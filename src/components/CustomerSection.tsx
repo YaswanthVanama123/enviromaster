@@ -2,14 +2,12 @@ import { useState } from "react";
 import "./CustomerSection.css";
 import logo from "../assets/em-logo.png";
 
-/** dummy API response, in the order you want them to appear */
 const initialFieldsFromAPI = [
   { id: "customerName",   label: "CUSTOMER NAME :",    value: "", builtIn: true },
   { id: "customerContact",label: "CUSTOMER CONTACT :", value: "", builtIn: true },
   { id: "customerNumber", label: "CUSTOMER NUMBER :",  value: "", builtIn: true },
   { id: "pocEmail",       label: "POC EMAIL :",        value: "", builtIn: true },
   { id: "pocPhone",       label: "POC PHONE :",        value: "", builtIn: true },
-  // if you ever need a full-row item, add { full: true }
 ];
 
 export default function CustomerSection() {
@@ -29,7 +27,7 @@ export default function CustomerSection() {
         id: `custom_${n}`,
         label: "LOREM IPSUM :",
         value: "",
-        builtIn: false,   // custom (editable + removable)
+        builtIn: false,  
       },
     ]);
   };
@@ -38,12 +36,10 @@ export default function CustomerSection() {
 
   return (
     <section className="cua2">
-      {/* left: logo */}
       <div className="cua2__logo">
         <img src={logo} alt="Enviro-Master Logo" className="cua2__logo-img" />
       </div>
 
-      {/* right: heading + fields */}
       <div className="cua2__right">
         <div className="cua2__headerRow">
           <h1 className="cua2__title">Customer Update Addendum</h1>
@@ -58,7 +54,6 @@ export default function CustomerSection() {
               key={f.id}
               className={`cua2__field ${f.full ? "cua2__field--full" : ""}`}
             >
-              {/* static vs editable label */}
               {f.builtIn ? (
                 <label>{f.label}</label>
               ) : (
@@ -80,7 +75,6 @@ export default function CustomerSection() {
                 </div>
               )}
 
-              {/* value underline input */}
               <input
                 className="cua2__value"
                 value={f.value}

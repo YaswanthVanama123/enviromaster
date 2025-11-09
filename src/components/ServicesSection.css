@@ -7,50 +7,155 @@
   overflow-x:hidden;
 }
 
-/* Red section bar */
 .svc-title{
-  background: #c00000;
-  color: #fff;
-  text-align: center;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  font-family: Arial;
-  font-size: 20px;
-  padding: 10px 8px;
-  border: 1.4px solid #000;
-  margin-bottom: 10px;
+  background:#c00000;
+  color:#fff;
+  text-align:center;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  font-family:Arial;
+  font-size:20px;
+  padding:10px 8px;
+  border:1.4px solid #000;
+  margin-bottom:10px;
+  position:relative;
+}
+.svc-title--hasActions{ 
+  padding-right:120px; 
+}
+.svc-actions{
+  position:absolute;
+   right:8px; top:50%;
+  transform:translateY(-50%);
+  display:inline-flex; 
+  gap:8px;
+}
+.svc-btn{
+  appearance:none; 
+  border:1px solid #fff; 
+  background:#fff; 
+  color:#c00000;
+  font-weight:700; 
+  font-size:12px; 
+  padding:6px 10px; 
+  border-radius:14px; 
+  cursor:pointer; 
+  white-space:nowrap;
+}
+.svc-btn:hover{ 
+  background:#ffecec; 
+}
+.svc-btn--small{ 
+  padding:6px 8px; 
+  font-size:12px; 
+  border-radius:10px; 
 }
 
-/* Main frame under the red bar */
 .svc-grid{
   width:100%;
   display:grid;
   grid-template-columns:repeat(3, minmax(0,1fr));
   gap:22px 28px;
-  /* border-left:2px solid #000;
-  border-right:2px solid #000;
-  border-bottom:2px solid #000; */
   padding:16px 16px 18px;
   box-sizing:border-box;
   background:#fff;
 }
 
-.svc-card{ min-width:0; }
-.svc-card--wide{ grid-column:1 / -1; }
+.svc-card{ 
+  min-width:0; 
+}
+.svc-card--wide{ 
+  grid-column:1 / -1; 
+}
 
-.svc-h{
+.svc-h{ 
+  margin:0 0 8px; 
+  font-size:15px; 
+  font-weight:bold; 
+  color:#bd2b33; 
+  font-family:Arial; 
+  text-transform:uppercase; 
+  text-decoration:underline; 
+  text-underline-offset:1px; 
+}
+.svc-h-row{ 
+  display:flex; 
+  align-items:center; 
+  justify-content:space-between; 
+  gap:8px; 
+}
+.svc-h-actions{ 
+  display:flex; 
+  gap:6px; 
+  align-items:center; 
+}
+
+.svc-h-input{
   margin:0 0 8px;
   font-size:15px;
   font-weight:bold;
   color:#bd2b33;
-  font-family: Arial;
+  font-family:Arial;
   text-transform:uppercase;
   text-decoration:underline;
   text-underline-offset:1px;
+  border:none;
+  background:transparent;
+  outline:none;
+  width:100%;
 }
 
-/* label + underline input rows */
+.svc-mini{
+  width:20px; 
+  height:20px; 
+  line-height:18px; 
+  text-align:center;
+  border:1px solid #666; 
+  border-radius:50%; 
+  background:#f6f6f6;
+  color:#333; 
+  font-weight:700; 
+  cursor:pointer; 
+  padding:0;
+}
+.svc-mini:hover{ 
+  background:#eee; 
+}
+.svc-mini--neg{ 
+  color:#a00; 
+  border-color:#a00; 
+}
+.svc-mini--inline{ 
+  margin-left:6px; 
+}
+
+.svc-chooser-wrap{ 
+  position:relative; 
+}
+.svc-chooser{
+  position:absolute; 
+  top:28px; 
+  right:0;
+  display:flex; 
+  align-items:center; 
+  gap:6px;
+  background:#fff; 
+  border:1px solid #ccc; 
+  border-radius:8px;
+  padding:6px; 
+  z-index:5; 
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.svc-chooser-select{
+  border:1px solid #bbb; 
+  border-radius:6px; 
+  height:28px; 
+  padding:0 6px; 
+  background:#fff; 
+  font-size:12px;
+}
+
 .svc-row{
   display:grid;
   grid-template-columns:max-content minmax(0,1fr);
@@ -59,45 +164,47 @@
   margin:6px 0;
   min-width:0;
 }
-.svc-row label{
-  font-size:13px;
-  font-weight:500;
-  color:#000;
-  white-space:nowrap;
+.svc-row-right{ 
+  display:flex; 
+  align-items:center; 
+  gap:6px; 
+  min-width:0; 
+}
+.svc-row label{ 
+  font-size:13px; 
+  font-weight:500; 
+  color:#000; 
+  white-space:nowrap; 
 }
 
-/* underline inputs */
-.svc-in{
-  border:none;
-  border-bottom:2px solid #000;
-  height:22px;
-  background:transparent;
+.svc-label-edit{
+  border:none; 
+  background:transparent; 
   outline:none;
-  padding:0 4px;
-  font-size:14px;
-  min-width:0;
-  box-sizing:border-box;
+  font-size:13px; 
+  font-weight:500; 
+  color:#000; 
+  padding:0; 
+  width:auto; 
+  min-width:40px;
+}
+
+.svc-in{
+  border:none; border-bottom:2px solid #000; height:22px; background:transparent; outline:none; padding:0 4px; font-size:14px; min-width:0; box-sizing:border-box;
 }
 .svc-in:focus{ border-bottom-color:#c20000; }
 
-.svc-in-box,
-.svc-dollar input{
-  border:none;
-  border-bottom:2px solid #000;
-  background:transparent;
-  outline:none;
-  font-size:14px;
-  height:28px;
-  width:100%;
-  box-sizing:border-box;
-  min-width:0;
+.svc-in-box, .svc-dollar input{
+  border:none; border-bottom:2px solid #000; background:transparent; outline:none; font-size:14px; height:28px; width:100%; box-sizing:border-box; min-width:0;
 }
 .svc-row-charge .svc-dollar input{ border-bottom:2px solid #c20000; }
 
 .svc-dollar{ display:inline-flex; align-items:center; gap:6px; padding-bottom:0px; min-width:0; }
-.svc-dollar > span{ font-weight:500; font-size: 13px;}
+.svc-dollar > span{ font-weight:500; font-size:13px; }
 
-/* inline small fields (N @ N = N) */
+.svc-red{ color:#bd2b33; font-weight:700; }
+
+
 .svc-inline{ display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
 .svc-inline span{ font-weight:700; white-space:nowrap; }
 .svc-inline--tight{ display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap; min-width:0; white-space:nowrap; }
@@ -105,144 +212,44 @@
 @media (min-width:1120px){ .svc-in.sm{ width:62px; } }
 @media (max-width:740px){ .svc-inline--tight{ flex-wrap:wrap; } }
 
-/* ---------- Refresh Power Scrub (boxed like PDF) ---------- */
-.scrub-table-wrapper{
-  width:100%;
-  overflow-x:auto;
-  border:2px solid #000;
-  border-radius:2px;
-}
-.scrub-table{
-  width:100%;
-  border-collapse:collapse;
-  text-align:center;
-  background:#fff;
-}
-.scrub-table th{
-  background:#dbe6ff;
-  color:#c20000;
-  font-weight:800;
-  font-size:14px;
-  border:1px solid #000;
-  padding:6px 8px;
-}
-.scrub-table td{
-  border:1px solid #000;
-  padding:4px;          /* tighter so inner boxes look like the reference */
-  vertical-align:top;
-}
 
-/* Inner boxed rows inside each cell */
-.scrub-box{
-  border:1px solid #000;
-  padding:6px 8px;
-  margin:4px 2px;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  justify-content:space-between;
-  background:#fff;
-}
-
-.scrub-dollar-sym{ font-weight:800; }
-
-.scrub-label{
-  font-size:12px;
-  font-weight:700;
-  color:#000;
-}
-
-.scrub-line{
-  border:none;
-  border-bottom:2px solid #000;
-  background:transparent;
-  outline:none;
-  font-size:14px;
-  width:78%;
-  text-align:center;
-}
-.scrub-box.amount .scrub-line{ width:78%; }
-.scrub-box.freq   .scrub-line{ width:78%; }
-.scrub-line:focus{ border-bottom-color:#c20000; }
-
-/* ---------- Service Notes (two editable lines) ---------- */
-.svc-notes{
-  display:flex; flex-direction:column; gap:8px; margin-top:6px;
-}
-.svc-line-input{
-  width:100%;
-  border:none; border-bottom:2px solid #000;
-  background:transparent; outline:none;
-  font-size:14px; padding:2px 4px; font-family:Arial, Helvetica, sans-serif;
-}
-.svc-line-input:focus{ border-bottom-color:#c20000; }
-
-/* ===== Refresh Power Scrub (matches 2nd image) ===== */
-.rps-wrap{
-  width:100%;
-  border:1px solid #000;        /* outer box like PDF */
-  border-radius:2px;
-  overflow:hidden;
-  background:#fff;
-}
-
-.rps{
-  width:100%;
-  border-collapse:collapse;
-  table-layout:fixed;            /* even columns */
-}
-
-.rps td{
-  border-left:1px solid #000;    /* inner vertical dividers */
-  border-top:1px solid #000;     /* inner horizontal divider between the 2 rows */
-  padding:10px 8px;
-  vertical-align:middle;
-}
-.rps tr:first-child td{ border-top:none; }     /* top row no top line */
-.rps td:first-child{ border-left:none; }       /* first column no left line */
-
-/* inline row inside each cell: label on left, underline input on right */
-.rps-inline{
-  display:grid;
-  grid-template-columns: max-content 1fr;
-  align-items:center;
-  column-gap:10px;
-  min-width:0;
-}
-
-.rps-label{
-  font-size:12px;
-  font-weight:bold;
-  color:#000;                    /* matches PDF small black text */
-  white-space:nowrap;
-}
-
-/* underline input (fill-in-the-blank) */
-.rps-line{
-  width:100%;
-  border:none;
-  border-bottom:2px solid #000;
-  background:transparent;
-  outline:none;
-  font-size:14px;
-  height:22px;
-  box-sizing:border-box;
-  min-width:0;
-}
+.rps-wrap{ width:100%; border:1px solid #000; border-radius:2px; overflow:hidden; background:#fff; }
+.rps{ width:100%; border-collapse:collapse; table-layout:fixed; }
+.rps td{ border-left:1px solid #000; border-top:1px solid #000; padding:10px 8px; vertical-align:middle; }
+.rps tr:first-child td{ border-top:none; }
+.rps td:first-child{ border-left:none; }
+.rps-inline{ display:grid; grid-template-columns:max-content 1fr; align-items:center; column-gap:10px; min-width:0; }
+.rps-label{ font-size:12px; font-weight:bold; color:#000; white-space:nowrap; }
+.rps-line{ width:100%; border:none; border-bottom:2px solid #000; background:transparent; outline:none; font-size:14px; height:22px; box-sizing:border-box; min-width:0; }
 .rps-line:focus{ border-bottom-color:#c20000; }
+@media (max-width:900px){ .rps td{ padding:8px 6px; } .rps-label{ font-size:11.5px; } }
+@media (max-width:740px){ .rps{ table-layout:auto; } .rps-inline{ column-gap:8px; } }
 
-/* responsive tightening so text + blank stay on one line */
-@media (max-width: 900px){
-  .rps td{ padding:8px 6px; }
-  .rps-label{ font-size:11.5px; }
+
+.svc-notes{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:6px;
 }
-@media (max-width: 740px){
-  .rps{ table-layout:auto; }
-  .rps-inline{ column-gap:8px; }
+
+.svc-note-line{
+  width:100%;
+  height:24px;
+  border:none;
+  border-bottom:2px solid #000;   
+  background:transparent;
+  outline:none;
+  font-size:14px;
+  padding:2px 4px;
+  box-sizing:border-box;
+}
+
+.svc-note-line:focus{
+  border-bottom-color:#c20000;    
 }
 
 
-/* ---------- Responsive ---------- */
 @media (max-width:1100px){
   .svc-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
 }
@@ -250,5 +257,4 @@
   .svc-grid{ grid-template-columns:1fr; }
   .svc-card--wide{ grid-column:1; }
   .svc-row{ grid-template-columns:1fr; row-gap:4px; }
-  .scrub-line{ width:70%; }
 }
