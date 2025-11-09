@@ -3,11 +3,11 @@ import "./CustomerSection.css";
 import logo from "../assets/em-logo.png";
 
 const initialFieldsFromAPI = [
-  { id: "customerName",   label: "CUSTOMER NAME :",    value: "", builtIn: true },
-  { id: "customerContact",label: "CUSTOMER CONTACT :", value: "", builtIn: true },
-  { id: "customerNumber", label: "CUSTOMER NUMBER :",  value: "", builtIn: true },
-  { id: "pocEmail",       label: "POC EMAIL :",        value: "", builtIn: true },
-  { id: "pocPhone",       label: "POC PHONE :",        value: "", builtIn: true },
+  { id: "customerName",    label: "CUSTOMER NAME :",     value: "", builtIn: true },
+  { id: "customerContact", label: "CUSTOMER CONTACT :",  value: "", builtIn: true },
+  { id: "customerNumber",  label: "CUSTOMER NUMBER :",   value: "", builtIn: true },
+  { id: "pocEmail",        label: "POC EMAIL :",         value: "", builtIn: true },
+  { id: "pocPhone",        label: "POC PHONE :",         value: "", builtIn: true },
 ];
 
 export default function CustomerSection() {
@@ -23,16 +23,12 @@ export default function CustomerSection() {
     const n = Date.now().toString(36);
     setFields(prev => [
       ...prev,
-      {
-        id: `custom_${n}`,
-        label: "LOREM IPSUM :",
-        value: "",
-        builtIn: false,  
-      },
+      { id: `custom_${n}`, label: "LOREM IPSUM :", value: "", builtIn: false },
     ]);
   };
 
-  const removeField = (id) => setFields(prev => prev.filter(f => f.id !== id));
+  const removeField = (id) =>
+    setFields(prev => prev.filter(f => f.id !== id));
 
   return (
     <section className="cua2">
@@ -50,40 +46,56 @@ export default function CustomerSection() {
 
         <div className="cua2__fields">
           {fields.map((f) => (
-            <div
+            <FieldRow
               key={f.id}
-              className={`cua2__field ${f.full ? "cua2__field--full" : ""}`}
-            >
-              {f.builtIn ? (
-                <label>{f.label}</label>
-              ) : (
-                <div className="cua2__labelWrap">
-                  <input
-                    className="cua2__labelEdit"
-                    value={f.label}
-                    onChange={(e) => changeLabel(f.id, e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    aria-label="Remove"
-                    className="cua2__removeBtn"
-                    onClick={() => removeField(f.id)}
-                    title="Remove this field"
-                  >
-                    –
-                  </button>
-                </div>
-              )}
-
-              <input
-                className="cua2__value"
-                value={f.value}
-                onChange={(e) => changeValue(f.id, e.target.value)}
-              />
-            </div>
+              field={f}
+              onChangeLabel={(val) => changeLabel(f.id, val)}
+              onChangeValue={(val) => changeValue(f.id, val)}
+              onRemove={() => removeField(f.id)}
+            />
           ))}
         </div>
       </div>
     </section>
+  );
+}
+
+function FieldRow({ field, onChangeLabel, onChangeValue, onRemove }) {
+  return (
+    <div className="cua2__field">
+      <div className="cua2__labelCell">
+        {field.builtIn ? (
+          <span className="cua2__labelText">{field.label}</span>
+        ) : (
+<input
+  className="cua2__labelEdit"
+  value={field.label}
+  size={Math.min(Math.max((field.label ?? "").trimEnd().length, 1), 26)}
+  maxLength={26}
+  onChange={(e) => onChangeLabel(e.target.value)}
+/>
+
+        )}
+      </div>
+
+      <div className="cua2__valueCell">
+        <input
+          className={`cua2__value ${!field.builtIn ? "cua2__value--withBtn" : ""}`}
+          value={field.value}
+          onChange={(e) => onChangeValue(e.target.value)}
+        />
+        {!field.builtIn && (
+          <button
+            type="button"
+            aria-label="Remove"
+            className="cua2__removeBtn"
+            title="Remove this field"
+            onClick={onRemove}
+          >
+            –
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

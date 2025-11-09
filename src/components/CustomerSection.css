@@ -1,3 +1,4 @@
+
 .cua2{
   box-sizing:border-box;
   padding:12px 8px 8px;
@@ -43,45 +44,56 @@
 
 .cua2__fields{
   display:grid;
-  grid-template-columns: 1fr 1fr;   
+  grid-template-columns: 1fr 1fr;
   gap:10px 28px;
-  grid-auto-flow: row;              
 }
 
 .cua2__field{
+  --minValueW: 180px; 
   display:grid;
-  grid-template-columns:max-content 1fr;
-  align-items:end;         
-  column-gap:10px;
+  grid-template-columns: auto minmax(var(--minValueW), 1fr);
+  column-gap:8px;
+  align-items:end;
   min-width:0;
 }
 
-.cua2__field--full{ grid-column: 1 / -1; }
-
-.cua2__field > label{
-  font-size:12px; font-weight:bold; color:#FF0000; white-space:nowrap;
+.cua2__field--stack{
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
 }
 
-.cua2__labelWrap{
-  display:inline-flex; align-items:flex-end; gap:6px;
-  white-space:nowrap; line-height:1;
+.cua2__labelCell{ min-width:0; }
+.cua2__valueCell{ position:relative; min-width:0; }
+
+.cua2__labelText{
+  display:inline-block;
+  font-size:12px;
+  font-weight:bold;
+  color:#FF0000;
+  white-space:normal;  
 }
+
 .cua2__labelEdit{
   border:none; background:transparent; color:#FF0000; font-weight:bold;
-  font-size:12px; padding:0; outline:none; min-width:0;
+  font-size:12px; padding:0; outline:none;
+  width:auto; max-width:100%; min-width:0;  
 }
-.cua2__removeBtn{
-  width:20px; height:20px; line-height:18px; text-align:center;
-  border:1px solid #666; border-radius:50%; background:#f6f6f6; color:#333;
-  font-weight:700; cursor:pointer; padding:0; position:relative; bottom:-2px;
-}
-.cua2__removeBtn:hover{ background:#eee; }
+
 
 .cua2__value{
   width:100%; border:none; border-bottom:2px solid #000;
   padding:6px 6px 3px; font-size:14px; outline:none; background:transparent; box-sizing:border-box;
 }
 .cua2__value:focus{ border-bottom-color:#d50000; }
+
+.cua2__value--withBtn{ padding-right:28px; }
+.cua2__removeBtn{
+  position:absolute; right:-2px; top:50%; transform:translateY(-50%);
+  width:20px; height:20px; line-height:18px; text-align:center;
+  border:1px solid #666; border-radius:50%;
+  background:#f6f6f6; color:#333; font-weight:700; cursor:pointer; padding:0;
+}
+.cua2__removeBtn:hover{ background:#eee; }
 
 @media (max-width: 880px){
   .cua2{ grid-template-columns:180px 1fr; }
@@ -90,6 +102,7 @@
 @media (max-width: 640px){
   .cua2{ grid-template-columns:1fr; row-gap:10px; }
   .cua2__logo{ padding-left:0; }
-  .cua2__fields{ grid-template-columns:1fr; } 
+  .cua2__fields{ grid-template-columns:1fr; }
   .cua2__headerRow{ flex-direction:column; align-items:flex-start; gap:6px; }
 }
+ 

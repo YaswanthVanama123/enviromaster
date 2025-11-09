@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./ProductsSection.css";
 
 const dummyResponse = {
@@ -9,12 +9,8 @@ const dummyResponse = {
     "Center Pull Towels",
     "Multi-Fold Natural",
     "Multi-Fold White",
-    "",
-    "",
     "Seat Cover Sleeve",
-    "",
     "Grit Soap",
-    "",
   ],
   dispensers: [
     "EM Proprietary Twin JRT",
@@ -58,35 +54,93 @@ function DollarCell() {
   );
 }
 
-function NameCell({
+function PlainCell() {
+  return <input className="in" />;
+}
+
+const NameCell = React.memo(function NameCell({
   item,
-  onChange,
+  onRename,
   onRemove,
 }: {
   item: RowItem;
-  onChange?: (v: string) => void;
+  onRename?: (v: string) => void;
   onRemove?: () => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(item.name);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      setDraft(item.name);
+      const t = setTimeout(() => inputRef.current?.focus(), 0);
+      return () => clearTimeout(t);
+    }
+  }, [isEditing, item.name]);
+
+  const commit = () => {
+    const next = draft.trim();
+    if (onRename && next !== item.name) onRename(next);
+    setIsEditing(false);
+  };
+  const cancel = () => {
+    setDraft(item.name);
+    setIsEditing(false);
+  };
+
   return (
     <div className="namecell">
-      {item.isCustom ? (
+      {isEditing ? (
         <>
           <input
+            ref={inputRef}
             className="name-edit"
-            value={item.name}
-            onChange={(e) => onChange?.(e.target.value)}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") cancel();
+            }}
             placeholder="Enter name…"
           />
-          <button className="row-remove" title="Remove row" onClick={onRemove} type="button">
-            –
-          </button>
+          {item.isCustom && (
+            <button
+              className="row-remove"
+              title="Remove row"
+              onClick={onRemove}
+              type="button"
+            >
+              –
+            </button>
+          )}
         </>
       ) : (
-        <span>{item.name}</span>
+        <>
+          <span
+            className={`name-label ${item.isCustom ? "editable" : ""}`}
+            onClick={() => item.isCustom && setIsEditing(true)}
+            title={item.isCustom ? "Click to edit" : undefined}
+            role={item.isCustom ? "button" : undefined}
+          >
+            {item.name}
+          </span>
+          {item.isCustom && (
+            <button
+              className="row-remove"
+              title="Remove row"
+              onClick={onRemove}
+              type="button"
+            >
+              –
+            </button>
+          )}
+        </>
       )}
     </div>
   );
-}
+});
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -130,21 +184,29 @@ export default function ProductsSection() {
 
   const mkRow = (): RowItem => ({
     id: `r_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-    name: "",
+    name: "Custom",
     isCustom: true,
   });
 
   const addRowAll = () =>
-    setData((d) => ({
-      smallProducts: [...d.smallProducts, mkRow()],
-      dispensers: [...d.dispensers, mkRow()],
-      bigProducts: [...d.bigProducts, mkRow()],
-    }));
+    setData((d) => {
+      const ra = mkRow();
+      const rb = mkRow();
+      const rc = mkRow();
+      return {
+        smallProducts: [...d.smallProducts, ra],
+        dispensers: [...d.dispensers, rb],
+        bigProducts: [...d.bigProducts, rc],
+      };
+    });
 
   const addRow = (bucket: keyof typeof data) =>
-    setData((d) => ({ ...d, [bucket]: [...d[bucket], mkRow()] }));
+    setData((d) => {
+      const r = mkRow();
+      return { ...d, [bucket]: [...d[bucket], r] };
+    });
 
-  const changeName = (bucket: keyof typeof data, id: string, next: string) =>
+  const renameRow = (bucket: keyof typeof data, id: string, next: string) =>
     setData((d) => ({
       ...d,
       [bucket]: d[bucket].map((it) => (it.id === id ? { ...it, name: next } : it)),
@@ -272,53 +334,91 @@ export default function ProductsSection() {
               const b = data.dispensers[i];
               const c = data.bigProducts[i];
 
+              const rowKey =
+                [a?.id ?? "", b?.id ?? "", c?.id ?? ""].filter(Boolean).join("|") ||
+                `row-${i}`;
+
               return (
-                <tr key={i}>
-                  <td className="label">
-                    {a && (
-                      <NameCell
-                        item={a}
-                        onChange={(v) => changeName("smallProducts", a.id, v)}
-                        onRemove={a.isCustom ? () => removeRow("smallProducts", a.id) : undefined}
-                      />
-                    )}
-                  </td>
-                  <td><DollarCell /></td>
-                  {extraCols.smallProducts.map((col) => (
-                    <td key={col.id}><DollarCell /></td>
-                  ))}
+                <tr key={rowKey}>
+                  {a ? (
+                    <>
+                      <td className="label">
+                        <NameCell
+                          item={a}
+                          onRename={a.isCustom ? (v) => renameRow("smallProducts", a.id, v) : undefined}
+                          onRemove={a.isCustom ? () => removeRow("smallProducts", a.id) : undefined}
+                        />
+                      </td>
+                      <td><DollarCell /></td>
+                      {extraCols.smallProducts.map((col) => (
+                        <td key={col.id}><DollarCell /></td>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <td className="label">{}</td>
+                      <td><PlainCell /></td>
+                      {extraCols.smallProducts.map((col) => (
+                        <td key={col.id}><PlainCell /></td>
+                      ))}
+                    </>
+                  )}
 
-                  <td className="label">
-                    {b && (
-                      <NameCell
-                        item={b}
-                        onChange={(v) => changeName("dispensers", b.id, v)}
-                        onRemove={b.isCustom ? () => removeRow("dispensers", b.id) : undefined}
-                      />
-                    )}
-                  </td>
-                  <td className="center"><input className="in" /></td>
-                  <td><DollarCell /></td>
-                  <td><DollarCell /></td>
-                  {extraCols.dispensers.map((col) => (
-                    <td key={col.id}><DollarCell /></td>
-                  ))}
+                  {b ? (
+                    <>
+                      <td className="label">
+                        <NameCell
+                          item={b}
+                          onRename={b.isCustom ? (v) => renameRow("dispensers", b.id, v) : undefined}
+                          onRemove={b.isCustom ? () => removeRow("dispensers", b.id) : undefined}
+                        />
+                      </td>
+                      <td className="center"><PlainCell /></td>
+                      <td><DollarCell /></td>
+                      <td><DollarCell /></td>
+                      {extraCols.dispensers.map((col) => (
+                        <td key={col.id}><DollarCell /></td>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <td className="label" />
+                      <td className="center"><PlainCell /></td>
+                      <td><PlainCell /></td>
+                      <td><PlainCell /></td>
+                      {extraCols.dispensers.map((col) => (
+                        <td key={col.id}><PlainCell /></td>
+                      ))}
+                    </>
+                  )}
 
-                  <td className="label">
-                    {c && (
-                      <NameCell
-                        item={c}
-                        onChange={(v) => changeName("bigProducts", c.id, v)}
-                        onRemove={c.isCustom ? () => removeRow("bigProducts", c.id) : undefined}
-                      />
-                    )}
-                  </td>
-                  <td className="center"><input className="in" /></td>
-                  <td><DollarCell /></td>
-                  <td className="center"><input className="in" /></td>
-                  {extraCols.bigProducts.map((col) => (
-                    <td key={col.id}><DollarCell /></td>
-                  ))}
+                  {c ? (
+                    <>
+                      <td className="label">
+                        <NameCell
+                          item={c}
+                          onRename={c.isCustom ? (v) => renameRow("bigProducts", c.id, v) : undefined}
+                          onRemove={c.isCustom ? () => removeRow("bigProducts", c.id) : undefined}
+                        />
+                      </td>
+                      <td className="center"><PlainCell /></td>
+                      <td><DollarCell /></td>
+                      <td className="center"><PlainCell /></td>
+                      {extraCols.bigProducts.map((col) => (
+                        <td key={col.id}><DollarCell /></td>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <td className="label" />
+                      <td className="center"><PlainCell /></td>
+                      <td><PlainCell /></td>
+                      <td className="center"><PlainCell /></td>
+                      {extraCols.bigProducts.map((col) => (
+                        <td key={col.id}><PlainCell /></td>
+                      ))}
+                    </>
+                  )}
                 </tr>
               );
             })}
@@ -346,173 +446,122 @@ export default function ProductsSection() {
     </div>
   );
 
-  const GroupedTables = () => (
-    <>
-      <div className="prod__ribbon">
-        <div className="prod__title">PRODUCTS</div>
-      </div>
-
-      <GroupWrap
-        onAddRow={() => addRow("smallProducts")}
-        onAddCol={() => addCol("smallProducts")}
-      >
-        <table className="gtable">
-          <thead>
-            <tr>
-              <th className="h h-blue">Products</th>
-              <th className="h h-blue center">Amount Per Unit</th>
-              {extraCols.smallProducts.map((col) => (
-                <th className="h h-blue center th-edit" key={col.id}>
-                  <input
-                    className="th-edit-input"
-                    value={col.label}
-                    onChange={(e) => changeColLabel("smallProducts", col.id, e.target.value)}
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
-                  />
-                  <button
-                    className="th-remove"
-                    title="Remove column"
-                    type="button"
-                    onClick={() => removeCol("smallProducts", col.id)}
-                  >
-                    –
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.smallProducts.map((a) => (
-              <tr key={a.id}>
-                <td className="label">
-                  <NameCell
-                    item={a}
-                    onChange={a.isCustom ? (v) => changeName("smallProducts", a.id, v) : undefined}
-                    onRemove={a.isCustom ? () => removeRow("smallProducts", a.id) : undefined}
-                  />
-                </td>
-                <td><DollarCell /></td>
-                {extraCols.smallProducts.map((col) => (
-                  <td key={col.id}><DollarCell /></td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </GroupWrap>
-
-      <GroupWrap
-        onAddRow={() => addRow("dispensers")}
-        onAddCol={() => addCol("dispensers")}
-      >
-        <table className="gtable">
-          <thead>
-            <tr>
-              <th className="h h-blue">Dispensers</th>
+const GroupedTable = ({
+  title,
+  bucket,
+  extraKey,
+  renderAmountCells,
+}: {
+  title: string;
+  bucket: keyof typeof data;
+  extraKey: keyof typeof extraCols;
+  renderAmountCells: (hasName: boolean) => React.ReactNode;
+}) => (
+  <GroupWrap onAddRow={() => addRow(bucket)} onAddCol={() => addCol(extraKey)}>
+    <table className="gtable">
+      <thead>
+        <tr>
+          <th className="h h-blue">{title}</th>
+          {bucket === "smallProducts" ? (
+            <th className="h h-blue center">Amount Per Unit</th>
+          ) : bucket === "dispensers" ? (
+            <>
               <th className="h h-blue center">Qty</th>
               <th className="h h-blue center">Warranty Rate</th>
               <th className="h h-blue center">Replacement Rate/Install</th>
-              {extraCols.dispensers.map((col) => (
-                <th className="h h-blue center th-edit" key={col.id}>
-                  <input
-                    className="th-edit-input"
-                    value={col.label}
-                    onChange={(e) => changeColLabel("dispensers", col.id, e.target.value)}
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
-                  />
-                  <button
-                    className="th-remove"
-                    title="Remove column"
-                    type="button"
-                    onClick={() => removeCol("dispensers", col.id)}
-                  >
-                    –
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.dispensers.map((b) => (
-              <tr key={b.id}>
-                <td className="label">
-                  <NameCell
-                    item={b}
-                    onChange={b.isCustom ? (v) => changeName("dispensers", b.id, v) : undefined}
-                    onRemove={b.isCustom ? () => removeRow("dispensers", b.id) : undefined}
-                  />
-                </td>
-                <td className="center"><input className="in" /></td>
-                <td><DollarCell /></td>
-                <td><DollarCell /></td>
-                {extraCols.dispensers.map((col) => (
-                  <td key={col.id}><DollarCell /></td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </GroupWrap>
-
-      <GroupWrap
-        onAddRow={() => addRow("bigProducts")}
-        onAddCol={() => addCol("bigProducts")}
-      >
-        <table className="gtable">
-          <thead>
-            <tr>
-              <th className="h h-blue">Products</th>
+            </>
+          ) : (
+            <>
               <th className="h h-blue center">Qty</th>
               <th className="h h-blue center">Amount</th>
               <th className="h h-blue center">Frequency of Service</th>
-              {extraCols.bigProducts.map((col) => (
-                <th className="h h-blue center th-edit" key={col.id}>
-                  <input
-                    className="th-edit-input"
-                    value={col.label}
-                    onChange={(e) => changeColLabel("bigProducts", col.id, e.target.value)}
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
-                  />
-                  <button
-                    className="th-remove"
-                    title="Remove column"
-                    type="button"
-                    onClick={() => removeCol("bigProducts", col.id)}
-                  >
-                    –
-                  </button>
-                </th>
+            </>
+          )}
+          {extraCols[extraKey].map((col) => (
+            <th className="h h-blue center th-edit" key={col.id}>
+              <input
+                className="th-edit-input"
+                value={col.label}
+                onChange={(e) => changeColLabel(extraKey, col.id, e.target.value)}
+                onFocus={() => setEditingColId(col.id)}
+                autoFocus={editingColId === col.id}
+              />
+              <button
+                className="th-remove"
+                title="Remove column"
+                type="button"
+                onClick={() => removeCol(extraKey, col.id)}
+              >
+                –
+              </button>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {data[bucket].map((row) => {
+          const hasName = !!row.name;
+          return (
+            <tr key={row.id}>
+              <td className="label">
+                <NameCell
+                  item={row}
+                  onRename={row.isCustom ? (v) => renameRow(bucket, row.id, v) : undefined}
+                  onRemove={row.isCustom ? () => removeRow(bucket, row.id) : undefined}
+                />
+              </td>
+              {renderAmountCells(hasName)}
+              {extraCols[extraKey].map((col) => (
+                <td key={col.id}>{hasName ? <DollarCell /> : <PlainCell />}</td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {data.bigProducts.map((c) => (
-              <tr key={c.id}>
-                <td className="label">
-                  <NameCell
-                    item={c}
-                    onChange={c.isCustom ? (v) => changeName("bigProducts", c.id, v) : undefined}
-                    onRemove={c.isCustom ? () => removeRow("bigProducts", c.id) : undefined}
-                  />
-                </td>
-                <td className="center"><input className="in" /></td>
-                <td><DollarCell /></td>
-                <td className="center"><input className="in" /></td>
-                {extraCols.bigProducts.map((col) => (
-                  <td key={col.id}><DollarCell /></td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </GroupWrap>
-    </>
-  );
+          );
+        })}
+      </tbody>
+    </table>
+  </GroupWrap>
+);
 
-  return (
-    <section className="prod">{isDesktop ? <DesktopTable /> : <GroupedTables />}</section>
-  );
+const GroupedTables = () => (
+  <>
+    <div className="prod__ribbon">
+      <div className="prod__title">PRODUCTS</div>
+    </div>
+
+    <GroupedTable
+      title="Products"
+      bucket="smallProducts"
+      extraKey="smallProducts"
+      renderAmountCells={(hasName) => <td>{hasName ? <DollarCell /> : <PlainCell />}</td>}
+    />
+
+    <GroupedTable
+      title="Dispensers"
+      bucket="dispensers"
+      extraKey="dispensers"
+      renderAmountCells={(hasName) => (
+        <>
+          <td className="center"><PlainCell /></td>
+          <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
+          <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
+        </>
+      )}
+    />
+
+    <GroupedTable
+      title="Products"
+      bucket="bigProducts"
+      extraKey="bigProducts"
+      renderAmountCells={(hasName) => (
+        <>
+          <td className="center"><PlainCell /></td>
+          <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
+          <td className="center"><PlainCell /></td>
+        </>
+      )}
+    />
+  </>
+);
+
+  return <section className="prod">{isDesktop ? <DesktopTable /> : <GroupedTables />}</section>;
 }
