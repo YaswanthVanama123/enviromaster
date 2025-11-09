@@ -127,6 +127,20 @@
   border-bottom: 2px solid #000;
 }
 
+/* make ALL “Products” and “Dispensers” cells gray (both left and right tables) */
+.grid10 td.label,
+.gtable td.label {
+  background: #e5e5e5 !important;   /* overrides the generic td background */
+  font-size: 13px;
+  font-weight: 500;
+  color: #000;
+  font-family: Arial, sans-serif;
+}
+
+/* keep the generic td background for non-label cells */
+.grid10 td { background: #fff; }
+
+
 /* ===== Grouped table headers ===== */
 .gtable thead th {
   background: #dae9f8;
