@@ -1,0 +1,120 @@
+/* ===== 2-column layout: [Logo] | [Right content] ===== */
+.cua2{
+  box-sizing:border-box;
+  padding:12px 8px 8px;
+  font-family:Arial;
+
+  display:grid;
+  grid-template-columns: 220px 1fr;   
+  column-gap:28px;
+  align-items:start;
+
+  margin:0;
+  justify-items:stretch;
+}
+
+html, body, #root{
+  height:100%;
+  margin:0;
+  padding:0;
+  display:block;
+}
+
+/* LEFT: logo rail */
+.cua2__logo{
+  display:grid;
+  align-content:center;
+  justify-items:start;
+  padding-left:8px;
+  min-height:120px;
+}
+.cua2__logo span{
+  display:inline-block;
+  font-weight:900;
+  font-size:56px;
+  color:#d50000;
+  line-height:1;
+}
+.cua2__logo small{
+  display:block;
+  margin-top:2px;
+  font-size:12px;
+  color:#555;
+  letter-spacing:.6px;
+}
+.cua2__logo-img{
+  height: 100px;
+  width: 150px;
+}
+
+/* RIGHT: heading + fields container */
+.cua2__right{
+  width:100%;
+  display:grid;
+  grid-template-rows:auto 1fr;
+  row-gap:10px;
+  justify-items:stretch;  /* prevent inner centering */
+}
+
+/* Heading is centered but ONLY inside the right side */
+.cua2__title{
+  margin:0;
+  font-size:16px;
+  font-weight:750;
+  color:#ff0000;
+  /* text-transform:uppercase; */
+  font-family:Arial;
+  letter-spacing:.4px;
+  text-align:center;          /* center within right side only */
+}
+
+/* Fields grid inside the right side (2 columns) */
+.cua2__fields{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px 28px;
+}
+
+/* label + underline input per cell */
+.cua2__field{
+  display:grid;
+  grid-template-columns:max-content 1fr;
+  align-items:end;
+  column-gap:10px;
+  min-width:0;
+}
+.cua2__field--span1{
+  grid-column: 2;             /* place POC PHONE under right column only */
+}
+
+.cua2__field label{
+  font-size:12px;
+  font-weight:bold;
+  color:#FF0000;
+  white-space:nowrap;
+  font-family:Arial;
+}
+
+.cua2__field input{
+  width:100%;
+  border:none;
+  border-bottom:2px solid #000; /* black underline */
+  padding:6px 6px 3px;
+  font-size:14px;
+  outline:none;
+  background:transparent;
+  box-sizing:border-box;
+}
+.cua2__field input:focus{ border-bottom-color:#d50000; }
+
+/* ===== Responsive ===== */
+@media (max-width: 880px){
+  .cua2{ grid-template-columns:180px 1fr; }
+  .cua2__fields{ gap:8px 20px; }
+}
+@media (max-width: 640px){
+  .cua2{ grid-template-columns:1fr; row-gap:10px; }
+  .cua2__logo{ padding-left:0; }
+  .cua2__fields{ grid-template-columns:1fr; }
+  .cua2__field--span1{ grid-column:auto; }
+}
