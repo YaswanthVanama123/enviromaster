@@ -3,7 +3,7 @@
   box-sizing:border-box;
   padding:12px 8px 8px;
   font-family:Arial, Helvetica, sans-serif;
-  
+
   display:grid;
   grid-template-columns: 220px 1fr;
   column-gap:28px;

@@ -1,0 +1,22 @@
+/* Remove any old center-align wrappers around NavBar */
+
+:root{
+  --bg:#ffffff; --ink:#212121; --muted:#4a4a4a; --accent:#ff4500;
+}
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+
+/* Full-bleed header + flexible page */
+.shell{
+  min-height:100dvh;
+  display:grid;
+  grid-template-rows:auto 1fr; /* header, content */
+}
+
+/* Your page content stays centered with a max width */
+.container{
+  /* max-width:1200px; */
+  margin:0 auto;
+  padding:24px 16px;
+}
