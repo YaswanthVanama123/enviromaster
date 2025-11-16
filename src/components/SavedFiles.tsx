@@ -1,42 +1,45 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./SavedFiles.css";
 
-type FileStatus = "draft" | "in_progress" | "active" | "completed";
+type FileStatus =
+  | "draft"
+  | "in_progress"
+  | "active"
+  | "completed"
+  | "pending_approval"
+  | "approved_salesman"
+  | "approved_admin";
 
 type SavedFile = {
   id: string;
   fileName: string;
   updatedAt: string;
   status: FileStatus;
+
+  createdAt?: string;
+  headerTitle?: string;
+  zoho?: {
+    bigin: {
+      dealId: string | null;
+      fileId: string | null;
+      url: string | null;
+    };
+    crm: {
+      dealId: string | null;
+      fileId: string | null;
+      url: string | null;
+    };
+  };
 };
 
-type ApiResponse = {
-  data: {
-    items: SavedFile[];
-    page: number;
-    pageSize: number;
-    total: number;
-  };
-  meta: {
-    requestId: string;
-    generatedAt: string;
-  };
-};
-
-const initialPayload: ApiResponse = {
-  data: {
-    items: [
-      { id: "fl_003", fileName: "Example File 3", updatedAt: "2025-11-09T07:30:00.000Z", status: "active" },
-      { id: "fl_005", fileName: "Example File 5", updatedAt: "2025-11-05T07:30:00.000Z", status: "completed" },
-      { id: "fl_001", fileName: "Example File 1", updatedAt: new Date().toISOString(), status: "draft" },
-      { id: "fl_004", fileName: "Example File 4", updatedAt: "2025-11-09T04:30:00.000Z", status: "draft" },
-      { id: "fl_002", fileName: "Example File 2", updatedAt: "2025-11-10T04:30:00.000Z", status: "in_progress" }
-    ],
-    page: 1,
-    pageSize: 10,
-    total: 5
-  },
-  meta: { requestId: "req_demo", generatedAt: new Date().toISOString() }
+type BackendItem = {
+  id: string;
+  headerTitle: string;
+  status: FileStatus;
+  createdAt: string;
+  updatedAt: string;
+  zoho: SavedFile["zoho"];
 };
 
 function timeAgo(iso: string) {
@@ -56,55 +59,194 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   in_progress: "In Progress",
   active: "Active",
   completed: "Completed",
+  pending_approval: "Pending Approval",
+  approved_salesman: "Approved by Salesman",
+  approved_admin: "Approved by Admin",
 };
 
 export default function SavedFiles() {
-  const [payload, setPayload] = useState<ApiResponse>(initialPayload);
+  const [files, setFiles] = useState<SavedFile[]>([]);
   const [query, setQuery] = useState("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
 
-  const files = payload.data.items;
+  const navigate = useNavigate();
+
+  // ---- Fetch from backend on mount ----
+  useEffect(() => {
+    const fetchFiles = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          "http://localhost:5000/api/pdf/viewer/getall/highlevel",
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`Failed with status ${res.status}`);
+        }
+
+        const data: BackendItem[] = await res.json();
+
+        const mapped: SavedFile[] = (data ?? []).map((item) => ({
+          id: item.id,
+          fileName: item.headerTitle ?? "Untitled",
+          updatedAt: item.updatedAt,
+          status: item.status ?? "draft",
+          createdAt: item.createdAt,
+          headerTitle: item.headerTitle,
+          zoho: item.zoho,
+        }));
+
+        setFiles(mapped);
+      } catch (err) {
+        console.error("Error fetching saved files:", err);
+        setError("Unable to load files. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let out = files.filter(f => f.fileName.toLowerCase().includes(q));
+    let out = files.filter((f) => f.fileName.toLowerCase().includes(q));
     out = out.sort((a, b) => {
-      const order = STATUS_LABEL[a.status].localeCompare(STATUS_LABEL[b.status]);
+      const order = STATUS_LABEL[a.status].localeCompare(
+        STATUS_LABEL[b.status]
+      );
       return sortDir === "asc" ? order : -order;
     });
     return out;
   }, [files, query, sortDir]);
 
-  const allSelected = filtered.length > 0 && filtered.every(f => selected[f.id]);
+  const allSelected =
+    filtered.length > 0 && filtered.every((f) => selected[f.id]);
   const anySelected = Object.values(selected).some(Boolean);
 
   function toggleSelectAll() {
     const next = { ...selected };
     const to = !allSelected;
-    filtered.forEach(f => (next[f.id] = to));
+    filtered.forEach((f) => (next[f.id] = to));
     setSelected(next);
   }
 
   function toggleRow(id: string) {
-    setSelected(prev => ({ ...prev, [id]: !prev[id] }));
+    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
   function changeStatus(id: string, next: FileStatus) {
-    setPayload(prev => ({
-      ...prev,
-      data: {
-        ...prev.data,
-        items: prev.data.items.map(it => (it.id === id ? { ...it, status: next } : it)),
-      },
-    }));
+    setFiles((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, status: next } : it))
+    );
   }
 
   function sendForApproval() {
-    const ids = Object.entries(selected).filter(([, v]) => v).map(([k]) => k);
+    const ids = Object.entries(selected)
+      .filter(([, v]) => v)
+      .map(([k]) => k);
     if (ids.length === 0) return;
     alert(`Send for approval:\n${ids.join(", ")}`);
   }
+
+  // ---- View handler (eye icon) ----
+  const handleView = (file: SavedFile) => {
+    navigate("/form-filling", {
+      state: {
+        editing: true,
+        id: file.id,
+      },
+    });
+  };
+
+  // ---- Download handler ----
+  const handleDownload = async (file: SavedFile) => {
+    try {
+      setDownloadingId(file.id);
+
+      const res = await fetch(
+        `http://localhost:5000/api/pdf/viewer/download/${file.id}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Download failed with status ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      const safeName =
+        (file.fileName || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") +
+        ".pdf";
+      a.download = safeName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading file:", err);
+      alert("Unable to download this PDF. Please try again.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  // ---- Save status handler ----
+  const handleSaveStatus = async (file: SavedFile) => {
+    try {
+      setSavingStatusId(file.id);
+
+      const res = await fetch(
+        "http://localhost:5000/api/pdf/customer-headers/update/status",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            id: file.id,
+            status: file.status,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Status update failed with status ${res.status}`);
+      }
+
+      let data: unknown = null;
+      try {
+        data = await res.json();
+      } catch {
+        // backend may not return JSON
+      }
+      console.log("Status update 200 response:", data);
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Unable to update status. Please try again.");
+    } finally {
+      setSavingStatusId(null);
+    }
+  };
 
   return (
     <section className="sf">
@@ -124,7 +266,7 @@ export default function SavedFiles() {
           <button
             type="button"
             className="sf__btn sf__btn--light"
-            onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))}
+            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
           >
             Sort by Status
           </button>
@@ -153,46 +295,110 @@ export default function SavedFiles() {
               </th>
               <th>File Name</th>
               <th>Updated</th>
-              <th className="w-180">Status</th>
-              <th className="w-160">Actions</th>
+              <th className="w-220">Status</th>
+              <th className="w-220">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((f) => (
-              <tr key={f.id}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={!!selected[f.id]}
-                    onChange={() => toggleRow(f.id)}
-                  />
-                </td>
-                <td>{f.fileName}</td>
-                <td>{timeAgo(f.updatedAt)}</td>
-                <td>
-                  <select
-                    className={`pill pill--${f.status}`}
-                    value={f.status}
-                    onChange={(e) => changeStatus(f.id, e.target.value as FileStatus)}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </td>
-                <td>
-                  <div className="rowactions">
-                    <button className="iconbtn" title="View">👁️</button>
-                    <button className="iconbtn" title="Download">⬇️</button>
-                    <button className="iconbtn" title="Share via Email">✉️</button>
-                  </div>
+            {loading && (
+              <tr>
+                <td colSpan={5} className="empty">
+                  Loading files…
                 </td>
               </tr>
-            ))}
-            {filtered.length === 0 && (
+            )}
+
+            {!loading &&
+              filtered.map((f) => (
+                <tr key={f.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={!!selected[f.id]}
+                      onChange={() => toggleRow(f.id)}
+                    />
+                  </td>
+                  <td>{f.fileName}</td>
+                  <td>{timeAgo(f.updatedAt)}</td>
+                  <td>
+                    <select
+                      className={`pill pill--${f.status}`}
+                      value={f.status}
+                      onChange={(e) =>
+                        changeStatus(
+                          f.id,
+                          e.target.value as FileStatus
+                        )
+                      }
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="active">Active</option>
+                      <option value="completed">Completed</option>
+                      <option value="pending_approval">
+                        Pending Approval
+                      </option>
+                      <option value="approved_salesman">
+                        Approved by Salesman
+                      </option>
+                      <option value="approved_admin">
+                        Approved by Admin
+                      </option>
+                    </select>
+                  </td>
+                  <td>
+                    <div className="rowactions">
+                      <button
+                        className="iconbtn"
+                        title="View"
+                        type="button"
+                        onClick={() => handleView(f)}
+                      >
+                        👁️
+                      </button>
+                      <button
+                        className="iconbtn"
+                        title="Download"
+                        type="button"
+                        onClick={() => handleDownload(f)}
+                        disabled={downloadingId === f.id}
+                      >
+                        {downloadingId === f.id ? "⏳" : "⬇️"}
+                      </button>
+                      <button
+                        className="iconbtn"
+                        title="Share via Email"
+                        type="button"
+                      >
+                        ✉️
+                      </button>
+                      <button
+                        className="iconbtn"
+                        title="Save Status"
+                        type="button"
+                        onClick={() => handleSaveStatus(f)}
+                        disabled={savingStatusId === f.id}
+                      >
+                        {savingStatusId === f.id ? "💾…" : "💾"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+            {!loading && !error && filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="empty">No files found.</td>
+                <td colSpan={5} className="empty">
+                  No files found.
+                </td>
+              </tr>
+            )}
+
+            {!loading && error && (
+              <tr>
+                <td colSpan={5} className="empty">
+                  {error}
+                </td>
               </tr>
             )}
           </tbody>
@@ -200,9 +406,13 @@ export default function SavedFiles() {
       </div>
 
       <div className="sf__pager">
-        <button type="button" className="sf__link" disabled>Previous</button>
+        <button type="button" className="sf__link" disabled>
+          Previous
+        </button>
         <span className="sf__page">1</span>
-        <button type="button" className="sf__link" disabled>Next</button>
+        <button type="button" className="sf__link" disabled>
+          Next
+        </button>
       </div>
     </section>
   );
