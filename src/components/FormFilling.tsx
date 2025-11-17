@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import CustomerSection from "./CustomerSection";
 import ProductsSection from "./ProductsSection";
-import ServicesSection from "./ServicesSection";
+// import ServicesSection from "./ServicesSection";
 import "./FormFilling.css";
+import ServicesSection from "./services/ServicesSection";
 import axios from "axios";
 
 type HeaderRow = {
@@ -14,7 +15,7 @@ type HeaderRow = {
 };
 
 type ProductsPayload = {
-  headers: string[];
+  headers: string[]; 
   rows: string[][];
 };
 
@@ -69,7 +70,7 @@ type LocationState = {
 // customer document we were using before (for saving when not editing an existing one)
 const CUSTOMER_FALLBACK_ID = "6918cecbf0b2846a9c562fd6";
 // admin template for "new" forms (read-only template to prefill)
-const ADMIN_TEMPLATE_ID = "69194208b58e7ccb71916480";
+const ADMIN_TEMPLATE_ID = "691b6ea14e85329ebac5f752";
 
 export default function FormFilling() {
   const location = useLocation();

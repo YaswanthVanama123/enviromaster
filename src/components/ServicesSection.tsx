@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./ServicesSection.css";
+import type { TextRow } from "./services/types";
+
 
 const Under = ({
   name,
