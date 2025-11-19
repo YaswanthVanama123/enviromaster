@@ -1,98 +1,58 @@
-// src/features/services/microfiberMopping/useMicrofiberMoppingCalc.ts
-
 import { useMemo, useState } from "react";
-import type { ChangeEvent } from "react";
+import type {ChangeEvent} from 'react';
 import type { MicrofiberMoppingFormState } from "./microfiberMoppingTypes";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
-import { calcAnnualFromPerVisit } from "../common/pricingUtils";
-import {
-  MICROFIBER_BATHROOM_RATE,
-  MICROFIBER_STANDALONE_RATE,
-  MICROFIBER_STANDALONE_MINIMUM,
-} from "./microfiberMoppingConfig";
+import { annualFromPerVisit } from "../common/pricingUtils";
+import { MF_COMBINED_RATE, MF_EXTRAAREA_RATE, MF_STANDALONE_MIN, MF_STANDALONE_RATE } from "./microfiberMoppingConfig";
 
 const DEFAULT_FORM: MicrofiberMoppingFormState = {
-  bathroomSqFt: 0,
-  nonBathroomSqFt: 0,
-  standalone: false,
+  isCombinedWithSani: true,
+  bathroomsSqFt: 0,
+  bathroomsRate: MF_COMBINED_RATE,
+  extraNonBathSqFt: 0,
+  extraNonBathRate: MF_EXTRAAREA_RATE,
+  standaloneSqFt: 0,
+  standaloneRate: MF_STANDALONE_RATE,
+  standaloneMinimum: MF_STANDALONE_MIN,
   frequency: "weekly",
   tripChargeIncluded: true,
   notes: "",
 };
 
-export function useMicrofiberMoppingCalc(initialData: MicrofiberMoppingFormState) {
-  const [form, setForm] = useState<MicrofiberMoppingFormState>(initialData || DEFAULT_FORM);
+export function useMicrofiberMoppingCalc(initial?: Partial<MicrofiberMoppingFormState>) {
+  const [form, setForm] = useState<MicrofiberMoppingFormState>({ ...DEFAULT_FORM, ...initial });
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const target = e.target as HTMLInputElement | HTMLSelectElement;
-
-    const { name, value, type } = target;
-    const checked =
-      type === "checkbox" ? (target as HTMLInputElement).checked : undefined;
-
-    setForm((prev) => {
-      if (name === "bathroomSqFt")
-        return { ...prev, bathroomSqFt: Number(value) || 0 };
-
-      if (name === "nonBathroomSqFt")
-        return { ...prev, nonBathroomSqFt: Number(value) || 0 };
-
-      if (name === "standalone") {
-        return {
-          ...prev,
-          standalone: type === "checkbox" ? checked! : value === "true",
-        };
-      }
-
-      if (name === "frequency") {
-        return {
-          ...prev,
-          frequency: value as MicrofiberMoppingFormState["frequency"],
-        };
-      }
-
-      if (name === "notes") {
-        return { ...prev, notes: value };
-      }
-
-      return prev;
-    });
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as any;
+    setForm((p) => ({ ...p, [name]: type === "checkbox" ? !!checked : name === "frequency" ? value : Number(value) || 0 }));
   };
 
   const quote: ServiceQuoteResult = useMemo(() => {
     let perVisit = 0;
 
-    if (!form.standalone) {
-      // Included with Sani — cheap bathroom-only rate
-      perVisit += form.bathroomSqFt * MICROFIBER_BATHROOM_RATE;
+    if (form.isCombinedWithSani) {
+      perVisit += form.bathroomsSqFt * form.bathroomsRate;
+      perVisit += form.extraNonBathSqFt * form.extraNonBathRate;
     } else {
-      // Standalone — use higher rate for entire area
-      perVisit +=
-        (form.bathroomSqFt + form.nonBathroomSqFt) *
-        MICROFIBER_STANDALONE_RATE;
-
-      if (perVisit < MICROFIBER_STANDALONE_MINIMUM) {
-        perVisit = MICROFIBER_STANDALONE_MINIMUM;
-      }
+      perVisit += form.standaloneSqFt * form.standaloneRate;
+      perVisit = Math.max(perVisit, form.standaloneMinimum);
     }
 
-    const annual = calcAnnualFromPerVisit(perVisit, form.frequency);
-
+    const annual = annualFromPerVisit(perVisit, form.frequency);
     return {
       serviceId: "microfiberMopping",
-      displayName: "Microfiber Mopping",
+      displayName: "Micromax Floor",
       perVisitPrice: perVisit,
       annualPrice: annual,
       detailsBreakdown: [
-        `Bathroom sq ft: ${form.bathroomSqFt}`,
-        `Non-bathroom sq ft: ${form.nonBathroomSqFt}`,
-        `Standalone: ${form.standalone ? "Yes" : "No"}`,
+        `Combined: ${form.isCombinedWithSani ? "Yes" : "No"}`,
+        `Bath ${form.bathroomsSqFt} ft² @ $${form.bathroomsRate.toFixed(4)}`,
+        `Extra ${form.extraNonBathSqFt} ft² @ $${form.extraNonBathRate.toFixed(4)}`,
+        `Standalone ${form.standaloneSqFt} ft² @ $${form.standaloneRate.toFixed(4)} (min $${form.standaloneMinimum})`,
         `Frequency: ${form.frequency}`,
       ],
     };
   }, [form]);
 
-  return { form, setForm, handleChange, quote };
+  return { form, setForm, onChange, quote };
 }

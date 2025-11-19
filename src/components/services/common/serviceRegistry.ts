@@ -1,45 +1,20 @@
 // src/features/services/common/serviceRegistry.ts
-
 import type { ServiceId, ServiceMeta } from "./serviceTypes";
 
 export const SERVICE_META: Record<ServiceId, ServiceMeta> = {
-  saniclean: {
-    id: "saniclean",
-    label: "SaniClean",
-    description: "Core restroom sanitization fixtures + trip charge.",
-  },
-  saniscrub: {
-    id: "saniscrub",
-    label: "SaniScrub",
-    description: "Deep scrub service for restroom floors & grout.",
-  },
-  rpmWindows: {
-    id: "rpmWindows",
-    label: "RPM Window Program",
-    description: "Restore · Protect · Maintain – window cleaning program.",
-  },
-  refreshPowerScrub: {
-    id: "refreshPowerScrub",
-    label: "Refresh Power Scrub",
-    description: "High-end powerwashing for kitchen / FOH / patios.",
-  },
-  microfiberMopping: {
-    id: "microfiberMopping",
-    label: "Microfiber Mopping",
-    description: "Add-on or standalone microfiber mopping program.",
-  },
-  foamingDrain: {
-    id: "foamingDrain",
-    label: "Foaming Drain / Drain Line",
-    description: "Drain line enzyme & foaming drain treatment service.",
-  },
+  saniclean:          { id: "saniclean", label: "SaniClean" },
+  saniscrub:          { id: "saniscrub", label: "SaniScrub" },
+  rpmWindows:         { id: "rpmWindows", label: "RPM Window" },
+  refreshPowerScrub:  { id: "refreshPowerScrub", label: "Refresh Power Scrub" },
+  microfiberMopping:  { id: "microfiberMopping", label: "Micromax Floor" },
+  foamingDrain:       { id: "foamingDrain", label: "Foaming Drain" },
 };
 
 export const SERVICE_ORDER: ServiceId[] = [
   "saniclean",
+  "foamingDrain",
   "saniscrub",
+  "microfiberMopping",
   "rpmWindows",
   "refreshPowerScrub",
-  "microfiberMopping",
-  "foamingDrain",
 ];

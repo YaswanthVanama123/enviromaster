@@ -6,8 +6,7 @@ export type ServiceId =
   | "rpmWindows"
   | "refreshPowerScrub"
   | "microfiberMopping"
-  | "foamingDrain"
-  | "greaseTrap";
+  | "foamingDrain";
 
 export type BillingFrequency =
   | "weekly"
@@ -17,22 +16,28 @@ export type BillingFrequency =
   | "quarterly";
 
 export interface BaseServiceFormState {
-  serviceId: ServiceId;
   frequency: BillingFrequency;
   tripChargeIncluded?: boolean;
   notes?: string;
 }
 
+// What each calculator returns (for summary or persistence)
 export interface ServiceQuoteResult {
   serviceId: ServiceId;
   displayName: string;
-  perVisitPrice: number;
-  annualPrice: number;
+  perVisitPrice: number;   // “= ____” in the card row
+  annualPrice: number;     // normalized annual
   detailsBreakdown: string[];
 }
 
+// Optional registry meta
 export interface ServiceMeta {
   id: ServiceId;
   label: string;
-  description: string;
+  description?: string;
+}
+
+// Optional prop for prefill
+export interface ServiceInitialData<T> {
+  initialData?: Partial<T>;
 }

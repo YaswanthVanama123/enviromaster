@@ -1,61 +1,60 @@
-// src/features/services/saniclean/useSanicleanCalc.ts
-
-import { useMemo, useState } from "react";
-import type { ChangeEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type {ChangeEvent} from 'react';
 import type { SanicleanFormState } from "./sanicleanTypes";
-import { SANICLEAN_FIXTURE_RATE, SANICLEAN_TRIP_CHARGE, SANICLEAN_MINIMUM_WEEKLY } from "./sanicleanConfig";
+import { SANICLEAN_FIXTURE_RATE, SANICLEAN_TRIP_CHARGE, DEFAULT_MIN_WEEKLY } from "./sanicleanConfig";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
-import { calcAnnualFromPerVisit } from "../common/pricingUtils";
+import { annualFromPerVisit } from "../common/pricingUtils";
 
-export function useSanicleanCalc(initialData: SanicleanFormState) {
-  const [form, setForm] = useState<SanicleanFormState>(initialData);
+const DEFAULT_FORM: SanicleanFormState = {
+  fixtureCount: 0,
+  region: "inside",
+  allInclusiveRatePerFixture: SANICLEAN_FIXTURE_RATE.inside,
+  minimumWeeklyCharge: DEFAULT_MIN_WEEKLY,
+  tripCharge: SANICLEAN_TRIP_CHARGE.inside,
+  frequency: "weekly",
+  tripChargeIncluded: true,
+  notes: "",
+};
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const target = e.target as HTMLInputElement | HTMLSelectElement;
-  
-    const { name, value, type } = target;
-    const checked = type === "checkbox" ? (target as HTMLInputElement).checked : undefined;
-  
-    setForm((prev) => {
-      if (name === "fixtureCount") {
-        return { ...prev, fixtureCount: Number(value) || 0 };
+export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
+  const [form, setForm] = useState<SanicleanFormState>({ ...DEFAULT_FORM, ...initial });
+
+  useEffect(() => {
+    // keep rate & trip in sync with region unless user overwrites
+    setForm((p) => ({
+      ...p,
+      allInclusiveRatePerFixture: SANICLEAN_FIXTURE_RATE[p.region],
+      tripCharge: SANICLEAN_TRIP_CHARGE[p.region],
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.region]);
+
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as any;
+    setForm((p) => {
+      switch (name) {
+        case "fixtureCount": return { ...p, fixtureCount: Number(value) || 0 };
+        case "region": return { ...p, region: value as SanicleanFormState["region"] };
+        case "allInclusiveRatePerFixture": return { ...p, allInclusiveRatePerFixture: Number(value) || 0 };
+        case "minimumWeeklyCharge": return { ...p, minimumWeeklyCharge: Number(value) || 0 };
+        case "tripCharge": return { ...p, tripCharge: Number(value) || 0 };
+        case "frequency": return { ...p, frequency: value as SanicleanFormState["frequency"] };
+        case "tripChargeIncluded": return { ...p, tripChargeIncluded: type === "checkbox" ? checked : value === "true" };
+        case "notes": return { ...p, notes: value };
+        default: return p;
       }
-  
-      if (name === "region") {
-        return { ...prev, region: value as SanicleanFormState["region"] };
-      }
-  
-      if (name === "frequency") {
-        return { ...prev, frequency: value as SanicleanFormState["frequency"] };
-      }
-  
-      if (name === "tripChargeIncluded") {
-        return {
-          ...prev,
-          tripChargeIncluded:
-            type === "checkbox" ? checked! : value === "true",
-        };
-      }
-  
-      if (name === "notes") {
-        return { ...prev, notes: value };
-      }
-  
-      return prev;
     });
   };
-  
 
   const quote: ServiceQuoteResult = useMemo(() => {
-    const rate = SANICLEAN_FIXTURE_RATE[form.region];
-    const trip = form.tripChargeIncluded ? SANICLEAN_TRIP_CHARGE[form.region] : 0;
+    const fixtures = form.fixtureCount * form.allInclusiveRatePerFixture;
+    const trip = form.tripChargeIncluded ? form.tripCharge : 0;
+    let perVisit = fixtures + trip;
 
-    let perVisit = form.fixtureCount * rate + trip;
-    if (form.frequency === "weekly" && perVisit < SANICLEAN_MINIMUM_WEEKLY) {
-      perVisit = SANICLEAN_MINIMUM_WEEKLY;
+    if (form.frequency === "weekly") {
+      perVisit = Math.max(perVisit, form.minimumWeeklyCharge);
     }
-
-    const annual = calcAnnualFromPerVisit(perVisit, form.frequency);
+    const annual = annualFromPerVisit(perVisit, form.frequency);
 
     return {
       serviceId: "saniclean",
@@ -63,20 +62,13 @@ export function useSanicleanCalc(initialData: SanicleanFormState) {
       perVisitPrice: perVisit,
       annualPrice: annual,
       detailsBreakdown: [
-        `Fixtures: ${form.fixtureCount} @ $${rate.toFixed(2)}`,
-        `Trip charge: $${trip.toFixed(2)}`,
+        `Fixtures: ${form.fixtureCount} @ $${form.allInclusiveRatePerFixture.toFixed(2)}`,
+        `Trip: $${trip.toFixed(2)}`,
+        `Min weekly: $${form.minimumWeeklyCharge.toFixed(2)}`,
         `Frequency: ${form.frequency}`,
-        `Minimum weekly applied: ${
-          form.frequency === "weekly" && perVisit === SANICLEAN_MINIMUM_WEEKLY ? "Yes" : "No"
-        }`,
       ],
     };
   }, [form]);
 
-  return {
-    form,
-    setForm,
-    handleChange,
-    quote,
-  };
+  return { form, setForm, onChange, quote };
 }

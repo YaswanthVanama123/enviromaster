@@ -1,110 +1,53 @@
-// src/features/services/foamingDrain/useFoamingDrainCalc.ts
-
-import { useMemo, useState } from "react";
-import type { ChangeEvent } from "react";
+import { useMemo, useState, } from "react";
+import type {ChangeEvent} from 'react';
 import type { FoamingDrainFormState } from "./foamingDrainTypes";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
-import { calcAnnualFromPerVisit } from "../common/pricingUtils";
-import {
-  FOAMING_DRAIN_PER_DRAIN,
-  FOAMING_DRAIN_BUNDLE_BASE,
-  GREEN_DRAIN_INSTALL,
-  GREEN_DRAIN_WEEKLY,
-  GREASE_TRAP_INSTALL,
-  GREASE_TRAP_WEEKLY,
-} from "./foamingDrainConfig";
+import { annualFromPerVisit } from "../common/pricingUtils";
+import { FD_INSTALL_MULT, FD_LARGE_BASE, FD_LARGE_RATE, FD_STANDARD_RATE } from "./foamingDrainConfig";
 
-export function useFoamingDrainCalc(initialData: FoamingDrainFormState) {
-  const [form, setForm] = useState<FoamingDrainFormState>(initialData);
+const DEFAULT_FORM: FoamingDrainFormState = {
+  totalDrains: 0,
+  greaseTraps: 0,
+  standardPlanRate: FD_STANDARD_RATE,
+  largePlanRate: FD_LARGE_RATE,
+  largePlanCount: 0,
+  baseChargeForLargePlan: FD_LARGE_BASE,
+  installMultiplier: FD_INSTALL_MULT,
+  frequency: "weekly",
+  tripChargeIncluded: true,
+  notes: "",
+};
 
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const target = e.target as HTMLInputElement | HTMLSelectElement;
+export function useFoamingDrainCalc(initial?: Partial<FoamingDrainFormState>) {
+  const [form, setForm] = useState<FoamingDrainFormState>({ ...DEFAULT_FORM, ...initial });
 
-    const { name, value, type } = target;
-    const checked =
-      type === "checkbox" ? (target as HTMLInputElement).checked : undefined;
-
-    setForm((prev) => {
-      if (name === "numberOfDrains") {
-        return { ...prev, numberOfDrains: Number(value) || 0 };
-      }
-      if (name === "includeGreaseTrap") {
-        return {
-          ...prev,
-          includeGreaseTrap:
-            type === "checkbox" ? checked! : value === "true",
-        };
-      }
-      if (name === "includeGreenDrain") {
-        return {
-          ...prev,
-          includeGreenDrain:
-            type === "checkbox" ? checked! : value === "true",
-        };
-      }
-      if (name === "frequency") {
-        return {
-          ...prev,
-          frequency: value as FoamingDrainFormState["frequency"],
-        };
-      }
-      if (name === "notes") {
-        return { ...prev, notes: value };
-      }
-
-      return prev;
-    });
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target as any;
+    setForm((p) => ({ ...p, [name]: name === "frequency" ? value : Number(value) || 0 }));
   };
 
   const quote: ServiceQuoteResult = useMemo(() => {
     let perVisit =
-      FOAMING_DRAIN_BUNDLE_BASE +
-      form.numberOfDrains * FOAMING_DRAIN_PER_DRAIN;
+      form.totalDrains * form.standardPlanRate +
+      form.largePlanCount * form.largePlanRate +
+      (form.largePlanCount > 0 ? form.baseChargeForLargePlan : 0);
 
-    // base annual calculation
-    let annual = calcAnnualFromPerVisit(perVisit, form.frequency);
+    perVisit *= form.installMultiplier || 1;
 
-    // add-ons
-    if (form.includeGreenDrain) {
-      annual += GREEN_DRAIN_INSTALL + GREEN_DRAIN_WEEKLY * 52;
-    }
-
-    if (form.includeGreaseTrap) {
-      annual += GREASE_TRAP_INSTALL + GREASE_TRAP_WEEKLY * 52;
-    }
-
-    const frequencyMap = {
-      weekly: 50,
-      biweekly: 25,
-      monthly: 12,
-      bimonthly: 6,
-      quarterly: 4,
-    };
-
-    const frequencyAnnualMultiplier = frequencyMap[form.frequency] ?? 0;
-
-    const effectivePerVisit =
-      frequencyAnnualMultiplier > 0
-        ? annual / frequencyAnnualMultiplier
-        : perVisit;
-
+    const annual = annualFromPerVisit(perVisit, form.frequency);
     return {
       serviceId: "foamingDrain",
-      displayName: "Foaming Drain / Drain Line Service",
-      perVisitPrice: effectivePerVisit,
+      displayName: "Foaming Drain",
+      perVisitPrice: perVisit,
       annualPrice: annual,
       detailsBreakdown: [
-        `Drains: ${form.numberOfDrains} @ $${FOAMING_DRAIN_PER_DRAIN.toFixed(
-          2
-        )}`,
-        `Green Drain Included: ${form.includeGreenDrain ? "Yes" : "No"}`,
-        `Grease Trap Included: ${form.includeGreaseTrap ? "Yes" : "No"}`,
-        `Frequency: ${form.frequency}`,
+        `Std drains: ${form.totalDrains} @ $${form.standardPlanRate}`,
+        `Large drains: ${form.largePlanCount} @ $${form.largePlanRate}`,
+        `Large plan base: $${form.baseChargeForLargePlan}`,
+        `Install ×${form.installMultiplier}, Freq: ${form.frequency}`,
       ],
     };
   }, [form]);
 
-  return { form, setForm, handleChange, quote };
+  return { form, setForm, onChange, quote };
 }

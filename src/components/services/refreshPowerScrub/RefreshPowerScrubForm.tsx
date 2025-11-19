@@ -1,98 +1,133 @@
-// src/features/services/refreshPowerScrub/RefreshPowerScrubForm.tsx
-
 import React from "react";
 import { useRefreshPowerScrubCalc } from "./useRefreshPowerScrubCalc";
 import type { RefreshPowerScrubFormState } from "./refreshPowerScrubTypes";
+import type { ServiceInitialData } from "../common/serviceTypes";
 
-export const RefreshPowerScrubForm: React.FC<{ initialData: RefreshPowerScrubFormState }> = ({ initialData }) => {
-  const { form, handleChange, quote } = useRefreshPowerScrubCalc(initialData);
+export const RefreshPowerScrubForm: React.FC<
+  ServiceInitialData<RefreshPowerScrubFormState>
+> = ({ initialData }) => {
+  const { form, onChange, quote } = useRefreshPowerScrubCalc(initialData);
+
+  const labourLine =
+    form.workers * form.hours * form.hourlyRatePerWorker;
 
   return (
     <div className="svc-card">
-      <h3 className="svc-card-title">Refresh Power Scrub</h3>
+      <div className="svc-h-row">
+        <div className="svc-h">REFRESH POWER SCRUB</div>
+        <button type="button" className="svc-mini" aria-label="add">
+          +
+        </button>
+      </div>
+
       <div className="svc-row">
-        <div className="svc-col">
-          <label className="svc-label">
-            Area type
-            <select
-              name="areaType"
-              className="svc-in"
-              value={form.areaType}
-              onChange={handleChange}
-            >
-              <option value="kitchen">Kitchen</option>
-              <option value="frontOfHouse">Front of House</option>
-              <option value="patio">Patio</option>
-              <option value="dumpster">Dumpster</option>
-            </select>
-          </label>
+        <label>Area</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="areaType"
+            value={form.areaType}
+            onChange={onChange}
+          >
+            <option value="kitchen">Kitchen / BOH</option>
+            <option value="frontOfHouse">Front of House</option>
+            <option value="patio">Patio</option>
+            <option value="dumpster">Dumpster Area</option>
+          </select>
+        </div>
+      </div>
 
-          <label className="svc-label">
-            Estimated hours
+      <div className="svc-row">
+        <label>Workers / Hours</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="workers"
+            value={form.workers}
+            onChange={onChange}
+          />
+          <span>×</span>
+          <input
+            className="svc-in"
+            type="number"
+            step={0.5}
+            name="hours"
+            value={form.hours}
+            onChange={onChange}
+          />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="number"
+            name="hourlyRatePerWorker"
+            value={form.hourlyRatePerWorker}
+            onChange={onChange}
+          />
+          <span>=</span>
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={`$${labourLine.toFixed(2)}`}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Trip Charge</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
             <input
+              className="svc-in"
               type="number"
-              name="estimatedHours"
-              className="svc-in"
-              value={form.estimatedHours}
-              onChange={handleChange}
-              min={0}
+              name="tripCharge"
+              value={form.tripCharge}
+              onChange={onChange}
             />
-          </label>
-
-          <label className="svc-label">
-            Workers
+          </div>
+          <label className="svc-inline">
             <input
-              type="number"
-              name="workers"
-              className="svc-in"
-              value={form.workers}
-              onChange={handleChange}
-              min={0}
+              type="checkbox"
+              name="tripChargeIncluded"
+              checked={!!form.tripChargeIncluded}
+              onChange={onChange}
             />
-          </label>
-
-          <label className="svc-label">
-            Frequency
-            <select
-              name="frequency"
-              className="svc-in"
-              value={form.frequency}
-              onChange={handleChange}
-            >
-              <option value="one-time">One-time</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-            </select>
-          </label>
-
-          <label className="svc-label">
-            Notes
-            <input
-              type="text"
-              name="notes"
-              className="svc-in"
-              value={form.notes ?? ""}
-              onChange={handleChange}
-            />
+            <span>Include</span>
           </label>
         </div>
+      </div>
 
-        <div className="svc-col">
-          <div className="svc-summary">
-            <div className="svc-summary-row">
-              <span>Per Visit</span>
-              <span>${quote.perVisitPrice.toFixed(2)}</span>
-            </div>
-            <div className="svc-summary-row">
-              <span>Annual Price</span>
-              <span>${quote.annualPrice.toFixed(2)}</span>
-            </div>
-            <ul className="svc-summary-list">
-              {quote.detailsBreakdown.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+      <div className="svc-row svc-row-charge">
+        <label>Minimum Visit</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="number"
+              name="minimumVisit"
+              value={form.minimumVisit}
+              onChange={onChange}
+            />
           </div>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            <option value="monthly">Monthly</option>
+            <option value="bimonthly">Bi-Monthly</option>
+            <option value="quarterly">Quarterly</option>
+          </select>
         </div>
       </div>
     </div>

@@ -1,50 +1,42 @@
-// src/features/services/saniscrub/useSaniscrubCalc.ts
-
 import { useMemo, useState } from "react";
-import type { ChangeEvent } from "react";
+import type {ChangeEvent} from 'react';
 import type { SaniscrubFormState } from "./saniscrubTypes";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
-import { calcAnnualFromPerVisit } from "../common/pricingUtils";
+import { annualFromPerVisit } from "../common/pricingUtils";
 import {
-  SANISCRUB_MONTHLY_PER_FIXTURE,
-  SANISCRUB_MONTHLY_MINIMUM,
-  SANISCRUB_NON_BATHROOM_RATE,
+  DEFAULT_SCRUB_FIXTURE_RATE,
+  DEFAULT_SCRUB_MIN,
+  DEFAULT_SCRUB_NONBATH_RATE,
+  DEFAULT_SCRUB_ADDL_500_UNIT,
 } from "./saniscrubConfig";
 
-export function useSaniscrubCalc(initialData: SaniscrubFormState) {
-  const [form, setForm] = useState<SaniscrubFormState>(initialData);
+const DEFAULT_FORM: SaniscrubFormState = {
+  fixtureCount: 0,
+  fixtureUnitRate: DEFAULT_SCRUB_FIXTURE_RATE,
+  fixtureMinimumCharge: DEFAULT_SCRUB_MIN,
+  nonBathroomSqFt: 0,
+  nonBathroomRate: DEFAULT_SCRUB_NONBATH_RATE,
+  addl500SqFtUnitRate: DEFAULT_SCRUB_ADDL_500_UNIT,
+  installMultiplier: 1,
+  frequency: "monthly",
+  tripChargeIncluded: true,
+  notes: "",
+};
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
+  const [form, setForm] = useState<SaniscrubFormState>({ ...DEFAULT_FORM, ...initial });
 
-    setForm((prev) => {
-      if (name === "restroomFixtures") {
-        return { ...prev, restroomFixtures: Number(value) || 0 };
-      }
-      if (name === "nonBathroomSqFt") {
-        return { ...prev, nonBathroomSqFt: Number(value) || 0 };
-      }
-      if (name === "frequency") {
-        return { ...prev, frequency: value as SaniscrubFormState["frequency"] };
-      }
-      if (name === "notes") {
-        return { ...prev, notes: value };
-      }
-      return prev;
-    });
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target as any;
+    setForm((p) => ({ ...p, [name]: name === "frequency" ? value : Number(value) || 0 }));
   };
 
   const quote: ServiceQuoteResult = useMemo(() => {
-    let base = form.restroomFixtures * SANISCRUB_MONTHLY_PER_FIXTURE;
+    let perVisit = Math.max(form.fixtureCount * form.fixtureUnitRate, form.fixtureMinimumCharge);
+    perVisit += form.nonBathroomSqFt * form.nonBathroomRate;
+    perVisit *= form.installMultiplier || 1;
 
-    if (base < SANISCRUB_MONTHLY_MINIMUM) {
-      base = SANISCRUB_MONTHLY_MINIMUM;
-    }
-
-    const nonBathCharge = form.nonBathroomSqFt * SANISCRUB_NON_BATHROOM_RATE;
-
-    const perVisit = base + nonBathCharge;
-    const annual = calcAnnualFromPerVisit(perVisit, form.frequency);
+    const annual = annualFromPerVisit(perVisit, form.frequency);
 
     return {
       serviceId: "saniscrub",
@@ -52,18 +44,13 @@ export function useSaniscrubCalc(initialData: SaniscrubFormState) {
       perVisitPrice: perVisit,
       annualPrice: annual,
       detailsBreakdown: [
-        `Restroom fixtures: ${form.restroomFixtures} @ $${SANISCRUB_MONTHLY_PER_FIXTURE.toFixed(2)}`,
-        `Minimum monthly: $${SANISCRUB_MONTHLY_MINIMUM.toFixed(2)}`,
-        `Non-bath sq ft: ${form.nonBathroomSqFt} @ $${SANISCRUB_NON_BATHROOM_RATE.toFixed(2)}/sq ft`,
+        `Fixtures: ${form.fixtureCount} @ $${form.fixtureUnitRate.toFixed(2)} (min $${form.fixtureMinimumCharge})`,
+        `Non-bath: ${form.nonBathroomSqFt} ft² @ $${form.nonBathroomRate.toFixed(2)}`,
+        `Install ×${form.installMultiplier}`,
         `Frequency: ${form.frequency}`,
       ],
     };
   }, [form]);
 
-  return {
-    form,
-    setForm,
-  handleChange,
-    quote,
-  };
+  return { form, setForm, onChange, quote };
 }

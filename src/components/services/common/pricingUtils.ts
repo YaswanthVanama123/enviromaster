@@ -1,13 +1,10 @@
 // src/features/services/common/pricingUtils.ts
-
 import type { BillingFrequency } from "./serviceTypes";
 
-export function frequencyToAnnualMultiplier(
-  frequency: BillingFrequency
-): number {
-  switch (frequency) {
+export function frequencyToAnnualMultiplier(f: BillingFrequency): number {
+  switch (f) {
     case "weekly":
-      return 50; // “about 50x per year” style assumption
+      return 50; // “~50 visits/year”
     case "biweekly":
       return 25;
     case "monthly":
@@ -21,17 +18,11 @@ export function frequencyToAnnualMultiplier(
   }
 }
 
-export function calcAnnualFromPerVisit(
-  perVisitPrice: number,
-  frequency: BillingFrequency
-): number {
-  const mult = frequencyToAnnualMultiplier(frequency);
-  return perVisitPrice * mult;
+export function annualFromPerVisit(perVisit: number, f: BillingFrequency) {
+  return perVisit * frequencyToAnnualMultiplier(f);
 }
 
-export function parseNumber(value: string | number | undefined): number {
-  if (typeof value === "number") return value;
-  if (!value) return 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
+export function n(v: unknown, fallback = 0): number {
+  const num = Number(v);
+  return Number.isFinite(num) ? num : fallback;
 }

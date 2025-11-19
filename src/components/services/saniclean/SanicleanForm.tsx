@@ -1,88 +1,140 @@
-// src/features/services/saniclean/SanicleanForm.tsx
-
 import React from "react";
 import { useSanicleanCalc } from "./useSanicleanCalc";
 import type { SanicleanFormState } from "./sanicleanTypes";
+import type { ServiceInitialData } from "../common/serviceTypes";
 
-export const SanicleanForm: React.FC<{ initialData: SanicleanFormState }> = ({ initialData }) => {
-  const { form, handleChange, quote } = useSanicleanCalc(initialData);
+export const SanicleanForm: React.FC<
+  ServiceInitialData<SanicleanFormState>
+> = ({ initialData }) => {
+  const { form, onChange, quote } = useSanicleanCalc(initialData);
 
   return (
     <div className="svc-card">
-      <h3 className="svc-card-title">Sani-Clean</h3>
+      <div className="svc-h-row">
+        <div className="svc-h">RESTROOM &amp; HYGIENE</div>
+        <button type="button" className="svc-mini" aria-label="add">
+          +
+        </button>
+      </div>
 
       <div className="svc-row">
-        <div className="svc-col">
-          <label className="svc-label">
-            Fixture count
+        <label>Total Fixtures</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="fixtureCount"
+            value={form.fixtureCount}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Inside Beltway / Outside / Standard</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="region"
+            value={form.region}
+            onChange={onChange}
+          >
+            <option value="inside">Inside Beltway</option>
+            <option value="outside">Outside</option>
+            <option value="standard">Standard</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>SaniClean Weekly</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="allInclusiveRatePerFixture"
+            value={form.allInclusiveRatePerFixture}
+            onChange={onChange}
+          />
+          <span>@</span>
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={`$${quote.perVisitPrice.toFixed(2)}`}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>All-Inclusive Rate Per Fixture</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="allInclusiveRatePerFixture"
+            value={form.allInclusiveRatePerFixture}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Minimum Weekly Charge</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
             <input
+              className="svc-in"
               type="number"
-              name="fixtureCount"
-              className="svc-in"
-              value={form.fixtureCount}
-              onChange={handleChange}
-              min={0}
+              name="minimumWeeklyCharge"
+              value={form.minimumWeeklyCharge}
+              onChange={onChange}
             />
-          </label>
+          </div>
+        </div>
+      </div>
 
-          <label className="svc-label">
-            Region
-            <select
-              name="region"
-              className="svc-in"
-              value={form.region}
-              onChange={handleChange}
-            >
-              <option value="standard">Standard</option>
-              <option value="inside">Inside</option>
-              <option value="outside">Outside</option>
-            </select>
-          </label>
-
-          <label className="svc-label">
-            Frequency
-            <select
-              name="frequency"
-              className="svc-in"
-              value={form.frequency}
-              onChange={handleChange}
-            >
-              <option value="one-time">One-time</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </label>
-
-          <label className="svc-label">
-            Notes
+      <div className="svc-row svc-row-charge">
+        <label>Trip Charge</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
             <input
-              type="text"
-              name="notes"
               className="svc-in"
-              value={form.notes ?? ""}
-              onChange={handleChange}
+              type="number"
+              name="tripCharge"
+              value={form.tripCharge}
+              onChange={onChange}
             />
+          </div>
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="tripChargeIncluded"
+              checked={!!form.tripChargeIncluded}
+              onChange={onChange}
+            />
+            <span>Include</span>
           </label>
         </div>
+      </div>
 
-        <div className="svc-col">
-          <div className="svc-summary">
-            <div className="svc-summary-row">
-              <span>Per Visit</span>
-              <span>${quote.perVisitPrice.toFixed(2)}</span>
-            </div>
-            <div className="svc-summary-row">
-              <span>Annual Price</span>
-              <span>${quote.annualPrice.toFixed(2)}</span>
-            </div>
-            <ul className="svc-summary-list">
-              {quote.detailsBreakdown.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </div>
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="bimonthly">Bi-Monthly</option>
+            <option value="quarterly">Quarterly</option>
+          </select>
         </div>
       </div>
     </div>

@@ -1,93 +1,144 @@
-// src/features/services/foamingDrain/FoamingDrainForm.tsx
-
 import React from "react";
 import { useFoamingDrainCalc } from "./useFoamingDrainCalc";
 import type { FoamingDrainFormState } from "./foamingDrainTypes";
+import type { ServiceInitialData } from "../common/serviceTypes";
 
-export const FoamingDrainForm: React.FC<{ initialData: FoamingDrainFormState }> = ({ initialData }) => {
-  const { form, handleChange, quote } = useFoamingDrainCalc(initialData);
+export const FoamingDrainForm: React.FC<
+  ServiceInitialData<FoamingDrainFormState>
+> = ({ initialData }) => {
+  const { form, onChange, quote } = useFoamingDrainCalc(initialData);
+
+  const stdLine = form.totalDrains * form.standardPlanRate;
+  const largeLine = form.largePlanCount * form.largePlanRate;
 
   return (
     <div className="svc-card">
-      <h3 className="svc-card-title">Foaming Drain</h3>
+      <div className="svc-h-row">
+        <div className="svc-h">FOAMING DRAIN</div>
+        <button type="button" className="svc-mini" aria-label="add">
+          +
+        </button>
+      </div>
+
       <div className="svc-row">
-        <div className="svc-col">
-          <label className="svc-label">
-            Number of drains
-            <input
-              type="number"
-              name="numberOfDrains"
-              className="svc-in"
-              value={form.numberOfDrains}
-              onChange={handleChange}
-              min={0}
-            />
-          </label>
-
-          <label className="svc-label">
-            <input
-              type="checkbox"
-              name="includeGreaseTrap"
-              className="svc-in-check"
-              checked={form.includeGreaseTrap}
-              onChange={handleChange}
-            />
-            Include grease trap
-          </label>
-
-          <label className="svc-label">
-            <input
-              type="checkbox"
-              name="includeGreenDrain"
-              className="svc-in-check"
-              checked={form.includeGreenDrain}
-              onChange={handleChange}
-            />
-            Include green drain
-          </label>
-
-          <label className="svc-label">
-            Frequency
-            <select
-              name="frequency"
-              className="svc-in"
-              value={form.frequency}
-              onChange={handleChange}
-            >
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </label>
-
-          <label className="svc-label">
-            Notes
-            <input
-              type="text"
-              name="notes"
-              className="svc-in"
-              value={form.notes ?? ""}
-              onChange={handleChange}
-            />
-          </label>
+        <label>Total Drains</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="totalDrains"
+            value={form.totalDrains}
+            onChange={onChange}
+          />
         </div>
+      </div>
 
-        <div className="svc-col">
-          <div className="svc-summary">
-            <div className="svc-summary-row">
-              <span>Per Visit</span>
-              <span>${quote.perVisitPrice.toFixed(2)}</span>
-            </div>
-            <div className="svc-summary-row">
-              <span>Annual Price</span>
-              <span>${quote.annualPrice.toFixed(2)}</span>
-            </div>
-            <ul className="svc-summary-list">
-              {quote.detailsBreakdown.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+      <div className="svc-row">
+        <label>No. of Grease Traps</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="greaseTraps"
+            value={form.greaseTraps}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Standard Drain Service</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="standardPlanRate"
+            value={form.standardPlanRate}
+            onChange={onChange}
+          />
+          <span>@</span>
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={`$${stdLine.toFixed(2)}`}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Large Drain Plan</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="largePlanRate"
+            value={form.largePlanRate}
+            onChange={onChange}
+          />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="number"
+            name="largePlanCount"
+            value={form.largePlanCount}
+            onChange={onChange}
+          />
+          <span>=</span>
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={`$${largeLine.toFixed(2)}`}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Base Charge for Large Drain Plan</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="number"
+              name="baseChargeForLargePlan"
+              value={form.baseChargeForLargePlan}
+              onChange={onChange}
+            />
           </div>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Install Multiplier</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            step={0.5}
+            name="installMultiplier"
+            value={form.installMultiplier}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="bimonthly">Bi-Monthly</option>
+            <option value="quarterly">Quarterly</option>
+          </select>
         </div>
       </div>
     </div>
