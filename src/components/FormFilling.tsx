@@ -4,7 +4,7 @@ import CustomerSection from "./CustomerSection";
 import ProductsSection from "./ProductsSection";
 // import ServicesSection from "./ServicesSection";
 import "./FormFilling.css";
-import ServicesSection from "./services/ServicesSection";
+import { ServicesSection } from "./services/ServicesSection";
 import axios from "axios";
 
 type HeaderRow = {
