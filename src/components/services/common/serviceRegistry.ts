@@ -8,10 +8,12 @@ export const SERVICE_META: Record<ServiceId, ServiceMeta> = {
   refreshPowerScrub:  { id: "refreshPowerScrub", label: "Refresh Power Scrub" },
   microfiberMopping:  { id: "microfiberMopping", label: "Micromax Floor" },
   foamingDrain:       { id: "foamingDrain", label: "Foaming Drain" },
+  sanipod:            { id: "sanipod", label: "SaniPod" },
 };
 
 export const SERVICE_ORDER: ServiceId[] = [
   "saniclean",
+  "sanipod",
   "foamingDrain",
   "saniscrub",
   "microfiberMopping",

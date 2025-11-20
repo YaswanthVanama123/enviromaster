@@ -6,7 +6,8 @@ export type ServiceId =
   | "rpmWindows"
   | "refreshPowerScrub"
   | "microfiberMopping"
-  | "foamingDrain";
+  | "foamingDrain"
+  | "sanipod";
 
 export type BillingFrequency =
   | "weekly"

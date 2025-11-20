@@ -5,6 +5,7 @@ import { useRpmWindowsCalc } from "../rpmWindows/useRpmWindowsCalc";
 import { useRefreshPowerScrubCalc } from "../refreshPowerScrub/useRefreshPowerScrubCalc";
 import { useMicrofiberMoppingCalc } from "../microfiberMopping/useMicrofiberMoppingCalc";
 import { useFoamingDrainCalc } from "../foamingDrain/useFoamingDrainCalc";
+import { useSanipodCalc } from "../sanipod/useSanipodCalc";
 import type { ServiceId, ServiceQuoteResult } from "./serviceTypes";
 
 export function useServiceEngine(serviceId?: ServiceId): {
@@ -15,6 +16,7 @@ export function useServiceEngine(serviceId?: ServiceId): {
   refreshPowerScrub: ReturnType<typeof useRefreshPowerScrubCalc>;
   microfiberMopping: ReturnType<typeof useMicrofiberMoppingCalc>;
   foamingDrain: ReturnType<typeof useFoamingDrainCalc>;
+  sanipod: ReturnType<typeof useSanipodCalc>;
 } {
   const saniclean = useSanicleanCalc();
   const saniscrub = useSaniscrubCalc();
@@ -22,21 +24,31 @@ export function useServiceEngine(serviceId?: ServiceId): {
   const refreshPowerScrub = useRefreshPowerScrubCalc();
   const microfiberMopping = useMicrofiberMoppingCalc();
   const foamingDrain = useFoamingDrainCalc();
+  const sanipod = useSanipodCalc();
 
   let quote: ServiceQuoteResult | null = null;
   switch (serviceId) {
     case "saniclean":
-      quote = saniclean.quote; break;
+      quote = saniclean.quote;
+      break;
     case "saniscrub":
-      quote = saniscrub.quote; break;
+      quote = saniscrub.quote;
+      break;
     case "rpmWindows":
-      quote = rpmWindows.quote; break;
+      quote = rpmWindows.quote;
+      break;
     case "refreshPowerScrub":
-      quote = refreshPowerScrub.quote; break;
+      quote = refreshPowerScrub.quote;
+      break;
     case "microfiberMopping":
-      quote = microfiberMopping.quote; break;
+      quote = microfiberMopping.quote;
+      break;
     case "foamingDrain":
-      quote = foamingDrain.quote; break;
+      quote = foamingDrain.quote;
+      break;
+    case "sanipod":
+      quote = sanipod.quote;
+      break;
     default:
       quote = null;
   }
@@ -49,5 +61,6 @@ export function useServiceEngine(serviceId?: ServiceId): {
     refreshPowerScrub,
     microfiberMopping,
     foamingDrain,
+    sanipod,
   };
 }

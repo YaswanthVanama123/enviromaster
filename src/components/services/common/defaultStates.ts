@@ -1,4 +1,3 @@
-
 // src/components/services/common/defaultStates.ts
 
 import type { SanicleanFormState } from "../saniclean/sanicleanTypes";
@@ -8,6 +7,7 @@ import type { RefreshPowerScrubFormState } from "../refreshPowerScrub/refreshPow
 import type { MicrofiberMoppingFormState } from "../microfiberMopping/microfiberMoppingTypes";
 import type { FoamingDrainFormState } from "../foamingDrain/foamingDrainTypes";
 import type { GreaseTrapFormState } from "../greaseTrap/greaseTrapTypes";
+import type { SanipodFormState } from "../sanipod/sanipodTypes";
 
 export const DEFAULT_SANICLEAN_FORM: SanicleanFormState = {
   serviceId: "saniclean",
@@ -69,6 +69,24 @@ export const DEFAULT_GREASE_TRAP_FORM: GreaseTrapFormState = {
   numberOfTraps: 0,
   sizeOfTraps: 0,
   frequency: "quarterly",
+  tripChargeIncluded: true,
+  notes: "",
+};
+
+export const DEFAULT_SANIPOD_FORM: SanipodFormState = {
+  serviceId: "sanipod",
+  podQuantity: 0,
+  weeklyRatePerUnit: 4,
+  extraBagsPerWeek: 0,
+  extraBagPrice: 2.5,
+  isNewInstall: false,
+  location: "insideBeltway",
+  needsParking: false,
+  selectedRateCategory: "redRate",
+  bundleType: "none",
+  toiletClipsQty: 0,
+  seatCoverDispensersQty: 0,
+  frequency: "weekly",
   tripChargeIncluded: true,
   notes: "",
 };

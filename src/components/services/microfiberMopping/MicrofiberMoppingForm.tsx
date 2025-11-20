@@ -1,16 +1,24 @@
+// src/features/services/microfiberMopping/MicrofiberMoppingForm.tsx
 import React from "react";
 import { useMicrofiberMoppingCalc } from "./useMicrofiberMoppingCalc";
 import type { MicrofiberMoppingFormState } from "./microfiberMoppingTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
+import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig";
 
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData }) => {
-  const { form, onChange, quote } = useMicrofiberMoppingCalc(initialData);
+  const { form, onChange, quote, calc } =
+    useMicrofiberMoppingCalc(initialData);
 
-  const bathLine = form.bathroomsSqFt * form.bathroomsRate;
-  const extraLine = form.extraNonBathSqFt * form.extraNonBathRate;
-  const standaloneLine = form.standaloneSqFt * form.standaloneRate;
+  // Derived “@” rates (per sq ft) for display only
+  const extraAreaRatePerSqFt =
+    cfg.extraAreaPricing.extraAreaRatePerUnit /
+    cfg.extraAreaPricing.extraAreaSqFtUnit; // 10 / 400 = 0.025
+
+  const standaloneRatePerSqFt =
+    cfg.standalonePricing.standaloneRatePerUnit /
+    cfg.standalonePricing.standaloneSqFtUnit; // 10 / 200 = 0.05
 
   return (
     <div className="svc-card">
@@ -21,14 +29,15 @@ export const MicrofiberMoppingForm: React.FC<
         </button>
       </div>
 
+      {/* Is Combined with Sani? */}
       <div className="svc-row">
         <label>Is Combined with Sani?</label>
         <div className="svc-row-right">
           <label className="svc-inline">
             <input
               type="checkbox"
-              name="isCombinedWithSani"
-              checked={form.isCombinedWithSani}
+              name="hasExistingSaniService"
+              checked={form.hasExistingSaniService}
               onChange={onChange}
             />
             <span>Yes</span>
@@ -36,64 +45,63 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
+      {/* Bathrooms Included (bundled with Sani) */}
       <div className="svc-row">
         <label>Bathrooms Included</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
             type="number"
-            name="bathroomsSqFt"
-            value={form.bathroomsSqFt}
+            name="bathroomCount"
+            value={form.bathroomCount}
             onChange={onChange}
           />
           <span>@</span>
           <input
             className="svc-in"
             type="number"
-            step={0.0001}
-            name="bathroomsRate"
-            value={form.bathroomsRate}
-            onChange={onChange}
+            value={cfg.includedBathroomRate}
+            readOnly
           />
           <span>=</span>
           <input
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${bathLine.toFixed(2)}`}
+            value={`$${calc.bathroomPrice.toFixed(2)}`}
           />
         </div>
       </div>
 
+      {/* Extra Non-Bath Area */}
       <div className="svc-row">
         <label>Extra Non-Bath Area</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
             type="number"
-            name="extraNonBathSqFt"
-            value={form.extraNonBathSqFt}
+            name="extraAreaSqFt"
+            value={form.extraAreaSqFt}
             onChange={onChange}
           />
           <span>@</span>
           <input
             className="svc-in"
             type="number"
-            step={0.0001}
-            name="extraNonBathRate"
-            value={form.extraNonBathRate}
-            onChange={onChange}
+            value={extraAreaRatePerSqFt}
+            readOnly
           />
           <span>=</span>
           <input
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${extraLine.toFixed(2)}`}
+            value={`$${calc.extraAreaPrice.toFixed(2)}`}
           />
         </div>
       </div>
 
+      {/* Standalone Mopping (when NOT combined with Sani) */}
       <div className="svc-row">
         <label>Standalone Mopping</label>
         <div className="svc-row-right">
@@ -108,21 +116,20 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in"
             type="number"
-            step={0.0001}
-            name="standaloneRate"
-            value={form.standaloneRate}
-            onChange={onChange}
+            value={standaloneRatePerSqFt}
+            readOnly
           />
           <span>=</span>
           <input
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${standaloneLine.toFixed(2)}`}
+            value={`$${calc.standaloneTotal.toFixed(2)}`}
           />
         </div>
       </div>
 
+      {/* Standalone Minimum Charge (display only – from config) */}
       <div className="svc-row svc-row-charge">
         <label>Standalone Minimum Charge</label>
         <div className="svc-row-right">
@@ -131,27 +138,28 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in"
               type="number"
-              name="standaloneMinimum"
-              value={form.standaloneMinimum}
-              onChange={onChange}
+              value={cfg.standalonePricing.standaloneMinimum}
+              readOnly
             />
           </div>
         </div>
       </div>
 
+      {/* Daily Mop Chemical (we treat as gallons of chemical per month) */}
       <div className="svc-row">
         <label>Daily Mop Chemical</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
-            type="text"
-            name="dailyMopChemical"
-            value={form.dailyMopChemical ?? ""}
+            type="number"
+            name="chemicalGallons"
+            value={form.chemicalGallons}
             onChange={onChange}
           />
         </div>
       </div>
 
+      {/* Frequency (for monthly/annual billing) */}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -164,9 +172,38 @@ export const MicrofiberMoppingForm: React.FC<
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi-Weekly</option>
             <option value="monthly">Monthly</option>
-            <option value="bimonthly">Bi-Monthly</option>
-            <option value="quarterly">Quarterly</option>
           </select>
+        </div>
+      </div>
+
+      {/* TOTALS – same UI structure, just extra rows */}
+      <div className="svc-row svc-row-charge">
+        <label>Total Weekly</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={calc.weeklyTotalWithChemicals.toFixed(2)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Monthly Recurring</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={calc.monthlyRecurring.toFixed(2)}
+            />
+          </div>
         </div>
       </div>
     </div>
