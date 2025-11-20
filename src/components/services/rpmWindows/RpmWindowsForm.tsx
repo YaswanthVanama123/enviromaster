@@ -1,4 +1,3 @@
-// src/features/services/rpmWindows/RpmWindowsForm.tsx
 import React from "react";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
@@ -117,7 +116,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Trip charge – always included */}
+      {/* Trip charge – editable and now used in calc */}
       <div className="svc-row svc-row-charge">
         <label>Trip Charge</label>
         <div className="svc-row-right">
@@ -132,13 +131,7 @@ export const RpmWindowsForm: React.FC<
             />
           </div>
           <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="tripChargeIncluded"
-              checked={true}
-              disabled
-              onChange={onChange}
-            />
+            <input type="checkbox" checked readOnly />
             <span>Include</span>
           </label>
         </div>
@@ -156,7 +149,7 @@ export const RpmWindowsForm: React.FC<
               checked={form.isFirstTimeInstall}
               onChange={() => handleInstallTypeChange("first")}
             />
-            <span>First Time</span>
+            <span>First Time (Install)</span>
           </label>
           <label className="svc-inline">
             <input
@@ -166,7 +159,7 @@ export const RpmWindowsForm: React.FC<
               checked={!form.isFirstTimeInstall}
               onChange={() => handleInstallTypeChange("clean")}
             />
-            <span>Clean / Existing</span>
+            <span>Ongoing / Clean</span>
           </label>
         </div>
       </div>
@@ -189,7 +182,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Rate category */}
+      {/* Rate category (red / green) */}
       <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
@@ -205,7 +198,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Mirror cleaning toggle (no extra math yet, just a flag) */}
+      {/* Mirror cleaning flag */}
       <div className="svc-row">
         <label>Mirror Cleaning</label>
         <div className="svc-row-right">
@@ -216,14 +209,14 @@ export const RpmWindowsForm: React.FC<
               checked={form.includeMirrors}
               onChange={onChange}
             />
-            <span>Include (same as windows)</span>
+            <span>Include (same chemicals)</span>
           </label>
         </div>
       </div>
 
       {/* TOTAL PRICE fields */}
       <div className="svc-row svc-row-charge">
-        <label>Total Price (per visit)</label>
+        <label>Total Price (Per Visit)</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
