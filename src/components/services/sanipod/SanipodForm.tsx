@@ -1,143 +1,39 @@
 // src/features/services/sanipod/SanipodForm.tsx
 import React from "react";
 import { useSanipodCalc } from "./useSanipodCalc";
-import type { SanipodFormState } from "./sanipodTypes";
+import type { SanipodFormState } from "./useSanipodCalc";
 import type { ServiceInitialData } from "../common/serviceTypes";
 
-export const SanipodForm: React.FC<
-  ServiceInitialData<SanipodFormState>
-> = ({ initialData }) => {
-  const { form, onChange, quote, calc } = useSanipodCalc(initialData);
-
-  // line totals for display (not used directly in engine)
-  const weeklyLineTotal = form.podQuantity * form.weeklyRatePerUnit;
-  const extraBagsLineTotal = form.extraBagsPerWeek * form.extraBagPrice;
+export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
+  initialData,
+}) => {
+  const { form, onChange, calc } = useSanipodCalc(initialData);
 
   return (
     <div className="svc-card">
+      {/* Header row */}
       <div className="svc-h-row">
-        <div className="svc-h">SANIPOD</div>
-        <button type="button" className="svc-mini" aria-label="add">
-          +
-        </button>
+        <div className="svc-h">SaniPod</div>
       </div>
 
-      {/* Number of SaniPods @ weekly rate = total */}
+      {/* Service mode */}
       <div className="svc-row">
-        <label>Number of SaniPods</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="number"
-            name="podQuantity"
-            value={form.podQuantity}
-            onChange={onChange}
-          />
-          <span>@</span>
-          <input
-            className="svc-in"
-            type="number"
-            name="weeklyRatePerUnit"
-            value={form.weeklyRatePerUnit}
-            onChange={onChange}
-          />
-          <span>=</span>
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${weeklyLineTotal.toFixed(2)}`}
-          />
-        </div>
-      </div>
-
-      {/* Install toggle */}
-      <div className="svc-row">
-        <label>New Install?</label>
-        <div className="svc-row-right">
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="isNewInstall"
-              checked={form.isNewInstall}
-              onChange={onChange}
-            />
-            <span>Apply install multiplier (3×)</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Extra bags per week */}
-      <div className="svc-row">
-        <label>Extra Bags per Week</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="number"
-            name="extraBagsPerWeek"
-            value={form.extraBagsPerWeek}
-            onChange={onChange}
-          />
-          <span>@</span>
-          <input
-            className="svc-in"
-            type="number"
-            name="extraBagPrice"
-            value={form.extraBagPrice}
-            onChange={onChange}
-          />
-          <span>=</span>
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${extraBagsLineTotal.toFixed(2)}`}
-          />
-        </div>
-      </div>
-
-      {/* Standalone minimum – display only */}
-      <div className="svc-row svc-row-charge">
-        <label>Standalone Minimum Charge</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-              value={40}
-              readOnly
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Location + parking – used for trip charge */}
-      <div className="svc-row">
-        <label>Location</label>
+        <label>Service Mode</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
-            name="location"
-            value={form.location}
+            name="serviceMode"
+            value={form.serviceMode}
             onChange={onChange}
           >
-            <option value="insideBeltway">Inside Beltway</option>
-            <option value="outsideBeltway">Outside Beltway</option>
+            <option value="standalone">Standalone (trip charge)</option>
+            <option value="withSaniClean">Bundled with SaniClean</option>
+            <option value="allInclusive">All-Inclusive Program</option>
           </select>
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="needsParking"
-              checked={form.needsParking}
-              onChange={onChange}
-            />
-            <span>Parking Needed</span>
-          </label>
         </div>
       </div>
 
-      {/* Frequency */}
+      {/* Frequency (used only for per-visit math) */}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -154,94 +50,173 @@ export const SanipodForm: React.FC<
         </div>
       </div>
 
+      {/* Pod quantity */}
+      <div className="svc-row">
+        <label>No of SaniPods</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            name="podQuantity"
+            value={form.podQuantity}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      {/* Extra bags per week */}
+      <div className="svc-row">
+        <label>Extra Bags per Week</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            name="extraBagsPerWeek"
+            value={form.extraBagsPerWeek}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      {/* Location + parking (standalone trip logic) */}
+      <div className="svc-row">
+        <label>Location</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="location"
+            value={form.location}
+            onChange={onChange}
+          >
+            <option value="insideBeltway">Inside Beltway</option>
+            <option value="outsideBeltway">Outside Beltway</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Parking Needed</label>
+        <div className="svc-row-right">
+          <input
+            type="checkbox"
+            name="needsParking"
+            checked={form.needsParking}
+            onChange={onChange}
+          />{" "}
+          <span className="svc-small">Add parking surcharge to trip</span>
+        </div>
+      </div>
+
+      {/* Install options */}
+      <div className="svc-row">
+        <label>New Install?</label>
+        <div className="svc-row-right">
+          <input
+            type="checkbox"
+            name="isNewInstall"
+            checked={form.isNewInstall}
+            onChange={onChange}
+          />{" "}
+          <span className="svc-small">
+            $25/pod install, multiplied for dirty conditions
+          </span>
+        </div>
+      </div>
+
+      {form.isNewInstall && (
+        <div className="svc-row">
+          <label>Install Condition</label>
+          <div className="svc-row-right">
+            <select
+              className="svc-in"
+              name="installType"
+              value={form.installType}
+              onChange={onChange}
+            >
+              <option value="clean">Clean / Normal (1×)</option>
+              <option value="dirty">Dirty / Filthy (3×)</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Rate category */}
       <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
-            name="selectedRateCategory"
-            value={form.selectedRateCategory}
+            name="rateCategory"
+            value={form.rateCategory}
             onChange={onChange}
           >
-            <option value="redRate">Red (Standard)</option>
-            <option value="greenRate">Green (Premium)</option>
+            <option value="redRate">Red</option>
+            <option value="greenRate">Green (+30%)</option>
           </select>
         </div>
       </div>
 
-      {/* Add-on related services */}
+      {/* Optional extras (not priced here yet, but kept on the form) */}
+      {/* <div className="svc-row">
+        <label>Toilet Clips Qty</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            name="toiletClipsQty"
+            value={form.toiletClipsQty}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
       <div className="svc-row">
-        <label>Add-On Services</label>
+        <label>Seat Cover Dispensers Qty</label>
         <div className="svc-row-right">
-          <div className="svc-row-sub">
-            <span>Toilet Clips</span>
-            <input
-              className="svc-in"
-              type="number"
-              name="toiletClipsQty"
-              value={form.toiletClipsQty}
-              onChange={onChange}
-            />
-          </div>
-          <div className="svc-row-sub">
-            <span>Seat Cover Disp.</span>
-            <input
-              className="svc-in"
-              type="number"
-              name="seatCoverDispensersQty"
-              value={form.seatCoverDispensersQty}
-              onChange={onChange}
-            />
-          </div>
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            name="seatCoverDispensersQty"
+            value={form.seatCoverDispensersQty}
+            onChange={onChange}
+          />
+        </div>
+      </div> */}
+
+      {/* Results */}
+      <div className="svc-row svc-row-total">
+        <label>Per Visit (service + trip)</label>
+        <div className="svc-dollar">
+          ${calc.perVisit.toFixed(2)}
         </div>
       </div>
 
-      {/* TOTALS */}
-      <div className="svc-row svc-row-charge">
-        <label>Total Price (Per Visit)</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={quote.perVisitPrice.toFixed(2)}
-            />
-          </div>
+      <div className="svc-row svc-row-total">
+        <label>Monthly Recurring</label>
+        <div className="svc-dollar">
+          ${calc.monthly.toFixed(2)}
         </div>
       </div>
 
-      <div className="svc-row svc-row-charge">
-        <label>Monthly Bill</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.monthlyBill.toFixed(2)}
-            />
-          </div>
+      <div className="svc-row svc-row-total">
+        <label>Annual Recurring</label>
+        <div className="svc-dollar">
+          ${calc.annual.toFixed(2)}
         </div>
       </div>
 
-      <div className="svc-row svc-row-charge">
-        <label>Annual Bill</label>
-        <div className="svc-row-right">
+      {calc.installCost > 0 && (
+        <div className="svc-row svc-row-total">
+          <label>Install (one-time)</label>
           <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.annualBill.toFixed(2)}
-            />
+            ${calc.installCost.toFixed(2)}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

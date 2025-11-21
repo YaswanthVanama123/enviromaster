@@ -1,247 +1,228 @@
 // src/features/services/sanipod/useSanipodCalc.ts
 import { useMemo, useState } from "react";
-import type {ChangeEvent} from 'react';
-import type { ServiceQuoteResult } from "../common/serviceTypes";
-import type {
-  SanipodFormState,
-  SanipodFrequencyKey,
-  SanipodRateCategory,
-  SanipodBundleType,
-} from "./sanipodTypes";
+import type { ChangeEvent } from "react";
 import { sanipodPricingConfig as cfg } from "./sanipodConfig";
+import type {
+  SanipodFrequencyKey,
+  SanipodLocationKey,
+  SanipodRateCategory,
+  SanipodServiceMode,
+  SanipodInstallType,
+} from "./sanipodTypes";
 
-const DEFAULT_FORM: SanipodFormState = {
+export interface SanipodFormState {
+  podQuantity: number;
+  extraBagsPerWeek: number;
+
+  serviceMode: SanipodServiceMode;
+
+  frequency: SanipodFrequencyKey;
+
+  location: SanipodLocationKey;
+  needsParking: boolean;
+
+  isNewInstall: boolean;
+  installType: SanipodInstallType;
+
+  rateCategory: SanipodRateCategory;
+
+  // For future add-ons (toilet clips / seat cover dispensers) – not
+  // used in SaniPod math here, but kept in the form for consistency.
+  toiletClipsQty: number;
+  seatCoverDispensersQty: number;
+}
+
+export interface SanipodCalcResult {
+  /** Total charge per visit at the selected frequency (includes service + trip, excludes install). */
+  perVisit: number;
+  /** Monthly recurring revenue (service + trip, excludes install). */
+  monthly: number;
+  /** Annual recurring revenue (service + trip, excludes install). */
+  annual: number;
+  /** One-time install cost (if isNewInstall). */
+  installCost: number;
+}
+
+const DEFAULT_FORM_STATE: SanipodFormState = {
   podQuantity: 0,
-  weeklyRatePerUnit: cfg.weeklyRatePerUnit,
-
   extraBagsPerWeek: 0,
-  extraBagPrice: cfg.extraBagPrice,
 
-  isNewInstall: false,
-  location: "outsideBeltway",
+  serviceMode: "standalone",
+  frequency: cfg.defaultFrequency,
+
+  location: "insideBeltway",
   needsParking: false,
 
-  selectedRateCategory: "redRate",
-  bundleType: "none",
+  isNewInstall: false,
+  installType: "clean",
+
+  rateCategory: "redRate",
 
   toiletClipsQty: 0,
   seatCoverDispensersQty: 0,
-
-  frequency: "weekly",
-  tripChargeIncluded: true,
-  notes: "",
 };
 
-function mapFrequency(f: string): SanipodFrequencyKey {
-  if (f === "weekly" || f === "biweekly" || f === "monthly") return f;
-  return "weekly";
+function annualVisits(freq: SanipodFrequencyKey): number {
+  return cfg.annualFrequencies[freq] ?? cfg.annualFrequencies.weekly;
 }
 
-function getMonthlyMultiplier(freq: SanipodFrequencyKey): number {
-  if (freq === "weekly") return cfg.monthlyConversions.weekly;
-  if (freq === "biweekly") return cfg.annualFrequencies.biweekly / 12;
-  return 1;
-}
-
-export function useSanipodCalc(initial?: Partial<SanipodFormState>) {
+export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
   const [form, setForm] = useState<SanipodFormState>({
-    ...DEFAULT_FORM,
-    ...initial,
+    ...DEFAULT_FORM_STATE,
+    ...initialData,
   });
 
-  const onChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type, checked } = e.target as any;
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, type } = e.target;
+    const target: any = e.target;
 
     setForm((prev) => {
-      switch (name) {
-        case "frequency":
-          return { ...prev, frequency: mapFrequency(value) };
+      const next: SanipodFormState = { ...prev };
 
-        case "bundleType":
-          return { ...prev, bundleType: value as SanipodBundleType };
-
-        case "selectedRateCategory":
-          return {
-            ...prev,
-            selectedRateCategory: value as SanipodRateCategory,
-          };
-
-        case "location":
-          return {
-            ...prev,
-            location: value === "insideBeltway" ? "insideBeltway" : "outsideBeltway",
-          };
-
-        case "needsParking":
-        case "isNewInstall":
-          return { ...prev, [name]: !!checked };
-
-        case "podQuantity":
-        case "weeklyRatePerUnit":
-        case "extraBagsPerWeek":
-        case "extraBagPrice":
-        case "toiletClipsQty":
-        case "seatCoverDispensersQty":
-          return { ...prev, [name]: Number(value) || 0 };
-
-        default:
-          return prev;
+      if (type === "checkbox") {
+        next[name as keyof SanipodFormState] = target.checked;
+      } else if (type === "number") {
+        const raw = target.value;
+        const num = raw === "" ? 0 : Number(raw);
+        next[name as keyof SanipodFormState] =
+          Number.isFinite(num) && num >= 0 ? num : 0;
+      } else {
+        next[name as keyof SanipodFormState] = target.value;
       }
+
+      return next;
     });
   };
 
-  const {
-    baseRate,
-    baseServiceCost,
-    adjustedServiceCost,
-    frequencyMultiplier,
-    frequencyAdjustedCost,
-    installCost,
-    tripCost,
-    extraBagsCost,
-    toiletClipsCost,
-    seatCoverCost,
-    addOnCost,
-    totalPerVisitBase,
-    finalPerVisit,
-    monthlyBill,
-    annualBill,
-  } = useMemo(() => {
-    // If all-inclusive bundle, SaniPod service itself is priced in the $20/fixture
-    // bundle on the restroom card, so here we treat core as 0 and only keep add-ons.
-    const freqKey = mapFrequency(form.frequency);
+  const calc = useMemo<SanipodCalcResult>(() => {
+    const pods = Math.max(0, Number(form.podQuantity) || 0);
+    const bagsPerWeek = Math.max(0, Number(form.extraBagsPerWeek) || 0);
 
-    // Base rate by geography
-    const geo =
-      form.location === "insideBeltway"
-        ? cfg.geographicPricing.insideBeltway
-        : cfg.geographicPricing.outsideBeltway;
+    const anyPodsOrBags = pods > 0 || bagsPerWeek > 0;
 
-    const baseRate = geo.baseRate || cfg.weeklyRatePerUnit;
+    // If truly no SaniPod activity and no new install, everything is 0.
+    if (!anyPodsOrBags && !form.isNewInstall) {
+      return {
+        perVisit: 0,
+        monthly: 0,
+        annual: 0,
+        installCost: 0,
+      };
+    }
 
-    // Step 2: base service cost
-    const baseServiceCost = form.podQuantity * baseRate;
+    const freq: SanipodFrequencyKey = form.frequency ?? cfg.defaultFrequency;
+    const visits = annualVisits(freq);
+    const rateCfg = cfg.rateCategories[form.rateCategory];
 
-    // Step 3: apply minimum
-    const adjustedServiceCost = Math.max(
-      baseServiceCost,
-      cfg.standaloneMinimum
-    );
+    const weeklyExtraRed = bagsPerWeek * cfg.extraBagPrice;
+    const weeklyToAnnual = cfg.annualFrequencies.weekly;
 
-    // Step 4: frequency multiplier
-    const frequencyMultiplier = cfg.frequencyMultipliers[freqKey];
-    const frequencyAdjustedCost = adjustedServiceCost * frequencyMultiplier;
+    // ---------- Install cost ----------
+    let installCost = 0;
+    if (form.isNewInstall && pods > 0) {
+      const baseInstall = pods * cfg.installChargePerUnit;
+      const mult =
+        form.installType === "dirty"
+          ? cfg.installationOptions.dirtyMultiplier
+          : cfg.installationOptions.cleanMultiplier;
+      installCost = baseInstall * mult;
+    }
 
-    // Step 5: installation
-    const installCost = form.isNewInstall
-      ? adjustedServiceCost * cfg.installationOptions.newInstall.multiplier
-      : 0;
+    let annual = 0;
 
-    // Step 6: trip cost (unless bundle all-inclusive waives it)
-    let tripCost = 0;
-    if (
-      cfg.businessRules.alwaysIncludeTripCharge &&
-      form.bundleType !== "allInclusive"
-    ) {
-      const baseTrip =
+    // ---------- Standalone mode ----------
+    if (form.serviceMode === "standalone") {
+      // $8/wk flat option
+      const weeklyFlatRed =
+        cfg.standaloneOptions.flatRate + weeklyExtraRed;
+
+      // $3/wk/ea + bags
+      const weeklyPerUnitRed =
+        pods * cfg.standaloneOptions.perUnitRate + weeklyExtraRed;
+
+      const annualFlatServiceRed = weeklyFlatRed * weeklyToAnnual;
+      const annualPerUnitServiceRed = weeklyPerUnitRed * weeklyToAnnual;
+
+      const annualFlatService =
+        annualFlatServiceRed * rateCfg.multiplier;
+      const annualPerUnitService =
+        annualPerUnitServiceRed * rateCfg.multiplier;
+
+      // Trip charge applies to BOTH options
+      let tripPerVisit =
         form.location === "insideBeltway"
           ? cfg.tripCharge.insideBeltway
           : cfg.tripCharge.outsideBeltway;
+      if (form.needsParking) {
+        tripPerVisit += cfg.tripCharge.parkingSurcharge;
+      }
 
-      tripCost =
-        baseTrip +
-        (form.location === "insideBeltway" && form.needsParking
-          ? cfg.tripCharge.parking
-          : 0);
+      const visitsStandalone = cfg.annualFrequencies.weekly; // weekly service
+      const annualTrip =
+        cfg.businessRules.alwaysIncludeTripChargeStandalone
+          ? tripPerVisit * visitsStandalone
+          : 0;
+
+      const annualTotalFlat = annualFlatService + annualTrip;
+
+      // Per-unit option has $40/month MINIMUM (on total, service + trip)
+      const annualPerUnitRaw = annualPerUnitService + annualTrip;
+      const monthlyPerUnitRaw = annualPerUnitRaw / 12;
+      const minimumMonthly = cfg.standaloneOptions.minimum;
+      const monthlyPerUnit = Math.max(minimumMonthly, monthlyPerUnitRaw);
+      const annualTotalPerUnit = monthlyPerUnit * 12;
+
+      // Customer gets whichever overall total is cheaper
+      if (annualTotalFlat <= annualTotalPerUnit) {
+        annual = annualTotalFlat;
+      } else {
+        annual = annualTotalPerUnit;
+      }
     }
 
-    // Step 7: add-on cost
-    const extraBagsCost = form.extraBagsPerWeek * form.extraBagPrice;
+    // ---------- Bundled with SaniClean ----------
+    if (form.serviceMode === "withSaniClean") {
+      const annualPodsRed =
+        pods * cfg.bundleOptions.withSaniClean.monthlyRatePerPod * 12;
+      const annualExtraBagsRed = weeklyExtraRed * weeklyToAnnual;
 
-    const toiletClipsCost =
-      form.toiletClipsQty * cfg.relatedServices.toiletClips.pricePerMonth;
+      const annualServiceRed = annualPodsRed + annualExtraBagsRed;
+      const annualService = annualServiceRed * rateCfg.multiplier;
 
-    const seatCoverCost =
-      form.seatCoverDispensersQty *
-      cfg.relatedServices.toiletSeatCoverDispensers.pricePerMonth;
+      // No separate trip charge – covered by SaniClean line
+      annual = annualService;
+    }
 
-    const addOnCost = extraBagsCost + toiletClipsCost + seatCoverCost;
+    // ---------- All-inclusive program ----------
+    if (form.serviceMode === "allInclusive") {
+      const annualPodsRed =
+        pods *
+        cfg.bundleOptions.allInclusive.monthlyRatePerFixture *
+        12;
+      const annualExtraBagsRed = weeklyExtraRed * weeklyToAnnual;
 
-    // Step 8: total per visit before rate category
-    const totalPerVisitBase =
-      frequencyAdjustedCost + installCost + tripCost + addOnCost;
+      const annualServiceRed = annualPodsRed + annualExtraBagsRed;
+      const annualService = annualServiceRed * rateCfg.multiplier;
 
-    // Step 9: rate category
-    const rateCfg =
-      cfg.rateCategories[form.selectedRateCategory] ??
-      cfg.rateCategories.redRate;
+      // No separate trip charge – covered by all-inclusive structure
+      annual = annualService;
+    }
 
-    const finalPerVisit = totalPerVisitBase * rateCfg.multiplier;
+    // Safety guard
+    if (!Number.isFinite(annual) || annual < 0) {
+      annual = 0;
+    }
 
-    // Step 10: monthly & annual billing
-    const monthlyMultiplier = getMonthlyMultiplier(freqKey);
-    const monthlyBill = finalPerVisit * monthlyMultiplier;
-    const annualBill =
-      finalPerVisit * cfg.annualFrequencies[freqKey];
+    const monthly = annual / 12;
+    const perVisit = visits > 0 ? annual / visits : 0;
 
     return {
-      baseRate,
-      baseServiceCost,
-      adjustedServiceCost,
-      frequencyMultiplier,
-      frequencyAdjustedCost,
+      perVisit,
+      monthly,
+      annual,
       installCost,
-      tripCost,
-      extraBagsCost,
-      toiletClipsCost,
-      seatCoverCost,
-      addOnCost,
-      totalPerVisitBase,
-      finalPerVisit,
-      monthlyBill,
-      annualBill,
     };
   }, [form]);
 
-  const quote: ServiceQuoteResult = {
-    serviceId: "sanipod",
-    displayName: "SaniPod",
-    perVisitPrice: finalPerVisit,
-    annualPrice: annualBill,
-    detailsBreakdown: [
-      `Base rate (${form.location}): $${baseRate.toFixed(2)} per pod`,
-      `Base service cost: $${baseServiceCost.toFixed(2)}`,
-      `Frequency x${frequencyMultiplier.toFixed(2)}`,
-      `Install: $${installCost.toFixed(2)}`,
-      `Trip: $${tripCost.toFixed(2)}`,
-      `Add-ons (bags/clips/seat covers): $${addOnCost.toFixed(2)}`,
-      `Monthly bill: $${monthlyBill.toFixed(2)}`,
-    ],
-  };
-
-  return {
-    form,
-    setForm,
-    onChange,
-    quote,
-    calc: {
-      baseRate,
-      baseServiceCost,
-      adjustedServiceCost,
-      frequencyMultiplier,
-      frequencyAdjustedCost,
-      installCost,
-      tripCost,
-      extraBagsCost,
-      toiletClipsCost,
-      seatCoverCost,
-      addOnCost,
-      totalPerVisitBase,
-      finalPerVisit,
-      monthlyBill,
-      annualBill,
-    },
-  };
+  return { form, onChange, calc };
 }

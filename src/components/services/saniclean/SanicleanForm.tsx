@@ -1,295 +1,302 @@
-// src/features/services/saniclean/SanicleanForm.tsx
 import React from "react";
+import "../ServicesSection.css"; // adjust path if different
 import { useSanicleanCalc } from "./useSanicleanCalc";
-import type {
-  SanicleanFormState,
-  SanicleanLocation,
-  SanicleanRateTier,
-  SanicleanSoapUpgradeType,
-} from "./sanicleanTypes";
+import type { SanicleanFormState } from "./sanicleanTypes";
+import type { ServiceInitialData } from "../common/serviceTypes";
 
-interface SanicleanFormProps {
-  initialData?: Partial<SanicleanFormState>;
-}
-
-export const SanicleanForm: React.FC<SanicleanFormProps> = ({
-  initialData,
-}) => {
-  const { state, updateField, reset, quote } = useSanicleanCalc(initialData);
-
-  const onNumberChange = (
-    key: keyof SanicleanFormState,
-    raw: string
-  ) => {
-    const n = Number(raw);
-    updateField(key, (isNaN(n) ? 0 : n) as any);
-  };
+export const SanicleanForm: React.FC<
+  ServiceInitialData<SanicleanFormState>
+> = ({ initialData }) => {
+  const { form, onChange, calc } = useSanicleanCalc(initialData);
 
   return (
     <div className="svc-card">
-      <div className="svc-card-header">
-        <h3 className="svc-card-title">SaniClean</h3>
-        <p className="svc-card-subtitle">
-          Core weekly restroom &amp; hygiene service with all-inclusive option.
-        </p>
+      {/* TITLE BAR (matches screenshot) */}
+      {/* <div className="svc-title">
+        SANICLEAN — RESTROOM &amp; HYGIENE 
+      </div> */}
+      <div className="svc-h-row">
+        <div className="svc-h">SANICLEAN — RESTROOM &amp; HYGIENE</div>
+        <button type="button" className="svc-mini" aria-label="add">
+          +
+        </button>
       </div>
 
-      <div className="svc-card-body">
-        <div className="svc-grid">
-          {/* LEFT SIDE – INPUTS */}
-          <div>
-            {/* Core counts */}
-            <div className="svc-row">
-              <label className="svc-label">Total fixtures</label>
-              <input
-                type="number"
-                min={0}
-                className="svc-input"
-                value={state.fixtureCount}
-                onChange={(e) =>
-                  onNumberChange("fixtureCount", e.target.value)
-                }
-              />
-            </div>
+      {/* CORE SETUP */}
+      {/* <div className="svc-h">Core Setup</div> */}
 
-            <div className="svc-row">
-              <label className="svc-label">Location</label>
-              <select
-                className="svc-input"
-                value={state.location}
-                onChange={(e) =>
-                  updateField(
-                    "location",
-                    e.target.value as SanicleanLocation
-                  )
-                }
-              >
-                <option value="insideBeltway">Inside Beltway</option>
-                <option value="outsideBeltway">Outside Beltway</option>
-              </select>
-            </div>
+      {/* Pricing Mode */}
+      <div className="svc-row">
+        <label>Pricing Mode</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="pricingMode"
+            value={form.pricingMode}
+            onChange={onChange}
+          >
+            <option value="auto">Auto (recommended)</option>
+            <option value="all_inclusive">All Inclusive</option>
+            <option value="geographic_standard">Standard</option>
+          </select>
+        </div>
+      </div>
 
-            <div className="svc-row svc-row-inline">
-              <label className="svc-label">
-                Parking required (inside Beltway)
-              </label>
+      {/* Total Restroom Fixtures */}
+      <div className="svc-row">
+        <label>Total Restroom Fixtures</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="fixtureCount"
+            value={form.fixtureCount}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      {/* Location + Parking */}
+      <div className="svc-row">
+        <label>Location</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="location"
+            value={form.location}
+            onChange={onChange}
+          >
+            <option value="insideBeltway">Inside Beltway</option>
+            <option value="outsideBeltway">Outside Beltway</option>
+          </select>
+          {form.location === "insideBeltway" && (
+            <label className="svc-inline">
               <input
                 type="checkbox"
-                checked={state.needsParking}
-                onChange={(e) =>
-                  updateField("needsParking", e.target.checked)
-                }
+                name="needsParking"
+                checked={form.needsParking}
+                onChange={onChange}
               />
-            </div>
+              <span>Parking Required</span>
+            </label>
+          )}
+        </div>
+      </div>
 
-            <div className="svc-row svc-row-inline">
-              <label className="svc-label">All-inclusive package</label>
+      {/* Fixture breakdown: sinks / urinals / toilets */}
+      <div className="svc-row">
+        <label>Sinks</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="sinks"
+            value={form.sinks}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Urinals</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="urinals"
+            value={form.urinals}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Male Toilets</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="maleToilets"
+            value={form.maleToilets}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Female Toilets</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="number"
+            name="femaleToilets"
+            value={form.femaleToilets}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      {/* Soap & Upgrades */}
+      <div className="svc-row">
+        <label>Soap &amp; Upgrades</label>
+        <div className="svc-row-right svc-inline">
+          <span>Type</span>
+          <select
+            className="svc-in sm"
+            name="soapType"
+            value={form.soapType}
+            onChange={onChange}
+          >
+            <option value="standard">Standard</option>
+            <option value="luxury">Luxury (+$5/dispenser/wk)</option>
+          </select>
+          <span>Extra Gallons / Week</span>
+          <input
+            className="svc-in sm"
+            type="number"
+            name="excessSoapGallonsPerWeek"
+            value={form.excessSoapGallonsPerWeek}
+            onChange={onChange}
+          />
+        </div>
+      </div>
+
+      {/* Microfiber Mopping */}
+      <div className="svc-row">
+        <label>Microfiber Mopping</label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="addMicrofiberMopping"
+              checked={form.addMicrofiberMopping}
+              onChange={onChange}
+            />
+            <span>Add Microfiber Mopping</span>
+          </label>
+
+          {form.addMicrofiberMopping && (
+            <div className="svc-inline">
+              <span>Bathrooms</span>
               <input
-                type="checkbox"
-                checked={state.isAllInclusive}
-                onChange={(e) =>
-                  updateField("isAllInclusive", e.target.checked)
-                }
-              />
-            </div>
-
-            {/* Fixture breakdown */}
-            <div className="svc-row">
-              <label className="svc-label">Fixture breakdown</label>
-              <div className="svc-multi">
-                <div className="svc-multi-item">
-                  <span className="svc-multi-label">Sinks</span>
-                  <input
-                    type="number"
-                    min={0}
-                    className="svc-input"
-                    value={state.sinks}
-                    onChange={(e) => onNumberChange("sinks", e.target.value)}
-                  />
-                </div>
-                <div className="svc-multi-item">
-                  <span className="svc-multi-label">Urinals</span>
-                  <input
-                    type="number"
-                    min={0}
-                    className="svc-input"
-                    value={state.urinals}
-                    onChange={(e) =>
-                      onNumberChange("urinals", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="svc-multi-item">
-                  <span className="svc-multi-label">Male toilets</span>
-                  <input
-                    type="number"
-                    min={0}
-                    className="svc-input"
-                    value={state.maleToilets}
-                    onChange={(e) =>
-                      onNumberChange("maleToilets", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="svc-multi-item">
-                  <span className="svc-multi-label">Female toilets</span>
-                  <input
-                    type="number"
-                    min={0}
-                    className="svc-input"
-                    value={state.femaleToilets}
-                    onChange={(e) =>
-                      onNumberChange("femaleToilets", e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Soap upgrade */}
-            <div className="svc-row">
-              <label className="svc-label">Soap upgrade</label>
-              <select
-                className="svc-input"
-                value={state.soapUpgradeType}
-                onChange={(e) =>
-                  updateField(
-                    "soapUpgradeType",
-                    e.target.value as SanicleanSoapUpgradeType
-                  )
-                }
-              >
-                <option value="none">Standard</option>
-                <option value="luxury">Luxury (+$5/disp/week)</option>
-              </select>
-            </div>
-
-            {state.soapUpgradeType === "luxury" && (
-              <div className="svc-row">
-                <label className="svc-label"># of soap dispensers</label>
-                <input
-                  type="number"
-                  min={0}
-                  className="svc-input"
-                  value={state.soapDispensers}
-                  onChange={(e) =>
-                    onNumberChange("soapDispensers", e.target.value)
-                  }
-                />
-              </div>
-            )}
-
-            {/* Microfiber + drains */}
-            <div className="svc-row">
-              <label className="svc-label">
-                Microfiber mopping bathrooms
-              </label>
-              <input
+                className="svc-in sm"
                 type="number"
-                min={0}
-                className="svc-input"
-                value={state.bathroomsForMopping}
-                onChange={(e) =>
-                  onNumberChange("bathroomsForMopping", e.target.value)
-                }
+                name="microfiberBathrooms"
+                value={form.microfiberBathrooms}
+                onChange={onChange}
               />
+              <span className="svc-label-light">@ $10/bathroom/week</span>
             </div>
+          )}
+        </div>
+      </div>
 
-            <div className="svc-row">
-              <label className="svc-label">
-                Drain line service – # of drains
-              </label>
-              <input
-                type="number"
-                min={0}
-                className="svc-input"
-                value={state.drains}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const n = Number(raw);
-                  const val = isNaN(n) ? 0 : n;
-                  updateField("drains", val);
-                  updateField("includeDrainService", val > 0);
-                }}
-              />
-            </div>
+      {/* Rate Tier */}
+      <div className="svc-row">
+        <label>Rate Tier</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="rateTier"
+            value={form.rateTier}
+            onChange={onChange}
+          >
+            <option value="redRate">Red (standard)</option>
+            <option value="greenRate">Green (premium)</option>
+          </select>
+        </div>
+      </div>
 
-            {/* Rate tier */}
-            <div className="svc-row">
-              <label className="svc-label">Rate tier</label>
-              <select
-                className="svc-input"
-                value={state.rateTier}
-                onChange={(e) =>
-                  updateField(
-                    "rateTier",
-                    e.target.value as SanicleanRateTier
-                  )
-                }
-              >
-                <option value="redRate">Red (standard)</option>
-                <option value="greenRate">Green (+30%)</option>
-              </select>
-            </div>
+      {/* Notes */}
+      <div className="svc-row">
+        <label>Notes</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-note-line"
+            type="text"
+            name="notes"
+            value={form.notes}
+            onChange={onChange}
+            placeholder="Internal notes"
+          />
+        </div>
+      </div>
+
+      {/* PRICING SUMMARY (inside same card, under Core Setup) */}
+      <div className="svc-h" style={{ marginTop: 10 }}>
+        Pricing Summary
+      </div>
+
+      <div className="svc-row">
+        <label>Method</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={calc.method}
+          />
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Weekly Total (Service)</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in-box"
+              type="text"
+              readOnly
+              value={calc.weeklyTotal.toFixed(2)}
+            />
           </div>
+        </div>
+      </div>
 
-          {/* RIGHT SIDE – SUMMARY & NOTES */}
-          <div>
-            <div className="svc-summary">
-              <div className="svc-summary-row">
-                <span className="svc-summary-label">Weekly total</span>
-                <span className="svc-summary-value">
-                  ${quote.weekly.toFixed(2)}
-                </span>
-              </div>
-              <div className="svc-summary-row">
-                <span className="svc-summary-label">
-                  Monthly (≈ 4.2× weekly)
-                </span>
-                <span className="svc-summary-value">
-                  ${quote.monthly.toFixed(2)}
-                </span>
-              </div>
-              <div className="svc-summary-row">
-                <span className="svc-summary-label">Annual (× 50)</span>
-                <span className="svc-summary-value">
-                  ${quote.annual.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {quote.detailsBreakdown?.length > 0 && (
-              <ul className="svc-breakdown-list">
-                {quote.detailsBreakdown.map((line, idx) => (
-                  <li key={idx} className="svc-breakdown-item">
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="svc-row">
-              <label className="svc-label">Notes</label>
-              <textarea
-                className="svc-input"
-                rows={3}
-                value={state.notes}
-                onChange={(e) =>
-                  updateField("notes", e.target.value)
-                }
-              />
-            </div>
-
-            <button
-              type="button"
-              className="svc-reset-btn"
-              onClick={reset}
-            >
-              Reset SaniClean
-            </button>
+      <div className="svc-row">
+        <label>Monthly Recurring</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in-box"
+              type="text"
+              readOnly
+              value={calc.monthlyTotal.toFixed(2)}
+            />
           </div>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Annual Recurring</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in-box"
+              type="text"
+              readOnly
+              value={calc.annualTotal.toFixed(2)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Dispenser Count (auto)</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={calc.dispenserCount ?? 0}
+          />
         </div>
       </div>
     </div>
   );
 };
+
+export default SanicleanForm;

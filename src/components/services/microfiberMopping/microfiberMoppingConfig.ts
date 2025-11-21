@@ -2,9 +2,20 @@
 import type { MicrofiberMoppingPricingConfig } from "./microfiberMoppingTypes";
 
 export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
+  // $10 per bathroom when bundled with Sani (per visit)
   includedBathroomRate: 10,
-  hugeBathroomException: true,
 
+  // Huge bathrooms: $10 per 300 sq ft
+  hugeBathroomPricing: {
+    enabled: true,
+    ratePerSqFt: 10,
+    sqFtUnit: 300,
+    description:
+      "For huge bathrooms charge $10 per 300 sq ft instead of $10 per bathroom.",
+  },
+
+  // Extra non-bathroom area when customer already has Sani
+  // Rule: For a single large area, $100 OR $10 per 400 sq ft, whichever is more.
   extraAreaPricing: {
     singleLargeAreaRate: 100,
     extraAreaSqFtUnit: 400,
@@ -12,6 +23,8 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     useHigherRate: true,
   },
 
+  // Stand-alone microfiber mopping (no Sani program)
+  // Rule: $10 per 200 sq ft, $40 minimum, + trip charges.
   standalonePricing: {
     standaloneSqFtUnit: 200,
     standaloneRatePerUnit: 10,
@@ -19,6 +32,8 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     includeTripCharge: true,
   },
 
+  // Chemical for customers doing their own mopping
+  // Rule: sell Daily at $27.34 / gallon (diluted).
   chemicalProducts: {
     dailyChemicalPerGallon: 27.34,
     customerSelfMopping: true,
@@ -29,14 +44,15 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     mopHandlesOnInstall: true,
     microfiberMopsLeftBehind: true,
     commercialGradeMicrofiber: true,
-    designedWashes: 300,
-    enhancedCleaningSpeed: 0.1,
-    microfiberDensity: "33% more than standard",
+    designedWashes: 500,
+    enhancedCleaningSpeed: 30,
+    microfiberDensity: "High-density commercial microfiber",
   },
 
   tripCharges: {
     insideBeltway: 8,
     outsideBeltway: 8,
+    standard: 6,
     parkingFee: 7,
     waiveForAllInclusive: true,
   },
@@ -51,13 +67,24 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     recommendCombineWithSaniScrub: true,
     installUpkeepNeeded: true,
     preventsBacteriaSpread: true,
-    optimalPairing: ["SaniClean", "SaniScrub"],
+    optimalPairing: ["SaniScrub"],
   },
 
   billingConversions: {
-    weekly: { annualMultiplier: 50, monthlyMultiplier: 4.2 },
-    biweekly: { annualMultiplier: 25, monthlyMultiplier: 2.1 },
-    monthly: { annualMultiplier: 12, monthlyMultiplier: 1 },
+    weekly: {
+      annualMultiplier: 50, // treat as ~50 service weeks / year
+      monthlyMultiplier: 50 / 12,
+    },
+    biweekly: {
+      annualMultiplier: 25,
+      monthlyMultiplier: 25 / 12,
+    },
+    monthly: {
+      annualMultiplier: 12,
+      monthlyMultiplier: 1,
+    },
+    actualWeeksPerYear: 52.18,
+    actualWeeksPerMonth: 4.35,
   },
 
   pricingRules: {
@@ -65,6 +92,21 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     canPriceAsIncluded: true,
     customPricingForHugeBathrooms: true,
     alwaysIncludeTripChargeStandalone: true,
+    authorizationRequired: {
+      belowRedRates: true,
+      authorizers: ["Owner", "GM"],
+    },
+  },
+
+  rateCategories: {
+    redRate: {
+      multiplier: 1,
+      commissionRate: "20%",
+    },
+    greenRate: {
+      multiplier: 1.3,
+      commissionRate: "25%",
+    },
   },
 
   valueProposition: {
@@ -76,17 +118,22 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
   },
 
   serviceSpecs: {
-    microfiberSize: "16x24 inches",
+    microfiberSize: '16" x 24"',
     microfiberQuality: "Commercial cleaning grade",
-    washLifecycle: 300,
-    performanceEnhancement: "10% enhanced speed in cleaning tests",
-    bacteriaPrevention: "Prevents driving bacteria into grout",
+    washLifecycle: 500,
+    performanceEnhancement: "Reduces grout damage vs wet mopping.",
+    bacteriaPrevention: "Not driving bacteria into grout between scrubs.",
   },
 
-  defaultFrequency: "Weekly",
-  allowedFrequencies: ["Weekly", "Bi-Weekly", "Monthly"],
+  defaultFrequency: "weekly",
+  allowedFrequencies: ["weekly", "biweekly", "monthly"],
 
-  serviceType: "MicrofiberMopping",
+  serviceType: "microfiberMopping",
   category: "Floor Maintenance",
-  availablePricingMethods: ["included_with_sani", "standalone", "extra_area"],
+  availablePricingMethods: [
+    "included_with_sani",
+    "standalone",
+    "extra_area",
+    "huge_bathroom",
+  ],
 };

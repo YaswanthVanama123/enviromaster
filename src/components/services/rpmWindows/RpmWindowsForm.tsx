@@ -9,9 +9,10 @@ export const RpmWindowsForm: React.FC<
   const { form, setForm, onChange, quote, calc } =
     useRpmWindowsCalc(initialData);
 
-  const smallLine = form.smallQty * form.smallWindowRate;
-  const mediumLine = form.mediumQty * form.mediumWindowRate;
-  const largeLine = form.largeQty * form.largeWindowRate;
+  // Lines use frequency-adjusted rates
+  const smallLine = form.smallQty * calc.effSmallRate;
+  const mediumLine = form.mediumQty * calc.effMediumRate;
+  const largeLine = form.largeQty * calc.effLargeRate;
 
   const handleInstallTypeChange = (value: "first" | "clean") => {
     setForm((prev) => ({
@@ -19,6 +20,11 @@ export const RpmWindowsForm: React.FC<
       isFirstTimeInstall: value === "first",
     }));
   };
+
+  // ✅ Only show first-visit total when installation is selected
+  const firstVisitDisplay = form.isFirstTimeInstall
+    ? calc.firstVisitTotalRated
+    : 0;
 
   return (
     <div className="svc-card">
@@ -45,7 +51,7 @@ export const RpmWindowsForm: React.FC<
             className="svc-in"
             type="number"
             name="smallWindowRate"
-            value={form.smallWindowRate}
+            value={calc.effSmallRate.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
@@ -74,7 +80,7 @@ export const RpmWindowsForm: React.FC<
             className="svc-in"
             type="number"
             name="mediumWindowRate"
-            value={form.mediumWindowRate}
+            value={calc.effMediumRate.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
@@ -103,7 +109,7 @@ export const RpmWindowsForm: React.FC<
             className="svc-in"
             type="number"
             name="largeWindowRate"
-            value={form.largeWindowRate}
+            value={calc.effLargeRate.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
@@ -116,7 +122,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Trip charge – editable and now used in calc */}
+      {/* Trip charge – shows frequency-adjusted trip, but stored weekly */}
       <div className="svc-row svc-row-charge">
         <label>Trip Charge</label>
         <div className="svc-row-right">
@@ -126,7 +132,7 @@ export const RpmWindowsForm: React.FC<
               className="svc-in"
               type="number"
               name="tripCharge"
-              value={form.tripCharge}
+              value={calc.effTrip.toFixed(2)}
               onChange={onChange}
             />
           </div>
@@ -134,6 +140,22 @@ export const RpmWindowsForm: React.FC<
             <input type="checkbox" checked readOnly />
             <span>Include</span>
           </label>
+        </div>
+      </div>
+
+      {/* Installation fee + first visit – only when First Time is selected */}
+      <div className="svc-row svc-row-charge">
+        <label>Installation Fee + First Visit</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={firstVisitDisplay.toFixed(2)}
+            />
+          </div>
         </div>
       </div>
 
@@ -182,7 +204,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Rate category (red / green) */}
+      {/* Rate category */}
       <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
@@ -198,7 +220,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Mirror cleaning flag */}
+      {/* Mirror cleaning */}
       <div className="svc-row">
         <label>Mirror Cleaning</label>
         <div className="svc-row-right">
@@ -214,7 +236,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* TOTAL PRICE fields */}
+      {/* Totals */}
       <div className="svc-row svc-row-charge">
         <label>Total Price (Per Visit)</label>
         <div className="svc-row-right">
