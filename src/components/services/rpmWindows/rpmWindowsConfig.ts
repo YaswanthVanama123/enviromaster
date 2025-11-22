@@ -18,17 +18,23 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     quarterlyFirstTime: 3.0,
   },
 
+  // Use “weeks” based logic:
+  // weekly  = 52 visits/year
+  // biweekly = 26 visits/year
+  // monthly = 12 visits/year
+  // quarterly = 4 visits/year
   annualFrequencies: {
-    weekly: 50,
-    biweekly: 25,
+    weekly: 52,
+    biweekly: 26,
     monthly: 12,
     quarterly: 4,
   },
 
+  // Normalize to simple 4-week months, 52-week year
   monthlyConversions: {
-    weekly: 4.2,
-    actualWeeksPerMonth: 4.35,
-    actualWeeksPerYear: 52.18,
+    weekly: 4,             // 4 weeks/month
+    actualWeeksPerMonth: 4,
+    actualWeeksPerYear: 52,
   },
 
   rateCategories: {

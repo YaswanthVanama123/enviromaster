@@ -11,67 +11,64 @@ export interface SaniscrubFrequencyMeta {
   visitsPerYear: number;
 }
 
+/**
+ * Static pricing config for SaniScrub.
+ * This is the light-weight frontend view of the big backend schema / JSON.
+ */
 export interface SaniscrubPricingConfig {
-  // Fixture pricing
-  fixtureRates: {
-    monthly: number;       // $25/fixture
-    twicePerMonth: number; // baseline $25 before discount
-    bimonthly: number;     // $35/fixture
-    quarterly: number;     // $40/fixture
-  };
+  // Per-fixture headline rates for each frequency
+  fixtureRates: Record<SaniscrubFrequency, number>;
 
-  minimums: {
-    monthly: number;       // $175
-    twicePerMonth: number; // treat same as monthly for baseline
-    bimonthly: number;     // $250
-    quarterly: number;     // $250
-  };
+  // Frequency-specific minimums (per month)
+  minimums: Record<SaniscrubFrequency, number>;
 
-  // Discount for 2x per month when combined with SaniClean
-  twicePerMonthDiscountPerFixture: number; // $15/fixture
+  // Non-bathroom area rules (kitchens, FOH, etc.)
+  nonBathroomUnitSqFt: number;           // size of one unit, e.g. 500 sq ft
+  nonBathroomFirstUnitRate: number;      // charge for first unit
+  nonBathroomAdditionalUnitRate: number; // charge for each additional unit
 
-  // Non-bathroom floor scrub rule
-  nonBathroom: {
-    unitSqFt: number;          // 500 sq ft per unit
-    firstUnitPrice: number;    // $250 for first 500 sq ft
-    additionalUnitPrice: number; // $125 for each additional 500
-  };
-
-  // Install multipliers
+  // Install multipliers (one-time job)
   installMultipliers: {
-    dirty: number; // 3x
-    clean: number; // 1x
+    clean: number; // 1× job
+    dirty: number; // 3× job
   };
 
-  // Trip charge
+  // Base trip charge + optional parking
   tripChargeBase: number; // $8
-  parkingFee: number;     // $7 when inside beltway & parking
+  parkingFee: number;     // +$7 when needed inside beltway
 
-  // Frequency meta (visits per year)
+  // Visit counts per year for each frequency
   frequencyMeta: Record<SaniscrubFrequency, SaniscrubFrequencyMeta>;
+
+  // 2× / month discount configuration (relative to straight monthly)
+  twoTimesPerMonthDiscountPerFixture: number;
 }
 
-export interface SaniscrubFormState
-  extends Omit<BaseServiceFormState, "frequency"> {
+/**
+ * Live form state for a single SaniScrub card.
+ * Only includes the *real* inputs we need to drive the rules.
+ */
+export interface SaniscrubFormState extends BaseServiceFormState {
   serviceId: "saniscrub";
 
-  // How many restroom fixtures we SaniScrub
+  // Bathroom fixtures that get SaniScrub
   fixtureCount: number;
 
-  // Non-bathroom area in sq ft
+  // Non-bathroom SaniScrub area in sq ft (kitchen, FOH, etc.)
   nonBathroomSqFt: number;
 
-  // Frequency of SaniScrub service
+  // Selected service frequency
   frequency: SaniscrubFrequency;
 
-  // Is SaniScrub bundled with SaniClean?
+  // Whether SaniClean is also being sold at the site.
+  // Required for the special 2× / month discount rule.
   hasSaniClean: boolean;
 
-  // Trip charge / geography
+  // Geography / trip logic
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
 
-  // Install quote
+  // Install quote options
   includeInstall: boolean;
   isDirtyInstall: boolean;
 }

@@ -1,0 +1,212 @@
+/* make the Refresh card + table use the full available width */
+.svc-card.refresh-full {
+  width: 100%;
+  max-width: 100%;
+}
+
+.rps-wrap {
+  width: 100%;
+}
+
+.rps {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rps td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.rps-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.rps-label {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+
+
+/* Make Refresh Power Scrub card take full width */
+.svc-card-wide.refresh-rps {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* If parent is flex, let it stretch */
+.svc-card-wide.refresh-rps {
+  flex: 1 1 100%;
+  align-self: stretch;
+}
+
+/* Wrapper + table full width */
+.rps-wrap-full {
+  width: 100%;
+}
+
+.rps-full {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.rps-full td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+/* Keep inline controls behaving nicely inside narrow columns */
+.rps-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.rps-label {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+
+
+
+
+
+
+/* changed css */
+/* ===============================
+   REFRESH POWER SCRUB – LAYOUT
+   =============================== */
+
+/* Card takes full width of content area */
+.svc-card-wide.refresh-rps {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+/* Wrapper + table full width */
+.rps-wrap,
+.rps-wrap-full {
+  width: 100%;
+}
+
+/* Main table */
+.rps,
+.rps-full {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+/* Cell styling */
+.rps td,
+.rps-full td {
+  padding: 6px 8px;
+  vertical-align: middle;
+  border: 1px solid #999;   /* light grid so it looks like a matrix */
+}
+
+/* First row (Rate Tier) styled like a small header bar */
+.rps-full tbody tr:first-child td {
+  /* background: #f4f4f4; */
+  border-bottom: 2px solid #000;
+}
+
+/* Last two rows ($ row + Freq row) slightly emphasized */
+.rps-full tbody tr:nth-last-child(2) td {
+  border-top: 2px solid #000;
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.rps-full tbody tr:last-child td {
+  background: #fafafa;
+}
+
+/* Make each column content nicely aligned */
+.rps-full td {
+  text-align: left;
+}
+
+/* ===============================
+   INLINE CONTROLS INSIDE CELLS
+   =============================== */
+
+.rps-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.rps-label {
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Inputs / selects stretch inside column but stay compact */
+.rps-line {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: none;
+  border-bottom: 1px solid #555;   /* matches EM underline style */
+  background: transparent;
+    -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Readonly amount fields – make them look like output, not editable */
+.rps-line[readonly] {
+  font-weight: 600;
+  text-align: right;
+  background: #f9f9f9;
+  border-bottom: 1px dashed #999;
+}
+
+/* Number inputs – align text to right for dollar & qty cells */
+.rps-line[type="number"] {
+  text-align: right;
+}
+
+/* Selects – remove browser default heavy look a bit */
+.rps-line::-ms-expand {
+  display: none;
+}
+
+.rps-line:focus {
+  outline: none;
+  border-bottom-color: #d60000; /* EM red accent on focus */
+}
+
+/* Freq row inputs a bit lighter */
+.rps-full tbody tr:last-child .rps-line {
+  font-weight: 500;
+  background: #fff;
+}
+
+/* Small tweak so the Rate Tier row looks like a header bar */
+.rps-full tbody tr:first-child .rps-label {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* header labels in amount row */
+.rps-full tbody tr:nth-last-child(2) .rps-label {
+  text-align: center;
+  width: 100%;
+}

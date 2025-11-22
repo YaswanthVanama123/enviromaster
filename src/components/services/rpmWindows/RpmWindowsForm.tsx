@@ -1,3 +1,4 @@
+// src/features/services/rpmWindows/RpmWindowsForm.tsx
 import React from "react";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
@@ -6,23 +7,21 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
 > = ({ initialData }) => {
-  const { form, setForm, onChange, quote, calc } =
-    useRpmWindowsCalc(initialData);
+  const {
+    form,
+    setForm,
+    onChange,
+    addExtraCharge,
+    updateExtraCharge,
+    calc,
+    quote,
+  } = useRpmWindowsCalc(initialData);
 
-  // Lines use frequency-adjusted rates
-  const smallLine = form.smallQty * calc.effSmallRate;
-  const mediumLine = form.mediumQty * calc.effMediumRate;
-  const largeLine = form.largeQty * calc.effLargeRate;
+  const handleInstallTypeChange = (value: "first" | "clean") =>
+    setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));
 
-  const handleInstallTypeChange = (value: "first" | "clean") => {
-    setForm((prev) => ({
-      ...prev,
-      isFirstTimeInstall: value === "first",
-    }));
-  };
-
-  // ✅ Only show first-visit total when installation is selected
-  const firstVisitDisplay = form.isFirstTimeInstall
+  // Installation Fee + First Visit (install + 1 normal service)
+  const installationFeeDisplay = form.isFirstTimeInstall
     ? calc.firstVisitTotalRated
     : 0;
 
@@ -30,99 +29,133 @@ export const RpmWindowsForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">RPM WINDOW</div>
-        <button type="button" className="svc-mini" aria-label="add">
+        <button type="button" className="svc-mini" onClick={addExtraCharge}>
           +
         </button>
       </div>
 
-      {/* Small windows */}
+      {/* Small */}
       <div className="svc-row">
         <label>Small Windows</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
-            type="number"
             name="smallQty"
+            type="number"
             value={form.smallQty}
             onChange={onChange}
           />
           <span>@</span>
           <input
             className="svc-in"
-            type="number"
             name="smallWindowRate"
-            value={calc.effSmallRate.toFixed(2)}
+            type="number"
+            value={calc.effSmall.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
             readOnly
-            value={`$${smallLine.toFixed(2)}`}
+            value={`$${(form.smallQty * calc.effSmall).toFixed(2)}`}
           />
         </div>
       </div>
 
-      {/* Medium windows */}
+      {/* Medium */}
       <div className="svc-row">
         <label>Medium Windows</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
-            type="number"
             name="mediumQty"
+            type="number"
             value={form.mediumQty}
             onChange={onChange}
           />
           <span>@</span>
           <input
             className="svc-in"
-            type="number"
             name="mediumWindowRate"
-            value={calc.effMediumRate.toFixed(2)}
+            type="number"
+            value={calc.effMedium.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
             readOnly
-            value={`$${mediumLine.toFixed(2)}`}
+            value={`$${(form.mediumQty * calc.effMedium).toFixed(2)}`}
           />
         </div>
       </div>
 
-      {/* Large windows */}
+      {/* Large */}
       <div className="svc-row">
         <label>Large Windows</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
-            type="number"
             name="largeQty"
+            type="number"
             value={form.largeQty}
             onChange={onChange}
           />
           <span>@</span>
           <input
             className="svc-in"
-            type="number"
             name="largeWindowRate"
-            value={calc.effLargeRate.toFixed(2)}
+            type="number"
+            value={calc.effLarge.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
             readOnly
-            value={`$${largeLine.toFixed(2)}`}
+            value={`$${(form.largeQty * calc.effLarge).toFixed(2)}`}
           />
         </div>
       </div>
 
-      {/* Trip charge – shows frequency-adjusted trip, but stored weekly */}
+      {/* + Added extra lines */}
+      {form.extraCharges.map((line) => (
+        <div className="svc-row" key={line.id}>
+          <div className="svc-row-right">
+            <input
+              className="svc-in"
+              type="text"
+              placeholder="Calc"
+              value={line.calcText}
+              onChange={(e) =>
+                updateExtraCharge(line.id, "calcText", e.target.value)
+              }
+            />
+            <input
+              className="svc-in"
+              type="text"
+              placeholder="Text"
+              value={line.description}
+              onChange={(e) =>
+                updateExtraCharge(line.id, "description", e.target.value)
+              }
+            />
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                value={line.amount}
+                onChange={(e) =>
+                  updateExtraCharge(line.id, "amount", e.target.value)
+                }
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Trip Charge */}
       <div className="svc-row svc-row-charge">
         <label>Trip Charge</label>
         <div className="svc-row-right">
@@ -130,8 +163,8 @@ export const RpmWindowsForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="number"
               name="tripCharge"
+              type="number"
               value={calc.effTrip.toFixed(2)}
               onChange={onChange}
             />
@@ -143,7 +176,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Installation fee + first visit – only when First Time is selected */}
+      {/* Install Fee + First Visit */}
       <div className="svc-row svc-row-charge">
         <label>Installation Fee + First Visit</label>
         <div className="svc-row-right">
@@ -153,20 +186,19 @@ export const RpmWindowsForm: React.FC<
               className="svc-in"
               type="text"
               readOnly
-              value={firstVisitDisplay.toFixed(2)}
+              value={installationFeeDisplay.toFixed(2)}
             />
           </div>
         </div>
       </div>
 
-      {/* Install type */}
+      {/* Install Type */}
       <div className="svc-row">
         <label>Install Type</label>
         <div className="svc-row-right">
           <label className="svc-inline">
             <input
               type="radio"
-              name="installType"
               value="first"
               checked={form.isFirstTimeInstall}
               onChange={() => handleInstallTypeChange("first")}
@@ -176,7 +208,6 @@ export const RpmWindowsForm: React.FC<
           <label className="svc-inline">
             <input
               type="radio"
-              name="installType"
               value="clean"
               checked={!form.isFirstTimeInstall}
               onChange={() => handleInstallTypeChange("clean")}
@@ -186,7 +217,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Service frequency */}
+      {/* Frequency */}
       <div className="svc-row">
         <label>Service Frequency</label>
         <div className="svc-row-right">
@@ -204,7 +235,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Rate category */}
+      {/* Rate Category */}
       <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
@@ -220,7 +251,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Mirror cleaning */}
+      {/* Mirror */}
       <div className="svc-row">
         <label>Mirror Cleaning</label>
         <div className="svc-row-right">
@@ -236,7 +267,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Totals */}
+      {/* Total Per Visit */}
       <div className="svc-row svc-row-charge">
         <label>Total Price (Per Visit)</label>
         <div className="svc-row-right">
@@ -252,6 +283,25 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
+      {/* Monthly Recurring – HIDE for Quarterly */}
+      {form.frequency !== "quarterly" && (
+        <div className="svc-row svc-row-charge">
+          <label>Monthly Recurring</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.monthlyBillRated.toFixed(2)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Annual Price */}
       <div className="svc-row svc-row-charge">
         <label>Annual Price</label>
         <div className="svc-row-right">

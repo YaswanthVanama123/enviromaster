@@ -12,56 +12,71 @@ import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
 const DEFAULT_FORM: SanicleanFormState = {
   serviceId: "saniclean",
 
+  // fixtureCount will be AUTO from sinks/urinals/toilets
   fixtureCount: 0,
+
+  // geo + logistics
   location: "insideBeltway",
   needsParking: false,
-
   pricingMode: "auto",
 
+  // fixture breakdown
   sinks: 0,
   urinals: 0,
   maleToilets: 0,
   femaleToilets: 0,
 
+  // soap
   soapType: "standard",
   excessSoapGallonsPerWeek: 0,
 
+  // microfiber
   addMicrofiberMopping: false,
   microfiberBathrooms: 0,
 
+  // paper
+  estimatedPaperSpendPerWeek: 0,
+
+  // rate tier
   rateTier: "redRate",
 
   notes: "",
 };
 
-function clampPricingMode(mode: string): SanicleanPricingMode {
-  if (mode === "all_inclusive" || mode === "geographic_standard") {
-    return mode;
-  }
-  return "auto";
-}
+function recomputeFixtureCount(state: SanicleanFormState): SanicleanFormState {
+  const total =
+    Math.max(0, state.sinks) +
+    Math.max(0, state.urinals) +
+    Math.max(0, state.maleToilets) +
+    Math.max(0, state.femaleToilets);
 
-function clampRateTier(rt: string): SanicleanRateTier {
-  return rt === "greenRate" ? "greenRate" : "redRate";
+  return { ...state, fixtureCount: total };
 }
 
 export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
-  const [form, setForm] = useState<SanicleanFormState>({
-    ...DEFAULT_FORM,
-    ...initial,
-  });
+  const [form, setForm] = useState<SanicleanFormState>(() =>
+    recomputeFixtureCount({
+      ...DEFAULT_FORM,
+      ...initial,
+    } as SanicleanFormState)
+  );
 
   const onChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value, type, checked } = e.target as any;
 
     setForm((prev) => {
+      let next: SanicleanFormState = { ...prev };
+
       switch (name) {
         // booleans
         case "needsParking":
         case "addMicrofiberMopping":
-          return { ...prev, [name]: !!checked };
+          next = { ...next, [name]: type === "checkbox" ? !!checked : !!value };
+          break;
 
         // numeric fields
         case "fixtureCount":
@@ -69,44 +84,48 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         case "urinals":
         case "maleToilets":
         case "femaleToilets":
+        case "excessSoapGallonsPerWeek":
         case "microfiberBathrooms":
-        case "excessSoapGallonsPerWeek": {
-          const num = Number(value);
-          return { ...prev, [name]: Number.isFinite(num) ? Math.max(0, num) : 0 };
+        case "estimatedPaperSpendPerWeek": {
+          const num = value === "" ? 0 : Number(value);
+          next = { ...next, [name]: Number.isFinite(num) ? num : 0 };
+          break;
         }
 
         // enums / selects
         case "location":
-          return {
-            ...prev,
-            location: value === "insideBeltway" ? "insideBeltway" : "outsideBeltway",
-          };
+          next = { ...next, location: value as SanicleanFormState["location"] };
+          break;
 
         case "pricingMode":
-          return {
-            ...prev,
-            pricingMode: clampPricingMode(value),
+          next = {
+            ...next,
+            pricingMode: value as SanicleanPricingMode,
           };
-
-        case "rateTier":
-          return {
-            ...prev,
-            rateTier: clampRateTier(value),
-          };
+          break;
 
         case "soapType":
-          return {
-            ...prev,
-            soapType: value === "luxury" ? "luxury" : "standard",
-          };
+          next = { ...next, soapType: value as SanicleanFormState["soapType"] };
+          break;
 
-        // notes (free text)
+        case "rateTier":
+          next = { ...next, rateTier: value as SanicleanRateTier };
+          break;
+
+        // text / notes
         case "notes":
-          return { ...prev, notes: value };
+          next = { ...next, notes: value };
+          break;
 
         default:
-          return prev;
+          // any other field just assign raw value
+          next = { ...next, [name]: value };
+          break;
       }
+
+      // after any change, recompute fixtureCount from breakdown
+      next = recomputeFixtureCount(next);
+      return next;
     });
   };
 
@@ -124,95 +143,152 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       excessSoapGallonsPerWeek,
       addMicrofiberMopping,
       microfiberBathrooms,
+      estimatedPaperSpendPerWeek,
       rateTier,
     } = form;
 
     const fixtures = Math.max(0, fixtureCount);
-    const visits = 1; // SaniClean is weekly service; “per visit” == per week.
+    const visitsPerWeek = 1; // weekly service
+
+    // 🔴 NEW: if there are literally no fixtures, there is no SaniClean charge.
+    if (fixtures === 0) {
+      const zeroQuote: ServiceQuoteResult = {
+        serviceId: "saniclean",
+        displayName: "SaniClean",
+        perVisitPrice: 0,
+        annualPrice: 0,
+        detailsBreakdown: ["No restroom fixtures configured – no SaniClean charge."],
+      };
+
+      const zeroCalc = {
+        method: "geographic_standard" as const,
+        weeklyBase: 0,
+        weeklyTrip: 0,
+        weeklyFacilityComponents: 0,
+        weeklySoapUpgrade: 0,
+        weeklyWarranty: 0,
+        weeklyMicrofiber: 0,
+        weeklyPaperCredit: 0,
+        weeklyPaperOverage: 0,
+        weeklySubtotal: 0,
+        weeklyTotal: 0,
+        monthlyTotal: 0,
+        annualTotal: 0,
+        dispenserCount: 0,
+        monthlyFacilityComponents: 0,
+        rateMultiplier: 1,
+      };
+
+      return { quote: zeroQuote, calc: zeroCalc };
+    }
 
     // ---- 1) Decide pricing method ----
-    let method: "all_inclusive" | "geographic_standard" | "small_facility_minimum";
+    type InternalMethod =
+      | "all_inclusive"
+      | "geographic_standard"
+      | "small_facility_minimum";
+
+    let method: InternalMethod = "geographic_standard";
 
     if (pricingMode === "all_inclusive") {
       method = "all_inclusive";
     } else if (pricingMode === "geographic_standard") {
-      if (fixtures > 0 && fixtures <= cfg.smallFacilityMinimum.fixtureThreshold) {
+      if (
+        fixtures > 0 &&
+        fixtures <= cfg.smallFacilityMinimum.fixtureThreshold
+      ) {
         method = "small_facility_minimum";
       } else {
         method = "geographic_standard";
       }
     } else {
-      // auto
-      if (fixtures >= cfg.autoAllInclusiveMinFixtures) {
+      // auto mode
+      if (fixtures >= cfg.allInclusivePackage.autoAllInclusiveMinFixtures) {
         method = "all_inclusive";
-      } else if (fixtures > 0 && fixtures <= cfg.smallFacilityMinimum.fixtureThreshold) {
+      } else if (
+        fixtures > 0 &&
+        fixtures <= cfg.smallFacilityMinimum.fixtureThreshold
+      ) {
         method = "small_facility_minimum";
       } else {
         method = "geographic_standard";
       }
     }
 
-    // ---- 2) Base weekly SaniClean (before components / add-ons / tier) ----
+    // ---- 2) Base weekly + trip/parking ----
     let weeklyBase = 0;
+    let weeklyTrip = 0;
 
-    if (fixtures > 0) {
-      if (method === "all_inclusive") {
-        // All-inclusive: weekly rate per fixture; no trip charge.
-        weeklyBase = fixtures * cfg.allInclusivePackage.weeklyRatePerFixture;
-      } else if (method === "small_facility_minimum") {
-        weeklyBase = cfg.smallFacilityMinimum.minimumWeeklyCharge;
+    if (method === "all_inclusive") {
+      weeklyBase = fixtures * cfg.allInclusivePackage.weeklyRatePerFixture;
+      weeklyTrip = 0; // waived
+    } else if (method === "small_facility_minimum") {
+      weeklyBase = cfg.smallFacilityMinimum.minimumWeeklyCharge;
+
+      if (cfg.smallFacilityMinimum.includesTripCharge) {
+        weeklyTrip = 0;
       } else {
-        // geographic_standard
         const geo = cfg.geographicPricing[location];
-        const fixtureWeekly = Math.max(
-          fixtures * geo.ratePerFixture,
-          geo.weeklyMinimum
-        );
-        let trip = geo.tripCharge;
-        if (location === "insideBeltway" && needsParking) {
-          trip += cfg.geographicPricing.insideBeltway.parkingFee;
-        }
-        weeklyBase = fixtureWeekly + trip;
+        const parkingAddon =
+          location === "insideBeltway" && needsParking ? geo.parkingFee : 0;
+        weeklyTrip = geo.tripCharge + parkingAddon;
       }
+    } else {
+      // geographic_standard
+      const geo = cfg.geographicPricing[location];
+      const perFixtureWeekly = fixtures * geo.ratePerFixture;
+      weeklyBase = Math.max(perFixtureWeekly, geo.weeklyMinimum);
+
+      const parkingAddon =
+        location === "insideBeltway" && needsParking ? geo.parkingFee : 0;
+      weeklyTrip = geo.tripCharge + parkingAddon;
     }
 
-    // ---- 3) Facility components (urinals, toilets, sanipods) – only non all-inclusive ----
-    const { urinals: uCfg, maleToilets: mCfg, femaleToilets: fCfg } =
-      cfg.facilityComponents;
-
+    // ---- 3) Facility components (urinals, toilets, sanipods) ----
+    let weeklyFacilityComponents = 0;
     let monthlyFacilityComponents = 0;
-    if (method !== "all_inclusive") {
-      if (urinals > 0) {
-        monthlyFacilityComponents +=
-          urinals * (uCfg.urinalScreen + uCfg.urinalMat);
-      }
-      if (maleToilets > 0) {
-        monthlyFacilityComponents +=
-          maleToilets * (mCfg.toiletClips + mCfg.seatCoverDispenser);
-      }
-      if (femaleToilets > 0) {
-        monthlyFacilityComponents +=
-          femaleToilets * fCfg.sanipodService;
-      }
-    }
 
-    const weeklyFacilityComponents =
-      monthlyFacilityComponents > 0
-        ? monthlyFacilityComponents / cfg.billingConversions.weekly.monthlyMultiplier
-        : 0;
+    const includeFacilityComponentsAsAddOns = !(
+      method === "all_inclusive" && cfg.allInclusivePackage.includeAllAddOns
+    );
+
+    if (includeFacilityComponentsAsAddOns) {
+      const u = cfg.facilityComponents.urinals;
+      const m = cfg.facilityComponents.maleToilets;
+      const f = cfg.facilityComponents.femaleToilets;
+
+      const monthlyUrinals = urinals * (u.urinalScreen + u.urinalMat);
+      const monthlyMale =
+        maleToilets * (m.toiletClips + m.seatCoverDispenser);
+      const monthlyFemale = femaleToilets * f.sanipodService;
+
+      monthlyFacilityComponents = monthlyUrinals + monthlyMale + monthlyFemale;
+
+      weeklyFacilityComponents =
+        monthlyFacilityComponents /
+        cfg.billingConversions.weekly.monthlyMultiplier;
+    }
 
     // ---- 4) Soap upgrades (weekly) ----
-    const dispenserCount = sinks * cfg.facilityComponents.sinks.ratioSinkToSoap;
+    const soapDispensers =
+      sinks * cfg.facilityComponents.sinks.ratioSinkToSoap;
+
+    const airFreshDispensers =
+      sinks > 0
+        ? Math.ceil(
+            sinks / cfg.facilityComponents.sinks.ratioSinkToAirFreshener
+          )
+        : 0;
+
+    const dispenserCount = soapDispensers + airFreshDispensers;
 
     let weeklySoapUpgrade = 0;
 
-    // Luxury upgrade on each dispenser
-    if (soapType === "luxury" && dispenserCount > 0) {
+    if (soapType === "luxury" && soapDispensers > 0) {
       weeklySoapUpgrade +=
-        dispenserCount * cfg.soapUpgrades.standardToLuxury;
+        soapDispensers * cfg.soapUpgrades.standardToLuxury;
     }
 
-    // Excess gallons beyond included weekly fill
     if (excessSoapGallonsPerWeek > 0) {
       const ratePerGallon =
         soapType === "luxury"
@@ -222,48 +298,75 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       weeklySoapUpgrade += excessSoapGallonsPerWeek * ratePerGallon;
     }
 
-    // ---- 5) Microfiber mopping (weekly) – charge only if NOT all-inclusive ----
-    let weeklyMicrofiber = 0;
-    if (
-      method !== "all_inclusive" &&
-      addMicrofiberMopping &&
-      microfiberBathrooms > 0
-    ) {
-      weeklyMicrofiber =
-        microfiberBathrooms * cfg.addOnServices.microfiberMopping.pricePerBathroom;
+    // ---- 5) Warranty fee per dispenser (weekly) ----
+    let weeklyWarranty = 0;
+    const warrantyApplies = !(
+      method === "all_inclusive" && cfg.allInclusivePackage.waiveWarrantyFees
+    );
+
+    if (warrantyApplies && dispenserCount > 0) {
+      weeklyWarranty = dispenserCount * cfg.warrantyFeePerDispenser;
     }
 
-    // ---- 6) Subtotal before rate tier ----
-    const weeklySubtotal =
-      weeklyBase + weeklyFacilityComponents + weeklySoapUpgrade + weeklyMicrofiber;
+    // ---- 6) Microfiber mopping (weekly) ----
+    let weeklyMicrofiber = 0;
+    if (
+      addMicrofiberMopping &&
+      microfiberBathrooms > 0 &&
+      method !== "all_inclusive" // included in all-inclusive
+    ) {
+      weeklyMicrofiber =
+        microfiberBathrooms *
+        cfg.addOnServices.microfiberMopping.pricePerBathroom;
+    }
 
-    // ---- 7) Apply rate tier ----
-    const tierConfig = cfg.rateTiers[rateTier];
-    const rateMultiplier = tierConfig?.multiplier ?? 1.0;
-    const weeklyTotal = weeklySubtotal * rateMultiplier;
+    // ---- 7) Paper credit / overage (weekly) ----
+    let weeklyPaperCredit = 0;
+    let weeklyPaperOverage = 0;
 
-    // ---- 8) Convert to monthly / annual ----
-    const { monthlyMultiplier, annualMultiplier } = cfg.billingConversions.weekly;
-    const monthlyTotal = weeklyTotal * monthlyMultiplier;
-    const annualTotal = weeklyTotal * annualMultiplier;
+    if (method === "all_inclusive") {
+      const paperCredit =
+        fixtures * cfg.paperCredit.creditPerFixturePerWeek;
 
-    // Effective per-visit (per weekly SaniClean visit)
-    const perVisitPrice = weeklyTotal / Math.max(visits, 1);
+      weeklyPaperCredit = paperCredit;
 
-    const calc = {
-      method,
-      weeklyBase,
-      weeklyFacilityComponents,
-      weeklySoapUpgrade,
-      weeklyMicrofiber,
-      weeklySubtotal,
-      weeklyTotal,
-      monthlyTotal,
-      annualTotal,
-      dispenserCount,
-      monthlyFacilityComponents,
-      rateMultiplier,
-    };
+      if (estimatedPaperSpendPerWeek > paperCredit) {
+        weeklyPaperOverage = estimatedPaperSpendPerWeek - paperCredit;
+      }
+    }
+
+    // ---- 8) Rate tier multiplier ----
+    const tier = cfg.rateTiers[rateTier];
+    const rateMultiplier = tier?.multiplier ?? 1;
+
+    // ---- 9) Totals ----
+    const weeklyRaw =
+      weeklyBase +
+      weeklyTrip +
+      weeklyFacilityComponents +
+      weeklySoapUpgrade +
+      weeklyWarranty +
+      weeklyMicrofiber +
+      weeklyPaperOverage -
+      weeklyPaperCredit;
+
+    const weeklySubtotal = weeklyRaw * rateMultiplier;
+
+    const weeklyTotal = weeklySubtotal;
+    const monthlyTotal =
+      weeklyTotal * cfg.billingConversions.weekly.monthlyMultiplier;
+    const annualTotal =
+      weeklyTotal * cfg.billingConversions.weekly.annualMultiplier;
+
+    const perVisitPrice =
+      visitsPerWeek > 0 ? weeklyTotal / visitsPerWeek : weeklyTotal;
+
+    const methodLabel =
+      method === "all_inclusive"
+        ? "All Inclusive"
+        : method === "small_facility_minimum"
+        ? "Small Facility Minimum"
+        : "Geographic Standard";
 
     const quote: ServiceQuoteResult = {
       serviceId: "saniclean",
@@ -271,15 +374,38 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       perVisitPrice,
       annualPrice: annualTotal,
       detailsBreakdown: [
-        `Method: ${method}`,
-        `Base weekly SaniClean: $${weeklyBase.toFixed(2)}`,
-        `Facility components (weekly eq.): $${weeklyFacilityComponents.toFixed(2)}`,
+        `Method: ${methodLabel}`,
+        `Weekly base (before trip): $${weeklyBase.toFixed(2)}`,
+        `Weekly trip/parking: $${weeklyTrip.toFixed(2)}`,
+        `Facility components (weekly eq.): $${weeklyFacilityComponents.toFixed(
+          2
+        )}`,
         `Soap upgrades (weekly): $${weeklySoapUpgrade.toFixed(2)}`,
+        `Warranty (weekly): $${weeklyWarranty.toFixed(2)}`,
         `Microfiber (weekly): $${weeklyMicrofiber.toFixed(2)}`,
-        `Rate tier multiplier: ×${rateMultiplier.toFixed(2)}`,
-        `Weekly total: $${weeklyTotal.toFixed(2)}`,
-        `Monthly total: $${monthlyTotal.toFixed(2)}`,
+        `Paper credit (weekly): -$${weeklyPaperCredit.toFixed(2)}`,
+        `Paper overage (weekly): $${weeklyPaperOverage.toFixed(2)}`,
+        `Rate tier multiplier: x${rateMultiplier.toFixed(2)}`,
       ],
+    };
+
+    const calc = {
+      method,
+      weeklyBase,
+      weeklyTrip,
+      weeklyFacilityComponents,
+      weeklySoapUpgrade,
+      weeklyWarranty,
+      weeklyMicrofiber,
+      weeklyPaperCredit,
+      weeklyPaperOverage,
+      weeklySubtotal,
+      weeklyTotal,
+      monthlyTotal,
+      annualTotal,
+      dispenserCount,
+      monthlyFacilityComponents,
+      rateMultiplier,
     };
 
     return { quote, calc };

@@ -67,6 +67,14 @@ export interface RpmWindowPricingConfig {
   };
 }
 
+// Extra custom lines added with the + button
+export interface RpmExtraChargeLine {
+  id: string;
+  calcText: string;
+  description: string;
+  amount: number; // per-visit extra charge (already in “this frequency” units)
+}
+
 // Form state used by the frontend
 export interface RpmWindowsFormState extends BaseServiceFormState {
   // quantities
@@ -83,7 +91,10 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
   tripCharge: number;
 
   // pricing choices
-  isFirstTimeInstall: boolean;           // new install? -> use installMultiplierFirstTime
+  isFirstTimeInstall: boolean;           // new install?
   selectedRateCategory: RpmRateCategory; // "redRate" / "greenRate"
   includeMirrors: boolean;               // flag only; price not yet changed
+
+  // extra custom per-visit charges (added via + button)
+  extraCharges: RpmExtraChargeLine[];
 }

@@ -1,6 +1,6 @@
 // src/features/services/saniscrub/useSaniscrubCalc.ts
 import { useMemo, useState } from "react";
-import type {ChangeEvent} from 'react';
+import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { SaniscrubFormState, SaniscrubFrequency } from "./saniscrubTypes";
 import {
@@ -16,9 +16,9 @@ const DEFAULT_FORM: SaniscrubFormState = {
   hasSaniClean: true,
   location: "insideBeltway",
   needsParking: false,
-  includeInstall: false,
-  isDirtyInstall: true,
   tripChargeIncluded: true,
+  includeInstall: false,
+  isDirtyInstall: false,
   notes: "",
 };
 
@@ -40,25 +40,50 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     const { name, value, type, checked } = e.target as any;
 
     setForm((prev) => {
-      switch (name) {
+      switch (name as keyof SaniscrubFormState) {
+        case "fixtureCount":
+        case "nonBathroomSqFt": {
+          const num = parseFloat(String(value));
+          return {
+            ...prev,
+            [name]: Number.isFinite(num) && num > 0 ? num : 0,
+          };
+        }
+
         case "frequency":
-          return { ...prev, frequency: clampFrequency(value) };
+          return {
+            ...prev,
+            frequency: clampFrequency(String(value)),
+          };
 
         case "hasSaniClean":
         case "needsParking":
+        case "tripChargeIncluded":
         case "includeInstall":
         case "isDirtyInstall":
-        case "tripChargeIncluded":
-          return { ...prev, [name]: !!checked };
-
-        case "fixtureCount":
-        case "nonBathroomSqFt":
-          return { ...prev, [name]: Number(value) || 0 };
+          return {
+            ...prev,
+            [name]: type === "checkbox" ? !!checked : Boolean(value),
+          };
 
         case "location":
           return {
             ...prev,
-            location: value === "insideBeltway" ? "insideBeltway" : "outsideBeltway",
+            location:
+              value === "outsideBeltway" ? "outsideBeltway" : "insideBeltway",
+          };
+
+        case "notes":
+          return {
+            ...prev,
+            notes: String(value ?? ""),
+          };
+
+        case "serviceId":
+          // Normally fixed, but keep it safe
+          return {
+            ...prev,
+            serviceId: value as any,
           };
 
         default:
@@ -80,86 +105,99 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     perVisitEffective,
     installOneTime,
   } = useMemo(() => {
-    const freq = form.frequency;
-    const freqMeta = cfg.frequencyMeta[freq];
-    const visitsPerYear = freqMeta.visitsPerYear || 12;
+    const freq = clampFrequency(form.frequency);
+
+    // IMPORTANT:
+    // 2× / month is only a special SaniScrub program WHEN SaniClean is also sold.
+    // If SaniClean is NOT sold, treat "twicePerMonth" like straight monthly
+    // for all math (visits/year, non-bathroom, trip, etc.).
+    const effectiveFreq: SaniscrubFrequency =
+      freq === "twicePerMonth" && !form.hasSaniClean ? "monthly" : freq;
+
+    const freqMeta = cfg.frequencyMeta[effectiveFreq];
+    const visitsPerYear = freqMeta?.visitsPerYear ?? 12;
+
+    const fixtureCount = form.fixtureCount ?? 0;
+    const nonBathSqFt = form.nonBathroomSqFt ?? 0;
+
+    // Service is "on" if we have either fixtures or non-bathroom area
+    const serviceActive = fixtureCount > 0 || nonBathSqFt > 0;
 
     // --- 1) Fixtures (bathroom SaniScrub) monthly price ---
+    // Only apply minimums when we actually have fixtures.
     let fixtureMonthly = 0;
 
-    if (freq === "monthly") {
-      // Monthly: $25/fixture or $175 min
-      const baseMonthly = Math.max(
-        form.fixtureCount * cfg.fixtureRates.monthly,
-        cfg.minimums.monthly
-      );
-      fixtureMonthly = baseMonthly;
-    } else if (freq === "twicePerMonth") {
-      // 2x month: "Combine with Sani. -$15 from what the monthly charge would be."
-      const baseMonthly = Math.max(
-        form.fixtureCount * cfg.fixtureRates.monthly,
-        cfg.minimums.monthly
-      );
-      const discount = form.hasSaniClean
-        ? form.fixtureCount * cfg.twicePerMonthDiscountPerFixture
-        : 0;
-      fixtureMonthly = Math.max(baseMonthly - discount, 0);
-    } else {
-      // Bimonthly / Quarterly: use per-visit rate, then convert to monthly
-      const perVisitRate = cfg.fixtureRates[freq];
-      const perVisitMin = cfg.minimums[freq];
-      const perVisitFixture = Math.max(
-        form.fixtureCount * perVisitRate,
-        perVisitMin
-      );
-      fixtureMonthly = (perVisitFixture * visitsPerYear) / 12;
+    if (fixtureCount > 0) {
+      if (freq === "twicePerMonth" && form.hasSaniClean) {
+        // 2× / month with SaniClean:
+        // base monthly rate 25 - 15 discount = 10 per fixture,
+        // but still respect the $175 monthly minimum.
+        const baseRate = cfg.fixtureRates.monthly;
+        const discount = cfg.twoTimesPerMonthDiscountPerFixture;
+        const effectiveRate = Math.max(baseRate - discount, 0);
+
+        const raw = fixtureCount * effectiveRate;
+        const minimum = cfg.minimums.monthly;
+        fixtureMonthly = Math.max(raw, minimum);
+      } else {
+        const rate = cfg.fixtureRates[effectiveFreq];
+        const minimum = cfg.minimums[effectiveFreq];
+
+        const raw = fixtureCount * rate;
+        fixtureMonthly = Math.max(raw, minimum);
+      }
     }
 
-    // --- 2) Non-bathroom floors (rule: first 500 sq ft = 250, then 125 per 500) ---
+    // --- 2) Non-bathroom area pricing ---
+    // Rule: first 500 sq ft = $250, each additional 500 sq ft = $125.
     let nonBathroomPerVisit = 0;
     let nonBathroomMonthly = 0;
 
-    if (form.nonBathroomSqFt > 0) {
-      const units = Math.ceil(form.nonBathroomSqFt / cfg.nonBathroom.unitSqFt);
+    if (nonBathSqFt > 0) {
+      const units = Math.ceil(nonBathSqFt / cfg.nonBathroomUnitSqFt);
       if (units > 0) {
+        const extraUnits = Math.max(units - 1, 0);
         nonBathroomPerVisit =
-          cfg.nonBathroom.firstUnitPrice +
-          (units - 1) * cfg.nonBathroom.additionalUnitPrice;
+          cfg.nonBathroomFirstUnitRate +
+          extraUnits * cfg.nonBathroomAdditionalUnitRate;
+        nonBathroomMonthly = (nonBathroomPerVisit * visitsPerYear) / 12;
       }
-
-      nonBathroomMonthly = (nonBathroomPerVisit * visitsPerYear) / 12;
     }
 
-    // --- 3) Base monthly SaniScrub (bath + non-bath, no trip, no install) ---
+    // --- 3) Base monthly (fixtures + non-bathroom, no trip, no install) ---
     const monthlyBase = fixtureMonthly + nonBathroomMonthly;
 
     // --- 4) Trip charge ($8 + parking) converted to monthly ---
-    const perVisitTrip =
-      form.tripChargeIncluded && monthlyBase > 0
-        ? cfg.tripChargeBase +
-          (form.location === "insideBeltway" && form.needsParking
-            ? cfg.parkingFee
-            : 0)
-        : 0;
+    let perVisitTrip = 0;
+    let monthlyTrip = 0;
 
-    const monthlyTrip = (perVisitTrip * visitsPerYear) / 12;
+    if (serviceActive && form.tripChargeIncluded && monthlyBase > 0) {
+      perVisitTrip =
+        cfg.tripChargeBase +
+        (form.location === "insideBeltway" && form.needsParking
+          ? cfg.parkingFee
+          : 0);
+      monthlyTrip = (perVisitTrip * visitsPerYear) / 12;
+    }
 
     // --- 5) Recurring totals (trip included) ---
     const monthlyTotal = monthlyBase + monthlyTrip;
     const annualTotal = monthlyTotal * 12;
 
-    // Effective per visit price
+    // Per-visit effective rate across the year
     const perVisitEffective =
-      visitsPerYear > 0 ? (monthlyTotal * 12) / visitsPerYear : 0;
+      serviceActive && visitsPerYear > 0
+        ? annualTotal / visitsPerYear
+        : 0;
 
-    // --- 6) Install: 3× (dirty) or 1× (clean) of *monthlyBase* as a one-time job ---
-    let installOneTime = 0;
-    if (form.includeInstall && monthlyBase > 0) {
-      const mult = form.isDirtyInstall
-        ? cfg.installMultipliers.dirty
-        : cfg.installMultipliers.clean;
-      installOneTime = monthlyBase * mult;
-    }
+    // --- 6) Install cost (one-time job) ---
+    const installOneTime =
+      serviceActive && form.includeInstall
+        ? monthlyBase *
+          (form.isDirtyInstall
+            ? cfg.installMultipliers.dirty
+            : cfg.installMultipliers.clean)
+        : 0;
 
     return {
       fixtureMonthly,
@@ -176,19 +214,15 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     };
   }, [form]);
 
-  const quote: ServiceQuoteResult = {
-    serviceId: "saniscrub",
-    displayName: "SaniScrub",
-    perVisitPrice: perVisitEffective,
-    annualPrice: annualTotal,
-    detailsBreakdown: [
-      `Fixtures monthly: $${fixtureMonthly.toFixed(2)}`,
-      `Non-bathroom floors monthly: $${nonBathroomMonthly.toFixed(2)}`,
-      `Trip (monthly): $${monthlyTrip.toFixed(2)}`,
-      `Install (one-time): $${installOneTime.toFixed(2)}`,
-      `Visits per year: ${visitsPerYear}`,
-    ],
-  };
+  const quote: ServiceQuoteResult = useMemo(
+    () => ({
+      serviceId: form.serviceId,
+      perVisit: perVisitEffective,
+      monthly: monthlyTotal,
+      annual: annualTotal,
+    }),
+    [form.serviceId, perVisitEffective, monthlyTotal, annualTotal]
+  );
 
   return {
     form,

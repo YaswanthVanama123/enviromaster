@@ -3,22 +3,56 @@ import React from "react";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
 import type { SaniscrubFormState } from "./saniscrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
-import { saniscrubPricingConfig as cfg } from "./saniscrubConfig";
+import {
+  saniscrubPricingConfig as cfg,
+  saniscrubFrequencyLabels,
+} from "./saniscrubConfig";
 
+/**
+ * SaniScrub form
+ *
+ * This is 100% driven by the JSON + rules:
+ *  - fixtures priced per frequency (with minimums)
+ *  - optional non-bathroom sq ft blocks (250/125 rule)
+ *  - 2×/month discount when combined with SaniClean
+ *  - trip charge based on location + parking
+ *  - install = 1× clean / 3× dirty
+ */
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onQuoteChange }) => {
   const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
 
-  // For display: per-fixture "headline" rate based on frequency
-  const displayFixtureRate =
-    form.frequency === "monthly"
-      ? cfg.fixtureRates.monthly
-      : form.frequency === "twicePerMonth"
-      ? cfg.fixtureRates.twicePerMonth
-      : form.frequency === "bimonthly"
-      ? cfg.fixtureRates.bimonthly
-      : cfg.fixtureRates.quarterly;
+  // Push quote up to parent aggregator whenever it changes
+  React.useEffect(() => {
+    if (onQuoteChange) {
+      onQuoteChange(quote);
+    }
+  }, [onQuoteChange, quote]);
+
+  // Headline per-fixture rate for the UI row
+  const displayFixtureRate = (() => {
+    if (form.frequency === "monthly") {
+      return cfg.fixtureRates.monthly;
+    }
+    if (form.frequency === "twicePerMonth") {
+      // With SaniClean we show the discounted *incremental* rate
+      if (form.hasSaniClean) {
+        const base = cfg.fixtureRates.monthly;
+        const eff = Math.max(
+          base - cfg.twoTimesPerMonthDiscountPerFixture,
+          0
+        );
+        return eff;
+      }
+      // Fallback: behave like plain monthly rate
+      return cfg.fixtureRates.twicePerMonth;
+    }
+    if (form.frequency === "bimonthly") {
+      return cfg.fixtureRates.bimonthly;
+    }
+    return cfg.fixtureRates.quarterly;
+  })();
 
   const fixtureLineTotal = form.fixtureCount * displayFixtureRate;
 
@@ -26,12 +60,13 @@ export const SaniscrubForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">SANISCRUB</div>
+        {/* keep + button consistent with other cards (add/duplicate later if needed) */}
         <button type="button" className="svc-mini" aria-label="add">
           +
         </button>
       </div>
 
-      {/* Combined with SaniClean (needed for 2x month discount) */}
+      {/* Combined with SaniClean (needed for 2× month discount) */}
       <div className="svc-row">
         <label>Combined with SaniClean?</label>
         <div className="svc-row-right">
@@ -62,8 +97,8 @@ export const SaniscrubForm: React.FC<
           <input
             className="svc-in"
             type="number"
-            value={displayFixtureRate}
             readOnly
+            value={displayFixtureRate}
           />
           <span>=</span>
           <input
@@ -72,6 +107,17 @@ export const SaniscrubForm: React.FC<
             readOnly
             value={`$${fixtureLineTotal.toFixed(2)}`}
           />
+        </div>
+      </div>
+
+      {/* Minimum reminder row */}
+      <div className="svc-row svc-row-note">
+        <label></label>
+        <div className="svc-row-right">
+          <span className="svc-micro-note">
+            Minimums: Monthly/2× = ${cfg.minimums.monthly} ·
+            Bi-Monthly/Quarterly = ${cfg.minimums.bimonthly}
+          </span>
         </div>
       </div>
 
@@ -117,17 +163,20 @@ export const SaniscrubForm: React.FC<
             value={form.frequency}
             onChange={onChange}
           >
-            <option value="monthly">Monthly</option>
-            <option value="twicePerMonth">2× / Month (with Sani)</option>
-            <option value="bimonthly">Every 2 Months</option>
-            <option value="quarterly">Quarterly</option>
+            {Object.entries(saniscrubFrequencyLabels).map(
+              ([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              )
+            )}
           </select>
         </div>
       </div>
 
-      {/* Location + Parking (trip charge logic) */}
+      {/* Trip charge: location + parking */}
       <div className="svc-row">
-        <label>Trip & Location</label>
+        <label>Trip &amp; Location</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -146,23 +195,16 @@ export const SaniscrubForm: React.FC<
               checked={form.needsParking}
               onChange={onChange}
             />
-            <span>Parking Needed</span>
-          </label>
-
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="tripChargeIncluded"
-              checked={!!form.tripChargeIncluded}
-              onChange={onChange}
-            />
-            <span>Include Trip</span>
+            <span>Parking Needed (+${cfg.parkingFee})</span>
           </label>
         </div>
       </div>
 
       {/* Install (3× dirty / 1× clean) – one-time job */}
-      <div className="svc-row">
+      {/* <div className="svc-row"> */}
+      {/* Install (3× dirty / 1× clean) – one-time job */}
+<div className="svc-row svc-row-install">
+
         <label>Install Quote</label>
         <div className="svc-row-right">
           <label className="svc-inline">
@@ -172,7 +214,7 @@ export const SaniscrubForm: React.FC<
               checked={form.includeInstall}
               onChange={onChange}
             />
-            <span>Include Install</span>
+            <span>Install</span>
           </label>
           <label className="svc-inline">
             <input
@@ -187,12 +229,16 @@ export const SaniscrubForm: React.FC<
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${calc.installOneTime.toFixed(2)} one-time`}
+            value={
+              calc.installOneTime > 0
+                ? `$${calc.installOneTime.toFixed(2)} one-time`
+                : "$0 one-time"
+            }
           />
         </div>
       </div>
 
-      {/* Totals – same layout style */}
+      {/* Totals – match SaniClean/RPM layout */}
       <div className="svc-row svc-row-charge">
         <label>Monthly SaniScrub</label>
         <div className="svc-row-right">
@@ -224,7 +270,7 @@ export const SaniscrubForm: React.FC<
       </div>
 
       <div className="svc-row svc-row-charge">
-        <label>Effective Per Visit</label>
+        <label>Per-Visit Effective</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>

@@ -1,7 +1,8 @@
 .center-align{
   display: grid;
-  width: 100%;
+
   justify-content: center;
+  margin: 30px;
 }
 
 /* html, body, #root{

@@ -10,40 +10,25 @@ import type {
 import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
 
 const DEFAULT_FORM: RpmWindowsFormState = {
-  // quantities
   smallQty: 0,
   mediumQty: 0,
   largeQty: 0,
-
-  // WEEKLY base rates (both sides)
   smallWindowRate: cfg.smallWindowRate,
   mediumWindowRate: cfg.mediumWindowRate,
   largeWindowRate: cfg.largeWindowRate,
-
-  // WEEKLY base trip charge
   tripCharge: cfg.tripCharge,
-
-  // options
   isFirstTimeInstall: false,
   selectedRateCategory: "redRate",
   includeMirrors: false,
-
-  // base service fields
+  extraCharges: [],
   frequency: "weekly",
   tripChargeIncluded: true,
   notes: "",
 };
 
 function mapFrequency(v: string): RpmFrequencyKey {
-  if (
-    v === "weekly" ||
-    v === "biweekly" ||
-    v === "monthly" ||
-    v === "quarterly"
-  ) {
-    return v;
-  }
-  return "monthly";
+  if (v === "weekly" || v === "biweekly" || v === "monthly" || v === "quarterly") return v;
+  return "weekly";
 }
 
 function getFrequencyMultiplier(freq: RpmFrequencyKey): number {
@@ -54,21 +39,13 @@ function getAnnualFrequency(freq: RpmFrequencyKey): number {
   return cfg.annualFrequencies[freq] ?? 0;
 }
 
-function getMonthlyConversion(freq: RpmFrequencyKey): number {
-  if (freq === "weekly") return cfg.monthlyConversions.weekly;
-  const annual = getAnnualFrequency(freq);
-  return annual ? annual / 12 : 0;
-}
-
 export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   const [form, setForm] = useState<RpmWindowsFormState>({
     ...DEFAULT_FORM,
     ...initial,
   });
 
-  const onChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, checked } = e.target as any;
 
     setForm((prev) => {
@@ -77,31 +54,24 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           return { ...prev, frequency: mapFrequency(value) };
 
         case "selectedRateCategory":
-          return {
-            ...prev,
-            selectedRateCategory: value as RpmRateCategory,
-          };
+          return { ...prev, selectedRateCategory: value as RpmRateCategory };
 
         case "includeMirrors":
           return { ...prev, includeMirrors: !!checked };
 
-        // quantities
         case "smallQty":
         case "mediumQty":
         case "largeQty":
           return { ...prev, [name]: Number(value) || 0 };
 
-        // rate + trip inputs show FREQUENCY-ADJUSTED values.
-        // Convert back to WEEKLY base for storage.
+        // convert UI “this frequency” rates back to weekly base
         case "smallWindowRate":
         case "mediumWindowRate":
         case "largeWindowRate":
         case "tripCharge": {
-          const freqKey = mapFrequency(prev.frequency);
-          const freqMult = getFrequencyMultiplier(freqKey) || 1;
+          const freqMult = getFrequencyMultiplier(mapFrequency(prev.frequency)) || 1;
           const displayVal = Number(value) || 0;
-          const weeklyBase = displayVal / freqMult;
-          return { ...prev, [name]: weeklyBase };
+          return { ...prev, [name]: displayVal / freqMult };
         }
 
         default:
@@ -110,110 +80,152 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     });
   };
 
+  // + Button handlers
+  const addExtraCharge = () => {
+    setForm((prev) => ({
+      ...prev,
+      extraCharges: [
+        ...prev.extraCharges,
+        {
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          calcText: "",
+          description: "",
+          amount: 0,
+        },
+      ],
+    }));
+  };
+
+  const updateExtraCharge = (
+    id: string,
+    field: "calcText" | "description" | "amount",
+    value: string
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      extraCharges: prev.extraCharges.map((line) =>
+        line.id === id
+          ? { ...line, [field]: field === "amount" ? Number(value) || 0 : value }
+          : line
+      ),
+    }));
+  };
+
+  const removeExtraCharge = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      extraCharges: prev.extraCharges.filter((line) => line.id !== id),
+    }));
+  };
+
   const calc = useMemo(() => {
     const freqKey = mapFrequency(form.frequency);
     const freqMult = getFrequencyMultiplier(freqKey) || 1;
 
-    // 1) WEEKLY base (not frequency adjusted)
-    const weeklySmallRate = form.smallWindowRate;
-    const weeklyMediumRate = form.mediumWindowRate;
-    const weeklyLargeRate = form.largeWindowRate;
+    const weeklySmall = form.smallWindowRate;
+    const weeklyMedium = form.mediumWindowRate;
+    const weeklyLarge = form.largeWindowRate;
     const weeklyTrip = form.tripCharge;
 
-    const weeklyWindowsBase =
-      form.smallQty * weeklySmallRate +
-      form.mediumQty * weeklyMediumRate +
-      form.largeQty * weeklyLargeRate;
+    // Weekly base window cost
+    const weeklyWindows =
+      form.smallQty * weeklySmall +
+      form.mediumQty * weeklyMedium +
+      form.largeQty * weeklyLarge;
 
-    const hasWindows = weeklyWindowsBase > 0;
+    const hasWindows = weeklyWindows > 0;
 
-    // ✅ Only bill trip + service when there is at least one window
-    const weeklyServiceBase = hasWindows
-      ? weeklyWindowsBase + weeklyTrip
-      : 0;
-
-    // 2) Frequency-adjusted effective rates (for UI display & line totals)
-    const effSmallRate = weeklySmallRate * freqMult;
-    const effMediumRate = weeklyMediumRate * freqMult;
-    const effLargeRate = weeklyLargeRate * freqMult;
+    // Frequency-adjusted (this is what we show in the UI)
+    const effSmall = weeklySmall * freqMult;
+    const effMedium = weeklyMedium * freqMult;
+    const effLarge = weeklyLarge * freqMult;
     const effTrip = weeklyTrip * freqMult;
 
-    const baseWindowCost =
-      form.smallQty * effSmallRate +
-      form.mediumQty * effMediumRate +
-      form.largeQty * effLargeRate;
+    // Per-visit, at chosen frequency
+    const perVisitWindows =
+      form.smallQty * effSmall +
+      form.mediumQty * effMedium +
+      form.largeQty * effLarge;
 
-    // 3) NORMAL RECURRING PER-VISIT (for that frequency, BEFORE red/green)
-    const recurringPerVisitBase = weeklyServiceBase * freqMult;
+    const perVisitService = hasWindows ? perVisitWindows + effTrip : 0;
 
-    // 4) FIRST-TIME INSTALL = 3× FOR THE FREQUENCY
-    let firstVisitBase = recurringPerVisitBase;
-    let installOneTimeBase = 0;
+    const extrasTotal = form.extraCharges.reduce(
+      (s, l) => s + (l.amount || 0),
+      0
+    );
 
-    if (form.isFirstTimeInstall && hasWindows) {
-      const firstMult = cfg.installMultiplierFirstTime; // 3
-      firstVisitBase = recurringPerVisitBase * firstMult; // 3 × frequency price
-      installOneTimeBase = firstVisitBase - recurringPerVisitBase; // extra one-time
-    }
+    const recurringPerVisitBase = perVisitService + extrasTotal;
 
-    // 5) Apply Red / Green rate
     const rateCfg =
       cfg.rateCategories[form.selectedRateCategory] ??
       cfg.rateCategories.redRate;
 
     const recurringPerVisitRated = recurringPerVisitBase * rateCfg.multiplier;
-    const firstVisitTotalRated = firstVisitBase * rateCfg.multiplier;
+
+    // INSTALLATION FEE — ALWAYS WEEKLY WINDOW ×3 (NO FREQUENCY MULTIPLIER)
+    const installOneTimeBase =
+      form.isFirstTimeInstall && hasWindows
+        ? weeklyWindows * cfg.installMultiplierFirstTime
+        : 0;
+
     const installOneTime = installOneTimeBase * rateCfg.multiplier;
 
-    // 6) Annual + Monthly
-    const annualFreq = getAnnualFrequency(freqKey);
-    const annualBillRated =
-      recurringPerVisitRated * annualFreq + installOneTime;
+    // FIRST VISIT = INSTALL (weekly) + FIRST SERVICE (frequency adjusted), all rated
+    const firstVisitTotalRated =
+      (installOneTimeBase + perVisitService) * rateCfg.multiplier;
 
-    const monthlyConv = getMonthlyConversion(freqKey);
-    const monthlyBillRated = recurringPerVisitRated * monthlyConv;
+    // ANNUAL using config (weekly=52, biweekly=26, monthly=12, quarterly=4)
+    const annualVisits = getAnnualFrequency(freqKey);
+    const annualBillRated =
+      recurringPerVisitRated * annualVisits + installOneTime;
+
+    // MONTHLY VISITS (simple weeks model)
+    // weekly    -> 4 visits / month  (4 weeks)
+    // biweekly  -> 2 visits / month  (every 2 weeks)
+    // monthly   -> 1 visit / month   (every 4 weeks)
+    // quarterly -> we will NOT show monthly (0 here, UI hides row)
+    let monthlyVisits = 0;
+    if (freqKey === "weekly") monthlyVisits = 4;
+    else if (freqKey === "biweekly") monthlyVisits = 2;
+    else if (freqKey === "monthly") monthlyVisits = 1;
+    else if (freqKey === "quarterly") monthlyVisits = 0; // no monthly form for quarterly
+
+    const monthlyBase = recurringPerVisitRated * monthlyVisits;
+
+    // Monthly = recurring + ONE-TIME install (only when first time)
+    const monthlyBillRated = form.isFirstTimeInstall
+      ? monthlyBase + installOneTime
+      : monthlyBase;
 
     return {
-      freqMult,
-      weeklyServiceBase,
-      baseWindowCost,
-      effSmallRate,
-      effMediumRate,
-      effLargeRate,
+      effSmall,
+      effMedium,
+      effLarge,
       effTrip,
-      recurringPerVisitBase,
-      recurringPerVisitRated,   // recurring / from next time
-      firstVisitTotalRated,     // first-time total = install + normal
-      installOneTime,           // extra portion (for annual math)
+      recurringPerVisitRated,
+      installOneTime,
+      firstVisitTotalRated,
       annualBillRated,
       monthlyBillRated,
     };
   }, [form]);
 
-  // ⬇️ CHANGE HERE:
-  // "Total Price (Per Visit)" should be NEXT TIME value (recurring),
-  // not first-time.
-  const perVisitForQuote = calc.recurringPerVisitRated;
-
   const quote: ServiceQuoteResult = {
     serviceId: "rpmWindows",
     displayName: "RPM Window",
-    perVisitPrice: perVisitForQuote,
+    perVisitPrice: calc.recurringPerVisitRated,
     annualPrice: calc.annualBillRated,
-    detailsBreakdown: [
-      `Weekly base (windows + trip): $${calc.weeklyServiceBase.toFixed(2)}`,
-      `Frequency x${calc.freqMult.toFixed(2)}`,
-      `Install one-time (extra): $${calc.installOneTime.toFixed(2)}`,
-      `Rate tier: ${form.selectedRateCategory}`,
-      `Monthly (approx): $${calc.monthlyBillRated.toFixed(2)}`,
-    ],
+    detailsBreakdown: [],
   };
 
   return {
     form,
     setForm,
     onChange,
-    quote,
+    addExtraCharge,
+    updateExtraCharge,
+    removeExtraCharge,
     calc,
+    quote,
   };
 }

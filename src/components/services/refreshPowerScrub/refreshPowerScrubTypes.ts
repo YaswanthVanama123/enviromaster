@@ -1,34 +1,52 @@
 // src/features/services/refreshPowerScrub/refreshPowerScrubTypes.ts
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
-export type RefreshAreaType =
-  | "kitchen"
-  | "frontOfHouse"
-  | "patio"
-  | "dumpster";
+export type RefreshPricingMethod = "area_specific" | "hourly" | "square_footage";
+export type RefreshRateType = "red_rate" | "green_rate";
+export type RefreshKitchenSize = "smallMedium" | "large";
+export type RefreshPatioMode = "standalone" | "upsell";
 
-export interface RefreshPowerScrubFormState extends BaseServiceFormState {
-  // existing pricing inputs
-  areaType: RefreshAreaType;
-  hours: number;
+export type RefreshAreaKey =
+  | "dumpster"
+  | "patio"
+  | "walkway"
+  | "foh"
+  | "boh"
+  | "other";
+
+// Each column (Dumpster, Patio, Walkway, FOH, BOH, Other) has its own calc config
+export interface RefreshAreaCalcState {
+  pricingMethod: RefreshPricingMethod;
   workers: number;
-  hourlyRatePerWorker: number;
+  hours: number;
+  insideSqFt: number;
+  outsideSqFt: number;
+  kitchenSize: RefreshKitchenSize;
+  patioMode: RefreshPatioMode;
+  // purely for header table – free-text such as "Monthly", "Quarterly", etc.
+  freqText: string;
+}
+
+// Full Refresh Power Scrub form state
+export interface RefreshPowerScrubFormState extends BaseServiceFormState {
+  rateType: RefreshRateType;
   tripCharge: number;
   minimumVisit: number;
 
-  // NEW: header-table dollar amounts
-  dumpsterAmount: number;
-  patioAmount: number;
-  walkwayAmount: number;
-  fohAmount: number;
-  bohAmount: number;
-  otherAmount: number;
+  dumpster: RefreshAreaCalcState;
+  patio: RefreshAreaCalcState;
+  walkway: RefreshAreaCalcState;
+  foh: RefreshAreaCalcState;
+  boh: RefreshAreaCalcState;
+  other: RefreshAreaCalcState;
+}
 
-  // NEW: header-table frequencies (text like "Weekly", "Monthly")
-  dumpsterFreq: string;
-  patioFreq: string;
-  walkwayFreq: string;
-  fohFreq: string;
-  bohFreq: string;
-  otherFreq: string;
+// Per-column per-visit totals used by the header table
+export interface RefreshAreaTotals {
+  dumpster: number;
+  patio: number;
+  walkway: number;
+  foh: number;
+  boh: number;
+  other: number;
 }

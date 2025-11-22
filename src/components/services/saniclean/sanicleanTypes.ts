@@ -1,129 +1,141 @@
 // src/features/services/saniclean/sanicleanTypes.ts
-import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type SanicleanLocation = "insideBeltway" | "outsideBeltway";
-
+export type SanicleanSoapType = "standard" | "luxury";
 export type SanicleanPricingMode =
   | "auto"
   | "all_inclusive"
   | "geographic_standard";
-
 export type SanicleanRateTier = "redRate" | "greenRate";
 
-export type SanicleanSoapType = "standard" | "luxury";
+// Back-compat aliases (used by some older helpers)
+export type LocationKey = SanicleanLocation;
+export type SoapType = SanicleanSoapType;
+export type PricingMode = SanicleanPricingMode;
 
 export interface SanicleanPricingConfig {
+  // Inside vs outside beltway per-fixture pricing
   geographicPricing: {
     insideBeltway: {
-      ratePerFixture: number;
-      weeklyMinimum: number;
-      tripCharge: number;
-      parkingFee: number;
+      ratePerFixture: number; // $7 / fixture weekly
+      weeklyMinimum: number; // $40 minimum
+      tripCharge: number; // weekly trip charge
+      parkingFee: number; // additional parking / week if needed
     };
     outsideBeltway: {
-      ratePerFixture: number;
+      ratePerFixture: number; // $6 / fixture weekly
       weeklyMinimum: number;
       tripCharge: number;
     };
   };
 
+  // For 4–5 or fewer fixtures, $50/wk minimum including trip
   smallFacilityMinimum: {
-    fixtureThreshold: number;
-    minimumWeeklyCharge: number;
+    fixtureThreshold: number; // e.g., 5 fixtures
+    minimumWeeklyCharge: number; // $50/week includes trip
     includesTripCharge: boolean;
   };
 
-  // We will treat this as a WEEKLY rate per fixture (doc example: 20 × 4.2 ≈ 84/mo)
+  // All-inclusive bundle
   allInclusivePackage: {
-    weeklyRatePerFixture: number;
-    waiveTripCharge: boolean;
-    waiveWarrantyFees: boolean;
+    weeklyRatePerFixture: number; // $20 / fixture / week (≈ $900/mo for 11 fixtures)
+    includeAllAddOns: boolean; // drains, mopping, etc. conceptually bundled
+    waiveTripCharge: boolean; // no trip charge
+    waiveWarrantyFees: boolean; // no $1/wk warranty fee
+    autoAllInclusiveMinFixtures: number; // if fixtures >= this and pricingMode=auto -> all-inclusive
   };
 
+  // Soap upgrade + over-usage
   soapUpgrades: {
-    standardToLuxury: number; // $/dispenser/week
+    standardToLuxury: number; // $5 / dispenser / week
     excessUsageCharges: {
-      standardSoap: number; // $/gallon
-      luxurySoap: number; // $/gallon
+      standardSoap: number; // $13 / gallon / week
+      luxurySoap: number; // $30 / gallon / week
     };
   };
 
+  // Warranty fee per dispenser (air freshener + soap)
+  warrantyFeePerDispenser: number; // $1 / wk / dispenser
+
+  // Paper credit for all-inclusive
+  paperCredit: {
+    creditPerFixturePerWeek: number; // $5 credit / fixture / week
+  };
+
+  // Facility components that are normally charged separately
   facilityComponents: {
     urinals: {
-      urinalScreen: number; // $/month
-      urinalMat: number;    // $/month
+      urinalScreen: number; // monthly rate / urinal
+      urinalMat: number; // monthly rate / urinal
     };
     maleToilets: {
-      toiletClips: number;         // $/month
-      seatCoverDispenser: number;  // $/month
+      toiletClips: number; // monthly rate / toilet
+      seatCoverDispenser: number; // monthly rate / toilet
     };
     femaleToilets: {
-      sanipodService: number;      // $/month
+      sanipodService: number; // monthly rate / female toilet
     };
     sinks: {
-      ratioSinkToSoap: number;
+      ratioSinkToSoap: number; // sinks : soap dispensers (e.g., 1:1)
+      ratioSinkToAirFreshener: number; // sinks : air fresheners (e.g., 2:1)
     };
   };
 
   addOnServices: {
     microfiberMopping: {
-      pricePerBathroom: number; // $/bathroom/week
-    };
-  };
-
-  tripChargeRules: {
-    alwaysInclude: boolean;
-    waiveForAllInclusive: boolean;
-    smallFacilityInclusion: boolean;
-  };
-
-  rateTiers: {
-    redRate: {
-      multiplier: number;
-    };
-    greenRate: {
-      multiplier: number;
+      pricePerBathroom: number; // $10 / bathroom / week
     };
   };
 
   billingConversions: {
     weekly: {
-      annualMultiplier: number;
-      monthlyMultiplier: number;
+      monthlyMultiplier: number; // e.g., 4.09
+      annualMultiplier: number; // e.g., 50
     };
   };
 
-  autoAllInclusiveMinFixtures: number;
+  rateTiers: Record<
+    SanicleanRateTier,
+    {
+      multiplier: number; // pricing multiplier
+      commissionRate: number; // sales commission %
+    }
+  >;
+
+  valueProposition: string[];
 }
 
-export interface SanicleanFormState extends BaseServiceFormState {
+export interface SanicleanFormState {
   serviceId: "saniclean";
 
-  // Core facility / geography
+  // derived total fixtures
   fixtureCount: number;
+
+  // geo + logistics
   location: SanicleanLocation;
   needsParking: boolean;
-
-  // How we choose pricing logic
   pricingMode: SanicleanPricingMode;
 
-  // Facility breakdown for components + dispensers
+  // fixture breakdown
   sinks: number;
   urinals: number;
   maleToilets: number;
   femaleToilets: number;
 
-  // Soap & upgrades
+  // soap
   soapType: SanicleanSoapType;
   excessSoapGallonsPerWeek: number;
 
-  // Microfiber mopping as an add-on
+  // microfiber mopping
   addMicrofiberMopping: boolean;
   microfiberBathrooms: number;
 
-  // Rate tier
+  // paper usage (for all-inclusive credit)
+  estimatedPaperSpendPerWeek: number; // $ / week
+
+  // rate tier
   rateTier: SanicleanRateTier;
 
-  // Notes (from BaseServiceFormState)
+  // freeform notes
   notes: string;
 }

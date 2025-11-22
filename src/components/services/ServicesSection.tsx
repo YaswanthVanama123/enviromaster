@@ -45,10 +45,11 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         />
         <RpmWindowsForm initialData={initialServices?.rpmWindows} />
         <SanipodForm initialData={initialServices?.sanipod} />
-        <RefreshPowerScrubForm
+
+      </div>
+              <RefreshPowerScrubForm
           initialData={initialServices?.refreshPowerScrub}
         />
-      </div>
     </section>
   );
 };
