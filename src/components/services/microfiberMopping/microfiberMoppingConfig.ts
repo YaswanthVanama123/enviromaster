@@ -72,8 +72,8 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
 
   billingConversions: {
     weekly: {
-      annualMultiplier: 50, // treat as ~50 service weeks / year
-      monthlyMultiplier: 50 / 12,
+      annualMultiplier: 52, // treat as ~50 service weeks / year
+      monthlyMultiplier: 4,
     },
     biweekly: {
       annualMultiplier: 25,
@@ -83,8 +83,8 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
       annualMultiplier: 12,
       monthlyMultiplier: 1,
     },
-    actualWeeksPerYear: 52.18,
-    actualWeeksPerMonth: 4.35,
+    actualWeeksPerYear: 52,
+    actualWeeksPerMonth: 4,
   },
 
   pricingRules: {

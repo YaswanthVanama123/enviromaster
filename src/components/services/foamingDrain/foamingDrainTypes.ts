@@ -8,38 +8,64 @@ export type FoamingDrainCondition = "normal" | "filthy";
 export interface FoamingDrainFormState {
   serviceId: "foamingDrain";
 
-  // Core counts (from customerInput)
+  // Core counts
   standardDrainCount: number; // normal floor drains
   greaseTrapCount: number;    // grease traps
   greenDrainCount: number;    // green drains
 
-  // Frequency and site info
-  frequency: FoamingDrainFrequency;         // weekly / bimonthly
-  facilityCondition: FoamingDrainCondition; // normal / filthy
-  location: FoamingDrainLocation;           // beltway / standard
+  // Of the standard drains, how many are filthy (3× install)?
+  // If facilityCondition = "filthy" and this is 0, we treat ALL standard drains as filthy.
+  filthyDrainCount: number;
 
-  // Boolean toggles from rules
-  needsPlumbing: boolean;         // plumbingWorkAddon ($10 / drain)
+  // Frequency and site info
+  frequency: FoamingDrainFrequency;
+  facilityCondition: FoamingDrainCondition;
+  location: FoamingDrainLocation;
+
+  // Trip charge: optional override (if undefined we use config / location)
+  tripChargeOverride?: number;
+
+  // Plumbing
+  needsPlumbing: boolean;
+  plumbingDrainCount: number; // how many drains need plumbing (+$10/drain)
+
   /**
-   * Alternative pricing toggle:
-   * - < 10 drains  → $20 + $4/drain weekly equivalent
-   * - 10+ drains + weekly → $10/week per drain + standard install waived
+   * Alternative small-job weekly pricing:
+   *   - Weekly
+   *   - <10 drains
+   *   => $20 + $4/drain
    */
-  useAlternativePricing: boolean;
+  useSmallAltPricingWeekly: boolean;
+
   /**
-   * All-inclusive: standard drains included (no extra charge),
-   * trip waived; special drains (green / grease traps) still billed.
+   * Big-account alternative:
+   *   - Weekly
+   *   - 10+ drains
+   *   => $10/week per drain, install waived
+   */
+  useBigAccountTenWeekly: boolean;
+
+  /**
+   * All-inclusive: standard drains included (no charge), trip waived.
+   * Grease traps & green drains still billed separately.
    */
   isAllInclusive: boolean;
 
-  // Free text notes
+  /**
+   * Grease trap install is "if possible" per rules, so we make it optional.
+   * When true: apply min $300 / $150 per trap rule.
+   * When false: no grease trap install is charged.
+   */
+  chargeGreaseTrapInstall: boolean;
+
+  // Notes
   notes: string;
 }
 
 export interface FoamingDrainBreakdown {
   pricingModel: "standard" | "alternative" | "volume";
 
-  // Weekly (or per-service) pieces
+  // Weekly (per-visit) pieces
   weeklyStandardDrains: number;
   weeklyPlumbingAddon: number;
   weeklyGreaseTraps: number;
@@ -53,8 +79,11 @@ export interface FoamingDrainBreakdown {
   greaseTrapInstall: number;
   greenDrainInstall: number;
   installationTotal: number;
+
+  // Flags
   volumePricingApplied: boolean;
-  usedAlternativePricing: boolean;
+  usedSmallAlt: boolean;
+  usedBigAccountAlt: boolean;
 
   // Trip & billing
   tripCharge: number;
@@ -72,10 +101,15 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   standardDrainCount: number;
   greaseTrapCount: number;
   greenDrainCount: number;
+  filthyDrainCount: number;
 
   isAllInclusive: boolean;
   needsPlumbing: boolean;
-  useAlternativePricing: boolean;
+  plumbingDrainCount: number;
+
+  useSmallAltPricingWeekly: boolean;
+  useBigAccountTenWeekly: boolean;
+  chargeGreaseTrapInstall: boolean;
 
   weeklyService: number;
   weeklyTotal: number;
