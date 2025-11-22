@@ -2,40 +2,37 @@
 import React from "react";
 import { useSanipodCalc } from "./useSanipodCalc";
 import type { SanipodFormState } from "./useSanipodCalc";
+import { sanipodPricingConfig as cfg } from "./sanipodConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
+
+const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
 export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
 }) => {
   const { form, onChange, calc } = useSanipodCalc(initialData);
 
+  // Derive weekly line amounts from calc result
+  const pods = Math.max(0, form.podQuantity || 0);
+  const bags = Math.max(0, form.extraBagsPerWeek || 0);
+
+  // Base weekly bag amount at red rate (from config: 2$/bag/wk)
+  const bagLineWeekly = bags * cfg.extraBagPrice;
+
+  // Decide the label that appears after "@"
+  const ruleLabel =
+    calc.chosenServiceRule === "perPod8" ? "8" : "3+40";
+
   return (
     <div className="svc-card">
       {/* Header row */}
       <div className="svc-h-row">
-        <div className="svc-h">SaniPod</div>
+        <div className="svc-h">SANIPOD (STANDALONE ONLY)</div>
       </div>
 
-      {/* Service mode */}
+      {/* Frequency used only for per-visit view */}
       <div className="svc-row">
-        <label>Service Mode</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="serviceMode"
-            value={form.serviceMode}
-            onChange={onChange}
-          >
-            <option value="standalone">Standalone (trip charge)</option>
-            <option value="withSaniClean">Bundled with SaniClean</option>
-            <option value="allInclusive">All-Inclusive Program</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Frequency (used only for per-visit math) */}
-      <div className="svc-row">
-        <label>Frequency</label>
+        <label>Frequency (for per-visit view)</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -50,66 +47,79 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Pod quantity */}
+      {/* SaniPods line – the rule chosen is what we show after '@' */}
       <div className="svc-row">
-        <label>No of SaniPods</label>
+        <label>No. of SaniPods</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in svc-in-small"
             type="number"
             min={0}
             name="podQuantity"
             value={form.podQuantity}
             onChange={onChange}
           />
+          <span className="svc-multi">@</span>
+          <span className="svc-rate">{ruleLabel}</span>
+          <span className="svc-small">$/wk</span>
+          <span className="svc-eq">=</span>
+          <span className="svc-dollar">
+            ${fmt(calc.weeklyPodServiceRed)}
+          </span>
         </div>
       </div>
 
-      {/* Extra bags per week */}
+      {/* Extra bags line */}
       <div className="svc-row">
-        <label>Extra Bags per Week</label>
+        <label>
+          Extra Bags per Week{" "}
+          {/* <span className="svc-small">(above 1 refill/wk included)</span> */}
+        </label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in svc-in-small"
             type="number"
             min={0}
             name="extraBagsPerWeek"
             value={form.extraBagsPerWeek}
             onChange={onChange}
           />
+          <span className="svc-multi">@</span>
+          <span className="svc-rate">{cfg.extraBagPrice}</span>
+          <span className="svc-small">$/bag/wk</span>
+          <span className="svc-eq">=</span>
+          <span className="svc-dollar">
+            ${fmt(bagLineWeekly)}
+          </span>
         </div>
       </div>
 
-      {/* Location + parking (standalone trip logic) */}
+      {/* Trip charge row */}
       <div className="svc-row">
-        <label>Location</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="location"
-            value={form.location}
-            onChange={onChange}
-          >
-            <option value="insideBeltway">Inside Beltway</option>
-            <option value="outsideBeltway">Outside Beltway</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="svc-row">
-        <label>Parking Needed</label>
+        <label>Trip Charge</label>
         <div className="svc-row-right">
           <input
-            type="checkbox"
-            name="needsParking"
-            checked={form.needsParking}
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="tripChargePerVisit"
+            value={form.tripChargePerVisit}
             onChange={onChange}
-          />{" "}
-          <span className="svc-small">Add parking surcharge to trip</span>
+          />
+          <span className="svc-small">$/visit</span>
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="includeTrip"
+              checked={form.includeTrip}
+              onChange={onChange}
+            />{" "}
+            Include
+          </label>
         </div>
       </div>
 
-      {/* Install options */}
+      {/* Install toggle */}
       <div className="svc-row">
         <label>New Install?</label>
         <div className="svc-row-right">
@@ -119,25 +129,37 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             checked={form.isNewInstall}
             onChange={onChange}
           />{" "}
-          <span className="svc-small">
-            $25/pod install, multiplied for dirty conditions
-          </span>
+          <span className="svc-small">$25 / pod (one-time install)</span>
         </div>
       </div>
 
+      {/* Install details */}
       {form.isNewInstall && (
         <div className="svc-row">
-          <label>Install Condition</label>
+          <label>Install Pods</label>
           <div className="svc-row-right">
-            <select
-              className="svc-in"
-              name="installType"
-              value={form.installType}
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              min={0}
+              name="installQuantity"
+              value={form.installQuantity}
               onChange={onChange}
-            >
-              <option value="clean">Clean / Normal (1×)</option>
-              <option value="dirty">Dirty / Filthy (3×)</option>
-            </select>
+            />
+            <span className="svc-multi">@</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="installRatePerPod"
+              value={form.installRatePerPod}
+              onChange={onChange}
+            />
+            <span className="svc-small">$/pod install</span>
+            <span className="svc-eq">=</span>
+            <span className="svc-dollar">
+              ${fmt(calc.installCost)}
+            </span>
           </div>
         </div>
       )}
@@ -152,71 +174,33 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={form.rateCategory}
             onChange={onChange}
           >
-            <option value="redRate">Red</option>
+            <option value="redRate">Red (base)</option>
             <option value="greenRate">Green (+30%)</option>
           </select>
         </div>
       </div>
 
-      {/* Optional extras (not priced here yet, but kept on the form) */}
-      {/* <div className="svc-row">
-        <label>Toilet Clips Qty</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="number"
-            min={0}
-            name="toiletClipsQty"
-            value={form.toiletClipsQty}
-            onChange={onChange}
-          />
-        </div>
-      </div>
-
-      <div className="svc-row">
-        <label>Seat Cover Dispensers Qty</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="number"
-            min={0}
-            name="seatCoverDispensersQty"
-            value={form.seatCoverDispensersQty}
-            onChange={onChange}
-          />
-        </div>
-      </div> */}
-
-      {/* Results */}
+      {/* Totals */}
       <div className="svc-row svc-row-total">
-        <label>Per Visit (service + trip)</label>
+        <label>Per Visit (Service + Trip + Install)</label>
         <div className="svc-dollar">
-          ${calc.perVisit.toFixed(2)}
+          ${fmt(calc.perVisit)}
         </div>
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>Monthly Recurring</label>
+        <label>Monthly Recurring (1st Year incl. Install)</label>
         <div className="svc-dollar">
-          ${calc.monthly.toFixed(2)}
+          ${fmt(calc.monthly)}
         </div>
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>Annual Recurring</label>
+        <label>Annual (Service + Trip + Install)</label>
         <div className="svc-dollar">
-          ${calc.annual.toFixed(2)}
+          ${fmt(calc.annual)}
         </div>
       </div>
-
-      {calc.installCost > 0 && (
-        <div className="svc-row svc-row-total">
-          <label>Install (one-time)</label>
-          <div className="svc-dollar">
-            ${calc.installCost.toFixed(2)}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
