@@ -1,195 +1,167 @@
-// src/features/services/refreshPowerScrub/RefreshPowerScrubForm.tsx
 import React from "react";
 import { useRefreshPowerScrubCalc } from "./useRefreshPowerScrubCalc";
-import type { RefreshPowerScrubFormState } from "./refreshPowerScrubTypes";
+import type {
+  RefreshAreaKey,
+  RefreshPowerScrubFormState,
+} from "./refreshPowerScrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import {
-  REFRESH_DEFAULT_MIN,
   REFRESH_FOH_RATE,
   REFRESH_KITCHEN_LARGE,
   REFRESH_KITCHEN_SMALL_MED,
+  REFRESH_PATIO_STANDALONE,
+  REFRESH_PATIO_UPSELL,
 } from "./refreshPowerScrubConfig";
-import './refreshPowerScrub.css'
+import "./refreshPowerScrub.css";
 
-const formatAmount = (n: number): string =>
-  n > 0 ? n.toFixed(2) : "";
+const formatAmount = (n: number): string => n.toFixed(2);
+
+const FREQ_OPTIONS = [
+  "",
+  "Weekly",
+  "Bi-weekly",
+  "Monthly",
+  "Quarterly",
+  "One-time",
+];
+
+const AREA_ORDER: RefreshAreaKey[] = [
+  "dumpster",
+  "patio",
+  "walkway",
+  "foh",
+  "boh",
+  "other",
+];
 
 export const RefreshPowerScrubForm: React.FC<
   ServiceInitialData<RefreshPowerScrubFormState>
 > = ({ initialData }) => {
-  const { form, onChange, setAreaField, areaTotals } =
-    useRefreshPowerScrubCalc(initialData);
+  const {
+    form,
+    setTripCharge,
+    setHourlyRate,
+    setMinimumVisit,
+    toggleAreaEnabled,
+    setAreaField,
+    areaTotals,
+  } = useRefreshPowerScrubCalc(initialData);
+
+  // For each column, show the default rule price so the user
+  // knows the starting point even before typing anything.
+  const getPresetAmount = (areaKey: RefreshAreaKey): number => {
+    switch (areaKey) {
+      case "dumpster":
+        // Default is the minimum visit (e.g. $475)
+        return form.minimumVisit;
+
+      case "patio":
+        return form.patio.patioMode === "upsell"
+          ? REFRESH_PATIO_UPSELL
+          : REFRESH_PATIO_STANDALONE;
+
+      case "foh":
+        return REFRESH_FOH_RATE;
+
+      case "boh":
+        return form.boh.kitchenSize === "large"
+          ? REFRESH_KITCHEN_LARGE
+          : REFRESH_KITCHEN_SMALL_MED;
+
+      case "walkway":
+      case "other":
+      default:
+        // These are usually custom – no fixed preset
+        return 0;
+    }
+  };
 
   return (
     <div className="svc-card svc-card-wide refresh-rps">
       <div className="svc-h-row">
         <div className="svc-h">REFRESH POWER SCRUB</div>
-        <button type="button" className="svc-mini" aria-label="add">
-          +
-        </button>
+      </div>
+
+      {/* Global rule controls */}
+      <div className="rps-config-row">
+        <div className="rps-inline">
+          <span className="rps-label">Trip Charge</span>
+          <span>$</span>
+          <input
+            type="number"
+            className="rps-line rps-num"
+            value={form.tripCharge}
+            onChange={(e) => setTripCharge(e.target.value)}
+          />
+        </div>
+        <div className="rps-inline">
+          <span className="rps-label">Hourly Rate</span>
+          <span>$</span>
+          <input
+            type="number"
+            className="rps-line rps-num"
+            value={form.hourlyRate}
+            onChange={(e) => setHourlyRate(e.target.value)}
+          />
+          <span>/hr/worker</span>
+        </div>
+        <div className="rps-inline">
+          <span className="rps-label">Minimum Visit</span>
+          <span>$</span>
+          <input
+            type="number"
+            className="rps-line rps-num"
+            value={form.minimumVisit}
+            onChange={(e) => setMinimumVisit(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="rps-wrap rps-wrap-full">
         <table className="rps rps-full">
           <tbody>
-            {/* Rate tier row inside SAME table (spans all columns) */}
+            {/* Row 1 – Area names + enable checkbox */}
             <tr>
-              <td colSpan={6}>
-                <div className="rps-inline">
-                  <span className="rps-label">Rate Tier</span>
-                  <select
-                    className="rps-line"
-                    name="rateType"
-                    value={form.rateType}
-                    onChange={onChange}
-                  >
-                    <option value="red_rate">Red (standard)</option>
-                    <option value="green_rate">
-                      Green (+30% premium)
-                    </option>
-                  </select>
-                </div>
-              </td>
+              {AREA_ORDER.map((areaKey) => (
+                <td key={`head-${areaKey}`}>
+                  <label className="rps-area-header">
+                    <input
+                      type="checkbox"
+                      checked={form[areaKey].enabled}
+                      onChange={(e) =>
+                        toggleAreaEnabled(areaKey, e.target.checked)
+                      }
+                    />
+                    <span className="rps-label-strong">
+                      {areaKey === "dumpster"
+                        ? "DUMPSTER"
+                        : areaKey === "patio"
+                        ? "PATIO"
+                        : areaKey === "walkway"
+                        ? "WALKWAY"
+                        : areaKey === "foh"
+                        ? "FRONT OF HOUSE"
+                        : areaKey === "boh"
+                        ? "BACK OF HOUSE"
+                        : "OTHER"}
+                    </span>
+                  </label>
+                </td>
+              ))}
             </tr>
 
-            {/* CALC ROW 1: Pricing method for each column */}
+            {/* Row 2 – Preset rule summary + selector fields */}
             <tr>
-              {/* Dumpster */}
+              {/* DUMPSTER */}
               <td>
                 <div className="rps-inline">
-                  <span className="rps-label">Dumpster Mode</span>
-                  <select
-                    className="rps-line"
-                    value={form.dumpster.pricingMethod}
-                    onChange={(e) =>
-                      setAreaField(
-                        "dumpster",
-                        "pricingMethod",
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="area_specific">Area</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="square_footage">Sq Ft</option>
-                  </select>
+                  <span className="rps-label">
+                    Default: Min ${formatAmount(getPresetAmount("dumpster"))}
+                  </span>
                 </div>
               </td>
 
-              {/* Patio */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Patio Mode</span>
-                  <select
-                    className="rps-line"
-                    value={form.patio.pricingMethod}
-                    onChange={(e) =>
-                      setAreaField(
-                        "patio",
-                        "pricingMethod",
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="area_specific">Area</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="square_footage">Sq Ft</option>
-                  </select>
-                </div>
-              </td>
-
-              {/* Walkway */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Walkway Mode</span>
-                  <select
-                    className="rps-line"
-                    value={form.walkway.pricingMethod}
-                    onChange={(e) =>
-                      setAreaField(
-                        "walkway",
-                        "pricingMethod",
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="area_specific">Area</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="square_footage">Sq Ft</option>
-                  </select>
-                </div>
-              </td>
-
-              {/* FOH */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">FOH Mode</span>
-                  <select
-                    className="rps-line"
-                    value={form.foh.pricingMethod}
-                    onChange={(e) =>
-                      setAreaField("foh", "pricingMethod", e.target.value)
-                    }
-                  >
-                    <option value="area_specific">Area</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="square_footage">Sq Ft</option>
-                  </select>
-                </div>
-              </td>
-
-              {/* BOH */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">BOH Mode</span>
-                  <select
-                    className="rps-line"
-                    value={form.boh.pricingMethod}
-                    onChange={(e) =>
-                      setAreaField("boh", "pricingMethod", e.target.value)
-                    }
-                  >
-                    <option value="area_specific">Area</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="square_footage">Sq Ft</option>
-                  </select>
-                </div>
-              </td>
-
-              {/* Other */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Other Mode</span>
-                  <select
-                    className="rps-line"
-                    value={form.other.pricingMethod}
-                    onChange={(e) =>
-                      setAreaField(
-                        "other",
-                        "pricingMethod",
-                        e.target.value
-                      )
-                    }
-                  >
-                    <option value="area_specific">Area</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="square_footage">Sq Ft</option>
-                  </select>
-                </div>
-              </td>
-            </tr>
-
-            {/* CALC ROW 2: Area-specific core options per column */}
-            <tr>
-              {/* Dumpster – minimum visit */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Min</span>
-                  <span>${REFRESH_DEFAULT_MIN}</span>
-                </div>
-              </td>
-
-              {/* Patio – upsell vs standalone */}
+              {/* PATIO */}
               <td>
                 <div className="rps-inline">
                   <span className="rps-label">Patio Type</span>
@@ -200,40 +172,40 @@ export const RefreshPowerScrubForm: React.FC<
                       setAreaField("patio", "patioMode", e.target.value)
                     }
                   >
-                    <option value="standalone">Standalone</option>
-                    <option value="upsell">Upsell</option>
+                    <option value="standalone">
+                      Standalone (${REFRESH_PATIO_STANDALONE})
+                    </option>
+                    <option value="upsell">
+                      Upsell (+${REFRESH_PATIO_UPSELL})
+                    </option>
                   </select>
                 </div>
-              </td>
-
-              {/* Walkway – outside sq ft (for area / sq-ft) */}
-              <td>
                 <div className="rps-inline">
-                  <span className="rps-label">Outside Sq Ft</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.walkway.outsideSqFt}
-                    onChange={(e) =>
-                      setAreaField(
-                        "walkway",
-                        "outsideSqFt",
-                        e.target.value
-                      )
-                    }
-                  />
+                  <span className="rps-label">
+                    Default: ${formatAmount(getPresetAmount("patio"))}
+                  </span>
                 </div>
               </td>
 
-              {/* FOH – fixed rate */}
+              {/* WALKWAY */}
               <td>
                 <div className="rps-inline">
-                  <span className="rps-label">FOH Fixed</span>
-                  <span>${REFRESH_FOH_RATE}</span>
+                  <span className="rps-label">
+                    Use sq-ft (outside) below
+                  </span>
                 </div>
               </td>
 
-              {/* BOH – kitchen size */}
+              {/* FRONT OF HOUSE */}
+              <td>
+                <div className="rps-inline">
+                  <span className="rps-label">
+                    Default: ${formatAmount(getPresetAmount("foh"))}
+                  </span>
+                </div>
+              </td>
+
+              {/* BACK OF HOUSE */}
               <td>
                 <div className="rps-inline">
                   <span className="rps-label">Kitchen Size</span>
@@ -241,11 +213,7 @@ export const RefreshPowerScrubForm: React.FC<
                     className="rps-line"
                     value={form.boh.kitchenSize}
                     onChange={(e) =>
-                      setAreaField(
-                        "boh",
-                        "kitchenSize",
-                        e.target.value
-                      )
+                      setAreaField("boh", "kitchenSize", e.target.value)
                     }
                   >
                     <option value="smallMedium">
@@ -256,194 +224,100 @@ export const RefreshPowerScrubForm: React.FC<
                     </option>
                   </select>
                 </div>
+                <div className="rps-inline">
+                  <span className="rps-label">
+                    Default: ${formatAmount(getPresetAmount("boh"))}
+                  </span>
+                </div>
               </td>
 
-              {/* Other – freeform sq-ft inside (if needed) */}
+              {/* OTHER */}
               <td>
                 <div className="rps-inline">
-                  <span className="rps-label">Inside Sq Ft</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.other.insideSqFt}
-                    onChange={(e) =>
-                      setAreaField(
-                        "other",
-                        "insideSqFt",
-                        e.target.value
-                      )
-                    }
-                  />
+                  <span className="rps-label">
+                    Custom – use hours or sq-ft
+                  </span>
                 </div>
               </td>
             </tr>
 
-            {/* CALC ROW 3: Hourly workers × hours per column */}
+            {/* Row 3 – Hourly fields (W×H) */}
             <tr>
-              {/* Dumpster */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">W×H</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.dumpster.workers}
-                    onChange={(e) =>
-                      setAreaField(
-                        "dumpster",
-                        "workers",
-                        e.target.value
-                      )
-                    }
-                  />
-                  <span>×</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.dumpster.hours}
-                    onChange={(e) =>
-                      setAreaField(
-                        "dumpster",
-                        "hours",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              </td>
-
-              {/* Patio */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">W×H</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.patio.workers}
-                    onChange={(e) =>
-                      setAreaField("patio", "workers", e.target.value)
-                    }
-                  />
-                  <span>×</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.patio.hours}
-                    onChange={(e) =>
-                      setAreaField("patio", "hours", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
-
-              {/* Walkway */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">W×H</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.walkway.workers}
-                    onChange={(e) =>
-                      setAreaField(
-                        "walkway",
-                        "workers",
-                        e.target.value
-                      )
-                    }
-                  />
-                  <span>×</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.walkway.hours}
-                    onChange={(e) =>
-                      setAreaField("walkway", "hours", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
-
-              {/* FOH */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">W×H</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.foh.workers}
-                    onChange={(e) =>
-                      setAreaField("foh", "workers", e.target.value)
-                    }
-                  />
-                  <span>×</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.foh.hours}
-                    onChange={(e) =>
-                      setAreaField("foh", "hours", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
-
-              {/* BOH */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">W×H</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.boh.workers}
-                    onChange={(e) =>
-                      setAreaField("boh", "workers", e.target.value)
-                    }
-                  />
-                  <span>×</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.boh.hours}
-                    onChange={(e) =>
-                      setAreaField("boh", "hours", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
-
-              {/* Other */}
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">W×H</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.other.workers}
-                    onChange={(e) =>
-                      setAreaField("other", "workers", e.target.value)
-                    }
-                  />
-                  <span>×</span>
-                  <input
-                    className="rps-line"
-                    type="number"
-                    value={form.other.hours}
-                    onChange={(e) =>
-                      setAreaField("other", "hours", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
+              {AREA_ORDER.map((areaKey) => (
+                <td key={`wh-${areaKey}`}>
+                  <div className="rps-inline">
+                    <span className="rps-label">W×H</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      value={form[areaKey].workers}
+                      onChange={(e) =>
+                        setAreaField(
+                          areaKey,
+                          "workers",
+                          e.target.value
+                        )
+                      }
+                    />
+                    <span>×</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      value={form[areaKey].hours}
+                      onChange={(e) =>
+                        setAreaField(areaKey, "hours", e.target.value)
+                      }
+                    />
+                  </div>
+                </td>
+              ))}
             </tr>
 
-            {/* AMOUNT ROW: Dumpster $ | Patio $ | Walkway $ | FOH $ | BOH $ | Other $ */}
+            {/* Row 4 – Sq-ft fields (Inside @ Outside) */}
+            <tr>
+              {AREA_ORDER.map((areaKey) => (
+                <td key={`sq-${areaKey}`}>
+                  <div className="rps-inline">
+                    <span className="rps-label">Sq Ft</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      placeholder="Inside"
+                      value={form[areaKey].insideSqFt}
+                      onChange={(e) =>
+                        setAreaField(
+                          areaKey,
+                          "insideSqFt",
+                          e.target.value
+                        )
+                      }
+                    />
+                    <span>@</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      placeholder="Outside"
+                      value={form[areaKey].outsideSqFt}
+                      onChange={(e) =>
+                        setAreaField(
+                          areaKey,
+                          "outsideSqFt",
+                          e.target.value
+                        )
+                      }
+                    />
+                  </div>
+                </td>
+              ))}
+            </tr>
+
+            {/* Row 5 – Amounts (auto-calculated) */}
             <tr>
               <td>
                 <div className="rps-inline">
                   <span className="rps-label">Dumpster $</span>
                   <input
-                    className="rps-line"
+                    className="rps-line rps-num"
                     type="text"
                     readOnly
                     value={formatAmount(areaTotals.dumpster)}
@@ -454,7 +328,7 @@ export const RefreshPowerScrubForm: React.FC<
                 <div className="rps-inline">
                   <span className="rps-label">Patio $</span>
                   <input
-                    className="rps-line"
+                    className="rps-line rps-num"
                     type="text"
                     readOnly
                     value={formatAmount(areaTotals.patio)}
@@ -465,7 +339,7 @@ export const RefreshPowerScrubForm: React.FC<
                 <div className="rps-inline">
                   <span className="rps-label">Walkway $</span>
                   <input
-                    className="rps-line"
+                    className="rps-line rps-num"
                     type="text"
                     readOnly
                     value={formatAmount(areaTotals.walkway)}
@@ -476,7 +350,7 @@ export const RefreshPowerScrubForm: React.FC<
                 <div className="rps-inline">
                   <span className="rps-label">FOH $</span>
                   <input
-                    className="rps-line"
+                    className="rps-line rps-num"
                     type="text"
                     readOnly
                     value={formatAmount(areaTotals.foh)}
@@ -487,7 +361,7 @@ export const RefreshPowerScrubForm: React.FC<
                 <div className="rps-inline">
                   <span className="rps-label">BOH $</span>
                   <input
-                    className="rps-line"
+                    className="rps-line rps-num"
                     type="text"
                     readOnly
                     value={formatAmount(areaTotals.boh)}
@@ -498,7 +372,7 @@ export const RefreshPowerScrubForm: React.FC<
                 <div className="rps-inline">
                   <span className="rps-label">Other $</span>
                   <input
-                    className="rps-line"
+                    className="rps-line rps-num"
                     type="text"
                     readOnly
                     value={formatAmount(areaTotals.other)}
@@ -507,102 +381,32 @@ export const RefreshPowerScrubForm: React.FC<
               </td>
             </tr>
 
-            {/* FREQ ROW: Freq under each column */}
+            {/* Row 6 – Frequency dropdowns (for display only) */}
             <tr>
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Freq</span>
-                  <input
-                    className="rps-line"
-                    type="text"
-                    value={form.dumpster.freqText}
-                    onChange={(e) =>
-                      setAreaField(
-                        "dumpster",
-                        "freqText",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              </td>
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Freq</span>
-                  <input
-                    className="rps-line"
-                    type="text"
-                    value={form.patio.freqText}
-                    onChange={(e) =>
-                      setAreaField(
-                        "patio",
-                        "freqText",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              </td>
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Freq</span>
-                  <input
-                    className="rps-line"
-                    type="text"
-                    value={form.walkway.freqText}
-                    onChange={(e) =>
-                      setAreaField(
-                        "walkway",
-                        "freqText",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              </td>
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Freq</span>
-                  <input
-                    className="rps-line"
-                    type="text"
-                    value={form.foh.freqText}
-                    onChange={(e) =>
-                      setAreaField("foh", "freqText", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Freq</span>
-                  <input
-                    className="rps-line"
-                    type="text"
-                    value={form.boh.freqText}
-                    onChange={(e) =>
-                      setAreaField("boh", "freqText", e.target.value)
-                    }
-                  />
-                </div>
-              </td>
-              <td>
-                <div className="rps-inline">
-                  <span className="rps-label">Freq</span>
-                  <input
-                    className="rps-line"
-                    type="text"
-                    value={form.other.freqText}
-                    onChange={(e) =>
-                      setAreaField(
-                        "other",
-                        "freqText",
-                        e.target.value
-                      )
-                    }
-                  />
-                </div>
-              </td>
+              {AREA_ORDER.map((areaKey) => (
+                <td key={`freq-${areaKey}`}>
+                  <div className="rps-inline">
+                    <span className="rps-label">Freq</span>
+                    <select
+                      className="rps-line"
+                      value={form[areaKey].frequencyLabel}
+                      onChange={(e) =>
+                        setAreaField(
+                          areaKey,
+                          "frequencyLabel",
+                          e.target.value
+                        )
+                      }
+                    >
+                      {FREQ_OPTIONS.map((opt) => (
+                        <option value={opt} key={opt || "blank"}>
+                          {opt || "-"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </td>
+              ))}
             </tr>
           </tbody>
         </table>

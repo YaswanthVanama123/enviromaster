@@ -1,4 +1,3 @@
-// src/features/services/saniscrub/useSaniscrubCalc.ts
 import { useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
@@ -87,6 +86,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
   const {
     fixtureMonthly,
+    fixturePerVisit,
+    fixtureRawForMinimum,
+    fixtureMinimumApplied,
     nonBathroomPerVisit,
     nonBathroomMonthly,
     monthlyBase,
@@ -99,42 +101,85 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     installOneTime,
   } = useMemo(() => {
     const freq = clampFrequency(form.frequency);
-
-    // 2× / month special behavior only when combined with SaniClean
-    const effectiveFreq: SaniscrubFrequency =
-      freq === "twicePerMonth" && !form.hasSaniClean ? "monthly" : freq;
-
-    const freqMeta = cfg.frequencyMeta[effectiveFreq];
-    const visitsPerYear = freqMeta?.visitsPerYear ?? 12;
+    const visitsPerYear = cfg.frequencyMeta[freq]?.visitsPerYear ?? 12;
 
     const fixtureCount = form.fixtureCount ?? 0;
     const nonBathSqFt = form.nonBathroomSqFt ?? 0;
-
     const serviceActive = fixtureCount > 0 || nonBathSqFt > 0;
 
-    // --- 1) Fixtures ---
+    // ---------------- 1) Bathroom fixtures ----------------
     let fixtureMonthly = 0;
+    let fixturePerVisit = 0;
+    let fixtureRawForMinimum = 0;
+    let fixtureMinimumApplied = 0;
 
     if (fixtureCount > 0) {
-      if (freq === "twicePerMonth" && form.hasSaniClean) {
-        // your current 2× / month logic (25 - 15 = 10/fixture, with 175 min)
-        const baseRate = cfg.fixtureRates.monthly;
-        const discount = cfg.twoTimesPerMonthDiscountPerFixture;
-        const effectiveRate = Math.max(baseRate - discount, 0);
+      const baseMonthlyRate = cfg.fixtureRates.monthly; // 25
+      const baseMonthlyMin = cfg.minimums.monthly;       // 175
+      const rawMonthlyAtBase = fixtureCount * baseMonthlyRate;
+      const baseMonthlyWithMin = Math.max(rawMonthlyAtBase, baseMonthlyMin);
 
-        const raw = fixtureCount * effectiveRate;
-        const minimum = cfg.minimums.monthly;
-        fixtureMonthly = Math.max(raw, minimum);
+      if (freq === "monthly") {
+        // Monthly: $25/fixture or $175 minimum (per MONTH)
+        fixtureMonthly = baseMonthlyWithMin;
+        fixturePerVisit = baseMonthlyWithMin; // 1 visit / month
+
+        fixtureRawForMinimum = rawMonthlyAtBase;
+        if (rawMonthlyAtBase > 0 && rawMonthlyAtBase <= baseMonthlyMin) {
+          fixtureMinimumApplied = baseMonthlyMin;
+        }
+      } else if (freq === "twicePerMonth") {
+        // 2×/month: normal monthly (with 175 minimum), then 2×, then -$15 if SaniClean.
+        let twiceMonthly = baseMonthlyWithMin * 2;
+        if (form.hasSaniClean) {
+          twiceMonthly = Math.max(
+            0,
+            twiceMonthly - cfg.twoTimesPerMonthDiscountFlat
+          );
+        }
+
+        fixtureMonthly = twiceMonthly;
+        // convert that monthly to per-visit using 24 visits/year
+        fixturePerVisit = (fixtureMonthly * 12) / visitsPerYear;
+
+        fixtureRawForMinimum = rawMonthlyAtBase;
+        if (rawMonthlyAtBase > 0 && rawMonthlyAtBase <= baseMonthlyMin) {
+          fixtureMinimumApplied = baseMonthlyMin;
+        }
+      } else if (freq === "bimonthly") {
+        // Bi-Monthly: $35 / fixture, $250 minimum PER VISIT
+        const perVisitRate = cfg.fixtureRates.bimonthly; // 35
+        const perVisitMin = cfg.minimums.bimonthly;       // 250
+
+        const rawPerVisit = fixtureCount * perVisitRate;
+        const perVisitCharge = Math.max(rawPerVisit, perVisitMin);
+
+        fixturePerVisit = perVisitCharge;
+        fixtureMonthly = (perVisitCharge * visitsPerYear) / 12;
+
+        fixtureRawForMinimum = rawPerVisit;
+        if (rawPerVisit > 0 && rawPerVisit <= perVisitMin) {
+          fixtureMinimumApplied = perVisitMin;
+        }
       } else {
-        const rate = cfg.fixtureRates[effectiveFreq];
-        const minimum = cfg.minimums[effectiveFreq];
+        // Quarterly: $40 / fixture, $250 minimum PER VISIT
+        const perVisitRate = cfg.fixtureRates.quarterly; // 40
+        const perVisitMin = cfg.minimums.quarterly;       // 250
 
-        const raw = fixtureCount * rate;
-        fixtureMonthly = Math.max(raw, minimum);
+        const rawPerVisit = fixtureCount * perVisitRate;
+        const perVisitCharge = Math.max(rawPerVisit, perVisitMin);
+
+        fixturePerVisit = perVisitCharge;
+        fixtureMonthly = (perVisitCharge * visitsPerYear) / 12;
+
+        fixtureRawForMinimum = rawPerVisit;
+        if (rawPerVisit > 0 && rawPerVisit <= perVisitMin) {
+          fixtureMinimumApplied = perVisitMin;
+        }
       }
     }
 
-    // --- 2) Non-bathroom area ---
+    // ---------------- 2) Non-bathroom Sq Ft ----------------
     let nonBathroomPerVisit = 0;
     let nonBathroomMonthly = 0;
 
@@ -145,31 +190,31 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         nonBathroomPerVisit =
           cfg.nonBathroomFirstUnitRate +
           extraUnits * cfg.nonBathroomAdditionalUnitRate;
-        nonBathroomMonthly = (nonBathroomPerVisit * visitsPerYear) / 12;
+
+        nonBathroomMonthly =
+          (nonBathroomPerVisit * visitsPerYear) / 12;
       }
     }
 
-    // --- 3) Base monthly (fixtures + non-bathroom, no trip, no install) ---
-    const monthlyBase = fixtureMonthly + nonBathroomMonthly;
-
-    // --- 4) Trip charge ($8 + parking) converted to monthly ---
+    // ---------------- 3) Trip charge ----------------
     let perVisitTrip = 0;
     let monthlyTrip = 0;
 
-    if (serviceActive && form.tripChargeIncluded && monthlyBase > 0) {
+    if (serviceActive && form.tripChargeIncluded) {
       perVisitTrip =
         cfg.tripChargeBase +
         (form.location === "insideBeltway" && form.needsParking
           ? cfg.parkingFee
           : 0);
+
       monthlyTrip = (perVisitTrip * visitsPerYear) / 12;
     }
 
-    // --- 5) Recurring totals (trip included, NO install) ---
-    // This is the "183" style number you mentioned.
-    const monthlyTotal = monthlyBase + monthlyTrip;
+    // ---------------- 4) Recurring totals (no install) ----------------
+    const monthlyBase = fixtureMonthly + nonBathroomMonthly;
 
-    // --- 6) Install cost (one-time job) ---
+    // "Install is 3x this price if dirty or 1x job."
+    // Use MONTHLY BASE (fixtures + non-bath) as the reference price.
     const installOneTime =
       serviceActive && form.includeInstall
         ? monthlyBase *
@@ -178,27 +223,37 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
             : cfg.installMultipliers.clean)
         : 0;
 
-    // Annual = 12× recurring + full install (no dividing the install)
-    const annualTotal = monthlyTotal * 12 + installOneTime;
+    // Recurring monthly (no install)
+    const monthlyRecurring = monthlyBase + monthlyTrip;
 
-    // Per-visit effective uses the annual that includes install
+    // What you want on the UI:
+    //  - Per-Visit Effective = NO install
+    //  - Monthly SaniScrub   = recurring + FULL install
+    //  - Annual SaniScrub    = recurring*12 + FULL install
+    const monthlyTotal = monthlyRecurring + installOneTime;
+    const annualTotal = monthlyRecurring * 12 + installOneTime;
+
+    // ---------------- 5) Per-Visit Effective (NO install) ----------------
     const perVisitEffective =
       serviceActive && visitsPerYear > 0
-        ? annualTotal / visitsPerYear
+        ? fixturePerVisit + nonBathroomPerVisit + perVisitTrip
         : 0;
 
     return {
       fixtureMonthly,
+      fixturePerVisit,
+      fixtureRawForMinimum,
+      fixtureMinimumApplied,
       nonBathroomPerVisit,
       nonBathroomMonthly,
       monthlyBase,
       perVisitTrip,
       monthlyTrip,
-      monthlyTotal,
-      annualTotal,
+      monthlyTotal,   // recurring + full install (for display)
+      annualTotal,    // recurring*12 + full install
       visitsPerYear,
-      perVisitEffective,
-      installOneTime,
+      perVisitEffective, // recurring per visit – NO install
+      installOneTime,    // one-time install
     };
   }, [form]);
 
@@ -219,13 +274,16 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     quote,
     calc: {
       fixtureMonthly,
+      fixturePerVisit,
+      fixtureRawForMinimum,
+      fixtureMinimumApplied,
       nonBathroomPerVisit,
       nonBathroomMonthly,
       monthlyBase,
       perVisitTrip,
       monthlyTrip,
-      monthlyTotal,   // recurring only
-      annualTotal,    // recurring*12 + install
+      monthlyTotal,
+      annualTotal,
       visitsPerYear,
       perVisitEffective,
       installOneTime,

@@ -1,4 +1,3 @@
-// src/features/services/saniscrub/SaniscrubForm.tsx
 import React from "react";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
 import type { SaniscrubFormState } from "./saniscrubTypes";
@@ -9,31 +8,24 @@ import {
 } from "./saniscrubConfig";
 
 /**
- * SaniScrub form
- *
- * This is 100% driven by the JSON + rules:
- *  - fixtures priced per frequency (with minimums)
- *  - optional non-bathroom sq ft blocks (250/125 rule)
- *  - 2×/month discount when combined with SaniClean
- *  - trip charge based on location + parking
- *  - install = 1× clean / 3× dirty
+ * SaniScrub form – wired 100% to the rules:
+ *  - fixtures per frequency with 175 / 250 monthly minimums
+ *  - 2×/month = 2× normal monthly − $15 when combined with SaniClean
+ *  - non-bathroom block pricing (250 + 125/extra 500 sq ft)
+ *  - trip charge $8 + parking
+ *  - install = 1× clean / 3× dirty; annual = 12×monthly + full install
  */
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onQuoteChange }) => {
   const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
 
-  // Push quote up to parent aggregator whenever it changes
+  // Push quote up whenever it changes
   React.useEffect(() => {
-    if (onQuoteChange) {
-      onQuoteChange(quote);
-    }
+    if (onQuoteChange) onQuoteChange(quote);
   }, [onQuoteChange, quote]);
 
   // Headline per-fixture rate for the UI row
-  // NOTE: 2× / month still shows the BASE $25/fixture rate so we don't
-  // show a fake "$10/fixture" anymore. The 2×/month discount is handled
-  // in the monthly math, not here.
   const displayFixtureRate = (() => {
     if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
       return cfg.fixtureRates.monthly; // $25
@@ -45,13 +37,14 @@ export const SaniscrubForm: React.FC<
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
-  // - If 2× / month WITH SaniClean → show the full 2×monthly−$15 SaniScrub monthly.
-  // - Otherwise:
-  //   - If we hit a minimum → show 175 or 250 (based on frequency).
-  //   - Else → show raw fixtures × rate.
+  // - For 2× / month → always show the FULL monthly fixture charge
+  //   (2× normal monthly − $15 when combined with SaniClean).
+  // - For other frequencies:
+  //   - If we hit a minimum → show 175 or 250.
+  //   - Else → show raw fixtures × rate (monthly).
   const fixtureLineDisplayAmount =
     form.fixtureCount > 0
-      ? form.frequency === "twicePerMonth" && form.hasSaniClean
+      ? form.frequency === "twicePerMonth"
         ? calc.fixtureMonthly
         : calc.fixtureMinimumApplied > 0
         ? calc.fixtureMinimumApplied
@@ -62,13 +55,12 @@ export const SaniscrubForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">SANISCRUB</div>
-        {/* keep + button consistent with other cards (add/duplicate later if needed) */}
         <button type="button" className="svc-mini" aria-label="add">
           +
         </button>
       </div>
 
-      {/* Combined with SaniClean (needed for 2× month discount) */}
+      {/* Combined with SaniClean (required for 2×/month discount) */}
       <div className="svc-row">
         <label>Combined with SaniClean?</label>
         <div className="svc-row-right">
@@ -123,7 +115,8 @@ export const SaniscrubForm: React.FC<
           <span className="svc-micro-note">
             Minimums (fixtures): Monthly = ${cfg.minimums.monthly} ·
             Bi-Monthly/Quarterly = ${cfg.minimums.bimonthly}. 2× / Month with
-            SaniClean is priced as 2× Monthly − $15.
+            SaniClean is priced as 2× Monthly − $
+            {cfg.twoTimesPerMonthDiscountFlat}.
           </span>
         </div>
       </div>
@@ -207,7 +200,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Trip charge numeric display (new requirement) */}
+      {/* Trip charge numeric display */}
       <div className="svc-row">
         <label>Trip Charge</label>
         <div className="svc-row-right">
@@ -270,7 +263,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Totals – match SaniClean/RPM layout */}
+      {/* Totals */}
       <div className="svc-row svc-row-charge">
         <label>Monthly SaniScrub</label>
         <div className="svc-row-right">

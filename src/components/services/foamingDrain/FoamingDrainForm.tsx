@@ -30,6 +30,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const canUseSmallAlt =
     isWeekly && state.standardDrainCount > 0 && !isVolume;
   const canUseBigAlt = isWeekly && isVolume;
+  const isInstallLevelUi =
+    isVolume && !state.useBigAccountTenWeekly && !state.isAllInclusive;
 
   const handleNumberChange =
     (field: keyof FoamingDrainFormState) =>
@@ -60,7 +62,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           updateField("useBigAccountTenWeekly", false);
         }
 
-        // If filthyDrainCount is now higher than total drains, clamp via calc
         return;
       }
 
@@ -129,7 +130,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       return "Volume – $10/week per drain, install waived (10+ drains)";
     }
     if (breakdown.volumePricingApplied) {
-      return "Volume (10+ drains, install-level)";
+      return "Volume (10+ drains, separate $20/install-drain)";
     }
     if (breakdown.usedSmallAlt) {
       return "Alternative (weekly: $20 + $4/drain)";
@@ -199,11 +200,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
-        {/* How many filthy drains (for 3× install) */}
-        {state.facilityCondition === "filthy" && (
+        {/* How many filthy install drains (for 3× install) */}
+        {state.facilityCondition === "filthy" && isInstallLevelUi && (
           <div className="svc-row">
             <div className="svc-label">
-              <span>Filthy Drains (3× install)</span>
+              <span>Filthy Install Drains (3×)</span>
             </div>
             <div className="svc-field">
               <input
@@ -215,7 +216,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 onChange={handleNumberChange("filthyDrainCount")}
               />{" "}
               <span className="svc-note">
-                leave 0 = all {state.standardDrainCount || 0} drains filthy
+                leave 0 = all install drains filthy
               </span>
             </div>
           </div>
@@ -397,6 +398,31 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </div>
             </div>
           </div>
+
+          {/* NEW: Drains to charge install on (10+ rule) */}
+          {isInstallLevelUi && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Drains for Install (10+)</span>
+              </div>
+              <div className="svc-field">
+                <div className="svc-inline">
+                  <input
+                    type="number"
+                    min={0}
+                    max={state.standardDrainCount}
+                    className="svc-in sm"
+                    style={{ width: 60 }}
+                    value={state.installDrainCount}
+                    onChange={handleNumberChange("installDrainCount")}
+                  />
+                  <span className="svc-note">
+                    of {state.standardDrainCount || 0} standard drains
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Grease traps */}
           <div className="svc-row">

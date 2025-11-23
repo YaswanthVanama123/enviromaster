@@ -10,11 +10,13 @@ export interface FoamingDrainFormState {
 
   // Core counts
   standardDrainCount: number; // normal floor drains
+  // For 10+ drains we can choose how many are treated as install-level service.
+  installDrainCount: number;  // subset of standard drains, only used when 10+
   greaseTrapCount: number;    // grease traps
   greenDrainCount: number;    // green drains
 
-  // Of the standard drains, how many are filthy (3× install)?
-  // If facilityCondition = "filthy" and this is 0, we treat ALL standard drains as filthy.
+  // Of the install drains, how many are filthy (3× install)?
+  // If facilityCondition = "filthy" and this is 0, we'll treat ALL install drains as filthy.
   filthyDrainCount: number;
 
   // Frequency and site info
@@ -22,10 +24,10 @@ export interface FoamingDrainFormState {
   facilityCondition: FoamingDrainCondition;
   location: FoamingDrainLocation;
 
-  // Trip charge: optional override (if undefined we use config / location)
+  // Trip charge override (if undefined we use config default)
   tripChargeOverride?: number;
 
-  // Plumbing
+  // Plumbing add-on
   needsPlumbing: boolean;
   plumbingDrainCount: number; // how many drains need plumbing (+$10/drain)
 
@@ -58,7 +60,7 @@ export interface FoamingDrainFormState {
    */
   chargeGreaseTrapInstall: boolean;
 
-  // Notes
+  // Free-form notes
   notes: string;
 }
 
@@ -94,11 +96,13 @@ export interface FoamingDrainBreakdown {
 
 export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   serviceId: "foamingDrain";
+
   frequency: FoamingDrainFrequency;
   location: FoamingDrainLocation;
   facilityCondition: FoamingDrainCondition;
 
   standardDrainCount: number;
+  installDrainCount: number;
   greaseTrapCount: number;
   greenDrainCount: number;
   filthyDrainCount: number;

@@ -1,35 +1,60 @@
 // src/features/services/saniclean/SanicleanForm.tsx
 import React from "react";
-import "../ServicesSection.css"; // adjust path if different
+import "../ServicesSection.css";
 import { useSanicleanCalc } from "./useSanicleanCalc";
+import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
 import type { SanicleanFormState } from "./sanicleanTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
+
+const formatMoney = (n: number): string => `$${n.toFixed(2)}`;
 
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData }) => {
   const { form, onChange, calc } = useSanicleanCalc(initialData);
 
+  const fixtures = Math.max(0, form.fixtureCount);
+
+  // Soap dispensers & air freshener dispensers from sinks
+  const soapDispensers =
+    form.sinks * cfg.facilityComponents.sinks.ratioSinkToSoap;
+
+  const airFreshDispensers =
+    form.sinks > 0
+      ? Math.ceil(
+          form.sinks / cfg.facilityComponents.sinks.ratioSinkToAirFreshener
+        )
+      : 0;
+
+  const luxuryUpgradeWeekly =
+    form.soapType === "luxury" && soapDispensers > 0
+      ? soapDispensers * cfg.soapUpgrades.standardToLuxury
+      : 0;
+
+  // Extra soap rate per gallon from rules
+  const extraSoapRatePerGallon =
+    form.soapType === "luxury"
+      ? cfg.soapUpgrades.excessUsageCharges.luxurySoap
+      : cfg.soapUpgrades.excessUsageCharges.standardSoap;
+
+  const extraSoapWeekly =
+    Math.max(0, form.excessSoapGallonsPerWeek) * extraSoapRatePerGallon;
+
+  // Paper credit & overage from calc (so they respect all-inclusive logic)
+  const paperCreditPerWeek = calc.weeklyPaperCredit;
+  const paperOveragePerWeek = calc.weeklyPaperOverage;
+
+  const isAllInclusive = calc.method === "all_inclusive";
+
   return (
     <div className="svc-card">
       {/* HEADER */}
-      {/* <div className="svc-title">
-        <div>
-          <div className="svc-title-main">SaniClean</div>
-          <div className="svc-title-sub">
-            Core weekly restroom sanitization service
-          </div>
-        </div>
-      </div> */}
-
       <div className="svc-h-row">
-        <div className="svc-h">Sani Clean</div>
+        <div className="svc-h">SANI CLEAN</div>
         <button type="button" className="svc-mini" aria-label="add">
           +
         </button>
       </div>
-
-
 
       {/* Pricing Mode */}
       <div className="svc-row">
@@ -43,22 +68,22 @@ export const SanicleanForm: React.FC<
           >
             <option value="auto">Auto (recommended)</option>
             <option value="all_inclusive">All Inclusive</option>
-            <option value="geographic_standard">Standard</option>
+            <option value="geographic_standard">
+              Per Fixture / Geographic Standard
+            </option>
           </select>
         </div>
       </div>
 
-      {/* Total Restroom Fixtures */}
+      {/* Total Restroom Fixtures (derived) */}
       <div className="svc-row">
         <label>Total Restroom Fixtures</label>
         <div className="svc-row-right">
-          {/* fixtureCount is derived, but we show it read-only to match spec */}
           <input
             className="svc-in"
             type="number"
             name="fixtureCount"
             value={form.fixtureCount}
-            onChange={onChange}
             readOnly
           />
         </div>
@@ -80,7 +105,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Parking (inside beltway) */}
+      {/* Parking */}
       <div className="svc-row">
         <label>Parking</label>
         <div className="svc-row-right">
@@ -92,7 +117,7 @@ export const SanicleanForm: React.FC<
                 checked={form.needsParking}
                 onChange={onChange}
               />
-              <span>Parking needed (+trip parking fee)</span>
+              <span>Parking needed (+parking fee in trip)</span>
             </label>
           ) : (
             <span className="svc-muted">Not applicable outside beltway</span>
@@ -100,9 +125,9 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* FIXTURE BREAKDOWN HEADER */}
+      {/* ================== FIXTURE BREAKDOWN ================== */}
       <div className="svc-h" style={{ marginTop: 10 }}>
-        Fixture Breakdown
+        FIXTURE BREAKDOWN
       </div>
 
       {/* Sinks */}
@@ -116,12 +141,31 @@ export const SanicleanForm: React.FC<
             value={form.sinks}
             onChange={onChange}
           />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              form.sinks *
+                cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
         </div>
       </div>
 
       {/* Urinals */}
       <div className="svc-row">
-        <label>Urinals</label>
+        <label>Urinals </label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -130,12 +174,31 @@ export const SanicleanForm: React.FC<
             value={form.urinals}
             onChange={onChange}
           />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              form.urinals *
+                cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
         </div>
       </div>
 
       {/* Male Toilets */}
       <div className="svc-row">
-        <label>Male Toilets</label>
+        <label>Male Toilets </label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -144,12 +207,31 @@ export const SanicleanForm: React.FC<
             value={form.maleToilets}
             onChange={onChange}
           />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              form.maleToilets *
+                cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
         </div>
       </div>
 
       {/* Female Toilets */}
       <div className="svc-row">
-        <label>Female Toilets</label>
+        <label>Female Toilets </label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -158,20 +240,39 @@ export const SanicleanForm: React.FC<
             value={form.femaleToilets}
             onChange={onChange}
           />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              form.femaleToilets *
+                cfg.geographicPricing[form.location].ratePerFixture
+            )}
+          />
         </div>
       </div>
 
-      {/* Soap & Upgrades */}
+      {/* ================== SOAP & UPGRADES ================== */}
       <div className="svc-h" style={{ marginTop: 10 }}>
-        Soap, Air Freshener & Upgrades
+        SOAP, AIR FRESHENER &amp; UPGRADES
       </div>
 
+      {/* Soap type selector */}
       <div className="svc-row">
-        <label>Soap &amp; Upgrades</label>
-        <div className="svc-row-right svc-inline">
-          <span>Type</span>
+        <label>Soap Type</label>
+        <div className="svc-row-right">
           <select
-            className="svc-in sm"
+            className="svc-in"
             name="soapType"
             value={form.soapType}
             onChange={onChange}
@@ -179,57 +280,123 @@ export const SanicleanForm: React.FC<
             <option value="standard">Standard</option>
             <option value="luxury">Luxury (+$5/dispenser/wk)</option>
           </select>
-          <span>Extra Gallons / Week</span>
+        </div>
+      </div>
+
+      {/* Luxury upgrade calc row */}
+      <div className="svc-row">
+        <label>Luxury Upgrade </label>
+        <div className="svc-row-right">
+          <input className="svc-in" type="text" readOnly value={soapDispensers} />
+          <span>@</span>
           <input
-            className="svc-in sm"
+            className="svc-in"
+            type="text"
+            readOnly
+            value={form.soapType === "luxury" ? "$5.00" : "$0.00"}
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(luxuryUpgradeWeekly)}
+          />
+        </div>
+      </div>
+
+      {/* Extra soap usage */}
+      <div className="svc-row">
+        <label>Extra Soap </label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
             type="number"
             name="excessSoapGallonsPerWeek"
             value={form.excessSoapGallonsPerWeek}
             onChange={onChange}
           />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(extraSoapRatePerGallon)}
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(extraSoapWeekly)}
+          />
         </div>
       </div>
 
-      {/* Microfiber Mopping */}
-      <div className="svc-row">
-        <label>Microfiber Mopping</label>
-        <div className="svc-row-right">
-          <div className="svc-micro">
-            <label className="svc-inline">
-              <input
-                type="checkbox"
-                name="addMicrofiberMopping"
-                checked={form.addMicrofiberMopping}
-                onChange={onChange}
-              />
-              <span>Add Microfiber Mopping</span>
-            </label>
+      {/* ================== MICROFIBER ================== */}
+      <div className="svc-h" style={{ marginTop: 10 }}>
+        MICROFIBER MOPPING
+      </div>
 
-            {form.addMicrofiberMopping && (
-              <div className="svc-micro-inner">
-                <div className="svc-inline">
-                  <span>Bathrooms</span>
-                  <input
-                    className="svc-in xs"
-                    type="number"
-                    name="microfiberBathrooms"
-                    value={form.microfiberBathrooms}
-                    onChange={onChange}
-                  />
-                  <span className="svc-muted">
-                    $10 / bathroom / week (if not all-inclusive)
-                  </span>
-                </div>
-              </div>
+      <div className="svc-row">
+        <label>Microfiber Mopping </label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="addMicrofiberMopping"
+              checked={form.addMicrofiberMopping}
+              onChange={onChange}
+            />
+            <span>Include</span>
+          </label>
+          <input
+            className="svc-in"
+            type="number"
+            name="microfiberBathrooms"
+            disabled={!form.addMicrofiberMopping}
+            value={form.microfiberBathrooms}
+            onChange={onChange}
+          />
+          <span>@</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={
+              form.addMicrofiberMopping && !isAllInclusive
+                ? formatMoney(cfg.addOnServices.microfiberMopping.pricePerBathroom)
+                : "$0.00"
+            }
+          />
+          <span>=</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(
+              form.addMicrofiberMopping && !isAllInclusive
+                ? form.microfiberBathrooms *
+                    cfg.addOnServices.microfiberMopping.pricePerBathroom
+                : 0
             )}
-          </div>
+          />
         </div>
       </div>
 
-      {/* Paper usage (all-inclusive credit) */}
+      {/* ================== PAPER ================== */}
+      <div className="svc-h" style={{ marginTop: 10 }}>
+        PAPER
+      </div>
       <div className="svc-row">
-        <label>Paper Spend / Week</label>
+        <label>
+          Paper Spend - Credit = Overage{" "}
+          {!isAllInclusive && (
+            <span className="svc-muted"></span>
+          )}
+        </label>
         <div className="svc-row-right">
+          {/* editable weekly spend */}
           <input
             className="svc-in"
             type="number"
@@ -237,14 +404,26 @@ export const SanicleanForm: React.FC<
             value={form.estimatedPaperSpendPerWeek}
             onChange={onChange}
           />
-          {/* <div className="svc-help">
-            In all-inclusive, customer gets $5/week per fixture credit.
-            Overage is charged.
-          </div> */}
+          <span>-</span>
+          {/* credit from calc (0 if not all-inclusive) */}
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(paperCreditPerWeek)}
+          />
+          <span>=</span>
+          {/* overage = max(0, spend - credit) */}
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={formatMoney(paperOveragePerWeek)}
+          />
         </div>
       </div>
 
-      {/* Rate Tier */}
+      {/* ================== RATE TIER & NOTES ================== */}
       <div className="svc-row">
         <label>Rate Tier</label>
         <div className="svc-row-right">
@@ -254,13 +433,12 @@ export const SanicleanForm: React.FC<
             value={form.rateTier}
             onChange={onChange}
           >
-            <option value="redRate">Red (standard)</option>
-            <option value="greenRate">Green (premium)</option>
+            <option value="redRate">Red</option>
+            <option value="greenRate">Green</option>
           </select>
         </div>
       </div>
 
-      {/* Notes */}
       <div className="svc-row">
         <label>Notes</label>
         <div className="svc-row-right">
@@ -274,9 +452,9 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* SUMMARY / OUTPUT */}
+      {/* ================== PRICING SUMMARY ================== */}
       <div className="svc-h" style={{ marginTop: 16 }}>
-        Pricing Summary
+        PRICING SUMMARY
       </div>
 
       <div className="svc-row">
@@ -290,21 +468,21 @@ export const SanicleanForm: React.FC<
               calc.method === "all_inclusive"
                 ? "All Inclusive"
                 : calc.method === "small_facility_minimum"
-                ? "Small Facility Minimum"
-                : "Geographic Standard"
+                ? "Small Facility Minimum ($50/wk incl. trip)"
+                : "Per Fixture / Geographic Standard"
             }
           />
         </div>
       </div>
 
       <div className="svc-row">
-        <label>Weekly Total (Service + Trip)</label>
+        <label>Weekly Total (Service + All Add-Ons)</label>
         <div className="svc-row-right">
           <input
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${calc.weeklyTotal.toFixed(2)}`}
+            value={formatMoney(calc.weeklyTotal)}
           />
         </div>
       </div>
@@ -316,7 +494,7 @@ export const SanicleanForm: React.FC<
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${calc.monthlyTotal.toFixed(2)}`}
+            value={formatMoney(calc.monthlyTotal)}
           />
         </div>
       </div>
@@ -328,20 +506,7 @@ export const SanicleanForm: React.FC<
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${calc.annualTotal.toFixed(2)}`}
-          />
-        </div>
-      </div>
-
-      {/* Dispenser Count */}
-      <div className="svc-row">
-        <label>Total Dispensers (soap + air freshener, auto)</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={calc.dispenserCount ?? 0}
+            value={formatMoney(calc.annualTotal)}
           />
         </div>
       </div>

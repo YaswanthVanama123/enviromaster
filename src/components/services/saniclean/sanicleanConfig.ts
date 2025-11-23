@@ -5,87 +5,97 @@ import type {
   SanicleanPricingConfig,
 } from "./sanicleanTypes";
 
-// Concrete pricing config that encodes all SaniClean rules.
 export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
   geographicPricing: {
+    // Inside the Beltway: $7 / fixture, $40 minimum, $8 trip + optional parking
     insideBeltway: {
-      ratePerFixture: 7, // $7 / fixture weekly
-      weeklyMinimum: 40, // $40 minimum
+      ratePerFixture: 7,
+      weeklyMinimum: 40,
       tripCharge: 8,
-      parkingFee: 7, // extra if we have to pay for parking
+      parkingFee: 7,
     },
+    // Outside the Beltway: $6 / fixture, same $40 minimum, $8 trip
     outsideBeltway: {
-      ratePerFixture: 6, // $6 / fixture weekly
+      ratePerFixture: 6,
       weeklyMinimum: 40,
       tripCharge: 8,
     },
   },
 
+  // For 4–5 or fewer fixtures → $50 minimum (trip included)
   smallFacilityMinimum: {
-    fixtureThreshold: 5, // 4–5 or fewer fixtures
-    minimumWeeklyCharge: 50, // $50/wk including trip
+    fixtureThreshold: 5,
+    minimumWeeklyCharge: 50,
     includesTripCharge: true,
   },
 
+  // All-inclusive package:
+  //   - SaniClean
+  //   - SaniPod, urinal mats, paper & dispensers
+  //   - microfiber mopping
+  //   - monthly SaniScrub
+  //   - no warranty fee, no trip charge
+  //   - priced at $20 / fixture / week
   allInclusivePackage: {
-    weeklyRatePerFixture: 20, // $20 / fixture / week (≈ $900/mo for 11 fixtures)
-    includeAllAddOns: true, // drains, mopping, etc. conceptually bundled
-    waiveTripCharge: true, // "We will waive trip charge"
-    waiveWarrantyFees: true, // "Warranty fee waived"
-    autoAllInclusiveMinFixtures: 10, // in auto mode, 10+ fixtures -> all-inclusive
+    weeklyRatePerFixture: 20,
+    includeAllAddOns: true,
+    waiveTripCharge: true,
+    waiveWarrantyFees: true,
+    autoAllInclusiveMinFixtures: 10, // auto-switch to all-inclusive for 10+ fixtures
   },
 
+  // Soap upgrades + extra usage
   soapUpgrades: {
-    standardToLuxury: 5, // $5 / dispenser / week
+    standardToLuxury: 5, // $5 / wk / dispenser to upgrade to luxury soap
     excessUsageCharges: {
-      standardSoap: 13, // $13/gal/wk over one fill
-      luxurySoap: 30, // $30/gal/wk over one fill
+      standardSoap: 13, // $13 / gal / wk beyond one fill
+      luxurySoap: 30,   // $30 / gal / wk beyond one fill
     },
   },
 
-  warrantyFeePerDispenser: 1, // $1/wk per soap/air-freshener dispenser
+  // Warranty on dispensers when NOT all-inclusive
+  warrantyFeePerDispenser: 1, // $1 / wk / dispenser (soap + air freshener)
 
+  // Paper credit in all-inclusive mode
   paperCredit: {
-    creditPerFixturePerWeek: 5, // $5/fixture/week paper credit in all-inclusive
+    creditPerFixturePerWeek: 5, // $5 / wk / fixture credit towards paper
   },
 
+  // Monthly component pricing (when NOT all-inclusive)
   facilityComponents: {
-    // Example in rules: 2 urinals -> $16/mo (screens + mats)
+    // per-urinal monthly cost: screens + mats
     urinals: {
-      urinalScreen: 8, // monthly per urinal
-      urinalMat: 8, // monthly per urinal
+      urinalScreen: 4,
+      urinalMat: 4,
     },
-    // Example: 2 male toilets -> ~$4/mo (clips + seat cover dispensers)
+    // per-male-toilet monthly cost: clips + seat covers
     maleToilets: {
-      toiletClips: 1.5, // monthly per toilet
-      seatCoverDispenser: 0.5, // monthly per toilet (1.5 + 0.5) * 2 ≈ $4
+      toiletClips: 1.5,
+      seatCoverDispenser: 0.5,
     },
-    // Example: 3 female toilets -> $12/mo of SaniPod service
+    // per-female-toilet monthly cost: SaniPod service
     femaleToilets: {
-      sanipodService: 4, // monthly per female toilet
+      sanipodService: 4,
     },
-    // 4 sinks -> 4 soap, 2 air fresheners (6 dispensers)
+    // sink → dispenser ratios
     sinks: {
-      ratioSinkToSoap: 1, // 1 soap dispenser per sink
+      ratioSinkToSoap: 1,         // 1 soap per sink
       ratioSinkToAirFreshener: 2, // 1 air freshener per 2 sinks
     },
   },
 
+  // Microfiber mopping add-on (NOT charged in all-inclusive)
   addOnServices: {
     microfiberMopping: {
       pricePerBathroom: 10, // $10 / bathroom / week
     },
   },
 
+  // Conversions so 11 fixtures × $20/wk ≈ $900/month
   billingConversions: {
     weekly: {
-      // Tuned so that the all-inclusive example in the rules
-      // (11 fixtures at $20/fixture/week) is exactly $900/month.
-      //
-      // 11 fixtures × $20/week = $220/week
-      // $220 × 4.090909... = $900/month
-      monthlyMultiplier: 4.0909090909,
-      annualMultiplier: 50, // 50 service weeks / year
+      monthlyMultiplier: 4.0909090909, // 220 × 4.0909 ≈ 900
+      annualMultiplier: 50,            // 50 service weeks / year
     },
   },
 
@@ -95,7 +105,7 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
       commissionRate: 0.1,
     },
     greenRate: {
-      multiplier: 1.3,
+      multiplier: 1.0,
       commissionRate: 0.12,
     },
   } as Record<
@@ -105,19 +115,15 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
 
   valueProposition: [
     "Enviro-Master’s core service since the Swisher days.",
-    "Bathroom cleanliness signals whether an establishment is luxury or value-driven.",
-    "Along with SaniScrub, SaniClean significantly reduces bacteria migration to back-of-house.",
-    "Reduces time and chemicals for in-house staff doing daily restroom cleaning.",
+    "Bathroom cleanliness signals whether a location can charge premium pricing.",
+    "With SaniScrub, SaniClean reduces bacteria that can migrate to back-of-house.",
+    "Reduces time and chemicals for existing staff between weekly sanitization visits.",
   ],
-} as const;
+};
 
-// Named export used by hooks
 export const sanicleanPricingConfig = SANICLEAN_CONFIG;
-
-// Convenience type
 export type SanicleanConfig = typeof SANICLEAN_CONFIG;
 
-// Handy helpers for narrowing enums from strings, if needed elsewhere
 export function isSanicleanLocation(value: string): value is SanicleanLocation {
   return value === "insideBeltway" || value === "outsideBeltway";
 }

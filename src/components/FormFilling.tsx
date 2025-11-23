@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import CustomerSection from "./CustomerSection";
-import ProductsSection from "./ProductsSection";
+// import ProductsSection from "./ProductsSection";
+import ProductsSection from "./products/ProductsSection";
 // import ServicesSection from "./ServicesSection";
 import "./FormFilling.css";
 import { ServicesSection } from "./services/ServicesSection";
@@ -206,9 +207,9 @@ export default function FormFilling() {
           />
 
           <ProductsSection
-            initialSmallProducts={initialSmallProducts}
-            initialDispensers={initialDispensers}
-            initialBigProducts={initialBigProducts}
+            // initialSmallProducts={initialSmallProducts}
+            // initialDispensers={initialDispensers}
+            // initialBigProducts={initialBigProducts}
           />
 
           <ServicesSection initialServices={payload.services} />

@@ -15,6 +15,7 @@ const DEFAULT_FREQUENCY: FoamingDrainFrequency = "weekly";
 const DEFAULT_FOAMING_DRAIN_FORM_STATE: FoamingDrainFormState = {
   serviceId: "foamingDrain",
   standardDrainCount: 0,
+  installDrainCount: 0,
   greaseTrapCount: 0,
   greenDrainCount: 0,
   filthyDrainCount: 0,
@@ -68,32 +69,44 @@ export function useFoamingDrainCalc(
     const isAllInclusive = !!state.isAllInclusive;
     const isWeekly = frequency === "weekly";
 
-    const isVolume = standardDrains >= cfg.volumePricing.minimumDrains; // 10+ drains
+    const isVolume =
+      standardDrains >= cfg.volumePricing.minimumDrains; // 10+ drains
     const anyService =
       standardDrains > 0 || greaseTraps > 0 || greenDrains > 0;
-
-    // How many drains are filthy for 3× install?
-    let filthyDrains = 0;
-    if (condition === "filthy" && standardDrains > 0) {
-      const requested =
-        Math.max(0, Number(state.filthyDrainCount) || 0) || 0;
-      // If user typed >0, clamp to standardDrains. If they left 0, assume ALL drains are filthy.
-      filthyDrains =
-        requested > 0
-          ? Math.min(requested, standardDrains)
-          : standardDrains;
-    }
-    const cleanDrains = standardDrains - filthyDrains;
 
     // Alt-mode availability
     const canUseSmallAlt = isWeekly && standardDrains > 0 && !isVolume;
     const canUseBigAlt = isWeekly && isVolume;
 
-    const useSmallAlt = !!state.useSmallAltPricingWeekly && canUseSmallAlt;
+    const useSmallAlt =
+      !!state.useSmallAltPricingWeekly && canUseSmallAlt;
     const useBigAlt = !!state.useBigAccountTenWeekly && canUseBigAlt;
 
     // Install-level program = 10+ drains AND not big-account alt
     const isInstallLevel = isVolume && !useBigAlt;
+
+    // How many drains are actually being treated as "install" (10+ rule)?
+    const requestedInstallDrains = Math.max(
+      0,
+      Number(state.installDrainCount) || 0
+    );
+    const installDrains = isInstallLevel
+      ? Math.min(requestedInstallDrains, standardDrains)
+      : 0;
+
+    // How many of those install drains are filthy for 3× install?
+    let filthyInstallDrains = 0;
+    if (condition === "filthy" && installDrains > 0) {
+      const requestedFilthy =
+        Math.max(0, Number(state.filthyDrainCount) || 0) || 0;
+      // If user typed >0, clamp to installDrains.
+      // If they left 0, assume ALL install drains are filthy.
+      filthyInstallDrains =
+        requestedFilthy > 0
+          ? Math.min(requestedFilthy, installDrains)
+          : installDrains;
+    }
+    const cleanInstallDrains = installDrains - filthyInstallDrains;
 
     // Decide pricing model label for breakdown
     let pricingModel: FoamingDrainBreakdown["pricingModel"];
@@ -113,14 +126,15 @@ export function useFoamingDrainCalc(
       weeklyStandard = 0;
     } else if (useBigAlt) {
       // Big-account special: $10/week per drain, install waived
-      weeklyStandard = standardDrains * cfg.standardDrainRate; // 10$/drain
+      weeklyStandard = standardDrains * cfg.standardDrainRate; // $10/drain
     } else if (isVolume) {
-      // Install-level 10+ drains:
-      //   weekly → $20/drain
-      //   bimonthly → $10/drain
-      const volumeForFreq =
-        cfg.volumePricing[frequency] ?? cfg.volumePricing.weekly;
-      weeklyStandard = standardDrains * volumeForFreq.ratePerDrain;
+      // INSTALL-LEVEL pricing for 10+ drains:
+      //   Weekly  → $20/drain
+      //   2 mo    → $10/drain
+      const volCfg =
+        cfg.volumePricing[frequency] ?? { ratePerDrain: cfg.standardDrainRate };
+      const ratePerDrain = volCfg.ratePerDrain ?? cfg.standardDrainRate;
+      weeklyStandard = standardDrains * ratePerDrain;
     } else if (useSmallAlt) {
       // Alternative small-job weekly pricing: $20 + $4/drain
       weeklyStandard =
@@ -155,44 +169,37 @@ export function useFoamingDrainCalc(
 
     // ---------- 5) Installation fees ----------
     let installBase = 0;
-
-    /**
-     * Install fee is ONLY for "install level service":
-     *   - 10+ drains
-     *   - NOT big-account $10/week mode
-     *   - NOT all-inclusive
-     *
-     * For install-level:
-     *   clean drains → 1× rate
-     *   filthy drains → 3× rate
-     *   plumbing → added once (no extra filthy multiplier)
-     */
     let conditionMultiplier = 1;
 
     if (
       !isAllInclusive &&
-      standardDrains > 0 &&
+      installDrains > 0 &&
       isInstallLevel
     ) {
-      const volumeForFreq =
-        cfg.volumePricing[frequency] ?? cfg.volumePricing.weekly;
-      const ratePerDrain = volumeForFreq.ratePerDrain;
+      // Install fee per drain is $10 (for 10+ install level),
+      // regardless of weekly vs every 2 months.
+      const volCfg = cfg.volumePricing[frequency];
+      const baseInstallRate =
+        (volCfg && volCfg.installPerDrain) ?? 10;
+
       const filthyMult = cfg.installationRules.filthyMultiplier;
 
-      const cleanInstall = cleanDrains * ratePerDrain;
-      const filthyInstall = filthyDrains * ratePerDrain * filthyMult;
+      const cleanInstall =
+        cleanInstallDrains * baseInstallRate;
+      const filthyInstall =
+        filthyInstallDrains * baseInstallRate * filthyMult;
 
       installBase = cleanInstall + filthyInstall + plumbingAddon;
 
       // For breakdown only
-      conditionMultiplier = filthyDrains > 0 ? filthyMult : 1;
+      conditionMultiplier = filthyInstallDrains > 0 ? filthyMult : 1;
     }
 
     let installBeforeWaive = installBase;
 
     // Big-account: $10/wk/drain for large number of drains → definitely waive install
     if (useBigAlt && cfg.installationRules.waiveForLargeVolume) {
-      installBeforeWaive = 0;
+      installBeforeWaave = 0;
     }
 
     // Grease trap install: optional ("if possible")
@@ -208,7 +215,8 @@ export function useFoamingDrainCalc(
     const greenInstall =
       greenDrains * cfg.specialDrains.greenDrain.installCost;
 
-    const installTotal = installBeforeWaive + greaseInstall + greenInstall;
+    const installTotal =
+      installBeforeWaive + greaseInstall + greenInstall;
 
     // ---------- 6) Trip charge (with optional override) ----------
     let tripCharge = 0;
@@ -248,9 +256,6 @@ export function useFoamingDrainCalc(
     const annualRecurring = recurringAnnual + installTotal;
 
     // ---------- 9) Breakdown + final quote ----------
-    const usedSmallAlt = useSmallAlt;
-    const usedBigAccountAlt = useBigAlt;
-
     const breakdown: FoamingDrainBreakdown = {
       pricingModel,
       weeklyStandardDrains: weeklyStandard,
@@ -265,8 +270,8 @@ export function useFoamingDrainCalc(
       greenDrainInstall: greenInstall,
       installationTotal: installTotal,
       volumePricingApplied: isVolume,
-      usedSmallAlt,
-      usedBigAccountAlt,
+      usedSmallAlt: useSmallAlt,
+      usedBigAccountAlt: useBigAlt,
       tripCharge,
       weeklyTotal,
       monthlyRecurring,
@@ -282,9 +287,10 @@ export function useFoamingDrainCalc(
       facilityCondition: condition,
 
       standardDrainCount: standardDrains,
+      installDrainCount: installDrains,
       greaseTrapCount: greaseTraps,
       greenDrainCount: greenDrains,
-      filthyDrainCount: filthyDrains,
+      filthyDrainCount: filthyInstallDrains,
 
       isAllInclusive,
       needsPlumbing: state.needsPlumbing,
