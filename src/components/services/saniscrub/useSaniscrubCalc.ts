@@ -79,13 +79,6 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
             notes: String(value ?? ""),
           };
 
-        case "serviceId":
-          // Normally fixed, but keep it safe
-          return {
-            ...prev,
-            serviceId: value as any,
-          };
-
         default:
           return prev;
       }
@@ -107,10 +100,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
   } = useMemo(() => {
     const freq = clampFrequency(form.frequency);
 
-    // IMPORTANT:
-    // 2× / month is only a special SaniScrub program WHEN SaniClean is also sold.
-    // If SaniClean is NOT sold, treat "twicePerMonth" like straight monthly
-    // for all math (visits/year, non-bathroom, trip, etc.).
+    // 2× / month special behavior only when combined with SaniClean
     const effectiveFreq: SaniscrubFrequency =
       freq === "twicePerMonth" && !form.hasSaniClean ? "monthly" : freq;
 
@@ -120,18 +110,14 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     const fixtureCount = form.fixtureCount ?? 0;
     const nonBathSqFt = form.nonBathroomSqFt ?? 0;
 
-    // Service is "on" if we have either fixtures or non-bathroom area
     const serviceActive = fixtureCount > 0 || nonBathSqFt > 0;
 
-    // --- 1) Fixtures (bathroom SaniScrub) monthly price ---
-    // Only apply minimums when we actually have fixtures.
+    // --- 1) Fixtures ---
     let fixtureMonthly = 0;
 
     if (fixtureCount > 0) {
       if (freq === "twicePerMonth" && form.hasSaniClean) {
-        // 2× / month with SaniClean:
-        // base monthly rate 25 - 15 discount = 10 per fixture,
-        // but still respect the $175 monthly minimum.
+        // your current 2× / month logic (25 - 15 = 10/fixture, with 175 min)
         const baseRate = cfg.fixtureRates.monthly;
         const discount = cfg.twoTimesPerMonthDiscountPerFixture;
         const effectiveRate = Math.max(baseRate - discount, 0);
@@ -148,8 +134,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       }
     }
 
-    // --- 2) Non-bathroom area pricing ---
-    // Rule: first 500 sq ft = $250, each additional 500 sq ft = $125.
+    // --- 2) Non-bathroom area ---
     let nonBathroomPerVisit = 0;
     let nonBathroomMonthly = 0;
 
@@ -180,15 +165,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       monthlyTrip = (perVisitTrip * visitsPerYear) / 12;
     }
 
-    // --- 5) Recurring totals (trip included) ---
+    // --- 5) Recurring totals (trip included, NO install) ---
+    // This is the "183" style number you mentioned.
     const monthlyTotal = monthlyBase + monthlyTrip;
-    const annualTotal = monthlyTotal * 12;
-
-    // Per-visit effective rate across the year
-    const perVisitEffective =
-      serviceActive && visitsPerYear > 0
-        ? annualTotal / visitsPerYear
-        : 0;
 
     // --- 6) Install cost (one-time job) ---
     const installOneTime =
@@ -197,6 +176,15 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
           (form.isDirtyInstall
             ? cfg.installMultipliers.dirty
             : cfg.installMultipliers.clean)
+        : 0;
+
+    // Annual = 12× recurring + full install (no dividing the install)
+    const annualTotal = monthlyTotal * 12 + installOneTime;
+
+    // Per-visit effective uses the annual that includes install
+    const perVisitEffective =
+      serviceActive && visitsPerYear > 0
+        ? annualTotal / visitsPerYear
         : 0;
 
     return {
@@ -236,8 +224,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       monthlyBase,
       perVisitTrip,
       monthlyTrip,
-      monthlyTotal,
-      annualTotal,
+      monthlyTotal,   // recurring only
+      annualTotal,    // recurring*12 + install
       visitsPerYear,
       perVisitEffective,
       installOneTime,

@@ -27,14 +27,14 @@ export const saniscrubFrequencyLabels: Record<SaniscrubFrequency, string> = {
 export const saniscrubPricingConfig: SaniscrubPricingConfig = {
   fixtureRates: {
     monthly: 25,        // $25 / fixture (monthly)
-    twicePerMonth: 25,  // base is still the monthly rate; discount applied separately
+    twicePerMonth: 25,  // base rate still $25; 2×/month discount handled separately
     bimonthly: 35,      // $35 / fixture (every 2 months)
     quarterly: 40,      // $40 / fixture (quarterly)
   },
 
   minimums: {
-    monthly: 175,        // $175 minimum
-    twicePerMonth: 175,  // use same monthly minimum, then apply discount via delta
+    monthly: 175,        // $175 minimum (fixtures)
+    twicePerMonth: 175,  // we still use the same "monthly" minimum as the baseline
     bimonthly: 250,      // $250 minimum
     quarterly: 250,      // $250 minimum
   },
@@ -63,8 +63,9 @@ export const saniscrubPricingConfig: SaniscrubPricingConfig = {
     quarterly: { visitsPerYear: 4 },
   },
 
-  // 2× / month rule: "Combine with Sani; -$15 from what the monthly charge
-  // would be." We treat this as a $15/fixture discount off the standard
-  // monthly rate whenever `hasSaniClean` is true.
-  twoTimesPerMonthDiscountPerFixture: 15,
+  // 2× / month rule:
+  // "Combine with Sani; -$15 from what the monthly charge would be."
+  // We treat this as a flat $15/month discount off the 2× monthly SaniScrub charge
+  // when SaniScrub is combined with SaniClean.
+  twoTimesPerMonthDiscountFlat: 15,
 };

@@ -31,30 +31,32 @@ export const SaniscrubForm: React.FC<
   }, [onQuoteChange, quote]);
 
   // Headline per-fixture rate for the UI row
+  // NOTE: 2× / month still shows the BASE $25/fixture rate so we don't
+  // show a fake "$10/fixture" anymore. The 2×/month discount is handled
+  // in the monthly math, not here.
   const displayFixtureRate = (() => {
-    if (form.frequency === "monthly") {
-      return cfg.fixtureRates.monthly;
-    }
-    if (form.frequency === "twicePerMonth") {
-      // With SaniClean we show the discounted *incremental* rate
-      if (form.hasSaniClean) {
-        const base = cfg.fixtureRates.monthly;
-        const eff = Math.max(
-          base - cfg.twoTimesPerMonthDiscountPerFixture,
-          0
-        );
-        return eff;
-      }
-      // Fallback: behave like plain monthly rate
-      return cfg.fixtureRates.twicePerMonth;
+    if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
+      return cfg.fixtureRates.monthly; // $25
     }
     if (form.frequency === "bimonthly") {
-      return cfg.fixtureRates.bimonthly;
+      return cfg.fixtureRates.bimonthly; // $35
     }
-    return cfg.fixtureRates.quarterly;
+    return cfg.fixtureRates.quarterly; // $40
   })();
 
-  const fixtureLineTotal = form.fixtureCount * displayFixtureRate;
+  // For the "= ___" box in the Restroom Fixtures row:
+  // - If 2× / month WITH SaniClean → show the full 2×monthly−$15 SaniScrub monthly.
+  // - Otherwise:
+  //   - If we hit a minimum → show 175 or 250 (based on frequency).
+  //   - Else → show raw fixtures × rate.
+  const fixtureLineDisplayAmount =
+    form.fixtureCount > 0
+      ? form.frequency === "twicePerMonth" && form.hasSaniClean
+        ? calc.fixtureMonthly
+        : calc.fixtureMinimumApplied > 0
+        ? calc.fixtureMinimumApplied
+        : calc.fixtureRawForMinimum
+      : 0;
 
   return (
     <div className="svc-card">
@@ -105,7 +107,11 @@ export const SaniscrubForm: React.FC<
             className="svc-in-box"
             type="text"
             readOnly
-            value={`$${fixtureLineTotal.toFixed(2)}`}
+            value={
+              fixtureLineDisplayAmount > 0
+                ? `$${fixtureLineDisplayAmount.toFixed(2)}`
+                : "$0.00"
+            }
           />
         </div>
       </div>
@@ -115,8 +121,9 @@ export const SaniscrubForm: React.FC<
         <label></label>
         <div className="svc-row-right">
           <span className="svc-micro-note">
-            Minimums: Monthly/2× = ${cfg.minimums.monthly} ·
-            Bi-Monthly/Quarterly = ${cfg.minimums.bimonthly}
+            Minimums (fixtures): Monthly = ${cfg.minimums.monthly} ·
+            Bi-Monthly/Quarterly = ${cfg.minimums.bimonthly}. 2× / Month with
+            SaniClean is priced as 2× Monthly − $15.
           </span>
         </div>
       </div>
@@ -200,11 +207,36 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Install (3× dirty / 1× clean) – one-time job */}
-      {/* <div className="svc-row"> */}
-      {/* Install (3× dirty / 1× clean) – one-time job */}
-<div className="svc-row svc-row-install">
+      {/* Trip charge numeric display (new requirement) */}
+      <div className="svc-row">
+        <label>Trip Charge</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={
+              calc.perVisitTrip > 0
+                ? `$${calc.perVisitTrip.toFixed(2)} / visit`
+                : "$0.00"
+            }
+          />
+          <span>·</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={
+              calc.monthlyTrip > 0
+                ? `$${calc.monthlyTrip.toFixed(2)} / month`
+                : "$0.00"
+            }
+          />
+        </div>
+      </div>
 
+      {/* Install (3× dirty / 1× clean) – one-time job */}
+      <div className="svc-row svc-row-install">
         <label>Install Quote</label>
         <div className="svc-row-right">
           <label className="svc-inline">

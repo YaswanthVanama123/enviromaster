@@ -40,8 +40,9 @@ export interface SaniscrubPricingConfig {
   // Visit counts per year for each frequency
   frequencyMeta: Record<SaniscrubFrequency, SaniscrubFrequencyMeta>;
 
-  // 2× / month discount configuration (relative to straight monthly)
-  twoTimesPerMonthDiscountPerFixture: number;
+  // 2× / month discount configuration:
+  // flat $ amount off the *monthly invoice* when combined with SaniClean
+  twoTimesPerMonthDiscountFlat: number;
 }
 
 /**
