@@ -24,18 +24,28 @@ export interface FoamingDrainFormState {
   facilityCondition: FoamingDrainCondition;
   location: FoamingDrainLocation;
 
-  // Pricing toggles for standard drains
-  useSmallAltPricingWeekly: boolean; // force 20 + 4$/drain when true
-  useBigAccountTenWeekly: boolean;   // force 10$/drain with explicit big-account flag
-  isAllInclusive: boolean;           // when true, standard drains are included (0$)
+  // Standard drain pricing toggles
+  // We still support:
+  //  - auto choose cheaper (10$/drain vs 20+4)
+  //  - "force 20+4" (small account)
+  //  - "force 10$/drain" (big account)
+  useSmallAltPricingWeekly: boolean; // force 20+4
+  useBigAccountTenWeekly: boolean;   // force 10$/drain
+  isAllInclusive: boolean;           // standard drains included elsewhere (0$ here)
+
+  // Install-level mode for 10+ program
+  //  "none"    → not using install-level program
+  //  "weekly"  → 20$/drain weekly
+  //  "bimonth" → 10$/drain 2× per month
+  installServiceMode: "none" | "weekly" | "bimonth";
 
   // Grease install toggle
   chargeGreaseTrapInstall: boolean;
 
-  // Trip override – UI only, ignored in math
+  // Trip override – UI only, ignored in price math (always 0 in quote)
   tripChargeOverride?: number;
 
-  // Internal contract length (months) – used to compute "Annual" (contract total)
+  // Contract length in months (2–36)
   contractMonths: number;
 
   notes: string;
@@ -44,7 +54,7 @@ export interface FoamingDrainFormState {
 export interface FoamingDrainBreakdown {
   // Which pricing model applied to standard drains
   usedSmallAlt: boolean;      // using 20 + 4$/drain
-  usedBigAccountAlt: boolean; // using 10$/drain via big-account flag
+  usedBigAccountAlt: boolean; // using explicit 10$/drain
   volumePricingApplied: boolean; // install-level 10+ program in use
 
   // Per-visit pieces
@@ -79,14 +89,14 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   // Money fields
   weeklyService: number;      // service only (no trip)
   weeklyTotal: number;        // = weeklyService (trip removed)
-  monthlyRecurring: number;   // normal recurring month (4.33× or 0.5×)
-  annualRecurring: number;    // TOTAL CONTRACT for contractMonths
-  installation: number;       // one-time install total (filthy + grease + green)
+  monthlyRecurring: number;   // normal month after 1st = 4.3 × weeklyService (weekly case)
+  annualRecurring: number;    // TOTAL CONTRACT for contractMonths (2–36), not calendar year
+  installation: number;       // one-time install (filthy + grease + green)
   tripCharge: number;         // kept for compatibility, always 0
 
-  // Extra internal values (not displayed in current UI)
-  firstVisitPrice: number;    // = installation only
-  firstMonthPrice: number;    // first month price (install + 3.33× when weekly)
+  // Extra internal values
+  firstVisitPrice: number;    // First visit (Scenario A/B)
+  firstMonthPrice: number;    // First month cost = FirstVisit + 3.3 × serviceBase
   contractMonths: number;
 
   notes: string;

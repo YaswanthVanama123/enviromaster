@@ -143,15 +143,22 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       : tenTotal;
 
     // ---------- 3) Install-level drains (10+ program) ----------
+    // IMPORTANT: drains are always serviced weekly.
+    // The Weekly / Bi-Monthly selector is ONLY used to decide
+    // the install-program rate:
+    //   Weekly     → $20 / install drain
+    //   Bi-Monthly → $10 / install drain
     let weeklyInstallDrains = 0;
     let volumePricingApplied = false;
 
     if (installDrains > 0 && canUseInstallProgram) {
       volumePricingApplied = true;
+
       const perDrainRate =
-        frequency === "weekly"
-          ? cfg.volumePricing.weekly.ratePerDrain
-          : cfg.volumePricing.bimonthly.ratePerDrain;
+        frequency === "bimonthly"
+          ? cfg.volumePricing.bimonthly.ratePerDrain // e.g. 10
+          : cfg.volumePricing.weekly.ratePerDrain;   // e.g. 20
+
       weeklyInstallDrains = perDrainRate * installDrains;
     }
 
@@ -176,28 +183,37 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyGreenDrains;
 
     const weeklyService = round2(weeklyServiceRaw);
-    const tripCharge = 0; // NEW RULE: trip not used in math
+    const tripCharge = 0; // Trip charge removed from math
     const weeklyTotal = weeklyService; // (service only)
 
     // ---------- 7) One-time installation ----------
 
     // 7a) Filthy standard drains – only when using 20 + 4$/drain
-    let filthyInstallOneTime = 0;
-    if (
+    //     FilthyInstall = (alt weekly total for filthy drains) × 3
+    const usingFilthyAlt =
       condition === "filthy" &&
-      filthyDrains > 0 &&
       useAltPricing &&
-      standardDrainsActive > 0
-    ) {
-      const perDrainAlt = altTotal / standardDrainsActive; // e.g. 60 / 10 = 6
-      const filthyWeeklyPortion = perDrainAlt * filthyDrains; // weekly cost portion for filthy drains
+      standardDrainsActive > 0;
+
+    let filthyInstallOneTime = 0;
+
+    if (usingFilthyAlt) {
+      // How many of the alt drains are filthy?
+      const filthyAltDrains =
+        filthyDrains > 0 && filthyDrains <= standardDrainsActive
+          ? filthyDrains
+          : standardDrainsActive;
+
+      // Alt weekly for those filthy drains:
+      // example: 10 drains → 20 + 4×10 = 60
+      const filthyAltWeekly =
+        cfg.altBaseCharge + cfg.altExtraPerDrain * filthyAltDrains;
+
       filthyInstallOneTime =
-        filthyWeeklyPortion * cfg.installationRules.filthyMultiplier; // 3×
+        filthyAltWeekly * cfg.installationRules.filthyMultiplier; // ×3
     }
 
-    // IMPORTANT RULE:
-    // If standard drains are effectively on $10/drain (useAltPricing = false),
-    // filthy install is completely WAIVED.
+    // If they are NOT on 20+4 (i.e. $10/drain), filthy install is waived.
     if (!useAltPricing) {
       filthyInstallOneTime = 0;
     }
@@ -216,9 +232,29 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       filthyInstallOneTime + greaseInstallOneTime + greenInstallOneTime;
     const installation = round2(installationRaw);
 
-    // First visit = installation only (standard drains never add install
-    // except filthy 3× when using 20+4).
-    const firstVisitPrice = installation;
+    // ---------- 7d) FIRST VISIT LOGIC ----------
+    // Filthy + 20+4$/drain:
+    //   FirstVisit = filthyInstall + weeklyInstallDrains + greaseInstall + greenInstall
+    //
+    // All other cases ($10/drain, normal, all-inclusive):
+    //   FirstVisit = greaseInstall + greenInstall + weeklyStandardDrains + weeklyInstallDrains
+    let firstVisitPrice: number;
+
+    if (usingFilthyAlt) {
+      firstVisitPrice =
+        filthyInstallOneTime +
+        weeklyInstallDrains +
+        greaseInstallOneTime +
+        greenInstallOneTime;
+    } else {
+      firstVisitPrice =
+        greaseInstallOneTime +
+        greenInstallOneTime +
+        weeklyStandardDrains +
+        weeklyInstallDrains;
+    }
+
+    firstVisitPrice = round2(firstVisitPrice);
 
     // ---------- 8) Monthly & contract logic ----------
     const contractMonths = clamp(
@@ -227,52 +263,39 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       cfg.contract.maxMonths
     );
 
+    // Service is always weekly; Monthly logic ALWAYS uses the weekly rule:
+    //   NormalMonth  = weeklyService × 4.33
+    //   If installation > 0:
+    //       FirstMonth = FirstVisit + weeklyService × 3.33
+    //     else:
+    //       FirstMonth = NormalMonth
     let normalMonth = 0;
     let firstMonthPrice = 0;
 
-    if (frequency === "weekly") {
-      const monthlyVisits = cfg.billingConversions.weekly.monthlyVisits; // 4.33
-      normalMonth = weeklyService * monthlyVisits; // 4.33 × weekly
+    const monthlyVisits = cfg.billingConversions.weekly.monthlyVisits; // 4.33
+    const extraVisitsFirstMonth = monthlyVisits - 1; // 3.33
 
-      if (installation > 0) {
-        // First month: Install + (4.33 − 1) × weekly = Install + 3.33 × weekly
-        firstMonthPrice = installation + weeklyService * (monthlyVisits - 1);
-      } else {
-        // No installation at all → first month same as normal month
-        firstMonthPrice = normalMonth;
-      }
+    normalMonth = weeklyService * monthlyVisits;
+
+    if (installation > 0) {
+      firstMonthPrice =
+        firstVisitPrice + weeklyService * extraVisitsFirstMonth;
     } else {
-      // Bi-monthly: treat as ~0.5 visits per month
-      const monthlyFactor = cfg.billingConversions.bimonthly.monthlyMultiplier; // 0.5
-      normalMonth = weeklyService * monthlyFactor;
-
-      if (installation > 0) {
-        // Simpler rule: first month = install + normal month
-        firstMonthPrice = installation + normalMonth;
-      } else {
-        firstMonthPrice = normalMonth;
-      }
+      firstMonthPrice = normalMonth;
     }
 
     normalMonth = round2(normalMonth);
     firstMonthPrice = round2(firstMonthPrice);
 
     // Contract total:
-    // If installation > 0:
-    //   Total = FirstMonth + (Months − 1) × normalMonth
-    // If installation == 0:
-    //   Total = Months × normalMonth
-    let contractTotalRaw: number;
-    if (installation > 0) {
-      contractTotalRaw = firstMonthPrice + (contractMonths - 1) * normalMonth;
-    } else {
-      contractTotalRaw = contractMonths * normalMonth;
-    }
+    //   TotalContract = FirstMonth + (Months − 1) × NormalMonth
+    const contractTotalRaw =
+      firstMonthPrice + (contractMonths - 1) * normalMonth;
     const contractTotal = round2(contractTotalRaw);
 
-    // For this UI:
-    // - monthlyRecurring  → normal recurring month (4.33× or 0.5×)
-    // - annualRecurring   → total contract for contractMonths
+    // For compatibility with ServiceQuoteResult:
+    // - monthlyRecurring  → Normal recurring month (NormalMonth)
+    // - annualRecurring   → TOTAL CONTRACT for contractMonths
     const monthlyRecurring = normalMonth;
     const annualRecurring = contractTotal;
 
@@ -310,8 +333,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       weeklyService,
       weeklyTotal,
-      monthlyRecurring,
-      annualRecurring,
+      monthlyRecurring,   // normal month
+      annualRecurring,    // contract total
       installation,
       tripCharge,
 

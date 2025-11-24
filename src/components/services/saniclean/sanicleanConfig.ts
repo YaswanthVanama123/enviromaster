@@ -25,7 +25,7 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
   // For 4–5 or fewer fixtures → $50 minimum
   smallFacilityMinimum: {
     fixtureThreshold: 5,
-    minimumWeeklyCharge: 50,
+    minimumWeeklyCharge: 40,
     includesTripCharge: true, // historical note; trip itself is $0 now
   },
 

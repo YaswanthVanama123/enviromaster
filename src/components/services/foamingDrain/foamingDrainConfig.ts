@@ -4,9 +4,9 @@ export const FOAMING_DRAIN_CONFIG = {
   // 1. Standard drain pricing
   //    Option A: $10 / drain
   //    Option B: $20 + $4 / drain
-  standardDrainRate: 10,      // $10 / drain
-  altBaseCharge: 20,          // $20 base
-  altExtraPerDrain: 4,        // +$4 per drain
+  standardDrainRate: 10, // $10 / drain
+  altBaseCharge: 20, // $20 base
+  altExtraPerDrain: 4, // +$4 per drain
 
   // 2. Volume / install-level pricing (10+ drains)
   //    If they want install-level service (10+ drains):
@@ -54,14 +54,20 @@ export const FOAMING_DRAIN_CONFIG = {
     beltway: 0,
   },
 
-  // 8. Billing conversions
-  //    Monthly for weekly = 4.33 visits.
+  // 8. Billing conversions (NEW RULES)
+  //    Weekly:
+  //      MonthlyServiceCharge = weeklyService × 4.3
+  //      FirstMonth           = FirstVisit + (MonthlyServiceCharge × 3.3)
+  //      NormalMonth          = MonthlyServiceCharge × 4.3
   billingConversions: {
     weekly: {
-      monthlyVisits: 4.33,
+      monthlyVisits: 4.3,          // used to compute MonthlyServiceCharge
+      firstMonthExtraMonths: 3.3,  // multiplier for MonthlyServiceCharge in first month
+      normalMonthFactor: 4.3,      // multiplier for MonthlyServiceCharge for normal month
     },
+    // Bi-monthly: about 0.5 visits per month
     bimonthly: {
-      monthlyMultiplier: 0.5, // ~0.5 visits per month (every 2 months)
+      monthlyMultiplier: 0.5,
     },
   },
 
