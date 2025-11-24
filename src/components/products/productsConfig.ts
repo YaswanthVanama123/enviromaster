@@ -1,45 +1,442 @@
 // src/features/products/productsConfig.ts
-
 import type { EnvProductCatalog } from "./productsTypes";
 
 export const envProductCatalog: EnvProductCatalog = {
-  version: "2020-11-05-red",
-  lastUpdated: "2020-11-05",
+  version: "EnvNVA-2020115",
+  lastUpdated: "2025-11-23",
   currency: "USD",
   families: [
-    // -----------------------------------------------------------------------
-    // PAPER – prices per case, effective per roll shown for info only
-    // -----------------------------------------------------------------------
+    // ---------------------------------
+    // FLOOR PRODUCTS (floor cleaners / degreasers)
+    // ---------------------------------
+    {
+      key: "floorProducts",
+      label: "Floor Products",
+      sortOrder: 1,
+      products: [
+        {
+          key: "floor_daily",
+          name: "Daily",
+          familyKey: "floorProducts",
+          kind: "floorCleaner",
+          basePrice: {
+            amount: 28,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "floor_primo",
+          name: "Primo",
+          familyKey: "floorProducts",
+          kind: "floorCleaner",
+          basePrice: {
+            amount: 24,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "floor_surefoot_ez",
+          name: "Surefoot EZ",
+          familyKey: "floorProducts",
+          kind: "degreaser",
+          basePrice: {
+            amount: 32,
+            currency: "USD",
+            uom: "gallon",
+          },
+          // show by default in EXTRAS column (matches old “bigProducts”)
+          displayByAdmin: true,
+        },
+        {
+          key: "floor_bad",
+          name: "B.A.D.",
+          familyKey: "floorProducts",
+          kind: "degreaser",
+          basePrice: {
+            amount: 39,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "floor_hero",
+          name: "Hero",
+          familyKey: "floorProducts",
+          kind: "degreaser",
+          basePrice: {
+            amount: 29,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "floor_butyl_deg",
+          name: "Butyl Commercial Degreaser",
+          familyKey: "floorProducts",
+          kind: "degreaser",
+          basePrice: {
+            amount: 20,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "floor_turquoise3",
+          name: "Turquoise 3 (Pro-Con)",
+          familyKey: "floorProducts",
+          kind: "disinfectant",
+          basePrice: {
+            amount: 61,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "floor_hiox_blue_planet",
+          name: "Hiox Blue Planet (APC Peroxide)",
+          familyKey: "floorProducts",
+          kind: "degreaser",
+          basePrice: {
+            amount: 30,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+      ],
+    },
+
+    // ---------------------------------
+    // SANI PRODUCTS (restroom cleaners / disinfectants)
+    // ---------------------------------
+    {
+      key: "saniProducts",
+      label: "Sani Products",
+      sortOrder: 2,
+      products: [
+        {
+          key: "sani_habc",
+          name: "H.A.B.C. (High Acid Bowl Cleaner)",
+          familyKey: "saniProducts",
+          kind: "bowlCleaner",
+          basePrice: {
+            amount: 40,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "sani_visclean",
+          name: "Visclean",
+          familyKey: "saniProducts",
+          kind: "bowlCleaner",
+          basePrice: {
+            amount: 23,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "sani_blue_planet_hospital",
+          name: "Blue Planet Hospital Grade Disinfectant",
+          familyKey: "saniProducts",
+          kind: "disinfectant",
+          basePrice: {
+            amount: 11,
+            currency: "USD",
+            uom: "32oz",
+          },
+        },
+        {
+          key: "sani_sani_shield",
+          name: "Sani Shield Clean-X",
+          familyKey: "saniProducts",
+          kind: "disinfectant",
+          basePrice: {
+            amount: 140,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+      ],
+    },
+
+    // ---------------------------------
+    // THREE SINK COMPONENTS (dish / sanitizer)
+    // ---------------------------------
+    {
+      key: "threeSink",
+      label: "Three Sink Components",
+      sortOrder: 3,
+      products: [
+        {
+          key: "three_blue_diamond",
+          name: "Blue Diamond Dish Detergent",
+          familyKey: "threeSink",
+          kind: "dishSoap",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "three_dish_detergent_pink",
+          name: "Dish Detergent (Pink)",
+          familyKey: "threeSink",
+          kind: "dishSoap",
+          basePrice: {
+            amount: 11,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "three_grade_a",
+          name: "Grade-A",
+          familyKey: "threeSink",
+          kind: "sanitizer",
+          basePrice: {
+            amount: 41,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+      ],
+    },
+
+    // ---------------------------------
+    // OTHER CHEMICALS (drain, oven, Berry Good, etc.)
+    // ---------------------------------
+    {
+      key: "otherChemicals",
+      label: "Other Chemicals",
+      sortOrder: 4,
+      products: [
+        {
+          key: "chem_activate_plus",
+          name: "Activate Plus",
+          familyKey: "otherChemicals",
+          kind: "drainProduct",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "chem_oven_cleaner",
+          name: "Oven Cleaner",
+          familyKey: "otherChemicals",
+          kind: "other",
+          basePrice: {
+            amount: 29,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "chem_health_guard_sanitizer",
+          name: "Hand Sanitizer (Health Guard by Kutol)",
+          familyKey: "otherChemicals",
+          kind: "sanitizer",
+          basePrice: {
+            amount: 42,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "chem_berry_good",
+          name: "Berry Good Deodorant",
+          familyKey: "otherChemicals",
+          kind: "fragrance",
+          basePrice: {
+            amount: 11,
+            currency: "USD",
+            uom: "32oz",
+          },
+        },
+        {
+          key: "chem_repel_glass",
+          name: "Repel Glass and Surface Cleaner",
+          familyKey: "otherChemicals",
+          kind: "other",
+          basePrice: {
+            amount: 14,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "chem_invisible_shield",
+          name: "Invisible Shield",
+          familyKey: "otherChemicals",
+          kind: "other",
+          basePrice: {
+            amount: 14,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+      ],
+    },
+
+    // ---------------------------------
+    // SOAP PRODUCTS (bulk soap, quality levels)
+    // ---------------------------------
+    {
+      key: "soap",
+      label: "Soap Products",
+      sortOrder: 5,
+      products: [
+        {
+          key: "soap_orange_premium",
+          name: "Orange Premium Foam Soap",
+          familyKey: "soap",
+          kind: "handSoap",
+          // price not explicitly in sheet – leave basePrice undefined
+        },
+        {
+          key: "soap_foaming_pear",
+          name: "Foaming Pear Hand Soap",
+          familyKey: "soap",
+          kind: "handSoap",
+          basePrice: {
+            amount: 30,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "soap_white_lotion",
+          name: "White Lotion Soap",
+          familyKey: "soap",
+          kind: "handSoap",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "gallon",
+          },
+        },
+        {
+          key: "soap_low_quality_lotion",
+          name: "Low Quality Lotion Soap",
+          familyKey: "soap",
+          kind: "handSoap",
+          // “ask Alex or Jeff” – keep price open
+        },
+        {
+          key: "soap_grit_soap",
+          name: "Grit Soap",
+          familyKey: "soap",
+          kind: "handSoap",
+          // no explicit price – treat as product without basePrice
+          displayByAdmin: true, // appears by default in EXTRAS column (old smallProducts last row)
+        },
+      ],
+    },
+
+    // ---------------------------------
+    // PAPER (cases & per-roll economics)
+    // ---------------------------------
     {
       key: "paper",
       label: "Paper",
-      sortOrder: 10,
-      description: "Paper products (per case pricing, red rates).",
+      sortOrder: 6,
       products: [
+        // --- “generic” tower / hard-wound / household / JRT ---
         {
-          key: "paper-multifold-towel",
-          name: "Multifold Towel",
-          kind: "paper",
+          key: "paper_multifold_tower",
+          name: "Multifold Tower",
           familyKey: "paper",
+          kind: "paper",
           basePrice: {
-            amount: 50, // Multifold Tower Case/16/250 $50
+            amount: 50,
             currency: "USD",
             uom: "case",
             unitSizeLabel: "Case/16/250",
           },
           effectivePerRollPriceInternal: 3.125,
           suggestedCustomerRollPrice: 4.7,
-          quantityPerCase: 16 * 250,
-          quantityPerCaseLabel: "16 packs × 250",
-          displayByAdmin: true,
+          quantityPerCase: 16,
+          quantityPerCaseLabel: "Case/16/250",
         },
         {
-          key: "paper-em-jrt",
-          name: "Enviro-Master JRT",
-          kind: "paper",
+          key: "paper_hardwound_kraft",
+          name: "Hard-wound Kraft (Paper Towels)",
           familyKey: "paper",
+          kind: "paper",
           basePrice: {
-            amount: 56, // Enviro-Master JRT Case/12 $56
+            amount: 55,
+            currency: "USD",
+            uom: "case",
+            unitSizeLabel: "Case/6",
+          },
+          effectivePerRollPriceInternal: 9.17,
+          suggestedCustomerRollPrice: 13.75,
+          quantityPerCase: 6,
+          quantityPerCaseLabel: "Case/6",
+        },
+        {
+          key: "paper_hardwound_white",
+          name: "Hard-wound White (Paper Towels)",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 68,
+            currency: "USD",
+            uom: "case",
+            unitSizeLabel: "Case/6",
+          },
+          effectivePerRollPriceInternal: 11.33,
+          suggestedCustomerRollPrice: 17,
+          quantityPerCase: 6,
+          quantityPerCaseLabel: "Case/6",
+        },
+        {
+          key: "paper_household_toilet_tissue",
+          name: "Household Toilet Tissue",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 103,
+            currency: "USD",
+            uom: "case",
+            unitSizeLabel: "Case/96",
+          },
+          effectivePerRollPriceInternal: 1.073,
+          suggestedCustomerRollPrice: 1.6,
+          quantityPerCase: 96,
+          quantityPerCaseLabel: "Case/96",
+        },
+        {
+          key: "paper_jrt_generic",
+          name: "JRT (Big Rolls of Toilet Paper)",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 60,
+            currency: "USD",
+            uom: "case",
+            unitSizeLabel: "Case/12",
+          },
+          effectivePerRollPriceInternal: 5,
+          suggestedCustomerRollPrice: 7.5,
+          quantityPerCase: 12,
+          quantityPerCaseLabel: "Case/12",
+        },
+
+        // --- Enviro-Master branded SKUs (mapped to EM names used in UI) ---
+
+        {
+          key: "paper_em_jrt_tissue",
+          name: "EM Proprietary JRT Tissue",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 56,
             currency: "USD",
             uom: "case",
             unitSizeLabel: "Case/12",
@@ -47,15 +444,16 @@ export const envProductCatalog: EnvProductCatalog = {
           effectivePerRollPriceInternal: 4.67,
           suggestedCustomerRollPrice: 7.0,
           quantityPerCase: 12,
-          displayByAdmin: true,
+          quantityPerCaseLabel: "Case/12",
+          displayByAdmin: true, // shown by default in LEFT column
         },
         {
-          key: "paper-em-hardwound-kraft",
-          name: "Enviro-Master Hard-wound Kraft",
-          kind: "paper",
+          key: "paper_em_hardwound_natural",
+          name: "EM Proprietary Hardwood Natural",
           familyKey: "paper",
+          kind: "paper",
           basePrice: {
-            amount: 43, // Enviro-Master Hard-wound kraft Case/6 $43
+            amount: 43,
             currency: "USD",
             uom: "case",
             unitSizeLabel: "Case/6",
@@ -63,15 +461,16 @@ export const envProductCatalog: EnvProductCatalog = {
           effectivePerRollPriceInternal: 7.17,
           suggestedCustomerRollPrice: 10.75,
           quantityPerCase: 6,
+          quantityPerCaseLabel: "Case/6",
           displayByAdmin: true,
         },
         {
-          key: "paper-em-hardwound-white",
-          name: "Enviro-Master Hard-wound White",
-          kind: "paper",
+          key: "paper_em_hardwound_white",
+          name: "EM Proprietary Hardwood White",
           familyKey: "paper",
+          kind: "paper",
           basePrice: {
-            amount: 54, // Enviro-Master Hard-wound white Case/6 $54
+            amount: 54,
             currency: "USD",
             uom: "case",
             unitSizeLabel: "Case/6",
@@ -79,15 +478,16 @@ export const envProductCatalog: EnvProductCatalog = {
           effectivePerRollPriceInternal: 9,
           suggestedCustomerRollPrice: 13.5,
           quantityPerCase: 6,
+          quantityPerCaseLabel: "Case/6",
           displayByAdmin: true,
         },
         {
-          key: "paper-em-center-pull",
-          name: "Enviro-Master Center Pull",
-          kind: "paper",
+          key: "paper_center_pull_towels",
+          name: "Center Pull Towels",
           familyKey: "paper",
+          kind: "paper",
           basePrice: {
-            amount: 57, // Enviro-Master Center Pull Case/6 $57
+            amount: 57,
             currency: "USD",
             uom: "case",
             unitSizeLabel: "Case/6",
@@ -95,25 +495,77 @@ export const envProductCatalog: EnvProductCatalog = {
           effectivePerRollPriceInternal: 9.5,
           suggestedCustomerRollPrice: 14.25,
           quantityPerCase: 6,
+          quantityPerCaseLabel: "Case/6",
           displayByAdmin: true,
+        },
+        {
+          key: "paper_multifold_natural",
+          name: "Multi-Fold Natural",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 50,
+            currency: "USD",
+            uom: "case",
+            unitSizeLabel: "Case/16/250",
+          },
+          effectivePerRollPriceInternal: 3.125,
+          suggestedCustomerRollPrice: 4.7,
+          quantityPerCase: 16,
+          quantityPerCaseLabel: "Case/16/250",
+          displayByAdmin: true,
+        },
+        {
+          key: "paper_multifold_white",
+          name: "Multi-Fold White",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 50,
+            currency: "USD",
+            uom: "case",
+            unitSizeLabel: "Case/16/250",
+          },
+          effectivePerRollPriceInternal: 3.125,
+          suggestedCustomerRollPrice: 4.7,
+          quantityPerCase: 16,
+          quantityPerCaseLabel: "Case/16/250",
+          displayByAdmin: true,
+        },
+
+        // Toilet seat covers (pack)
+        {
+          key: "paper_toilet_seat_covers",
+          name: "Toilet Seat Covers",
+          familyKey: "paper",
+          kind: "paper",
+          basePrice: {
+            amount: 5,
+            currency: "USD",
+            uom: "pack",
+            unitSizeLabel: "Pack of 250",
+          },
+          quantityPerCase: 250,
+          quantityPerCaseLabel: "Pack of 250",
+          displayByAdmin: true, // Seat Cover Sleeve in smallProducts
         },
       ],
     },
 
-    // -----------------------------------------------------------------------
-    // DISPENSERS – prices per dispenser + weekly warranty rate
-    // -----------------------------------------------------------------------
+    // ---------------------------------
+    // DISPENSERS
+    // ---------------------------------
     {
       key: "dispensers",
       label: "Dispensers",
-      sortOrder: 20,
-      description: "Dispensers with hardware and weekly warranty charges.",
+      sortOrder: 7,
       products: [
+        // main Enviro-Master dispenser list from sheet
         {
-          key: "disp-manual-soap",
+          key: "disp_manual_soap",
           name: "Enviro-Master Manual Soap Dispenser",
-          kind: "dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 53,
             currency: "USD",
@@ -122,15 +574,15 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 1,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
-          displayByAdmin: true,
         },
         {
-          key: "disp-hybrid",
+          key: "disp_hybrid_soap",
           name: "Enviro-Master Hybrid Soap Dispenser",
-          kind: "dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 100,
             currency: "USD",
@@ -139,14 +591,15 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 2,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
         },
         {
-          key: "disp-mechanical-towel",
+          key: "disp_mechanical_towel",
           name: "Enviro-Master Mechanical Towel Dispenser",
-          kind: "dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 100,
             currency: "USD",
@@ -155,15 +608,15 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 2,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
-          displayByAdmin: true,
         },
         {
-          key: "disp-hybrid-towel",
+          key: "disp_hybrid_towel",
           name: "Enviro-Master Hybrid Towel Dispenser",
-          kind: "dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 160,
             currency: "USD",
@@ -172,15 +625,15 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 3,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
-          displayByAdmin: true,
         },
         {
-          key: "disp-air-freshener",
+          key: "disp_air_freshener",
           name: "Enviro-Master Air Freshener (Battery)",
-          kind: "dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 53,
             currency: "USD",
@@ -189,15 +642,15 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 1,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
-          displayByAdmin: true,
         },
         {
-          key: "disp-jrt",
-          name: "Enviro-Master JRT Dispenser",
-          kind: "dispenser",
+          key: "disp_jrt_dispenser",
+          name: "Enviro-Master JRT Tissue Dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 60,
             currency: "USD",
@@ -206,42 +659,86 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 1,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
-          displayByAdmin: true,
         },
         {
-          key: "disp-seat-cover",
-          name: "Seat Cover Dispenser",
-          kind: "dispenser",
+          key: "disp_legacy_tp",
+          name: "Enviro-Master Legacy Toilet Paper Dispenser",
           familyKey: "dispensers",
-          basePrice: {
-            amount: 25, // Toilet seat dispensers — $25, warranty free
-            currency: "USD",
-            uom: "dispenser",
-          },
-        },
-        {
-          key: "disp-paper-towel",
-          name: "Paper Towel Dispenser",
           kind: "dispenser",
-          familyKey: "dispensers",
           basePrice: {
-            amount: 25,
+            amount: 40,
             currency: "USD",
             uom: "dispenser",
           },
           warrantyPricePerUnit: {
             amount: 1,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
         },
         {
-          key: "disp-toilet-paper",
+          key: "disp_legacy_towel",
+          name: "Enviro-Master Legacy Paper Towel Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 100,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 2,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+        },
+        {
+          key: "disp_legacy_air_freshener",
+          name: "Enviro-Master Legacy Air Freshener",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 65,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+        },
+
+        // generic install/warranty rules turned into actual SKUs
+        {
+          key: "disp_toilet_seat_dispenser",
+          name: "Toilet Seat Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 0,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          // warranty explicitly free
+        },
+        {
+          key: "disp_toilet_paper_dispenser",
           name: "Toilet Paper Dispenser",
-          kind: "dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
             amount: 25,
             currency: "USD",
@@ -250,110 +747,252 @@ export const envProductCatalog: EnvProductCatalog = {
           warrantyPricePerUnit: {
             amount: 1,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
+          
         },
         {
-          key: "disp-hand-sanitizer",
-          name: "Hand Sanitizer Dispenser",
-          kind: "dispenser",
+          key: "disp_paper_towel_dispenser",
+          name: "Paper Towel Dispenser",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
-            amount: 20, // $20/dispenser install
+            amount: 25,
             currency: "USD",
             uom: "dispenser",
           },
           warrantyPricePerUnit: {
             amount: 1,
             currency: "USD",
+            uom: "dispenser",
             billingPeriod: "week",
           },
         },
+
+        // “UI names” used in your old dummyResponse – marked displayByAdmin
         {
-          key: "disp-sanipod-receptacle",
-          name: "SaniPod Receptacle",
-          kind: "dispenser",
+          key: "disp_em_twin_jrt",
+          name: "EM Proprietary Twin JRT",
           familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
-            amount: 25, // SaniPod install $25
+            amount: 60,
             currency: "USD",
             uom: "dispenser",
           },
-        },
-      ],
-    },
-
-    // -----------------------------------------------------------------------
-    // FLOOR PRODUCTS (chemicals per gallon)
-    // -----------------------------------------------------------------------
-    {
-      key: "floorProducts",
-      label: "Floor Products",
-      sortOrder: 30,
-      products: [
-        {
-          key: "daily-floor-cleaner",
-          name: "Daily",
-          kind: "chemical",
-          familyKey: "floorProducts",
-          basePrice: {
-            amount: 28,
+          warrantyPricePerUnit: {
+            amount: 1,
             currency: "USD",
-            uom: "gallon",
+            uom: "dispenser",
+            billingPeriod: "week",
           },
           displayByAdmin: true,
         },
         {
-          key: "surefoot-ez",
-          name: "Surefoot EZ",
-          kind: "chemical",
-          familyKey: "floorProducts",
+          key: "disp_em_towel_mech",
+          name: "EM Proprietary Towel Mechanical",
+          familyKey: "dispensers",
+          kind: "dispenser",
           basePrice: {
-            amount: 32,
+            amount: 100,
             currency: "USD",
-            uom: "gallon",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 2,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_em_towel_hybrid",
+          name: "EM Proprietary Towel Hybrid",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 160,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 3,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_center_pull_towel_dispenser",
+          name: "Center Pull Towel Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_multifold_dispenser",
+          name: "Multi-Fold Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_em_af_dispenser",
+          name: "EM Proprietary A/F Dispensers",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 53,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_em_soap_dispenser",
+          name: "EM Proprietary Soap Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 53,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_seat_cover_dispenser",
+          name: "Seat Cover Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_hand_sanitizer_dispenser",
+          name: "Hand Sanitizer Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 20, // install $20
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_grit_soap_dispenser",
+          name: "Grit Soap Dispenser",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 53,
+            currency: "USD",
+            uom: "dispenser",
+          },
+          warrantyPricePerUnit: {
+            amount: 1,
+            currency: "USD",
+            uom: "dispenser",
+            billingPeriod: "week",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "disp_sanipod_receptacle",
+          name: "SaniPod Receptacle",
+          familyKey: "dispensers",
+          kind: "dispenser",
+          basePrice: {
+            amount: 25, // install
+            currency: "USD",
+            uom: "receptacle",
+          },
+          warrantyPricePerUnit: {
+            amount: 3,
+            currency: "USD",
+            uom: "receptacle",
+            billingPeriod: "week",
           },
           displayByAdmin: true,
         },
       ],
     },
 
-    // -----------------------------------------------------------------------
-    // SOAP / OTHER CHEMICALS
-    // -----------------------------------------------------------------------
+    // ---------------------------------
+    // EXTRAS / FACILITIES PRODUCTS (mats, clips, screens, microfiber, green drain, etc.)
+    // ---------------------------------
     {
-      key: "soap",
-      label: "Dish / Soap",
-      sortOrder: 40,
+      key: "extras",
+      label: "Extras / Facilities Products",
+      sortOrder: 8,
       products: [
         {
-          key: "dish-detergent-pink",
-          name: "Dish Detergent (Pink)",
-          kind: "soap",
-          familyKey: "soap",
+          key: "extra_berry_good_case",
+          name: "Berry Good (Case/12)",
+          familyKey: "extras",
+          kind: "fragrance",
           basePrice: {
             amount: 11,
             currency: "USD",
-            uom: "gallon",
+            uom: "32oz",
+            unitSizeLabel: "Case/12",
           },
-          displayByAdmin: true,
+          quantityPerCase: 12,
+          quantityPerCaseLabel: "Case/12",
         },
-      ],
-    },
-
-    // -----------------------------------------------------------------------
-    // EXTRAS (mats, screens, seat covers, etc.)
-    // -----------------------------------------------------------------------
-    {
-      key: "extras",
-      label: "Extras",
-      sortOrder: 50,
-      products: [
         {
-          key: "extra-urinal-mat",
-          name: "Urinal Mat",
-          kind: "accessory",
+          key: "extra_urinal_mats",
+          name: "EM Urinal Mat",
           familyKey: "extras",
+          kind: "other",
           basePrice: {
             amount: 10,
             currency: "USD",
@@ -364,10 +1003,22 @@ export const envProductCatalog: EnvProductCatalog = {
           displayByAdmin: true,
         },
         {
-          key: "extra-bowl-clip",
-          name: "Bowl Clip",
-          kind: "accessory",
+          key: "extra_commode_mats",
+          name: "EM Commode Mat",
           familyKey: "extras",
+          kind: "other",
+          basePrice: {
+            amount: 10,
+            currency: "USD",
+            uom: "each",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "extra_bowl_clip",
+          name: "Bowl Clip",
+          familyKey: "extras",
+          kind: "fragrance",
           basePrice: {
             amount: 4,
             currency: "USD",
@@ -378,10 +1029,23 @@ export const envProductCatalog: EnvProductCatalog = {
           displayByAdmin: true,
         },
         {
-          key: "extra-urinal-screen",
-          name: "Urinal Screen",
-          kind: "accessory",
+          key: "extra_fragrance_bars",
+          name: "Fragrance Bars",
           familyKey: "extras",
+          kind: "fragrance",
+          basePrice: {
+            amount: 5,
+            currency: "USD",
+            uom: "each",
+          },
+          quantityPerCase: 45,
+          quantityPerCaseLabel: "Case/45",
+        },
+        {
+          key: "extra_urinal_screen",
+          name: "Urinal Screen",
+          familyKey: "extras",
+          kind: "fragrance",
           basePrice: {
             amount: 4,
             currency: "USD",
@@ -389,39 +1053,62 @@ export const envProductCatalog: EnvProductCatalog = {
           },
           quantityPerCase: 60,
           quantityPerCaseLabel: "Case/60",
-          displayByAdmin: true,
         },
         {
-          key: "extra-seat-cover",
-          name: "Toilet Seat Cover",
-          kind: "accessory",
+          key: "extra_wave3d_urinal_screen",
+          name: "Wave 3D Urinal Screen",
           familyKey: "extras",
+          kind: "fragrance",
           basePrice: {
-            amount: 4, // Toilet Seat Cover Case/40 $4 → $0.10 each
+            amount: 4,
             currency: "USD",
             uom: "each",
           },
-          quantityPerCase: 40,
-          quantityPerCaseLabel: "Case/40",
           displayByAdmin: true,
         },
         {
-          key: "extra-berry-good",
-          name: "Berry Good",
-          kind: "chemical",
+          key: "extra_splash_hog_urinal_screen",
+          name: "Splash Hog Urinal Screen",
           familyKey: "extras",
+          kind: "fragrance",
           basePrice: {
             amount: 11,
             currency: "USD",
-            uom: "gallon",
-            unitSizeLabel: "32oz (Case/12)",
+            uom: "each",
           },
+          displayByAdmin: true,
         },
         {
-          key: "extra-green-drain",
-          name: "Green Drain",
-          kind: "accessory",
+          key: "extra_vertical_urinal_screen",
+          name: "Vertical Urinal Screen",
           familyKey: "extras",
+          kind: "fragrance",
+          basePrice: {
+            amount: 11,
+            currency: "USD",
+            uom: "each",
+          },
+          quantityPerCase: 72,
+          quantityPerCaseLabel: "Case/72",
+        },
+        {
+          key: "extra_microfiber_mop",
+          name: "Microfiber Mop",
+          familyKey: "extras",
+          kind: "tool",
+          basePrice: {
+            amount: 5,
+            currency: "USD",
+            uom: "each",
+          },
+          quantityPerCase: 12,
+          quantityPerCaseLabel: "Case/12",
+        },
+        {
+          key: "extra_green_drain",
+          name: "Green Drain",
+          familyKey: "extras",
+          kind: "drainProduct",
           basePrice: {
             amount: 59,
             currency: "USD",
@@ -429,6 +1116,83 @@ export const envProductCatalog: EnvProductCatalog = {
           },
           quantityPerCase: 6,
           quantityPerCaseLabel: "Case/6",
+        },
+        {
+          key: "extra_toilet_seat_cover_case",
+          name: "Toilet Seat Cover Case",
+          familyKey: "extras",
+          kind: "paper",
+          basePrice: {
+            amount: 4,
+            currency: "USD",
+            uom: "each",
+          },
+          quantityPerCase: 40,
+          quantityPerCaseLabel: "Case/40",
+        },
+        {
+          key: "extra_commercial_microfiber",
+          name: "Commercial Cleaning Grade Microfiber",
+          familyKey: "extras",
+          kind: "tool",
+          basePrice: {
+            amount: 20,
+            currency: "USD",
+            uom: "each",
+          },
+          quantityPerCase: 6,
+          quantityPerCaseLabel: "Case/6",
+        },
+        {
+          key: "extra_disposable_microfiber",
+          name: "Disposable Microfiber",
+          familyKey: "extras",
+          kind: "tool",
+          basePrice: {
+            amount: 40,
+            currency: "USD",
+            uom: "case",
+          },
+          quantityPerCase: 50,
+          quantityPerCaseLabel: "Case/50",
+        },
+
+        // Chemicals that you previously showed in the “bigProducts” column
+        {
+          key: "extra_daily_default",
+          name: "Daily (Floor Cleaner)",
+          familyKey: "extras",
+          kind: "floorCleaner",
+          basePrice: {
+            amount: 28,
+            currency: "USD",
+            uom: "gallon",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "extra_surefoot_default",
+          name: "Surefoot EZ (Default Extra)",
+          familyKey: "extras",
+          kind: "degreaser",
+          basePrice: {
+            amount: 32,
+            currency: "USD",
+            uom: "gallon",
+          },
+          displayByAdmin: true,
+        },
+        {
+          key: "extra_dish_detergent_default",
+          name: "Dish Detergent (Default Extra)",
+          familyKey: "extras",
+          kind: "dishSoap",
+          basePrice: {
+            amount: 25,
+            currency: "USD",
+            uom: "gallon",
+          },
+          displayByAdmin: true,
         },
       ],
     },

@@ -93,10 +93,10 @@ export const productsTableLayout: ProductTableLayout = {
       productKey: "disp-air-freshener",
       overrideLabel: "Enviro-Master Air Freshener (Battery)",
     },
-    {
-      productKey: "disp-manual-soap",
-      overrideLabel: "Enviro-Master Manual Soap Dispenser",
-    },
+    // {
+    //   productKey: "disp-manual-soap",
+    //   overrideLabel: "Enviro-Master Manual Soap Dispenser",
+    // },
     {
       productKey: "disp-seat-cover",
       overrideLabel: "Seat Cover Dispenser",
