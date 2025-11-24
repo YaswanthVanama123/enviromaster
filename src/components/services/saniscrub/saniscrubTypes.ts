@@ -7,6 +7,7 @@ export type SaniscrubFrequency =
   | "quarterly";
 
 export interface SaniscrubFrequencyMeta {
+  // visits per YEAR (e.g. 52 for weekly → 4.33 visits/month)
   visitsPerYear: number;
 }
 
@@ -23,8 +24,8 @@ export interface SaniscrubPricingConfig {
   minimums: Record<SaniscrubFrequency, number>;
 
   // Non-bathroom area rules (per VISIT)
-  nonBathroomUnitSqFt: number;           // 500 sq ft
-  nonBathroomFirstUnitRate: number;      // 250 for first 500
+  nonBathroomUnitSqFt: number; // 500 sq ft
+  nonBathroomFirstUnitRate: number; // 250 for first 500
   nonBathroomAdditionalUnitRate: number; // 125 for each extra 500
 
   // Install multipliers (one-time job) applied to MONTHLY base (no trip)
@@ -33,9 +34,9 @@ export interface SaniscrubPricingConfig {
     dirty: number; // 3× job
   };
 
-  // Base trip charge + optional parking
-  tripChargeBase: number; // $8 / visit
-  parkingFee: number;     // +$7 when parking needed
+  // Trip charge base/parking (kept only for UI – calculations ignore these now)
+  tripChargeBase: number;
+  parkingFee: number;
 
   // Visits per year per frequency
   frequencyMeta: Record<SaniscrubFrequency, SaniscrubFrequencyMeta>;
@@ -63,11 +64,14 @@ export interface SaniscrubFormState extends BaseServiceFormState {
   // Whether SaniClean is also being sold (required for 2×/month discount)
   hasSaniClean: boolean;
 
-  // Geography / trip logic
+  // Geography / trip logic (UI only now)
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
 
   // Install quote options
   includeInstall: boolean;
   isDirtyInstall: boolean;
+
+  // Contract length in months (2–36) – drives total contract price
+  contractMonths: number;
 }

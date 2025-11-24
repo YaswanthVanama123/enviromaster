@@ -16,8 +16,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const pods = Math.max(0, form.podQuantity || 0);
   const bags = Math.max(0, form.extraBagsPerWeek || 0);
 
-  // Base weekly bag amount at red rate (from config: 2$/bag/wk)
-  const bagLineWeekly = bags * cfg.extraBagPrice;
+  // For display: bag line amount (same base price, unit text depends on checkbox).
+  const bagLineAmount = bags * cfg.extraBagPrice;
+  const bagUnitLabel = form.extraBagsRecurring
+    ? "$/bag/wk"
+    : "$/bag one-time";
 
   // Decide the label that appears after "@"
   const ruleLabel =
@@ -30,7 +33,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         <div className="svc-h">SANIPOD (STANDALONE ONLY)</div>
       </div>
 
-      {/* Frequency used only for per-visit view */}
+      {/* Frequency used only for per-visit view (kept same UI) */}
       <div className="svc-row">
         <label>Frequency (for per-visit view)</label>
         <div className="svc-row-right">
@@ -69,12 +72,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Extra bags line */}
+      {/* Extra bags line with recurring vs one-time checkbox */}
       <div className="svc-row">
-        <label>
-          Extra Bags per Week{" "}
-          {/* <span className="svc-small">(above 1 refill/wk included)</span> */}
-        </label>
+        <label>Extra Bags</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
@@ -86,16 +86,27 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           />
           <span className="svc-multi">@</span>
           <span className="svc-rate">{cfg.extraBagPrice}</span>
-          <span className="svc-small">$/bag/wk</span>
+          <span className="svc-small">{bagUnitLabel}</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
-            ${fmt(bagLineWeekly)}
+            ${fmt(bagLineAmount)}
           </span>
+          <label className="svc-inline" style={{ marginLeft: "8px" }}>
+            <input
+              type="checkbox"
+              name="extraBagsRecurring"
+              checked={form.extraBagsRecurring}
+              onChange={onChange}
+            />{" "}
+            <span className="svc-small">
+              Recurring each visit
+            </span>
+          </label>
         </div>
       </div>
 
-      {/* Trip charge row */}
-      <div className="svc-row">
+      {/* Trip charge row (visible, but locked to 0 and ignored in pricing) */}
+      {/* <div className="svc-row">
         <label>Trip Charge</label>
         <div className="svc-row-right">
           <input
@@ -104,20 +115,20 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             step="0.01"
             name="tripChargePerVisit"
             value={form.tripChargePerVisit}
-            onChange={onChange}
+            disabled
+            readOnly
           />
-          <span className="svc-small">$/visit</span>
+          <span className="svc-small">$/visit (not used)</span>
           <label className="svc-inline">
             <input
               type="checkbox"
-              name="includeTrip"
-              checked={form.includeTrip}
-              onChange={onChange}
+              checked={false}
+              disabled
             />{" "}
             Include
           </label>
         </div>
-      </div>
+      </div> */}
 
       {/* Install toggle */}
       <div className="svc-row">
@@ -180,23 +191,48 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
+      {/* Contract length (2–36 months) */}
+      <div className="svc-row">
+        <label>Contract Length (Months)</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="contractMonths"
+            value={form.contractMonths}
+            onChange={onChange}
+          >
+            {Array.from({ length: cfg.maxContractMonths - cfg.minContractMonths + 1 })
+              .map((_, idx) => {
+                const m = cfg.minContractMonths + idx;
+                return (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                );
+              })}
+          </select>
+        </div>
+      </div>
+
       {/* Totals */}
       <div className="svc-row svc-row-total">
-        <label>Per Visit (Service + Trip + Install)</label>
+        <label>Per Visit (Service Only)</label>
         <div className="svc-dollar">
           ${fmt(calc.perVisit)}
         </div>
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>Monthly Recurring (1st Year incl. Install)</label>
+        <label>First Month (Install + Service)</label>
         <div className="svc-dollar">
           ${fmt(calc.monthly)}
         </div>
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>Annual (Service + Trip + Install)</label>
+        <label>
+          Contract Total ({form.contractMonths} Months)
+        </label>
         <div className="svc-dollar">
           ${fmt(calc.annual)}
         </div>

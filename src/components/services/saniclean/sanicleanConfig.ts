@@ -7,26 +7,26 @@ import type {
 
 export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
   geographicPricing: {
-    // Inside the Beltway: $7 / fixture, $40 minimum, $8 trip + optional parking
+    // Inside the Beltway: $7 / fixture, $40 minimum, trip charge removed (set to 0)
     insideBeltway: {
       ratePerFixture: 7,
       weeklyMinimum: 40,
-      tripCharge: 8,
-      parkingFee: 7,
+      tripCharge: 0, // trip concept removed from calculations
+      parkingFee: 0, // parking folded into 0 as well
     },
-    // Outside the Beltway: $6 / fixture, same $40 minimum, $8 trip
+    // Outside the Beltway: $6 / fixture, same $40 minimum, trip charge removed (set to 0)
     outsideBeltway: {
       ratePerFixture: 6,
       weeklyMinimum: 40,
-      tripCharge: 8,
+      tripCharge: 0, // trip concept removed from calculations
     },
   },
 
-  // For 4–5 or fewer fixtures → $50 minimum (trip included)
+  // For 4–5 or fewer fixtures → $50 minimum
   smallFacilityMinimum: {
     fixtureThreshold: 5,
     minimumWeeklyCharge: 50,
-    includesTripCharge: true,
+    includesTripCharge: true, // historical note; trip itself is $0 now
   },
 
   // All-inclusive package:
@@ -34,7 +34,8 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
   //   - SaniPod, urinal mats, paper & dispensers
   //   - microfiber mopping
   //   - monthly SaniScrub
-  //   - no warranty fee, no trip charge
+  //   - no warranty fee
+  //   - no trip charge (already 0 in geo)
   //   - priced at $20 / fixture / week
   allInclusivePackage: {
     weeklyRatePerFixture: 20,
@@ -91,11 +92,11 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
     },
   },
 
-  // Conversions so 11 fixtures × $20/wk ≈ $900/month
+  // Conversions — global rule: Monthly = 4.33 × weekly, annual still 50 service weeks
   billingConversions: {
     weekly: {
-      monthlyMultiplier: 4.0909090909, // 220 × 4.0909 ≈ 900
-      annualMultiplier: 50,            // 50 service weeks / year
+      monthlyMultiplier: 4.33, // new rule: 4.33 weeks/month
+      annualMultiplier: 50,    // 50 service weeks / year (kept for compatibility)
     },
   },
 

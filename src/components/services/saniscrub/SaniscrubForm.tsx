@@ -8,12 +8,13 @@ import {
 } from "./saniscrubConfig";
 
 /**
- * SaniScrub form – wired 100% to the rules:
- *  - fixtures per frequency with 175 / 250 monthly minimums
- *  - 2×/month = 2× normal monthly − $15 when combined with SaniClean
- *  - non-bathroom block pricing (250 + 125/extra 500 sq ft)
- *  - trip charge $8 + parking
- *  - install = 1× clean / 3× dirty; annual = 12×monthly + full install
+ * SaniScrub form with updated rules:
+ *  - Trip charge visible but locked to $0 (not used in any math)
+ *  - Monthly uses visitsPerYear/12 (weekly would be 4.33 visits/month)
+ *  - No "annual" math; instead a 2–36 month contract dropdown
+ *  - First visit = install only
+ *  - First month = install-only first visit + (monthlyVisits − 1) × normal service
+ *  - Contract total is based on that first month + remaining months
  */
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
@@ -174,7 +175,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Trip charge: location + parking */}
+      {/* Trip & location – still visible for UI, but math is locked to $0 */}
       <div className="svc-row">
         <label>Trip &amp; Location</label>
         <div className="svc-row-right">
@@ -195,12 +196,12 @@ export const SaniscrubForm: React.FC<
               checked={form.needsParking}
               onChange={onChange}
             />
-            <span>Parking Needed (+${cfg.parkingFee})</span>
+            <span>Parking Needed (+$0)</span>
           </label>
         </div>
       </div>
 
-      {/* Trip charge numeric display */}
+      {/* Trip charge numeric display – locked to $0 */}
       <div className="svc-row">
         <label>Trip Charge</label>
         <div className="svc-row-right">
@@ -208,29 +209,21 @@ export const SaniscrubForm: React.FC<
             className="svc-in"
             type="text"
             readOnly
-            value={
-              calc.perVisitTrip > 0
-                ? `$${calc.perVisitTrip.toFixed(2)} / visit`
-                : "$0.00"
-            }
+            value="$0.00 / visit"
           />
           <span>·</span>
           <input
             className="svc-in"
             type="text"
             readOnly
-            value={
-              calc.monthlyTrip > 0
-                ? `$${calc.monthlyTrip.toFixed(2)} / month`
-                : "$0.00"
-            }
+            value="$0.00 / month"
           />
         </div>
       </div>
 
-      {/* Install (3× dirty / 1× clean) – one-time job */}
+      {/* Install (3× dirty / 1× clean) – one-time job, first visit only */}
       <div className="svc-row svc-row-install">
-        <label>Install Quote</label>
+        <label>Install Quote (First Visit Only)</label>
         <div className="svc-row-right">
           <label className="svc-inline">
             <input
@@ -263,7 +256,23 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Totals */}
+      {/* First month total = install-only first visit + (monthlyVisits − 1) × normal service */}
+      <div className="svc-row svc-row-charge">
+        <label>First Month Total</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={calc.firstMonthTotal.toFixed(2)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Normal recurring month (after first) */}
       <div className="svc-row svc-row-charge">
         <label>Monthly SaniScrub</label>
         <div className="svc-row-right">
@@ -279,9 +288,22 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
+      {/* Contract total – dropdown 2–36 months */}
       <div className="svc-row svc-row-charge">
-        <label>Annual SaniScrub</label>
+        <label>Contract Total</label>
         <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="contractMonths"
+            value={form.contractMonths}
+            onChange={onChange}
+          >
+            {Array.from({ length: 35 }, (_, i) => i + 2).map((months) => (
+              <option key={months} value={months}>
+                {months} mo
+              </option>
+            ))}
+          </select>
           <div className="svc-dollar">
             <span>$</span>
             <input
@@ -294,6 +316,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
+      {/* Per-Visit Effective (no install, no trip) */}
       <div className="svc-row svc-row-charge">
         <label>Per-Visit Effective</label>
         <div className="svc-row-right">

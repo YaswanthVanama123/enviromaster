@@ -5,7 +5,7 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
   smallWindowRate: 1.5,
   mediumWindowRate: 3.0,
   largeWindowRate: 7.0,
-  tripCharge: 8.0,
+  tripCharge: 0,
 
   installMultiplierFirstTime: 3,
   installMultiplierClean: 1,
@@ -30,10 +30,10 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     quarterly: 4,
   },
 
-  // Normalize to simple 4-week months, 52-week year
+  // Normalize to 4.33-week months
   monthlyConversions: {
-    weekly: 4,             // 4 weeks/month
-    actualWeeksPerMonth: 4,
+    weekly: 4.33,          // 4.33 weeks/month
+    actualWeeksPerMonth: 4.33,
     actualWeeksPerYear: 52,
   },
 
@@ -58,7 +58,7 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
   businessRules: {
     quarterlyHandledByInstallers: true,
     installCanBeWaivedAsConcession: true,
-    alwaysIncludeTripCharge: true,
+    alwaysIncludeTripCharge: false,
     authorizationRequiredBelowRed: true,
     authorizers: ["Jeff", "Alex"],
   },

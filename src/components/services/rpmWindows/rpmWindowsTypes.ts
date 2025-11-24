@@ -97,4 +97,7 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
 
   // extra custom per-visit charges (added via + button)
   extraCharges: RpmExtraChargeLine[];
+
+  // contract length in months for total pricing (2–36)
+  contractMonths: number;
 }

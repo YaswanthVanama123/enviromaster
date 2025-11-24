@@ -32,20 +32,23 @@ export interface SanipodAnnualFrequencyConfig {
 // ------------ Pricing config (FINAL RULES) ------------
 
 /**
- * Final SaniPod standalone pricing schema – matches the written rules exactly.
+ * Final SaniPod standalone pricing schema – matches the written rules.
  *
  * Weekly standalone service:
  *   Option A:  $8  / week / each SaniPod
  *   Option B:  $3  / week / each SaniPod + $40 / week (account-level base)
  *   The cheaper option is what we actually charge.
  *
- * Extra bags are $2 / bag / week and apply on top of either option.
- * There is a trip charge every visit.
+ * Extra bags:
+ *   - Priced at 2 $ / bag.
+ *   - If "recurring" is checked, they behave as 2 $ / bag / week.
+ *   - If not recurring, they are treated as a one-time amount on the first visit.
+ *
  * Install is $25 / pod one-time.
  *
  * For rollups:
- *   - Annual = 52 weeks
- *   - Monthly = 4 weeks
+ *   - Monthly uses 4.33 weeks (≈ 52 / 12).
+ *   - No annual price. Instead a contract length (2–36 months) is used.
  */
 export interface SanipodPricingConfig {
   /** The "3$/each/week" part used in the 3+40 rule. */
@@ -54,7 +57,7 @@ export interface SanipodPricingConfig {
   /** The "8$/each/week" option. */
   altWeeklyRatePerUnit: number;
 
-  /** Extra bags price per week. */
+  /** Extra bags price (base unit). */
   extraBagPrice: number;
 
   /** Install charge per pod (one-time). */
@@ -63,7 +66,11 @@ export interface SanipodPricingConfig {
   /** The "+ 40$/week" part in the 3+40 rule (account-level weekly base). */
   standaloneExtraWeeklyCharge: number;
 
-  /** Trip charge per visit. */
+  /**
+   * Trip charge per visit.
+   * NOTE: This is kept only so the field can still appear in the UI.
+   * It is locked to 0 and NOT used in any pricing calculations.
+   */
   tripChargePerVisit: number;
 
   /** Default frequency used for the per-visit view. */
@@ -76,8 +83,12 @@ export interface SanipodPricingConfig {
   annualFrequencies: SanipodAnnualFrequencyConfig;
 
   /** Weeks used for monthly & annual rollups. */
-  weeksPerMonth: number; // e.g. 4
-  weeksPerYear: number;  // e.g. 52
+  weeksPerMonth: number; // now 4.33
+  weeksPerYear: number;  // typically 52
+
+  /** Contract length bounds in months (used by dropdown). */
+  minContractMonths: number;
+  maxContractMonths: number;
 
   /** Red / green tiers. */
   rateCategories: {

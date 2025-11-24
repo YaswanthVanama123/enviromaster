@@ -11,6 +11,8 @@ import type {
 export interface SanipodFormState {
   podQuantity: number;
   extraBagsPerWeek: number;
+  /** true = recurring each visit, false = one-time only on first visit */
+  extraBagsRecurring: boolean;
 
   includeTrip: boolean;
   tripChargePerVisit: number;
@@ -21,32 +23,57 @@ export interface SanipodFormState {
 
   frequency: SanipodFrequencyKey;
   rateCategory: SanipodRateCategory;
+
+  /** Contract length in months (2–36). */
+  contractMonths: number;
 }
 
 export interface SanipodCalcResult {
+  /** Per visit, service only (no install, no trip). */
   perVisit: number;
+
+  /** First month total (first visit + other visits). */
   monthly: number;
+
+  /** Contract total for the selected number of months. */
   annual: number;
+
+  /** Install + any one-time extra bag cost. */
   installCost: number;
+
+  /** Which service rule ("8" or "3+40") is cheaper. */
   chosenServiceRule: SanipodServiceRuleKey;
+
+  /** Pod-only portion of the weekly service at red rate (without bags). */
   weeklyPodServiceRed: number;
+
+  /** First visit charge = install-only (plus one-time bags). */
+  firstVisit: number;
+
+  /** Ongoing monthly (after first) with 4.33 weeks logic. */
+  ongoingMonthly: number;
+
+  /** Contract total explicitly, same as `annual`. */
+  contractTotal: number;
 }
 
 const DEFAULT_FORM_STATE: SanipodFormState = {
   podQuantity: 0,
   extraBagsPerWeek: 0,
-  includeTrip: true,
-  tripChargePerVisit: cfg.tripChargePerVisit,
+  extraBagsRecurring: true,
+
+  includeTrip: false,
+  tripChargePerVisit: cfg.tripChargePerVisit, // 0 and ignored in calc
+
   isNewInstall: false,
   installQuantity: 0,
   installRatePerPod: cfg.installChargePerUnit,
+
   frequency: cfg.defaultFrequency,
   rateCategory: "redRate",
-};
 
-function annualVisits(freq: SanipodFrequencyKey): number {
-  return cfg.annualFrequencies[freq] ?? cfg.annualFrequencies.weekly;
-}
+  contractMonths: cfg.minContractMonths ?? 12,
+};
 
 export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
   const [form, setForm] = useState<SanipodFormState>({
@@ -81,9 +108,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
   const calc: SanipodCalcResult = useMemo(() => {
     const pods = Math.max(0, Number(form.podQuantity) || 0);
     const bags = Math.max(0, Number(form.extraBagsPerWeek) || 0);
+    const installQtyRaw = Math.max(0, Number(form.installQuantity) || 0);
 
     const anyActivity =
-      pods > 0 || bags > 0 || (form.isNewInstall && form.installQuantity > 0);
+      pods > 0 ||
+      bags > 0 ||
+      (form.isNewInstall && installQtyRaw > 0);
 
     if (!anyActivity) {
       return {
@@ -93,27 +123,34 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
         installCost: 0,
         chosenServiceRule: "perPod8",
         weeklyPodServiceRed: 0,
+        firstVisit: 0,
+        ongoingMonthly: 0,
+        contractTotal: 0,
       };
     }
 
     const rateCfg = cfg.rateCategories[form.rateCategory];
-    const weeksPerMonth = cfg.weeksPerMonth ?? 4;
-    const weeksPerYear =
-      cfg.weeksPerYear ?? cfg.annualFrequencies.weekly;
+    const weeksPerMonth = cfg.weeksPerMonth ?? 4.33;
 
-    const tripPerVisit =
-      form.tripChargePerVisit > 0
-        ? form.tripChargePerVisit
-        : cfg.tripChargePerVisit;
+    // Trip charge concept removed from calculations.
+    const tripPerVisit = 0;
 
     const installRate =
       form.installRatePerPod > 0
         ? form.installRatePerPod
         : cfg.installChargePerUnit;
 
-    // ---------- WEEKLY SERVICE (RED RATE) ----------
-    const weeklyBagsRed = bags * cfg.extraBagPrice;
+    // ---------- EXTRA BAGS ----------
+    // If recurring: weekly revenue; if one-time: first-visit only.
+    const weeklyBagsRed = form.extraBagsRecurring
+      ? bags * cfg.extraBagPrice
+      : 0;
 
+    const oneTimeBagsCost = form.extraBagsRecurring
+      ? 0
+      : bags * cfg.extraBagPrice;
+
+    // ---------- WEEKLY SERVICE (RED RATE) ----------
     const weeklyPodOptA_Red = pods * cfg.altWeeklyRatePerUnit; // 8$/wk * pods
     const weeklyPodOptB_Red =
       pods * cfg.weeklyRatePerUnit + cfg.standaloneExtraWeeklyCharge; // 3$/wk * pods + 40$/wk
@@ -134,49 +171,62 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       ? "perPod8"
       : "perPod3Plus40";
 
-    // ---------- SERVICE + TRIP (NO INSTALL) ----------
-    const annualServiceRed = weeklyServiceRed * weeksPerYear;
-    const annualService = annualServiceRed * rateCfg.multiplier;
+    // Apply rate category to service portion only.
+    const weeklyService = weeklyServiceRed * rateCfg.multiplier;
 
-    const annualTrip = form.includeTrip
-      ? tripPerVisit * weeksPerYear
-      : 0;
+    // ---------- PER VISIT (SERVICE ONLY) ----------
+    const perVisitService = weeklyService;
+    const perVisit = perVisitService + tripPerVisit; // tripPerVisit = 0
 
-    // ---------- INSTALL (ONE-TIME) ----------
-    const installQty = form.isNewInstall
-      ? Math.max(0, Number(form.installQuantity) || 0)
-      : 0;
+    // ---------- INSTALL (ONE-TIME) + ONE-TIME BAGS ----------
+    const installQty = form.isNewInstall ? installQtyRaw : 0;
+    const installOnlyCost = installQty * installRate;
 
-    const installCost = installQty * installRate;
+    // First visit = install-only + one-time bag cost (no normal service).
+    const firstVisit = installOnlyCost + oneTimeBagsCost;
+    const installCost = firstVisit;
 
-    // ---------- TOTALS ----------
-    const annualTotal = annualService + annualTrip + installCost;
+    // ---------- MONTHLY & CONTRACT ----------
+    const monthlyVisits = weeksPerMonth;
 
-    const monthlyService =
-      weeklyServiceRed * weeksPerMonth * rateCfg.multiplier;
-    const monthlyTrip = form.includeTrip
-      ? tripPerVisit * weeksPerMonth
-      : 0;
+    // ✅ FIXED:
+    // If there is NO special first-visit cost (no install + no one-time bags),
+    // first month should just be 4.33 * perVisit.
+    // Only when firstVisit > 0 do we do: firstVisit + (4.33 - 1) * perVisit.
+    const firstMonth =
+      firstVisit > 0
+        ? firstVisit +
+          Math.max(monthlyVisits - 1, 0) * perVisit
+        : monthlyVisits * perVisit;
 
-    // *** HERE IS THE FIX: use full installCost, not /12 ***
-    const monthlyTotal =
-      (Number.isFinite(monthlyService) ? monthlyService : 0) +
-      (Number.isFinite(monthlyTrip) ? monthlyTrip : 0) +
-      installCost;
+    // Ongoing months (after first) – all visits are "normal".
+    const ongoingMonthly = monthlyVisits * perVisit;
 
-    // Per Visit: service + trip only, no install
-    const perVisit =
-      weeksPerYear > 0
-        ? (annualService + annualTrip) / weeksPerYear
-        : 0;
+    // Contract months, clamped 2–36.
+    const minMonths = cfg.minContractMonths ?? 2;
+    const maxMonths = cfg.maxContractMonths ?? 36;
+    const rawMonths = Number(form.contractMonths) || minMonths;
+    const contractMonths = Math.min(
+      Math.max(rawMonths, minMonths),
+      maxMonths
+    );
+
+    const contractTotal =
+      contractMonths <= 0
+        ? 0
+        : firstMonth +
+          Math.max(contractMonths - 1, 0) * ongoingMonthly;
 
     return {
       perVisit,
-      monthly: monthlyTotal,
-      annual: annualTotal,
+      monthly: firstMonth,
+      annual: contractTotal,
       installCost,
       chosenServiceRule,
       weeklyPodServiceRed,
+      firstVisit,
+      ongoingMonthly,
+      contractTotal,
     };
   }, [form]);
 

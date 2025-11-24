@@ -42,8 +42,22 @@ export type EnvProductCatalog = {
 export type ColumnKey = "smallProducts" | "dispensers" | "bigProducts";
 
 // Row in the UI table
+// src/components/products/productsTypes.ts  (example)
 export type ProductRow = {
   id: string;
-  productKey: string | null; // null means "no product selected yet"
-  isDefault: boolean;        // true if it came from displayByAdmin, false if user-added
+  productKey: string | null;
+  isDefault?: boolean;
+  qty?: number;
+  unitPriceOverride?: number;
+  warrantyPriceOverride?: number;
+  replacementPriceOverride?: number;
+  amountOverride?: number;
+
+  // custom rows
+  isCustom?: boolean;
+  customName?: string;
+
+  // NEW – editable Total column
+  totalOverride?: number;
 };
+

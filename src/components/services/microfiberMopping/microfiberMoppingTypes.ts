@@ -3,6 +3,10 @@ import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type MicrofiberFrequencyKey = "weekly" | "biweekly" | "monthly";
 
+/**
+ * Static config for the Microfiber Mopping pricing engine.
+ * Most of this is descriptive / guard-rail data used by the calculator + UI.
+ */
 export interface MicrofiberMoppingPricingConfig {
   // Bathroom pricing when included with Sani services
   includedBathroomRate: number; // $ per standard bathroom per visit
@@ -17,38 +21,38 @@ export interface MicrofiberMoppingPricingConfig {
 
   // Non-bathroom area pricing (add-on to an existing service)
   extraAreaPricing: {
-    singleLargeAreaRate: number;      // $100 flat for a single big area
-    extraAreaSqFtUnit: number;        // e.g. 400 sq ft
-    extraAreaRatePerUnit: number;     // $10 per 400 sq ft
-    useHigherRate: boolean;           // if true, bill max(unit price, singleLargeAreaRate)
+    singleLargeAreaRate: number; // e.g. $100 flat for a single big area
+    extraAreaSqFtUnit: number; // e.g. 400 sq ft
+    extraAreaRatePerUnit: number; // e.g. $10 per 400 sq ft
+    useHigherRate: boolean; // if true, bill max(unit price, singleLargeAreaRate)
   };
 
   // Stand-alone microfiber mopping pricing
   standalonePricing: {
-    standaloneSqFtUnit: number;       // e.g. 200 sq ft
-    standaloneRatePerUnit: number;    // $10 per 200 sq ft
-    standaloneMinimum: number;        // $40 minimum
-    includeTripCharge: boolean;       // whether to add trip charge on top
+    standaloneSqFtUnit: number; // e.g. 200 sq ft
+    standaloneRatePerUnit: number; // e.g. $10 per 200 sq ft
+    standaloneMinimum: number; // e.g. $40 minimum
+    includeTripCharge: boolean; // kept for copy; math uses 0 trip now
   };
 
   // Chemical sold for customer self-mopping
   chemicalProducts: {
-    dailyChemicalPerGallon: number;   // $27.34 / gallon
+    dailyChemicalPerGallon: number; // e.g. $27.34 / gallon
     customerSelfMopping: boolean;
     waterOnlyBetweenServices: boolean;
   };
 
-  // Equipment we provide (for copy / proposal)
+  // Equipment we provide (for proposal copy only)
   equipmentProvision: {
     mopHandlesOnInstall: boolean;
     microfiberMopsLeftBehind: boolean;
     commercialGradeMicrofiber: boolean;
     designedWashes: number;
-    enhancedCleaningSpeed: number;    // % faster vs traditional mops
+    enhancedCleaningSpeed: number; // % faster vs traditional mops
     microfiberDensity: string;
   };
 
-  // Trip charges by location
+  // Trip charges by location – NOT used in math anymore, only for reference
   tripCharges: {
     insideBeltway: number;
     outsideBeltway: number;
@@ -64,7 +68,7 @@ export interface MicrofiberMoppingPricingConfig {
     standardBathroomCoverage: boolean;
   };
 
-  // Integration with other services
+  // Integration with other services (for copy)
   serviceIntegration: {
     recommendCombineWithSaniScrub: boolean;
     installUpkeepNeeded: boolean;
@@ -72,22 +76,22 @@ export interface MicrofiberMoppingPricingConfig {
     optimalPairing: string[];
   };
 
-  // Frequency conversions
+  // Frequency conversions (key: actualWeeksPerMonth = 4.33)
   billingConversions: {
     weekly: {
       annualMultiplier: number;
-      monthlyMultiplier: number;
+      monthlyMultiplier: number; // visits per month (4.33)
     };
     biweekly: {
       annualMultiplier: number;
-      monthlyMultiplier: number;
+      monthlyMultiplier: number; // visits per month (~2.17)
     };
     monthly: {
       annualMultiplier: number;
-      monthlyMultiplier: number;
+      monthlyMultiplier: number; // visits per month (1)
     };
     actualWeeksPerYear: number;
-    actualWeeksPerMonth: number;
+    actualWeeksPerMonth: number; // 4.33
   };
 
   // Pricing rules / guard rails
@@ -102,7 +106,7 @@ export interface MicrofiberMoppingPricingConfig {
     };
   };
 
-  // Rate categories (currently meta only)
+  // Rate categories (meta only)
   rateCategories: {
     redRate: {
       multiplier: number;
@@ -114,7 +118,7 @@ export interface MicrofiberMoppingPricingConfig {
     };
   };
 
-  // Value proposition (for UI copy)
+  // Value proposition (for copy)
   valueProposition: {
     bacterialReduction: boolean;
     costSavingsForCustomer: boolean;
@@ -141,37 +145,45 @@ export interface MicrofiberMoppingPricingConfig {
   availablePricingMethods: string[];
 }
 
-// REAL form inputs we use
+/**
+ * Actual form state used on the Microfiber Mopping screen.
+ */
 export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   frequency: MicrofiberFrequencyKey;
 
+  // NEW: contract length dropdown (2–36 months)
+  contractTermMonths: number;
+
+  // Tied to Sani program?
   hasExistingSaniService: boolean;
 
-  // Standard bathrooms
+  // Standard bathrooms (per-bathroom pricing path)
   bathroomCount: number;
 
   // Huge bathroom exception
   isHugeBathroom: boolean;
   hugeBathroomSqFt: number;
 
-  // Extra non-bath area (add-on)
+  // Extra non-bathroom floor area (add-on)
   extraAreaSqFt: number;
 
-  // Stand-alone mopping area (no Sani)
+  // Stand-alone microfiber mopping area
   standaloneSqFt: number;
 
-  // Chemical for self-mopping (gallons/month)
+  // Chemical we sell them for self-mopping (gallons/month)
   chemicalGallons: number;
 
-  // All-inclusive package flag
+  // If true, all microfiber is baked into an “all-inclusive” package pricing
   isAllInclusive: boolean;
 
-  // For stand-alone trip charges
+  // Trip info (kept for UI only)
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
 }
 
-// Calculator result
+/**
+ * Calculator outputs (used both for UI display and quote summary).
+ */
 export interface MicrofiberMoppingCalcResult {
   standardBathroomPrice: number;
   hugeBathroomPrice: number;
@@ -180,14 +192,21 @@ export interface MicrofiberMoppingCalcResult {
   extraAreaPrice: number;
 
   standaloneServicePrice: number;
-  standaloneTripCharge: number;
+  standaloneTripCharge: number; // always 0 in math now
   standaloneTotal: number;
 
   chemicalSupplyMonthly: number;
 
   weeklyServiceTotal: number;
   weeklyTotalWithChemicals: number;
+
   perVisitPrice: number;
   annualPrice: number;
   monthlyRecurring: number;
+
+  // NEW: first visit / first month / contract math
+  firstVisitPrice: number;
+  firstMonthPrice: number;
+  contractMonths: number;
+  contractTotal: number;
 }

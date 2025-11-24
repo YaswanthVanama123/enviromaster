@@ -46,6 +46,13 @@ export const SanicleanForm: React.FC<
 
   const isAllInclusive = calc.method === "all_inclusive";
 
+  // New: contract months + total contract price (monthly * months)
+  const contractMonths =
+    form.contractMonths && form.contractMonths >= 2 && form.contractMonths <= 36
+      ? form.contractMonths
+      : 12;
+  const contractTotal = calc.monthlyTotal * contractMonths;
+
   return (
     <div className="svc-card">
       {/* HEADER */}
@@ -468,7 +475,7 @@ export const SanicleanForm: React.FC<
               calc.method === "all_inclusive"
                 ? "All Inclusive"
                 : calc.method === "small_facility_minimum"
-                ? "Small Facility Minimum ($50/wk incl. trip)"
+                ? "Small Facility Minimum ($50/wk)"
                 : "Per Fixture / Geographic Standard"
             }
           />
@@ -499,14 +506,33 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
+      {/* New: contract duration & total contract price */}
       <div className="svc-row">
-        <label>Annual Recurring</label>
+        <label>Contract Length (months)</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="contractMonths"
+            value={contractMonths}
+            onChange={onChange}
+          >
+            {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Total Contract Price</label>
         <div className="svc-row-right">
           <input
             className="svc-in-box"
             type="text"
             readOnly
-            value={formatMoney(calc.annualTotal)}
+            value={formatMoney(contractTotal)}
           />
         </div>
       </div>

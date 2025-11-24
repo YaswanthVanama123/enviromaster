@@ -20,7 +20,7 @@ export const RpmWindowsForm: React.FC<
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));
 
-  // Installation Fee + First Visit (install + 1 normal service)
+  // Installation Fee + First Visit (now: install-only first visit)
   const installationFeeDisplay = form.isFirstTimeInstall
     ? calc.firstVisitTotalRated
     : 0;
@@ -156,17 +156,16 @@ export const RpmWindowsForm: React.FC<
       ))}
 
       {/* Trip Charge */}
-      <div className="svc-row svc-row-charge">
+      {/* <div className="svc-row svc-row-charge">
         <label>Trip Charge</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
             <input
               className="svc-in"
-              name="tripCharge"
               type="number"
               value={calc.effTrip.toFixed(2)}
-              onChange={onChange}
+              readOnly
             />
           </div>
           <label className="svc-inline">
@@ -174,7 +173,7 @@ export const RpmWindowsForm: React.FC<
             <span>Include</span>
           </label>
         </div>
-      </div>
+      </div> */}
 
       {/* Install Fee + First Visit */}
       <div className="svc-row svc-row-charge">
@@ -236,7 +235,7 @@ export const RpmWindowsForm: React.FC<
       </div>
 
       {/* Rate Category */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
           <select
@@ -249,7 +248,7 @@ export const RpmWindowsForm: React.FC<
             <option value="greenRate">Green (Premium)</option>
           </select>
         </div>
-      </div>
+      </div> */}
 
       {/* Mirror */}
       <div className="svc-row">
@@ -301,10 +300,22 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Annual Price */}
+      {/* Annual Price (now: total for selected months) */}
       <div className="svc-row svc-row-charge">
         <label>Annual Price</label>
         <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="contractMonths"
+            value={form.contractMonths}
+            onChange={onChange}
+          >
+            {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+              <option key={m} value={m}>
+                {m} months
+              </option>
+            ))}
+          </select>
           <div className="svc-dollar">
             <span>$</span>
             <input

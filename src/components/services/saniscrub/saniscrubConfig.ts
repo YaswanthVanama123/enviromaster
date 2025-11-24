@@ -26,17 +26,17 @@ export const saniscrubFrequencyLabels: Record<SaniscrubFrequency, string> = {
 export const saniscrubPricingConfig: SaniscrubPricingConfig = {
   // *** ALL fixture rates & minimums here are MONTHLY ***
   fixtureRates: {
-    monthly: 25,        // $25 / fixture / month
-    twicePerMonth: 25,  // base per-fixture rate still 25; 2× handled in calc
-    bimonthly: 35,      // $35 / fixture / month (every 2 months service)
-    quarterly: 40,      // $40 / fixture / month (quarterly service)
+    monthly: 25, // $25 / fixture / month
+    twicePerMonth: 25, // base per-fixture rate still 25; 2× handled in calc
+    bimonthly: 35, // $35 / fixture / month (every 2 months service)
+    quarterly: 40, // $40 / fixture / month (quarterly service)
   },
 
   minimums: {
-    monthly: 175,        // Monthly: $25/fixture or $175 minimum
-    twicePerMonth: 175,  // 2×/month uses same base minimum before discount
-    bimonthly: 250,      // Bi-Monthly: $35/fixture, $250 minimum (monthly)
-    quarterly: 250,      // Quarterly: $40/fixture, $250 minimum (monthly)
+    monthly: 175, // Monthly: $25/fixture or $175 minimum
+    twicePerMonth: 175, // 2×/month uses same base minimum before discount
+    bimonthly: 250, // Bi-Monthly: $35/fixture, $250 minimum (monthly)
+    quarterly: 250, // Quarterly: $40/fixture, $250 minimum (monthly)
   },
 
   // Non-bathroom rule of thumb (per VISIT):
@@ -51,11 +51,12 @@ export const saniscrubPricingConfig: SaniscrubPricingConfig = {
     clean: 1,
   },
 
-  // Trip charge at $8 + parking as per SaniClean.
-  tripChargeBase: 8,
-  parkingFee: 7,
+  // Trip charge values are now effectively disabled (UI shows 0, no impact).
+  tripChargeBase: 0,
+  parkingFee: 0,
 
-  // Visit counts per year
+  // Visit counts per year – this drives the monthlyVisits = visitsPerYear / 12.
+  // For a weekly service you would set visitsPerYear = 52 → 4.33 visits/month.
   frequencyMeta: {
     monthly: { visitsPerYear: 12 },
     twicePerMonth: { visitsPerYear: 24 },

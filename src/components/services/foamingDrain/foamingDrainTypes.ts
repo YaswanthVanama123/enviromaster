@@ -9,89 +9,58 @@ export interface FoamingDrainFormState {
   serviceId: "foamingDrain";
 
   // Core counts
-  standardDrainCount: number; // normal floor drains
-  // For 10+ drains we can choose how many are treated as install-level service.
-  installDrainCount: number;  // subset of standard drains, only used when 10+
-  greaseTrapCount: number;    // grease traps
-  greenDrainCount: number;    // green drains
+  standardDrainCount: number;   // total standard drains
+  installDrainCount: number;    // # of drains treated as install-level (10+)
+  filthyDrainCount: number;     // filthy drains for 3× install (subset)
+  greaseTrapCount: number;      // grease traps
+  greenDrainCount: number;      // green drains
+  plumbingDrainCount: number;   // drains with plumbing work
 
-  // Of the install drains, how many are filthy (3× install)?
-  // If facilityCondition = "filthy" and this is 0, we'll treat ALL install drains as filthy.
-  filthyDrainCount: number;
+  // Flags
+  needsPlumbing: boolean;
 
-  // Frequency and site info
+  // Site / frequency
   frequency: FoamingDrainFrequency;
   facilityCondition: FoamingDrainCondition;
   location: FoamingDrainLocation;
 
-  // Trip charge override (if undefined we use config default)
-  tripChargeOverride?: number;
+  // Pricing toggles for standard drains
+  useSmallAltPricingWeekly: boolean; // force 20 + 4$/drain when true
+  useBigAccountTenWeekly: boolean;   // force 10$/drain with explicit big-account flag
+  isAllInclusive: boolean;           // when true, standard drains are included (0$)
 
-  // Plumbing add-on
-  needsPlumbing: boolean;
-  plumbingDrainCount: number; // how many drains need plumbing (+$10/drain)
-
-  /**
-   * Alternative small-job weekly pricing:
-   *   - Weekly
-   *   - <10 drains
-   *   => $20 + $4/drain
-   */
-  useSmallAltPricingWeekly: boolean;
-
-  /**
-   * Big-account alternative:
-   *   - Weekly
-   *   - 10+ drains
-   *   => $10/week per drain, install waived
-   */
-  useBigAccountTenWeekly: boolean;
-
-  /**
-   * All-inclusive: standard drains included (no charge), trip waived.
-   * Grease traps & green drains still billed separately.
-   */
-  isAllInclusive: boolean;
-
-  /**
-   * Grease trap install is "if possible" per rules, so we make it optional.
-   * When true: apply min $300 / $150 per trap rule.
-   * When false: no grease trap install is charged.
-   */
+  // Grease install toggle
   chargeGreaseTrapInstall: boolean;
 
-  // Free-form notes
+  // Trip override – UI only, ignored in math
+  tripChargeOverride?: number;
+
+  // Internal contract length (months) – used to compute "Annual" (contract total)
+  contractMonths: number;
+
   notes: string;
 }
 
 export interface FoamingDrainBreakdown {
-  pricingModel: "standard" | "alternative" | "volume";
+  // Which pricing model applied to standard drains
+  usedSmallAlt: boolean;      // using 20 + 4$/drain
+  usedBigAccountAlt: boolean; // using 10$/drain via big-account flag
+  volumePricingApplied: boolean; // install-level 10+ program in use
 
-  // Weekly (per-visit) pieces
+  // Per-visit pieces
   weeklyStandardDrains: number;
-  weeklyPlumbingAddon: number;
+  weeklyInstallDrains: number;
   weeklyGreaseTraps: number;
   weeklyGreenDrains: number;
-  weeklyServiceSubtotal: number;
+  weeklyPlumbing: number;
 
-  // Installation detail
-  baseInstall: number;
-  conditionMultiplier: number;
-  installBeforeWaive: number;
-  greaseTrapInstall: number;
-  greenDrainInstall: number;
-  installationTotal: number;
+  // One-time installs
+  filthyInstallOneTime: number;
+  greaseInstallOneTime: number;
+  greenInstallOneTime: number;
 
-  // Flags
-  volumePricingApplied: boolean;
-  usedSmallAlt: boolean;
-  usedBigAccountAlt: boolean;
-
-  // Trip & billing
+  // Effective trip charge (kept for UI only, always 0 in new rules)
   tripCharge: number;
-  weeklyTotal: number;
-  monthlyRecurring: number;
-  annualRecurring: number;
 }
 
 export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
@@ -101,26 +70,25 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   location: FoamingDrainLocation;
   facilityCondition: FoamingDrainCondition;
 
-  standardDrainCount: number;
-  installDrainCount: number;
-  greaseTrapCount: number;
-  greenDrainCount: number;
-  filthyDrainCount: number;
-
-  isAllInclusive: boolean;
-  needsPlumbing: boolean;
-  plumbingDrainCount: number;
-
+  // Echo toggles
   useSmallAltPricingWeekly: boolean;
   useBigAccountTenWeekly: boolean;
+  isAllInclusive: boolean;
   chargeGreaseTrapInstall: boolean;
 
-  weeklyService: number;
-  weeklyTotal: number;
-  monthlyRecurring: number;
-  annualRecurring: number;
-  installation: number;
-  tripCharge: number;
+  // Money fields
+  weeklyService: number;      // service only (no trip)
+  weeklyTotal: number;        // = weeklyService (trip removed)
+  monthlyRecurring: number;   // normal recurring month (4.33× or 0.5×)
+  annualRecurring: number;    // TOTAL CONTRACT for contractMonths
+  installation: number;       // one-time install total (filthy + grease + green)
+  tripCharge: number;         // kept for compatibility, always 0
+
+  // Extra internal values (not displayed in current UI)
+  firstVisitPrice: number;    // = installation only
+  firstMonthPrice: number;    // first month price (install + 3.33× when weekly)
+  contractMonths: number;
+
   notes: string;
 
   breakdown: FoamingDrainBreakdown;

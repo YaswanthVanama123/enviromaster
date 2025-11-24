@@ -126,6 +126,9 @@ export interface SanicleanFormState {
   // paper usage (for all-inclusive credit/overage)
   estimatedPaperSpendPerWeek: number;
 
+  // contract length (replaces “annual” logic globally)
+  contractMonths: number;
+
   // rate tier (multiplier currently = 1 so pricing rules are unchanged)
   rateTier: SanicleanRateTier;
 

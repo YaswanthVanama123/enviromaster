@@ -14,8 +14,8 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
       "For huge bathrooms charge $10 per 300 sq ft instead of $10 per bathroom.",
   },
 
-  // Extra non-bathroom area when customer already has Sani
-  // Rule: For a single large area, $100 OR $10 per 400 sq ft, whichever is more.
+  // Extra non-bathroom area:
+  // $100 minimum for a single large area, or $10 per 400 sq ft (whichever is more)
   extraAreaPricing: {
     singleLargeAreaRate: 100,
     extraAreaSqFtUnit: 400,
@@ -24,12 +24,12 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
   },
 
   // Stand-alone microfiber mopping (no Sani program)
-  // Rule: $10 per 200 sq ft, $40 minimum, + trip charges.
+  // Rule: $10 per 200 sq ft, $40 minimum.
   standalonePricing: {
     standaloneSqFtUnit: 200,
     standaloneRatePerUnit: 10,
     standaloneMinimum: 40,
-    includeTripCharge: true,
+    includeTripCharge: true, // kept only for copy; math sets trip = 0
   },
 
   // Chemical for customers doing their own mopping
@@ -40,61 +40,68 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     waterOnlyBetweenServices: true,
   },
 
+  // What we provide physically
   equipmentProvision: {
     mopHandlesOnInstall: true,
     microfiberMopsLeftBehind: true,
     commercialGradeMicrofiber: true,
     designedWashes: 500,
-    enhancedCleaningSpeed: 30,
-    microfiberDensity: "High-density commercial microfiber",
+    enhancedCleaningSpeed: 30, // ~30% faster
+    microfiberDensity: "High-density commercial-grade microfiber",
   },
 
+  // Trip charges (NOT used in math anymore, only for reference/UI copy)
   tripCharges: {
-    insideBeltway: 8,
-    outsideBeltway: 8,
-    standard: 6,
-    parkingFee: 7,
+    insideBeltway: 75,
+    outsideBeltway: 100,
+    standard: 75,
+    parkingFee: 0,
     waiveForAllInclusive: true,
   },
 
+  // All-inclusive behavior
   allInclusiveIntegration: {
     includedInPackage: true,
     noAdditionalCharge: true,
     standardBathroomCoverage: true,
   },
 
+  // Integration with other services
   serviceIntegration: {
     recommendCombineWithSaniScrub: true,
     installUpkeepNeeded: true,
     preventsBacteriaSpread: true,
-    optimalPairing: ["SaniScrub"],
+    optimalPairing: ["SaniScrub", "SaniClean", "RPM Windows"],
   },
 
+  // Frequency conversions
+  // KEY CHANGE: Monthly = 4.33 weeks everywhere.
   billingConversions: {
     weekly: {
-      annualMultiplier: 52, // treat as ~50 service weeks / year
-      monthlyMultiplier: 4,
+      annualMultiplier: 52,
+      monthlyMultiplier: 52 / 12, // 4.33 visits / month
     },
     biweekly: {
-      annualMultiplier: 25,
-      monthlyMultiplier: 25 / 12,
+      annualMultiplier: 26,
+      monthlyMultiplier: 26 / 12, // ~2.17 visits / month
     },
     monthly: {
       annualMultiplier: 12,
-      monthlyMultiplier: 1,
+      monthlyMultiplier: 1, // 1 visit / month
     },
     actualWeeksPerYear: 52,
-    actualWeeksPerMonth: 4,
+    actualWeeksPerMonth: 52 / 12, // 4.33 weeks / month
   },
 
+  // Guard rails
   pricingRules: {
     canBundleWithSani: true,
     canPriceAsIncluded: true,
     customPricingForHugeBathrooms: true,
-    alwaysIncludeTripChargeStandalone: true,
+    alwaysIncludeTripChargeStandalone: false,
     authorizationRequired: {
       belowRedRates: true,
-      authorizers: ["Owner", "GM"],
+      authorizers: ["Franchise Owner", "VP of Sales"],
     },
   },
 
@@ -118,10 +125,11 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
   },
 
   serviceSpecs: {
-    microfiberSize: '16" x 24"',
-    microfiberQuality: "Commercial cleaning grade",
+    microfiberSize: "24-inch commercial microfiber mop pads",
+    microfiberQuality: "High-density commercial-grade microfiber",
     washLifecycle: 500,
-    performanceEnhancement: "Reduces grout damage vs wet mopping.",
+    performanceEnhancement:
+      "30% faster and more effective than traditional mops",
     bacteriaPrevention: "Not driving bacteria into grout between scrubs.",
   },
 

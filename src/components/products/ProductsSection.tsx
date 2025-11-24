@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./ProductsSection.css";
 import { envProductCatalog } from "./productsConfig";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
@@ -32,7 +32,7 @@ const ALL_PRODUCTS: EnvProduct[] = envProductCatalog.families.flatMap(
   (family) => family.products
 );
 
-// Which family groups live in which column
+// Which families live in which band/column group
 const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
   // LEFT band: paper products
   smallProducts: (p) => p.familyKey === "paper",
@@ -40,7 +40,7 @@ const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
   // MIDDLE band: dispensers
   dispensers: (p) => p.familyKey === "dispensers",
 
-  // RIGHT band: everything else (chemicals, extras, drains, refresh, etc.)
+  // RIGHT band: everything else
   bigProducts: (p) => p.familyKey !== "paper" && p.familyKey !== "dispensers",
 };
 
@@ -73,20 +73,44 @@ function getAvailableProductsForColumn(
   column: ColumnKey,
   usedKeys: Set<string>
 ): EnvProduct[] {
-  return getProductsForColumn(column).filter(
-    (p) => !usedKeys.has(p.key)
-  );
+  return getProductsForColumn(column).filter((p) => !usedKeys.has(p.key));
 }
 
 // ---------------------------
-// Small re-usable cell pieces
+// Small re-usable cells
 // ---------------------------
 
-function DollarCell({ value }: { value?: number | null }) {
+type DollarCellProps = {
+  value: number | "" | null | undefined;
+  onChange?: (value: number | "") => void;
+  readOnly?: boolean;
+};
+
+function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
+  const display =
+    value === null || value === undefined ? "" : (value as number | "");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!onChange) return;
+    const raw = e.target.value;
+    if (raw === "") {
+      onChange("");
+      return;
+    }
+    const num = Number(raw);
+    if (Number.isNaN(num)) return;
+    onChange(num);
+  };
+
   return (
     <div className="dcell">
       <span className="dollarColor">$</span>
-      <input className="in" defaultValue={value ?? ""} />
+      <input
+        className="in"
+        value={display}
+        onChange={handleChange}
+        readOnly={readOnly || !onChange}
+      />
     </div>
   );
 }
@@ -95,15 +119,64 @@ function PlainCell({ value }: { value?: string | number | null }) {
   return <input className="in" defaultValue={value ?? ""} />;
 }
 
+type QtyCellProps = {
+  value: number | "" | undefined;
+  onChange: (value: number | "") => void;
+};
+
+function QtyCell({ value, onChange }: QtyCellProps) {
+  // what we show in the box (same pattern as DollarCell & header inputs)
+  const display =
+    value === "" || value === undefined ? "" : String(value);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+
+    // allow clearing the field
+    if (raw === "") {
+      onChange("");
+      return;
+    }
+
+    // only allow digits
+    if (!/^\d+$/.test(raw)) {
+      return; // ignore non-numeric input
+    }
+
+    const num = Number(raw);
+    if (Number.isNaN(num)) return;
+
+    onChange(num);
+  };
+
+  return (
+    <input
+      className="in"
+      value={display}
+      onChange={handleChange}
+      inputMode="numeric" // just for mobile keyboard; optional
+    />
+  );
+}
+
+
+
+
 // ---------------------------
 // Name cell with wrapped text + custom dropdown
 // ---------------------------
 
 type NameCellProps = {
   product: EnvProduct | undefined;
-  options: EnvProduct[]; // remaining products for this column (+ current one if set)
+  options: EnvProduct[]; // remaining products for this band (+ current row product)
   onChangeProduct: (productKey: string) => void;
   onRemove?: () => void;
+
+  // support custom rows
+  isCustom?: boolean;
+  customName?: string;
+  onChangeCustomName?: (name: string) => void;
+  onSelectCustom?: () => void;
 };
 
 const NameCell = React.memo(function NameCell({
@@ -111,10 +184,38 @@ const NameCell = React.memo(function NameCell({
   options,
   onChangeProduct,
   onRemove,
+  isCustom,
+  customName,
+  onChangeCustomName,
+  onSelectCustom,
 }: NameCellProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // If row is "Custom", show a simple text input instead of dropdown
+  if (isCustom) {
+    return (
+      <div className="namecell">
+        <input
+          className="in"
+          value={customName ?? ""}
+          placeholder="Custom product..."
+          onChange={(e) => onChangeCustomName?.(e.target.value)}
+        />
+        {onRemove && (
+          <button
+            className="row-remove"
+            title="Remove row"
+            type="button"
+            onClick={onRemove}
+          >
+            –
+          </button>
+        )}
+      </div>
+    );
+  }
 
   const filteredOptions = useMemo(
     () =>
@@ -124,7 +225,7 @@ const NameCell = React.memo(function NameCell({
     [options, query]
   );
 
-  // Close dropdown when click outside
+  // close dropdown on outside click
   useEffect(() => {
     if (!open) return;
 
@@ -146,9 +247,14 @@ const NameCell = React.memo(function NameCell({
     setQuery("");
   };
 
+  const handleSelectCustom = () => {
+    onSelectCustom?.();
+    setOpen(false);
+    setQuery("");
+  };
+
   return (
     <div className="namecell" ref={wrapperRef}>
-      {/* Label inside the table cell (text wraps to 2nd line) */}
       <button
         type="button"
         className="namecell-display"
@@ -171,7 +277,6 @@ const NameCell = React.memo(function NameCell({
         </button>
       )}
 
-      {/* Dropdown panel below the cell */}
       {open && (
         <div className="namecell-dropdown">
           <input
@@ -186,16 +291,26 @@ const NameCell = React.memo(function NameCell({
                 No products
               </div>
             ) : (
-              filteredOptions.map((opt) => (
+              <>
+                {filteredOptions.map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    className="namecell-option"
+                    onClick={() => handleSelect(opt.key)}
+                  >
+                    {opt.name}
+                  </button>
+                ))}
+                {/* Custom option at the bottom */}
                 <button
-                  key={opt.key}
                   type="button"
-                  className="namecell-option"
-                  onClick={() => handleSelect(opt.key)}
+                  className="namecell-option namecell-option--custom"
+                  onClick={handleSelectCustom}
                 >
-                  {opt.name}
+                  + Custom product
                 </button>
-              ))
+              </>
             )}
           </div>
         </div>
@@ -231,8 +346,6 @@ export default function ProductsSection() {
     bigProducts: [],
   });
 
-  const [editingColId, setEditingColId] = useState<string | null>(null);
-
   const productMap = useMemo(() => {
     const map = new Map<string, EnvProduct>();
     ALL_PRODUCTS.forEach((p) => map.set(p.key, p));
@@ -242,24 +355,34 @@ export default function ProductsSection() {
   const getProduct = (row: ProductRow | undefined) =>
     row && row.productKey ? productMap.get(row.productKey) : undefined;
 
-  // Utility to update product key for a row
+  // Generic row updater
+  const updateRowField = (
+    bucket: ColumnKey,
+    rowId: string,
+    patch: Partial<ProductRow>
+  ) =>
+    setData((prev) => ({
+      ...prev,
+      [bucket]: prev[bucket].map((r) =>
+        r.id === rowId ? { ...r, ...patch } : r
+      ),
+    }));
+
   const updateRowProductKey = (
     bucket: ColumnKey,
     rowId: string,
     productKey: string
   ) =>
-    setData((prev) => ({
-      ...prev,
-      [bucket]: prev[bucket].map((r) =>
-        r.id === rowId ? { ...r, productKey } : r
-      ),
-    }));
+    updateRowField(bucket, rowId, {
+      productKey,
+      isCustom: false,
+      customName: undefined,
+    });
 
   // ---------------------------
   // Row operations
   // ---------------------------
 
-  // + Row (all three bands at once)
   const addRowAll = () => {
     setData((prev) => ({
       smallProducts: [
@@ -277,7 +400,6 @@ export default function ProductsSection() {
     }));
   };
 
-  // + Row (single band)
   const addRow = (bucket: ColumnKey) =>
     setData((prev) => ({
       ...prev,
@@ -315,11 +437,7 @@ export default function ProductsSection() {
       [bucket]: [...c[bucket], mkCol()],
     }));
 
-  const changeColLabel = (
-    bucket: ColumnKey,
-    id: string,
-    next: string
-  ) =>
+  const changeColLabel = (bucket: ColumnKey, id: string, next: string) =>
     setExtraCols((c) => ({
       ...c,
       [bucket]: c[bucket].map((col) =>
@@ -357,7 +475,6 @@ export default function ProductsSection() {
 
     const base = getAvailableProductsForColumn(bucket, usedKeys);
 
-    // If current row already has a product, make sure it is present in options
     const currentRow = data[bucket].find((r) => r.id === rowId);
     if (currentRow?.productKey) {
       const current = findProductByKey(currentRow.productKey);
@@ -370,6 +487,21 @@ export default function ProductsSection() {
   };
 
   // ---------------------------
+  // Helpers for totals
+  // ---------------------------
+
+  const getSmallUnitPrice = (row: ProductRow, product?: EnvProduct) =>
+    row.unitPriceOverride ?? product?.basePrice?.amount ?? 0;
+
+  const getDispReplacementPrice = (row: ProductRow, product?: EnvProduct) =>
+    row.replacementPriceOverride ?? product?.basePrice?.amount ?? 0;
+
+  const getBigAmount = (row: ProductRow, product?: EnvProduct) =>
+    row.amountOverride ?? product?.basePrice?.amount ?? 0;
+
+  const getQty = (row?: ProductRow) => row?.qty ?? 0;
+
+  // ---------------------------
   // Desktop table
   // ---------------------------
 
@@ -379,18 +511,10 @@ export default function ProductsSection() {
         <div className="prod__title prod__title--hasActions">
           PRODUCTS
           <div className="prod__title-actions">
-            <button
-              className="prod__add"
-              onClick={addRowAll}
-              type="button"
-            >
+            <button className="prod__add" onClick={addRowAll} type="button">
               + Row
             </button>
-            <button
-              className="prod__add"
-              onClick={addColAll}
-              type="button"
-            >
+            <button className="prod__add" onClick={addColAll} type="button">
               + Column
             </button>
           </div>
@@ -404,19 +528,16 @@ export default function ProductsSection() {
               {/* LEFT band – paper products */}
               <th className="h h-blue">Products</th>
               <th className="h h-blue center">Amount Per Unit</th>
+              <th className="h h-blue center">Qty</th>
+              <th className="h h-blue center">Total</th>
               {extraCols.smallProducts.map((col) => (
-                <th
-                  className="h h-blue center th-edit"
-                  key={col.id}
-                >
+                <th className="h h-blue center th-edit" key={col.id}>
                   <input
                     className="th-edit-input"
                     value={col.label}
                     onChange={(e) =>
                       changeColLabel("smallProducts", col.id, e.target.value)
                     }
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
                   />
                   <button
                     className="th-remove"
@@ -433,22 +554,16 @@ export default function ProductsSection() {
               <th className="h h-blue">Dispensers</th>
               <th className="h h-blue center">Qty</th>
               <th className="h h-blue center">Warranty Rate</th>
-              <th className="h h-blue center">
-                Replacement Rate/Install
-              </th>
+              <th className="h h-blue center">Replacement Rate/Install</th>
+              <th className="h h-blue center">Total</th>
               {extraCols.dispensers.map((col) => (
-                <th
-                  className="h h-blue center th-edit"
-                  key={col.id}
-                >
+                <th className="h h-blue center th-edit" key={col.id}>
                   <input
                     className="th-edit-input"
                     value={col.label}
                     onChange={(e) =>
                       changeColLabel("dispensers", col.id, e.target.value)
                     }
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
                   />
                   <button
                     className="th-remove"
@@ -465,22 +580,16 @@ export default function ProductsSection() {
               <th className="h h-blue">Products</th>
               <th className="h h-blue center">Qty</th>
               <th className="h h-blue center">Amount</th>
-              <th className="h h-blue center">
-                Frequency of Service
-              </th>
+              <th className="h h-blue center">Frequency of Service</th>
+              <th className="h h-blue center">Total</th>
               {extraCols.bigProducts.map((col) => (
-                <th
-                  className="h h-blue center th-edit"
-                  key={col.id}
-                >
+                <th className="h h-blue center th-edit" key={col.id}>
                   <input
                     className="th-edit-input"
                     value={col.label}
                     onChange={(e) =>
                       changeColLabel("bigProducts", col.id, e.target.value)
                     }
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
                   />
                   <button
                     className="th-remove"
@@ -514,7 +623,7 @@ export default function ProductsSection() {
 
               return (
                 <tr key={rowKey}>
-                  {/* LEFT band */}
+                  {/* LEFT band: Products + Amount Per Unit + Qty + Total */}
                   {rowSmall ? (
                     <>
                       <td className="label">
@@ -522,7 +631,25 @@ export default function ProductsSection() {
                           product={pSmall}
                           options={getRowOptions("smallProducts", rowSmall.id)}
                           onChangeProduct={(key) =>
-                            updateRowProductKey("smallProducts", rowSmall.id, key)
+                            updateRowProductKey(
+                              "smallProducts",
+                              rowSmall.id,
+                              key
+                            )
+                          }
+                          onSelectCustom={() =>
+                            updateRowField("smallProducts", rowSmall.id, {
+                              productKey: null,
+                              isCustom: true,
+                              customName: "",
+                            })
+                          }
+                          isCustom={rowSmall.isCustom}
+                          customName={rowSmall.customName}
+                          onChangeCustomName={(name) =>
+                            updateRowField("smallProducts", rowSmall.id, {
+                              customName: name,
+                            })
                           }
                           onRemove={() =>
                             removeRow("smallProducts", rowSmall.id)
@@ -530,17 +657,60 @@ export default function ProductsSection() {
                         />
                       </td>
                       <td>
-                        <DollarCell value={pSmall?.basePrice?.amount} />
+                        <DollarCell
+                          value={
+                            rowSmall.unitPriceOverride ??
+                            pSmall?.basePrice?.amount ??
+                            ""
+                          }
+                          onChange={(val) =>
+                            updateRowField("smallProducts", rowSmall.id, {
+                              unitPriceOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
+                      </td>
+                      <td className="center">
+                        <QtyCell
+                          value={rowSmall.qty ?? ""}
+                          onChange={(val) =>
+                            updateRowField("smallProducts", rowSmall.id, {
+                              qty: val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <DollarCell
+                          value={
+                            rowSmall.totalOverride ??
+                            getSmallUnitPrice(rowSmall, pSmall) *
+                              getQty(rowSmall)
+                          }
+                          onChange={(val) =>
+                            updateRowField("smallProducts", rowSmall.id, {
+                              totalOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
                       </td>
                       {extraCols.smallProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell />
+                          <DollarCell value="" />
                         </td>
                       ))}
                     </>
                   ) : (
                     <>
                       <td className="label" />
+                      <td>
+                        <PlainCell />
+                      </td>
+                      <td className="center">
+                        <PlainCell />
+                      </td>
                       <td>
                         <PlainCell />
                       </td>
@@ -552,7 +722,7 @@ export default function ProductsSection() {
                     </>
                   )}
 
-                  {/* MIDDLE band */}
+                  {/* MIDDLE band: Dispensers + Qty + Warranty + Replacement + Total */}
                   {rowDisp ? (
                     <>
                       <td className="label">
@@ -562,25 +732,81 @@ export default function ProductsSection() {
                           onChangeProduct={(key) =>
                             updateRowProductKey("dispensers", rowDisp.id, key)
                           }
-                          onRemove={() =>
-                            removeRow("dispensers", rowDisp.id)
+                          onSelectCustom={() =>
+                            updateRowField("dispensers", rowDisp.id, {
+                              productKey: null,
+                              isCustom: true,
+                              customName: "",
+                            })
                           }
+                          isCustom={rowDisp.isCustom}
+                          customName={rowDisp.customName}
+                          onChangeCustomName={(name) =>
+                            updateRowField("dispensers", rowDisp.id, {
+                              customName: name,
+                            })
+                          }
+                          onRemove={() => removeRow("dispensers", rowDisp.id)}
                         />
                       </td>
                       <td className="center">
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={pDisp?.warrantyPricePerUnit?.amount}
+                        <QtyCell
+                          value={rowDisp.qty ?? ""}
+                          onChange={(val) =>
+                            updateRowField("dispensers", rowDisp.id, {
+                              qty: val === "" ? undefined : (val as number),
+                            })
+                          }
                         />
                       </td>
                       <td>
-                        <DollarCell value={pDisp?.basePrice?.amount} />
+                        <DollarCell
+                          value={
+                            rowDisp.warrantyPriceOverride ??
+                            pDisp?.warrantyPricePerUnit?.amount ??
+                            ""
+                          }
+                          onChange={(val) =>
+                            updateRowField("dispensers", rowDisp.id, {
+                              warrantyPriceOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <DollarCell
+                          value={
+                            rowDisp.replacementPriceOverride ??
+                            pDisp?.basePrice?.amount ??
+                            ""
+                          }
+                          onChange={(val) =>
+                            updateRowField("dispensers", rowDisp.id, {
+                              replacementPriceOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <DollarCell
+                          value={
+                            rowDisp.totalOverride ??
+                            getDispReplacementPrice(rowDisp, pDisp) *
+                              getQty(rowDisp)
+                          }
+                          onChange={(val) =>
+                            updateRowField("dispensers", rowDisp.id, {
+                              totalOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
                       </td>
                       {extraCols.dispensers.map((col) => (
                         <td key={col.id}>
-                          <DollarCell />
+                          <DollarCell value="" />
                         </td>
                       ))}
                     </>
@@ -588,6 +814,9 @@ export default function ProductsSection() {
                     <>
                       <td className="label" />
                       <td className="center">
+                        <PlainCell />
+                      </td>
+                      <td>
                         <PlainCell />
                       </td>
                       <td>
@@ -604,7 +833,7 @@ export default function ProductsSection() {
                     </>
                   )}
 
-                  {/* RIGHT band */}
+                  {/* RIGHT band: Products + Qty + Amount + Frequency + Total */}
                   {rowBig ? (
                     <>
                       <td className="label">
@@ -614,21 +843,68 @@ export default function ProductsSection() {
                           onChangeProduct={(key) =>
                             updateRowProductKey("bigProducts", rowBig.id, key)
                           }
+                          onSelectCustom={() =>
+                            updateRowField("bigProducts", rowBig.id, {
+                              productKey: null,
+                              isCustom: true,
+                              customName: "",
+                            })
+                          }
+                          isCustom={rowBig.isCustom}
+                          customName={rowBig.customName}
+                          onChangeCustomName={(name) =>
+                            updateRowField("bigProducts", rowBig.id, {
+                              customName: name,
+                            })
+                          }
                           onRemove={() => removeRow("bigProducts", rowBig.id)}
+                        />
+                      </td>
+                      <td className="center">
+                        <QtyCell
+                          value={rowBig.qty ?? ""}
+                          onChange={(val) =>
+                            updateRowField("bigProducts", rowBig.id, {
+                              qty: val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <DollarCell
+                          value={
+                            rowBig.amountOverride ??
+                            pBig?.basePrice?.amount ??
+                            ""
+                          }
+                          onChange={(val) =>
+                            updateRowField("bigProducts", rowBig.id, {
+                              amountOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
                         />
                       </td>
                       <td className="center">
                         <PlainCell />
                       </td>
                       <td>
-                        <DollarCell value={pBig?.basePrice?.amount} />
-                      </td>
-                      <td className="center">
-                        <PlainCell />
+                        <DollarCell
+                          value={
+                            rowBig.totalOverride ??
+                            getBigAmount(rowBig, pBig) * getQty(rowBig)
+                          }
+                          onChange={(val) =>
+                            updateRowField("bigProducts", rowBig.id, {
+                              totalOverride:
+                                val === "" ? undefined : (val as number),
+                            })
+                          }
+                        />
                       </td>
                       {extraCols.bigProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell />
+                          <DollarCell value="" />
                         </td>
                       ))}
                     </>
@@ -642,6 +918,9 @@ export default function ProductsSection() {
                         <PlainCell />
                       </td>
                       <td className="center">
+                        <PlainCell />
+                      </td>
+                      <td>
                         <PlainCell />
                       </td>
                       {extraCols.bigProducts.map((col) => (
@@ -693,7 +972,10 @@ export default function ProductsSection() {
   }: {
     title: string;
     bucket: ColumnKey;
-    renderAmountCells: (product: EnvProduct | undefined) => React.ReactNode;
+    renderAmountCells: (
+      row: ProductRow,
+      product?: EnvProduct
+    ) => React.ReactNode;
   }) => {
     const extraKey = bucket;
     return (
@@ -706,7 +988,11 @@ export default function ProductsSection() {
             <tr>
               <th className="h h-blue">{title}</th>
               {bucket === "smallProducts" ? (
-                <th className="h h-blue center">Amount Per Unit</th>
+                <>
+                  <th className="h h-blue center">Amount Per Unit</th>
+                  <th className="h h-blue center">Qty</th>
+                  <th className="h h-blue center">Total</th>
+                </>
               ) : bucket === "dispensers" ? (
                 <>
                   <th className="h h-blue center">Qty</th>
@@ -714,6 +1000,7 @@ export default function ProductsSection() {
                   <th className="h h-blue center">
                     Replacement Rate/Install
                   </th>
+                  <th className="h h-blue center">Total</th>
                 </>
               ) : (
                 <>
@@ -722,6 +1009,7 @@ export default function ProductsSection() {
                   <th className="h h-blue center">
                     Frequency of Service
                   </th>
+                  <th className="h h-blue center">Total</th>
                 </>
               )}
               {extraCols[extraKey].map((col) => (
@@ -732,8 +1020,6 @@ export default function ProductsSection() {
                     onChange={(e) =>
                       changeColLabel(extraKey, col.id, e.target.value)
                     }
-                    onFocus={() => setEditingColId(col.id)}
-                    autoFocus={editingColId === col.id}
                   />
                   <button
                     className="th-remove"
@@ -761,13 +1047,27 @@ export default function ProductsSection() {
                       onChangeProduct={(key) =>
                         updateRowProductKey(bucket, row.id, key)
                       }
+                      onSelectCustom={() =>
+                        updateRowField(bucket, row.id, {
+                          productKey: null,
+                          isCustom: true,
+                          customName: "",
+                        })
+                      }
+                      isCustom={row.isCustom}
+                      customName={row.customName}
+                      onChangeCustomName={(name) =>
+                        updateRowField(bucket, row.id, {
+                          customName: name,
+                        })
+                      }
                       onRemove={() => removeRow(bucket, row.id)}
                     />
                   </td>
-                  {renderAmountCells(product)}
+                  {renderAmountCells(row, product)}
                   {extraCols[extraKey].map((col) => (
                     <td key={col.id}>
-                      <DollarCell />
+                      <DollarCell value="" />
                     </td>
                   ))}
                 </tr>
@@ -785,49 +1085,159 @@ export default function ProductsSection() {
         <div className="prod__title">PRODUCTS</div>
       </div>
 
+      {/* smallProducts grouped */}
       <GroupedTable
         title="Products"
         bucket="smallProducts"
-        renderAmountCells={(product) => (
-          <td>
-            <DollarCell value={product?.basePrice?.amount ?? null} />
-          </td>
-        )}
-      />
-
-      <GroupedTable
-        title="Dispensers"
-        bucket="dispensers"
-        renderAmountCells={(product) => (
+        renderAmountCells={(row, product) => (
           <>
-            <td className="center">
-              <PlainCell />
-            </td>
             <td>
               <DollarCell
-                value={product?.warrantyPricePerUnit?.amount ?? null}
+                value={
+                  row.unitPriceOverride ?? product?.basePrice?.amount ?? ""
+                }
+                onChange={(val) =>
+                  updateRowField("smallProducts", row.id, {
+                    unitPriceOverride:
+                      val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
+            <td className="center">
+              <QtyCell
+                value={row.qty ?? ""}
+                onChange={(val) =>
+                  updateRowField("smallProducts", row.id, {
+                    qty: val === "" ? undefined : (val as number),
+                  })
+                }
               />
             </td>
             <td>
-              <DollarCell value={product?.basePrice?.amount ?? null} />
+              <DollarCell
+                value={
+                  row.totalOverride ??
+                  getSmallUnitPrice(row, product) * getQty(row)
+                }
+                onChange={(val) =>
+                  updateRowField("smallProducts", row.id, {
+                    totalOverride: val === "" ? undefined : (val as number),
+                  })
+                }
+              />
             </td>
           </>
         )}
       />
 
+      {/* dispensers grouped */}
+      <GroupedTable
+        title="Dispensers"
+        bucket="dispensers"
+        renderAmountCells={(row, product) => (
+          <>
+            <td className="center">
+              <QtyCell
+                value={row.qty ?? ""}
+                onChange={(val) =>
+                  updateRowField("dispensers", row.id, {
+                    qty: val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
+            <td>
+              <DollarCell
+                value={
+                  row.warrantyPriceOverride ??
+                  product?.warrantyPricePerUnit?.amount ??
+                  ""
+                }
+                onChange={(val) =>
+                  updateRowField("dispensers", row.id, {
+                    warrantyPriceOverride:
+                      val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
+            <td>
+              <DollarCell
+                value={
+                  row.replacementPriceOverride ??
+                  product?.basePrice?.amount ??
+                  ""
+                }
+                onChange={(val) =>
+                  updateRowField("dispensers", row.id, {
+                    replacementPriceOverride:
+                      val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
+            <td>
+              <DollarCell
+                value={
+                  row.totalOverride ??
+                  getDispReplacementPrice(row, product) * getQty(row)
+                }
+                onChange={(val) =>
+                  updateRowField("dispensers", row.id, {
+                    totalOverride: val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
+          </>
+        )}
+      />
+
+      {/* bigProducts grouped */}
       <GroupedTable
         title="Products"
         bucket="bigProducts"
-        renderAmountCells={(product) => (
+        renderAmountCells={(row, product) => (
           <>
+            <td className="center">
+              <QtyCell
+                value={row.qty ?? ""}
+                onChange={(val) =>
+                  updateRowField("bigProducts", row.id, {
+                    qty: val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
+            <td>
+              <DollarCell
+                value={
+                  row.amountOverride ?? product?.basePrice?.amount ?? ""
+                }
+                onChange={(val) =>
+                  updateRowField("bigProducts", row.id, {
+                    amountOverride:
+                      val === "" ? undefined : (val as number),
+                  })
+                }
+              />
+            </td>
             <td className="center">
               <PlainCell />
             </td>
             <td>
-              <DollarCell value={product?.basePrice?.amount ?? null} />
-            </td>
-            <td className="center">
-              <PlainCell />
+              <DollarCell
+                value={
+                  row.totalOverride ??
+                  getBigAmount(row, product) * getQty(row)
+                }
+                onChange={(val) =>
+                  updateRowField("bigProducts", row.id, {
+                    totalOverride: val === "" ? undefined : (val as number),
+                  })
+                }
+              />
             </td>
           </>
         )}

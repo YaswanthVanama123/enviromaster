@@ -24,6 +24,7 @@ const DEFAULT_FORM: RpmWindowsFormState = {
   frequency: "weekly",
   tripChargeIncluded: true,
   notes: "",
+  contractMonths: 12,
 };
 
 function mapFrequency(v: string): RpmFrequencyKey {
@@ -35,6 +36,7 @@ function getFrequencyMultiplier(freq: RpmFrequencyKey): number {
   return cfg.frequencyMultipliers[freq];
 }
 
+// kept but no longer used; safe to leave
 function getAnnualFrequency(freq: RpmFrequencyKey): number {
   return cfg.annualFrequencies[freq] ?? 0;
 }
@@ -63,6 +65,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "mediumQty":
         case "largeQty":
           return { ...prev, [name]: Number(value) || 0 };
+
+        case "contractMonths":
+          return { ...prev, contractMonths: Number(value) || 0 };
 
         // convert UI “this frequency” rates back to weekly base
         case "smallWindowRate":
@@ -125,7 +130,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const weeklySmall = form.smallWindowRate;
     const weeklyMedium = form.mediumWindowRate;
     const weeklyLarge = form.largeWindowRate;
-    const weeklyTrip = form.tripCharge;
+    const weeklyTrip = form.tripCharge; // will be 0, used only for display
 
     // Weekly base window cost
     const weeklyWindows =
@@ -139,15 +144,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const effSmall = weeklySmall * freqMult;
     const effMedium = weeklyMedium * freqMult;
     const effLarge = weeklyLarge * freqMult;
-    const effTrip = weeklyTrip * freqMult;
+    const effTrip = weeklyTrip * freqMult; // display only
 
-    // Per-visit, at chosen frequency
+    // Per-visit, at chosen frequency (NO TRIP CHARGE ANYMORE)
     const perVisitWindows =
       form.smallQty * effSmall +
       form.mediumQty * effMedium +
       form.largeQty * effLarge;
 
-    const perVisitService = hasWindows ? perVisitWindows + effTrip : 0;
+    const perVisitService = hasWindows ? perVisitWindows : 0;
 
     const extrasTotal = form.extraCharges.reduce(
       (s, l) => s + (l.amount || 0),
@@ -170,32 +175,50 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const installOneTime = installOneTimeBase * rateCfg.multiplier;
 
-    // FIRST VISIT = INSTALL (weekly) + FIRST SERVICE (frequency adjusted), all rated
-    const firstVisitTotalRated =
-      (installOneTimeBase + perVisitService) * rateCfg.multiplier;
+    // FIRST VISIT PRICE = INSTALLATION ONLY (no normal service on that visit)
+    const firstVisitTotalRated = installOneTime;
 
-    // ANNUAL using config (weekly=52, biweekly=26, monthly=12, quarterly=4)
-    const annualVisits = getAnnualFrequency(freqKey);
-    const annualBillRated =
-      recurringPerVisitRated * annualVisits + installOneTime;
-
-    // MONTHLY VISITS (simple weeks model)
-    // weekly    -> 4 visits / month  (4 weeks)
-    // biweekly  -> 2 visits / month  (every 2 weeks)
-    // monthly   -> 1 visit / month   (every 4 weeks)
+    // MONTHLY VISITS using 4.33 weeks/month
+    // weekly    -> 4.33 visits / month
+    // biweekly  -> 4.33 / 2 visits / month
+    // monthly   -> 1 visit / month
     // quarterly -> we will NOT show monthly (0 here, UI hides row)
     let monthlyVisits = 0;
-    if (freqKey === "weekly") monthlyVisits = 4;
-    else if (freqKey === "biweekly") monthlyVisits = 2;
+    if (freqKey === "weekly") monthlyVisits = 4.33;
+    else if (freqKey === "biweekly") monthlyVisits = 4.33 / 2;
     else if (freqKey === "monthly") monthlyVisits = 1;
     else if (freqKey === "quarterly") monthlyVisits = 0; // no monthly form for quarterly
 
-    const monthlyBase = recurringPerVisitRated * monthlyVisits;
+    // Standard ongoing monthly bill (after the first month)
+    const standardMonthlyBillRated = recurringPerVisitRated * monthlyVisits;
 
-    // Monthly = recurring + ONE-TIME install (only when first time)
-    const monthlyBillRated = form.isFirstTimeInstall
-      ? monthlyBase + installOneTime
-      : monthlyBase;
+    // First month bill:
+    //  - first visit is installation only
+    //  - remaining visits in the month are normal service
+    const effectiveServiceVisitsFirstMonth =
+      monthlyVisits > 1 ? monthlyVisits - 1 : 0;
+
+    const firstMonthBillRated = form.isFirstTimeInstall
+      ? firstVisitTotalRated +
+        recurringPerVisitRated * effectiveServiceVisitsFirstMonth
+      : standardMonthlyBillRated;
+
+    // Displayed "Monthly Recurring" value
+    const monthlyBillRated = firstMonthBillRated;
+
+    // CONTRACT TOTAL for N months (2–36)
+    const contractMonths = Math.max(form.contractMonths ?? 0, 0);
+
+    let contractTotalRated = 0;
+    if (contractMonths > 0) {
+      if (form.isFirstTimeInstall) {
+        const remainingMonths = Math.max(contractMonths - 1, 0);
+        contractTotalRated =
+          firstMonthBillRated + standardMonthlyBillRated * remainingMonths;
+      } else {
+        contractTotalRated = standardMonthlyBillRated * contractMonths;
+      }
+    }
 
     return {
       effSmall,
@@ -205,8 +228,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       recurringPerVisitRated,
       installOneTime,
       firstVisitTotalRated,
-      annualBillRated,
+      standardMonthlyBillRated,
       monthlyBillRated,
+      contractTotalRated,
     };
   }, [form]);
 
@@ -214,7 +238,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     serviceId: "rpmWindows",
     displayName: "RPM Window",
     perVisitPrice: calc.recurringPerVisitRated,
-    annualPrice: calc.annualBillRated,
+    // now represents TOTAL for selected contract months (not "per year")
+    annualPrice: calc.contractTotalRated,
     detailsBreakdown: [],
   };
 

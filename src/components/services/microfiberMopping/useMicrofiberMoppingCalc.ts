@@ -14,9 +14,13 @@ type InputChangeEvent =
   | ChangeEvent<HTMLSelectElement>;
 
 const DEFAULT_FORM: MicrofiberMoppingFormState = {
-  serviceId: "microfiber_mopping_service_001",
+  // Base service meta
+  serviceId: "microfiber_mopping",
 
-  frequency: "weekly",
+  // Defaults
+  frequency: cfg.defaultFrequency,
+  contractTermMonths: 12,
+
   hasExistingSaniService: true,
 
   bathroomCount: 0,
@@ -28,6 +32,7 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
   chemicalGallons: 0,
 
   isAllInclusive: false,
+
   location: "insideBeltway",
   needsParking: false,
 } as MicrofiberMoppingFormState;
@@ -81,13 +86,14 @@ export function useMicrofiberMoppingCalc(
         [name]: nextValue as any,
       };
 
-      // UX rule: if they start using the "huge bathroom" path,
-      // clear the standard bathroom count so they don't double-count.
+      // UX rule: huge bathroom path clears standard bathroom count
       if (name === "hugeBathroomSqFt") {
         const sq = Number(nextValue) || 0;
         if (sq > 0) {
           next.bathroomCount = 0;
           next.isHugeBathroom = true;
+        } else if (sq === 0) {
+          next.isHugeBathroom = false;
         }
       }
 
@@ -100,14 +106,14 @@ export function useMicrofiberMoppingCalc(
   };
 
   const { calc, quote } = useMemo(() => {
-    const freq: MicrofiberFrequencyKey = form.frequency ?? "weekly";
+    const freq: MicrofiberFrequencyKey = form.frequency ?? cfg.defaultFrequency;
     const conv = getBillingConversion(freq);
-    const { actualWeeksPerYear } = cfg.billingConversions;
+    const { actualWeeksPerYear, actualWeeksPerMonth } = cfg.billingConversions;
     const isAllInclusive = !!form.isAllInclusive;
 
-    // ---------------------------------------------------------
-    // 1) Bathrooms (standard + huge)  – INCLUDED with Sani
-    // ---------------------------------------------------------
+    // ----------------------------
+    // 1) Bathrooms (included with Sani)
+    // ----------------------------
     let standardBathroomPrice = 0;
     let hugeBathroomPrice = 0;
 
@@ -137,10 +143,10 @@ export function useMicrofiberMoppingCalc(
 
     const bathroomPrice = standardBathroomPrice + hugeBathroomPrice;
 
-    // ---------------------------------------------------------
+    // ----------------------------
     // 2) Extra non-bath area
     // Rule: $100 OR $10 per 400 sq ft, whichever is more.
-    // ---------------------------------------------------------
+    // ----------------------------
     let extraAreaPrice = 0;
 
     if (!isAllInclusive && form.extraAreaSqFt > 0) {
@@ -155,10 +161,11 @@ export function useMicrofiberMoppingCalc(
         : unitPrice;
     }
 
-    // ---------------------------------------------------------
+    // ----------------------------
     // 3) Stand-alone microfiber mopping
-    // Rule: $10 per 200 sq ft, $40 minimum, + trip charges.
-    // ---------------------------------------------------------
+    // Rule (base): $10 per 200 sq ft, $40 minimum.
+    // Trip charge is now removed from the math (always 0).
+    // ----------------------------
     let standaloneServicePrice = 0;
     let standaloneTripCharge = 0;
     let standaloneTotal = 0;
@@ -176,61 +183,66 @@ export function useMicrofiberMoppingCalc(
 
       standaloneServicePrice = basePrice;
 
-      const includeStandaloneTrip =
-        cfg.standalonePricing.includeTripCharge &&
-        cfg.pricingRules.alwaysIncludeTripChargeStandalone;
-
-      if (includeStandaloneTrip) {
-        let trip =
-          form.location === "insideBeltway"
-            ? cfg.tripCharges.insideBeltway
-            : cfg.tripCharges.outsideBeltway;
-
-        if (form.needsParking && form.location === "insideBeltway") {
-          trip += cfg.tripCharges.parkingFee;
-        }
-
-        // If ever used inside an all-inclusive variant,
-        // this flag could waive trip, but with our current
-        // guards this stays informational.
-        if (isAllInclusive && cfg.tripCharges.waiveForAllInclusive) {
-          trip = 0;
-        }
-
-        standaloneTripCharge = trip;
-      }
-
-      standaloneTotal = standaloneServicePrice + standaloneTripCharge;
+      // NEW: trip charge concept removed → always 0 in calculations
+      standaloneTripCharge = 0;
+      standaloneTotal = standaloneServicePrice;
     }
 
-    // ---------------------------------------------------------
+    // ----------------------------
     // 4) Chemical supply (customer self-mopping)
     // Rule: $27.34 / gallon (diluted) – per month.
-    // ---------------------------------------------------------
+    // ----------------------------
     const chemicalSupplyMonthly =
       form.chemicalGallons > 0
         ? form.chemicalGallons *
           cfg.chemicalProducts.dailyChemicalPerGallon
         : 0;
 
-    const annualChemical = chemicalSupplyMonthly * 12;
-
-    // ---------------------------------------------------------
-    // 5) Totals
-    // ---------------------------------------------------------
+    // ----------------------------
+    // 5) Per-visit total
+    // ----------------------------
     const perVisitServiceTotal =
       bathroomPrice + extraAreaPrice + standaloneTotal;
 
     const perVisitPrice = perVisitServiceTotal;
 
-    const annualService = perVisitPrice * conv.annualMultiplier;
-    const annualPrice = annualService + annualChemical;
-
-    const monthlyService = perVisitPrice * conv.monthlyMultiplier;
+    // ----------------------------
+    // 6) Monthly (4.33 weeks logic) and contract
+    // ----------------------------
+    const monthlyVisits = conv.monthlyMultiplier; // 4.33, ~2.17 or 1
+    const monthlyService = perVisitPrice * monthlyVisits;
     const monthlyRecurring = monthlyService + chemicalSupplyMonthly;
 
-    const weeklyServiceTotal = annualService / actualWeeksPerYear;
-    const weeklyTotalWithChemicals = annualPrice / actualWeeksPerYear;
+    // First visit / first month rules
+    // For Microfiber we don't have a separate installation fee,
+    // so installFee is treated as 0 here.
+    const installFee = 0;
+    const firstVisitPrice = installFee; // install-only, but 0 in this service
+
+    // First month = install-only first visit + (monthlyVisits − 1) × normal service price
+    const firstMonthService =
+      Math.max(monthlyVisits , 0) * perVisitPrice;
+    const firstMonthPrice =
+      firstVisitPrice + firstMonthService + chemicalSupplyMonthly;
+
+    // Contract term (2–36 months)
+    let contractMonths = Number(form.contractTermMonths) || 0;
+    if (contractMonths < 2) contractMonths = 2;
+    if (contractMonths > 36) contractMonths = 36;
+
+    const remainingMonths = Math.max(contractMonths - 1, 0);
+    const contractTotal =
+      firstMonthPrice + remainingMonths * monthlyRecurring;
+
+    // ----------------------------
+    // 7) Annual + weekly approximations (not main focus now)
+    // ----------------------------
+    const annualPrice = monthlyRecurring * 12;
+
+    const weeklyServiceTotal =
+      monthlyService / (actualWeeksPerMonth || 4.33);
+    const weeklyTotalWithChemicals =
+      annualPrice / actualWeeksPerYear;
 
     const calc: MicrofiberMoppingCalcResult = {
       standardBathroomPrice,
@@ -246,6 +258,10 @@ export function useMicrofiberMoppingCalc(
       perVisitPrice,
       annualPrice,
       monthlyRecurring,
+      firstVisitPrice,
+      firstMonthPrice,
+      contractMonths,
+      contractTotal,
     };
 
     const quote: ServiceQuoteResult = {

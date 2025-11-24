@@ -31,6 +31,9 @@ const DEFAULT_FORM: SanicleanFormState = {
 
   estimatedPaperSpendPerWeek: 0,
 
+  // global new rule: contract dropdown (2–36 months)
+  contractMonths: 12,
+
   rateTier: "redRate",
 
   notes: "",
@@ -77,7 +80,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         case "femaleToilets":
         case "excessSoapGallonsPerWeek":
         case "microfiberBathrooms":
-        case "estimatedPaperSpendPerWeek": {
+        case "estimatedPaperSpendPerWeek":
+        case "contractMonths": {
           const num = value === "" ? 0 : Number(value);
           next = { ...next, [name]: Number.isFinite(num) ? num : 0 };
           break;
@@ -226,6 +230,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
 
     // ---------- Base weekly charges ----------
     const geo = cfg.geographicPricing[location];
+    // parkingAddon will always be 0 because parkingFee=0 in config
     const parkingAddon =
       location === "insideBeltway" && needsParking ? geo.parkingFee : 0;
 
@@ -246,11 +251,11 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     let smallFacilityMinApplied = false;
 
     if (method === "all_inclusive") {
-      // All-inclusive: fixtures × $20, trip waived
+      // All-inclusive: fixtures × $20, trip waived (and trip config is 0 anyway)
       weeklyBase = baseFixtureChargeRaw;
       weeklyTrip = 0;
     } else if (method === "small_facility_minimum") {
-      // $50 minimum including trip
+      // $50 minimum including trip (trip itself is 0 now)
       weeklyBase = cfg.smallFacilityMinimum.minimumWeeklyCharge;
       if (cfg.smallFacilityMinimum.includesTripCharge) {
         weeklyTrip = 0;
@@ -262,7 +267,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       // Geographic per-fixture with weekly facility minimum
       const perFixtureWeekly = baseFixtureChargeRaw;
       weeklyBase = Math.max(perFixtureWeekly, geo.weeklyMinimum);
-      weeklyTrip = geo.tripCharge + parkingAddon;
+      weeklyTrip = geo.tripCharge + parkingAddon; // geo.tripCharge is 0 now
     }
 
     const tripUnits = weeklyTrip > 0 ? 1 : 0;
@@ -407,6 +412,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       serviceId: "saniclean",
       displayName: "SaniClean",
       perVisitPrice,
+      // still returning annualPrice for global aggregator, but UI won’t show it
       annualPrice: annualTotal,
       detailsBreakdown: [
         `Method: ${methodLabel}`,
