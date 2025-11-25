@@ -9,6 +9,7 @@ import AdminPanel from "./components/AdminPanel";
 import ApprovalDocuments from "./components/ApprovalDocuments";
 import PriceChanges from "./components/PriceChanges";
 import AdminPricesPage from "./components/pages/AdminPricesPage";
+import { AdminDashboard } from "./components/admin";
 
 export default function App() {
   return (
@@ -22,10 +23,10 @@ export default function App() {
             <Route path="/saved-pdfs" element={<SavedFiles />} />
             {/* <Route path="/admin-panel" element={<AdminPanel />} /> */}
             <Route path="/admin-Login" element={<AdminLogin/>} />
-            <Route path="/admin-panel" element={<AdminPanel />} /> 
+            <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/approval-documents" element={<ApprovalDocuments />} />
             <Route path="/price-changes" element={<PriceChanges />} />
-            
+            <Route path="/pricing-tables" element={<AdminDashboard />} />
           </Routes>
         </main>
       </div>

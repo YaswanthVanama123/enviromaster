@@ -16,6 +16,14 @@ export default function AdminPanel() {
       <div className="admin-options">
         <div
           className="admin-card"
+          onClick={() => handleNavigation("/pricing-tables")}
+        >
+          <div className="icon">📊</div>
+          <div className="label">Pricing Tables</div>
+        </div>
+
+        <div
+          className="admin-card"
           onClick={() => handleNavigation("/approval-documents")}
         >
           <div className="icon">📋</div>
