@@ -91,18 +91,32 @@ type DollarCellProps = {
 const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditingRef = useRef(false);
+  const lastValueRef = useRef(value);
 
-  console.log('🔵 DollarCell RENDER - value:', value);
+  console.log('🔵 DollarCell RENDER - value:', value, 'lastValue:', lastValueRef.current);
 
+  // Initialize the input value on mount only
   useEffect(() => {
-    const isFocused = inputRef.current === document.activeElement;
-    console.log('🟢 DollarCell useEffect - value:', value, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
-    // Sync input value from props when not editing AND not focused
-    if (inputRef.current && !isEditingRef.current && !isFocused) {
-      const newValue = value === null || value === undefined || value === "" ? "" : String(value);
-      if (inputRef.current.value !== newValue) {
+    if (inputRef.current && inputRef.current.value === "") {
+      const initialValue = value === null || value === undefined || value === "" ? "" : String(value);
+      inputRef.current.value = initialValue;
+      lastValueRef.current = value;
+      console.log('🟢 DollarCell MOUNTED - initial value:', initialValue);
+    }
+  }, []);
+
+  // Update only when value changes AND user is not editing
+  useEffect(() => {
+    if (value !== lastValueRef.current) {
+      const isFocused = inputRef.current === document.activeElement;
+      console.log('🟢 DollarCell value changed - value:', value, 'lastValue:', lastValueRef.current, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
+
+      // Only update if not editing AND not focused
+      if (inputRef.current && !isEditingRef.current && !isFocused) {
+        const newValue = value === null || value === undefined || value === "" ? "" : String(value);
         console.log('🟡 DollarCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
         inputRef.current.value = newValue;
+        lastValueRef.current = value;
       }
     }
   }, [value]);
@@ -131,6 +145,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   const handleBlur = () => {
     console.log('🟠 DollarCell BLUR - setting isEditing = false');
     isEditingRef.current = false;
+    lastValueRef.current = value;
     // Sync value on blur
     if (inputRef.current) {
       const newValue = value === null || value === undefined || value === "" ? "" : String(value);
@@ -157,12 +172,10 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     </div>
   );
 }, (prevProps, nextProps) => {
-  console.log('🔵 DollarCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value);
-  // Return true = props are equal = DON'T re-render
-  // Return false = props changed = DO re-render
-  // We always return true to NEVER re-render
-  return true;
-}); // NEVER re-render this component
+  console.log('🔵 DollarCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value, 'equal:', prevProps.value === nextProps.value);
+  // Only re-render if value actually changed
+  return prevProps.value === nextProps.value && prevProps.readOnly === nextProps.readOnly;
+});
 
 function PlainCell({ value }: { value?: string | number | null }) {
   const displayValue = value === null || value === undefined ? "" : String(value);
@@ -184,18 +197,32 @@ type QtyCellProps = {
 const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditingRef = useRef(false);
+  const lastValueRef = useRef(value);
 
-  console.log('🔵 QtyCell RENDER - value:', value);
+  console.log('🔵 QtyCell RENDER - value:', value, 'lastValue:', lastValueRef.current);
 
+  // Initialize the input value on mount only
   useEffect(() => {
-    const isFocused = inputRef.current === document.activeElement;
-    console.log('🟢 QtyCell useEffect - value:', value, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
-    // Sync input value from props when not editing AND not focused
-    if (inputRef.current && !isEditingRef.current && !isFocused) {
-      const newValue = value === "" || value === undefined ? "" : String(value);
-      if (inputRef.current.value !== newValue) {
+    if (inputRef.current && inputRef.current.value === "") {
+      const initialValue = value === "" || value === undefined ? "" : String(value);
+      inputRef.current.value = initialValue;
+      lastValueRef.current = value;
+      console.log('🟢 QtyCell MOUNTED - initial value:', initialValue);
+    }
+  }, []);
+
+  // Update only when value changes AND user is not editing
+  useEffect(() => {
+    if (value !== lastValueRef.current) {
+      const isFocused = inputRef.current === document.activeElement;
+      console.log('🟢 QtyCell value changed - value:', value, 'lastValue:', lastValueRef.current, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
+
+      // Only update if not editing AND not focused
+      if (inputRef.current && !isEditingRef.current && !isFocused) {
+        const newValue = value === "" || value === undefined ? "" : String(value);
         console.log('🟡 QtyCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
         inputRef.current.value = newValue;
+        lastValueRef.current = value;
       }
     }
   }, [value]);
@@ -226,6 +253,7 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const handleBlur = () => {
     console.log('🟠 QtyCell BLUR - setting isEditing = false');
     isEditingRef.current = false;
+    lastValueRef.current = value;
     // Sync value on blur
     if (inputRef.current) {
       const newValue = value === "" || value === undefined ? "" : String(value);
@@ -248,11 +276,10 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     />
   );
 }, (prevProps, nextProps) => {
-  console.log('🔵 QtyCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value);
-  // Return true = props are equal = DON'T re-render
-  // We always return true to NEVER re-render
-  return true;
-}); // NEVER re-render this component
+  console.log('🔵 QtyCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value, 'equal:', prevProps.value === nextProps.value);
+  // Only re-render if value actually changed
+  return prevProps.value === nextProps.value;
+});
 
 
 
@@ -482,12 +509,22 @@ export default function ProductsSection() {
   const updateRowField = useCallback(
     (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) => {
       console.log('⚡ updateRowField called - bucket:', bucket, 'rowId:', rowId, 'patch:', patch);
-      setData((prev) => ({
-        ...prev,
-        [bucket]: prev[bucket].map((r) =>
+      setData((prev) => {
+        const newBucket = prev[bucket].map((r) =>
           r.id === rowId ? { ...r, ...patch } : r
-        ),
-      }));
+        );
+
+        // Only update if something actually changed
+        if (JSON.stringify(newBucket) === JSON.stringify(prev[bucket])) {
+          console.log('⚡ No actual change detected, skipping state update');
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [bucket]: newBucket,
+        };
+      });
     },
     []
   );
@@ -756,7 +793,8 @@ export default function ProductsSection() {
               const pBig = getProduct(rowBig);
 
               // Stable row key: combine all three IDs plus index
-              const rowKey = `${rowSmall?.id ?? ""}_${rowDisp?.id ?? ""}_${rowBig?.id ?? ""}_${i}`;
+              const rowKey = `${rowSmall?.id ?? `s${i}`}_${rowDisp?.id ?? `d${i}`}_${rowBig?.id ?? `b${i}`}`;
+              console.log(`🔑 Row ${i} key:`, rowKey);
 
               return (
                 <tr key={rowKey}>

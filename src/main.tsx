@@ -4,7 +4,8 @@ import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  // DISABLED StrictMode to prevent double-renders causing focus loss
+  // <StrictMode>
     <App />
-  </StrictMode>,
+  // </StrictMode>,
 )
