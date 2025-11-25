@@ -1,5 +1,5 @@
 // src/components/services/ServicesContext.tsx
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
 
 /**
@@ -60,12 +60,12 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
     ? (servicesState.saniclean?.fixtureCount ?? 0) * 5 // $5 per fixture per week
     : 0;
 
-  const value: ServicesContextValue = {
+  const value = useMemo<ServicesContextValue>(() => ({
     servicesState,
     updateSaniclean,
     isSanicleanAllInclusive,
     sanicleanPaperCreditPerWeek,
-  };
+  }), [servicesState, updateSaniclean, isSanicleanAllInclusive, sanicleanPaperCreditPerWeek]);
 
   return (
     <ServicesContext.Provider value={value}>

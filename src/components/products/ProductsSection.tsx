@@ -127,7 +127,6 @@ function PlainCell({ value }: { value?: string | number | null }) {
       type="text"
       value={displayValue}
       readOnly
-      style={{ padding: '6px' }}
     />
   );
 }
