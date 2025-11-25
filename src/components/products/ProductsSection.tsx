@@ -315,30 +315,7 @@ const NameCell = React.memo(function NameCell({
   const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // If row is "Custom", show a simple text input instead of dropdown
-  if (isCustom) {
-    return (
-      <div className="namecell">
-        <input
-          className="in"
-          value={customName ?? ""}
-          placeholder="Custom product..."
-          onChange={(e) => onChangeCustomName?.(e.target.value)}
-        />
-        {onRemove && (
-          <button
-            className="row-remove"
-            title="Remove row"
-            type="button"
-            onClick={onRemove}
-          >
-            –
-          </button>
-        )}
-      </div>
-    );
-  }
-
+  // Always call all hooks before any conditional returns
   const filteredOptions = useMemo(
     () =>
       options.filter((opt) =>
@@ -362,6 +339,30 @@ const NameCell = React.memo(function NameCell({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
+
+  // If row is "Custom", show a simple text input instead of dropdown
+  if (isCustom) {
+    return (
+      <div className="namecell">
+        <input
+          className="in"
+          value={customName ?? ""}
+          placeholder="Custom product..."
+          onChange={(e) => onChangeCustomName?.(e.target.value)}
+        />
+        {onRemove && (
+          <button
+            className="row-remove"
+            title="Remove row"
+            type="button"
+            onClick={onRemove}
+          >
+            –
+          </button>
+        )}
+      </div>
+    );
+  }
 
   const handleSelect = (key: string) => {
     onChangeProduct(key);
