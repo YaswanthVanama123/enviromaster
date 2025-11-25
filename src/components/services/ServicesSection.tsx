@@ -8,6 +8,9 @@ import { MicrofiberMoppingForm } from "../services/microfiberMopping/MicrofiberM
 import { RpmWindowsForm } from "../services/rpmWindows/RpmWindowsForm";
 import { RefreshPowerScrubForm } from "../services/refreshPowerScrub/RefreshPowerScrubForm";
 import { SanipodForm } from "./sanipod/SanipodForm";
+import { CarpetForm } from "./carpetCleaning/CarpetForm";
+import { JanitorialForm } from "./purejanitorial/JanitorialForm";
+import { StripWaxForm } from "./stripWax/StripWaxForm";
 
 // Optional prop if you prefill from backend
 type ServicesSectionProps = {
@@ -19,6 +22,9 @@ type ServicesSectionProps = {
     rpmWindows?: any;
     refreshPowerScrub?: any;
     sanipod?: any;
+    carpetclean?: any;
+    janitorial?:any;
+    stripwax?:any;
   };
 };
 
@@ -45,7 +51,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         />
         <RpmWindowsForm initialData={initialServices?.rpmWindows} />
         <SanipodForm initialData={initialServices?.sanipod} />
-
+        <CarpetForm initialData={initialServices?.carpetclean} />
+        <JanitorialForm initialData={initialServices?.janitorial} />
+        <StripWaxForm initialData={initialServices?.stripwax} />
       </div>
               <RefreshPowerScrubForm
           initialData={initialServices?.refreshPowerScrub}
