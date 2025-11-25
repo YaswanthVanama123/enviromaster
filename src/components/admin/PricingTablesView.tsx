@@ -182,6 +182,11 @@ export const PricingTablesView: React.FC = () => {
   const selectedFamily = catalog?.families.find(f => f.key === selectedProductFamily);
   const selectedServiceData = configs.find(s => s.serviceId === selectedService);
 
+  // Debug logs
+  console.log("Selected service ID:", selectedService);
+  console.log("Selected service data:", selectedServiceData);
+  console.log("All configs:", configs.map(c => ({ id: c.serviceId, label: c.label })));
+
   return (
     <div style={styles.container}>
       {successMessage && <div style={styles.successBanner}>{successMessage}</div>}
@@ -331,60 +336,90 @@ export const PricingTablesView: React.FC = () => {
             </h3>
             <p style={styles.tableSubtitle}>{selectedServiceData.description}</p>
 
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Pricing Field</th>
-                    <th style={styles.th}>Current Value</th>
-                    <th style={styles.th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {extractServicePricing(selectedServiceData.config).map((field, idx) => {
-                    const isEditing = editingServiceField?.serviceId === selectedServiceData.serviceId &&
-                                     editingServiceField?.path.join(".") === field.path.join(".");
+            {(() => {
+              const pricingFields = extractServicePricing(selectedServiceData.config);
+              console.log("Extracted pricing fields for", selectedServiceData.serviceId, ":", pricingFields);
 
-                    return (
-                      <tr key={idx} style={styles.tr}>
-                        <td style={styles.td}><strong>{field.label}</strong></td>
-                        <td style={styles.td}>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              style={styles.input}
-                              value={editingServiceField.value}
-                              onChange={(e) => setEditingServiceField({ ...editingServiceField, value: e.target.value })}
-                              autoFocus
-                              step="0.01"
-                            />
-                          ) : (
-                            <span style={styles.priceValue}>${field.value.toFixed(2)}</span>
-                          )}
-                        </td>
-                        <td style={styles.td}>
-                          {isEditing ? (
-                            <div style={styles.actionButtons}>
-                              <button style={styles.saveBtn} onClick={handleSaveServiceField} disabled={saving}>
-                                {saving ? "..." : "Save"}
-                              </button>
-                              <button style={styles.cancelBtn} onClick={handleCancelEdit}>Cancel</button>
-                            </div>
-                          ) : (
-                            <button
-                              style={styles.editBtn}
-                              onClick={() => handleEditServiceField(selectedServiceData.serviceId, field.path, field.value)}
-                            >
-                              Edit Price
-                            </button>
-                          )}
-                        </td>
+              if (pricingFields.length === 0) {
+                return (
+                  <div style={styles.errorBox}>
+                    <p>No pricing fields found for this service.</p>
+                    <p>Service ID: {selectedServiceData.serviceId}</p>
+                    <details>
+                      <summary>View Config</summary>
+                      <pre style={{ fontSize: "11px", overflow: "auto" }}>
+                        {JSON.stringify(selectedServiceData.config, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={styles.tableWrapper}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr>
+                        <th style={styles.th}>Pricing Field</th>
+                        <th style={styles.th}>Current Value</th>
+                        <th style={styles.th}>Actions</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {pricingFields.map((field, idx) => {
+                        const isEditing = editingServiceField?.serviceId === selectedServiceData.serviceId &&
+                                         editingServiceField?.path.join(".") === field.path.join(".");
+
+                        return (
+                          <tr key={idx} style={styles.tr}>
+                            <td style={styles.td}><strong>{field.label}</strong></td>
+                            <td style={styles.td}>
+                              {isEditing ? (
+                                <input
+                                  type="number"
+                                  style={styles.input}
+                                  value={editingServiceField.value}
+                                  onChange={(e) => setEditingServiceField({ ...editingServiceField, value: e.target.value })}
+                                  autoFocus
+                                  step="0.01"
+                                />
+                              ) : (
+                                <span style={styles.priceValue}>${field.value.toFixed(2)}</span>
+                              )}
+                            </td>
+                            <td style={styles.td}>
+                              {isEditing ? (
+                                <div style={styles.actionButtons}>
+                                  <button style={styles.saveBtn} onClick={handleSaveServiceField} disabled={saving}>
+                                    {saving ? "..." : "Save"}
+                                  </button>
+                                  <button style={styles.cancelBtn} onClick={handleCancelEdit}>Cancel</button>
+                                </div>
+                              ) : (
+                                <button
+                                  style={styles.editBtn}
+                                  onClick={() => handleEditServiceField(selectedServiceData.serviceId, field.path, field.value)}
+                                >
+                                  Edit Price
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {!selectedServiceData && (
+          <div style={styles.errorBox}>
+            <p>⚠️ Service not found</p>
+            <p>Selected: {selectedService}</p>
+            <p>Available services: {configs.map(c => c.serviceId).join(", ")}</p>
           </div>
         )}
       </div>
