@@ -1422,7 +1422,7 @@ export default function ProductsSection() {
 
   return (
     <section className="prod">
-      {isDesktop ? <DesktopTable /> : <GroupedTables />}
+      {isDesktop ? DesktopTable() : GroupedTables()}
     </section>
   );
 }
