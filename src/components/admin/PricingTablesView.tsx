@@ -3,20 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
-import type { ProductFamily, Product } from "../../backendservice/types/productCatalog.types";
+import type { Product } from "../../backendservice/types/productCatalog.types";
 
 type ViewMode = "services" | "products";
 
-interface EditingService {
-  id: string;
-  config: any;
-}
-
-interface EditingProduct {
-  familyKey: string;
-  productKey: string;
-  basePrice?: number;
-  warrantyPrice?: number;
+interface EditField {
+  serviceId: string;
+  path: string[];
+  label: string;
+  value: number;
 }
 
 export const PricingTablesView: React.FC = () => {
@@ -24,12 +19,11 @@ export const PricingTablesView: React.FC = () => {
   const { catalog, loading: catalogLoading, error: catalogError, updateCatalog } = useActiveProductCatalog();
 
   const [viewMode, setViewMode] = useState<ViewMode>("services");
-  const [editingService, setEditingService] = useState<EditingService | null>(null);
-  const [editingProduct, setEditingProduct] = useState<EditingProduct | null>(null);
+  const [editingField, setEditingField] = useState<EditField | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Auto-hide success message
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(null), 3000);
@@ -37,398 +31,279 @@ export const PricingTablesView: React.FC = () => {
     }
   }, [successMessage]);
 
-  const handleEditService = (service: ServiceConfig) => {
-    setEditingService({
-      id: service._id,
-      config: JSON.parse(JSON.stringify(service.config)), // Deep clone
-    });
-  };
+  const extractPricingFields = (config: any, serviceId: string): Array<{ label: string; value: number; path: string[] }> => {
+    const fields: Array<{ label: string; value: number; path: string[] }> = [];
 
-  const handleSaveService = async () => {
-    if (!editingService) return;
-
-    setSaving(true);
-    const result = await updateConfig(editingService.id, {
-      config: editingService.config,
-    });
-
-    if (result.success) {
-      setSuccessMessage("Service pricing updated successfully!");
-      setEditingService(null);
-    }
-    setSaving(false);
-  };
-
-  const handleCancelServiceEdit = () => {
-    setEditingService(null);
-  };
-
-  const handleServiceConfigChange = (path: string[], value: any) => {
-    if (!editingService) return;
-
-    const newConfig = { ...editingService.config };
-    let current: any = newConfig;
-
-    // Navigate to the parent of the field we want to change
-    for (let i = 0; i < path.length - 1; i++) {
-      if (!current[path[i]]) current[path[i]] = {};
-      current = current[path[i]];
-    }
-
-    // Set the value
-    current[path[path.length - 1]] = value;
-
-    setEditingService({ ...editingService, config: newConfig });
-  };
-
-  const handleEditProduct = (familyKey: string, product: Product) => {
-    setEditingProduct({
-      familyKey,
-      productKey: product.key,
-      basePrice: product.basePrice?.amount,
-      warrantyPrice: product.warrantyPricePerUnit?.amount,
-    });
-  };
-
-  const handleSaveProduct = async () => {
-    if (!editingProduct || !catalog) return;
-
-    setSaving(true);
-
-    // Create updated catalog
-    const updatedCatalog = { ...catalog };
-    const familyIndex = updatedCatalog.families.findIndex(
-      (f) => f.key === editingProduct.familyKey
-    );
-
-    if (familyIndex !== -1) {
-      const productIndex = updatedCatalog.families[familyIndex].products.findIndex(
-        (p) => p.key === editingProduct.productKey
-      );
-
-      if (productIndex !== -1) {
-        const product = updatedCatalog.families[familyIndex].products[productIndex];
-
-        if (editingProduct.basePrice !== undefined && product.basePrice) {
-          product.basePrice.amount = editingProduct.basePrice;
+    // Geographic Pricing
+    if (config.geographicPricing) {
+      if (config.geographicPricing.insideBeltway) {
+        const ib = config.geographicPricing.insideBeltway;
+        if (ib.ratePerFixture !== undefined) {
+          fields.push({ label: "Inside Beltway - Rate/Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"] });
         }
-
-        if (editingProduct.warrantyPrice !== undefined && product.warrantyPricePerUnit) {
-          product.warrantyPricePerUnit.amount = editingProduct.warrantyPrice;
+        if (ib.weeklyMinimum !== undefined) {
+          fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"] });
+        }
+      }
+      if (config.geographicPricing.outsideBeltway) {
+        const ob = config.geographicPricing.outsideBeltway;
+        if (ob.ratePerFixture !== undefined) {
+          fields.push({ label: "Outside Beltway - Rate/Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"] });
+        }
+        if (ob.weeklyMinimum !== undefined) {
+          fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"] });
         }
       }
     }
 
-    const result = await updateCatalog(catalog._id, {
-      families: updatedCatalog.families,
+    // All-Inclusive Package
+    if (config.allInclusivePackage?.weeklyRatePerFixture !== undefined) {
+      fields.push({ label: "All-Inclusive Weekly Rate/Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"] });
+    }
+
+    // Warranty Fees
+    if (config.warrantyFeePerDispenser !== undefined) {
+      fields.push({ label: "Warranty Fee/Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"] });
+    }
+
+    // Soap Upgrades
+    if (config.soapUpgrades?.standardToLuxury !== undefined) {
+      fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
+    }
+
+    // Service-specific rates
+    if (config.ratePerTrap !== undefined) {
+      fields.push({ label: "Rate per Trap", value: config.ratePerTrap, path: ["ratePerTrap"] });
+    }
+    if (config.ratePerGallon !== undefined) {
+      fields.push({ label: "Rate per Gallon", value: config.ratePerGallon, path: ["ratePerGallon"] });
+    }
+    if (config.weeklyRatePerBathroom !== undefined) {
+      fields.push({ label: "Weekly Rate per Bathroom", value: config.weeklyRatePerBathroom, path: ["weeklyRatePerBathroom"] });
+    }
+    if (config.monthlyRatePerSqFt !== undefined) {
+      fields.push({ label: "Monthly Rate per Sq Ft", value: config.monthlyRatePerSqFt, path: ["monthlyRatePerSqFt"] });
+    }
+
+    return fields;
+  };
+
+  const handleEditField = (service: ServiceConfig, field: { label: string; value: number; path: string[] }) => {
+    setEditingField({
+      serviceId: service._id,
+      path: field.path,
+      label: field.label,
+      value: field.value,
     });
+    setEditValue(field.value.toString());
+  };
+
+  const handleSaveField = async () => {
+    if (!editingField) return;
+
+    const service = configs.find(c => c._id === editingField.serviceId);
+    if (!service) return;
+
+    setSaving(true);
+
+    // Create updated config
+    const newConfig = JSON.parse(JSON.stringify(service.config));
+    let current: any = newConfig;
+
+    // Navigate to parent
+    for (let i = 0; i < editingField.path.length - 1; i++) {
+      current = current[editingField.path[i]];
+    }
+
+    // Update value
+    current[editingField.path[editingField.path.length - 1]] = parseFloat(editValue) || 0;
+
+    const result = await updateConfig(editingField.serviceId, { config: newConfig });
 
     if (result.success) {
-      setSuccessMessage("Product pricing updated successfully!");
-      setEditingProduct(null);
+      setSuccessMessage("✓ Price updated successfully!");
+      setEditingField(null);
     }
     setSaving(false);
   };
 
-  const handleCancelProductEdit = () => {
-    setEditingProduct(null);
+  const handleCancelEdit = () => {
+    setEditingField(null);
+    setEditValue("");
   };
 
-  const renderServicePricingFields = (service: ServiceConfig) => {
-    const isEditing = editingService?.id === service._id;
-    const config = isEditing ? editingService.config : service.config;
-
-    // Extract common pricing fields
-    const geoPricing = config?.geographicPricing?.insideBeltway || {};
-    const allInclusive = config?.allInclusivePackage || {};
-
-    if (!isEditing) {
+  const renderServicesView = () => {
+    if (servicesLoading) {
       return (
-        <div style={styles.pricingFields}>
-          <div style={styles.fieldRow}>
-            <span style={styles.fieldLabel}>Rate/Fixture:</span>
-            <span style={styles.fieldValue}>${geoPricing.ratePerFixture || "N/A"}</span>
-          </div>
-          <div style={styles.fieldRow}>
-            <span style={styles.fieldLabel}>Weekly Minimum:</span>
-            <span style={styles.fieldValue}>${geoPricing.weeklyMinimum || "N/A"}</span>
-          </div>
-          <div style={styles.fieldRow}>
-            <span style={styles.fieldLabel}>All-Inclusive Rate:</span>
-            <span style={styles.fieldValue}>${allInclusive.weeklyRatePerFixture || "N/A"}</span>
-          </div>
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p style={styles.loadingText}>Loading service pricing...</p>
         </div>
       );
     }
 
-    return (
-      <div style={styles.editingFields}>
-        <div style={styles.editRow}>
-          <label style={styles.editLabel}>Rate/Fixture ($):</label>
-          <input
-            type="number"
-            style={styles.input}
-            value={geoPricing.ratePerFixture || ""}
-            onChange={(e) =>
-              handleServiceConfigChange(
-                ["geographicPricing", "insideBeltway", "ratePerFixture"],
-                parseFloat(e.target.value) || 0
-              )
-            }
-          />
-        </div>
-        <div style={styles.editRow}>
-          <label style={styles.editLabel}>Weekly Minimum ($):</label>
-          <input
-            type="number"
-            style={styles.input}
-            value={geoPricing.weeklyMinimum || ""}
-            onChange={(e) =>
-              handleServiceConfigChange(
-                ["geographicPricing", "insideBeltway", "weeklyMinimum"],
-                parseFloat(e.target.value) || 0
-              )
-            }
-          />
-        </div>
-        <div style={styles.editRow}>
-          <label style={styles.editLabel}>All-Inclusive Rate ($):</label>
-          <input
-            type="number"
-            style={styles.input}
-            value={allInclusive.weeklyRatePerFixture || ""}
-            onChange={(e) =>
-              handleServiceConfigChange(
-                ["allInclusivePackage", "weeklyRatePerFixture"],
-                parseFloat(e.target.value) || 0
-              )
-            }
-          />
-        </div>
-        <div style={styles.editActions}>
-          <button style={styles.cancelButton} onClick={handleCancelServiceEdit}>
-            Cancel
-          </button>
-          <button
-            style={styles.saveButton}
-            onClick={handleSaveService}
-            disabled={saving}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderServicesTable = () => {
-    if (servicesLoading) {
-      return <div style={styles.loading}>Loading services...</div>;
-    }
-
     if (servicesError) {
-      return <div style={styles.error}>Error: {servicesError}</div>;
+      return <div style={styles.errorBox}>⚠️ {servicesError}</div>;
     }
 
     return (
-      <div style={styles.tableContainer}>
-        <div style={styles.tableHeader}>
-          <h2 style={styles.tableTitle}>Service Pricing Configuration</h2>
-          <p style={styles.tableSubtitle}>
-            {configs.length} services available • Edit pricing directly
-          </p>
-        </div>
+      <div style={styles.servicesGrid}>
+        {configs.map((service) => {
+          const pricingFields = extractPricingFields(service.config, service.serviceId);
 
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.headerRow}>
-                <th style={styles.th}>Service Name</th>
-                <th style={styles.th}>Service ID</th>
-                <th style={styles.th}>Version</th>
-                <th style={styles.th}>Status</th>
-                <th style={styles.th}>Pricing Details</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {configs.map((service) => (
-                <tr
-                  key={service._id}
-                  style={{
-                    ...styles.tableRow,
-                    ...(editingService?.id === service._id ? styles.editingRow : {}),
-                  }}
-                >
-                  <td style={styles.td}>
-                    <div style={styles.serviceName}>{service.label}</div>
-                    <div style={styles.serviceDescription}>{service.description}</div>
-                  </td>
-                  <td style={styles.td}>
-                    <code style={styles.code}>{service.serviceId}</code>
-                  </td>
-                  <td style={styles.td}>{service.version}</td>
-                  <td style={styles.td}>
-                    {service.isActive ? (
-                      <span style={styles.activeBadge}>Active</span>
-                    ) : (
-                      <span style={styles.inactiveBadge}>Inactive</span>
-                    )}
-                  </td>
-                  <td style={styles.td}>{renderServicePricingFields(service)}</td>
-                  <td style={styles.td}>
-                    {editingService?.id !== service._id && (
-                      <button
-                        style={styles.editButton}
-                        onClick={() => handleEditService(service)}
-                      >
-                        Edit Pricing
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          return (
+            <div key={service._id} style={styles.serviceCard}>
+              <div style={styles.cardHeader}>
+                <div>
+                  <h3 style={styles.serviceName}>{service.label}</h3>
+                  <p style={styles.serviceDescription}>{service.description}</p>
+                </div>
+                {service.isActive ? (
+                  <span style={styles.badgeActive}>● Active</span>
+                ) : (
+                  <span style={styles.badgeInactive}>● Inactive</span>
+                )}
+              </div>
+
+              <div style={styles.metaInfo}>
+                <span style={styles.metaTag}>
+                  <strong>ID:</strong> {service.serviceId}
+                </span>
+                <span style={styles.metaTag}>
+                  <strong>Ver:</strong> {service.version}
+                </span>
+              </div>
+
+              <div style={styles.pricingSection}>
+                <h4 style={styles.pricingSectionTitle}>💰 Pricing Details</h4>
+
+                {pricingFields.length === 0 ? (
+                  <p style={styles.noPricing}>No pricing data available</p>
+                ) : (
+                  <div style={styles.priceGrid}>
+                    {pricingFields.map((field, idx) => {
+                      const isEditing = editingField?.serviceId === service._id &&
+                                       editingField?.path.join(".") === field.path.join(".");
+
+                      return (
+                        <div key={idx} style={styles.priceRow}>
+                          <div style={styles.priceLabel}>{field.label}</div>
+                          <div style={styles.priceValueContainer}>
+                            {isEditing ? (
+                              <div style={styles.editContainer}>
+                                <input
+                                  type="number"
+                                  style={styles.priceInput}
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  autoFocus
+                                  step="0.01"
+                                />
+                                <button
+                                  style={styles.saveBtn}
+                                  onClick={handleSaveField}
+                                  disabled={saving}
+                                >
+                                  {saving ? "..." : "✓"}
+                                </button>
+                                <button style={styles.cancelBtn} onClick={handleCancelEdit}>
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <span style={styles.priceValue}>${field.value.toFixed(2)}</span>
+                                <button
+                                  style={styles.editBtn}
+                                  onClick={() => handleEditField(service, field)}
+                                >
+                                  Edit
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
 
-  const renderProductsTable = () => {
+  const renderProductsView = () => {
     if (catalogLoading) {
-      return <div style={styles.loading}>Loading products...</div>;
+      return (
+        <div style={styles.loadingContainer}>
+          <div style={styles.spinner}></div>
+          <p style={styles.loadingText}>Loading product catalog...</p>
+        </div>
+      );
     }
 
     if (catalogError) {
-      return <div style={styles.error}>Error: {catalogError}</div>;
+      return <div style={styles.errorBox}>⚠️ {catalogError}</div>;
     }
 
     if (!catalog) {
-      return <div style={styles.error}>No product catalog found</div>;
+      return <div style={styles.errorBox}>No product catalog found</div>;
     }
 
     return (
-      <div style={styles.tableContainer}>
-        <div style={styles.tableHeader}>
-          <h2 style={styles.tableTitle}>Product Catalog Pricing</h2>
-          <p style={styles.tableSubtitle}>
-            Version: {catalog.version} • Currency: {catalog.currency} • Edit pricing directly
-          </p>
+      <div style={styles.productsContainer}>
+        <div style={styles.catalogHeader}>
+          <h2 style={styles.catalogTitle}>Product Catalog</h2>
+          <div style={styles.catalogMeta}>
+            <span style={styles.catalogBadge}>Version: {catalog.version}</span>
+            <span style={styles.catalogBadge}>Currency: {catalog.currency}</span>
+          </div>
         </div>
 
         {catalog.families.map((family) => (
-          <div key={family.key} style={styles.familySection}>
-            <h3 style={styles.familyTitle}>
-              {family.label} <span style={styles.productCount}>({family.products.length} products)</span>
-            </h3>
+          <div key={family.key} style={styles.familyCard}>
+            <div style={styles.familyHeader}>
+              <h3 style={styles.familyTitle}>{family.label}</h3>
+              <span style={styles.productCount}>{family.products.length} products</span>
+            </div>
 
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.headerRow}>
-                    <th style={styles.th}>Product Name</th>
-                    <th style={styles.th}>Product Key</th>
-                    <th style={styles.th}>Base Price</th>
-                    <th style={styles.th}>UOM</th>
-                    <th style={styles.th}>Warranty Price</th>
-                    <th style={styles.th}>Billing Period</th>
-                    <th style={styles.th}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {family.products.map((product) => {
-                    const isEditing =
-                      editingProduct?.familyKey === family.key &&
-                      editingProduct?.productKey === product.key;
+            <div style={styles.productsGrid}>
+              {family.products.map((product) => (
+                <div key={product.key} style={styles.productCard}>
+                  <div style={styles.productHeader}>
+                    <h4 style={styles.productName}>{product.name}</h4>
+                    <code style={styles.productKey}>{product.key}</code>
+                  </div>
 
-                    return (
-                      <tr
-                        key={product.key}
-                        style={{
-                          ...styles.tableRow,
-                          ...(isEditing ? styles.editingRow : {}),
-                        }}
-                      >
-                        <td style={styles.td}>
-                          <div style={styles.productName}>{product.name}</div>
-                        </td>
-                        <td style={styles.td}>
-                          <code style={styles.code}>{product.key}</code>
-                        </td>
-                        <td style={styles.td}>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              style={styles.inlineInput}
-                              value={editingProduct.basePrice || ""}
-                              onChange={(e) =>
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  basePrice: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                            />
-                          ) : (
-                            <span style={styles.priceValue}>
-                              ${product.basePrice?.amount || "—"}
-                            </span>
-                          )}
-                        </td>
-                        <td style={styles.td}>{product.basePrice?.uom || "—"}</td>
-                        <td style={styles.td}>
-                          {isEditing ? (
-                            <input
-                              type="number"
-                              style={styles.inlineInput}
-                              value={editingProduct.warrantyPrice || ""}
-                              onChange={(e) =>
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  warrantyPrice: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                            />
-                          ) : (
-                            <span style={styles.priceValue}>
-                              ${product.warrantyPricePerUnit?.amount || "—"}
-                            </span>
-                          )}
-                        </td>
-                        <td style={styles.td}>
-                          {product.warrantyPricePerUnit?.billingPeriod || "—"}
-                        </td>
-                        <td style={styles.td}>
-                          {isEditing ? (
-                            <div style={styles.inlineActions}>
-                              <button
-                                style={styles.cancelButtonSmall}
-                                onClick={handleCancelProductEdit}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                style={styles.saveButtonSmall}
-                                onClick={handleSaveProduct}
-                                disabled={saving}
-                              >
-                                {saving ? "Saving..." : "Save"}
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              style={styles.editButton}
-                              onClick={() => handleEditProduct(family.key, product)}
-                            >
-                              Edit Price
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                  <div style={styles.productPricing}>
+                    <div style={styles.priceItem}>
+                      <span style={styles.priceItemLabel}>Base Price:</span>
+                      <span style={styles.priceItemValue}>
+                        {product.basePrice ? `$${product.basePrice.amount}` : "—"}
+                      </span>
+                    </div>
+                    {product.basePrice?.uom && (
+                      <div style={styles.priceItem}>
+                        <span style={styles.priceItemLabel}>UOM:</span>
+                        <span style={styles.priceItemValue}>{product.basePrice.uom}</span>
+                      </div>
+                    )}
+                    {product.warrantyPricePerUnit && (
+                      <>
+                        <div style={styles.priceItem}>
+                          <span style={styles.priceItemLabel}>Warranty:</span>
+                          <span style={styles.priceItemValue}>
+                            ${product.warrantyPricePerUnit.amount}/{product.warrantyPricePerUnit.billingPeriod}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}
@@ -438,32 +313,44 @@ export const PricingTablesView: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      {successMessage && <div style={styles.successBanner}>{successMessage}</div>}
+      {successMessage && (
+        <div style={styles.successBanner}>
+          {successMessage}
+        </div>
+      )}
 
-      <div style={styles.navigation}>
-        <button
-          style={{
-            ...styles.navButton,
-            ...(viewMode === "services" ? styles.navButtonActive : {}),
-          }}
-          onClick={() => setViewMode("services")}
-        >
-          📊 Service Pricing ({configs.length})
-        </button>
-        <button
-          style={{
-            ...styles.navButton,
-            ...(viewMode === "products" ? styles.navButtonActive : {}),
-          }}
-          onClick={() => setViewMode("products")}
-        >
-          📦 Product Pricing ({catalog?.families.reduce((acc, f) => acc + f.products.length, 0) || 0})
-        </button>
+      <div style={styles.topBar}>
+        <div style={styles.tabContainer}>
+          <button
+            style={{
+              ...styles.tab,
+              ...(viewMode === "services" ? styles.tabActive : {}),
+            }}
+            onClick={() => setViewMode("services")}
+          >
+            <span style={styles.tabIcon}>🛠️</span>
+            <span>Services</span>
+            <span style={styles.tabBadge}>{configs.length}</span>
+          </button>
+          <button
+            style={{
+              ...styles.tab,
+              ...(viewMode === "products" ? styles.tabActive : {}),
+            }}
+            onClick={() => setViewMode("products")}
+          >
+            <span style={styles.tabIcon}>📦</span>
+            <span>Products</span>
+            <span style={styles.tabBadge}>
+              {catalog?.families.reduce((acc, f) => acc + f.products.length, 0) || 0}
+            </span>
+          </button>
+        </div>
       </div>
 
       <div style={styles.content}>
-        {viewMode === "services" && renderServicesTable()}
-        {viewMode === "products" && renderProductsTable()}
+        {viewMode === "services" && renderServicesView()}
+        {viewMode === "products" && renderProductsView()}
       </div>
     </div>
   );
@@ -471,284 +358,363 @@ export const PricingTablesView: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    backgroundColor: "#f9fafb",
     minHeight: "100vh",
+    backgroundColor: "#f8fafc",
   },
   successBanner: {
     padding: "16px 24px",
     backgroundColor: "#10b981",
     color: "white",
-    fontSize: "14px",
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  navigation: {
-    display: "flex",
-    gap: "8px",
-    padding: "20px 24px",
-    backgroundColor: "white",
-    borderBottom: "2px solid #e5e7eb",
-  },
-  navButton: {
-    padding: "12px 24px",
-    border: "none",
-    backgroundColor: "#f3f4f6",
-    borderRadius: "8px",
-    fontSize: "14px",
-    fontWeight: "600",
-    cursor: "pointer",
-    color: "#374151",
-    transition: "all 0.2s",
-  },
-  navButtonActive: {
-    backgroundColor: "#2563eb",
-    color: "white",
-  },
-  content: {
-    padding: "24px",
-  },
-  tableContainer: {
-    backgroundColor: "white",
-    borderRadius: "12px",
-    padding: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  },
-  tableHeader: {
-    marginBottom: "24px",
-    borderBottom: "2px solid #e5e7eb",
-    paddingBottom: "16px",
-  },
-  tableTitle: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#111",
-    marginBottom: "8px",
-  },
-  tableSubtitle: {
-    fontSize: "14px",
-    color: "#6b7280",
-    margin: 0,
-  },
-  tableWrapper: {
-    overflowX: "auto",
-    marginTop: "16px",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-  headerRow: {
-    backgroundColor: "#f9fafb",
-    borderBottom: "2px solid #e5e7eb",
-  },
-  th: {
-    padding: "12px 16px",
-    textAlign: "left",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#374151",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  tableRow: {
-    borderBottom: "1px solid #f3f4f6",
-    transition: "background-color 0.2s",
-  },
-  editingRow: {
-    backgroundColor: "#fef3c7",
-  },
-  td: {
-    padding: "16px",
-    fontSize: "14px",
-    color: "#374151",
-    verticalAlign: "top",
-  },
-  serviceName: {
     fontSize: "15px",
     fontWeight: "600",
-    color: "#111",
-    marginBottom: "4px",
+    textAlign: "center",
+    boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
   },
-  serviceDescription: {
-    fontSize: "13px",
-    color: "#6b7280",
+  topBar: {
+    backgroundColor: "white",
+    borderBottom: "2px solid #e2e8f0",
+    padding: "0 24px",
+    position: "sticky" as const,
+    top: 0,
+    zIndex: 10,
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
   },
-  productName: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#111",
-  },
-  code: {
-    backgroundColor: "#f3f4f6",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontSize: "12px",
-    fontFamily: "monospace",
-    color: "#6366f1",
-  },
-  activeBadge: {
-    padding: "4px 12px",
-    backgroundColor: "#dcfce7",
-    color: "#166534",
-    borderRadius: "12px",
-    fontSize: "12px",
-    fontWeight: "600",
-  },
-  inactiveBadge: {
-    padding: "4px 12px",
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-    borderRadius: "12px",
-    fontSize: "12px",
-    fontWeight: "600",
-  },
-  pricingFields: {
+  tabContainer: {
     display: "flex",
-    flexDirection: "column",
     gap: "8px",
   },
-  fieldRow: {
+  tab: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "16px 24px",
+    border: "none",
+    backgroundColor: "transparent",
+    color: "#64748b",
+    fontSize: "15px",
+    fontWeight: "600",
+    cursor: "pointer",
+    borderBottom: "3px solid transparent",
+    transition: "all 0.2s",
+  },
+  tabActive: {
+    color: "#2563eb",
+    borderBottomColor: "#2563eb",
+    backgroundColor: "#eff6ff",
+  },
+  tabIcon: {
+    fontSize: "18px",
+  },
+  tabBadge: {
+    padding: "2px 8px",
+    backgroundColor: "#e2e8f0",
+    borderRadius: "12px",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  content: {
+    padding: "32px 24px",
+  },
+
+  // Services Grid
+  servicesGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(450px, 1fr))",
+    gap: "24px",
+  },
+  serviceCard: {
+    backgroundColor: "white",
+    borderRadius: "16px",
+    padding: "24px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
+    border: "1px solid #e2e8f0",
+    transition: "all 0.2s",
+  },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "16px",
+    paddingBottom: "16px",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  serviceName: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: "0 0 4px 0",
+  },
+  serviceDescription: {
+    fontSize: "14px",
+    color: "#64748b",
+    margin: 0,
+  },
+  badgeActive: {
+    padding: "6px 12px",
+    backgroundColor: "#dcfce7",
+    color: "#166534",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  badgeInactive: {
+    padding: "6px 12px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  metaInfo: {
+    display: "flex",
+    gap: "16px",
+    marginBottom: "20px",
+  },
+  metaTag: {
+    fontSize: "13px",
+    color: "#64748b",
+  },
+  pricingSection: {
+    backgroundColor: "#f8fafc",
+    borderRadius: "12px",
+    padding: "16px",
+  },
+  pricingSectionTitle: {
+    fontSize: "15px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: "0 0 16px 0",
+  },
+  noPricing: {
+    fontSize: "14px",
+    color: "#94a3b8",
+    fontStyle: "italic",
+    margin: 0,
+  },
+  priceGrid: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "12px",
+  },
+  priceRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "6px 0",
-  },
-  fieldLabel: {
-    fontSize: "13px",
-    color: "#6b7280",
-    fontWeight: "500",
-  },
-  fieldValue: {
-    fontSize: "14px",
-    color: "#111",
-    fontWeight: "600",
-  },
-  editingFields: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    padding: "12px",
-    backgroundColor: "#fffbeb",
+    padding: "10px 12px",
+    backgroundColor: "white",
     borderRadius: "8px",
+    border: "1px solid #e2e8f0",
   },
-  editRow: {
+  priceLabel: {
+    fontSize: "13px",
+    color: "#475569",
+    fontWeight: "500",
+    flex: 1,
+  },
+  priceValueContainer: {
     display: "flex",
     alignItems: "center",
     gap: "8px",
   },
-  editLabel: {
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#374151",
-    minWidth: "150px",
-  },
-  input: {
-    flex: 1,
-    padding: "8px 12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "14px",
-    outline: "none",
-  },
-  inlineInput: {
-    width: "100px",
-    padding: "6px 10px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "14px",
-    outline: "none",
-  },
   priceValue: {
-    fontSize: "15px",
-    fontWeight: "600",
+    fontSize: "16px",
+    fontWeight: "700",
     color: "#059669",
+    minWidth: "80px",
+    textAlign: "right" as const,
   },
-  editActions: {
-    display: "flex",
-    gap: "8px",
-    justifyContent: "flex-end",
-    marginTop: "8px",
-  },
-  inlineActions: {
-    display: "flex",
-    gap: "8px",
-  },
-  editButton: {
-    padding: "8px 16px",
+  editBtn: {
+    padding: "6px 14px",
     backgroundColor: "#2563eb",
     color: "white",
     border: "none",
     borderRadius: "6px",
-    fontSize: "13px",
-    fontWeight: "500",
-    cursor: "pointer",
-    transition: "background-color 0.2s",
-  },
-  cancelButton: {
-    padding: "8px 16px",
-    backgroundColor: "#f3f4f6",
-    color: "#374151",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "13px",
-    fontWeight: "500",
-    cursor: "pointer",
-  },
-  cancelButtonSmall: {
-    padding: "6px 12px",
-    backgroundColor: "#f3f4f6",
-    color: "#374151",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
     fontSize: "12px",
-    fontWeight: "500",
+    fontWeight: "600",
     cursor: "pointer",
+    transition: "all 0.2s",
   },
-  saveButton: {
-    padding: "8px 16px",
-    backgroundColor: "#10b981",
-    color: "white",
-    border: "none",
+  editContainer: {
+    display: "flex",
+    gap: "6px",
+    alignItems: "center",
+  },
+  priceInput: {
+    width: "100px",
+    padding: "6px 10px",
+    border: "2px solid #2563eb",
     borderRadius: "6px",
-    fontSize: "13px",
-    fontWeight: "500",
-    cursor: "pointer",
-  },
-  saveButtonSmall: {
-    padding: "6px 12px",
-    backgroundColor: "#10b981",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontWeight: "500",
-    cursor: "pointer",
-  },
-  loading: {
-    textAlign: "center",
-    padding: "60px 20px",
-    fontSize: "16px",
-    color: "#6b7280",
-  },
-  error: {
-    padding: "16px",
-    backgroundColor: "#fef2f2",
-    color: "#dc2626",
-    borderRadius: "8px",
     fontSize: "14px",
+    fontWeight: "600",
+    outline: "none",
   },
-  familySection: {
-    marginBottom: "32px",
+  saveBtn: {
+    padding: "6px 12px",
+    backgroundColor: "#10b981",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+  cancelBtn: {
+    padding: "6px 12px",
+    backgroundColor: "#ef4444",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  // Products
+  productsContainer: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "24px",
+  },
+  catalogHeader: {
+    backgroundColor: "white",
+    padding: "24px",
+    borderRadius: "16px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+    border: "1px solid #e2e8f0",
+  },
+  catalogTitle: {
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: "0 0 12px 0",
+  },
+  catalogMeta: {
+    display: "flex",
+    gap: "12px",
+  },
+  catalogBadge: {
+    padding: "6px 14px",
+    backgroundColor: "#dbeafe",
+    color: "#1e40af",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  familyCard: {
+    backgroundColor: "white",
+    borderRadius: "16px",
+    padding: "24px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+    border: "1px solid #e2e8f0",
+  },
+  familyHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+    paddingBottom: "16px",
+    borderBottom: "2px solid #f1f5f9",
   },
   familyTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#111",
-    marginBottom: "12px",
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
   },
   productCount: {
     fontSize: "14px",
-    fontWeight: "400",
-    color: "#6b7280",
+    color: "#64748b",
+    fontWeight: "600",
+  },
+  productsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "16px",
+  },
+  productCard: {
+    padding: "16px",
+    backgroundColor: "#f8fafc",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+  },
+  productHeader: {
+    marginBottom: "12px",
+    paddingBottom: "12px",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  productName: {
+    fontSize: "15px",
+    fontWeight: "600",
+    color: "#0f172a",
+    margin: "0 0 6px 0",
+  },
+  productKey: {
+    fontSize: "11px",
+    padding: "3px 8px",
+    backgroundColor: "#dbeafe",
+    color: "#1e40af",
+    borderRadius: "6px",
+    fontFamily: "monospace",
+  },
+  productPricing: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "8px",
+  },
+  priceItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  priceItemLabel: {
+    fontSize: "13px",
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  priceItemValue: {
+    fontSize: "14px",
+    color: "#0f172a",
+    fontWeight: "700",
+  },
+
+  // Loading & Error
+  loadingContainer: {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "80px 20px",
+  },
+  spinner: {
+    width: "48px",
+    height: "48px",
+    border: "4px solid #e2e8f0",
+    borderTopColor: "#2563eb",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+  },
+  loadingText: {
+    marginTop: "16px",
+    fontSize: "15px",
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  errorBox: {
+    padding: "20px 24px",
+    backgroundColor: "#fef2f2",
+    color: "#991b1b",
+    borderRadius: "12px",
+    border: "1px solid #fecaca",
+    fontSize: "15px",
+    fontWeight: "500",
   },
 };
+
+// Add spinner animation
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
