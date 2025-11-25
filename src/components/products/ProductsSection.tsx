@@ -95,9 +95,10 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   console.log('🔵 DollarCell RENDER - value:', value);
 
   useEffect(() => {
-    console.log('🟢 DollarCell useEffect - value:', value, 'isEditing:', isEditingRef.current);
-    // Sync input value from props when not editing
-    if (inputRef.current && !isEditingRef.current) {
+    const isFocused = inputRef.current === document.activeElement;
+    console.log('🟢 DollarCell useEffect - value:', value, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
+    // Sync input value from props when not editing AND not focused
+    if (inputRef.current && !isEditingRef.current && !isFocused) {
       const newValue = value === null || value === undefined || value === "" ? "" : String(value);
       if (inputRef.current.value !== newValue) {
         console.log('🟡 DollarCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
@@ -155,8 +156,11 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
       />
     </div>
   );
-}, () => {
-  console.log('🔵 DollarCell memo comparison - BLOCKING RE-RENDER');
+}, (prevProps, nextProps) => {
+  console.log('🔵 DollarCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value);
+  // Return true = props are equal = DON'T re-render
+  // Return false = props changed = DO re-render
+  // We always return true to NEVER re-render
   return true;
 }); // NEVER re-render this component
 
@@ -184,9 +188,10 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   console.log('🔵 QtyCell RENDER - value:', value);
 
   useEffect(() => {
-    console.log('🟢 QtyCell useEffect - value:', value, 'isEditing:', isEditingRef.current);
-    // Sync input value from props when not editing
-    if (inputRef.current && !isEditingRef.current) {
+    const isFocused = inputRef.current === document.activeElement;
+    console.log('🟢 QtyCell useEffect - value:', value, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
+    // Sync input value from props when not editing AND not focused
+    if (inputRef.current && !isEditingRef.current && !isFocused) {
       const newValue = value === "" || value === undefined ? "" : String(value);
       if (inputRef.current.value !== newValue) {
         console.log('🟡 QtyCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
@@ -242,8 +247,10 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
       onBlur={handleBlur}
     />
   );
-}, () => {
-  console.log('🔵 QtyCell memo comparison - BLOCKING RE-RENDER');
+}, (prevProps, nextProps) => {
+  console.log('🔵 QtyCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value);
+  // Return true = props are equal = DON'T re-render
+  // We always return true to NEVER re-render
   return true;
 }); // NEVER re-render this component
 
