@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { GreaseTrapFormState } from "./greaseTrapTypes";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
-import { calcAnnualFromPerVisit } from "../common/pricingUtils";
+import { annualFromPerVisit } from "../common/pricingUtils";
 import { GREASE_TRAP_PER_TRAP_RATE, GREASE_TRAP_PER_GALLON_RATE } from "./greaseTrapConfig";
 
 export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
@@ -32,7 +32,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
 
   const quote: ServiceQuoteResult = useMemo(() => {
     const perVisit = (form.numberOfTraps * GREASE_TRAP_PER_TRAP_RATE) + (form.sizeOfTraps * GREASE_TRAP_PER_GALLON_RATE);
-    const annual = calcAnnualFromPerVisit(perVisit, form.frequency);
+    const annual = annualFromPerVisit(perVisit, form.frequency);
 
     return {
       serviceId: "greaseTrap",
