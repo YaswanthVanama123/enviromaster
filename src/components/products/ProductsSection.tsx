@@ -90,12 +90,21 @@ type DollarCellProps = {
 
 const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [localValue, setLocalValue] = useState("");
+  const isEditingRef = useRef(false);
+
+  useEffect(() => {
+    // Sync input value from props when not editing
+    if (inputRef.current && !isEditingRef.current) {
+      const newValue = value === null || value === undefined || value === "" ? "" : String(value);
+      if (inputRef.current.value !== newValue) {
+        inputRef.current.value = newValue;
+      }
+    }
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!onChange) return;
     const raw = e.target.value;
-    setLocalValue(raw);
 
     if (raw === "") {
       onChange("");
@@ -108,17 +117,19 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   };
 
   const handleFocus = () => {
-    // Set local value from prop when focusing
-    const newValue = value === null || value === undefined || value === "" ? "" : String(value);
-    setLocalValue(newValue);
+    isEditingRef.current = true;
   };
 
   const handleBlur = () => {
-    // Clear local value on blur
-    setLocalValue("");
+    isEditingRef.current = false;
+    // Sync value on blur
+    if (inputRef.current) {
+      const newValue = value === null || value === undefined || value === "" ? "" : String(value);
+      inputRef.current.value = newValue;
+    }
   };
 
-  const displayValue = localValue || (value === null || value === undefined || value === "" ? "" : String(value));
+  const defaultValue = value === null || value === undefined || value === "" ? "" : String(value);
 
   return (
     <div className="dcell">
@@ -127,7 +138,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
         ref={inputRef}
         className="in"
         type="text"
-        value={displayValue}
+        defaultValue={defaultValue}
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
@@ -135,7 +146,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
       />
     </div>
   );
-});
+}, () => true); // NEVER re-render this component
 
 function PlainCell({ value }: { value?: string | number | null }) {
   const displayValue = value === null || value === undefined ? "" : String(value);
@@ -156,11 +167,20 @@ type QtyCellProps = {
 
 const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [localValue, setLocalValue] = useState("");
+  const isEditingRef = useRef(false);
+
+  useEffect(() => {
+    // Sync input value from props when not editing
+    if (inputRef.current && !isEditingRef.current) {
+      const newValue = value === "" || value === undefined ? "" : String(value);
+      if (inputRef.current.value !== newValue) {
+        inputRef.current.value = newValue;
+      }
+    }
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    setLocalValue(raw);
 
     if (raw === "") {
       onChange("");
@@ -176,30 +196,32 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   };
 
   const handleFocus = () => {
-    // Set local value from prop when focusing
-    const newValue = value === "" || value === undefined ? "" : String(value);
-    setLocalValue(newValue);
+    isEditingRef.current = true;
   };
 
   const handleBlur = () => {
-    // Clear local value on blur
-    setLocalValue("");
+    isEditingRef.current = false;
+    // Sync value on blur
+    if (inputRef.current) {
+      const newValue = value === "" || value === undefined ? "" : String(value);
+      inputRef.current.value = newValue;
+    }
   };
 
-  const displayValue = localValue || (value === "" || value === undefined ? "" : String(value));
+  const defaultValue = value === "" || value === undefined ? "" : String(value);
 
   return (
     <input
       ref={inputRef}
       className="in"
       type="text"
-      value={displayValue}
+      defaultValue={defaultValue}
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
     />
   );
-});
+}, () => true); // NEVER re-render this component
 
 
 
