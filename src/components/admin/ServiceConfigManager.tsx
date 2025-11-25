@@ -175,13 +175,16 @@ export const ServiceConfigManager: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    padding: "20px",
+    padding: "24px",
     width: "100%",
+    maxWidth: "100%",
     minHeight: "100vh",
     backgroundColor: "#f5f7fa",
+    boxSizing: "border-box",
   },
   header: {
     marginBottom: "24px",
+    width: "100%",
   },
   title: {
     fontSize: "24px",
@@ -218,9 +221,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-    gap: "20px",
+    gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
+    gap: "24px",
     width: "100%",
+    maxWidth: "100%",
   },
   card: {
     padding: "20px",

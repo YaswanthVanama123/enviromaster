@@ -44,32 +44,111 @@ export const PricingTablesView: React.FC = () => {
   const extractServicePricing = (config: any) => {
     const fields: Array<{ label: string; value: number; path: string[] }> = [];
 
+    // SANICLEAN - geographicPricing structure
     if (config.geographicPricing?.insideBeltway) {
       const ib = config.geographicPricing.insideBeltway;
       if (ib.ratePerFixture !== undefined) fields.push({ label: "Inside Beltway - Rate per Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"] });
       if (ib.weeklyMinimum !== undefined) fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"] });
       if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["geographicPricing", "insideBeltway", "tripCharge"] });
     }
-
     if (config.geographicPricing?.outsideBeltway) {
       const ob = config.geographicPricing.outsideBeltway;
       if (ob.ratePerFixture !== undefined) fields.push({ label: "Outside Beltway - Rate per Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"] });
       if (ob.weeklyMinimum !== undefined) fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"] });
-      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["geographicPricing", "outsideBeltway", "tripCharge"] });
     }
-
     if (config.allInclusivePackage?.weeklyRatePerFixture !== undefined) {
       fields.push({ label: "All-Inclusive - Weekly Rate per Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"] });
     }
-
     if (config.warrantyFeePerDispenser !== undefined) fields.push({ label: "Warranty Fee per Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"] });
-    if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade (Standard to Luxury)", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
-    if (config.ratePerTrap !== undefined) fields.push({ label: "Rate per Trap", value: config.ratePerTrap, path: ["ratePerTrap"] });
-    if (config.ratePerGallon !== undefined) fields.push({ label: "Rate per Gallon", value: config.ratePerGallon, path: ["ratePerGallon"] });
-    if (config.weeklyRatePerBathroom !== undefined) fields.push({ label: "Weekly Rate per Bathroom", value: config.weeklyRatePerBathroom, path: ["weeklyRatePerBathroom"] });
-    if (config.monthlyRatePerSqFt !== undefined) fields.push({ label: "Monthly Rate per Sq Ft", value: config.monthlyRatePerSqFt, path: ["monthlyRatePerSqFt"] });
-    if (config.basePrice !== undefined) fields.push({ label: "Base Price", value: config.basePrice, path: ["basePrice"] });
-    if (config.pricePerWindow !== undefined) fields.push({ label: "Price per Window", value: config.pricePerWindow, path: ["pricePerWindow"] });
+    if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
+
+    // SANIPOD
+    if (config.weeklyRatePerUnit !== undefined) fields.push({ label: "Weekly Rate per Unit", value: config.weeklyRatePerUnit, path: ["weeklyRatePerUnit"] });
+    if (config.altWeeklyRatePerUnit !== undefined) fields.push({ label: "Alternate Weekly Rate per Unit", value: config.altWeeklyRatePerUnit, path: ["altWeeklyRatePerUnit"] });
+    if (config.extraBagPrice !== undefined) fields.push({ label: "Extra Bag Price", value: config.extraBagPrice, path: ["extraBagPrice"] });
+    if (config.installChargePerUnit !== undefined) fields.push({ label: "Install Charge per Unit", value: config.installChargePerUnit, path: ["installChargePerUnit"] });
+    if (config.standaloneExtraWeeklyCharge !== undefined) fields.push({ label: "Standalone Extra Weekly Charge", value: config.standaloneExtraWeeklyCharge, path: ["standaloneExtraWeeklyCharge"] });
+
+    // SANISCRUB - fixtureRates
+    if (config.fixtureRates) {
+      if (config.fixtureRates.monthly !== undefined) fields.push({ label: "Fixture Rate - Monthly", value: config.fixtureRates.monthly, path: ["fixtureRates", "monthly"] });
+      if (config.fixtureRates.twicePerMonth !== undefined) fields.push({ label: "Fixture Rate - Twice per Month", value: config.fixtureRates.twicePerMonth, path: ["fixtureRates", "twicePerMonth"] });
+      if (config.fixtureRates.bimonthly !== undefined) fields.push({ label: "Fixture Rate - Bimonthly", value: config.fixtureRates.bimonthly, path: ["fixtureRates", "bimonthly"] });
+      if (config.fixtureRates.quarterly !== undefined) fields.push({ label: "Fixture Rate - Quarterly", value: config.fixtureRates.quarterly, path: ["fixtureRates", "quarterly"] });
+    }
+    if (config.minimums) {
+      if (config.minimums.monthly !== undefined) fields.push({ label: "Minimum - Monthly", value: config.minimums.monthly, path: ["minimums", "monthly"] });
+      if (config.minimums.twicePerMonth !== undefined) fields.push({ label: "Minimum - Twice per Month", value: config.minimums.twicePerMonth, path: ["minimums", "twicePerMonth"] });
+      if (config.minimums.bimonthly !== undefined) fields.push({ label: "Minimum - Bimonthly", value: config.minimums.bimonthly, path: ["minimums", "bimonthly"] });
+      if (config.minimums.quarterly !== undefined) fields.push({ label: "Minimum - Quarterly", value: config.minimums.quarterly, path: ["minimums", "quarterly"] });
+    }
+    if (config.nonBathroomUnitSqFt !== undefined) fields.push({ label: "Non-Bathroom Unit Sq Ft", value: config.nonBathroomUnitSqFt, path: ["nonBathroomUnitSqFt"] });
+    if (config.nonBathroomFirstUnitRate !== undefined) fields.push({ label: "Non-Bathroom First Unit Rate", value: config.nonBathroomFirstUnitRate, path: ["nonBathroomFirstUnitRate"] });
+    if (config.nonBathroomAdditionalUnitRate !== undefined) fields.push({ label: "Non-Bathroom Additional Unit Rate", value: config.nonBathroomAdditionalUnitRate, path: ["nonBathroomAdditionalUnitRate"] });
+
+    // FOAMING DRAIN
+    if (config.standardDrainRate !== undefined) fields.push({ label: "Standard Drain Rate", value: config.standardDrainRate, path: ["standardDrainRate"] });
+    if (config.altBaseCharge !== undefined) fields.push({ label: "Alternate Base Charge", value: config.altBaseCharge, path: ["altBaseCharge"] });
+    if (config.altExtraPerDrain !== undefined) fields.push({ label: "Alternate Extra per Drain", value: config.altExtraPerDrain, path: ["altExtraPerDrain"] });
+    if (config.volumePricing?.weekly?.ratePerDrain !== undefined) fields.push({ label: "Volume Pricing - Weekly Rate per Drain", value: config.volumePricing.weekly.ratePerDrain, path: ["volumePricing", "weekly", "ratePerDrain"] });
+    if (config.volumePricing?.bimonthly?.ratePerDrain !== undefined) fields.push({ label: "Volume Pricing - Bimonthly Rate per Drain", value: config.volumePricing.bimonthly.ratePerDrain, path: ["volumePricing", "bimonthly", "ratePerDrain"] });
+    if (config.grease?.weeklyRatePerTrap !== undefined) fields.push({ label: "Grease - Weekly Rate per Trap", value: config.grease.weeklyRatePerTrap, path: ["grease", "weeklyRatePerTrap"] });
+    if (config.grease?.installPerTrap !== undefined) fields.push({ label: "Grease - Install per Trap", value: config.grease.installPerTrap, path: ["grease", "installPerTrap"] });
+    if (config.green?.weeklyRatePerDrain !== undefined) fields.push({ label: "Green - Weekly Rate per Drain", value: config.green.weeklyRatePerDrain, path: ["green", "weeklyRatePerDrain"] });
+    if (config.green?.installPerDrain !== undefined) fields.push({ label: "Green - Install per Drain", value: config.green.installPerDrain, path: ["green", "installPerDrain"] });
+    if (config.plumbing?.weeklyAddonPerDrain !== undefined) fields.push({ label: "Plumbing - Weekly Addon per Drain", value: config.plumbing.weeklyAddonPerDrain, path: ["plumbing", "weeklyAddonPerDrain"] });
+
+    // MICROFIBER MOPPING
+    if (config.includedBathroomRate !== undefined) fields.push({ label: "Included Bathroom Rate", value: config.includedBathroomRate, path: ["includedBathroomRate"] });
+    if (config.hugeBathroomPricing?.ratePerSqFt !== undefined) fields.push({ label: "Huge Bathroom - Rate per Sq Ft", value: config.hugeBathroomPricing.ratePerSqFt, path: ["hugeBathroomPricing", "ratePerSqFt"] });
+    if (config.extraAreaPricing?.singleLargeAreaRate !== undefined) fields.push({ label: "Extra Area - Single Large Area Rate", value: config.extraAreaPricing.singleLargeAreaRate, path: ["extraAreaPricing", "singleLargeAreaRate"] });
+    if (config.extraAreaPricing?.extraAreaRatePerUnit !== undefined) fields.push({ label: "Extra Area - Rate per Unit", value: config.extraAreaPricing.extraAreaRatePerUnit, path: ["extraAreaPricing", "extraAreaRatePerUnit"] });
+    if (config.standalonePricing?.standaloneRatePerUnit !== undefined) fields.push({ label: "Standalone - Rate per Unit", value: config.standalonePricing.standaloneRatePerUnit, path: ["standalonePricing", "standaloneRatePerUnit"] });
+    if (config.standalonePricing?.standaloneMinimum !== undefined) fields.push({ label: "Standalone - Minimum", value: config.standalonePricing.standaloneMinimum, path: ["standalonePricing", "standaloneMinimum"] });
+
+    // RPM WINDOWS
+    if (config.smallWindowRate !== undefined) fields.push({ label: "Small Window Rate", value: config.smallWindowRate, path: ["smallWindowRate"] });
+    if (config.mediumWindowRate !== undefined) fields.push({ label: "Medium Window Rate", value: config.mediumWindowRate, path: ["mediumWindowRate"] });
+    if (config.largeWindowRate !== undefined) fields.push({ label: "Large Window Rate", value: config.largeWindowRate, path: ["largeWindowRate"] });
+    if (config.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.tripCharge, path: ["tripCharge"] });
+
+    // CARPET CLEANING
+    if (config.unitSqFt !== undefined) fields.push({ label: "Unit Square Feet", value: config.unitSqFt, path: ["unitSqFt"] });
+    if (config.firstUnitRate !== undefined) fields.push({ label: "First Unit Rate", value: config.firstUnitRate, path: ["firstUnitRate"] });
+    if (config.additionalUnitRate !== undefined) fields.push({ label: "Additional Unit Rate", value: config.additionalUnitRate, path: ["additionalUnitRate"] });
+    if (config.perVisitMinimum !== undefined) fields.push({ label: "Per Visit Minimum", value: config.perVisitMinimum, path: ["perVisitMinimum"] });
+
+    // PURE JANITORIAL
+    if (config.baseHourlyRate !== undefined) fields.push({ label: "Base Hourly Rate", value: config.baseHourlyRate, path: ["baseHourlyRate"] });
+    if (config.shortJobHourlyRate !== undefined) fields.push({ label: "Short Job Hourly Rate", value: config.shortJobHourlyRate, path: ["shortJobHourlyRate"] });
+    if (config.minHoursPerVisit !== undefined) fields.push({ label: "Minimum Hours per Visit", value: config.minHoursPerVisit, path: ["minHoursPerVisit"] });
+
+    // STRIP & WAX - variants
+    if (config.variants?.standardFull) {
+      if (config.variants.standardFull.ratePerSqFt !== undefined) fields.push({ label: "Standard Full - Rate per Sq Ft", value: config.variants.standardFull.ratePerSqFt, path: ["variants", "standardFull", "ratePerSqFt"] });
+      if (config.variants.standardFull.minCharge !== undefined) fields.push({ label: "Standard Full - Minimum Charge", value: config.variants.standardFull.minCharge, path: ["variants", "standardFull", "minCharge"] });
+    }
+    if (config.variants?.noSealant) {
+      if (config.variants.noSealant.ratePerSqFt !== undefined) fields.push({ label: "No Sealant - Rate per Sq Ft", value: config.variants.noSealant.ratePerSqFt, path: ["variants", "noSealant", "ratePerSqFt"] });
+      if (config.variants.noSealant.minCharge !== undefined) fields.push({ label: "No Sealant - Minimum Charge", value: config.variants.noSealant.minCharge, path: ["variants", "noSealant", "minCharge"] });
+    }
+    if (config.variants?.wellMaintained) {
+      if (config.variants.wellMaintained.ratePerSqFt !== undefined) fields.push({ label: "Well Maintained - Rate per Sq Ft", value: config.variants.wellMaintained.ratePerSqFt, path: ["variants", "wellMaintained", "ratePerSqFt"] });
+      if (config.variants.wellMaintained.minCharge !== undefined) fields.push({ label: "Well Maintained - Minimum Charge", value: config.variants.wellMaintained.minCharge, path: ["variants", "wellMaintained", "minCharge"] });
+    }
+
+    // REFRESH POWER SCRUB
+    if (config.defaultHourly !== undefined) fields.push({ label: "Default Hourly Rate", value: config.defaultHourly, path: ["defaultHourly"] });
+    if (config.defaultTrip !== undefined) fields.push({ label: "Default Trip Charge", value: config.defaultTrip, path: ["defaultTrip"] });
+    if (config.defaultMinimum !== undefined) fields.push({ label: "Default Minimum", value: config.defaultMinimum, path: ["defaultMinimum"] });
+    if (config.kitchenPricing?.smallMedium !== undefined) fields.push({ label: "Kitchen - Small/Medium", value: config.kitchenPricing.smallMedium, path: ["kitchenPricing", "smallMedium"] });
+    if (config.kitchenPricing?.large !== undefined) fields.push({ label: "Kitchen - Large", value: config.kitchenPricing.large, path: ["kitchenPricing", "large"] });
+    if (config.fohRate !== undefined) fields.push({ label: "FOH Rate", value: config.fohRate, path: ["fohRate"] });
+    if (config.patioPricing?.standalone !== undefined) fields.push({ label: "Patio - Standalone", value: config.patioPricing.standalone, path: ["patioPricing", "standalone"] });
+    if (config.patioPricing?.upsell !== undefined) fields.push({ label: "Patio - Upsell", value: config.patioPricing.upsell, path: ["patioPricing", "upsell"] });
+    if (config.sqftPricing?.fixedFee !== undefined) fields.push({ label: "Sq Ft Pricing - Fixed Fee", value: config.sqftPricing.fixedFee, path: ["sqftPricing", "fixedFee"] });
+    if (config.sqftPricing?.insideRate !== undefined) fields.push({ label: "Sq Ft Pricing - Inside Rate", value: config.sqftPricing.insideRate, path: ["sqftPricing", "insideRate"] });
+    if (config.sqftPricing?.outsideRate !== undefined) fields.push({ label: "Sq Ft Pricing - Outside Rate", value: config.sqftPricing.outsideRate, path: ["sqftPricing", "outsideRate"] });
 
     return fields;
   };
@@ -431,8 +510,10 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: "100vh",
     backgroundColor: "#f5f7fa",
-    padding: "20px",
+    padding: "24px",
     width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
   },
   successBanner: {
     padding: "16px",

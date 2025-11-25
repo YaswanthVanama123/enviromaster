@@ -74,6 +74,8 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: "100vh",
     backgroundColor: "#f5f5f5",
+    width: "100%",
+    maxWidth: "100%",
   },
   topBar: {
     display: "flex",
@@ -144,5 +146,7 @@ const styles: Record<string, React.CSSProperties> = {
   content: {
     padding: "0",
     width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
   },
 };

@@ -240,10 +240,12 @@ export const ProductCatalogManager: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    padding: "20px",
+    padding: "24px",
     width: "100%",
+    maxWidth: "100%",
     minHeight: "100vh",
     backgroundColor: "#f5f7fa",
+    boxSizing: "border-box",
   },
   header: {
     display: "flex",
@@ -299,10 +301,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   familyGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: "20px",
     marginBottom: "32px",
     width: "100%",
+    maxWidth: "100%",
   },
   familyCard: {
     padding: "16px",
