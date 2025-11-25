@@ -96,16 +96,9 @@
 .grid10 td {
   border-right: 1px solid #000;
   border-bottom: 1px solid #000;
-  padding: 6px 6px;
+  padding: 4px;
   vertical-align: middle;
   background: #fff;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  position: relative;
-}
-
-.grid10 td:has(input.in) {
-  padding: 2px;
 }
 
 .grid10 td.label, .gtable td.label {
@@ -117,27 +110,25 @@
 
 .dcell { display:flex; align-items:center; gap:6px; }
 .in {
-  width:100%;
-  min-width:0;
-  border:1px solid transparent;
-  background:transparent;
-  padding:4px 4px 2px;
-  height:24px;
-  font-size:14px;
-  outline:none;
-  box-sizing:border-box;
-  cursor:text;
-}
-
-.in:hover:not([readonly]) {
-  background: #f9f9f9;
-  border-color: #ccc;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 4px;
+  height: 28px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
 }
 
 .in:focus {
-  background: #fff;
   border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.in:disabled,
+.in[readonly] {
+  background: #f5f5f5;
+  cursor: not-allowed;
 }
 
 .dollarColor {
@@ -166,13 +157,8 @@
 .gtable td {
   border-right: 1px solid #000;
   border-bottom: 1px solid #000;
-  padding: 6px 8px;
+  padding: 4px;
   background: #fff;
-  position: relative;
-}
-
-.gtable td:has(input.in) {
-  padding: 2px;
 }
 
 /* --- Product select dropdown (for +Row) ----------------------------- */

@@ -87,11 +87,7 @@ type DollarCellProps = {
   readOnly?: boolean;
 };
 
-const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
-  const display = value === null || value === undefined || value === ""
-    ? ""
-    : String(value);
-
+function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!onChange) return;
     const raw = e.target.value;
@@ -104,67 +100,58 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     onChange(num);
   };
 
+  const displayValue = value === null || value === undefined || value === "" ? "" : String(value);
+
   return (
     <div className="dcell">
       <span className="dollarColor">$</span>
       <input
         className="in"
         type="text"
-        value={display}
+        value={displayValue}
         onChange={handleChange}
-        readOnly={readOnly || !onChange}
-        autoComplete="off"
+        disabled={readOnly || !onChange}
       />
     </div>
   );
-});
+}
 
-const PlainCell = React.memo(function PlainCell({ value }: { value?: string | number | null }) {
-  const display = value === null || value === undefined ? "" : String(value);
-  return <input className="in" type="text" value={display} onChange={() => {}} autoComplete="off" readOnly />;
-});
+function PlainCell({ value }: { value?: string | number | null }) {
+  const displayValue = value === null || value === undefined ? "" : String(value);
+  return <input className="in" type="text" value={displayValue} readOnly />;
+}
 
 type QtyCellProps = {
   value: number | "" | undefined;
   onChange: (value: number | "") => void;
 };
 
-const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
-  // what we show in the box (same pattern as DollarCell & header inputs)
-  const display =
-    value === "" || value === undefined ? "" : String(value);
-
+function QtyCell({ value, onChange }: QtyCellProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-
-    // allow clearing the field
     if (raw === "") {
       onChange("");
       return;
     }
-
-    // only allow digits
     if (!/^\d+$/.test(raw)) {
-      return; // ignore non-numeric input
+      return;
     }
-
     const num = Number(raw);
     if (Number.isNaN(num)) return;
-
     onChange(num);
   };
+
+  const displayValue = value === "" || value === undefined ? "" : String(value);
 
   return (
     <input
       className="in"
       type="text"
-      value={display}
+      value={displayValue}
       onChange={handleChange}
-      inputMode="numeric"
-      autoComplete="off"
     />
   );
-});
+}
 
 
 
@@ -186,7 +173,7 @@ type NameCellProps = {
   onSelectCustom?: () => void;
 };
 
-const NameCell = React.memo(function NameCell({
+function NameCell({
   product,
   options,
   onChangeProduct,
@@ -324,7 +311,7 @@ const NameCell = React.memo(function NameCell({
       )}
     </div>
   );
-});
+}
 
 // ---------------------------
 // Main component
