@@ -1,3 +1,4 @@
+// src/components/products/ProductsSection.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./ProductsSection.css";
 import { envProductCatalog } from "./productsConfig";
@@ -88,28 +89,50 @@ type DollarCellProps = {
 };
 
 const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [localValue, setLocalValue] = useState(() =>
+    value === null || value === undefined || value === "" ? "" : String(value)
+  );
+
+  // Sync localValue with prop value only when not focused
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      const newValue = value === null || value === undefined || value === "" ? "" : String(value);
+      setLocalValue(newValue);
+    }
+  }, [value]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!onChange) return;
     const raw = e.target.value;
+    setLocalValue(raw);
+
     if (raw === "") {
       onChange("");
       return;
     }
     const num = Number(raw);
-    if (Number.isNaN(num)) return;
-    onChange(num);
+    if (!Number.isNaN(num)) {
+      onChange(num);
+    }
   };
 
-  const displayValue = value === null || value === undefined || value === "" ? "" : String(value);
+  const handleBlur = () => {
+    // Sync on blur
+    const newValue = value === null || value === undefined || value === "" ? "" : String(value);
+    setLocalValue(newValue);
+  };
 
   return (
     <div className="dcell">
       <span className="dollarColor">$</span>
       <input
+        ref={inputRef}
         className="in"
         type="text"
-        value={displayValue}
+        value={localValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         disabled={readOnly || !onChange}
       />
     </div>
@@ -137,8 +160,23 @@ type QtyCellProps = {
 };
 
 const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [localValue, setLocalValue] = useState(() =>
+    value === "" || value === undefined ? "" : String(value)
+  );
+
+  // Sync localValue with prop value only when not focused
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      const newValue = value === "" || value === undefined ? "" : String(value);
+      setLocalValue(newValue);
+    }
+  }, [value]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
+    setLocalValue(raw);
+
     if (raw === "") {
       onChange("");
       return;
@@ -147,18 +185,25 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
       return;
     }
     const num = Number(raw);
-    if (Number.isNaN(num)) return;
-    onChange(num);
+    if (!Number.isNaN(num)) {
+      onChange(num);
+    }
   };
 
-  const displayValue = value === "" || value === undefined ? "" : String(value);
+  const handleBlur = () => {
+    // Sync on blur
+    const newValue = value === "" || value === undefined ? "" : String(value);
+    setLocalValue(newValue);
+  };
 
   return (
     <input
+      ref={inputRef}
       className="in"
       type="text"
-      value={displayValue}
+      value={localValue}
       onChange={handleChange}
+      onBlur={handleBlur}
     />
   );
 }, (prevProps, nextProps) => {
