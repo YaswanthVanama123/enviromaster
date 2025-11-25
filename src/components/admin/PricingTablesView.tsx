@@ -6,8 +6,21 @@ import type { ServiceConfig } from "../../backendservice/types/serviceConfig.typ
 import type { Product } from "../../backendservice/types/productCatalog.types";
 
 export const PricingTablesView: React.FC = () => {
-  const { configs, loading: servicesLoading, updateConfig } = useServiceConfigs();
-  const { catalog, loading: catalogLoading, updateCatalog } = useActiveProductCatalog();
+  const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
+  const { catalog, loading: catalogLoading, error: catalogError, updateCatalog } = useActiveProductCatalog();
+
+  // Debug logs
+  useEffect(() => {
+    console.log("Services configs:", configs);
+    console.log("Services loading:", servicesLoading);
+    console.log("Services error:", servicesError);
+  }, [configs, servicesLoading, servicesError]);
+
+  useEffect(() => {
+    console.log("Product catalog:", catalog);
+    console.log("Catalog loading:", catalogLoading);
+    console.log("Catalog error:", catalogError);
+  }, [catalog, catalogLoading, catalogError]);
 
   // Product state
   const [selectedProductFamily, setSelectedProductFamily] = useState<string>("");
@@ -147,6 +160,31 @@ export const PricingTablesView: React.FC = () => {
       <div style={styles.loadingContainer}>
         <div style={styles.spinner}></div>
         <p style={styles.loadingText}>Loading pricing data...</p>
+      </div>
+    );
+  }
+
+  if (servicesError || catalogError) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.errorBox}>
+          <h3>⚠️ Error Loading Data</h3>
+          {servicesError && <p>Services Error: {servicesError}</p>}
+          {catalogError && <p>Catalog Error: {catalogError}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  if (!catalog || !configs || configs.length === 0) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.errorBox}>
+          <h3>⚠️ No Data Available</h3>
+          <p>No services or products found. Please check backend connection.</p>
+          <p>Configs length: {configs?.length || 0}</p>
+          <p>Catalog families: {catalog?.families?.length || 0}</p>
+        </div>
       </div>
     );
   }
@@ -369,6 +407,7 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "100vh",
     backgroundColor: "#f5f7fa",
     padding: "20px",
+    width: "100%",
   },
   successBanner: {
     padding: "16px",
@@ -387,6 +426,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "24px",
     marginBottom: "24px",
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+    width: "100%",
   },
   sectionTitle: {
     fontSize: "24px",
@@ -403,6 +443,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
     borderBottom: "2px solid #e5e7eb",
     paddingBottom: "8px",
+    width: "100%",
   },
   tab: {
     padding: "12px 20px",
@@ -432,6 +473,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: "12px",
+    flexWrap: "wrap",
   },
   tableSubtitle: {
     fontSize: "14px",
@@ -442,10 +484,12 @@ const styles: Record<string, React.CSSProperties> = {
     overflowX: "auto",
     borderRadius: "8px",
     border: "1px solid #e5e7eb",
+    width: "100%",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
+    minWidth: "100%",
   },
   th: {
     backgroundColor: "#f9fafb",
@@ -552,6 +596,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     minHeight: "400px",
+    width: "100%",
   },
   spinner: {
     width: "48px",
@@ -566,6 +611,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "16px",
     color: "#6b7280",
     fontWeight: "500",
+  },
+  errorBox: {
+    padding: "24px",
+    backgroundColor: "#fef2f2",
+    color: "#991b1b",
+    borderRadius: "12px",
+    border: "2px solid #fecaca",
+    fontSize: "15px",
+    fontWeight: "500",
+    width: "100%",
+    maxWidth: "800px",
+    margin: "40px auto",
   },
 };
 
