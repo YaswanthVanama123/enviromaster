@@ -87,7 +87,7 @@ type DollarCellProps = {
   readOnly?: boolean;
 };
 
-function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
+const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!onChange) return;
     const raw = e.target.value;
@@ -114,7 +114,10 @@ function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
       />
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Only re-render if value or readOnly changes, ignore onChange
+  return prevProps.value === nextProps.value && prevProps.readOnly === nextProps.readOnly;
+});
 
 function PlainCell({ value }: { value?: string | number | null }) {
   const displayValue = value === null || value === undefined ? "" : String(value);
@@ -134,7 +137,7 @@ type QtyCellProps = {
   onChange: (value: number | "") => void;
 };
 
-function QtyCell({ value, onChange }: QtyCellProps) {
+const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     if (raw === "") {
@@ -159,7 +162,10 @@ function QtyCell({ value, onChange }: QtyCellProps) {
       onChange={handleChange}
     />
   );
-}
+}, (prevProps, nextProps) => {
+  // Only re-render if value changes, ignore onChange
+  return prevProps.value === nextProps.value;
+});
 
 
 
@@ -181,7 +187,7 @@ type NameCellProps = {
   onSelectCustom?: () => void;
 };
 
-function NameCell({
+const NameCell = React.memo(function NameCell({
   product,
   options,
   onChangeProduct,
@@ -319,7 +325,7 @@ function NameCell({
       )}
     </div>
   );
-}
+});
 
 // ---------------------------
 // Main component
@@ -510,7 +516,7 @@ export default function ProductsSection() {
   );
 
   // Build dropdown options for a particular row
-  const getRowOptions = (bucket: ColumnKey, rowId: string): EnvProduct[] => {
+  const getRowOptions = useCallback((bucket: ColumnKey, rowId: string): EnvProduct[] => {
     const usedKeys = new Set(
       data[bucket]
         .filter((r) => r.id !== rowId && r.productKey)
@@ -528,7 +534,7 @@ export default function ProductsSection() {
     }
 
     return base;
-  };
+  }, [data]);
 
   // ---------------------------
   // Helpers for totals
