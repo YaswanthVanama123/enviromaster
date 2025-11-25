@@ -118,7 +118,15 @@ function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
 
 function PlainCell({ value }: { value?: string | number | null }) {
   const displayValue = value === null || value === undefined ? "" : String(value);
-  return <input className="in" type="text" value={displayValue} readOnly />;
+  return (
+    <input
+      className="in"
+      type="text"
+      value={displayValue}
+      readOnly
+      style={{ padding: '6px' }}
+    />
+  );
 }
 
 type QtyCellProps = {
