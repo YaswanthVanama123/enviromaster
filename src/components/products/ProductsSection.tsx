@@ -108,16 +108,18 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
       <span className="dollarColor">$</span>
       <input
         className="in"
+        type="text"
         value={display}
         onChange={handleChange}
         readOnly={readOnly || !onChange}
+        autoComplete="off"
       />
     </div>
   );
 });
 
 const PlainCell = React.memo(function PlainCell({ value }: { value?: string | number | null }) {
-  return <input className="in" defaultValue={value ?? ""} />;
+  return <input className="in" type="text" value={value ?? ""} onChange={() => {}} autoComplete="off" readOnly />;
 });
 
 type QtyCellProps = {
@@ -153,9 +155,11 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   return (
     <input
       className="in"
+      type="text"
       value={display}
       onChange={handleChange}
-      inputMode="numeric" // just for mobile keyboard; optional
+      inputMode="numeric"
+      autoComplete="off"
     />
   );
 });

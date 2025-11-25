@@ -70,60 +70,54 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
 ];
 
 /** Hourly rule:
- *  Trip charge + workers × hours × hourlyRate, with minimumVisit floor.
+ *  Workers × hours × hourlyRate (NO trip charge here - applied at visit level).
+ *  Returns the labour cost only.
  */
-function calcHourly(
+function calcHourlyLabour(
   state: RefreshAreaCalcState,
-  tripCharge: number,
-  hourlyRate: number,
-  minimumVisit: number
+  hourlyRate: number
 ): number {
-  const labour =
-    (state.workers || 0) * (state.hours || 0) * hourlyRate;
-  const total = tripCharge + labour;
-  return Math.max(total, minimumVisit);
+  return (state.workers || 0) * (state.hours || 0) * hourlyRate;
 }
 
 /** Sq-ft rule:
- *  $200 fixed fee + $.60 / inside sq ft + $.40 / outside sq ft,
- *  with minimumVisit floor.
+ *  $200 fixed fee + $.60 / inside sq ft + $.40 / outside sq ft.
+ *  Returns the service cost only (trip applied at visit level).
  */
 function calcSquareFootage(
-  state: RefreshAreaCalcState,
-  minimumVisit: number
+  state: RefreshAreaCalcState
 ): number {
   const insideCost =
     (state.insideSqFt || 0) * REFRESH_SQFT_INSIDE_RATE;
   const outsideCost =
     (state.outsideSqFt || 0) * REFRESH_SQFT_OUTSIDE_RATE;
-  const subtotal =
-    REFRESH_SQFT_FIXED_FEE + insideCost + outsideCost;
-  return Math.max(subtotal, minimumVisit);
+  return REFRESH_SQFT_FIXED_FEE + insideCost + outsideCost;
 }
 
-/** Default / preset prices when no hours / sq-ft are supplied. */
-function calcPresetBase(
+/** Default / preset prices when no hours / sq-ft are supplied.
+ *  These are PACKAGE prices that already include trip charge.
+ */
+function calcPresetPackage(
   area: RefreshAreaKey,
-  state: RefreshAreaCalcState,
-  minimumVisit: number
+  state: RefreshAreaCalcState
 ): number {
   switch (area) {
     case "dumpster":
-      // Dumpster — charge the $475 minimum visit in normal cases.
-      return minimumVisit;
+      // Dumpster — charge the $475 minimum visit (includes trip + minimal labour).
+      return REFRESH_DEFAULT_MIN;
 
     case "patio":
-      // Patio — standalone $875, upsell +$500 when attached to FOH.
+      // Patio — standalone $875 (includes trip), upsell +$500 (labour only, trip already in FOH).
       return state.patioMode === "upsell"
         ? REFRESH_PATIO_UPSELL
         : REFRESH_PATIO_STANDALONE;
 
     case "foh":
-      // Front of house — $2500
+      // Front of house — $2500 package (includes trip).
       return REFRESH_FOH_RATE;
 
     case "boh":
-      // Back of house — $1500 small/medium, $2500 large kitchen
+      // Back of house — $1500 small/medium, $2500 large kitchen (includes trip).
       return state.kitchenSize === "large"
         ? REFRESH_KITCHEN_LARGE
         : REFRESH_KITCHEN_SMALL_MED;
@@ -137,38 +131,33 @@ function calcPresetBase(
   }
 }
 
-/** Decide which rule applies to this column based on what
- *  the rep actually filled out:
- *
- *  - If any sq-ft > 0 → use the sq-ft rule
- *  - else if hours > 0 → use the hourly rule
- *  - else → use the preset rule for that column
+/** Decide which rule applies to this column and whether it's a package price.
+ *  Returns { cost, isPackage }
+ *  - isPackage=true means the cost already includes trip charge
+ *  - isPackage=false means the cost is labour/service only (trip added at visit level)
  */
-function calcAreaTotal(
+function calcAreaCost(
   area: RefreshAreaKey,
   form: RefreshPowerScrubFormState
-): number {
+): { cost: number; isPackage: boolean } {
   const state = form[area];
-  if (!state.enabled) return 0;
+  if (!state.enabled) return { cost: 0, isPackage: false };
 
   const hasSqFt =
     (state.insideSqFt || 0) > 0 ||
     (state.outsideSqFt || 0) > 0;
   const hasHours = (state.hours || 0) > 0;
 
+  // Priority: sq-ft > hourly > preset
   if (hasSqFt) {
-    return calcSquareFootage(state, form.minimumVisit);
+    return { cost: calcSquareFootage(state), isPackage: false };
   }
   if (hasHours) {
-    return calcHourly(
-      state,
-      form.tripCharge,
-      form.hourlyRate,
-      form.minimumVisit
-    );
+    return { cost: calcHourlyLabour(state, form.hourlyRate), isPackage: false };
   }
 
-  return calcPresetBase(area, state, form.minimumVisit);
+  // Preset prices are package prices (trip included)
+  return { cost: calcPresetPackage(area, state), isPackage: true };
 }
 
 export function useRefreshPowerScrubCalc(
@@ -266,27 +255,53 @@ export function useRefreshPowerScrubCalc(
     }));
   };
 
-  const areaTotals: RefreshAreaTotals = useMemo(() => {
+  // Calculate area totals and track if any use package pricing
+  const { areaTotals, hasPackagePrice } = useMemo(() => {
     const totals: any = {};
+    let hasPackage = false;
+
     for (const area of AREA_KEYS) {
-      totals[area] = calcAreaTotal(area, form);
+      const { cost, isPackage } = calcAreaCost(area, form);
+      totals[area] = cost;
+      if (isPackage && cost > 0) {
+        hasPackage = true;
+      }
     }
-    return totals as RefreshAreaTotals;
+
+    return {
+      areaTotals: totals as RefreshAreaTotals,
+      hasPackagePrice: hasPackage,
+    };
   }, [form]);
 
   const quote: ServiceQuoteResult = useMemo(() => {
-    const perVisit = AREA_KEYS.reduce(
+    // Sum all area costs
+    const areasSubtotal = AREA_KEYS.reduce(
       (sum, area) => sum + areaTotals[area],
       0
     );
+
+    let perVisit: number;
+
+    if (hasPackagePrice) {
+      // At least one area uses package pricing (trip already included).
+      // Just use the sum as-is.
+      perVisit = areasSubtotal;
+    } else {
+      // All areas are labour/service only (hourly or sq-ft).
+      // Add trip charge once at visit level.
+      const withTrip = form.tripCharge + areasSubtotal;
+      perVisit = Math.max(withTrip, form.minimumVisit);
+    }
+
     const rounded = Math.round(perVisit * 100) / 100;
 
     const details: string[] = [];
     AREA_KEYS.forEach((area) => {
-      const state = form[area];
       const amount = areaTotals[area];
-      if (!state.enabled || amount <= 0) return;
+      if (amount <= 0) return;
 
+      const state = form[area];
       const prettyArea =
         area === "boh"
           ? "Back of House"
@@ -303,12 +318,16 @@ export function useRefreshPowerScrubCalc(
         ? "sq-ft rule"
         : hasHours
         ? "hourly rule"
-        : "preset rule";
+        : "package price";
 
       details.push(
         `${prettyArea}: $${amount.toFixed(2)} (${method})`
       );
     });
+
+    if (!hasPackagePrice && areasSubtotal > 0) {
+      details.push(`Trip charge: $${form.tripCharge.toFixed(2)} (one-time per visit)`);
+    }
 
     // Refresh is essentially a one-time deep clean,
     // so annual == per-visit in this model.
@@ -319,7 +338,7 @@ export function useRefreshPowerScrubCalc(
       annualPrice: rounded,
       detailsBreakdown: details,
     };
-  }, [areaTotals, form]);
+  }, [areaTotals, hasPackagePrice, form.tripCharge, form.minimumVisit]);
 
   return {
     form,
