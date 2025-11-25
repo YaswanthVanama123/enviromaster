@@ -9,52 +9,25 @@ import type {
 } from "./janitorialTypes";
 
 export interface JanitorialFormState {
-  /** Manual hours entry */
   manualHours: number;
-
-  /** Scheduling mode affects pricing */
   schedulingMode: SchedulingMode;
-
-  /** Is this part of a larger service package? (affects addon-only pricing) */
   isAddonToLargerService: boolean;
-
-  /** Task-specific inputs */
   vacuumingHours: number;
   dustingPlaces: number;
-
-  /** If true, first visit is treated as a dirty initial clean (3x). */
-  dirtyInitial: boolean;
-
+  dirtyInitial: boolean; // kept for UI text only now
   frequency: JanitorialFrequencyKey;
   rateCategory: JanitorialRateCategory;
-
-  /** Contract length in months (2–36). */
   contractMonths: number;
 }
 
 export interface JanitorialCalcResult {
-  /** Total hours calculated from all tasks */
   totalHours: number;
-
-  /** Per-visit revenue (service only). */
   perVisit: number;
-
-  /** First month total. */
   monthly: number;
-
-  /** Contract total for the selected number of months. */
   annual: number;
-
-  /** First-visit revenue (may be 3x when dirtyInitial=true or infrequent). */
   firstVisit: number;
-
-  /** Ongoing monthly after the first month. */
   ongoingMonthly: number;
-
-  /** Contract total (same as annual). */
   contractTotal: number;
-
-  /** Breakdown details */
   breakdown: {
     manualHours: number;
     vacuumingHours: number;
@@ -77,45 +50,29 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   contractMonths: cfg.minContractMonths ?? 12,
 };
 
+function calcBaseHourlyRate(mode: SchedulingMode): number {
+  return mode === "standalone"
+    ? cfg.shortJobHourlyRate
+    : cfg.baseHourlyRate;
+}
+
 /**
- * Calculate per-visit price based on hours and scheduling mode.
+ * Base per-visit **with dust at 1× time**:
+ *  - normalRoute:  max(hours, 4) × $30  (4 hr minimum = $120)
+ *  - standalone :  hours × $50
  */
-function calculatePerVisitPrice(
+function calculateBasePerVisitPrice(
   hours: number,
-  schedulingMode: SchedulingMode,
-  isAddon: boolean,
-  frequency: JanitorialFrequencyKey
+  schedulingMode: SchedulingMode
 ): number {
   if (hours <= 0) return 0;
 
-  // Standalone jobs use $50/hr flat rate
   if (schedulingMode === "standalone") {
     return hours * cfg.shortJobHourlyRate;
   }
 
-  // Normal route: use tiered pricing
-  // Check if infrequent (quarterly = 4x/year)
-  const isInfrequent = frequency === "quarterly";
-
-  // For 4+ hours, use $30/hr
-  if (hours >= 4) {
-    return hours * cfg.baseHourlyRate;
-  }
-
-  // Find the appropriate tier
-  for (const tier of cfg.tieredPricing) {
-    if (hours <= tier.upToHours) {
-      // Check if this is addon-only pricing
-      if (tier.addonOnly && !isAddon) {
-        // Use standalone price if available (for 15-30 min tier)
-        return tier.standalonePrice ?? tier.price;
-      }
-      return tier.price;
-    }
-  }
-
-  // Fallback (shouldn't reach here with proper tier config)
-  return hours * cfg.baseHourlyRate;
+  const billableHours = Math.max(hours, cfg.minHoursPerVisit);
+  return billableHours * cfg.baseHourlyRate;
 }
 
 export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
@@ -149,24 +106,25 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
   };
 
   const calc: JanitorialCalcResult = useMemo(() => {
-    // Calculate total hours from all sources
+    // ---- base hours with dust at 1× time ----
     const manualHours = Math.max(0, Number(form.manualHours) || 0);
     const vacuumingHours = Math.max(0, Number(form.vacuumingHours) || 0);
-
-    // Dusting calculation: places / 30 = hours
     const dustingPlaces = Math.max(0, Number(form.dustingPlaces) || 0);
-    let dustingHours = dustingPlaces / cfg.dustingPlacesPerHour;
 
-    // Apply 3× multiplier for dirty initial or infrequent service (dusting only)
-    const isInfrequent = form.frequency === "quarterly";
-    if (dustingPlaces > 0 && (form.dirtyInitial || isInfrequent)) {
-      dustingHours *= cfg.infrequentMultiplier;
-    }
+    const dustingHoursBase =
+      dustingPlaces / cfg.dustingPlacesPerHour; // 1× dust
 
-    const totalHours = manualHours + vacuumingHours + dustingHours;
+    const totalHoursBase =
+      manualHours + vacuumingHours + dustingHoursBase;
 
-    // If no hours, return zeros
-    if (totalHours === 0) {
+    const hourlyRate = calcBaseHourlyRate(form.schedulingMode);
+
+    const pricingMode =
+      form.schedulingMode === "standalone"
+        ? `Standalone ($${hourlyRate}/hr)`
+        : `Normal Route (min ${cfg.minHoursPerVisit} hrs @ $${hourlyRate}/hr → $${cfg.minHoursPerVisit * hourlyRate} min/visit)`;
+
+    if (totalHoursBase === 0) {
       return {
         totalHours: 0,
         perVisit: 0,
@@ -179,37 +137,58 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
           manualHours: 0,
           vacuumingHours: 0,
           dustingHours: 0,
-          pricingMode: "none",
+          pricingMode,
           basePrice: 0,
           appliedMultiplier: 1,
         },
       };
     }
 
-    // Calculate base per-visit price (red rate)
-    const basePrice = calculatePerVisitPrice(
-      totalHours,
-      form.schedulingMode,
-      form.isAddonToLargerService,
-      form.frequency
+    // base with dust at 1× (subject to 4hr min on route)
+    const basePerVisit = calculateBasePerVisitPrice(
+      totalHoursBase,
+      form.schedulingMode
     );
 
-    // Apply rate category multiplier
+    // pure 1× dust dollars (no minimum)
+    const normalDustPrice = dustingHoursBase * hourlyRate;
+    const isQuarterly = form.frequency === "quarterly";
+
+    // ---------- ongoing per-visit ----------
+    let perVisitService = basePerVisit;
+
+    if (isQuarterly && dustingHoursBase > 0) {
+      // Quarterly: ALL visits use 3× dusting time
+      // base (1× dust) + extra 2× dust
+      perVisitService =
+        basePerVisit + normalDustPrice * (cfg.infrequentMultiplier - 1);
+    }
+
+    // ---------- first visit ----------
+    let firstVisitService = perVisitService;
+
+    if (isQuarterly && dustingHoursBase > 0) {
+      // Quarterly: installation is recurring => first visit SAME as ongoing
+      firstVisitService = perVisitService;
+    } else if (!isQuarterly && dustingHoursBase > 0) {
+      // Non-quarterly: first visit dusting at 3× time
+      // base has 1× dust, so add extra 2× dust
+      firstVisitService =
+        basePerVisit + normalDustPrice * (cfg.dirtyInitialMultiplier - 1);
+    } else {
+      // no dust: first visit = normal base
+      firstVisitService = basePerVisit;
+    }
+
+    // apply rate category multiplier
     const rateCfg = cfg.rateCategories[form.rateCategory];
-    const perVisit = basePrice * rateCfg.multiplier;
+    const perVisit = perVisitService * rateCfg.multiplier;
+    const firstVisit = firstVisitService * rateCfg.multiplier;
 
-    // First visit pricing
-    // Apply dirty initial multiplier to the entire first visit
-    const firstVisit = form.dirtyInitial
-      ? perVisit * cfg.dirtyInitialMultiplier
-      : perVisit;
-
-    // Monthly calculations
+    // monthly / contract
     const weeksPerMonth = cfg.weeksPerMonth ?? 4.33;
     const monthlyVisits = weeksPerMonth;
 
-    // If first visit is special (3x), use "firstVisit + (4.33 - 1) * perVisit"
-    // Otherwise just 4.33 * perVisit
     const firstMonth =
       firstVisit > perVisit
         ? firstVisit + Math.max(monthlyVisits - 1, 0) * perVisit
@@ -217,7 +196,6 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
 
     const ongoingMonthly = monthlyVisits * perVisit;
 
-    // Contract total
     const minMonths = cfg.minContractMonths ?? 2;
     const maxMonths = cfg.maxContractMonths ?? 36;
     const rawMonths = Number(form.contractMonths) || minMonths;
@@ -232,7 +210,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
         : firstMonth + Math.max(contractMonths - 1, 0) * ongoingMonthly;
 
     return {
-      totalHours,
+      totalHours: totalHoursBase,
       perVisit,
       monthly: firstMonth,
       annual: contractTotal,
@@ -242,14 +220,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       breakdown: {
         manualHours,
         vacuumingHours,
-        dustingHours,
-        pricingMode:
-          form.schedulingMode === "standalone"
-            ? "Standalone ($50/hr)"
-            : totalHours >= 4
-            ? "Normal Route (4+ hrs, $30/hr)"
-            : "Tiered Pricing",
-        basePrice,
+        dustingHours: dustingHoursBase,
+        pricingMode,
+        basePrice: perVisitService,
         appliedMultiplier: rateCfg.multiplier,
       },
     };

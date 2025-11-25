@@ -1,6 +1,11 @@
 // src/features/services/janitorial/janitorialTypes.ts
 
-export type JanitorialFrequencyKey = "weekly" | "biweekly" | "monthly" | "quarterly";
+export type JanitorialFrequencyKey =
+  | "weekly"
+  | "biweekly"
+  | "monthly"
+  | "quarterly";
+
 export type JanitorialRateCategory = "redRate" | "greenRate";
 export type SchedulingMode = "normalRoute" | "standalone";
 
@@ -9,28 +14,18 @@ export interface JanitorialRateCategoryConfig {
   commissionRate: string;
 }
 
-/**
- * Tiered pricing structure for smooth scheduling (normal route).
- */
-export interface TieredPricing {
-  upToHours: number;
-  price: number;
-  addonOnly?: boolean; // if true, can only be used as addon to larger service
-  standalonePrice?: number; // price when used as standalone (for 15-30 min tier)
-}
-
 export interface JanitorialPricingConfig {
-  /** Base hourly rate for 4+ hours on normal route. */
+  /** Base hourly rate for normal route work. */
   baseHourlyRate: number;
 
   /** Higher hourly rate for standalone/short jobs. */
   shortJobHourlyRate: number;
 
-  /** Minimum billable hours per visit when using baseHourlyRate (4 hrs). */
+  /**
+   * Target minimum hours per visit/day on the route.
+   * Normal route charge = max(totalHours, minHoursPerVisit) * baseHourlyRate.
+   */
   minHoursPerVisit: number;
-
-  /** Tiered pricing for smooth scheduling (normal route). */
-  tieredPricing: TieredPricing[];
 
   /** Weeks used for monthly rollups (typically 4.33). */
   weeksPerMonth: number;
@@ -39,10 +34,13 @@ export interface JanitorialPricingConfig {
   minContractMonths: number;
   maxContractMonths: number;
 
-  /** Multiplier applied to first visit when doing a dirty initial clean (3x). */
+  /** Multiplier applied to first visit when doing a dirty initial clean (3×). */
   dirtyInitialMultiplier: number;
 
-  /** Multiplier for infrequent service (quarterly/4x per year). */
+  /**
+   * Multiplier for infrequent service (quarterly/4× per year) dusting hours
+   * on recurring visits.
+   */
   infrequentMultiplier: number;
 
   /** Default frequency to display in UI. */

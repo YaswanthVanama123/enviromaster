@@ -19,45 +19,21 @@ export const JanitorialForm: React.FC<
         <div className="svc-h">PURE JANITORIAL ADD-ONS</div>
       </div>
 
-      {/* Scheduling Mode */}
-      <div className="svc-row">
-        <label>Scheduling Mode</label>
+      {/* Summary / description */}
+      {/* <div className="svc-row">
+        <label>Overview</label>
         <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="schedulingMode"
-            value={form.schedulingMode}
-            onChange={onChange}
-          >
-            <option value="normalRoute">
-              Normal Route (tiered pricing, with route services)
-            </option>
-            <option value="standalone">
-              Standalone/Short Job ($50/hr)
-            </option>
-          </select>
+          <span className="svc-small">
+            Vacuuming, dusting, and other light janitorial extras. Base rate $
+            {cfg.baseHourlyRate.toFixed(2)}/hr. Normal route has a{" "}
+            {cfg.minHoursPerVisit}-hour minimum target (
+            {cfg.minHoursPerVisit} × ${cfg.baseHourlyRate} = $
+            {cfg.minHoursPerVisit * cfg.baseHourlyRate} minimum per visit). For
+            very small standalone jobs you can use $
+            {cfg.shortJobHourlyRate.toFixed(2)}/hr.
+          </span>
         </div>
-      </div>
-
-      {/* Is Addon toggle (only for normal route and small jobs) */}
-      {form.schedulingMode === "normalRoute" && calc.totalHours < 0.5 && (
-        <div className="svc-row">
-          <label>Service Type</label>
-          <div className="svc-row-right">
-            <label className="svc-inline">
-              <input
-                type="checkbox"
-                name="isAddonToLargerService"
-                checked={form.isAddonToLargerService}
-                onChange={onChange}
-              />
-              <span className="svc-small">
-                Part of larger service package (allows addon-only pricing)
-              </span>
-            </label>
-          </div>
-        </div>
-      )}
+      </div> */}
 
       {/* Frequency */}
       <div className="svc-row">
@@ -72,17 +48,59 @@ export const JanitorialForm: React.FC<
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi-Weekly</option>
             <option value="monthly">Monthly</option>
-            <option value="quarterly">Quarterly (3× multiplier for dusting)</option>
+            <option value="quarterly">
+              Quarterly (dusting 3× time on recurring visits; first visit
+              dusting covered by install)
+            </option>
           </select>
         </div>
       </div>
 
       {/* TASK-SPECIFIC INPUTS */}
-      <div className="svc-row">
-        <label style={{ fontWeight: 700, fontSize: "15px" }}>
-          Task-Specific Inputs
-        </label>
+      <div className="svc-h-row svc-h-row-sub">
+        <div className="svc-h-sub">Task-Specific Inputs</div>
       </div>
+
+      {/* Scheduling mode */}
+      <div className="svc-row">
+        <label>Scheduling Mode</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="schedulingMode"
+            value={form.schedulingMode}
+            onChange={onChange}
+          >
+            <option value="normalRoute">
+              Normal Route (bundled with other services, $30/hr, 4 hr min)
+            </option>
+            <option value="standalone">
+              Standalone / Short Job ($50/hr)
+            </option>
+          </select>
+        </div>
+      </div>
+
+      {/* Is Addon toggle (kept for info) */}
+      {form.schedulingMode === "normalRoute" && (
+        <div className="svc-row">
+          <label>Service Type</label>
+          <div className="svc-row-right">
+            <label className="svc-inline">
+              <input
+                type="checkbox"
+                name="isAddonToLargerService"
+                checked={form.isAddonToLargerService}
+                onChange={onChange}
+              />
+              <span className="svc-small">
+                This is an add-on to a larger route service (SaniClean, RPM,
+                etc.)
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Vacuuming */}
       <div className="svc-row">
@@ -96,10 +114,10 @@ export const JanitorialForm: React.FC<
             name="vacuumingHours"
             value={form.vacuumingHours}
             onChange={onChange}
-            placeholder="1"
+            placeholder={cfg.vacuumingDefaultHours.toString()}
           />
           <span className="svc-small">
-            Default: 1 hr (unless huge job)
+            hr
           </span>
         </div>
       </div>
@@ -119,9 +137,11 @@ export const JanitorialForm: React.FC<
             placeholder="30"
           />
           <span className="svc-small">
-            ~30 places/hr @ $1 each
-            {(form.dirtyInitial || form.frequency === "quarterly") &&
-              " (×3 for dirty/infrequent)"}
+            ~30 places/hr @ ${cfg.dustingPricePerPlace.toFixed(2)}.
+            {form.dirtyInitial &&
+              " – Dirty initial: first visit dusting at 3× time (non-quarterly)."}
+            {form.frequency === "quarterly" &&
+              " – Quarterly: from 2nd visit onwards dusting is 3× time each visit; first visit dusting is included in the main installation fee."}
           </span>
         </div>
       </div>
@@ -140,25 +160,7 @@ export const JanitorialForm: React.FC<
             onChange={onChange}
           />
           <span className="svc-small">
-            Additional manual hours
-          </span>
-        </div>
-      </div>
-
-      {/* Total hours display */}
-      <div className="svc-row">
-        <label>Total Hours (Calculated)</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="text"
-            readOnly
-            value={fmt(calc.totalHours) + " hrs"}
-          />
-          <span className="svc-small">
-            {calc.breakdown.manualHours > 0 && `Manual: ${fmt(calc.breakdown.manualHours)} `}
-            {calc.breakdown.vacuumingHours > 0 && `Vacuum: ${fmt(calc.breakdown.vacuumingHours)} `}
-            {calc.breakdown.dustingHours > 0 && `Dust: ${fmt(calc.breakdown.dustingHours)}`}
+            Extra sweeping, spot mopping, small wipe-downs, etc.
           </span>
         </div>
       </div>
@@ -176,19 +178,6 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Show tiered pricing table for reference */}
-      {form.schedulingMode === "normalRoute" && calc.totalHours < 4 && (
-        <div className="svc-row">
-          <label>Tiered Pricing Guide</label>
-          <div className="svc-row-right">
-            <span className="svc-small">
-              0-15min: $10 (addon) | 15-30min: $20 (addon)/$35 (standalone) |
-              0.5-1hr: $50 | 1-2hr: $80 | 2-3hr: $100 | 3-4hr: $120 | 4+hr: $30/hr
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* Dirty initial clean (3×) */}
       <div className="svc-row">
         <label>Initial Clean</label>
@@ -201,8 +190,10 @@ export const JanitorialForm: React.FC<
               onChange={onChange}
             />
             <span className="svc-small">
-              Dirty initial clean – first visit at {cfg.dirtyInitialMultiplier}×
-              (also affects dusting hours)
+              Dirty initial clean – first visit dusting at{" "}
+              {cfg.dirtyInitialMultiplier}× time (non-quarterly only). Ongoing
+              visits use normal dusting hours; quarterly already uses 3× time on
+              recurring visits with first visit dusting covered by install.
             </span>
           </label>
         </div>
@@ -219,7 +210,9 @@ export const JanitorialForm: React.FC<
             onChange={onChange}
           >
             <option value="redRate">Red Rate (base, 20% commission)</option>
-            <option value="greenRate">Green Rate (+30%, 25% commission)</option>
+            <option value="greenRate">
+              Green Rate (+30%, 25% commission)
+            </option>
           </select>
         </div>
       </div>
@@ -228,27 +221,37 @@ export const JanitorialForm: React.FC<
       <div className="svc-row">
         <label>Contract Length (Months)</label>
         <div className="svc-row-right">
-          <select
-            className="svc-in"
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min={cfg.minContractMonths}
+            max={cfg.maxContractMonths}
             name="contractMonths"
             value={form.contractMonths}
             onChange={onChange}
-          >
-            {Array.from({
-              length: cfg.maxContractMonths - cfg.minContractMonths + 1,
-            }).map((_, idx) => {
-              const m = cfg.minContractMonths + idx;
-              return (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              );
-            })}
-          </select>
+          />
         </div>
       </div>
 
-      {/* TOTALS */}
+      {/* OUTPUTS */}
+      <div className="svc-h-row svc-h-row-sub">
+        <div className="svc-h-sub">Pricing Summary</div>
+      </div>
+
+      {/* Total hours */}
+      <div className="svc-row">
+        <label>Total Hours (per visit)</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={`${fmt(calc.totalHours)} hrs`}
+          />
+        </div>
+      </div>
+
+      {/* Per-visit price */}
       <div className="svc-row svc-row-charge">
         <label>Per Visit (Service Only)</label>
         <div className="svc-row-right">
@@ -264,23 +267,23 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {form.dirtyInitial && calc.firstVisit !== calc.perVisit && (
-        <div className="svc-row svc-row-charge">
-          <label>First Visit (3× Dirty Initial)</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="text"
-                readOnly
-                value={fmt(calc.firstVisit)}
-              />
-            </div>
+      {/* First visit */}
+      <div className="svc-row svc-row-charge">
+        <label>First Visit Total</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={fmt(calc.firstVisit)}
+            />
           </div>
         </div>
-      )}
+      </div>
 
+      {/* First month total */}
       <div className="svc-row svc-row-charge">
         <label>First Month Total</label>
         <div className="svc-row-right">
@@ -294,11 +297,12 @@ export const JanitorialForm: React.FC<
             />
           </div>
           <span className="svc-small">
-            (4.33 visits/month)
+            Based on 4.33 visits/month equivalent (weekly-style rollup).
           </span>
         </div>
       </div>
 
+      {/* Ongoing monthly */}
       <div className="svc-row svc-row-charge">
         <label>Ongoing Monthly</label>
         <div className="svc-row-right">
@@ -314,10 +318,9 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
+      {/* Contract total */}
       <div className="svc-row svc-row-charge">
-        <label>
-          Contract Total ({form.contractMonths} Months)
-        </label>
+        <label>Contract Total</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -325,7 +328,7 @@ export const JanitorialForm: React.FC<
               className="svc-in"
               type="text"
               readOnly
-              value={fmt(calc.annual)}
+              value={fmt(calc.contractTotal)}
             />
           </div>
         </div>
