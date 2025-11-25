@@ -24,6 +24,12 @@ export interface CarpetPricingConfig {
   additionalUnitRate: number; // $125 for each extra 500 sq ft
   perVisitMinimum: number; // $250 min per visit
 
+  // Installation multipliers (same as SaniScrub)
+  installMultipliers: {
+    dirty: number;  // 3× multiplier for dirty install
+    clean: number;  // 1× multiplier for clean install
+  };
+
   frequencyMeta: Record<CarpetFrequency, CarpetFrequencyMeta>;
 }
 
@@ -45,4 +51,8 @@ export interface CarpetFormState extends BaseServiceFormState {
 
   // Contract length in months (2–36)
   contractMonths: number;
+
+  // Installation fee options (same as SaniScrub)
+  includeInstall: boolean;
+  isDirtyInstall: boolean;  // 3× multiplier vs 1× clean
 }

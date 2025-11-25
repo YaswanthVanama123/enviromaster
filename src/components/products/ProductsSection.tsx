@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./ProductsSection.css";
 import { envProductCatalog } from "./productsConfig";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
@@ -86,7 +86,7 @@ type DollarCellProps = {
   readOnly?: boolean;
 };
 
-function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
+const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
   const display =
     value === null || value === undefined ? "" : (value as number | "");
 
@@ -113,18 +113,18 @@ function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
       />
     </div>
   );
-}
+});
 
-function PlainCell({ value }: { value?: string | number | null }) {
+const PlainCell = React.memo(function PlainCell({ value }: { value?: string | number | null }) {
   return <input className="in" defaultValue={value ?? ""} />;
-}
+});
 
 type QtyCellProps = {
   value: number | "" | undefined;
   onChange: (value: number | "") => void;
 };
 
-function QtyCell({ value, onChange }: QtyCellProps) {
+const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   // what we show in the box (same pattern as DollarCell & header inputs)
   const display =
     value === "" || value === undefined ? "" : String(value);
@@ -157,7 +157,7 @@ function QtyCell({ value, onChange }: QtyCellProps) {
       inputMode="numeric" // just for mobile keyboard; optional
     />
   );
-}
+});
 
 
 
@@ -352,38 +352,39 @@ export default function ProductsSection() {
     return map;
   }, []);
 
-  const getProduct = (row: ProductRow | undefined) =>
-    row && row.productKey ? productMap.get(row.productKey) : undefined;
+  const getProduct = useCallback(
+    (row: ProductRow | undefined) =>
+      row && row.productKey ? productMap.get(row.productKey) : undefined,
+    [productMap]
+  );
 
   // Generic row updater
-  const updateRowField = (
-    bucket: ColumnKey,
-    rowId: string,
-    patch: Partial<ProductRow>
-  ) =>
-    setData((prev) => ({
-      ...prev,
-      [bucket]: prev[bucket].map((r) =>
-        r.id === rowId ? { ...r, ...patch } : r
-      ),
-    }));
+  const updateRowField = useCallback(
+    (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) =>
+      setData((prev) => ({
+        ...prev,
+        [bucket]: prev[bucket].map((r) =>
+          r.id === rowId ? { ...r, ...patch } : r
+        ),
+      })),
+    []
+  );
 
-  const updateRowProductKey = (
-    bucket: ColumnKey,
-    rowId: string,
-    productKey: string
-  ) =>
-    updateRowField(bucket, rowId, {
-      productKey,
-      isCustom: false,
-      customName: undefined,
-    });
+  const updateRowProductKey = useCallback(
+    (bucket: ColumnKey, rowId: string, productKey: string) =>
+      updateRowField(bucket, rowId, {
+        productKey,
+        isCustom: false,
+        customName: undefined,
+      }),
+    [updateRowField]
+  );
 
   // ---------------------------
   // Row operations
   // ---------------------------
 
-  const addRowAll = () => {
+  const addRowAll = useCallback(() => {
     setData((prev) => ({
       smallProducts: [
         ...prev.smallProducts,
@@ -398,22 +399,28 @@ export default function ProductsSection() {
         { id: makeRowId("bigProducts"), productKey: null, isDefault: false },
       ],
     }));
-  };
+  }, []);
 
-  const addRow = (bucket: ColumnKey) =>
-    setData((prev) => ({
-      ...prev,
-      [bucket]: [
-        ...prev[bucket],
-        { id: makeRowId(bucket), productKey: null, isDefault: false },
-      ],
-    }));
+  const addRow = useCallback(
+    (bucket: ColumnKey) =>
+      setData((prev) => ({
+        ...prev,
+        [bucket]: [
+          ...prev[bucket],
+          { id: makeRowId(bucket), productKey: null, isDefault: false },
+        ],
+      })),
+    []
+  );
 
-  const removeRow = (bucket: ColumnKey, id: string) =>
-    setData((prev) => ({
-      ...prev,
-      [bucket]: prev[bucket].filter((r) => r.id !== id),
-    }));
+  const removeRow = useCallback(
+    (bucket: ColumnKey, id: string) =>
+      setData((prev) => ({
+        ...prev,
+        [bucket]: prev[bucket].filter((r) => r.id !== id),
+      })),
+    []
+  );
 
   // ---------------------------
   // Column operations
@@ -424,32 +431,44 @@ export default function ProductsSection() {
     label,
   });
 
-  const addColAll = () =>
-    setExtraCols((c) => ({
-      smallProducts: [...c.smallProducts, mkCol()],
-      dispensers: [...c.dispensers, mkCol()],
-      bigProducts: [...c.bigProducts, mkCol()],
-    }));
+  const addColAll = useCallback(
+    () =>
+      setExtraCols((c) => ({
+        smallProducts: [...c.smallProducts, mkCol()],
+        dispensers: [...c.dispensers, mkCol()],
+        bigProducts: [...c.bigProducts, mkCol()],
+      })),
+    []
+  );
 
-  const addCol = (bucket: ColumnKey) =>
-    setExtraCols((c) => ({
-      ...c,
-      [bucket]: [...c[bucket], mkCol()],
-    }));
+  const addCol = useCallback(
+    (bucket: ColumnKey) =>
+      setExtraCols((c) => ({
+        ...c,
+        [bucket]: [...c[bucket], mkCol()],
+      })),
+    []
+  );
 
-  const changeColLabel = (bucket: ColumnKey, id: string, next: string) =>
-    setExtraCols((c) => ({
-      ...c,
-      [bucket]: c[bucket].map((col) =>
-        col.id === id ? { ...col, label: next } : col
-      ),
-    }));
+  const changeColLabel = useCallback(
+    (bucket: ColumnKey, id: string, next: string) =>
+      setExtraCols((c) => ({
+        ...c,
+        [bucket]: c[bucket].map((col) =>
+          col.id === id ? { ...col, label: next } : col
+        ),
+      })),
+    []
+  );
 
-  const removeCol = (bucket: ColumnKey, id: string) =>
-    setExtraCols((c) => ({
-      ...c,
-      [bucket]: c[bucket].filter((col) => col.id !== id),
-    }));
+  const removeCol = useCallback(
+    (bucket: ColumnKey, id: string) =>
+      setExtraCols((c) => ({
+        ...c,
+        [bucket]: c[bucket].filter((col) => col.id !== id),
+      })),
+    []
+  );
 
   // ---------------------------
   // Row count for desktop table
@@ -614,12 +633,8 @@ export default function ProductsSection() {
               const pDisp = getProduct(rowDisp);
               const pBig = getProduct(rowBig);
 
-              const rowKey =
-                (rowSmall?.id ?? "") +
-                  "|" +
-                  (rowDisp?.id ?? "") +
-                  "|" +
-                  (rowBig?.id ?? "") || `row-${i}`;
+              // Stable row key: combine all three IDs plus index
+              const rowKey = `${rowSmall?.id ?? ""}_${rowDisp?.id ?? ""}_${rowBig?.id ?? ""}_${i}`;
 
               return (
                 <tr key={rowKey}>

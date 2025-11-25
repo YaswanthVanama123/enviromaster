@@ -9,7 +9,9 @@ import { carpetFrequencyLabels } from "./carpetConfig";
  *  - Block pricing: 250 (first 500 sq ft) + 125 per extra 500
  *  - Per-visit minimum $250
  *  - No trip charge in math (field shows $0.00)
- *  - No "Annual" – instead 2–36 month contract dropdown
+ *  - Installation fee options (1× clean / 3× dirty)
+ *  - First month calculation includes installation + normal service
+ *  - Contract term: 2–36 months
  */
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
@@ -128,6 +130,57 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
+      {/* Installation options (same as SaniScrub) */}
+      <div className="svc-row">
+        <label>Installation Fee</label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="includeInstall"
+              checked={form.includeInstall}
+              onChange={onChange}
+            />
+            <span>Include Install</span>
+          </label>
+
+          {form.includeInstall && (
+            <>
+              <label className="svc-inline">
+                <input
+                  type="checkbox"
+                  name="isDirtyInstall"
+                  checked={form.isDirtyInstall}
+                  onChange={onChange}
+                />
+                <span>Dirty (3×)</span>
+              </label>
+              <span className="svc-small">
+                {form.isDirtyInstall ? "3× monthly base" : "1× monthly base"}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Installation fee display (when enabled) */}
+      {form.includeInstall && calc.installOneTime > 0 && (
+        <div className="svc-row svc-row-charge">
+          <label>Installation (One-Time)</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.installOneTime.toFixed(2)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Monthly recurring charge */}
       <div className="svc-row svc-row-charge">
         <label>Monthly Carpet Clean</label>
@@ -144,7 +197,25 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Contract total: 2–36 months, no "Annual" wording */}
+      {/* First month total (when installation is included) */}
+      {form.includeInstall && calc.firstMonthTotal > 0 && (
+        <div className="svc-row svc-row-charge">
+          <label>First Month (Install + Service)</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.firstMonthTotal.toFixed(2)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contract total: 2–36 months */}
       <div className="svc-row svc-row-charge">
         <label>Contract Total</label>
         <div className="svc-row-right">
@@ -182,7 +253,7 @@ export const CarpetForm: React.FC<
               className="svc-in"
               type="text"
               readOnly
-              value={calc.perVisitCharge.toFixed(2)}
+              value={calc.perVisitEffective.toFixed(2)}
             />
           </div>
         </div>

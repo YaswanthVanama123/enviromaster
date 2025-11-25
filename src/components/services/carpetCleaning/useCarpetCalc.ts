@@ -16,6 +16,8 @@ const DEFAULT_FORM: CarpetFormState = {
   tripChargeIncluded: true, // from BaseServiceFormState, but ignored in calc
   notes: "",
   contractMonths: 12,
+  includeInstall: false,
+  isDirtyInstall: false,
 };
 
 function clampFrequency(f: string): CarpetFrequency {
@@ -67,6 +69,8 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
         case "needsParking":
         case "tripChargeIncluded":
+        case "includeInstall":
+        case "isDirtyInstall":
           return {
             ...prev,
             [name]: type === "checkbox" ? !!checked : Boolean(value),
@@ -100,6 +104,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     visitsPerMonth,
     perVisitTrip,
     monthlyTrip,
+    installOneTime,
+    firstMonthTotal,
+    perVisitEffective,
   } = useMemo(() => {
     const freq = clampFrequency(form.frequency);
     const meta = cfg.frequencyMeta[freq];
@@ -125,33 +132,72 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     const perVisitTrip = 0;
     const monthlyTrip = 0;
 
-    const monthlyTotal =
-      visitsPerMonth > 0 ? perVisitCharge * visitsPerMonth : 0;
+    const serviceActive = areaSqFt > 0;
 
+    // Calculate monthly base (for installation calculation)
+    const monthlyBase = perVisitCharge * visitsPerMonth;
+
+    // ---------------- INSTALLATION FEE (SAME AS SANISCRUB) ----------------
+    // Install = 3× dirty / 1× clean of MONTHLY BASE (no trip)
+    const installOneTime =
+      serviceActive && form.includeInstall
+        ? monthlyBase *
+          (form.isDirtyInstall
+            ? cfg.installMultipliers.dirty
+            : cfg.installMultipliers.clean)
+        : 0;
+
+    // ---------------- FIRST VISIT & FIRST MONTH ----------------
+    // First visit = installation only (no normal service)
+    // First month = install-only first visit + (monthlyVisits − 1) × normal service price
+    const monthlyVisits = visitsPerMonth;
+    const firstMonthNormalVisits =
+      monthlyVisits > 1 ? monthlyVisits - 1 : 0;
+
+    const firstMonthTotal =
+      serviceActive && (installOneTime > 0 || firstMonthNormalVisits > 0)
+        ? installOneTime + firstMonthNormalVisits * perVisitCharge
+        : 0;
+
+    // ---------------- RECURRING MONTHLY (after first month) ----------------
+    const monthlyRecurring =
+      serviceActive && visitsPerMonth > 0
+        ? perVisitCharge * visitsPerMonth
+        : 0;
+
+    // ---------------- CONTRACT TOTAL ----------------
     const contractMonths = clampContractMonths(form.contractMonths);
-    const contractTotal = monthlyTotal * contractMonths;
+    const remainingMonths = contractMonths > 1 ? contractMonths - 1 : 0;
+    const remainingMonthsTotal = remainingMonths * monthlyRecurring;
+    const contractTotal = firstMonthTotal + remainingMonthsTotal;
+
+    // Per-Visit Effective = normal per-visit service price (no install, no trip)
+    const perVisitEffective = perVisitCharge;
 
     return {
       perVisitBase,
       perVisitCharge,
-      monthlyTotal,
+      monthlyTotal: monthlyRecurring,
       contractTotal,
       visitsPerYear,
       visitsPerMonth,
       perVisitTrip,
       monthlyTrip,
+      installOneTime,
+      firstMonthTotal,
+      perVisitEffective,
     };
   }, [form]);
 
   const quote: ServiceQuoteResult = useMemo(
     () => ({
       serviceId: form.serviceId,
-      perVisit: perVisitCharge,
+      perVisit: perVisitEffective,
       monthly: monthlyTotal,
       // re-using `annual` as "contract total" like we did on SaniScrub
       annual: contractTotal,
     }),
-    [form.serviceId, perVisitCharge, monthlyTotal, contractTotal]
+    [form.serviceId, perVisitEffective, monthlyTotal, contractTotal]
   );
 
   return {
@@ -168,6 +214,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       visitsPerMonth,
       perVisitTrip,
       monthlyTrip,
+      installOneTime,
+      firstMonthTotal,
+      perVisitEffective,
     },
   };
 }

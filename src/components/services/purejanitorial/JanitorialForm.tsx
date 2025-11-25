@@ -19,9 +19,49 @@ export const JanitorialForm: React.FC<
         <div className="svc-h">PURE JANITORIAL ADD-ONS</div>
       </div>
 
-      {/* Frequency row (for per-visit view label only, same as others) */}
+      {/* Scheduling Mode */}
       <div className="svc-row">
-        <label>Frequency (for per-visit view)</label>
+        <label>Scheduling Mode</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="schedulingMode"
+            value={form.schedulingMode}
+            onChange={onChange}
+          >
+            <option value="normalRoute">
+              Normal Route (tiered pricing, with route services)
+            </option>
+            <option value="standalone">
+              Standalone/Short Job ($50/hr)
+            </option>
+          </select>
+        </div>
+      </div>
+
+      {/* Is Addon toggle (only for normal route and small jobs) */}
+      {form.schedulingMode === "normalRoute" && calc.totalHours < 0.5 && (
+        <div className="svc-row">
+          <label>Service Type</label>
+          <div className="svc-row-right">
+            <label className="svc-inline">
+              <input
+                type="checkbox"
+                name="isAddonToLargerService"
+                checked={form.isAddonToLargerService}
+                onChange={onChange}
+              />
+              <span className="svc-small">
+                Part of larger service package (allows addon-only pricing)
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Frequency */}
+      <div className="svc-row">
+        <label>Frequency</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -32,61 +72,124 @@ export const JanitorialForm: React.FC<
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi-Weekly</option>
             <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly (3× multiplier for dusting)</option>
           </select>
         </div>
       </div>
 
-      {/* Hours line */}
+      {/* TASK-SPECIFIC INPUTS */}
       <div className="svc-row">
-        <label>Hours of Extra Service</label>
+        <label style={{ fontWeight: 700, fontSize: "15px" }}>
+          Task-Specific Inputs
+        </label>
+      </div>
+
+      {/* Vacuuming */}
+      <div className="svc-row">
+        <label>Vacuuming (hours)</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
             type="number"
             min={0}
             step={0.25}
-            name="hoursPerVisit"
-            value={form.hoursPerVisit}
+            name="vacuumingHours"
+            value={form.vacuumingHours}
             onChange={onChange}
+            placeholder="1"
           />
-          <span className="svc-multi">@</span>
+          <span className="svc-small">
+            Default: 1 hr (unless huge job)
+          </span>
+        </div>
+      </div>
+
+      {/* Dusting */}
+      <div className="svc-row">
+        <label>Dusting (# of places)</label>
+        <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
             type="number"
             min={0}
             step={1}
-            name="hourlyRate"
-            value={form.hourlyRate}
+            name="dustingPlaces"
+            value={form.dustingPlaces}
             onChange={onChange}
+            placeholder="30"
           />
-          <span className="svc-small">$/hr</span>
-          <span className="svc-eq">=</span>
-          <span className="svc-dollar">
-            ${fmt(calc.perVisit)}
+          <span className="svc-small">
+            ~30 places/hr @ $1 each
+            {(form.dirtyInitial || form.frequency === "quarterly") &&
+              " (×3 for dirty/infrequent)"}
           </span>
         </div>
       </div>
 
-      {/* Minimum hours toggle + note about billed hours */}
+      {/* Manual hours for other tasks */}
       <div className="svc-row">
-        <label>Minimum Hours</label>
+        <label>Other Tasks (hours)</label>
         <div className="svc-row-right">
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="enforceMinHours"
-              checked={form.enforceMinHours}
-              onChange={onChange}
-            />{" "}
-            <span className="svc-small">
-              Enforce {cfg.minHoursPerVisit} hr minimum (bills{" "}
-              {calc.billableHours.toFixed(2)} hrs)
-            </span>
-          </label>
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min={0}
+            step={0.25}
+            name="manualHours"
+            value={form.manualHours}
+            onChange={onChange}
+          />
+          <span className="svc-small">
+            Additional manual hours
+          </span>
         </div>
       </div>
 
-      {/* Dirty initial clean (3x) */}
+      {/* Total hours display */}
+      <div className="svc-row">
+        <label>Total Hours (Calculated)</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={fmt(calc.totalHours) + " hrs"}
+          />
+          <span className="svc-small">
+            {calc.breakdown.manualHours > 0 && `Manual: ${fmt(calc.breakdown.manualHours)} `}
+            {calc.breakdown.vacuumingHours > 0 && `Vacuum: ${fmt(calc.breakdown.vacuumingHours)} `}
+            {calc.breakdown.dustingHours > 0 && `Dust: ${fmt(calc.breakdown.dustingHours)}`}
+          </span>
+        </div>
+      </div>
+
+      {/* Pricing mode indicator */}
+      <div className="svc-row">
+        <label>Pricing Mode</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={calc.breakdown.pricingMode}
+          />
+        </div>
+      </div>
+
+      {/* Show tiered pricing table for reference */}
+      {form.schedulingMode === "normalRoute" && calc.totalHours < 4 && (
+        <div className="svc-row">
+          <label>Tiered Pricing Guide</label>
+          <div className="svc-row-right">
+            <span className="svc-small">
+              0-15min: $10 (addon) | 15-30min: $20 (addon)/$35 (standalone) |
+              0.5-1hr: $50 | 1-2hr: $80 | 2-3hr: $100 | 3-4hr: $120 | 4+hr: $30/hr
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Dirty initial clean (3×) */}
       <div className="svc-row">
         <label>Initial Clean</label>
         <div className="svc-row-right">
@@ -96,10 +199,10 @@ export const JanitorialForm: React.FC<
               name="dirtyInitial"
               checked={form.dirtyInitial}
               onChange={onChange}
-            />{" "}
+            />
             <span className="svc-small">
-              Dirty initial clean – first visit at {cfg.dirtyInitialMultiplier}
-              x
+              Dirty initial clean – first visit at {cfg.dirtyInitialMultiplier}×
+              (also affects dusting hours)
             </span>
           </label>
         </div>
@@ -115,8 +218,8 @@ export const JanitorialForm: React.FC<
             value={form.rateCategory}
             onChange={onChange}
           >
-            <option value="redRate">Red (base)</option>
-            <option value="greenRate">Green (+30%)</option>
+            <option value="redRate">Red Rate (base, 20% commission)</option>
+            <option value="greenRate">Green Rate (+30%, 25% commission)</option>
           </select>
         </div>
       </div>
@@ -145,27 +248,86 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Totals */}
-      <div className="svc-row svc-row-total">
+      {/* TOTALS */}
+      <div className="svc-row svc-row-charge">
         <label>Per Visit (Service Only)</label>
-        <div className="svc-dollar">
-          ${fmt(calc.perVisit)}
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={fmt(calc.perVisit)}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="svc-row svc-row-total">
-        <label>First Month (Install + Service)</label>
-        <div className="svc-dollar">
-          ${fmt(calc.monthly)}
+      {form.dirtyInitial && calc.firstVisit !== calc.perVisit && (
+        <div className="svc-row svc-row-charge">
+          <label>First Visit (3× Dirty Initial)</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={fmt(calc.firstVisit)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="svc-row svc-row-charge">
+        <label>First Month Total</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={fmt(calc.monthly)}
+            />
+          </div>
+          <span className="svc-small">
+            (4.33 visits/month)
+          </span>
         </div>
       </div>
 
-      <div className="svc-row svc-row-total">
+      <div className="svc-row svc-row-charge">
+        <label>Ongoing Monthly</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={fmt(calc.ongoingMonthly)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
         <label>
           Contract Total ({form.contractMonths} Months)
         </label>
-        <div className="svc-dollar">
-          ${fmt(calc.annual)}
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={fmt(calc.annual)}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -31,6 +31,13 @@ export const carpetPricingConfig: CarpetPricingConfig = {
   additionalUnitRate: 125, // each additional 500 sq ft
   perVisitMinimum: 250, // per-visit minimum
 
+  // Installation multipliers (same as SaniScrub)
+  // Install = 1× clean, 3× dirty of MONTHLY BASE (no trip)
+  installMultipliers: {
+    dirty: 3,
+    clean: 1,
+  },
+
   // Visits per year per frequency
   frequencyMeta: {
     monthly: { visitsPerYear: 12 }, // 1× per month
