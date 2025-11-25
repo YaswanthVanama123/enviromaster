@@ -92,17 +92,22 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditingRef = useRef(false);
 
+  console.log('🔵 DollarCell RENDER - value:', value);
+
   useEffect(() => {
+    console.log('🟢 DollarCell useEffect - value:', value, 'isEditing:', isEditingRef.current);
     // Sync input value from props when not editing
     if (inputRef.current && !isEditingRef.current) {
       const newValue = value === null || value === undefined || value === "" ? "" : String(value);
       if (inputRef.current.value !== newValue) {
+        console.log('🟡 DollarCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
         inputRef.current.value = newValue;
       }
     }
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🟣 DollarCell onChange - raw value:', e.target.value);
     if (!onChange) return;
     const raw = e.target.value;
 
@@ -112,19 +117,23 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     }
     const num = Number(raw);
     if (!Number.isNaN(num)) {
+      console.log('🟣 DollarCell calling onChange with:', num);
       onChange(num);
     }
   };
 
   const handleFocus = () => {
+    console.log('🔴 DollarCell FOCUS - setting isEditing = true');
     isEditingRef.current = true;
   };
 
   const handleBlur = () => {
+    console.log('🟠 DollarCell BLUR - setting isEditing = false');
     isEditingRef.current = false;
     // Sync value on blur
     if (inputRef.current) {
       const newValue = value === null || value === undefined || value === "" ? "" : String(value);
+      console.log('🟠 DollarCell BLUR syncing to:', newValue);
       inputRef.current.value = newValue;
     }
   };
@@ -146,7 +155,10 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
       />
     </div>
   );
-}, () => true); // NEVER re-render this component
+}, () => {
+  console.log('🔵 DollarCell memo comparison - BLOCKING RE-RENDER');
+  return true;
+}); // NEVER re-render this component
 
 function PlainCell({ value }: { value?: string | number | null }) {
   const displayValue = value === null || value === undefined ? "" : String(value);
@@ -169,17 +181,22 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditingRef = useRef(false);
 
+  console.log('🔵 QtyCell RENDER - value:', value);
+
   useEffect(() => {
+    console.log('🟢 QtyCell useEffect - value:', value, 'isEditing:', isEditingRef.current);
     // Sync input value from props when not editing
     if (inputRef.current && !isEditingRef.current) {
       const newValue = value === "" || value === undefined ? "" : String(value);
       if (inputRef.current.value !== newValue) {
+        console.log('🟡 QtyCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
         inputRef.current.value = newValue;
       }
     }
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🟣 QtyCell onChange - raw value:', e.target.value);
     const raw = e.target.value;
 
     if (raw === "") {
@@ -191,19 +208,23 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     }
     const num = Number(raw);
     if (!Number.isNaN(num)) {
+      console.log('🟣 QtyCell calling onChange with:', num);
       onChange(num);
     }
   };
 
   const handleFocus = () => {
+    console.log('🔴 QtyCell FOCUS - setting isEditing = true');
     isEditingRef.current = true;
   };
 
   const handleBlur = () => {
+    console.log('🟠 QtyCell BLUR - setting isEditing = false');
     isEditingRef.current = false;
     // Sync value on blur
     if (inputRef.current) {
       const newValue = value === "" || value === undefined ? "" : String(value);
+      console.log('🟠 QtyCell BLUR syncing to:', newValue);
       inputRef.current.value = newValue;
     }
   };
@@ -221,7 +242,10 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
       onBlur={handleBlur}
     />
   );
-}, () => true); // NEVER re-render this component
+}, () => {
+  console.log('🔵 QtyCell memo comparison - BLOCKING RE-RENDER');
+  return true;
+}); // NEVER re-render this component
 
 
 
@@ -408,6 +432,8 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
 }
 
 export default function ProductsSection() {
+  console.log('🟦 ProductsSection RENDER');
+
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
@@ -447,13 +473,15 @@ export default function ProductsSection() {
 
   // Generic row updater
   const updateRowField = useCallback(
-    (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) =>
+    (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) => {
+      console.log('⚡ updateRowField called - bucket:', bucket, 'rowId:', rowId, 'patch:', patch);
       setData((prev) => ({
         ...prev,
         [bucket]: prev[bucket].map((r) =>
           r.id === rowId ? { ...r, ...patch } : r
         ),
-      })),
+      }));
+    },
     []
   );
 
