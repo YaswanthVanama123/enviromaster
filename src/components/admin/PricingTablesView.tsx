@@ -9,19 +9,6 @@ export const PricingTablesView: React.FC = () => {
   const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
   const { catalog, loading: catalogLoading, error: catalogError, updateCatalog } = useActiveProductCatalog();
 
-  // Debug logs
-  useEffect(() => {
-    console.log("Services configs:", configs);
-    console.log("Services loading:", servicesLoading);
-    console.log("Services error:", servicesError);
-  }, [configs, servicesLoading, servicesError]);
-
-  useEffect(() => {
-    console.log("Product catalog:", catalog);
-    console.log("Catalog loading:", catalogLoading);
-    console.log("Catalog error:", catalogError);
-  }, [catalog, catalogLoading, catalogError]);
-
   // Product state
   const [selectedProductFamily, setSelectedProductFamily] = useState<string>("");
   const [editingProduct, setEditingProduct] = useState<{ familyKey: string; productKey: string; field: "basePrice" | "warrantyPrice"; value: string } | null>(null);
@@ -155,6 +142,7 @@ export const PricingTablesView: React.FC = () => {
     setEditingServiceField(null);
   };
 
+  // Show loading only if currently loading
   if (catalogLoading || servicesLoading) {
     return (
       <div style={styles.loadingContainer}>
@@ -164,6 +152,7 @@ export const PricingTablesView: React.FC = () => {
     );
   }
 
+  // Show errors if present
   if (servicesError || catalogError) {
     return (
       <div style={styles.container}>
@@ -176,7 +165,8 @@ export const PricingTablesView: React.FC = () => {
     );
   }
 
-  if (!catalog || !configs || configs.length === 0) {
+  // Show error only if finished loading but still no data
+  if (!catalogLoading && !servicesLoading && (!catalog || !configs || configs.length === 0)) {
     return (
       <div style={styles.container}>
         <div style={styles.errorBox}>

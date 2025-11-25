@@ -176,8 +176,9 @@ export const ServiceConfigManager: React.FC = () => {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     padding: "20px",
-    maxWidth: "1200px",
-    margin: "0 auto",
+    width: "100%",
+    minHeight: "100vh",
+    backgroundColor: "#f5f7fa",
   },
   header: {
     marginBottom: "24px",
@@ -197,6 +198,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "40px",
     fontSize: "16px",
     color: "#666",
+    width: "100%",
   },
   error: {
     padding: "12px",
@@ -204,6 +206,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#dc2626",
     borderRadius: "8px",
     marginBottom: "16px",
+    width: "100%",
   },
   success: {
     padding: "12px",
@@ -211,11 +214,13 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#15803d",
     borderRadius: "8px",
     marginBottom: "16px",
+    width: "100%",
   },
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
     gap: "20px",
+    width: "100%",
   },
   card: {
     padding: "20px",

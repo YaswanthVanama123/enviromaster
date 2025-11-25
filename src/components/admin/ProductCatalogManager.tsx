@@ -241,14 +241,16 @@ export const ProductCatalogManager: React.FC = () => {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     padding: "20px",
-    maxWidth: "1400px",
-    margin: "0 auto",
+    width: "100%",
+    minHeight: "100vh",
+    backgroundColor: "#f5f7fa",
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "24px",
+    width: "100%",
   },
   title: {
     fontSize: "24px",
@@ -273,6 +275,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "40px",
     fontSize: "16px",
     color: "#666",
+    width: "100%",
   },
   error: {
     padding: "12px",
@@ -280,9 +283,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#dc2626",
     borderRadius: "8px",
     marginBottom: "16px",
+    width: "100%",
   },
   searchContainer: {
     marginBottom: "24px",
+    width: "100%",
   },
   searchInput: {
     width: "100%",
@@ -297,6 +302,7 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
     gap: "16px",
     marginBottom: "32px",
+    width: "100%",
   },
   familyCard: {
     padding: "16px",
@@ -337,12 +343,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   productSection: {
     marginTop: "32px",
+    width: "100%",
   },
   productHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "16px",
+    width: "100%",
   },
   closeButton: {
     padding: "8px 16px",
@@ -357,10 +365,12 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "white",
     borderRadius: "8px",
     border: "1px solid #e5e5e5",
+    width: "100%",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
+    minWidth: "100%",
   },
   tableHeaderRow: {
     backgroundColor: "#f9fafb",

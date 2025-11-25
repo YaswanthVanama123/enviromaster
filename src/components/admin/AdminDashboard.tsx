@@ -143,5 +143,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   content: {
     padding: "0",
+    width: "100%",
   },
 };
