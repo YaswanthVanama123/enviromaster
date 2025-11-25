@@ -96,10 +96,28 @@ export function useActiveProductCatalog() {
     fetchActiveCatalog();
   }, [fetchActiveCatalog]);
 
+  const updateCatalog = async (id: string, payload: UpdateProductCatalogPayload) => {
+    setLoading(true);
+    setError(null);
+
+    const response = await productCatalogApi.update(id, payload);
+
+    if (response.error) {
+      setError(response.error);
+      setLoading(false);
+      return { success: false, error: response.error };
+    }
+
+    await fetchActiveCatalog();
+    setLoading(false);
+    return { success: true, data: response.data };
+  };
+
   return {
     catalog,
     loading,
     error,
     refetch: fetchActiveCatalog,
+    updateCatalog,
   };
 }
