@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useAdminAuth } from "../../backendservice/hooks";
 import { AdminLogin } from "./AdminLogin";
-import { PricingTables } from "./PricingTables";
+import { AdminPricingManager } from "./AdminPricingManager";
 import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
 
@@ -62,7 +62,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       <div style={styles.content}>
-        {activeTab === "pricing" && <PricingTables />}
+        {activeTab === "pricing" && <AdminPricingManager />}
         {activeTab === "services" && <ServiceConfigManager />}
         {activeTab === "products" && <ProductCatalogManager />}
       </div>
