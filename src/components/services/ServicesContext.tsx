@@ -50,22 +50,25 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
-  // Computed: Is SaniClean in all-inclusive mode?
-  const isSanicleanAllInclusive =
-    servicesState.saniclean?.isActive &&
-    servicesState.saniclean?.pricingMode === "all_inclusive";
+  const value = useMemo<ServicesContextValue>(() => {
+    // Computed: Is SaniClean in all-inclusive mode?
+    const isSanicleanAllInclusive = Boolean(
+      servicesState.saniclean?.isActive &&
+      servicesState.saniclean?.pricingMode === "all_inclusive"
+    );
 
-  // Computed: Paper credit (all-inclusive only)
-  const sanicleanPaperCreditPerWeek = isSanicleanAllInclusive
-    ? (servicesState.saniclean?.fixtureCount ?? 0) * 5 // $5 per fixture per week
-    : 0;
+    // Computed: Paper credit (all-inclusive only)
+    const sanicleanPaperCreditPerWeek = isSanicleanAllInclusive
+      ? (servicesState.saniclean?.fixtureCount ?? 0) * 5 // $5 per fixture per week
+      : 0;
 
-  const value = useMemo<ServicesContextValue>(() => ({
-    servicesState,
-    updateSaniclean,
-    isSanicleanAllInclusive,
-    sanicleanPaperCreditPerWeek,
-  }), [servicesState, updateSaniclean, isSanicleanAllInclusive, sanicleanPaperCreditPerWeek]);
+    return {
+      servicesState,
+      updateSaniclean,
+      isSanicleanAllInclusive,
+      sanicleanPaperCreditPerWeek,
+    };
+  }, [servicesState, updateSaniclean]);
 
   return (
     <ServicesContext.Provider value={value}>
