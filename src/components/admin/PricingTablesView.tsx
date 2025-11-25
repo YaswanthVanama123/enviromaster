@@ -5,24 +5,33 @@ import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import type { Product } from "../../backendservice/types/productCatalog.types";
 
-type ViewMode = "services" | "products";
-
-interface EditField {
-  serviceId: string;
-  path: string[];
-  label: string;
-  value: number;
-}
-
 export const PricingTablesView: React.FC = () => {
-  const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
-  const { catalog, loading: catalogLoading, error: catalogError, updateCatalog } = useActiveProductCatalog();
+  const { configs, loading: servicesLoading, updateConfig } = useServiceConfigs();
+  const { catalog, loading: catalogLoading, updateCatalog } = useActiveProductCatalog();
 
-  const [viewMode, setViewMode] = useState<ViewMode>("services");
-  const [editingField, setEditingField] = useState<EditField | null>(null);
-  const [editValue, setEditValue] = useState<string>("");
+  // Product state
+  const [selectedProductFamily, setSelectedProductFamily] = useState<string>("");
+  const [editingProduct, setEditingProduct] = useState<{ familyKey: string; productKey: string; field: "basePrice" | "warrantyPrice"; value: string } | null>(null);
+
+  // Service state
+  const [selectedService, setSelectedService] = useState<string>("");
+  const [editingServiceField, setEditingServiceField] = useState<{ serviceId: string; path: string[]; value: string } | null>(null);
+
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Set initial selections
+  useEffect(() => {
+    if (catalog && catalog.families.length > 0 && !selectedProductFamily) {
+      setSelectedProductFamily(catalog.families[0].key);
+    }
+  }, [catalog, selectedProductFamily]);
+
+  useEffect(() => {
+    if (configs.length > 0 && !selectedService) {
+      setSelectedService(configs[0].serviceId);
+    }
+  }, [configs, selectedService]);
 
   useEffect(() => {
     if (successMessage) {
@@ -31,326 +40,325 @@ export const PricingTablesView: React.FC = () => {
     }
   }, [successMessage]);
 
-  const extractPricingFields = (config: any, serviceId: string): Array<{ label: string; value: number; path: string[] }> => {
+  // Extract pricing fields from service config
+  const extractServicePricing = (config: any) => {
     const fields: Array<{ label: string; value: number; path: string[] }> = [];
 
-    // Geographic Pricing
-    if (config.geographicPricing) {
-      if (config.geographicPricing.insideBeltway) {
-        const ib = config.geographicPricing.insideBeltway;
-        if (ib.ratePerFixture !== undefined) {
-          fields.push({ label: "Inside Beltway - Rate/Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"] });
-        }
-        if (ib.weeklyMinimum !== undefined) {
-          fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"] });
-        }
-      }
-      if (config.geographicPricing.outsideBeltway) {
-        const ob = config.geographicPricing.outsideBeltway;
-        if (ob.ratePerFixture !== undefined) {
-          fields.push({ label: "Outside Beltway - Rate/Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"] });
-        }
-        if (ob.weeklyMinimum !== undefined) {
-          fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"] });
-        }
-      }
+    if (config.geographicPricing?.insideBeltway) {
+      const ib = config.geographicPricing.insideBeltway;
+      if (ib.ratePerFixture !== undefined) fields.push({ label: "Inside Beltway - Rate per Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"] });
+      if (ib.weeklyMinimum !== undefined) fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"] });
+      if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["geographicPricing", "insideBeltway", "tripCharge"] });
     }
 
-    // All-Inclusive Package
+    if (config.geographicPricing?.outsideBeltway) {
+      const ob = config.geographicPricing.outsideBeltway;
+      if (ob.ratePerFixture !== undefined) fields.push({ label: "Outside Beltway - Rate per Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"] });
+      if (ob.weeklyMinimum !== undefined) fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"] });
+      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["geographicPricing", "outsideBeltway", "tripCharge"] });
+    }
+
     if (config.allInclusivePackage?.weeklyRatePerFixture !== undefined) {
-      fields.push({ label: "All-Inclusive Weekly Rate/Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"] });
+      fields.push({ label: "All-Inclusive - Weekly Rate per Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"] });
     }
 
-    // Warranty Fees
-    if (config.warrantyFeePerDispenser !== undefined) {
-      fields.push({ label: "Warranty Fee/Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"] });
-    }
-
-    // Soap Upgrades
-    if (config.soapUpgrades?.standardToLuxury !== undefined) {
-      fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
-    }
-
-    // Service-specific rates
-    if (config.ratePerTrap !== undefined) {
-      fields.push({ label: "Rate per Trap", value: config.ratePerTrap, path: ["ratePerTrap"] });
-    }
-    if (config.ratePerGallon !== undefined) {
-      fields.push({ label: "Rate per Gallon", value: config.ratePerGallon, path: ["ratePerGallon"] });
-    }
-    if (config.weeklyRatePerBathroom !== undefined) {
-      fields.push({ label: "Weekly Rate per Bathroom", value: config.weeklyRatePerBathroom, path: ["weeklyRatePerBathroom"] });
-    }
-    if (config.monthlyRatePerSqFt !== undefined) {
-      fields.push({ label: "Monthly Rate per Sq Ft", value: config.monthlyRatePerSqFt, path: ["monthlyRatePerSqFt"] });
-    }
+    if (config.warrantyFeePerDispenser !== undefined) fields.push({ label: "Warranty Fee per Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"] });
+    if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade (Standard to Luxury)", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
+    if (config.ratePerTrap !== undefined) fields.push({ label: "Rate per Trap", value: config.ratePerTrap, path: ["ratePerTrap"] });
+    if (config.ratePerGallon !== undefined) fields.push({ label: "Rate per Gallon", value: config.ratePerGallon, path: ["ratePerGallon"] });
+    if (config.weeklyRatePerBathroom !== undefined) fields.push({ label: "Weekly Rate per Bathroom", value: config.weeklyRatePerBathroom, path: ["weeklyRatePerBathroom"] });
+    if (config.monthlyRatePerSqFt !== undefined) fields.push({ label: "Monthly Rate per Sq Ft", value: config.monthlyRatePerSqFt, path: ["monthlyRatePerSqFt"] });
+    if (config.basePrice !== undefined) fields.push({ label: "Base Price", value: config.basePrice, path: ["basePrice"] });
+    if (config.pricePerWindow !== undefined) fields.push({ label: "Price per Window", value: config.pricePerWindow, path: ["pricePerWindow"] });
 
     return fields;
   };
 
-  const handleEditField = (service: ServiceConfig, field: { label: string; value: number; path: string[] }) => {
-    setEditingField({
-      serviceId: service._id,
-      path: field.path,
-      label: field.label,
-      value: field.value,
-    });
-    setEditValue(field.value.toString());
+  // Product handlers
+  const handleEditProduct = (familyKey: string, productKey: string, field: "basePrice" | "warrantyPrice", currentValue: number) => {
+    setEditingProduct({ familyKey, productKey, field, value: currentValue.toString() });
   };
 
-  const handleSaveField = async () => {
-    if (!editingField) return;
+  const handleSaveProduct = async () => {
+    if (!editingProduct || !catalog) return;
 
-    const service = configs.find(c => c._id === editingField.serviceId);
+    setSaving(true);
+    const updatedCatalog = JSON.parse(JSON.stringify(catalog));
+    const family = updatedCatalog.families.find((f: any) => f.key === editingProduct.familyKey);
+
+    if (family) {
+      const product = family.products.find((p: any) => p.key === editingProduct.productKey);
+
+      if (product) {
+        if (editingProduct.field === "basePrice" && product.basePrice) {
+          product.basePrice.amount = parseFloat(editingProduct.value) || 0;
+        } else if (editingProduct.field === "warrantyPrice" && product.warrantyPricePerUnit) {
+          product.warrantyPricePerUnit.amount = parseFloat(editingProduct.value) || 0;
+        }
+      }
+    }
+
+    const result = await updateCatalog(catalog._id, { families: updatedCatalog.families });
+
+    if (result.success) {
+      setSuccessMessage("✓ Product price updated successfully!");
+      setEditingProduct(null);
+    }
+    setSaving(false);
+  };
+
+  // Service handlers
+  const handleEditServiceField = (serviceId: string, path: string[], currentValue: number) => {
+    setEditingServiceField({ serviceId, path, value: currentValue.toString() });
+  };
+
+  const handleSaveServiceField = async () => {
+    if (!editingServiceField) return;
+
+    const service = configs.find(c => c.serviceId === editingServiceField.serviceId);
     if (!service) return;
 
     setSaving(true);
-
-    // Create updated config
     const newConfig = JSON.parse(JSON.stringify(service.config));
     let current: any = newConfig;
 
-    // Navigate to parent
-    for (let i = 0; i < editingField.path.length - 1; i++) {
-      current = current[editingField.path[i]];
+    for (let i = 0; i < editingServiceField.path.length - 1; i++) {
+      current = current[editingServiceField.path[i]];
     }
 
-    // Update value
-    current[editingField.path[editingField.path.length - 1]] = parseFloat(editValue) || 0;
+    current[editingServiceField.path[editingServiceField.path.length - 1]] = parseFloat(editingServiceField.value) || 0;
 
-    const result = await updateConfig(editingField.serviceId, { config: newConfig });
+    const result = await updateConfig(service._id, { config: newConfig });
 
     if (result.success) {
-      setSuccessMessage("✓ Price updated successfully!");
-      setEditingField(null);
+      setSuccessMessage("✓ Service price updated successfully!");
+      setEditingServiceField(null);
     }
     setSaving(false);
   };
 
   const handleCancelEdit = () => {
-    setEditingField(null);
-    setEditValue("");
+    setEditingProduct(null);
+    setEditingServiceField(null);
   };
 
-  const renderServicesView = () => {
-    if (servicesLoading) {
-      return (
-        <div style={styles.loadingContainer}>
-          <div style={styles.spinner}></div>
-          <p style={styles.loadingText}>Loading service pricing...</p>
-        </div>
-      );
-    }
-
-    if (servicesError) {
-      return <div style={styles.errorBox}>⚠️ {servicesError}</div>;
-    }
-
+  if (catalogLoading || servicesLoading) {
     return (
-      <div style={styles.servicesGrid}>
-        {configs.map((service) => {
-          const pricingFields = extractPricingFields(service.config, service.serviceId);
-
-          return (
-            <div key={service._id} style={styles.serviceCard}>
-              <div style={styles.cardHeader}>
-                <div>
-                  <h3 style={styles.serviceName}>{service.label}</h3>
-                  <p style={styles.serviceDescription}>{service.description}</p>
-                </div>
-                {service.isActive ? (
-                  <span style={styles.badgeActive}>● Active</span>
-                ) : (
-                  <span style={styles.badgeInactive}>● Inactive</span>
-                )}
-              </div>
-
-              <div style={styles.metaInfo}>
-                <span style={styles.metaTag}>
-                  <strong>ID:</strong> {service.serviceId}
-                </span>
-                <span style={styles.metaTag}>
-                  <strong>Ver:</strong> {service.version}
-                </span>
-              </div>
-
-              <div style={styles.pricingSection}>
-                <h4 style={styles.pricingSectionTitle}>💰 Pricing Details</h4>
-
-                {pricingFields.length === 0 ? (
-                  <p style={styles.noPricing}>No pricing data available</p>
-                ) : (
-                  <div style={styles.priceGrid}>
-                    {pricingFields.map((field, idx) => {
-                      const isEditing = editingField?.serviceId === service._id &&
-                                       editingField?.path.join(".") === field.path.join(".");
-
-                      return (
-                        <div key={idx} style={styles.priceRow}>
-                          <div style={styles.priceLabel}>{field.label}</div>
-                          <div style={styles.priceValueContainer}>
-                            {isEditing ? (
-                              <div style={styles.editContainer}>
-                                <input
-                                  type="number"
-                                  style={styles.priceInput}
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  autoFocus
-                                  step="0.01"
-                                />
-                                <button
-                                  style={styles.saveBtn}
-                                  onClick={handleSaveField}
-                                  disabled={saving}
-                                >
-                                  {saving ? "..." : "✓"}
-                                </button>
-                                <button style={styles.cancelBtn} onClick={handleCancelEdit}>
-                                  ✕
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <span style={styles.priceValue}>${field.value.toFixed(2)}</span>
-                                <button
-                                  style={styles.editBtn}
-                                  onClick={() => handleEditField(service, field)}
-                                >
-                                  Edit
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      <div style={styles.loadingContainer}>
+        <div style={styles.spinner}></div>
+        <p style={styles.loadingText}>Loading pricing data...</p>
       </div>
     );
-  };
+  }
 
-  const renderProductsView = () => {
-    if (catalogLoading) {
-      return (
-        <div style={styles.loadingContainer}>
-          <div style={styles.spinner}></div>
-          <p style={styles.loadingText}>Loading product catalog...</p>
-        </div>
-      );
-    }
-
-    if (catalogError) {
-      return <div style={styles.errorBox}>⚠️ {catalogError}</div>;
-    }
-
-    if (!catalog) {
-      return <div style={styles.errorBox}>No product catalog found</div>;
-    }
-
-    return (
-      <div style={styles.productsContainer}>
-        <div style={styles.catalogHeader}>
-          <h2 style={styles.catalogTitle}>Product Catalog</h2>
-          <div style={styles.catalogMeta}>
-            <span style={styles.catalogBadge}>Version: {catalog.version}</span>
-            <span style={styles.catalogBadge}>Currency: {catalog.currency}</span>
-          </div>
-        </div>
-
-        {catalog.families.map((family) => (
-          <div key={family.key} style={styles.familyCard}>
-            <div style={styles.familyHeader}>
-              <h3 style={styles.familyTitle}>{family.label}</h3>
-              <span style={styles.productCount}>{family.products.length} products</span>
-            </div>
-
-            <div style={styles.productsGrid}>
-              {family.products.map((product) => (
-                <div key={product.key} style={styles.productCard}>
-                  <div style={styles.productHeader}>
-                    <h4 style={styles.productName}>{product.name}</h4>
-                    <code style={styles.productKey}>{product.key}</code>
-                  </div>
-
-                  <div style={styles.productPricing}>
-                    <div style={styles.priceItem}>
-                      <span style={styles.priceItemLabel}>Base Price:</span>
-                      <span style={styles.priceItemValue}>
-                        {product.basePrice ? `$${product.basePrice.amount}` : "—"}
-                      </span>
-                    </div>
-                    {product.basePrice?.uom && (
-                      <div style={styles.priceItem}>
-                        <span style={styles.priceItemLabel}>UOM:</span>
-                        <span style={styles.priceItemValue}>{product.basePrice.uom}</span>
-                      </div>
-                    )}
-                    {product.warrantyPricePerUnit && (
-                      <>
-                        <div style={styles.priceItem}>
-                          <span style={styles.priceItemLabel}>Warranty:</span>
-                          <span style={styles.priceItemValue}>
-                            ${product.warrantyPricePerUnit.amount}/{product.warrantyPricePerUnit.billingPeriod}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
+  const selectedFamily = catalog?.families.find(f => f.key === selectedProductFamily);
+  const selectedServiceData = configs.find(s => s.serviceId === selectedService);
 
   return (
     <div style={styles.container}>
-      {successMessage && (
-        <div style={styles.successBanner}>
-          {successMessage}
-        </div>
-      )}
+      {successMessage && <div style={styles.successBanner}>{successMessage}</div>}
 
-      <div style={styles.topBar}>
-        <div style={styles.tabContainer}>
-          <button
-            style={{
-              ...styles.tab,
-              ...(viewMode === "services" ? styles.tabActive : {}),
-            }}
-            onClick={() => setViewMode("services")}
-          >
-            <span style={styles.tabIcon}>🛠️</span>
-            <span>Services</span>
-            <span style={styles.tabBadge}>{configs.length}</span>
-          </button>
-          <button
-            style={{
-              ...styles.tab,
-              ...(viewMode === "products" ? styles.tabActive : {}),
-            }}
-            onClick={() => setViewMode("products")}
-          >
-            <span style={styles.tabIcon}>📦</span>
-            <span>Products</span>
-            <span style={styles.tabBadge}>
-              {catalog?.families.reduce((acc, f) => acc + f.products.length, 0) || 0}
-            </span>
-          </button>
+      {/* PRODUCTS SECTION */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionTitle}>📦 PRODUCT CATALOG</h2>
+
+        <div style={styles.tabBar}>
+          {catalog?.families.map((family) => (
+            <button
+              key={family.key}
+              style={{
+                ...styles.tab,
+                ...(selectedProductFamily === family.key ? styles.tabActive : {}),
+              }}
+              onClick={() => setSelectedProductFamily(family.key)}
+            >
+              {family.label}
+            </button>
+          ))}
         </div>
+
+        {selectedFamily && (
+          <div style={styles.tableContainer}>
+            <h3 style={styles.tableTitle}>{selectedFamily.label} ({selectedFamily.products.length} products)</h3>
+
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Product Name</th>
+                    <th style={styles.th}>Product Key</th>
+                    <th style={styles.th}>Base Price</th>
+                    <th style={styles.th}>UOM</th>
+                    <th style={styles.th}>Warranty Price</th>
+                    <th style={styles.th}>Billing Period</th>
+                    <th style={styles.th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedFamily.products.map((product) => {
+                    const isEditingBase = editingProduct?.familyKey === selectedFamily.key &&
+                                         editingProduct?.productKey === product.key &&
+                                         editingProduct?.field === "basePrice";
+                    const isEditingWarranty = editingProduct?.familyKey === selectedFamily.key &&
+                                             editingProduct?.productKey === product.key &&
+                                             editingProduct?.field === "warrantyPrice";
+
+                    return (
+                      <tr key={product.key} style={styles.tr}>
+                        <td style={styles.td}>{product.name}</td>
+                        <td style={styles.td}><code style={styles.code}>{product.key}</code></td>
+                        <td style={styles.td}>
+                          {isEditingBase ? (
+                            <input
+                              type="number"
+                              style={styles.input}
+                              value={editingProduct.value}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, value: e.target.value })}
+                              autoFocus
+                            />
+                          ) : (
+                            <span style={styles.price}>${product.basePrice?.amount || "—"}</span>
+                          )}
+                        </td>
+                        <td style={styles.td}>{product.basePrice?.uom || "—"}</td>
+                        <td style={styles.td}>
+                          {isEditingWarranty ? (
+                            <input
+                              type="number"
+                              style={styles.input}
+                              value={editingProduct.value}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, value: e.target.value })}
+                              autoFocus
+                            />
+                          ) : (
+                            <span style={styles.price}>${product.warrantyPricePerUnit?.amount || "—"}</span>
+                          )}
+                        </td>
+                        <td style={styles.td}>{product.warrantyPricePerUnit?.billingPeriod || "—"}</td>
+                        <td style={styles.td}>
+                          {isEditingBase || isEditingWarranty ? (
+                            <div style={styles.actionButtons}>
+                              <button style={styles.saveBtn} onClick={handleSaveProduct} disabled={saving}>
+                                {saving ? "..." : "Save"}
+                              </button>
+                              <button style={styles.cancelBtn} onClick={handleCancelEdit}>Cancel</button>
+                            </div>
+                          ) : (
+                            <div style={styles.actionButtons}>
+                              {product.basePrice && (
+                                <button
+                                  style={styles.editBtn}
+                                  onClick={() => handleEditProduct(selectedFamily.key, product.key, "basePrice", product.basePrice!.amount)}
+                                >
+                                  Edit Base
+                                </button>
+                              )}
+                              {product.warrantyPricePerUnit && (
+                                <button
+                                  style={styles.editBtn}
+                                  onClick={() => handleEditProduct(selectedFamily.key, product.key, "warrantyPrice", product.warrantyPricePerUnit!.amount)}
+                                >
+                                  Edit Warranty
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div style={styles.content}>
-        {viewMode === "services" && renderServicesView()}
-        {viewMode === "products" && renderProductsView()}
+      {/* SERVICES SECTION */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionTitle}>🛠️ SERVICES PRICING</h2>
+
+        <div style={styles.tabBar}>
+          {configs.map((service) => (
+            <button
+              key={service.serviceId}
+              style={{
+                ...styles.tab,
+                ...(selectedService === service.serviceId ? styles.tabActive : {}),
+              }}
+              onClick={() => setSelectedService(service.serviceId)}
+            >
+              {service.label}
+            </button>
+          ))}
+        </div>
+
+        {selectedServiceData && (
+          <div style={styles.tableContainer}>
+            <h3 style={styles.tableTitle}>
+              {selectedServiceData.label}
+              <span style={selectedServiceData.isActive ? styles.badgeActive : styles.badgeInactive}>
+                {selectedServiceData.isActive ? "● Active" : "● Inactive"}
+              </span>
+            </h3>
+            <p style={styles.tableSubtitle}>{selectedServiceData.description}</p>
+
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Pricing Field</th>
+                    <th style={styles.th}>Current Value</th>
+                    <th style={styles.th}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {extractServicePricing(selectedServiceData.config).map((field, idx) => {
+                    const isEditing = editingServiceField?.serviceId === selectedServiceData.serviceId &&
+                                     editingServiceField?.path.join(".") === field.path.join(".");
+
+                    return (
+                      <tr key={idx} style={styles.tr}>
+                        <td style={styles.td}><strong>{field.label}</strong></td>
+                        <td style={styles.td}>
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              style={styles.input}
+                              value={editingServiceField.value}
+                              onChange={(e) => setEditingServiceField({ ...editingServiceField, value: e.target.value })}
+                              autoFocus
+                              step="0.01"
+                            />
+                          ) : (
+                            <span style={styles.priceValue}>${field.value.toFixed(2)}</span>
+                          )}
+                        </td>
+                        <td style={styles.td}>
+                          {isEditing ? (
+                            <div style={styles.actionButtons}>
+                              <button style={styles.saveBtn} onClick={handleSaveServiceField} disabled={saving}>
+                                {saving ? "..." : "Save"}
+                              </button>
+                              <button style={styles.cancelBtn} onClick={handleCancelEdit}>Cancel</button>
+                            </div>
+                          ) : (
+                            <button
+                              style={styles.editBtn}
+                              onClick={() => handleEditServiceField(selectedServiceData.serviceId, field.path, field.value)}
+                            >
+                              Edit Price
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -359,101 +367,174 @@ export const PricingTablesView: React.FC = () => {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: "100vh",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f5f7fa",
+    padding: "20px",
   },
   successBanner: {
-    padding: "16px 24px",
+    padding: "16px",
     backgroundColor: "#10b981",
     color: "white",
-    fontSize: "15px",
+    fontSize: "16px",
     fontWeight: "600",
     textAlign: "center",
+    borderRadius: "8px",
+    marginBottom: "20px",
     boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
   },
-  topBar: {
+  section: {
     backgroundColor: "white",
-    borderBottom: "2px solid #e2e8f0",
-    padding: "0 24px",
-    position: "sticky" as const,
-    top: 0,
-    zIndex: 10,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    borderRadius: "12px",
+    padding: "24px",
+    marginBottom: "24px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   },
-  tabContainer: {
+  sectionTitle: {
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#1f2937",
+    marginBottom: "20px",
+    borderBottom: "3px solid #3b82f6",
+    paddingBottom: "12px",
+  },
+  tabBar: {
     display: "flex",
     gap: "8px",
+    marginBottom: "24px",
+    flexWrap: "wrap",
+    borderBottom: "2px solid #e5e7eb",
+    paddingBottom: "8px",
   },
   tab: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "16px 24px",
+    padding: "12px 20px",
     border: "none",
-    backgroundColor: "transparent",
-    color: "#64748b",
-    fontSize: "15px",
+    backgroundColor: "#f3f4f6",
+    color: "#6b7280",
+    fontSize: "14px",
     fontWeight: "600",
+    borderRadius: "8px 8px 0 0",
     cursor: "pointer",
-    borderBottom: "3px solid transparent",
     transition: "all 0.2s",
+    whiteSpace: "nowrap",
   },
   tabActive: {
-    color: "#2563eb",
-    borderBottomColor: "#2563eb",
-    backgroundColor: "#eff6ff",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    boxShadow: "0 -2px 8px rgba(59, 130, 246, 0.3)",
   },
-  tabIcon: {
-    fontSize: "18px",
+  tableContainer: {
+    width: "100%",
   },
-  tabBadge: {
-    padding: "2px 8px",
-    backgroundColor: "#e2e8f0",
-    borderRadius: "12px",
-    fontSize: "13px",
-    fontWeight: "600",
-  },
-  content: {
-    padding: "32px 24px",
-  },
-
-  // Services Grid
-  servicesGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(450px, 1fr))",
-    gap: "24px",
-  },
-  serviceCard: {
-    backgroundColor: "white",
-    borderRadius: "16px",
-    padding: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)",
-    border: "1px solid #e2e8f0",
-    transition: "all 0.2s",
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "16px",
-    paddingBottom: "16px",
-    borderBottom: "1px solid #f1f5f9",
-  },
-  serviceName: {
+  tableTitle: {
     fontSize: "20px",
     fontWeight: "700",
-    color: "#0f172a",
-    margin: "0 0 4px 0",
+    color: "#111827",
+    marginBottom: "8px",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
   },
-  serviceDescription: {
+  tableSubtitle: {
     fontSize: "14px",
-    color: "#64748b",
-    margin: 0,
+    color: "#6b7280",
+    marginBottom: "16px",
+  },
+  tableWrapper: {
+    overflowX: "auto",
+    borderRadius: "8px",
+    border: "1px solid #e5e7eb",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  th: {
+    backgroundColor: "#f9fafb",
+    padding: "14px 16px",
+    textAlign: "left",
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#374151",
+    borderBottom: "2px solid #e5e7eb",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  tr: {
+    borderBottom: "1px solid #f3f4f6",
+    transition: "background-color 0.2s",
+  },
+  td: {
+    padding: "14px 16px",
+    fontSize: "14px",
+    color: "#1f2937",
+  },
+  code: {
+    backgroundColor: "#f3f4f6",
+    padding: "4px 8px",
+    borderRadius: "4px",
+    fontSize: "12px",
+    fontFamily: "monospace",
+    color: "#3b82f6",
+  },
+  price: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#059669",
+  },
+  priceValue: {
+    fontSize: "18px",
+    fontWeight: "700",
+    color: "#059669",
+  },
+  input: {
+    width: "120px",
+    padding: "8px 12px",
+    border: "2px solid #3b82f6",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "600",
+    outline: "none",
+  },
+  actionButtons: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  editBtn: {
+    padding: "8px 16px",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+  },
+  saveBtn: {
+    padding: "8px 16px",
+    backgroundColor: "#10b981",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+  cancelBtn: {
+    padding: "8px 16px",
+    backgroundColor: "#ef4444",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "700",
+    cursor: "pointer",
   },
   badgeActive: {
     padding: "6px 12px",
-    backgroundColor: "#dcfce7",
-    color: "#166534",
-    borderRadius: "8px",
+    backgroundColor: "#d1fae5",
+    color: "#065f46",
+    borderRadius: "6px",
     fontSize: "13px",
     fontWeight: "600",
   },
@@ -461,251 +542,29 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "6px 12px",
     backgroundColor: "#fee2e2",
     color: "#991b1b",
-    borderRadius: "8px",
+    borderRadius: "6px",
     fontSize: "13px",
     fontWeight: "600",
   },
-  metaInfo: {
-    display: "flex",
-    gap: "16px",
-    marginBottom: "20px",
-  },
-  metaTag: {
-    fontSize: "13px",
-    color: "#64748b",
-  },
-  pricingSection: {
-    backgroundColor: "#f8fafc",
-    borderRadius: "12px",
-    padding: "16px",
-  },
-  pricingSectionTitle: {
-    fontSize: "15px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: "0 0 16px 0",
-  },
-  noPricing: {
-    fontSize: "14px",
-    color: "#94a3b8",
-    fontStyle: "italic",
-    margin: 0,
-  },
-  priceGrid: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "12px",
-  },
-  priceRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "10px 12px",
-    backgroundColor: "white",
-    borderRadius: "8px",
-    border: "1px solid #e2e8f0",
-  },
-  priceLabel: {
-    fontSize: "13px",
-    color: "#475569",
-    fontWeight: "500",
-    flex: 1,
-  },
-  priceValueContainer: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  priceValue: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: "#059669",
-    minWidth: "80px",
-    textAlign: "right" as const,
-  },
-  editBtn: {
-    padding: "6px 14px",
-    backgroundColor: "#2563eb",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s",
-  },
-  editContainer: {
-    display: "flex",
-    gap: "6px",
-    alignItems: "center",
-  },
-  priceInput: {
-    width: "100px",
-    padding: "6px 10px",
-    border: "2px solid #2563eb",
-    borderRadius: "6px",
-    fontSize: "14px",
-    fontWeight: "600",
-    outline: "none",
-  },
-  saveBtn: {
-    padding: "6px 12px",
-    backgroundColor: "#10b981",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "14px",
-    fontWeight: "700",
-    cursor: "pointer",
-  },
-  cancelBtn: {
-    padding: "6px 12px",
-    backgroundColor: "#ef4444",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "14px",
-    fontWeight: "700",
-    cursor: "pointer",
-  },
-
-  // Products
-  productsContainer: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "24px",
-  },
-  catalogHeader: {
-    backgroundColor: "white",
-    padding: "24px",
-    borderRadius: "16px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-    border: "1px solid #e2e8f0",
-  },
-  catalogTitle: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: "0 0 12px 0",
-  },
-  catalogMeta: {
-    display: "flex",
-    gap: "12px",
-  },
-  catalogBadge: {
-    padding: "6px 14px",
-    backgroundColor: "#dbeafe",
-    color: "#1e40af",
-    borderRadius: "8px",
-    fontSize: "13px",
-    fontWeight: "600",
-  },
-  familyCard: {
-    backgroundColor: "white",
-    borderRadius: "16px",
-    padding: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-    border: "1px solid #e2e8f0",
-  },
-  familyHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    paddingBottom: "16px",
-    borderBottom: "2px solid #f1f5f9",
-  },
-  familyTitle: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-  },
-  productCount: {
-    fontSize: "14px",
-    color: "#64748b",
-    fontWeight: "600",
-  },
-  productsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "16px",
-  },
-  productCard: {
-    padding: "16px",
-    backgroundColor: "#f8fafc",
-    borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-  },
-  productHeader: {
-    marginBottom: "12px",
-    paddingBottom: "12px",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  productName: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#0f172a",
-    margin: "0 0 6px 0",
-  },
-  productKey: {
-    fontSize: "11px",
-    padding: "3px 8px",
-    backgroundColor: "#dbeafe",
-    color: "#1e40af",
-    borderRadius: "6px",
-    fontFamily: "monospace",
-  },
-  productPricing: {
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "8px",
-  },
-  priceItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  priceItemLabel: {
-    fontSize: "13px",
-    color: "#64748b",
-    fontWeight: "500",
-  },
-  priceItemValue: {
-    fontSize: "14px",
-    color: "#0f172a",
-    fontWeight: "700",
-  },
-
-  // Loading & Error
   loadingContainer: {
     display: "flex",
     flexDirection: "column" as const,
     alignItems: "center",
     justifyContent: "center",
-    padding: "80px 20px",
+    minHeight: "400px",
   },
   spinner: {
     width: "48px",
     height: "48px",
-    border: "4px solid #e2e8f0",
-    borderTopColor: "#2563eb",
+    border: "4px solid #e5e7eb",
+    borderTopColor: "#3b82f6",
     borderRadius: "50%",
     animation: "spin 0.8s linear infinite",
   },
   loadingText: {
     marginTop: "16px",
-    fontSize: "15px",
-    color: "#64748b",
-    fontWeight: "500",
-  },
-  errorBox: {
-    padding: "20px 24px",
-    backgroundColor: "#fef2f2",
-    color: "#991b1b",
-    borderRadius: "12px",
-    border: "1px solid #fecaca",
-    fontSize: "15px",
+    fontSize: "16px",
+    color: "#6b7280",
     fontWeight: "500",
   },
 };
@@ -715,6 +574,10 @@ const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+  @media (max-width: 768px) {
+    table { font-size: 12px; }
+    th, td { padding: 10px 8px !important; }
   }
 `;
 document.head.appendChild(styleSheet);
