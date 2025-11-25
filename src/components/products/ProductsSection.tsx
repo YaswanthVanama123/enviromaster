@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import "./ProductsSection.css";
 import { envProductCatalog } from "./productsConfig";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
+import { useServicesContextOptional } from "../services/ServicesContext";
 
 // ---------------------------
 // Responsive breakpoint hook
@@ -323,8 +324,31 @@ const NameCell = React.memo(function NameCell({
 // Main component
 // ---------------------------
 
+// Helper: Check if product is included in SaniClean All-Inclusive
+function isProductIncludedInSaniClean(productKey: string | null): boolean {
+  if (!productKey) return false;
+
+  const includedProducts = [
+    "extra_sanipod_receptacle",
+    "disp_sanipod_receptacle",
+    "extra_urinal_mats",
+    "extra_commode_mats",
+    "extra_bowl_clip",
+    "extra_urinal_screen",
+    "extra_wave3d_urinal_screen",
+    "extra_splash_hog_urinal_screen",
+    "extra_vertical_urinal_screen",
+    "extra_microfiber_mop",
+  ];
+
+  return includedProducts.includes(productKey);
+}
+
 export default function ProductsSection() {
   const isDesktop = useIsDesktop();
+  const servicesContext = useServicesContextOptional();
+  const isSanicleanAllInclusive =
+    servicesContext?.isSanicleanAllInclusive ?? false;
 
   const [data, setData] = useState<{
     smallProducts: ProductRow[];

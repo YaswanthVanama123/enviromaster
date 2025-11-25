@@ -4,11 +4,17 @@ import { useMicrofiberMoppingCalc } from "./useMicrofiberMoppingCalc";
 import type { MicrofiberMoppingFormState } from "./microfiberMoppingTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig";
+import { useServicesContextOptional } from "../ServicesContext";
 
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData }) => {
   const { form, onChange, calc } = useMicrofiberMoppingCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Check if SaniClean All-Inclusive is active
+  const isSanicleanAllInclusive =
+    servicesContext?.isSanicleanAllInclusive ?? false;
 
   const extraAreaRatePerSqFt =
     cfg.extraAreaPricing.extraAreaRatePerUnit /
@@ -23,6 +29,27 @@ export const MicrofiberMoppingForm: React.FC<
       <div className="svc-h-row">
         <div className="svc-h">MICROFIBER MOPPING</div>
       </div>
+
+      {/* Alert when included in SaniClean All-Inclusive */}
+      {isSanicleanAllInclusive && (
+        <div
+          className="svc-row"
+          style={{
+            backgroundColor: "#e8f5e9",
+            border: "2px solid #4caf50",
+            padding: "12px",
+            marginBottom: "10px",
+            borderRadius: "4px",
+          }}
+        >
+          <div style={{ fontWeight: "bold", color: "#2e7d32", fontSize: "14px" }}>
+            ✓ INCLUDED in SaniClean All-Inclusive Package
+          </div>
+          <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
+            Microfiber Mopping is already included at no additional charge ($10/bathroom waived).
+          </div>
+        </div>
+      )}
 
       {/* Link to existing Sani program */}
       <div className="svc-row">

@@ -6,6 +6,7 @@ import ProductsSection from "./products/ProductsSection";
 // import ServicesSection from "./ServicesSection";
 import "./FormFilling.css";
 import { ServicesSection } from "./services/ServicesSection";
+import { ServicesProvider } from "./services/ServicesContext";
 import axios from "axios";
 
 type HeaderRow = {
@@ -193,38 +194,40 @@ export default function FormFilling() {
     undefined;
 
   return (
-    <div className="center-align">
-      {loading && !payload && (
-        <div className="formfilling__loading">Loading…</div>
-      )}
+    <ServicesProvider>
+      <div className="center-align">
+        {loading && !payload && (
+          <div className="formfilling__loading">Loading…</div>
+        )}
 
-      {payload && (
-        <>
-          <CustomerSection
-            headerTitle={payload.headerTitle}
-            headerRows={payload.headerRows}
-            onHeaderRowsChange={handleHeaderRowsChange}
-          />
+        {payload && (
+          <>
+            <CustomerSection
+              headerTitle={payload.headerTitle}
+              headerRows={payload.headerRows}
+              onHeaderRowsChange={handleHeaderRowsChange}
+            />
 
-          <ProductsSection
-            // initialSmallProducts={initialSmallProducts}
-            // initialDispensers={initialDispensers}
-            // initialBigProducts={initialBigProducts}
-          />
+            <ProductsSection
+              // initialSmallProducts={initialSmallProducts}
+              // initialDispensers={initialDispensers}
+              // initialBigProducts={initialBigProducts}
+            />
 
-          <ServicesSection initialServices={payload.services} />
+            <ServicesSection initialServices={payload.services} />
 
-          <div className="formfilling__actions">
-            <button
-              type="button"
-              className="formfilling__saveBtn"
-              onClick={handleSave}
-            >
-              Save
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+            <div className="formfilling__actions">
+              <button
+                type="button"
+                className="formfilling__saveBtn"
+                onClick={handleSave}
+              >
+                Save
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </ServicesProvider>
   );
 }

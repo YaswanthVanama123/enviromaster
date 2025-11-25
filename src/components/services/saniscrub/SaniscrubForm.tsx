@@ -6,6 +6,7 @@ import {
   saniscrubPricingConfig as cfg,
   saniscrubFrequencyLabels,
 } from "./saniscrubConfig";
+import { useServicesContextOptional } from "../ServicesContext";
 
 /**
  * SaniScrub form with updated rules:
@@ -20,6 +21,11 @@ export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onQuoteChange }) => {
   const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Check if SaniClean All-Inclusive is active
+  const isSanicleanAllInclusive =
+    servicesContext?.isSanicleanAllInclusive ?? false;
 
   // Push quote up whenever it changes
   React.useEffect(() => {
@@ -60,6 +66,28 @@ export const SaniscrubForm: React.FC<
           +
         </button>
       </div>
+
+      {/* Alert when included in SaniClean All-Inclusive */}
+      {isSanicleanAllInclusive && (
+        <div
+          className="svc-row"
+          style={{
+            backgroundColor: "#e8f5e9",
+            border: "2px solid #4caf50",
+            padding: "12px",
+            marginBottom: "10px",
+            borderRadius: "4px",
+          }}
+        >
+          <div style={{ fontWeight: "bold", color: "#2e7d32", fontSize: "14px" }}>
+            ✓ INCLUDED in SaniClean All-Inclusive Package
+          </div>
+          <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
+            Monthly SaniScrub is already included at no additional charge. This
+            form is for reference only.
+          </div>
+        </div>
+      )}
 
       {/* Combined with SaniClean (required for 2×/month discount) */}
       <div className="svc-row">

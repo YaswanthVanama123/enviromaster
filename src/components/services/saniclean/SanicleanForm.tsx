@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "../ServicesSection.css";
 import { useSanicleanCalc } from "./useSanicleanCalc";
 import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
 import type { SanicleanFormState } from "./sanicleanTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 
 const formatMoney = (n: number): string => `$${n.toFixed(2)}`;
 
@@ -11,9 +12,22 @@ export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData }) => {
   const { form, onChange, calc } = useSanicleanCalc(initialData);
+  const servicesContext = useServicesContextOptional();
 
   const fixtures = Math.max(0, form.fixtureCount);
   const isAllInclusive = calc.method === "all_inclusive";
+
+  // Broadcast SaniClean state to context for cross-service integration
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = fixtures > 0 && calc.weeklyTotal > 0;
+      servicesContext.updateSaniclean({
+        pricingMode: form.pricingMode,
+        fixtureCount: fixtures,
+        isActive,
+      });
+    }
+  }, [form.pricingMode, fixtures, calc.weeklyTotal, servicesContext]);
 
   // Per-fixture UI price:
   //  - All Inclusive → $20/fixture/week
