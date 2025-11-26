@@ -11,6 +11,7 @@ const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
 export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
+  onRemove,
 }) => {
   const { form, onChange, calc } = useSanipodCalc(initialData);
   const servicesContext = useServicesContextOptional();
@@ -63,6 +64,16 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

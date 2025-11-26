@@ -11,7 +11,7 @@ const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
 export const JanitorialForm: React.FC<
   ServiceInitialData<JanitorialFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onRemove }) => {
   const { form, onChange, calc } = useJanitorialCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -49,6 +49,16 @@ export const JanitorialForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

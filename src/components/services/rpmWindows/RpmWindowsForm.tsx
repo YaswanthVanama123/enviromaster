@@ -8,7 +8,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onRemove }) => {
   const {
     form,
     setForm,
@@ -64,6 +64,16 @@ export const RpmWindowsForm: React.FC<
         <button type="button" className="svc-mini" onClick={addExtraCharge}>
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

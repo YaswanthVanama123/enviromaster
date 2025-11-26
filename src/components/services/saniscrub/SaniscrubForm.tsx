@@ -20,7 +20,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
  */
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
-> = ({ initialData, onQuoteChange }) => {
+> = ({ initialData, onQuoteChange, onRemove }) => {
   const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -92,6 +92,16 @@ export const SaniscrubForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

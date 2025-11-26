@@ -11,7 +11,7 @@ const formatMoney = (n: number): string => `$${n.toFixed(2)}`;
 
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onRemove }) => {
   const { form, onChange, calc } = useSanicleanCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -99,6 +99,16 @@ export const SanicleanForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

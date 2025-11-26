@@ -9,7 +9,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onRemove }) => {
   const { form, onChange, calc } = useMicrofiberMoppingCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -58,6 +58,16 @@ export const MicrofiberMoppingForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

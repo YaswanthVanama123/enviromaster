@@ -62,11 +62,11 @@
   background:#fff;
 }
 
-.svc-card{ 
-  min-width:0; 
+.svc-card{
+  min-width:0;
 }
-.svc-card--wide{ 
-  grid-column:1 / -1; 
+.svc-card--wide{
+  grid-column:1 / -1;
 }
 
 .svc-h{

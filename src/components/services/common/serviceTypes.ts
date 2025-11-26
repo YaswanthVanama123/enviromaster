@@ -41,4 +41,5 @@ export interface ServiceMeta {
 // Optional prop for prefill
 export interface ServiceInitialData<T> {
   initialData?: Partial<T>;
+  onRemove?: () => void;
 }

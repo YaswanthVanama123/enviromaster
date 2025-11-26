@@ -11,7 +11,7 @@ const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
 export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onRemove }) => {
   const { form, onChange, calc } = useStripWaxCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -51,6 +51,16 @@ export const StripWaxForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}

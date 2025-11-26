@@ -38,7 +38,7 @@ const AREA_ORDER: RefreshAreaKey[] = [
 
 export const RefreshPowerScrubForm: React.FC<
   ServiceInitialData<RefreshPowerScrubFormState>
-> = ({ initialData }) => {
+> = ({ initialData, onRemove }) => {
   const {
     form,
     setTripCharge,
@@ -112,6 +112,16 @@ export const RefreshPowerScrubForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager */}

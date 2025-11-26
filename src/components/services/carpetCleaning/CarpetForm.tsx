@@ -17,7 +17,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
  */
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
-> = ({ initialData, onQuoteChange }) => {
+> = ({ initialData, onQuoteChange, onRemove }) => {
   const { form, onChange, quote, calc } = useCarpetCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -58,6 +58,16 @@ export const CarpetForm: React.FC<
         >
           +
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            onClick={onRemove}
+            title="Remove this service"
+          >
+            −
+          </button>
+        )}
       </div>
 
       {/* Custom fields manager - appears at the top */}
