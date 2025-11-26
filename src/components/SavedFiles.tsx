@@ -165,10 +165,10 @@ export default function SavedFiles() {
 
   // ---- View handler (eye icon) ----
   const handleView = (file: SavedFile) => {
-    navigate("/form-filling", {
+    navigate("/pdf-viewer", {
       state: {
-        editing: true,
-        id: file.id,
+        documentId: file.id,
+        fileName: file.fileName,
       },
     });
   };

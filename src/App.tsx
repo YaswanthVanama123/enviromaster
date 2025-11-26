@@ -4,6 +4,7 @@ import NavBar from "./components/NavBar";
 import Home from "./components/Home";
 import FormFilling from "./components/FormFilling";
 import SavedFiles from "./components/SavedFiles";
+import PDFViewer from "./components/PDFViewer";
 import AdminLogin from "./components/AdminLogin";
 import AdminPanel from "./components/AdminPanel";
 import ApprovalDocuments from "./components/ApprovalDocuments";
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/form-filling" element={<FormFilling />} />
             <Route path="/saved-pdfs" element={<SavedFiles />} />
+            <Route path="/pdf-viewer" element={<PDFViewer />} />
             <Route path="/admin-login" element={<AdminLogin/>} />
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/approval-documents" element={<ApprovalDocuments />} />

@@ -180,10 +180,10 @@ export default function ApprovalDocuments() {
 
   // ---- View/Edit handler (eye icon) ----
   const handleView = (doc: Document) => {
-    navigate("/form-filling", {
+    navigate("/pdf-viewer", {
       state: {
-        editing: true,
-        id: doc.id,
+        documentId: doc.id,
+        fileName: doc.fileName,
       },
     });
   };
