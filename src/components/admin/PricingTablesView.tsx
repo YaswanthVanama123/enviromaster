@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import type { Product } from "../../backendservice/types/productCatalog.types";
+import { Toast } from "./Toast";
 
 export const PricingTablesView: React.FC = () => {
   const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
@@ -19,6 +20,7 @@ export const PricingTablesView: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Set initial selections
   useEffect(() => {
@@ -35,10 +37,17 @@ export const PricingTablesView: React.FC = () => {
 
   useEffect(() => {
     if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 3000);
+      const timer = setTimeout(() => setSuccessMessage(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => setErrorMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   // Extract pricing fields from service config
   const extractServicePricing = (config: any) => {
@@ -177,7 +186,10 @@ export const PricingTablesView: React.FC = () => {
       }
     }
 
-    const result = await updateCatalog(catalog._id, { families: updatedCatalog.families });
+    const result = await updateCatalog(catalog._id, {
+      families: updatedCatalog.families,
+      version: catalog.version
+    });
 
     if (result.success) {
       setSuccessMessage("✓ Product price updated successfully!");
@@ -496,6 +508,22 @@ export const PricingTablesView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Toast Notifications */}
+      {successMessage && (
+        <Toast
+          message={successMessage}
+          type="success"
+          onClose={() => setSuccessMessage(null)}
+        />
+      )}
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
     </div>
   );
 };

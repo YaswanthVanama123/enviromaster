@@ -1,8 +1,8 @@
 // src/components/admin/AdminDashboard.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../../backendservice/hooks";
-import { AdminLogin } from "./AdminLogin";
 import { PricingTablesView } from "./PricingTablesView";
 import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
@@ -10,11 +10,20 @@ import { ProductCatalogManager } from "./ProductCatalogManager";
 type TabType = "pricing" | "services" | "products";
 
 export const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAdminAuth();
   const [activeTab, setActiveTab] = useState<TabType>("pricing");
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/admin-login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Show nothing while redirecting
   if (!isAuthenticated || !user) {
-    return <AdminLogin />;
+    return null;
   }
 
   return (

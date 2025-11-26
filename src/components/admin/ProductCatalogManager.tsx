@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { Product, ProductFamily } from "../../backendservice/types/productCatalog.types";
+import { Toast } from "./Toast";
 
 export const ProductCatalogManager: React.FC = () => {
   const { catalog, loading, error, updateCatalog } = useActiveProductCatalog();
@@ -12,6 +13,8 @@ export const ProductCatalogManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
@@ -47,14 +50,16 @@ export const ProductCatalogManager: React.FC = () => {
       }
     }
 
-    const result = await updateCatalog(catalog._id!, { families: updatedCatalog.families });
+    const result = await updateCatalog(catalog._id!, {
+      families: updatedCatalog.families,
+      version: catalog.version
+    });
 
     if (result.success) {
-      setSuccessMessage("Product updated successfully!");
+      setSuccessMessage("✓ Product updated successfully!");
       setIsEditMode(false);
-      setTimeout(() => setSuccessMessage(null), 3000);
     } else {
-      alert("Failed to update product: " + result.error);
+      setErrorMessage("Failed to update product: " + result.error);
     }
 
     setSaving(false);
@@ -75,7 +80,7 @@ export const ProductCatalogManager: React.FC = () => {
 
   const handleSaveNewProduct = async () => {
     if (!creatingProduct || !catalog || !newProduct.key || !newProduct.name) {
-      alert("Please fill in required fields: Key and Name");
+      setWarningMessage("⚠ Please fill in required fields: Key and Name");
       return;
     }
 
@@ -87,14 +92,16 @@ export const ProductCatalogManager: React.FC = () => {
       family.products.push(newProduct as Product);
     }
 
-    const result = await updateCatalog(catalog._id!, { families: updatedCatalog.families });
+    const result = await updateCatalog(catalog._id!, {
+      families: updatedCatalog.families,
+      version: catalog.version
+    });
 
     if (result.success) {
-      setSuccessMessage("Product added successfully!");
+      setSuccessMessage("✓ Product added successfully!");
       setCreatingProduct(null);
-      setTimeout(() => setSuccessMessage(null), 3000);
     } else {
-      alert("Failed to add product: " + result.error);
+      setErrorMessage("Failed to add product: " + result.error);
     }
 
     setSaving(false);
@@ -606,6 +613,29 @@ export const ProductCatalogManager: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Toast Notifications */}
+      {successMessage && (
+        <Toast
+          message={successMessage}
+          type="success"
+          onClose={() => setSuccessMessage(null)}
+        />
+      )}
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
+      {warningMessage && (
+        <Toast
+          message={warningMessage}
+          type="warning"
+          onClose={() => setWarningMessage(null)}
+        />
       )}
     </div>
   );
