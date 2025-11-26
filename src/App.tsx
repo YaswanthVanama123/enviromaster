@@ -22,7 +22,7 @@ export default function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/form-filling" element={<FormFilling />} />
             <Route path="/saved-pdfs" element={<SavedFiles />} />
-            <Route path="/admin-Login" element={<AdminLogin/>} />
+            <Route path="/admin-login" element={<AdminLogin/>} />
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/approval-documents" element={<ApprovalDocuments />} />
             <Route path="/price-changes" element={<PriceChanges />} />
