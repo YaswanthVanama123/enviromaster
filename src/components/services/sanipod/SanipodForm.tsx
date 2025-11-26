@@ -55,15 +55,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       {/* Header row */}
       <div className="svc-h-row">
         <div className="svc-h">SANIPOD (STANDALONE ONLY)</div>
-        <div className="svc-h-actions">
-          <button
-            type="button"
-            className="svc-btn svc-btn--small"
-            onClick={() => setShowAddDropdown(!showAddDropdown)}
-          >
-            + Field
-          </button>
-        </div>
+        <button
+          type="button"
+          className="svc-mini"
+          onClick={() => setShowAddDropdown(!showAddDropdown)}
+          title="Add custom field"
+        >
+          +
+        </button>
       </div>
 
       {/* Custom fields manager - appears at the top */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRefreshPowerScrubCalc } from "./useRefreshPowerScrubCalc";
 import type {
   RefreshAreaKey,
@@ -14,6 +14,7 @@ import {
 } from "./refreshPowerScrubConfig";
 import "./refreshPowerScrub.css";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const formatAmount = (n: number): string => n.toFixed(2);
 
@@ -51,6 +52,10 @@ export const RefreshPowerScrubForm: React.FC<
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   useEffect(() => {
     if (servicesContext) {
@@ -99,7 +104,23 @@ export const RefreshPowerScrubForm: React.FC<
     <div className="svc-card svc-card-wide refresh-rps">
       <div className="svc-h-row">
         <div className="svc-h">REFRESH POWER SCRUB</div>
+        <button
+          type="button"
+          className="svc-mini"
+          onClick={() => setShowAddDropdown(!showAddDropdown)}
+          title="Add custom field"
+        >
+          +
+        </button>
       </div>
+
+      {/* Custom fields manager */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
+      />
 
       {/* Global rule controls */}
       <div className="rps-config-row">

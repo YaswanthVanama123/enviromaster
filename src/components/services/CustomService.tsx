@@ -20,6 +20,8 @@ export const CustomService: React.FC<CustomServiceProps> = ({
   onUpdate,
   onRemove,
 }) => {
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate({ ...service, name: e.target.value });
   };
@@ -41,6 +43,14 @@ export const CustomService: React.FC<CustomServiceProps> = ({
         />
         <button
           type="button"
+          className="svc-mini"
+          onClick={() => setShowAddDropdown(!showAddDropdown)}
+          title="Add custom field"
+        >
+          +
+        </button>
+        <button
+          type="button"
           className="svc-remove"
           onClick={onRemove}
           title="Remove service"
@@ -53,6 +63,8 @@ export const CustomService: React.FC<CustomServiceProps> = ({
       <CustomFieldManager
         fields={service.fields}
         onFieldsChange={handleFieldsChange}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
       />
     </div>
   );

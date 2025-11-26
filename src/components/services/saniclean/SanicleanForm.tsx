@@ -91,15 +91,14 @@ export const SanicleanForm: React.FC<
       {/* HEADER */}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>
-        <div className="svc-h-actions">
-          <button
-            type="button"
-            className="svc-btn svc-btn--small"
-            onClick={() => setShowAddDropdown(!showAddDropdown)}
-          >
-            + Field
-          </button>
-        </div>
+        <button
+          type="button"
+          className="svc-mini"
+          onClick={() => setShowAddDropdown(!showAddDropdown)}
+          title="Add custom field"
+        >
+          +
+        </button>
       </div>
 
       {/* Custom fields manager - appears at the top */}

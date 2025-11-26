@@ -1,15 +1,38 @@
 // src/features/services/greaseTrap/GreaseTrapForm.tsx
 
-import React from "react";
+import React, { useState } from "react";
 import { useGreaseTrapCalc } from "./useGreaseTrapCalc";
 import type { GreaseTrapFormState } from "./greaseTrapTypes";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 export const GreaseTrapForm: React.FC<{ initialData: GreaseTrapFormState }> = ({ initialData }) => {
   const { form, handleChange, quote } = useGreaseTrapCalc(initialData);
 
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
+
   return (
     <div className="svc-card">
-      <h3 className="svc-card-title">Grease Trap</h3>
+      <div className="svc-h-row">
+        <div className="svc-h">GREASE TRAP</div>
+        <button
+          type="button"
+          className="svc-mini"
+          onClick={() => setShowAddDropdown(!showAddDropdown)}
+          title="Add custom field"
+        >
+          +
+        </button>
+      </div>
+
+      {/* Custom fields manager */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
+      />
 
       <div className="svc-row">
         <div className="svc-col">

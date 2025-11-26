@@ -56,35 +56,27 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
 
   return (
     <div className="custom-field-manager">
-      {/* Render existing fields */}
+      {/* Render existing fields - each as a single row like service fields */}
       {fields.map((field) => (
-        <div key={field.id} className="custom-field">
-          {/* Title row with field name and remove button */}
-          <div className="custom-field__header">
+        <div key={field.id} className="svc-row">
+          {/* Editable label on the left */}
+          <label>
             <input
               type="text"
-              className="custom-field__name"
+              className="svc-label-edit"
               value={field.name}
               onChange={(e) => handleUpdateField(field.id, { name: e.target.value })}
               placeholder="Field name"
             />
-            <button
-              type="button"
-              className="custom-field__remove"
-              onClick={() => handleRemoveField(field.id)}
-              title="Remove field"
-            >
-              −
-            </button>
-          </div>
+          </label>
 
-          {/* Field value input based on type */}
-          <div className="custom-field__content">
+          {/* Input on the right */}
+          <div className="svc-row-right">
             {/* Text field */}
             {field.type === "text" && (
               <input
                 type="text"
-                className="custom-field__input"
+                className="svc-in"
                 value={field.value || ""}
                 onChange={(e) => handleUpdateField(field.id, { value: e.target.value })}
                 placeholder="Enter value"
@@ -93,58 +85,68 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
 
             {/* Dollar field */}
             {field.type === "dollar" && (
-              <div className="custom-field__dollar">
-                <span className="custom-field__dollar-sign">$</span>
+              <div className="svc-dollar">
+                <span>$</span>
                 <input
                   type="text"
-                  className="custom-field__input"
+                  className="svc-in"
                   value={field.value || ""}
                   onChange={(e) => handleUpdateField(field.id, { value: e.target.value })}
-                  placeholder="Enter amount"
+                  placeholder="0.00"
                 />
               </div>
             )}
 
             {/* Calc field */}
             {field.type === "calc" && (
-              <div className="custom-field__calc">
+              <div className="svc-inline--tight">
                 <input
                   type="text"
-                  className="custom-field__calc-input"
+                  className="svc-in sm"
                   value={field.calcValues?.left || ""}
                   onChange={(e) =>
                     handleUpdateField(field.id, {
                       calcValues: { ...field.calcValues!, left: e.target.value },
                     })
                   }
-                  placeholder="Value"
+                  placeholder="0"
                 />
-                <span className="custom-field__calc-symbol">@</span>
+                <span>@</span>
                 <input
                   type="text"
-                  className="custom-field__calc-input"
+                  className="svc-in sm"
                   value={field.calcValues?.middle || ""}
                   onChange={(e) =>
                     handleUpdateField(field.id, {
                       calcValues: { ...field.calcValues!, middle: e.target.value },
                     })
                   }
-                  placeholder="Rate"
+                  placeholder="0.00"
                 />
-                <span className="custom-field__calc-symbol">=</span>
+                <span>=</span>
                 <input
                   type="text"
-                  className="custom-field__calc-input"
+                  className="svc-in sm"
                   value={field.calcValues?.right || ""}
                   onChange={(e) =>
                     handleUpdateField(field.id, {
                       calcValues: { ...field.calcValues!, right: e.target.value },
                     })
                   }
-                  placeholder="Total"
+                  placeholder="0.00"
                 />
               </div>
             )}
+
+            {/* Remove button */}
+            <button
+              type="button"
+              className="svc-mini svc-mini--neg"
+              onClick={() => handleRemoveField(field.id)}
+              title="Remove field"
+            >
+              −
+            </button>
           </div>
         </div>
       ))}
@@ -164,17 +166,17 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
           </select>
           <button
             type="button"
-            className="custom-field__add-confirm"
+            className="svc-btn svc-btn--small"
             onClick={handleAddField}
           >
             Add
           </button>
           <button
             type="button"
-            className="custom-field__add-cancel"
+            className="svc-mini svc-mini--neg"
             onClick={handleCancel}
           >
-            Cancel
+            ×
           </button>
         </div>
       )}

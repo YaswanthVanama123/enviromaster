@@ -1,142 +1,10 @@
-/* CustomFieldManager.css - Styling to match services section */
+/* CustomFieldManager.css - Matches services section exactly */
 
 .custom-field-manager {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  /* No special styling needed - uses svc-row class directly */
 }
 
-.custom-field {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 12px;
-}
-
-.custom-field__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.custom-field__name {
-  flex: 1;
-  margin: 0;
-  font-size: 15px;
-  font-weight: bold;
-  color: #bd2b33;
-  font-family: Arial;
-  text-transform: uppercase;
-  text-decoration: underline;
-  text-underline-offset: 1px;
-  border: none;
-  background: transparent;
-  outline: none;
-  padding: 0;
-}
-
-.custom-field__name:focus {
-  background: #fff9f9;
-  padding: 2px 4px;
-  border-radius: 2px;
-}
-
-.custom-field__remove {
-  width: 22px;
-  height: 22px;
-  line-height: 20px;
-  text-align: center;
-  border: 1px solid #c00000;
-  border-radius: 50%;
-  background: #fff;
-  color: #c00000;
-  font-weight: 700;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.2s;
-}
-
-.custom-field__remove:hover {
-  background: #c00000;
-  color: #fff;
-}
-
-.custom-field__content {
-  min-width: 0;
-}
-
-.custom-field__input {
-  width: 100%;
-  border: none;
-  border-bottom: 2px solid #000;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  height: 28px;
-  padding: 0 4px;
-  box-sizing: border-box;
-  min-width: 0;
-}
-
-.custom-field__input:focus {
-  border-bottom-color: #c20000;
-}
-
-/* Dollar field */
-.custom-field__dollar {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding-bottom: 0;
-  min-width: 0;
-  width: 100%;
-}
-
-.custom-field__dollar-sign {
-  font-weight: 500;
-  font-size: 13px;
-  color: #000;
-}
-
-/* Calc field */
-.custom-field__calc {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  min-width: 0;
-  width: 100%;
-}
-
-.custom-field__calc-input {
-  flex: 1;
-  min-width: 60px;
-  border: none;
-  border-bottom: 2px solid #000;
-  background: transparent;
-  outline: none;
-  padding: 0 4px;
-  font-size: 14px;
-  height: 28px;
-  box-sizing: border-box;
-}
-
-.custom-field__calc-input:focus {
-  border-bottom-color: #c20000;
-}
-
-.custom-field__calc-symbol {
-  font-weight: 700;
-  font-size: 14px;
-  color: #000;
-  white-space: nowrap;
-}
-
-/* Add field dropdown */
+/* Position dropdown below the + button */
 .custom-field__add-dropdown {
   display: flex;
   align-items: center;
@@ -146,6 +14,8 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-top: 8px;
+  margin-bottom: 12px;
 }
 
 .custom-field__add-label {
@@ -171,55 +41,8 @@
   border-color: #c00000;
 }
 
-.custom-field__add-confirm {
-  appearance: none;
-  border: 1px solid #10b981;
-  background: #10b981;
-  color: white;
-  font-weight: 700;
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.2s;
-}
-
-.custom-field__add-confirm:hover {
-  background: #059669;
-  border-color: #059669;
-}
-
-.custom-field__add-cancel {
-  appearance: none;
-  border: 1px solid #6b7280;
-  background: #6b7280;
-  color: white;
-  font-weight: 700;
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.2s;
-}
-
-.custom-field__add-cancel:hover {
-  background: #4b5563;
-  border-color: #4b5563;
-}
-
 /* Responsive adjustments */
 @media (max-width: 740px) {
-  .custom-field__calc {
-    flex-wrap: wrap;
-  }
-
-  .custom-field__calc-input {
-    flex: 1 1 100%;
-    min-width: 100%;
-  }
-
   .custom-field__add-dropdown {
     flex-wrap: wrap;
   }
