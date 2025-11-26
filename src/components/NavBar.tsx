@@ -14,6 +14,7 @@ export default function NavBar() {
   }, []);
 
   const links = [
+    { path: "/home", label: "Home" },
     { path: "/form-filling", label: "Form Filling" },
     { path: "/saved-pdfs", label: "Saved PDFs" },
     { path: "/admin-Login", label: "Admin Panel" }

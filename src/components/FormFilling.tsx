@@ -76,11 +76,10 @@ const ADMIN_TEMPLATE_ID = "691b6ea14e85329ebac5f752";
 
 export default function FormFilling() {
   const location = useLocation();
-  const { editing = false, id }: LocationState = (location.state ?? {}) as LocationState;
 
   const [payload, setPayload] = useState<FormPayload | null>(null);
   const [loading, setLoading] = useState(false);
-  const [documentId, setDocumentId] = useState<string | null>(id || null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -89,6 +88,12 @@ export default function FormFilling() {
   const servicesRef = useRef<ServicesDataHandle>(null);
 
   useEffect(() => {
+    // Extract editing and id from location.state inside useEffect to ensure fresh values
+    const { editing = false, id }: LocationState = (location.state ?? {}) as LocationState;
+
+    // Update documentId when location changes
+    setDocumentId(id || null);
+
     // ---- PICK API FOR INITIAL DATA ----
     const useCustomerDoc = editing && !!id;
 
@@ -147,7 +152,7 @@ export default function FormFilling() {
     };
 
     fetchHeaders();
-  }, [editing, id]);
+  }, [location]);
 
   const handleHeaderRowsChange = (rows: HeaderRow[]) => {
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));

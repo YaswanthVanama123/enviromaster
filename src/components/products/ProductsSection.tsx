@@ -102,15 +102,12 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
-  console.log('🔵 DollarCell RENDER - value:', value, 'lastValue:', lastValueRef.current);
-
   // Initialize the input value on mount only
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
       const initialValue = value === null || value === undefined || value === "" ? "" : String(value);
       inputRef.current.value = initialValue;
       lastValueRef.current = value;
-      console.log('🟢 DollarCell MOUNTED - initial value:', initialValue);
     }
   }, []);
 
@@ -118,12 +115,10 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   useEffect(() => {
     if (value !== lastValueRef.current) {
       const isFocused = inputRef.current === document.activeElement;
-      console.log('🟢 DollarCell value changed - value:', value, 'lastValue:', lastValueRef.current, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
 
       // Only update if not editing AND not focused
       if (inputRef.current && !isEditingRef.current && !isFocused) {
         const newValue = value === null || value === undefined || value === "" ? "" : String(value);
-        console.log('🟡 DollarCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
         inputRef.current.value = newValue;
         lastValueRef.current = value;
       }
@@ -131,7 +126,6 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🟣 DollarCell onChange - raw value:', e.target.value);
     if (!onChange) return;
     const raw = e.target.value;
 
@@ -141,24 +135,20 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     }
     const num = Number(raw);
     if (!Number.isNaN(num)) {
-      console.log('🟣 DollarCell calling onChange with:', num);
       onChange(num);
     }
   };
 
   const handleFocus = () => {
-    console.log('🔴 DollarCell FOCUS - setting isEditing = true');
     isEditingRef.current = true;
   };
 
   const handleBlur = () => {
-    console.log('🟠 DollarCell BLUR - setting isEditing = false');
     isEditingRef.current = false;
     lastValueRef.current = value;
     // Sync value on blur
     if (inputRef.current) {
       const newValue = value === null || value === undefined || value === "" ? "" : String(value);
-      console.log('🟠 DollarCell BLUR syncing to:', newValue);
       inputRef.current.value = newValue;
     }
   };
@@ -181,7 +171,6 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     </div>
   );
 }, (prevProps, nextProps) => {
-  console.log('🔵 DollarCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value, 'equal:', prevProps.value === nextProps.value);
   // Only re-render if value actually changed
   return prevProps.value === nextProps.value && prevProps.readOnly === nextProps.readOnly;
 });
@@ -208,15 +197,12 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
-  console.log('🔵 QtyCell RENDER - value:', value, 'lastValue:', lastValueRef.current);
-
   // Initialize the input value on mount only
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
       const initialValue = value === "" || value === undefined ? "" : String(value);
       inputRef.current.value = initialValue;
       lastValueRef.current = value;
-      console.log('🟢 QtyCell MOUNTED - initial value:', initialValue);
     }
   }, []);
 
@@ -224,12 +210,10 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   useEffect(() => {
     if (value !== lastValueRef.current) {
       const isFocused = inputRef.current === document.activeElement;
-      console.log('🟢 QtyCell value changed - value:', value, 'lastValue:', lastValueRef.current, 'isEditing:', isEditingRef.current, 'isFocused:', isFocused);
 
       // Only update if not editing AND not focused
       if (inputRef.current && !isEditingRef.current && !isFocused) {
         const newValue = value === "" || value === undefined ? "" : String(value);
-        console.log('🟡 QtyCell UPDATING INPUT VALUE from', inputRef.current.value, 'to', newValue);
         inputRef.current.value = newValue;
         lastValueRef.current = value;
       }
@@ -237,7 +221,6 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🟣 QtyCell onChange - raw value:', e.target.value);
     const raw = e.target.value;
 
     if (raw === "") {
@@ -249,24 +232,20 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     }
     const num = Number(raw);
     if (!Number.isNaN(num)) {
-      console.log('🟣 QtyCell calling onChange with:', num);
       onChange(num);
     }
   };
 
   const handleFocus = () => {
-    console.log('🔴 QtyCell FOCUS - setting isEditing = true');
     isEditingRef.current = true;
   };
 
   const handleBlur = () => {
-    console.log('🟠 QtyCell BLUR - setting isEditing = false');
     isEditingRef.current = false;
     lastValueRef.current = value;
     // Sync value on blur
     if (inputRef.current) {
       const newValue = value === "" || value === undefined ? "" : String(value);
-      console.log('🟠 QtyCell BLUR syncing to:', newValue);
       inputRef.current.value = newValue;
     }
   };
@@ -285,7 +264,6 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     />
   );
 }, (prevProps, nextProps) => {
-  console.log('🔵 QtyCell memo comparison - prevValue:', prevProps.value, 'nextValue:', nextProps.value, 'equal:', prevProps.value === nextProps.value);
   // Only re-render if value actually changed
   return prevProps.value === nextProps.value;
 });
@@ -476,8 +454,6 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
 }
 
 const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
-  console.log('🟦 ProductsSection RENDER');
-
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
@@ -529,7 +505,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
   // Generic row updater
   const updateRowField = useCallback(
     (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) => {
-      console.log('⚡ updateRowField called - bucket:', bucket, 'rowId:', rowId, 'patch:', patch);
       setData((prev) => {
         const newBucket = prev[bucket].map((r) =>
           r.id === rowId ? { ...r, ...patch } : r
@@ -537,7 +512,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
 
         // Only update if something actually changed
         if (JSON.stringify(newBucket) === JSON.stringify(prev[bucket])) {
-          console.log('⚡ No actual change detected, skipping state update');
           return prev;
         }
 
@@ -815,7 +789,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
 
               // Stable row key: combine all three IDs plus index
               const rowKey = `${rowSmall?.id ?? `s${i}`}_${rowDisp?.id ?? `d${i}`}_${rowBig?.id ?? `b${i}`}`;
-              console.log(`🔑 Row ${i} key:`, rowKey);
 
               return (
                 <tr key={rowKey}>

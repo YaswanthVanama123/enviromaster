@@ -261,11 +261,6 @@ export const PricingTablesView: React.FC = () => {
   const selectedFamily = catalog?.families.find(f => f.key === selectedProductFamily);
   const selectedServiceData = configs.find(s => s.serviceId === selectedService);
 
-  // Debug logs
-  console.log("Selected service ID:", selectedService);
-  console.log("Selected service data:", selectedServiceData);
-  console.log("All configs:", configs.map(c => ({ id: c.serviceId, label: c.label })));
-
   return (
     <div style={styles.container}>
       {successMessage && <div style={styles.successBanner}>{successMessage}</div>}
@@ -417,7 +412,6 @@ export const PricingTablesView: React.FC = () => {
 
             {(() => {
               const pricingFields = extractServicePricing(selectedServiceData.config);
-              console.log("Extracted pricing fields for", selectedServiceData.serviceId, ":", pricingFields);
 
               if (pricingFields.length === 0) {
                 return (
