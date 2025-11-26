@@ -1,5 +1,6 @@
 import React from "react";
 import "./ServicesSection.css";
+import { useServiceConfigs } from "../../backendservice/hooks";
 
 import { SanicleanForm } from "../services/saniclean/SanicleanForm";
 import { FoamingDrainForm }  from "../services/foamingDrain/FoamingDrainForm";
@@ -11,6 +12,20 @@ import { SanipodForm } from "./sanipod/SanipodForm";
 import { CarpetForm } from "./carpetCleaning/CarpetForm";
 import { JanitorialForm } from "./purejanitorial/JanitorialForm";
 import { StripWaxForm } from "./stripWax/StripWaxForm";
+
+// Map service IDs to their corresponding form components
+const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
+  saniclean: SanicleanForm,
+  foamingDrain: FoamingDrainForm,
+  saniscrub: SaniscrubForm,
+  microfiberMopping: MicrofiberMoppingForm,
+  rpmWindows: RpmWindowsForm,
+  refreshPowerScrub: RefreshPowerScrubForm,
+  sanipod: SanipodForm,
+  carpetclean: CarpetForm,
+  janitorial: JanitorialForm,
+  stripwax: StripWaxForm,
+};
 
 // Optional prop if you prefill from backend
 type ServicesSectionProps = {
@@ -31,6 +46,23 @@ type ServicesSectionProps = {
 export const ServicesSection: React.FC<ServicesSectionProps> = ({
   initialServices,
 }) => {
+  // Fetch service configs to determine which services are active
+  const { configs, loading } = useServiceConfigs();
+
+  // Filter only active services
+  const activeServices = configs.filter(config => config.isActive);
+
+  if (loading) {
+    return (
+      <section className="svc">
+        <div className="svc-title">SERVICES</div>
+        <div style={{ padding: "20px", textAlign: "center" }}>
+          Loading services...
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="svc">
       <div className="svc-title svc-title--hasActions">
@@ -43,21 +75,25 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       </div>
 
       <div className="svc-grid">
-        <SanicleanForm initialData={initialServices?.saniclean} />
-        <FoamingDrainForm initialData={initialServices?.foamingDrain} />
-        <SaniscrubForm initialData={initialServices?.saniscrub} />
-        <MicrofiberMoppingForm
-          initialData={initialServices?.microfiberMopping}
-        />
-        <RpmWindowsForm initialData={initialServices?.rpmWindows} />
-        <SanipodForm initialData={initialServices?.sanipod} />
-        <CarpetForm initialData={initialServices?.carpetclean} />
-        <JanitorialForm initialData={initialServices?.janitorial} />
-        <StripWaxForm initialData={initialServices?.stripwax} />
+        {activeServices.map((config) => {
+          const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
+          if (!ServiceComponent) return null;
+
+          return (
+            <ServiceComponent
+              key={config.serviceId}
+              initialData={initialServices?.[config.serviceId as keyof typeof initialServices]}
+            />
+          );
+        })}
       </div>
-              <RefreshPowerScrubForm
+
+      {/* RefreshPowerScrub is special - render it outside the grid if active */}
+      {activeServices.some(c => c.serviceId === "refreshPowerScrub") && (
+        <RefreshPowerScrubForm
           initialData={initialServices?.refreshPowerScrub}
         />
+      )}
     </section>
   );
 };

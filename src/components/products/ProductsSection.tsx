@@ -1,7 +1,7 @@
 // src/components/products/ProductsSection.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import "./ProductsSection.css";
-import { envProductCatalog } from "./productsConfig";
+import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
 import { useServicesContextOptional } from "../services/ServicesContext";
 
@@ -39,9 +39,34 @@ function useIsDesktop() {
 // Catalog helpers
 // ---------------------------
 
-const ALL_PRODUCTS: EnvProduct[] = envProductCatalog.families.flatMap(
-  (family) => family.products
-);
+// Hook to convert backend catalog to EnvProduct format
+function useProductCatalog() {
+  const { catalog, loading } = useActiveProductCatalog();
+
+  return useMemo(() => {
+    if (!catalog) return { products: [], loading };
+
+    const allProducts: EnvProduct[] = catalog.families.flatMap((family) =>
+      family.products
+        .filter((p) => p.displayByAdmin !== false) // Only show products where displayByAdmin is true
+        .map((p) => ({
+          key: p.key,
+          name: p.name,
+          familyKey: family.key,
+          kind: p.kind || "",
+          basePrice: p.basePrice,
+          warrantyPricePerUnit: p.warrantyPricePerUnit,
+          displayByAdmin: p.displayByAdmin !== false,
+          effectivePerRollPriceInternal: p.effectivePerRollPriceInternal,
+          suggestedCustomerRollPrice: p.suggestedCustomerRollPrice,
+          quantityPerCase: p.quantityPerCase,
+          quantityPerCaseLabel: p.quantityPerCaseLabel,
+        }))
+    );
+
+    return { products: allProducts, loading };
+  }, [catalog, loading]);
+}
 
 // Which families live in which band/column group
 const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
@@ -55,13 +80,13 @@ const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
   bigProducts: (p) => p.familyKey !== "paper" && p.familyKey !== "dispensers",
 };
 
-function getProductsForColumn(column: ColumnKey): EnvProduct[] {
+function getProductsForColumn(column: ColumnKey, allProducts: EnvProduct[]): EnvProduct[] {
   const filter = COLUMN_FAMILY_FILTER[column];
-  return ALL_PRODUCTS.filter(filter);
+  return allProducts.filter(filter);
 }
 
-function getDefaultRows(column: ColumnKey): ProductRow[] {
-  return getProductsForColumn(column)
+function getDefaultRows(column: ColumnKey, allProducts: EnvProduct[]): ProductRow[] {
+  return getProductsForColumn(column, allProducts)
     .filter((p) => p.displayByAdmin)
     .map((p) => ({
       id: `${column}_${p.key}`,
@@ -74,17 +99,18 @@ function makeRowId(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
-function findProductByKey(key: string | null): EnvProduct | undefined {
+function findProductByKey(key: string | null, allProducts: EnvProduct[]): EnvProduct | undefined {
   if (!key) return undefined;
-  return ALL_PRODUCTS.find((p) => p.key === key);
+  return allProducts.find((p) => p.key === key);
 }
 
 // For dropdown: products for this column that are NOT already used by other rows
 function getAvailableProductsForColumn(
   column: ColumnKey,
-  usedKeys: Set<string>
+  usedKeys: Set<string>,
+  allProducts: EnvProduct[]
 ): EnvProduct[] {
-  return getProductsForColumn(column).filter((p) => !usedKeys.has(p.key));
+  return getProductsForColumn(column, allProducts).filter((p) => !usedKeys.has(p.key));
 }
 
 // ---------------------------
@@ -459,15 +485,29 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
+  // Fetch products from backend
+  const { products: allProducts, loading } = useProductCatalog();
+
   const [data, setData] = useState<{
     smallProducts: ProductRow[];
     dispensers: ProductRow[];
     bigProducts: ProductRow[];
   }>(() => ({
-    smallProducts: getDefaultRows("smallProducts"),
-    dispensers: getDefaultRows("dispensers"),
-    bigProducts: getDefaultRows("bigProducts"),
+    smallProducts: [],
+    dispensers: [],
+    bigProducts: [],
   }));
+
+  // Initialize default rows when products load
+  useEffect(() => {
+    if (!loading && allProducts.length > 0) {
+      setData({
+        smallProducts: getDefaultRows("smallProducts", allProducts),
+        dispensers: getDefaultRows("dispensers", allProducts),
+        bigProducts: getDefaultRows("bigProducts", allProducts),
+      });
+    }
+  }, [loading, allProducts]);
 
   const [extraCols, setExtraCols] = useState<{
     smallProducts: { id: string; label: string }[];
@@ -481,9 +521,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
 
   const productMap = useMemo(() => {
     const map = new Map<string, EnvProduct>();
-    ALL_PRODUCTS.forEach((p) => map.set(p.key, p));
+    allProducts.forEach((p) => map.set(p.key, p));
     return map;
-  }, []);
+  }, [allProducts]);
 
   // Expose getData method via ref
   useImperativeHandle(ref, () => ({
@@ -646,18 +686,18 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
         .map((r) => r.productKey as string)
     );
 
-    const base = getAvailableProductsForColumn(bucket, usedKeys);
+    const base = getAvailableProductsForColumn(bucket, usedKeys, allProducts);
 
     const currentRow = data[bucket].find((r) => r.id === rowId);
     if (currentRow?.productKey) {
-      const current = findProductByKey(currentRow.productKey);
+      const current = findProductByKey(currentRow.productKey, allProducts);
       if (current && !base.find((p) => p.key === current.key)) {
         return [current, ...base];
       }
     }
 
     return base;
-  }, [data]);
+  }, [data, allProducts]);
 
   // ---------------------------
   // Helpers for totals
