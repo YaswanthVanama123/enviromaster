@@ -52,6 +52,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   // Filter only active services
   const activeServices = configs.filter(config => config.isActive);
 
+  // Separate RefreshPowerScrub from grid services (it needs full width)
+  const gridServices = activeServices.filter(config => config.serviceId !== "refreshPowerScrub");
+  const refreshPowerScrubActive = activeServices.some(c => c.serviceId === "refreshPowerScrub");
+
   if (loading) {
     return (
       <section className="svc">
@@ -75,7 +79,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       </div>
 
       <div className="svc-grid">
-        {activeServices.map((config) => {
+        {gridServices.map((config) => {
           const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
           if (!ServiceComponent) return null;
 
@@ -88,8 +92,8 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         })}
       </div>
 
-      {/* RefreshPowerScrub is special - render it outside the grid if active */}
-      {activeServices.some(c => c.serviceId === "refreshPowerScrub") && (
+      {/* RefreshPowerScrub is special - render outside grid for full width, only if active */}
+      {refreshPowerScrubActive && (
         <RefreshPowerScrubForm
           initialData={initialServices?.refreshPowerScrub}
         />
