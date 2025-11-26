@@ -5,13 +5,66 @@ import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { Product, ProductFamily } from "../../backendservice/types/productCatalog.types";
 
 export const ProductCatalogManager: React.FC = () => {
-  const { catalog, loading, error } = useActiveProductCatalog();
+  const { catalog, loading, error, updateCatalog } = useActiveProductCatalog();
   const [selectedFamily, setSelectedFamily] = useState<ProductFamily | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [creatingProduct, setCreatingProduct] = useState<ProductFamily | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+    key: "",
+    name: "",
+    familyKey: "",
+    kind: "",
+    basePrice: { amount: 0, currency: "USD", uom: "" },
+    warrantyPricePerUnit: { amount: 0, currency: "USD", billingPeriod: "monthly" },
+    displayByAdmin: true,
+  });
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+  };
+
+  const handleAddProduct = (family: ProductFamily) => {
+    setCreatingProduct(family);
+    setNewProduct({
+      key: "",
+      name: "",
+      familyKey: family.key,
+      kind: "",
+      basePrice: { amount: 0, currency: "USD", uom: "" },
+      warrantyPricePerUnit: { amount: 0, currency: "USD", billingPeriod: "monthly" },
+      displayByAdmin: true,
+    });
+  };
+
+  const handleSaveNewProduct = async () => {
+    if (!creatingProduct || !catalog || !newProduct.key || !newProduct.name) {
+      alert("Please fill in required fields: Key and Name");
+      return;
+    }
+
+    setSaving(true);
+    const updatedCatalog = JSON.parse(JSON.stringify(catalog));
+    const family = updatedCatalog.families.find((f: ProductFamily) => f.key === creatingProduct.key);
+
+    if (family) {
+      family.products.push(newProduct as Product);
+    }
+
+    const result = await updateCatalog(catalog._id!, { families: updatedCatalog.families });
+
+    if (result.success) {
+      setSuccessMessage("Product added successfully!");
+      setCreatingProduct(null);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } else {
+      alert("Failed to add product: " + result.error);
+    }
+
+    setSaving(false);
   };
 
   const filteredFamilies = catalog?.families.filter((family) =>
@@ -42,6 +95,7 @@ export const ProductCatalogManager: React.FC = () => {
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
+      {successMessage && <div style={styles.success}>{successMessage}</div>}
 
       <div style={styles.searchContainer}>
         <input
@@ -61,13 +115,21 @@ export const ProductCatalogManager: React.FC = () => {
               ...styles.familyCard,
               ...(selectedFamily?.key === family.key ? styles.familyCardActive : {}),
             }}
-            onClick={() => setSelectedFamily(family)}
           >
-            <div style={styles.familyHeader}>
+            <div style={styles.familyHeader} onClick={() => setSelectedFamily(family)}>
               <h3 style={styles.familyTitle}>{family.label}</h3>
               <span style={styles.productCount}>{family.products.length} products</span>
             </div>
             <p style={styles.familyKey}>{family.key}</p>
+            <button
+              style={styles.addProductBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddProduct(family);
+              }}
+            >
+              + Add Product
+            </button>
           </div>
         ))}
       </div>
@@ -234,6 +296,143 @@ export const ProductCatalogManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {creatingProduct && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <h3>Add New Product to {creatingProduct.label}</h3>
+              <button
+                style={styles.modalCloseButton}
+                onClick={() => setCreatingProduct(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={styles.formGrid}>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Product Key *</label>
+                <input
+                  type="text"
+                  value={newProduct.key}
+                  onChange={(e) => setNewProduct({ ...newProduct, key: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="e.g., soap-standard-1000ml"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Product Name *</label>
+                <input
+                  type="text"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="e.g., Standard Hand Soap 1000ml"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Kind</label>
+                <input
+                  type="text"
+                  value={newProduct.kind || ""}
+                  onChange={(e) => setNewProduct({ ...newProduct, kind: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="e.g., liquid, foam, gel"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Base Price ($)</label>
+                <input
+                  type="number"
+                  value={newProduct.basePrice?.amount || 0}
+                  onChange={(e) => setNewProduct({
+                    ...newProduct,
+                    basePrice: { ...newProduct.basePrice!, amount: parseFloat(e.target.value) || 0 }
+                  })}
+                  style={styles.formInput}
+                  step="0.01"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Unit of Measure</label>
+                <input
+                  type="text"
+                  value={newProduct.basePrice?.uom || ""}
+                  onChange={(e) => setNewProduct({
+                    ...newProduct,
+                    basePrice: { ...newProduct.basePrice!, uom: e.target.value }
+                  })}
+                  style={styles.formInput}
+                  placeholder="e.g., per unit, per case"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Warranty Price ($)</label>
+                <input
+                  type="number"
+                  value={newProduct.warrantyPricePerUnit?.amount || 0}
+                  onChange={(e) => setNewProduct({
+                    ...newProduct,
+                    warrantyPricePerUnit: { ...newProduct.warrantyPricePerUnit!, amount: parseFloat(e.target.value) || 0 }
+                  })}
+                  style={styles.formInput}
+                  step="0.01"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Billing Period</label>
+                <select
+                  value={newProduct.warrantyPricePerUnit?.billingPeriod || "monthly"}
+                  onChange={(e) => setNewProduct({
+                    ...newProduct,
+                    warrantyPricePerUnit: { ...newProduct.warrantyPricePerUnit!, billingPeriod: e.target.value }
+                  })}
+                  style={styles.formInput}
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={newProduct.displayByAdmin ?? true}
+                    onChange={(e) => setNewProduct({ ...newProduct, displayByAdmin: e.target.checked })}
+                    style={styles.checkbox}
+                  />
+                  <span>Display in Admin Panel</span>
+                </label>
+              </div>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button
+                style={styles.modalCancelButton}
+                onClick={() => setCreatingProduct(null)}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.modalSaveButton}
+                onClick={handleSaveNewProduct}
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "Add Product"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -287,6 +486,14 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: "16px",
     width: "100%",
   },
+  success: {
+    padding: "12px",
+    backgroundColor: "#f0fdf4",
+    color: "#15803d",
+    borderRadius: "8px",
+    marginBottom: "16px",
+    width: "100%",
+  },
   searchContainer: {
     marginBottom: "24px",
     width: "100%",
@@ -311,7 +518,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "16px",
     border: "1px solid #e5e5e5",
     borderRadius: "10px",
-    cursor: "pointer",
     transition: "all 0.2s",
     backgroundColor: "white",
   },
@@ -324,6 +530,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "8px",
+    cursor: "pointer",
   },
   familyTitle: {
     fontSize: "16px",
@@ -343,6 +550,19 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#999",
     fontFamily: "monospace",
     margin: 0,
+    marginBottom: "12px",
+  },
+  addProductBtn: {
+    width: "100%",
+    padding: "8px 16px",
+    backgroundColor: "#10b981",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
   },
   productSection: {
     marginTop: "32px",
@@ -476,6 +696,52 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "8px",
     fontSize: "14px",
     fontWeight: "500",
+    cursor: "pointer",
+  },
+  modalSaveButton: {
+    padding: "10px 20px",
+    backgroundColor: "#2563eb",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: "16px",
+    marginBottom: "24px",
+  },
+  formGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+  formLabel: {
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#333",
+  },
+  formInput: {
+    padding: "10px 12px",
+    border: "1px solid #ddd",
+    borderRadius: "6px",
+    fontSize: "14px",
+    outline: "none",
+    width: "100%",
+  },
+  checkboxLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    cursor: "pointer",
+    fontSize: "14px",
+  },
+  checkbox: {
+    width: "18px",
+    height: "18px",
     cursor: "pointer",
   },
 };

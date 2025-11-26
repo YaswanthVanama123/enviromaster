@@ -9,6 +9,7 @@ export interface ServiceConfig {
   config: Record<string, any>;
   defaultFormState?: Record<string, any>;
   isActive: boolean;
+  adminByDisplay?: boolean;
   tags?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -33,5 +34,6 @@ export interface UpdateServiceConfigPayload {
   config?: Record<string, any>;
   defaultFormState?: Record<string, any>;
   isActive?: boolean;
+  adminByDisplay?: boolean;
   tags?: string[];
 }
