@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
+import { Toast } from "./admin/Toast";
+import type { ToastType } from "./admin/Toast";
 import "./ApprovalDocuments.css";
 
 type FileStatus =
@@ -68,6 +70,7 @@ export default function ApprovalDocuments() {
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
   const navigate = useNavigate();
   const { isAuthenticated } = useAdminAuth();
@@ -217,7 +220,7 @@ export default function ApprovalDocuments() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error downloading file:", err);
-      alert("Unable to download this PDF. Please try again.");
+      setToastMessage({ message: "Unable to download this PDF. Please try again.", type: "error" });
     } finally {
       setDownloadingId(null);
     }
@@ -253,9 +256,10 @@ export default function ApprovalDocuments() {
       if (status !== "pending_approval") {
         setDocs((prev) => prev.filter((d) => d.id !== id));
       }
+      setToastMessage({ message: "Status updated successfully!", type: "success" });
     } catch (err) {
       console.error("Error updating status:", err);
-      alert("Unable to update status. Please try again.");
+      setToastMessage({ message: "Unable to update status. Please try again.", type: "error" });
     } finally {
       setSavingStatusId(null);
     }
@@ -438,6 +442,14 @@ export default function ApprovalDocuments() {
           Next
         </button>
       </div>
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage.message}
+          type={toastMessage.type}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </section>
   );
 }

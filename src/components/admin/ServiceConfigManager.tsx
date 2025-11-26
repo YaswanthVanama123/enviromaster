@@ -18,7 +18,6 @@ export const ServiceConfigManager: React.FC = () => {
       description: config.description,
       version: config.version,
       isActive: config.isActive,
-      adminByDisplay: config.adminByDisplay ?? true,
       tags: config.tags,
     });
   };
@@ -71,7 +70,6 @@ export const ServiceConfigManager: React.FC = () => {
               </div>
               <div style={styles.cardBadges}>
                 {config.isActive && <span style={styles.activeBadge}>Active</span>}
-                {config.adminByDisplay !== false && <span style={styles.displayBadge}>Admin Display</span>}
                 <span style={styles.versionBadge}>v{config.version}</span>
               </div>
             </div>
@@ -141,18 +139,6 @@ export const ServiceConfigManager: React.FC = () => {
                   style={styles.checkbox}
                 />
                 <span>Active</span>
-              </label>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={formData.adminByDisplay ?? true}
-                  onChange={(e) => setFormData({ ...formData, adminByDisplay: e.target.checked })}
-                  style={styles.checkbox}
-                />
-                <span>Show in Admin Display</span>
               </label>
             </div>
 
@@ -274,14 +260,6 @@ const styles: Record<string, React.CSSProperties> = {
   activeBadge: {
     padding: "4px 8px",
     backgroundColor: "#10b981",
-    color: "white",
-    borderRadius: "4px",
-    fontSize: "11px",
-    fontWeight: "600",
-  },
-  displayBadge: {
-    padding: "4px 8px",
-    backgroundColor: "#3b82f6",
     color: "white",
     borderRadius: "4px",
     fontSize: "11px",
