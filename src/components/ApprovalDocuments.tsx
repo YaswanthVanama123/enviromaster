@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAdminAuth } from "../backendservice/hooks";
 import "./ApprovalDocuments.css";
 
 type FileStatus =
@@ -69,6 +70,14 @@ export default function ApprovalDocuments() {
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const { isAuthenticated } = useAdminAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/admin-login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // ---- Fetch documents from backend on mount ----
   useEffect(() => {
@@ -265,6 +274,11 @@ export default function ApprovalDocuments() {
     // Open email client with pre-filled content
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
+
+  // Show nothing while checking auth
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <section className="ad">

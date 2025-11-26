@@ -1,17 +1,34 @@
 import React from "react";
-import "./AdminPanel.css";
 import { useNavigate } from "react-router-dom";
+import { useAdminAuth } from "../backendservice/hooks";
+import "./AdminPanel.css";
 
 export default function AdminPanel() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAdminAuth();
+
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/admin-login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
+  // Show loading or nothing while checking auth
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <section className="admin-panel">
-      <div className="admin-header">Admin Panel</div>
+      <div className="admin-header">
+        <div>Admin Panel</div>
+        {user && <div className="admin-username">Welcome, {user.username}</div>}
+      </div>
 
       <div className="admin-options">
         <div

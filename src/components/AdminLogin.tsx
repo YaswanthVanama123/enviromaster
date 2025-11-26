@@ -1,83 +1,36 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAdminAuth } from "../backendservice/hooks";
 import "./AdminLogin.css";
 
 export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login, error, isAuthenticated } = useAdminAuth();
 
-  // If admintoken already exists, force redirect to /admin-panel
+  // If already authenticated, redirect to admin panel
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const existingToken = localStorage.getItem("admintoken");
-    if (existingToken) {
+    if (isAuthenticated) {
       navigate("/admin-panel", { replace: true });
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
-    try {
-      const res = await fetch("http://localhost:5000/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
+    const result = await login({ username, password });
 
-      if (res.ok) {
-        let data: any = null;
-        try {
-          data = await res.json();
-        } catch {
-          data = null;
-        }
-
-        console.log("Admin login 200 response:", data);
-
-        // Try to pick token from common keys
-        const token = data?.token ?? data?.adminToken ?? null;
-
-        if (token) {
-          localStorage.setItem("admintoken", token);
-        }
-
-        // On success always navigate to /admin-panel
-        navigate("/admin-panel", { replace: true });
-      } else {
-        let message = "Invalid username or password";
-
-        try {
-          const errJson = await res.json();
-          if (
-            errJson &&
-            typeof errJson === "object" &&
-            "message" in errJson
-          ) {
-            message = (errJson as { message: string }).message;
-          }
-        } catch {
-          // ignore JSON parse errors, keep default message
-        }
-
-        setError(message);
-      }
-    } catch (err) {
-      console.error("Admin login error:", err);
-      setError("Unable to login. Please try again.");
-    } finally {
-      setLoading(false);
+    if (result.success) {
+      // On success, navigate to /admin-panel
+      navigate("/admin-panel", { replace: true });
     }
+
+    setLoading(false);
   };
 
   return (
