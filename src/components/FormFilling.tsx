@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import CustomerSection from "./CustomerSection";
-// import ProductsSection from "./ProductsSection";
-import ProductsSection from "./products/ProductsSection";
-// import ServicesSection from "./ServicesSection";
+import ProductsSection, { ProductsSectionHandle } from "./products/ProductsSection";
 import "./FormFilling.css";
 import { ServicesSection } from "./services/ServicesSection";
+import ServicesDataCollector, { ServicesDataHandle } from "./services/ServicesDataCollector";
 import { ServicesProvider } from "./services/ServicesContext";
 import ConfirmationModal from "./ConfirmationModal";
 import axios from "axios";
@@ -85,6 +84,10 @@ export default function FormFilling() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Refs to collect data from child components
+  const productsRef = useRef<ProductsSectionHandle>(null);
+  const servicesRef = useRef<ServicesDataHandle>(null);
+
   useEffect(() => {
     // ---- PICK API FOR INITIAL DATA ----
     const useCustomerDoc = editing && !!id;
@@ -150,6 +153,42 @@ export default function FormFilling() {
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
   };
 
+  // Helper function to collect all current form data
+  const collectFormData = () => {
+    // Get products data from ProductsSection ref
+    const productsData = productsRef.current?.getData() || {
+      smallProducts: [],
+      dispensers: [],
+      bigProducts: [],
+    };
+
+    // Get services data from ServicesDataCollector ref
+    const servicesData = servicesRef.current?.getData() || {
+      saniclean: null,
+      foamingDrain: null,
+      saniscrub: null,
+      microfiberMopping: null,
+      rpmWindows: null,
+      refreshPowerScrub: null,
+      sanipod: null,
+      carpetclean: null,
+      janitorial: null,
+      stripwax: null,
+    };
+
+    return {
+      headerTitle: payload?.headerTitle || "",
+      headerRows: payload?.headerRows || [],
+      products: productsData,
+      services: servicesData,
+      agreement: payload?.agreement || {
+        enviroOf: "",
+        customerExecutedOn: "",
+        additionalMonths: "",
+      },
+    };
+  };
+
   // Draft handler: Save without PDF compilation and Zoho
   const handleDraft = async () => {
     if (!payload) return;
@@ -157,11 +196,7 @@ export default function FormFilling() {
     setIsSaving(true);
 
     const payloadToSend = {
-      headerTitle: payload.headerTitle,
-      headerRows: payload.headerRows,
-      products: payload.products,
-      services: payload.services,
-      agreement: payload.agreement,
+      ...collectFormData(), // Collect current data from all child components
       status: "draft",
     };
 
@@ -213,11 +248,7 @@ export default function FormFilling() {
     setShowSaveModal(false);
 
     const payloadToSend = {
-      headerTitle: payload.headerTitle,
-      headerRows: payload.headerRows,
-      products: payload.products,
-      services: payload.services,
-      agreement: payload.agreement,
+      ...collectFormData(), // Collect current data from all child components
       status: "pending_approval",
     };
 
@@ -287,13 +318,10 @@ export default function FormFilling() {
               onHeaderRowsChange={handleHeaderRowsChange}
             />
 
-            <ProductsSection
-              // initialSmallProducts={initialSmallProducts}
-              // initialDispensers={initialDispensers}
-              // initialBigProducts={initialBigProducts}
-            />
+            <ProductsSection ref={productsRef} />
 
             <ServicesSection initialServices={payload.services} />
+            <ServicesDataCollector ref={servicesRef} />
 
             <div className="formfilling__actions">
               <button

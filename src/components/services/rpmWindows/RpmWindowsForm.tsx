@@ -1,8 +1,9 @@
 // src/features/services/rpmWindows/RpmWindowsForm.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
@@ -16,6 +17,24 @@ export const RpmWindowsForm: React.FC<
     calc,
     quote,
   } = useRpmWindowsCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.smallWindows ?? 0) > 0 || (form.mediumWindows ?? 0) > 0 || (form.largeWindows ?? 0) > 0;
+      if (isActive) {
+        servicesContext.updateService("rpmWindows", {
+          ...form,
+          ...calc,
+          ...quote,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("rpmWindows", null);
+      }
+    }
+  }, [form, calc, quote, servicesContext]);
 
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));

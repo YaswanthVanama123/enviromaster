@@ -1,5 +1,5 @@
 // src/components/services/microfiberMopping/MicrofiberMoppingForm.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useMicrofiberMoppingCalc } from "./useMicrofiberMoppingCalc";
 import type { MicrofiberMoppingFormState } from "./microfiberMoppingTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -15,6 +15,22 @@ export const MicrofiberMoppingForm: React.FC<
   // Check if SaniClean All-Inclusive is active
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0;
+      if (isActive) {
+        servicesContext.updateService("microfiberMopping", {
+          ...form,
+          ...calc,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("microfiberMopping", null);
+      }
+    }
+  }, [form, calc, servicesContext]);
 
   const extraAreaRatePerSqFt =
     cfg.extraAreaPricing.extraAreaRatePerUnit /

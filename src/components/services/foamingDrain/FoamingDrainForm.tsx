@@ -1,5 +1,5 @@
 // src/features/services/foamingDrain/FoamingDrainForm.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useFoamingDrainCalc } from "./useFoamingDrainCalc";
 import type {
   FoamingDrainFormState,
@@ -8,6 +8,7 @@ import type {
   FoamingDrainCondition,
 } from "./foamingDrainTypes";
 import { FOAMING_DRAIN_CONFIG as cfg } from "./foamingDrainConfig";
+import { useServicesContextOptional } from "../ServicesContext";
 
 interface FoamingDrainFormProps {
   initialData?: Partial<FoamingDrainFormState>;
@@ -21,6 +22,23 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 }) => {
   const { state, quote, updateField, reset } =
     useFoamingDrainCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
+      if (isActive) {
+        servicesContext.updateService("foamingDrain", {
+          ...state,
+          ...quote,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("foamingDrain", null);
+      }
+    }
+  }, [state, quote, servicesContext]);
 
   const breakdown = quote.breakdown;
 

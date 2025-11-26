@@ -25,9 +25,15 @@ export const SanicleanForm: React.FC<
         pricingMode: form.pricingMode,
         fixtureCount: fixtures,
         isActive,
+        // Save complete form data for form submission
+        formData: {
+          ...form,
+          ...calc,
+          isActive,
+        },
       });
     }
-  }, [form.pricingMode, fixtures, calc.weeklyTotal, servicesContext?.updateSaniclean]);
+  }, [form, calc, fixtures, servicesContext?.updateSaniclean]);
 
   // Per-fixture UI price:
   //  - All Inclusive → $20/fixture/week

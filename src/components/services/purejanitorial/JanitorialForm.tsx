@@ -1,9 +1,10 @@
 // src/features/services/janitorial/JanitorialForm.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useJanitorialCalc } from "./useJanitorialCalc";
 import type { JanitorialFormState } from "./useJanitorialCalc";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
@@ -11,6 +12,23 @@ export const JanitorialForm: React.FC<
   ServiceInitialData<JanitorialFormState>
 > = ({ initialData }) => {
   const { form, onChange, calc } = useJanitorialCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.hours ?? 0) > 0;
+      if (isActive) {
+        servicesContext.updateService("janitorial", {
+          ...form,
+          ...calc,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("janitorial", null);
+      }
+    }
+  }, [form, calc, servicesContext]);
 
   return (
     <div className="svc-card">

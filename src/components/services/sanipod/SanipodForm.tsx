@@ -1,9 +1,10 @@
 // src/features/services/sanipod/SanipodForm.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useSanipodCalc } from "./useSanipodCalc";
 import type { SanipodFormState } from "./useSanipodCalc";
 import { sanipodPricingConfig as cfg } from "./sanipodConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
@@ -11,6 +12,23 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
 }) => {
   const { form, onChange, calc } = useSanipodCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.podQuantity ?? 0) > 0;
+      if (isActive) {
+        servicesContext.updateService("sanipod", {
+          ...form,
+          ...calc,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("sanipod", null);
+      }
+    }
+  }, [form, calc, servicesContext]);
 
   // Derive weekly line amounts from calc result
   const pods = Math.max(0, form.podQuantity || 0);

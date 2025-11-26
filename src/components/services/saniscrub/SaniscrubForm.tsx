@@ -32,6 +32,22 @@ export const SaniscrubForm: React.FC<
     if (onQuoteChange) onQuoteChange(quote);
   }, [onQuoteChange, quote]);
 
+  // Save form data to context for form submission
+  React.useEffect(() => {
+    if (servicesContext) {
+      const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
+      if (isActive) {
+        servicesContext.updateService("saniscrub", {
+          ...form,
+          ...calc,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("saniscrub", null);
+      }
+    }
+  }, [form, calc, servicesContext]);
+
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {
     if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {

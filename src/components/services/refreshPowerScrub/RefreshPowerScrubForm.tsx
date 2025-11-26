@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRefreshPowerScrubCalc } from "./useRefreshPowerScrubCalc";
 import type {
   RefreshAreaKey,
@@ -13,6 +13,7 @@ import {
   REFRESH_PATIO_UPSELL,
 } from "./refreshPowerScrubConfig";
 import "./refreshPowerScrub.css";
+import { useServicesContextOptional } from "../ServicesContext";
 
 const formatAmount = (n: number): string => n.toFixed(2);
 
@@ -46,6 +47,23 @@ export const RefreshPowerScrubForm: React.FC<
     setAreaField,
     areaTotals,
   } = useRefreshPowerScrubCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = Object.values(form.areas).some(area => area.enabled);
+      if (isActive) {
+        servicesContext.updateService("refreshPowerScrub", {
+          ...form,
+          areaTotals,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("refreshPowerScrub", null);
+      }
+    }
+  }, [form, areaTotals, servicesContext]);
 
   // For each column, show the default rule price so the user
   // knows the starting point even before typing anything.

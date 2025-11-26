@@ -1,9 +1,10 @@
 // src/features/services/stripWax/StripWaxForm.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useStripWaxCalc } from "./useStripWaxCalc";
 import type { StripWaxFormState } from "./useStripWaxCalc";
 import { stripWaxPricingConfig as cfg } from "./stripWaxConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
@@ -11,6 +12,23 @@ export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
 > = ({ initialData }) => {
   const { form, onChange, calc } = useStripWaxCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.sqft ?? 0) > 0;
+      if (isActive) {
+        servicesContext.updateService("stripwax", {
+          ...form,
+          ...calc,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("stripwax", null);
+      }
+    }
+  }, [form, calc, servicesContext]);
 
   const variantOptions = cfg.variants;
 

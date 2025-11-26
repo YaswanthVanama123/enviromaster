@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useCarpetCalc } from "./useCarpetCalc";
 import type { CarpetFormState } from "./carpetTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { carpetFrequencyLabels } from "./carpetConfig";
+import { useServicesContextOptional } from "../ServicesContext";
 
 /**
  * Carpet Cleaning form – same UI style as SaniScrub:
@@ -17,6 +18,23 @@ export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
 > = ({ initialData, onQuoteChange }) => {
   const { form, onChange, quote, calc } = useCarpetCalc(initialData);
+  const servicesContext = useServicesContextOptional();
+
+  // Save form data to context for form submission
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.sqft ?? 0) > 0;
+      if (isActive) {
+        servicesContext.updateService("carpetclean", {
+          ...form,
+          ...calc,
+          isActive,
+        });
+      } else {
+        servicesContext.updateService("carpetclean", null);
+      }
+    }
+  }, [form, calc, servicesContext]);
 
   React.useEffect(() => {
     if (onQuoteChange) onQuoteChange(quote);

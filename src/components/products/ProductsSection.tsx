@@ -1,9 +1,18 @@
 // src/components/products/ProductsSection.tsx
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import "./ProductsSection.css";
 import { envProductCatalog } from "./productsConfig";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
 import { useServicesContextOptional } from "../services/ServicesContext";
+
+// Export interface for ref handle
+export interface ProductsSectionHandle {
+  getData: () => {
+    smallProducts: ProductRow[];
+    dispensers: ProductRow[];
+    bigProducts: ProductRow[];
+  };
+}
 
 // ---------------------------
 // Responsive breakpoint hook
@@ -466,7 +475,7 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
   return includedProducts.includes(productKey);
 }
 
-export default function ProductsSection() {
+const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
   console.log('🟦 ProductsSection RENDER');
 
   const isDesktop = useIsDesktop();
@@ -499,6 +508,17 @@ export default function ProductsSection() {
     ALL_PRODUCTS.forEach((p) => map.set(p.key, p));
     return map;
   }, []);
+
+  // Expose getData method via ref
+  useImperativeHandle(ref, () => ({
+    getData: () => {
+      return {
+        smallProducts: data.smallProducts,
+        dispensers: data.dispensers,
+        bigProducts: data.bigProducts,
+      };
+    }
+  }), [data]);
 
   const getProduct = useCallback(
     (row: ProductRow | undefined) =>
@@ -1426,4 +1446,7 @@ export default function ProductsSection() {
       {isDesktop ? DesktopTable() : GroupedTables()}
     </section>
   );
-}
+});
+
+ProductsSection.displayName = "ProductsSection";
+export default ProductsSection;

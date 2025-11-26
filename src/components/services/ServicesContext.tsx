@@ -5,6 +5,7 @@ import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
 /**
  * Cross-service integration context.
  * Allows services and products to know about each other's state.
+ * NOW ALSO: Stores complete service data for form saving
  */
 
 export interface ServicesState {
@@ -12,12 +13,24 @@ export interface ServicesState {
     pricingMode: SanicleanFormState["pricingMode"];
     fixtureCount: number;
     isActive: boolean;
+    // Complete form data for saving
+    formData?: any;
   };
+  foamingDrain?: any;
+  saniscrub?: any;
+  microfiberMopping?: any;
+  rpmWindows?: any;
+  refreshPowerScrub?: any;
+  sanipod?: any;
+  carpetclean?: any;
+  janitorial?: any;
+  stripwax?: any;
 }
 
 interface ServicesContextValue {
   servicesState: ServicesState;
   updateSaniclean: (update: Partial<ServicesState["saniclean"]>) => void;
+  updateService: (serviceName: keyof ServicesState, data: any) => void;
 
   // Helper computed values
   isSanicleanAllInclusive: boolean;
@@ -50,6 +63,17 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  // Generic update method for any service
+  const updateService = useCallback(
+    (serviceName: keyof ServicesState, data: any) => {
+      setServicesState((prev) => ({
+        ...prev,
+        [serviceName]: data,
+      }));
+    },
+    []
+  );
+
   const value = useMemo<ServicesContextValue>(() => {
     // Computed: Is SaniClean in all-inclusive mode?
     const isSanicleanAllInclusive = Boolean(
@@ -65,10 +89,11 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
     return {
       servicesState,
       updateSaniclean,
+      updateService,
       isSanicleanAllInclusive,
       sanicleanPaperCreditPerWeek,
     };
-  }, [servicesState, updateSaniclean]);
+  }, [servicesState, updateSaniclean, updateService]);
 
   return (
     <ServicesContext.Provider value={value}>
