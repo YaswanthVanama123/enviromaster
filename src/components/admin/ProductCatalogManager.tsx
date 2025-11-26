@@ -12,6 +12,7 @@ export const ProductCatalogManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     key: "",
@@ -25,6 +26,38 @@ export const ProductCatalogManager: React.FC = () => {
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+    setIsEditMode(false);
+  };
+
+  const handleToggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+  };
+
+  const handleSaveExistingProduct = async () => {
+    if (!editingProduct || !catalog) return;
+
+    setSaving(true);
+    const updatedCatalog = JSON.parse(JSON.stringify(catalog));
+    const family = updatedCatalog.families.find((f: ProductFamily) => f.key === editingProduct.familyKey);
+
+    if (family) {
+      const productIndex = family.products.findIndex((p: Product) => p.key === editingProduct.key);
+      if (productIndex !== -1) {
+        family.products[productIndex] = editingProduct;
+      }
+    }
+
+    const result = await updateCatalog(catalog._id!, { families: updatedCatalog.families });
+
+    if (result.success) {
+      setSuccessMessage("Product updated successfully!");
+      setIsEditMode(false);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } else {
+      alert("Failed to update product: " + result.error);
+    }
+
+    setSaving(false);
   };
 
   const handleAddProduct = (family: ProductFamily) => {
@@ -153,6 +186,7 @@ export const ProductCatalogManager: React.FC = () => {
                   <th style={styles.th}>Base Price</th>
                   <th style={styles.th}>UOM</th>
                   <th style={styles.th}>Warranty</th>
+                  <th style={styles.th}>Display</th>
                   <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
@@ -176,6 +210,13 @@ export const ProductCatalogManager: React.FC = () => {
                         : "—"}
                     </td>
                     <td style={styles.td}>
+                      {product.displayByAdmin !== false ? (
+                        <span style={styles.activeTag}>Yes</span>
+                      ) : (
+                        <span style={styles.inactiveTag}>No</span>
+                      )}
+                    </td>
+                    <td style={styles.td}>
                       <button
                         style={styles.viewButton}
                         onClick={() => handleEditProduct(product)}
@@ -195,104 +236,237 @@ export const ProductCatalogManager: React.FC = () => {
         <div style={styles.modal}>
           <div style={styles.modalContent}>
             <div style={styles.modalHeader}>
-              <h3>Product Details</h3>
+              <h3>{isEditMode ? "Edit Product" : "Product Details"}</h3>
               <button
                 style={styles.modalCloseButton}
-                onClick={() => setEditingProduct(null)}
+                onClick={() => {
+                  setEditingProduct(null);
+                  setIsEditMode(false);
+                }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={styles.detailGrid}>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Name:</span>
-                <span style={styles.detailValue}>{editingProduct.name}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Key:</span>
-                <code style={styles.code}>{editingProduct.key}</code>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Family:</span>
-                <span style={styles.detailValue}>{editingProduct.familyKey}</span>
-              </div>
-              <div style={styles.detailItem}>
-                <span style={styles.detailLabel}>Kind:</span>
-                <span style={styles.detailValue}>{editingProduct.kind || "—"}</span>
-              </div>
+            {!isEditMode ? (
+              <>
+                <div style={styles.detailGrid}>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Name:</span>
+                    <span style={styles.detailValue}>{editingProduct.name}</span>
+                  </div>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Key:</span>
+                    <code style={styles.code}>{editingProduct.key}</code>
+                  </div>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Family:</span>
+                    <span style={styles.detailValue}>{editingProduct.familyKey}</span>
+                  </div>
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Kind:</span>
+                    <span style={styles.detailValue}>{editingProduct.kind || "—"}</span>
+                  </div>
 
-              {editingProduct.basePrice && (
-                <>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Base Price:</span>
-                    <span style={styles.detailValue}>
-                      {editingProduct.basePrice.currency} ${editingProduct.basePrice.amount}
-                    </span>
-                  </div>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>UOM:</span>
-                    <span style={styles.detailValue}>{editingProduct.basePrice.uom}</span>
-                  </div>
-                  {editingProduct.basePrice.unitSizeLabel && (
+                  {editingProduct.basePrice && (
+                    <>
+                      <div style={styles.detailItem}>
+                        <span style={styles.detailLabel}>Base Price:</span>
+                        <span style={styles.detailValue}>
+                          {editingProduct.basePrice.currency} ${editingProduct.basePrice.amount}
+                        </span>
+                      </div>
+                      <div style={styles.detailItem}>
+                        <span style={styles.detailLabel}>UOM:</span>
+                        <span style={styles.detailValue}>{editingProduct.basePrice.uom}</span>
+                      </div>
+                      {editingProduct.basePrice.unitSizeLabel && (
+                        <div style={styles.detailItem}>
+                          <span style={styles.detailLabel}>Unit Size:</span>
+                          <span style={styles.detailValue}>
+                            {editingProduct.basePrice.unitSizeLabel}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {editingProduct.warrantyPricePerUnit && (
+                    <>
+                      <div style={styles.detailItem}>
+                        <span style={styles.detailLabel}>Warranty Price:</span>
+                        <span style={styles.detailValue}>
+                          ${editingProduct.warrantyPricePerUnit.amount}/
+                          {editingProduct.warrantyPricePerUnit.billingPeriod}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {editingProduct.effectivePerRollPriceInternal && (
                     <div style={styles.detailItem}>
-                      <span style={styles.detailLabel}>Unit Size:</span>
+                      <span style={styles.detailLabel}>Internal Roll Price:</span>
                       <span style={styles.detailValue}>
-                        {editingProduct.basePrice.unitSizeLabel}
+                        ${editingProduct.effectivePerRollPriceInternal}
                       </span>
                     </div>
                   )}
-                </>
-              )}
 
-              {editingProduct.warrantyPricePerUnit && (
-                <>
+                  {editingProduct.suggestedCustomerRollPrice && (
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Suggested Customer Price:</span>
+                      <span style={styles.detailValue}>
+                        ${editingProduct.suggestedCustomerRollPrice}
+                      </span>
+                    </div>
+                  )}
+
+                  {editingProduct.quantityPerCase && (
+                    <div style={styles.detailItem}>
+                      <span style={styles.detailLabel}>Quantity Per Case:</span>
+                      <span style={styles.detailValue}>
+                        {editingProduct.quantityPerCase} ({editingProduct.quantityPerCaseLabel})
+                      </span>
+                    </div>
+                  )}
+
                   <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Warranty Price:</span>
+                    <span style={styles.detailLabel}>Display in Admin:</span>
                     <span style={styles.detailValue}>
-                      ${editingProduct.warrantyPricePerUnit.amount}/
-                      {editingProduct.warrantyPricePerUnit.billingPeriod}
+                      {editingProduct.displayByAdmin !== false ? (
+                        <span style={styles.yesLabel}>Yes</span>
+                      ) : (
+                        <span style={styles.noLabel}>No</span>
+                      )}
                     </span>
                   </div>
-                </>
-              )}
-
-              {editingProduct.effectivePerRollPriceInternal && (
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Internal Roll Price:</span>
-                  <span style={styles.detailValue}>
-                    ${editingProduct.effectivePerRollPriceInternal}
-                  </span>
                 </div>
-              )}
 
-              {editingProduct.suggestedCustomerRollPrice && (
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Suggested Customer Price:</span>
-                  <span style={styles.detailValue}>
-                    ${editingProduct.suggestedCustomerRollPrice}
-                  </span>
+                <div style={styles.modalActions}>
+                  <button
+                    style={styles.editButton}
+                    onClick={handleToggleEditMode}
+                  >
+                    Edit Product
+                  </button>
+                  <button
+                    style={styles.modalCancelButton}
+                    onClick={() => setEditingProduct(null)}
+                  >
+                    Close
+                  </button>
                 </div>
-              )}
+              </>
+            ) : (
+              <>
+                <div style={styles.formGrid}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Product Name</label>
+                    <input
+                      type="text"
+                      value={editingProduct.name}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      style={styles.formInput}
+                    />
+                  </div>
 
-              {editingProduct.quantityPerCase && (
-                <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Quantity Per Case:</span>
-                  <span style={styles.detailValue}>
-                    {editingProduct.quantityPerCase} ({editingProduct.quantityPerCaseLabel})
-                  </span>
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Kind</label>
+                    <input
+                      type="text"
+                      value={editingProduct.kind || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, kind: e.target.value })}
+                      style={styles.formInput}
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Base Price ($)</label>
+                    <input
+                      type="number"
+                      value={editingProduct.basePrice?.amount || 0}
+                      onChange={(e) => setEditingProduct({
+                        ...editingProduct,
+                        basePrice: { ...editingProduct.basePrice!, amount: parseFloat(e.target.value) || 0 }
+                      })}
+                      style={styles.formInput}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Unit of Measure</label>
+                    <input
+                      type="text"
+                      value={editingProduct.basePrice?.uom || ""}
+                      onChange={(e) => setEditingProduct({
+                        ...editingProduct,
+                        basePrice: { ...editingProduct.basePrice!, uom: e.target.value }
+                      })}
+                      style={styles.formInput}
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Warranty Price ($)</label>
+                    <input
+                      type="number"
+                      value={editingProduct.warrantyPricePerUnit?.amount || 0}
+                      onChange={(e) => setEditingProduct({
+                        ...editingProduct,
+                        warrantyPricePerUnit: { ...editingProduct.warrantyPricePerUnit!, amount: parseFloat(e.target.value) || 0 }
+                      })}
+                      style={styles.formInput}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Billing Period</label>
+                    <select
+                      value={editingProduct.warrantyPricePerUnit?.billingPeriod || "monthly"}
+                      onChange={(e) => setEditingProduct({
+                        ...editingProduct,
+                        warrantyPricePerUnit: { ...editingProduct.warrantyPricePerUnit!, billingPeriod: e.target.value }
+                      })}
+                      style={styles.formInput}
+                    >
+                      <option value="monthly">Monthly</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={editingProduct.displayByAdmin !== false}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, displayByAdmin: e.target.checked })}
+                        style={styles.checkbox}
+                      />
+                      <span>Display in Admin Panel</span>
+                    </label>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div style={styles.modalActions}>
-              <button
-                style={styles.modalCancelButton}
-                onClick={() => setEditingProduct(null)}
-              >
-                Close
-              </button>
-            </div>
+                <div style={styles.modalActions}>
+                  <button
+                    style={styles.modalCancelButton}
+                    onClick={() => setIsEditMode(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    style={styles.modalSaveButton}
+                    onClick={handleSaveExistingProduct}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -743,5 +917,47 @@ const styles: Record<string, React.CSSProperties> = {
     width: "18px",
     height: "18px",
     cursor: "pointer",
+  },
+  yesLabel: {
+    padding: "4px 12px",
+    backgroundColor: "#d1fae5",
+    color: "#065f46",
+    borderRadius: "4px",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  noLabel: {
+    padding: "4px 12px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    borderRadius: "4px",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  editButton: {
+    padding: "10px 20px",
+    backgroundColor: "#f59e0b",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+  },
+  activeTag: {
+    padding: "4px 8px",
+    backgroundColor: "#d1fae5",
+    color: "#065f46",
+    borderRadius: "4px",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+  inactiveTag: {
+    padding: "4px 8px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    borderRadius: "4px",
+    fontSize: "12px",
+    fontWeight: "600",
   },
 };
