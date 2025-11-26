@@ -1,25 +1,25 @@
 // src/backendservice/hooks/useAdminAuth.ts
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { adminAuthApi } from "../api";
 import type { LoginPayload, AdminUser } from "../types/api.types";
 
+// Initialize auth state synchronously from localStorage
+const getInitialAuthState = () => {
+  const storedUser = adminAuthApi.getStoredAdminUser();
+  const authenticated = adminAuthApi.isAuthenticated();
+  return {
+    user: storedUser && authenticated ? storedUser : null,
+    isAuthenticated: Boolean(storedUser && authenticated),
+  };
+};
+
 export function useAdminAuth() {
-  const [user, setUser] = useState<AdminUser | null>(null);
+  const initialState = getInitialAuthState();
+  const [user, setUser] = useState<AdminUser | null>(initialState.user);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = adminAuthApi.getStoredAdminUser();
-    const authenticated = adminAuthApi.isAuthenticated();
-
-    if (storedUser && authenticated) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
-    }
-  }, []);
+  const [isAuthenticated, setIsAuthenticated] = useState(initialState.isAuthenticated);
 
   const login = async (credentials: LoginPayload) => {
     setLoading(true);
