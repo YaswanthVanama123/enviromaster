@@ -17,6 +17,7 @@ export const StripWaxForm: React.FC<
 
   // Custom fields state
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -42,12 +43,23 @@ export const StripWaxForm: React.FC<
       {/* Header */}
       <div className="svc-h-row">
         <div className="svc-h">STRIP &amp; WAX FLOOR</div>
+        <div className="svc-h-actions">
+          <button
+            type="button"
+            className="svc-btn svc-btn--small"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+          >
+            + Field
+          </button>
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
       />
 
       {/* Frequency row (for per-visit view label only) */}

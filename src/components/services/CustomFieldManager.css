@@ -1,219 +1,230 @@
-/* CustomFieldManager.css - Styling for dynamic custom fields */
+/* CustomFieldManager.css - Styling to match services section */
 
 .custom-field-manager {
-  margin-top: 1rem;
-  padding: 1rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .custom-field {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: #f9fafb;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
 }
 
-.custom-field__row {
+.custom-field__header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .custom-field__name {
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  background-color: #fff;
+  margin: 0;
+  font-size: 15px;
+  font-weight: bold;
+  color: #bd2b33;
+  font-family: Arial;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 1px;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 0;
 }
 
 .custom-field__name:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: #fff9f9;
+  padding: 2px 4px;
+  border-radius: 2px;
 }
 
 .custom-field__remove {
-  padding: 0.25rem 0.75rem;
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1.2rem;
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  text-align: center;
+  border: 1px solid #c00000;
+  border-radius: 50%;
+  background: #fff;
+  color: #c00000;
+  font-weight: 700;
+  font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  padding: 0;
+  transition: all 0.2s;
 }
 
 .custom-field__remove:hover {
-  background-color: #dc2626;
+  background: #c00000;
+  color: #fff;
+}
+
+.custom-field__content {
+  min-width: 0;
 }
 
 .custom-field__input {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  background-color: #fff;
+  border: none;
+  border-bottom: 2px solid #000;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  height: 28px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .custom-field__input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-bottom-color: #c20000;
 }
 
 /* Dollar field */
 .custom-field__dollar {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 6px;
+  padding-bottom: 0;
+  min-width: 0;
+  width: 100%;
 }
 
 .custom-field__dollar-sign {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #059669;
+  font-weight: 500;
+  font-size: 13px;
+  color: #000;
 }
 
 /* Calc field */
 .custom-field__calc {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   flex-wrap: wrap;
+  min-width: 0;
+  width: 100%;
 }
 
 .custom-field__calc-input {
   flex: 1;
-  min-width: 80px;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  background-color: #fff;
+  min-width: 60px;
+  border: none;
+  border-bottom: 2px solid #000;
+  background: transparent;
+  outline: none;
+  padding: 0 4px;
+  font-size: 14px;
+  height: 28px;
+  box-sizing: border-box;
 }
 
 .custom-field__calc-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-bottom-color: #c20000;
 }
 
 .custom-field__calc-symbol {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-/* Add field button */
-.custom-field__add-btn {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #fff;
-  border: 2px dashed #d1d5db;
-  border-radius: 6px;
-  color: #6b7280;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.custom-field__add-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
-  background-color: #eff6ff;
+  font-weight: 700;
+  font-size: 14px;
+  color: #000;
+  white-space: nowrap;
 }
 
 /* Add field dropdown */
 .custom-field__add-dropdown {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: 8px;
+  padding: 10px 12px;
   background-color: #fff;
-  border: 2px solid #3b82f6;
-  border-radius: 6px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .custom-field__add-label {
-  font-size: 0.9rem;
+  font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: #000;
+  white-space: nowrap;
 }
 
 .custom-field__type-select {
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  background-color: #fff;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  height: 28px;
+  padding: 0 6px;
+  background: #fff;
+  font-size: 12px;
   cursor: pointer;
+  outline: none;
 }
 
 .custom-field__type-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #c00000;
 }
 
 .custom-field__add-confirm {
-  padding: 0.5rem 1rem;
-  background-color: #10b981;
+  appearance: none;
+  border: 1px solid #10b981;
+  background: #10b981;
   color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 14px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.2s;
 }
 
 .custom-field__add-confirm:hover {
-  background-color: #059669;
+  background: #059669;
+  border-color: #059669;
 }
 
 .custom-field__add-cancel {
-  padding: 0.5rem 1rem;
-  background-color: #6b7280;
+  appearance: none;
+  border: 1px solid #6b7280;
+  background: #6b7280;
   color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 14px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.2s;
 }
 
 .custom-field__add-cancel:hover {
-  background-color: #4b5563;
+  background: #4b5563;
+  border-color: #4b5563;
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 740px) {
   .custom-field__calc {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
   }
 
   .custom-field__calc-input {
-    width: 100%;
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 
   .custom-field__add-dropdown {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
   }
 
-  .custom-field__type-select,
-  .custom-field__add-confirm,
-  .custom-field__add-cancel {
-    width: 100%;
+  .custom-field__type-select {
+    flex: 1 1 100%;
   }
 }

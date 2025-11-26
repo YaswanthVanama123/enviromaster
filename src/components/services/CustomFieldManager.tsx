@@ -15,13 +15,16 @@ export type CustomField = {
 type CustomFieldManagerProps = {
   fields: CustomField[];
   onFieldsChange: (fields: CustomField[]) => void;
+  showAddDropdown?: boolean;
+  onToggleAddDropdown?: (show: boolean) => void;
 };
 
 export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
   fields,
   onFieldsChange,
+  showAddDropdown = false,
+  onToggleAddDropdown,
 }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
   const [selectedType, setSelectedType] = useState<FieldType>("text");
 
   const handleAddField = () => {
@@ -34,7 +37,11 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
     };
 
     onFieldsChange([...fields, newField]);
-    setShowDropdown(false);
+    onToggleAddDropdown?.(false);
+  };
+
+  const handleCancel = () => {
+    onToggleAddDropdown?.(false);
   };
 
   const handleRemoveField = (fieldId: string) => {
@@ -52,7 +59,8 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
       {/* Render existing fields */}
       {fields.map((field) => (
         <div key={field.id} className="custom-field">
-          <div className="custom-field__row">
+          {/* Title row with field name and remove button */}
+          <div className="custom-field__header">
             <input
               type="text"
               className="custom-field__name"
@@ -70,84 +78,79 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
             </button>
           </div>
 
-          {/* Text field */}
-          {field.type === "text" && (
-            <input
-              type="text"
-              className="custom-field__input"
-              value={field.value || ""}
-              onChange={(e) => handleUpdateField(field.id, { value: e.target.value })}
-              placeholder="Enter value"
-            />
-          )}
-
-          {/* Dollar field */}
-          {field.type === "dollar" && (
-            <div className="custom-field__dollar">
-              <span className="custom-field__dollar-sign">$</span>
+          {/* Field value input based on type */}
+          <div className="custom-field__content">
+            {/* Text field */}
+            {field.type === "text" && (
               <input
                 type="text"
                 className="custom-field__input"
                 value={field.value || ""}
                 onChange={(e) => handleUpdateField(field.id, { value: e.target.value })}
-                placeholder="Enter amount"
+                placeholder="Enter value"
               />
-            </div>
-          )}
+            )}
 
-          {/* Calc field */}
-          {field.type === "calc" && (
-            <div className="custom-field__calc">
-              <input
-                type="text"
-                className="custom-field__calc-input"
-                value={field.calcValues?.left || ""}
-                onChange={(e) =>
-                  handleUpdateField(field.id, {
-                    calcValues: { ...field.calcValues!, left: e.target.value },
-                  })
-                }
-                placeholder="Value"
-              />
-              <span className="custom-field__calc-symbol">@</span>
-              <input
-                type="text"
-                className="custom-field__calc-input"
-                value={field.calcValues?.middle || ""}
-                onChange={(e) =>
-                  handleUpdateField(field.id, {
-                    calcValues: { ...field.calcValues!, middle: e.target.value },
-                  })
-                }
-                placeholder="Rate"
-              />
-              <span className="custom-field__calc-symbol">=</span>
-              <input
-                type="text"
-                className="custom-field__calc-input"
-                value={field.calcValues?.right || ""}
-                onChange={(e) =>
-                  handleUpdateField(field.id, {
-                    calcValues: { ...field.calcValues!, right: e.target.value },
-                  })
-                }
-                placeholder="Total"
-              />
-            </div>
-          )}
+            {/* Dollar field */}
+            {field.type === "dollar" && (
+              <div className="custom-field__dollar">
+                <span className="custom-field__dollar-sign">$</span>
+                <input
+                  type="text"
+                  className="custom-field__input"
+                  value={field.value || ""}
+                  onChange={(e) => handleUpdateField(field.id, { value: e.target.value })}
+                  placeholder="Enter amount"
+                />
+              </div>
+            )}
+
+            {/* Calc field */}
+            {field.type === "calc" && (
+              <div className="custom-field__calc">
+                <input
+                  type="text"
+                  className="custom-field__calc-input"
+                  value={field.calcValues?.left || ""}
+                  onChange={(e) =>
+                    handleUpdateField(field.id, {
+                      calcValues: { ...field.calcValues!, left: e.target.value },
+                    })
+                  }
+                  placeholder="Value"
+                />
+                <span className="custom-field__calc-symbol">@</span>
+                <input
+                  type="text"
+                  className="custom-field__calc-input"
+                  value={field.calcValues?.middle || ""}
+                  onChange={(e) =>
+                    handleUpdateField(field.id, {
+                      calcValues: { ...field.calcValues!, middle: e.target.value },
+                    })
+                  }
+                  placeholder="Rate"
+                />
+                <span className="custom-field__calc-symbol">=</span>
+                <input
+                  type="text"
+                  className="custom-field__calc-input"
+                  value={field.calcValues?.right || ""}
+                  onChange={(e) =>
+                    handleUpdateField(field.id, {
+                      calcValues: { ...field.calcValues!, right: e.target.value },
+                    })
+                  }
+                  placeholder="Total"
+                />
+              </div>
+            )}
+          </div>
         </div>
       ))}
 
-      {/* Add new field button */}
-      {!showDropdown ? (
-        <button
-          type="button"
-          className="custom-field__add-btn"
-          onClick={() => setShowDropdown(true)}
-        >
-          + Add Field
-        </button>
-      ) : (
+      {/* Add new field dropdown at bottom */}
+      {showAddDropdown && (
         <div className="custom-field__add-dropdown">
           <span className="custom-field__add-label">Add</span>
           <select
@@ -169,7 +172,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
           <button
             type="button"
             className="custom-field__add-cancel"
-            onClick={() => setShowDropdown(false)}
+            onClick={handleCancel}
           >
             Cancel
           </button>

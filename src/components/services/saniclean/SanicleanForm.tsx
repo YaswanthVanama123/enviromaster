@@ -17,6 +17,7 @@ export const SanicleanForm: React.FC<
 
   // Custom fields state
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   const fixtures = Math.max(0, form.fixtureCount);
   const isAllInclusive = calc.method === "all_inclusive";
@@ -90,12 +91,23 @@ export const SanicleanForm: React.FC<
       {/* HEADER */}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>
+        <div className="svc-h-actions">
+          <button
+            type="button"
+            className="svc-btn svc-btn--small"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+          >
+            + Field
+          </button>
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
       />
 
       {/* Pricing Mode */}

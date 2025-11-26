@@ -17,6 +17,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   // Custom fields state
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -54,12 +55,23 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       {/* Header row */}
       <div className="svc-h-row">
         <div className="svc-h">SANIPOD (STANDALONE ONLY)</div>
+        <div className="svc-h-actions">
+          <button
+            type="button"
+            className="svc-btn svc-btn--small"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+          >
+            + Field
+          </button>
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
       />
 
       {/* Frequency used only for per-visit view (kept same UI) */}

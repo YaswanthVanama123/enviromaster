@@ -22,6 +22,7 @@ export const RpmWindowsForm: React.FC<
 
   // Custom fields state
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -52,6 +53,15 @@ export const RpmWindowsForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">RPM WINDOW</div>
+        <div className="svc-h-actions">
+          <button
+            type="button"
+            className="svc-btn svc-btn--small"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+          >
+            + Field
+          </button>
+        </div>
         <button type="button" className="svc-mini" onClick={addExtraCharge}>
           +
         </button>
@@ -61,6 +71,8 @@ export const RpmWindowsForm: React.FC<
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
+        showAddDropdown={showAddDropdown}
+        onToggleAddDropdown={setShowAddDropdown}
       />
 
       {/* Small */}
