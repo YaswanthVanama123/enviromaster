@@ -7,6 +7,7 @@ import ProductsSection from "./products/ProductsSection";
 import "./FormFilling.css";
 import { ServicesSection } from "./services/ServicesSection";
 import { ServicesProvider } from "./services/ServicesContext";
+import ConfirmationModal from "./ConfirmationModal";
 import axios from "axios";
 
 type HeaderRow = {
@@ -80,6 +81,9 @@ export default function FormFilling() {
 
   const [payload, setPayload] = useState<FormPayload | null>(null);
   const [loading, setLoading] = useState(false);
+  const [documentId, setDocumentId] = useState<string | null>(id || null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // ---- PICK API FOR INITIAL DATA ----
@@ -146,39 +150,114 @@ export default function FormFilling() {
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
   };
 
-  const handleSave = async () => {
+  // Draft handler: Save without PDF compilation and Zoho
+  const handleDraft = async () => {
     if (!payload) return;
 
-    // when editing: update that specific customer header doc
-    // when not editing: fallback to the same customer doc id as before
-    const effectiveIdForSave =
-      editing && id ? id : CUSTOMER_FALLBACK_ID;
+    setIsSaving(true);
 
-    const payloadToSend: FormPayload = {
-      ...payload,
-      agreement: {
-        enviroOf: payload.agreement?.enviroOf ?? "",
-        customerExecutedOn: payload.agreement?.customerExecutedOn ?? "",
-        additionalMonths: payload.agreement?.additionalMonths ?? "",
-      },
+    const payloadToSend = {
+      headerTitle: payload.headerTitle,
+      headerRows: payload.headerRows,
+      products: payload.products,
+      services: payload.services,
+      agreement: payload.agreement,
+      status: "draft",
     };
 
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/pdf/customer-headers/${effectiveIdForSave}`,
-        payloadToSend,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      if (documentId) {
+        // Update existing draft
+        const res = await axios.put(
+          `http://localhost:5000/api/pdf/customer-headers/${documentId}`,
+          payloadToSend,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
 
-      if (res.status === 200) {
-        console.log("200 response from backend:", res.data);
+        if (res.status === 200) {
+          console.log("Draft updated successfully:", res.data);
+          alert("Draft saved successfully!");
+        }
       } else {
-        console.error("Save failed with status:", res.status);
+        // Create new draft
+        const res = await axios.post(
+          "http://localhost:5000/api/pdf/customer-header",
+          payloadToSend,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        if (res.status === 200 || res.status === 201) {
+          const newId = res.headers["x-customerheaderdoc-id"] || res.data._id || res.data.id;
+          setDocumentId(newId);
+          console.log("Draft created successfully with ID:", newId);
+          alert("Draft saved successfully!");
+        }
       }
     } catch (err) {
-      console.error("Error calling backend:", err);
+      console.error("Error saving draft:", err);
+      alert("Failed to save draft. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Save handler: Save with PDF compilation and Zoho
+  const handleSave = async () => {
+    if (!payload) return;
+
+    setIsSaving(true);
+    setShowSaveModal(false);
+
+    const payloadToSend = {
+      headerTitle: payload.headerTitle,
+      headerRows: payload.headerRows,
+      products: payload.products,
+      services: payload.services,
+      agreement: payload.agreement,
+      status: "pending_approval",
+    };
+
+    try {
+      if (documentId) {
+        // Update existing document
+        const res = await axios.put(
+          `http://localhost:5000/api/pdf/customer-headers/${documentId}?recompile=true`,
+          payloadToSend,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        if (res.status === 200) {
+          console.log("Document saved and PDF compiled:", res.data);
+          alert("Form saved and PDF generated successfully!");
+        }
+      } else {
+        // Create new document with PDF compilation
+        const res = await axios.post(
+          "http://localhost:5000/api/pdf/customer-header",
+          payloadToSend,
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        if (res.status === 200 || res.status === 201) {
+          const newId = res.headers["x-customerheaderdoc-id"] || res.data._id || res.data.id;
+          setDocumentId(newId);
+          console.log("Document created and PDF compiled:", newId);
+          alert("Form saved and PDF generated successfully!");
+        }
+      }
+    } catch (err) {
+      console.error("Error saving document:", err);
+      alert("Failed to save document. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -219,14 +298,33 @@ export default function FormFilling() {
             <div className="formfilling__actions">
               <button
                 type="button"
-                className="formfilling__saveBtn"
-                onClick={handleSave}
+                className="formfilling__draftBtn"
+                onClick={handleDraft}
+                disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save as Draft"}
+              </button>
+              <button
+                type="button"
+                className="formfilling__saveBtn"
+                onClick={() => setShowSaveModal(true)}
+                disabled={isSaving}
+              >
+                Save & Generate PDF
               </button>
             </div>
           </>
         )}
+
+        <ConfirmationModal
+          isOpen={showSaveModal}
+          title="Confirm Save"
+          message="Are you sure you want to save this form and convert it to PDF? This will compile the document and store it in Zoho CRM."
+          confirmText="Yes, Save & Generate"
+          cancelText="Cancel"
+          onConfirm={handleSave}
+          onCancel={() => setShowSaveModal(false)}
+        />
       </div>
     </ServicesProvider>
   );
