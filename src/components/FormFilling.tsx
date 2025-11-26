@@ -9,6 +9,8 @@ import ServicesDataCollector from "./services/ServicesDataCollector";
 import type{ ServicesDataHandle } from "./services/ServicesDataCollector";
 import { ServicesProvider } from "./services/ServicesContext";
 import ConfirmationModal from "./ConfirmationModal";
+import { Toast } from "./admin/Toast";
+import type { ToastType } from "./admin/Toast";
 import axios from "axios";
 
 type HeaderRow = {
@@ -84,6 +86,7 @@ export default function FormFilling() {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
   // Refs to collect data from child components
   const productsRef = useRef<ProductsSectionHandle>(null);
@@ -220,7 +223,7 @@ export default function FormFilling() {
 
         if (res.status === 200) {
           console.log("Draft updated successfully:", res.data);
-          alert("Draft saved successfully!");
+          setToastMessage({ message: "Draft saved successfully!", type: "success" });
         }
       } else {
         // Create new draft
@@ -236,12 +239,12 @@ export default function FormFilling() {
           const newId = res.headers["x-customerheaderdoc-id"] || res.data._id || res.data.id;
           setDocumentId(newId);
           console.log("Draft created successfully with ID:", newId);
-          alert("Draft saved successfully!");
+          setToastMessage({ message: "Draft saved successfully!", type: "success" });
         }
       }
     } catch (err) {
       console.error("Error saving draft:", err);
-      alert("Failed to save draft. Please try again.");
+      setToastMessage({ message: "Failed to save draft. Please try again.", type: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -272,7 +275,7 @@ export default function FormFilling() {
 
         if (res.status === 200) {
           console.log("Document saved and PDF compiled:", res.data);
-          alert("Form saved and PDF generated successfully!");
+          setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
         }
       } else {
         // Create new document with PDF compilation
@@ -288,12 +291,12 @@ export default function FormFilling() {
           const newId = res.headers["x-customerheaderdoc-id"] || res.data._id || res.data.id;
           setDocumentId(newId);
           console.log("Document created and PDF compiled:", newId);
-          alert("Form saved and PDF generated successfully!");
+          setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
         }
       }
     } catch (err) {
       console.error("Error saving document:", err);
-      alert("Failed to save document. Please try again.");
+      setToastMessage({ message: "Failed to save document. Please try again.", type: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -360,6 +363,14 @@ export default function FormFilling() {
           onConfirm={handleSave}
           onCancel={() => setShowSaveModal(false)}
         />
+
+        {toastMessage && (
+          <Toast
+            message={toastMessage.message}
+            type={toastMessage.type}
+            onClose={() => setToastMessage(null)}
+          />
+        )}
       </div>
     </ServicesProvider>
   );
