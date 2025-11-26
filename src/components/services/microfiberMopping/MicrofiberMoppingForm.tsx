@@ -1,5 +1,5 @@
 // src/components/services/microfiberMopping/MicrofiberMoppingForm.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useMicrofiberMoppingCalc } from "./useMicrofiberMoppingCalc";
 import type { MicrofiberMoppingFormState } from "./microfiberMoppingTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -17,17 +17,17 @@ export const MicrofiberMoppingForm: React.FC<
     servicesContext?.isSanicleanAllInclusive ?? false;
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0;
-      if (isActive) {
-        servicesContext.updateService("microfiberMopping", {
-          ...form,
-          ...calc,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("microfiberMopping", null);
+      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("microfiberMopping", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

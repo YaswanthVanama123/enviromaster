@@ -1,5 +1,5 @@
 // src/features/services/rpmWindows/RpmWindowsForm.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -20,18 +20,17 @@ export const RpmWindowsForm: React.FC<
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.smallWindows ?? 0) > 0 || (form.mediumWindows ?? 0) > 0 || (form.largeWindows ?? 0) > 0;
-      if (isActive) {
-        servicesContext.updateService("rpmWindows", {
-          ...form,
-          ...calc,
-          ...quote,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("rpmWindows", null);
+      const data = isActive ? { ...form, ...calc, ...quote, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("rpmWindows", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

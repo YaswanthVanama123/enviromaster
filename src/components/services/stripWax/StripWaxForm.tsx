@@ -1,5 +1,5 @@
 // src/features/services/stripWax/StripWaxForm.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useStripWaxCalc } from "./useStripWaxCalc";
 import type { StripWaxFormState } from "./useStripWaxCalc";
 import { stripWaxPricingConfig as cfg } from "./stripWaxConfig";
@@ -15,17 +15,17 @@ export const StripWaxForm: React.FC<
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.sqft ?? 0) > 0;
-      if (isActive) {
-        servicesContext.updateService("stripwax", {
-          ...form,
-          ...calc,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("stripwax", null);
+      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("stripwax", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,5 +1,5 @@
 // src/features/services/foamingDrain/FoamingDrainForm.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useFoamingDrainCalc } from "./useFoamingDrainCalc";
 import type {
   FoamingDrainFormState,
@@ -25,17 +25,18 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
-      if (isActive) {
-        servicesContext.updateService("foamingDrain", {
-          ...state,
-          ...quote,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("foamingDrain", null);
+      const data = isActive ? { ...state, ...quote, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      // Only update if data actually changed
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("foamingDrain", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

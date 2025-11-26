@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useCarpetCalc } from "./useCarpetCalc";
 import type { CarpetFormState } from "./carpetTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -21,17 +21,17 @@ export const CarpetForm: React.FC<
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.sqft ?? 0) > 0;
-      if (isActive) {
-        servicesContext.updateService("carpetclean", {
-          ...form,
-          ...calc,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("carpetclean", null);
+      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("carpetclean", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

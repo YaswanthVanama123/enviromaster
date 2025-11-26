@@ -1,5 +1,5 @@
 // src/features/services/sanipod/SanipodForm.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSanipodCalc } from "./useSanipodCalc";
 import type { SanipodFormState } from "./useSanipodCalc";
 import { sanipodPricingConfig as cfg } from "./sanipodConfig";
@@ -15,17 +15,17 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
-      if (isActive) {
-        servicesContext.updateService("sanipod", {
-          ...form,
-          ...calc,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("sanipod", null);
+      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("sanipod", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

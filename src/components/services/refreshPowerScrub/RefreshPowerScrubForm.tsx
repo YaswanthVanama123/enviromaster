@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useRefreshPowerScrubCalc } from "./useRefreshPowerScrubCalc";
 import type {
   RefreshAreaKey,
@@ -50,18 +50,17 @@ export const RefreshPowerScrubForm: React.FC<
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = AREA_ORDER.some(key => form[key]?.enabled);
+      const data = isActive ? { ...form, areaTotals, isActive } : null;
+      const dataStr = JSON.stringify(data);
 
-      if (isActive) {
-        servicesContext.updateService("refreshPowerScrub", {
-          ...form,
-          areaTotals,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("refreshPowerScrub", null);
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("refreshPowerScrub", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

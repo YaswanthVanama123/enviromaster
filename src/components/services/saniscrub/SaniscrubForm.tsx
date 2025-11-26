@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
 import type { SaniscrubFormState } from "./saniscrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -33,17 +33,17 @@ export const SaniscrubForm: React.FC<
   }, [onQuoteChange, quote]);
 
   // Save form data to context for form submission
+  const prevDataRef = React.useRef<string>("");
+
   React.useEffect(() => {
     if (servicesContext) {
       const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
-      if (isActive) {
-        servicesContext.updateService("saniscrub", {
-          ...form,
-          ...calc,
-          isActive,
-        });
-      } else {
-        servicesContext.updateService("saniscrub", null);
+      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("saniscrub", data);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
