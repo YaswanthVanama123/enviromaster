@@ -4,9 +4,6 @@ import "./SavedFiles.css";
 
 type FileStatus =
   | "draft"
-  | "in_progress"
-  | "active"
-  | "completed"
   | "pending_approval"
   | "approved_salesman"
   | "approved_admin";
@@ -56,9 +53,6 @@ function timeAgo(iso: string) {
 
 const STATUS_LABEL: Record<FileStatus, string> = {
   draft: "Draft",
-  in_progress: "In Progress",
-  active: "Active",
-  completed: "Completed",
   pending_approval: "Pending Approval",
   approved_salesman: "Approved by Salesman",
   approved_admin: "Approved by Admin",
@@ -83,7 +77,7 @@ export default function SavedFiles() {
       setError(null);
       try {
         const res = await fetch(
-          "http://localhost:5000/api/pdf/viewer/getall/highlevel",
+          "http://localhost:5000/api/pdf/customer-headers",
           {
             method: "GET",
             headers: {
@@ -96,15 +90,16 @@ export default function SavedFiles() {
           throw new Error(`Failed with status ${res.status}`);
         }
 
-        const data: BackendItem[] = await res.json();
+        const data = await res.json();
+        const items = data.items || [];
 
-        const mapped: SavedFile[] = (data ?? []).map((item) => ({
-          id: item.id,
-          fileName: item.headerTitle ?? "Untitled",
+        const mapped: SavedFile[] = items.map((item: any) => ({
+          id: item._id || item.id,
+          fileName: item.payload?.headerTitle ?? "Untitled",
           updatedAt: item.updatedAt,
           status: item.status ?? "draft",
           createdAt: item.createdAt,
-          headerTitle: item.headerTitle,
+          headerTitle: item.payload?.headerTitle,
           zoho: item.zoho,
         }));
 
@@ -148,9 +143,13 @@ export default function SavedFiles() {
   }
 
   function changeStatus(id: string, next: FileStatus) {
+    // Update UI immediately
     setFiles((prev) =>
       prev.map((it) => (it.id === id ? { ...it, status: next } : it))
     );
+
+    // Save to backend automatically
+    saveStatusToBackend(id, next);
   }
 
   function sendForApproval() {
@@ -210,21 +209,20 @@ export default function SavedFiles() {
   };
 
   // ---- Save status handler ----
-  const handleSaveStatus = async (file: SavedFile) => {
+  const saveStatusToBackend = async (id: string, status: FileStatus) => {
     try {
-      setSavingStatusId(file.id);
+      setSavingStatusId(id);
 
       const res = await fetch(
-        "http://localhost:5000/api/pdf/customer-headers/update/status",
+        `http://localhost:5000/api/pdf/customer-headers/${id}/status`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
           body: JSON.stringify({
-            id: file.id,
-            status: file.status,
+            status: status,
           }),
         }
       );
@@ -233,19 +231,33 @@ export default function SavedFiles() {
         throw new Error(`Status update failed with status ${res.status}`);
       }
 
-      let data: unknown = null;
-      try {
-        data = await res.json();
-      } catch {
-        // backend may not return JSON
-      }
-      console.log("Status update 200 response:", data);
+      const data = await res.json();
+      console.log("Status updated successfully:", data);
     } catch (err) {
       console.error("Error updating status:", err);
       alert("Unable to update status. Please try again.");
     } finally {
       setSavingStatusId(null);
     }
+  };
+
+  const handleSaveStatus = async (file: SavedFile) => {
+    // This function is now just for the save button (if needed)
+    await saveStatusToBackend(file.id, file.status);
+  };
+
+  // ---- Email handler ----
+  const handleEmail = (file: SavedFile) => {
+    const subject = encodeURIComponent(
+      `${file.fileName || "Customer Header Document"}`
+    );
+    const downloadUrl = `http://localhost:5000/api/pdf/viewer/download/${file.id}`;
+    const body = encodeURIComponent(
+      `Hello,\n\nPlease find the attached customer header document.\n\nDocument: ${file.fileName}\nStatus: ${STATUS_LABEL[file.status]}\n\nYou can download the PDF here:\n${downloadUrl}\n\nBest regards`
+    );
+
+    // Open email client with pre-filled content
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -332,9 +344,6 @@ export default function SavedFiles() {
                       }
                     >
                       <option value="draft">Draft</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
                       <option value="pending_approval">
                         Pending Approval
                       </option>
@@ -369,17 +378,17 @@ export default function SavedFiles() {
                         className="iconbtn"
                         title="Share via Email"
                         type="button"
+                        onClick={() => handleEmail(f)}
                       >
                         ✉️
                       </button>
                       <button
                         className="iconbtn"
-                        title="Save Status"
+                        title="Status Auto-Saves"
                         type="button"
-                        onClick={() => handleSaveStatus(f)}
-                        disabled={savingStatusId === f.id}
+                        disabled
                       >
-                        {savingStatusId === f.id ? "💾…" : "💾"}
+                        {savingStatusId === f.id ? "💾…" : "✓"}
                       </button>
                     </div>
                   </td>
