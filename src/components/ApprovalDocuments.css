@@ -129,16 +129,19 @@
 
 /* ✅ Equal column widths */
 .ad__table th:nth-child(1),
-.ad__table td:nth-child(1) { width: 8%; text-align: center; }
+.ad__table td:nth-child(1) { width: 5%; text-align: center; }
 
 .ad__table th:nth-child(2),
-.ad__table td:nth-child(2) { width: 42%; }
+.ad__table td:nth-child(2) { width: 35%; }
 
 .ad__table th:nth-child(3),
-.ad__table td:nth-child(3) { width: 25%; }
+.ad__table td:nth-child(3) { width: 15%; }
 
 .ad__table th:nth-child(4),
-.ad__table td:nth-child(4) { width: 25%; }
+.ad__table td:nth-child(4) { width: 20%; }
+
+.ad__table th:nth-child(5),
+.ad__table td:nth-child(5) { width: 25%; }
 
 /* Dropdown */
 .dropdown {
