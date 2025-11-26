@@ -3,13 +3,15 @@
 import React, { useState } from "react";
 import { useServiceConfigs } from "../../backendservice/hooks";
 import type { ServiceConfig, UpdateServiceConfigPayload } from "../../backendservice/types/serviceConfig.types";
+import { Toast } from "./Toast";
+import type { ToastType } from "./Toast";
 
 export const ServiceConfigManager: React.FC = () => {
   const { configs, loading, error, updateConfig } = useServiceConfigs();
   const [editingConfig, setEditingConfig] = useState<ServiceConfig | null>(null);
   const [formData, setFormData] = useState<UpdateServiceConfigPayload>({});
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
   const handleEdit = (config: ServiceConfig) => {
     setEditingConfig(config);
@@ -26,16 +28,14 @@ export const ServiceConfigManager: React.FC = () => {
     if (!editingConfig?._id) return;
 
     setSaving(true);
-    setSuccessMessage(null);
 
     const result = await updateConfig(editingConfig._id, formData);
 
     if (result.success) {
-      setSuccessMessage("Service config updated successfully!");
-      setTimeout(() => {
-        setEditingConfig(null);
-        setSuccessMessage(null);
-      }, 2000);
+      setToastMessage({ message: "Service config updated successfully!", type: "success" });
+      setEditingConfig(null);
+    } else {
+      setToastMessage({ message: "Failed to update service config. Please try again.", type: "error" });
     }
 
     setSaving(false);
@@ -58,7 +58,6 @@ export const ServiceConfigManager: React.FC = () => {
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
-      {successMessage && <div style={styles.success}>{successMessage}</div>}
 
       <div style={styles.grid}>
         {configs.map((config) => (
@@ -169,6 +168,14 @@ export const ServiceConfigManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage.message}
+          type={toastMessage.type}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </div>
   );
 };
@@ -207,14 +214,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: "12px",
     backgroundColor: "#fef2f2",
     color: "#dc2626",
-    borderRadius: "8px",
-    marginBottom: "16px",
-    width: "100%",
-  },
-  success: {
-    padding: "12px",
-    backgroundColor: "#f0fdf4",
-    color: "#15803d",
     borderRadius: "8px",
     marginBottom: "16px",
     width: "100%",
