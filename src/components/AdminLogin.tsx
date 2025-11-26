@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import "./AdminLogin.css";
@@ -11,20 +11,14 @@ export default function AdminLogin() {
 
   const navigate = useNavigate();
   const { login, error, isAuthenticated } = useAdminAuth();
-  const hasRedirected = useRef(false);
 
-  // If already authenticated, redirect to admin panel
+  // If already authenticated, redirect to admin panel (only check once on mount)
   useEffect(() => {
-    if (isAuthenticated && !hasRedirected.current) {
-      hasRedirected.current = true;
+    if (isAuthenticated) {
       navigate("/admin-panel", { replace: true });
     }
-    // Reset redirect flag if not authenticated
-    if (!isAuthenticated) {
-      hasRedirected.current = false;
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, []); // Empty deps - only run once on mount
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
