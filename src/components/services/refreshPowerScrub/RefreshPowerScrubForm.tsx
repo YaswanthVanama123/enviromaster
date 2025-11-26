@@ -52,7 +52,8 @@ export const RefreshPowerScrubForm: React.FC<
   // Save form data to context for form submission
   useEffect(() => {
     if (servicesContext) {
-      const isActive = Object.values(form.areas).some(area => area.enabled);
+      const isActive = AREA_ORDER.some(key => form[key]?.enabled);
+
       if (isActive) {
         servicesContext.updateService("refreshPowerScrub", {
           ...form,

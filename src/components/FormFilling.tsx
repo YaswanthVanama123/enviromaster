@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import CustomerSection from "./CustomerSection";
-import ProductsSection, { ProductsSectionHandle } from "./products/ProductsSection";
+import ProductsSection from "./products/ProductsSection";
+import type { ProductsSectionHandle } from "./products/ProductsSection";
 import "./FormFilling.css";
 import { ServicesSection } from "./services/ServicesSection";
-import ServicesDataCollector, { ServicesDataHandle } from "./services/ServicesDataCollector";
+import ServicesDataCollector from "./services/ServicesDataCollector";
+import type{ ServicesDataHandle } from "./services/ServicesDataCollector";
 import { ServicesProvider } from "./services/ServicesContext";
 import ConfirmationModal from "./ConfirmationModal";
 import axios from "axios";
