@@ -1,16 +1,20 @@
 // src/components/services/microfiberMopping/MicrofiberMoppingForm.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMicrofiberMoppingCalc } from "./useMicrofiberMoppingCalc";
 import type { MicrofiberMoppingFormState } from "./microfiberMoppingTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData }) => {
   const { form, onChange, calc } = useMicrofiberMoppingCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Check if SaniClean All-Inclusive is active
   const isSanicleanAllInclusive =
@@ -46,6 +50,12 @@ export const MicrofiberMoppingForm: React.FC<
       <div className="svc-h-row">
         <div className="svc-h">MICROFIBER MOPPING</div>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Alert when included in SaniClean All-Inclusive */}
       {isSanicleanAllInclusive && (

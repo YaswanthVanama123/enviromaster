@@ -1,5 +1,5 @@
 // src/features/services/foamingDrain/FoamingDrainForm.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useFoamingDrainCalc } from "./useFoamingDrainCalc";
 import type {
   FoamingDrainFormState,
@@ -9,6 +9,7 @@ import type {
 } from "./foamingDrainTypes";
 import { FOAMING_DRAIN_CONFIG as cfg } from "./foamingDrainConfig";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 interface FoamingDrainFormProps {
   initialData?: Partial<FoamingDrainFormState>;
@@ -23,6 +24,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const { state, quote, updateField, reset } =
     useFoamingDrainCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -187,10 +191,13 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       <div className="svc-card__inner">
         <div className="svc-h-row">
           <div className="svc-h">FOAMING DRAIN SERVICE</div>
-          <button type="button" className="svc-mini" aria-label="add">
-            +
-          </button>
         </div>
+
+        {/* Custom fields manager - appears at the top */}
+        <CustomFieldManager
+          fields={customFields}
+          onFieldsChange={setCustomFields}
+        />
 
         {/* Frequency */}
         {/* <div className="svc-row">

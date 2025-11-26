@@ -1,10 +1,11 @@
 // src/features/services/janitorial/JanitorialForm.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useJanitorialCalc } from "./useJanitorialCalc";
 import type { JanitorialFormState } from "./useJanitorialCalc";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
@@ -13,6 +14,9 @@ export const JanitorialForm: React.FC<
 > = ({ initialData }) => {
   const { form, onChange, calc } = useJanitorialCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -37,6 +41,12 @@ export const JanitorialForm: React.FC<
       <div className="svc-h-row">
         <div className="svc-h">PURE JANITORIAL ADD-ONS</div>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Summary / description */}
       {/* <div className="svc-row">

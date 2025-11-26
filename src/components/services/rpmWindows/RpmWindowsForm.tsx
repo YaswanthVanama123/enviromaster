@@ -1,9 +1,10 @@
 // src/features/services/rpmWindows/RpmWindowsForm.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
@@ -18,6 +19,9 @@ export const RpmWindowsForm: React.FC<
     quote,
   } = useRpmWindowsCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -52,6 +56,12 @@ export const RpmWindowsForm: React.FC<
           +
         </button>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Small */}
       <div className="svc-row">

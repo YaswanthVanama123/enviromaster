@@ -1,0 +1,219 @@
+/* CustomFieldManager.css - Styling for dynamic custom fields */
+
+.custom-field-manager {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.custom-field {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.custom-field__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.custom-field__name {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background-color: #fff;
+}
+
+.custom-field__name:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.custom-field__remove {
+  padding: 0.25rem 0.75rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.custom-field__remove:hover {
+  background-color: #dc2626;
+}
+
+.custom-field__input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: #fff;
+}
+
+.custom-field__input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Dollar field */
+.custom-field__dollar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.custom-field__dollar-sign {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+/* Calc field */
+.custom-field__calc {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.custom-field__calc-input {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: #fff;
+}
+
+.custom-field__calc-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.custom-field__calc-symbol {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Add field button */
+.custom-field__add-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #fff;
+  border: 2px dashed #d1d5db;
+  border-radius: 6px;
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.custom-field__add-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+/* Add field dropdown */
+.custom-field__add-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #fff;
+  border: 2px solid #3b82f6;
+  border-radius: 6px;
+}
+
+.custom-field__add-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.custom-field__type-select {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.custom-field__type-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.custom-field__add-confirm {
+  padding: 0.5rem 1rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.custom-field__add-confirm:hover {
+  background-color: #059669;
+}
+
+.custom-field__add-cancel {
+  padding: 0.5rem 1rem;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.custom-field__add-cancel:hover {
+  background-color: #4b5563;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .custom-field__calc {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-field__calc-input {
+    width: 100%;
+  }
+
+  .custom-field__add-dropdown {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-field__type-select,
+  .custom-field__add-confirm,
+  .custom-field__add-cancel {
+    width: 100%;
+  }
+}

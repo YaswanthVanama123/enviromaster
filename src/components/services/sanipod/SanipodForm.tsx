@@ -1,10 +1,11 @@
 // src/features/services/sanipod/SanipodForm.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSanipodCalc } from "./useSanipodCalc";
 import type { SanipodFormState } from "./useSanipodCalc";
 import { sanipodPricingConfig as cfg } from "./sanipodConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
@@ -13,6 +14,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 }) => {
   const { form, onChange, calc } = useSanipodCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -51,6 +55,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       <div className="svc-h-row">
         <div className="svc-h">SANIPOD (STANDALONE ONLY)</div>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Frequency used only for per-visit view (kept same UI) */}
       <div className="svc-row">

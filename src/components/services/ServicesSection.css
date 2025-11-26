@@ -69,26 +69,65 @@
   grid-column:1 / -1; 
 }
 
-.svc-h{ 
-  margin:0 0 8px; 
-  font-size:15px; 
-  font-weight:bold; 
-  color:#bd2b33; 
-  font-family:Arial; 
-  text-transform:uppercase; 
-  text-decoration:underline; 
-  text-underline-offset:1px; 
+.svc-h{
+  margin:0 0 8px;
+  font-size:15px;
+  font-weight:bold;
+  color:#bd2b33;
+  font-family:Arial;
+  text-transform:uppercase;
+  text-decoration:underline;
+  text-underline-offset:1px;
 }
-.svc-h-row{ 
-  display:flex; 
-  align-items:center; 
-  justify-content:space-between; 
-  gap:8px; 
+.svc-h-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
 }
-.svc-h-actions{ 
-  display:flex; 
-  gap:6px; 
-  align-items:center; 
+.svc-h-actions{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.svc-h-editable{
+  flex: 1;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: bold;
+  color: #bd2b33;
+  font-family: Arial;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 1px;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 0;
+}
+.svc-h-editable:focus{
+  background: #fff9f9;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+.svc-remove{
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  text-align: center;
+  border: 1px solid #c00000;
+  border-radius: 50%;
+  background: #fff;
+  color: #c00000;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+.svc-remove:hover{
+  background: #c00000;
+  color: #fff;
 }
 
 .svc-h-input{

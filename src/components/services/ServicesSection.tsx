@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import "./ServicesSection.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
 
@@ -12,6 +12,7 @@ import { SanipodForm } from "./sanipod/SanipodForm";
 import { CarpetForm } from "./carpetCleaning/CarpetForm";
 import { JanitorialForm } from "./purejanitorial/JanitorialForm";
 import { StripWaxForm } from "./stripWax/StripWaxForm";
+import { CustomService, type CustomServiceData } from "./CustomService";
 
 // Map service IDs to their corresponding form components
 const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
@@ -49,6 +50,31 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   // Fetch service configs to determine which services are active
   const { configs, loading } = useServiceConfigs();
 
+  // State for custom services
+  const [customServices, setCustomServices] = useState<CustomServiceData[]>([]);
+
+  // Handler to add a new custom service
+  const handleAddCustomService = () => {
+    const newService: CustomServiceData = {
+      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      name: "Lorem ipsum",
+      fields: [],
+    };
+    setCustomServices((prev) => [...prev, newService]);
+  };
+
+  // Handler to update a custom service
+  const handleUpdateCustomService = (service: CustomServiceData) => {
+    setCustomServices((prev) =>
+      prev.map((s) => (s.id === service.id ? service : s))
+    );
+  };
+
+  // Handler to remove a custom service
+  const handleRemoveCustomService = (id: string) => {
+    setCustomServices((prev) => prev.filter((s) => s.id !== id));
+  };
+
   // Filter only active services
   const activeServices = configs.filter(config => config.isActive);
 
@@ -72,7 +98,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       <div className="svc-title svc-title--hasActions">
         SERVICES
         <div className="svc-actions">
-          <button type="button" className="svc-btn">
+          <button type="button" className="svc-btn" onClick={handleAddCustomService}>
             + New
           </button>
         </div>
@@ -90,6 +116,16 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             />
           );
         })}
+
+        {/* Render custom services */}
+        {customServices.map((service) => (
+          <CustomService
+            key={service.id}
+            service={service}
+            onUpdate={handleUpdateCustomService}
+            onRemove={() => handleRemoveCustomService(service.id)}
+          />
+        ))}
       </div>
 
       {/* RefreshPowerScrub is special - render outside grid for full width, only if active */}

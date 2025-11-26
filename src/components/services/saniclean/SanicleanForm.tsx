@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "../ServicesSection.css";
 import { useSanicleanCalc } from "./useSanicleanCalc";
 import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
 import type { SanicleanFormState } from "./sanicleanTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const formatMoney = (n: number): string => `$${n.toFixed(2)}`;
 
@@ -13,6 +14,9 @@ export const SanicleanForm: React.FC<
 > = ({ initialData }) => {
   const { form, onChange, calc } = useSanicleanCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   const fixtures = Math.max(0, form.fixtureCount);
   const isAllInclusive = calc.method === "all_inclusive";
@@ -86,10 +90,13 @@ export const SanicleanForm: React.FC<
       {/* HEADER */}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>
-        <button type="button" className="svc-mini" aria-label="add">
-          +
-        </button>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Pricing Mode */}
       <div className="svc-row">

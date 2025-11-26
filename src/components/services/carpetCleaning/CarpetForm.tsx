@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCarpetCalc } from "./useCarpetCalc";
 import type { CarpetFormState } from "./carpetTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { carpetFrequencyLabels } from "./carpetConfig";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 /**
  * Carpet Cleaning form – same UI style as SaniScrub:
@@ -19,6 +20,9 @@ export const CarpetForm: React.FC<
 > = ({ initialData, onQuoteChange }) => {
   const { form, onChange, quote, calc } = useCarpetCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -45,10 +49,13 @@ export const CarpetForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">CARPET CLEANING</div>
-        <button type="button" className="svc-mini" aria-label="add">
-          +
-        </button>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Carpet area row – ____ @ ____ = ____ */}
       <div className="svc-row">

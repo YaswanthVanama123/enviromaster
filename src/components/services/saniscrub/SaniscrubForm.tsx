@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
 import type { SaniscrubFormState } from "./saniscrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -7,6 +7,7 @@ import {
   saniscrubFrequencyLabels,
 } from "./saniscrubConfig";
 import { useServicesContextOptional } from "../ServicesContext";
+import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 /**
  * SaniScrub form with updated rules:
@@ -22,6 +23,9 @@ export const SaniscrubForm: React.FC<
 > = ({ initialData, onQuoteChange }) => {
   const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Custom fields state
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   // Check if SaniClean All-Inclusive is active
   const isSanicleanAllInclusive =
@@ -79,10 +83,13 @@ export const SaniscrubForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">SANISCRUB</div>
-        <button type="button" className="svc-mini" aria-label="add">
-          +
-        </button>
       </div>
+
+      {/* Custom fields manager - appears at the top */}
+      <CustomFieldManager
+        fields={customFields}
+        onFieldsChange={setCustomFields}
+      />
 
       {/* Alert when included in SaniClean All-Inclusive */}
       {isSanicleanAllInclusive && (
