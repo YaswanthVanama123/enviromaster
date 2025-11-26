@@ -28,7 +28,8 @@ export const JanitorialForm: React.FC<
         servicesContext.updateService("janitorial", null);
       }
     }
-  }, [form, calc, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc]);
 
   return (
     <div className="svc-card">

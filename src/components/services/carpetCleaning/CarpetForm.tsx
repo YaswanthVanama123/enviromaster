@@ -34,7 +34,8 @@ export const CarpetForm: React.FC<
         servicesContext.updateService("carpetclean", null);
       }
     }
-  }, [form, calc, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc]);
 
   React.useEffect(() => {
     if (onQuoteChange) onQuoteChange(quote);

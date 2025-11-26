@@ -38,7 +38,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         servicesContext.updateService("foamingDrain", null);
       }
     }
-  }, [state, quote, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, quote]);
 
   const breakdown = quote.breakdown;
 

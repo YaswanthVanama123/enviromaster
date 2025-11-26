@@ -34,7 +34,8 @@ export const RpmWindowsForm: React.FC<
         servicesContext.updateService("rpmWindows", null);
       }
     }
-  }, [form, calc, quote, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc, quote]);
 
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));

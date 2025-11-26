@@ -28,7 +28,8 @@ export const StripWaxForm: React.FC<
         servicesContext.updateService("stripwax", null);
       }
     }
-  }, [form, calc, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc]);
 
   const variantOptions = cfg.variants;
 

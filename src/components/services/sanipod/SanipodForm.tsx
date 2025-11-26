@@ -28,7 +28,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         servicesContext.updateService("sanipod", null);
       }
     }
-  }, [form, calc, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc]);
 
   // Derive weekly line amounts from calc result
   const pods = Math.max(0, form.podQuantity || 0);

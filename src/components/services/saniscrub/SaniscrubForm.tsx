@@ -46,7 +46,8 @@ export const SaniscrubForm: React.FC<
         servicesContext.updateService("saniscrub", null);
       }
     }
-  }, [form, calc, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc]);
 
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {

@@ -64,7 +64,8 @@ export const RefreshPowerScrubForm: React.FC<
         servicesContext.updateService("refreshPowerScrub", null);
       }
     }
-  }, [form, areaTotals, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, areaTotals]);
 
   // For each column, show the default rule price so the user
   // knows the starting point even before typing anything.

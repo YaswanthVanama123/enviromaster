@@ -30,7 +30,8 @@ export const MicrofiberMoppingForm: React.FC<
         servicesContext.updateService("microfiberMopping", null);
       }
     }
-  }, [form, calc, servicesContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc]);
 
   const extraAreaRatePerSqFt =
     cfg.extraAreaPricing.extraAreaRatePerUnit /
