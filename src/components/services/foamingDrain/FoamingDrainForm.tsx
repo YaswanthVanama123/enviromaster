@@ -37,7 +37,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   useEffect(() => {
     if (servicesContext) {
       const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
-      const data = isActive ? { ...state, ...quote, isActive } : null;
+      const data = isActive ? { ...state, ...quote, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       // Only update if data actually changed
@@ -47,7 +47,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, quote]);
+  }, [state, quote, customFields]);
 
   const breakdown = quote.breakdown;
 

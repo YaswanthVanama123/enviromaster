@@ -60,7 +60,7 @@ export const RefreshPowerScrubForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = AREA_ORDER.some(key => form[key]?.enabled);
-      const data = isActive ? { ...form, areaTotals, isActive } : null;
+      const data = isActive ? { ...form, areaTotals, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
@@ -69,7 +69,7 @@ export const RefreshPowerScrubForm: React.FC<
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, areaTotals]);
+  }, [form, areaTotals, customFields]);
 
   // For each column, show the default rule price so the user
   // knows the starting point even before typing anything.

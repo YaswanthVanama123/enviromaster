@@ -26,7 +26,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
@@ -35,7 +35,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc]);
+  }, [form, calc, customFields]);
 
   // Derive weekly line amounts from calc result
   const pods = Math.max(0, form.podQuantity || 0);

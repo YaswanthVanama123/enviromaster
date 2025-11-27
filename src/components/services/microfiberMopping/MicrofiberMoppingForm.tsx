@@ -27,7 +27,7 @@ export const MicrofiberMoppingForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
@@ -36,7 +36,7 @@ export const MicrofiberMoppingForm: React.FC<
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc]);
+  }, [form, calc, customFields]);
 
   const extraAreaRatePerSqFt =
     cfg.extraAreaPricing.extraAreaRatePerUnit /

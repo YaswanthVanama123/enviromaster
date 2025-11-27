@@ -43,7 +43,7 @@ export const SaniscrubForm: React.FC<
   React.useEffect(() => {
     if (servicesContext) {
       const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
-      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
@@ -52,7 +52,7 @@ export const SaniscrubForm: React.FC<
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc]);
+  }, [form, calc, customFields]);
 
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {

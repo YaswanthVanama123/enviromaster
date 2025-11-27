@@ -48,7 +48,7 @@ function useProductCatalog() {
 
     const allProducts: EnvProduct[] = catalog.families.flatMap((family) =>
       family.products
-        .filter((p) => p.displayByAdmin !== false) // Only show products where displayByAdmin is true
+        // Show ALL products, including those with displayByAdmin: false
         .map((p) => ({
           key: p.key,
           name: p.name,
@@ -86,8 +86,8 @@ function getProductsForColumn(column: ColumnKey, allProducts: EnvProduct[]): Env
 }
 
 function getDefaultRows(column: ColumnKey, allProducts: EnvProduct[]): ProductRow[] {
+  // Return ALL products in the column as default rows (including displayByAdmin: false)
   return getProductsForColumn(column, allProducts)
-    .filter((p) => p.displayByAdmin)
     .map((p) => ({
       id: `${column}_${p.key}`,
       productKey: p.key,
@@ -104,13 +104,14 @@ function findProductByKey(key: string | null, allProducts: EnvProduct[]): EnvPro
   return allProducts.find((p) => p.key === key);
 }
 
-// For dropdown: products for this column that are NOT already used by other rows
+// For dropdown: ALL products for this column/category (not just unused ones)
 function getAvailableProductsForColumn(
   column: ColumnKey,
   usedKeys: Set<string>,
   allProducts: EnvProduct[]
 ): EnvProduct[] {
-  return getProductsForColumn(column, allProducts).filter((p) => !usedKeys.has(p.key));
+  // Return ALL products in this category, including already-used ones
+  return getProductsForColumn(column, allProducts);
 }
 
 // ---------------------------

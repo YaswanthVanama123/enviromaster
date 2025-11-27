@@ -25,7 +25,7 @@ export const StripWaxForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.sqft ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive } : null;
+      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
@@ -34,7 +34,7 @@ export const StripWaxForm: React.FC<
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc]);
+  }, [form, calc, customFields]);
 
   const variantOptions = cfg.variants;
 

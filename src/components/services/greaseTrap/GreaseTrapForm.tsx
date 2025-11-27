@@ -1,16 +1,35 @@
 // src/features/services/greaseTrap/GreaseTrapForm.tsx
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useGreaseTrapCalc } from "./useGreaseTrapCalc";
 import type { GreaseTrapFormState } from "./greaseTrapTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRemove?: () => void }> = ({ initialData, onRemove }) => {
   const { form, handleChange, quote } = useGreaseTrapCalc(initialData);
+  const servicesContext = useServicesContextOptional();
 
   // Custom fields state
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
+
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = (form.numberOfTraps ?? 0) > 0;
+      const data = isActive ? { ...form, ...quote, isActive, customFields } : null;
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("greaseTrap", data);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, quote, customFields]);
 
   return (
     <div className="svc-card">

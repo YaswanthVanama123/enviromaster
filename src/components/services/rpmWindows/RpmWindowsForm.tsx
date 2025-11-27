@@ -30,7 +30,7 @@ export const RpmWindowsForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.smallWindows ?? 0) > 0 || (form.mediumWindows ?? 0) > 0 || (form.largeWindows ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, ...quote, isActive } : null;
+      const data = isActive ? { ...form, ...calc, ...quote, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
@@ -39,7 +39,7 @@ export const RpmWindowsForm: React.FC<
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc, quote]);
+  }, [form, calc, quote, customFields]);
 
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));

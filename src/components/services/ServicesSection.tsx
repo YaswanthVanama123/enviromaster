@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useImperativeHandle, forwardRef } from "react";
 import "./ServicesSection.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
 
@@ -14,6 +14,7 @@ import { JanitorialForm } from "./purejanitorial/JanitorialForm";
 import { StripWaxForm } from "./stripWax/StripWaxForm";
 import { GreaseTrapForm } from "./greaseTrap/GreaseTrapForm";
 import { CustomService, type CustomServiceData } from "./CustomService";
+import { useServicesContextOptional } from "./ServicesContext";
 
 // Map service IDs to their corresponding form components
 const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
@@ -47,11 +48,20 @@ type ServicesSectionProps = {
   };
 };
 
-export const ServicesSection: React.FC<ServicesSectionProps> = ({
+// Export handle to get custom services data
+export interface ServicesSectionHandle {
+  getCustomServicesData: () => {
+    customServices: CustomServiceData[];
+    visibleServices: string[];
+  };
+}
+
+export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSectionProps>(({
   initialServices,
-}) => {
+}, ref) => {
   // Fetch service configs to determine which services are active
   const { configs, loading } = useServiceConfigs();
+  const servicesContext = useServicesContextOptional();
 
   // State for which services are currently visible
   const [visibleServices, setVisibleServices] = useState<Set<string>>(() => {
@@ -71,6 +81,24 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       setVisibleServices(new Set(configs.filter(c => c.isActive).map(c => c.serviceId)));
     }
   }, [configs]);
+
+  // Save custom services to context whenever they change
+  React.useEffect(() => {
+    if (servicesContext) {
+      servicesContext.updateService("customServices" as any, {
+        customServices,
+        visibleServices: Array.from(visibleServices),
+      });
+    }
+  }, [customServices, visibleServices, servicesContext]);
+
+  // Expose method to get custom services data
+  useImperativeHandle(ref, () => ({
+    getCustomServicesData: () => ({
+      customServices,
+      visibleServices: Array.from(visibleServices),
+    }),
+  }));
 
   // Handler to add a service back
   const handleAddService = (serviceId: string) => {
@@ -110,9 +138,14 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     setCustomServices((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Get available services to add (active but not currently visible)
+  // Get available services to add
+  // Show: 1) Active services that are not visible (removed), 2) Inactive services from backend
   const availableServices = configs.filter(
-    (config) => config.isActive && !visibleServices.has(config.serviceId)
+    (config) =>
+      // Show if inactive (always available to add)
+      !config.isActive ||
+      // OR if active but not currently visible (removed)
+      (config.isActive && !visibleServices.has(config.serviceId))
   );
 
   // Filter visible services
@@ -222,6 +255,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       )}
     </section>
   );
-};
+});
 
+ServicesSection.displayName = "ServicesSection";
 export default ServicesSection;
