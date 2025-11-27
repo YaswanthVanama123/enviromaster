@@ -14,6 +14,8 @@ export interface ServicesDataHandle {
     carpetclean: any | null;
     janitorial: any | null;
     stripwax: any | null;
+    greaseTrap: any | null;
+    customServices: any[];
   };
 }
 
@@ -37,13 +39,19 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
           carpetclean: null,
           janitorial: null,
           stripwax: null,
+          greaseTrap: null,
+          customServices: [],
         };
       }
 
       // Read from context - return null if service data is not present
       const state = servicesContext.servicesState;
+
+      // Get custom services data (includes customServices array and visibleServices list)
+      const customServicesData = state.customServices;
+
       return {
-        saniclean: state.saniclean?.formData || null,
+        saniclean: state.saniclean || null,
         foamingDrain: state.foamingDrain || null,
         saniscrub: state.saniscrub || null,
         microfiberMopping: state.microfiberMopping || null,
@@ -53,6 +61,8 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         carpetclean: state.carpetclean || null,
         janitorial: state.janitorial || null,
         stripwax: state.stripwax || null,
+        greaseTrap: state.greaseTrap || null,
+        customServices: customServicesData?.customServices || [],
       };
     }
   }), [servicesContext]);

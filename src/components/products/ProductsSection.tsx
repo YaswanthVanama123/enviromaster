@@ -86,8 +86,9 @@ function getProductsForColumn(column: ColumnKey, allProducts: EnvProduct[]): Env
 }
 
 function getDefaultRows(column: ColumnKey, allProducts: EnvProduct[]): ProductRow[] {
-  // Return ALL products in the column as default rows (including displayByAdmin: false)
+  // Return only products with displayByAdmin: true as default rows
   return getProductsForColumn(column, allProducts)
+    .filter((p) => p.displayByAdmin !== false)
     .map((p) => ({
       id: `${column}_${p.key}`,
       productKey: p.key,
@@ -104,14 +105,18 @@ function findProductByKey(key: string | null, allProducts: EnvProduct[]): EnvPro
   return allProducts.find((p) => p.key === key);
 }
 
-// For dropdown: ALL products for this column/category (not just unused ones)
+// For dropdown: products NOT already used + products with displayByAdmin: false
 function getAvailableProductsForColumn(
   column: ColumnKey,
   usedKeys: Set<string>,
   allProducts: EnvProduct[]
 ): EnvProduct[] {
-  // Return ALL products in this category, including already-used ones
-  return getProductsForColumn(column, allProducts);
+  return getProductsForColumn(column, allProducts).filter((p) =>
+    // Show if NOT already used
+    !usedKeys.has(p.key) ||
+    // OR if displayByAdmin is false (always show these)
+    p.displayByAdmin === false
+  );
 }
 
 // ---------------------------

@@ -93,7 +93,7 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
       isSanicleanAllInclusive,
       sanicleanPaperCreditPerWeek,
     };
-  }, [servicesState, updateSaniclean, updateService]);
+  }, [servicesState, updateSaniclean, updateService]); // ✅ Keep dependencies - callbacks are stable
 
   return (
     <ServicesContext.Provider value={value}>

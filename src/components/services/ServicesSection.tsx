@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from "react";
+import React, { useState, useImperativeHandle, forwardRef, useMemo, useRef } from "react";
 import "./ServicesSection.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
 
@@ -75,30 +75,53 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   // State for "New Service" dropdown
   const [showNewServiceDropdown, setShowNewServiceDropdown] = useState(false);
 
-  // Update visible services when configs load
+  // Use ref to track if configs have been initialized to prevent infinite loop
+  const configsInitializedRef = useRef(false);
+
+  // Update visible services when configs load (only once)
   React.useEffect(() => {
-    if (configs.length > 0) {
+    if (configs.length > 0 && !configsInitializedRef.current) {
+      configsInitializedRef.current = true;
       setVisibleServices(new Set(configs.filter(c => c.isActive).map(c => c.serviceId)));
     }
   }, [configs]);
 
+  // Memoize the array conversion to prevent infinite loops
+  const visibleServicesArray = useMemo(() => Array.from(visibleServices), [visibleServices]);
+
+  // Use ref to track last saved value to prevent unnecessary updates
+  const lastSavedCustomServicesRef = useRef<string>("");
+
   // Save custom services to context whenever they change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (servicesContext) {
-      servicesContext.updateService("customServices" as any, {
+      // Create a stable string representation to compare
+      const currentValue = JSON.stringify({
         customServices,
-        visibleServices: Array.from(visibleServices),
+        visibleServices: visibleServicesArray,
       });
+
+      // Only update if data actually changed
+      if (currentValue !== lastSavedCustomServicesRef.current) {
+        lastSavedCustomServicesRef.current = currentValue;
+        servicesContext.updateService("customServices" as any, {
+          customServices,
+          visibleServices: visibleServicesArray,
+        });
+      }
     }
-  }, [customServices, visibleServices, servicesContext]);
+    // NOTE: servicesContext omitted from deps to prevent infinite loop
+    // updateService is a stable callback (useCallback with empty deps)
+  }, [customServices, visibleServicesArray]);
 
   // Expose method to get custom services data
   useImperativeHandle(ref, () => ({
     getCustomServicesData: () => ({
       customServices,
-      visibleServices: Array.from(visibleServices),
+      visibleServices: visibleServicesArray,
     }),
-  }));
+  }), [customServices, visibleServicesArray]);
 
   // Handler to add a service back
   const handleAddService = (serviceId: string) => {
@@ -148,9 +171,9 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       (config.isActive && !visibleServices.has(config.serviceId))
   );
 
-  // Filter visible services
+  // Filter visible services (show all services in visibleServices, active or inactive)
   const activeVisibleServices = configs.filter(
-    (config) => config.isActive && visibleServices.has(config.serviceId)
+    (config) => visibleServices.has(config.serviceId)
   );
 
   // Separate RefreshPowerScrub from grid services
