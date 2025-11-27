@@ -125,6 +125,8 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
   // Handler to add a service back
   const handleAddService = (serviceId: string) => {
+    console.log('Adding service:', serviceId);
+
     if (serviceId === "custom") {
       // Add a new custom service
       const newService: CustomServiceData = {
@@ -133,9 +135,14 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         fields: [],
       };
       setCustomServices((prev) => [...prev, newService]);
+      console.log('Custom service added:', newService.id);
     } else {
       // Add an existing service
-      setVisibleServices((prev) => new Set([...prev, serviceId]));
+      setVisibleServices((prev) => {
+        const newSet = new Set([...prev, serviceId]);
+        console.log('Updated visible services:', Array.from(newSet));
+        return newSet;
+      });
     }
     setShowNewServiceDropdown(false);
   };
@@ -183,6 +190,11 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   const refreshPowerScrubVisible = activeVisibleServices.some(
     (c) => c.serviceId === "refreshPowerScrub"
   );
+
+  // Debug logging
+  console.log('Active Visible Services:', activeVisibleServices.map(c => ({ id: c.serviceId, label: c.label, isActive: c.isActive })));
+  console.log('Grid Services:', gridServices.map(c => c.serviceId));
+  console.log('Visible Services Set:', Array.from(visibleServices));
 
   if (loading) {
     return (
@@ -247,14 +259,41 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       <div className="svc-grid">
         {gridServices.map((config) => {
           const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
-          if (!ServiceComponent) return null;
+          if (!ServiceComponent) {
+            // Service component not found - log warning and show placeholder
+            console.warn(`Service component not found for serviceId: "${config.serviceId}". Available services:`, Object.keys(SERVICE_COMPONENTS));
+            return (
+              <div key={config.serviceId} className="svc-card" style={{ padding: '20px', background: '#fff3cd', border: '1px solid #ffc107' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>⚠️ Service Not Available</div>
+                <div>Service ID: {config.serviceId}</div>
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                  This service ({config.label || config.serviceId}) is configured in the backend but doesn't have a corresponding form component.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveService(config.serviceId)}
+                  style={{ marginTop: '10px', padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          }
 
           return (
-            <ServiceComponent
-              key={config.serviceId}
-              initialData={initialServices?.[config.serviceId as keyof typeof initialServices]}
-              onRemove={() => handleRemoveService(config.serviceId)}
-            />
+            <div key={config.serviceId} className="svc-card-wrapper">
+              <button
+                type="button"
+                className="svc-card-remove"
+                onClick={() => handleRemoveService(config.serviceId)}
+                title="Remove service"
+              >
+                −
+              </button>
+              <ServiceComponent
+                initialData={initialServices?.[config.serviceId as keyof typeof initialServices]}
+              />
+            </div>
           );
         })}
 
