@@ -27,7 +27,9 @@ const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   sanipod: SanipodForm,
   carpetclean: CarpetForm,
   janitorial: JanitorialForm,
+  pureJanitorial: JanitorialForm,  // Alias for backend compatibility
   stripwax: StripWaxForm,
+  stripWax: StripWaxForm,           // Alias for backend compatibility
   greaseTrap: GreaseTrapForm,
 };
 
@@ -43,7 +45,9 @@ type ServicesSectionProps = {
     sanipod?: any;
     carpetclean?: any;
     janitorial?: any;
+    pureJanitorial?: any;  // Alias for backend compatibility
     stripwax?: any;
+    stripWax?: any;        // Alias for backend compatibility
     greaseTrap?: any;
   };
 };
