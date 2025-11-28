@@ -534,6 +534,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
   // Expose getData method via ref
   useImperativeHandle(ref, () => ({
     getData: () => {
+      // Return the state data directly since controlled inputs keep it updated
       return {
         smallProducts: data.smallProducts,
         dispensers: data.dispensers,
@@ -913,7 +914,17 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
                       </td>
                       {extraCols.smallProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell value="" />
+                          <DollarCell
+                            value={rowSmall.customFields?.[col.id] ?? ""}
+                            onChange={(val) =>
+                              updateRowField("smallProducts", rowSmall.id, {
+                                customFields: {
+                                  ...rowSmall.customFields,
+                                  [col.id]: val,
+                                },
+                              })
+                            }
+                          />
                         </td>
                       ))}
                     </>
@@ -1021,7 +1032,17 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
                       </td>
                       {extraCols.dispensers.map((col) => (
                         <td key={col.id}>
-                          <DollarCell value="" />
+                          <DollarCell
+                            value={rowDisp.customFields?.[col.id] ?? ""}
+                            onChange={(val) =>
+                              updateRowField("dispensers", rowDisp.id, {
+                                customFields: {
+                                  ...rowDisp.customFields,
+                                  [col.id]: val,
+                                },
+                              })
+                            }
+                          />
                         </td>
                       ))}
                     </>
@@ -1119,7 +1140,17 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
                       </td>
                       {extraCols.bigProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell value="" />
+                          <DollarCell
+                            value={rowBig.customFields?.[col.id] ?? ""}
+                            onChange={(val) =>
+                              updateRowField("bigProducts", rowBig.id, {
+                                customFields: {
+                                  ...rowBig.customFields,
+                                  [col.id]: val,
+                                },
+                              })
+                            }
+                          />
                         </td>
                       ))}
                     </>
@@ -1282,7 +1313,17 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
                   {renderAmountCells(row, product)}
                   {extraCols[extraKey].map((col) => (
                     <td key={col.id}>
-                      <DollarCell value="" />
+                      <DollarCell
+                        value={row.customFields?.[col.id] ?? ""}
+                        onChange={(val) =>
+                          updateRowField(bucket, row.id, {
+                            customFields: {
+                              ...row.customFields,
+                              [col.id]: val,
+                            },
+                          })
+                        }
+                      />
                     </td>
                   ))}
                 </tr>

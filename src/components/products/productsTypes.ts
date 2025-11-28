@@ -59,5 +59,8 @@ export type ProductRow = {
 
   // NEW – editable Total column
   totalOverride?: number;
+
+  // Custom column data (columnId -> value)
+  customFields?: Record<string, string | number>;
 };
 
