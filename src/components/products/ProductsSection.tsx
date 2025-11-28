@@ -531,18 +531,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
     return map;
   }, [allProducts]);
 
-  // Expose getData method via ref
-  useImperativeHandle(ref, () => ({
-    getData: () => {
-      // Return the state data directly since controlled inputs keep it updated
-      return {
-        smallProducts: data.smallProducts,
-        dispensers: data.dispensers,
-        bigProducts: data.bigProducts,
-      };
-    }
-  }), [data]);
-
   const getProduct = useCallback(
     (row: ProductRow | undefined) =>
       row && row.productKey ? productMap.get(row.productKey) : undefined,
@@ -720,6 +708,52 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
     row.amountOverride ?? product?.basePrice?.amount ?? 0;
 
   const getQty = (row?: ProductRow) => row?.qty ?? 0;
+
+  // Expose getData method via ref
+  useImperativeHandle(ref, () => ({
+    getData: () => {
+      // Enrich data with calculated values
+      const enrichedSmallProducts = data.smallProducts.map((row) => {
+        const product = getProduct(row);
+        return {
+          ...row,
+          // Include calculated/displayed values
+          unitPrice: row.unitPriceOverride ?? product?.basePrice?.amount,
+          qty: row.qty,
+          total: row.totalOverride ?? (getSmallUnitPrice(row, product) * getQty(row)),
+        };
+      });
+
+      const enrichedDispensers = data.dispensers.map((row) => {
+        const product = getProduct(row);
+        return {
+          ...row,
+          // Include calculated/displayed values
+          qty: row.qty,
+          warrantyRate: row.warrantyPriceOverride ?? product?.warrantyPricePerUnit?.amount,
+          replacementRate: row.replacementPriceOverride ?? product?.basePrice?.amount,
+          total: row.totalOverride ?? (getDispReplacementPrice(row, product) * getQty(row)),
+        };
+      });
+
+      const enrichedBigProducts = data.bigProducts.map((row) => {
+        const product = getProduct(row);
+        return {
+          ...row,
+          // Include calculated/displayed values
+          qty: row.qty,
+          amount: row.amountOverride ?? product?.basePrice?.amount,
+          total: row.totalOverride ?? (getBigAmount(row, product) * getQty(row)),
+        };
+      });
+
+      return {
+        smallProducts: enrichedSmallProducts,
+        dispensers: enrichedDispensers,
+        bigProducts: enrichedBigProducts,
+      };
+    }
+  }), [data, getProduct]);
 
   // ---------------------------
   // Desktop table
