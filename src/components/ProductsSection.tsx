@@ -474,7 +474,11 @@ export default function ProductsSection({
                         />
                       </td>
                       <td>
-                        <DollarCell name={`smallProducts_${a.id}_amount`} />
+                        <DollarCell
+                          name={`smallProducts_${a.id}_amount`}
+                          value={a.amountOverride || ''}
+                          onChange={(e) => updateRowField('smallProducts', a.id, { amountOverride: parseFloat(e.target.value) || 0 })}
+                        />
                       </td>
                       {extraCols.smallProducts.map((col) => (
                         <td key={col.id}>
