@@ -198,7 +198,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        disabled={readOnly || !onChange}
+        // disabled={readOnly || !onChange}
       />
     </div>
   );
