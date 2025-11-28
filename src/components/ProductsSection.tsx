@@ -51,7 +51,7 @@ type ProductsSectionProps = {
 const toItems = (arr: string[]): RowItem[] =>
   arr.map((name, idx) => ({ id: `base_${idx}`, name, isCustom: false }));
 
-function DollarCell({ name }: { name?: string }) {
+function DollarCell({ name, value, onChange }: { name?: string; value?: string | number; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   return (
     <div className="dcell">
       <span className="dollarColor">$</span>
@@ -59,27 +59,27 @@ function DollarCell({ name }: { name?: string }) {
         className="in"
         type="text"
         name={name}
+        value={value || ''}
+        onChange={onChange}
         autoComplete="off"
         placeholder=""
         tabIndex={0}
-        onClick={(e) => e.stopPropagation()}
-        onFocus={(e) => console.log('DollarCell focused:', name)}
       />
     </div>
   );
 }
 
-function PlainCell({ name }: { name?: string }) {
+function PlainCell({ name, value, onChange }: { name?: string; value?: string | number; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   return (
     <input
       className="in"
       type="text"
       name={name}
+      value={value || ''}
+      onChange={onChange}
       autoComplete="off"
       placeholder=""
       tabIndex={0}
-      onClick={(e) => e.stopPropagation()}
-      onFocus={(e) => console.log('PlainCell focused:', name)}
     />
   );
 }
