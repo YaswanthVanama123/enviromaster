@@ -715,35 +715,48 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
       // Enrich data with calculated values
       const enrichedSmallProducts = data.smallProducts.map((row) => {
         const product = getProduct(row);
+        const unitPrice = row.unitPriceOverride ?? product?.basePrice?.amount;
+        const qty = row.qty ?? 0;
+        const total = row.totalOverride ?? (unitPrice ? unitPrice * qty : 0);
+
         return {
           ...row,
-          // Include calculated/displayed values
-          unitPrice: row.unitPriceOverride ?? product?.basePrice?.amount,
-          qty: row.qty,
-          total: row.totalOverride ?? (getSmallUnitPrice(row, product) * getQty(row)),
+          displayName: row.customName || product?.name || row.productKey || "",
+          unitPrice,
+          qty,
+          total,
         };
       });
 
       const enrichedDispensers = data.dispensers.map((row) => {
         const product = getProduct(row);
+        const qty = row.qty ?? 0;
+        const warrantyRate = row.warrantyPriceOverride ?? product?.warrantyPricePerUnit?.amount;
+        const replacementRate = row.replacementPriceOverride ?? product?.basePrice?.amount;
+        const total = row.totalOverride ?? (replacementRate ? replacementRate * qty : 0);
+
         return {
           ...row,
-          // Include calculated/displayed values
-          qty: row.qty,
-          warrantyRate: row.warrantyPriceOverride ?? product?.warrantyPricePerUnit?.amount,
-          replacementRate: row.replacementPriceOverride ?? product?.basePrice?.amount,
-          total: row.totalOverride ?? (getDispReplacementPrice(row, product) * getQty(row)),
+          displayName: row.customName || product?.name || row.productKey || "",
+          qty,
+          warrantyRate,
+          replacementRate,
+          total,
         };
       });
 
       const enrichedBigProducts = data.bigProducts.map((row) => {
         const product = getProduct(row);
+        const qty = row.qty ?? 0;
+        const amount = row.amountOverride ?? product?.basePrice?.amount;
+        const total = row.totalOverride ?? (amount ? amount * qty : 0);
+
         return {
           ...row,
-          // Include calculated/displayed values
-          qty: row.qty,
-          amount: row.amountOverride ?? product?.basePrice?.amount,
-          total: row.totalOverride ?? (getBigAmount(row, product) * getQty(row)),
+          displayName: row.customName || product?.name || row.productKey || "",
+          qty,
+          amount,
+          total,
         };
       });
 
