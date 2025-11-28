@@ -26,10 +26,11 @@ const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   refreshPowerScrub: RefreshPowerScrubForm,
   sanipod: SanipodForm,
   carpetclean: CarpetForm,
+  carpetCleaning: CarpetForm,       // Alias for backend compatibility
   janitorial: JanitorialForm,
-  pureJanitorial: JanitorialForm,  // Alias for backend compatibility
+  pureJanitorial: JanitorialForm,   // Alias for backend compatibility
   stripwax: StripWaxForm,
-  stripWax: StripWaxForm,           // Alias for backend compatibility
+  stripWax: StripWaxForm,            // Alias for backend compatibility
   greaseTrap: GreaseTrapForm,
 };
 
@@ -44,6 +45,7 @@ type ServicesSectionProps = {
     refreshPowerScrub?: any;
     sanipod?: any;
     carpetclean?: any;
+    carpetCleaning?: any;  // Alias for backend compatibility
     janitorial?: any;
     pureJanitorial?: any;  // Alias for backend compatibility
     stripwax?: any;
@@ -173,13 +175,9 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   };
 
   // Get available services to add
-  // Show: 1) Active services that are not visible (removed), 2) Inactive services from backend
+  // Only show services that are NOT currently visible
   const availableServices = configs.filter(
-    (config) =>
-      // Show if inactive (always available to add)
-      !config.isActive ||
-      // OR if active but not currently visible (removed)
-      (config.isActive && !visibleServices.has(config.serviceId))
+    (config) => !visibleServices.has(config.serviceId)
   );
 
   // Filter visible services (show all services in visibleServices, active or inactive)

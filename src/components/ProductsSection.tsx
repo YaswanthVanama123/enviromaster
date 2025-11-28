@@ -51,17 +51,17 @@ type ProductsSectionProps = {
 const toItems = (arr: string[]): RowItem[] =>
   arr.map((name, idx) => ({ id: `base_${idx}`, name, isCustom: false }));
 
-function DollarCell() {
+function DollarCell({ name }: { name?: string }) {
   return (
     <div className="dcell">
       <span className="dollarColor">$</span>
-      <input className="in" />
+      <input className="in" name={name} />
     </div>
   );
 }
 
-function PlainCell() {
-  return <input className="in" />;
+function PlainCell({ name }: { name?: string }) {
+  return <input className="in" name={name} />;
 }
 
 const NameCell = React.memo(function NameCell({
@@ -454,11 +454,11 @@ export default function ProductsSection({
                         />
                       </td>
                       <td>
-                        <DollarCell />
+                        <DollarCell name={`smallProducts_${a.id}_amount`} />
                       </td>
                       {extraCols.smallProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell />
+                          <DollarCell name={`smallProducts_${a.id}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -466,11 +466,11 @@ export default function ProductsSection({
                     <>
                       <td className="label"></td>
                       <td>
-                        <PlainCell />
+                        <PlainCell name={`smallProducts_empty_${i}_amount`} />
                       </td>
                       {extraCols.smallProducts.map((col) => (
                         <td key={col.id}>
-                          <PlainCell />
+                          <PlainCell name={`smallProducts_empty_${i}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -503,17 +503,17 @@ export default function ProductsSection({
                         />
                       </td>
                       <td className="center">
-                        <PlainCell />
+                        <PlainCell name={`dispensers_${b.id}_qty`} />
                       </td>
                       <td>
-                        <DollarCell />
+                        <DollarCell name={`dispensers_${b.id}_warranty`} />
                       </td>
                       <td>
-                        <DollarCell />
+                        <DollarCell name={`dispensers_${b.id}_replacement`} />
                       </td>
                       {extraCols.dispensers.map((col) => (
                         <td key={col.id}>
-                          <DollarCell />
+                          <DollarCell name={`dispensers_${b.id}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -521,17 +521,17 @@ export default function ProductsSection({
                     <>
                       <td className="label" />
                       <td className="center">
-                        <PlainCell />
+                        <PlainCell name={`dispensers_empty_${i}_qty`} />
                       </td>
                       <td>
-                        <PlainCell />
+                        <PlainCell name={`dispensers_empty_${i}_warranty`} />
                       </td>
                       <td>
-                        <PlainCell />
+                        <PlainCell name={`dispensers_empty_${i}_replacement`} />
                       </td>
                       {extraCols.dispensers.map((col) => (
                         <td key={col.id}>
-                          <PlainCell />
+                          <PlainCell name={`dispensers_empty_${i}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -564,17 +564,17 @@ export default function ProductsSection({
                         />
                       </td>
                       <td className="center">
-                        <PlainCell />
+                        <PlainCell name={`bigProducts_${c.id}_qty`} />
                       </td>
                       <td>
-                        <DollarCell />
+                        <DollarCell name={`bigProducts_${c.id}_amount`} />
                       </td>
                       <td className="center">
-                        <PlainCell />
+                        <PlainCell name={`bigProducts_${c.id}_frequency`} />
                       </td>
                       {extraCols.bigProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell />
+                          <DollarCell name={`bigProducts_${c.id}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -582,17 +582,17 @@ export default function ProductsSection({
                     <>
                       <td className="label" />
                       <td className="center">
-                        <PlainCell />
+                        <PlainCell name={`bigProducts_empty_${i}_qty`} />
                       </td>
                       <td>
-                        <PlainCell />
+                        <PlainCell name={`bigProducts_empty_${i}_amount`} />
                       </td>
                       <td className="center">
-                        <PlainCell />
+                        <PlainCell name={`bigProducts_empty_${i}_frequency`} />
                       </td>
                       {extraCols.bigProducts.map((col) => (
                         <td key={col.id}>
-                          <PlainCell />
+                          <PlainCell name={`bigProducts_empty_${i}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -637,7 +637,7 @@ export default function ProductsSection({
     title: string;
     bucket: keyof typeof data;
     extraKey: keyof typeof extraCols;
-    renderAmountCells: (hasName: boolean) => React.ReactNode;
+    renderAmountCells: (hasName: boolean, rowId: string) => React.ReactNode;
   }) => (
     <GroupWrap
       onAddRow={() => addRow(bucket)}
@@ -709,10 +709,10 @@ export default function ProductsSection({
                     }
                   />
                 </td>
-                {renderAmountCells(hasName)}
+                {renderAmountCells(hasName, row.id)}
                 {extraCols[extraKey].map((col) => (
                   <td key={col.id}>
-                    {hasName ? <DollarCell /> : <PlainCell />}
+                    {hasName ? <DollarCell name={`${bucket}_${row.id}_${col.id}`} /> : <PlainCell name={`${bucket}_${row.id}_${col.id}`} />}
                   </td>
                 ))}
               </tr>
@@ -733,8 +733,8 @@ export default function ProductsSection({
         title="Products"
         bucket="smallProducts"
         extraKey="smallProducts"
-        renderAmountCells={(hasName) => (
-          <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
+        renderAmountCells={(hasName, rowId) => (
+          <td>{hasName ? <DollarCell name={`smallProducts_${rowId}_amount`} /> : <PlainCell name={`smallProducts_${rowId}_amount`} />}</td>
         )}
       />
 
@@ -742,13 +742,13 @@ export default function ProductsSection({
         title="Dispensers"
         bucket="dispensers"
         extraKey="dispensers"
-        renderAmountCells={(hasName) => (
+        renderAmountCells={(hasName, rowId) => (
           <>
             <td className="center">
-              <PlainCell />
+              <PlainCell name={`dispensers_${rowId}_qty`} />
             </td>
-            <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
-            <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
+            <td>{hasName ? <DollarCell name={`dispensers_${rowId}_warranty`} /> : <PlainCell name={`dispensers_${rowId}_warranty`} />}</td>
+            <td>{hasName ? <DollarCell name={`dispensers_${rowId}_replacement`} /> : <PlainCell name={`dispensers_${rowId}_replacement`} />}</td>
           </>
         )}
       />
@@ -757,14 +757,14 @@ export default function ProductsSection({
         title="Products"
         bucket="bigProducts"
         extraKey="bigProducts"
-        renderAmountCells={(hasName) => (
+        renderAmountCells={(hasName, rowId) => (
           <>
             <td className="center">
-              <PlainCell />
+              <PlainCell name={`bigProducts_${rowId}_qty`} />
             </td>
-            <td>{hasName ? <DollarCell /> : <PlainCell />}</td>
+            <td>{hasName ? <DollarCell name={`bigProducts_${rowId}_amount`} /> : <PlainCell name={`bigProducts_${rowId}_amount`} />}</td>
             <td className="center">
-              <PlainCell />
+              <PlainCell name={`bigProducts_${rowId}_frequency`} />
             </td>
           </>
         )}
