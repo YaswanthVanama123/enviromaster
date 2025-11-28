@@ -61,6 +61,9 @@ function DollarCell({ name }: { name?: string }) {
         name={name}
         autoComplete="off"
         placeholder=""
+        tabIndex={0}
+        onClick={(e) => e.stopPropagation()}
+        onFocus={(e) => console.log('DollarCell focused:', name)}
       />
     </div>
   );
@@ -74,6 +77,9 @@ function PlainCell({ name }: { name?: string }) {
       name={name}
       autoComplete="off"
       placeholder=""
+      tabIndex={0}
+      onClick={(e) => e.stopPropagation()}
+      onFocus={(e) => console.log('PlainCell focused:', name)}
     />
   );
 }
