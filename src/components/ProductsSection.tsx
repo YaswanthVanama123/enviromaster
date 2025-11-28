@@ -55,13 +55,27 @@ function DollarCell({ name }: { name?: string }) {
   return (
     <div className="dcell">
       <span className="dollarColor">$</span>
-      <input className="in" name={name} />
+      <input
+        className="in"
+        type="text"
+        name={name}
+        autoComplete="off"
+        placeholder=""
+      />
     </div>
   );
 }
 
 function PlainCell({ name }: { name?: string }) {
-  return <input className="in" name={name} />;
+  return (
+    <input
+      className="in"
+      type="text"
+      name={name}
+      autoComplete="off"
+      placeholder=""
+    />
+  );
 }
 
 const NameCell = React.memo(function NameCell({
@@ -458,7 +472,7 @@ export default function ProductsSection({
                       </td>
                       {extraCols.smallProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell name={`smallProducts_${a.id}_${col.id}`} />
+                          <PlainCell name={`smallProducts_${a.id}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -513,7 +527,7 @@ export default function ProductsSection({
                       </td>
                       {extraCols.dispensers.map((col) => (
                         <td key={col.id}>
-                          <DollarCell name={`dispensers_${b.id}_${col.id}`} />
+                          <PlainCell name={`dispensers_${b.id}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -574,7 +588,7 @@ export default function ProductsSection({
                       </td>
                       {extraCols.bigProducts.map((col) => (
                         <td key={col.id}>
-                          <DollarCell name={`bigProducts_${c.id}_${col.id}`} />
+                          <PlainCell name={`bigProducts_${c.id}_${col.id}`} />
                         </td>
                       ))}
                     </>
@@ -712,7 +726,7 @@ export default function ProductsSection({
                 {renderAmountCells(hasName, row.id)}
                 {extraCols[extraKey].map((col) => (
                   <td key={col.id}>
-                    {hasName ? <DollarCell name={`${bucket}_${row.id}_${col.id}`} /> : <PlainCell name={`${bucket}_${row.id}_${col.id}`} />}
+                    <PlainCell name={`${bucket}_${row.id}_${col.id}`} />
                   </td>
                 ))}
               </tr>
