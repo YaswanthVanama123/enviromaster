@@ -50,6 +50,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     ...initial,
   });
 
+  // Store the ORIGINAL backend/default rates separately for installation calculation
+  const [defaultRates, setDefaultRates] = useState({
+    smallWindowRate: cfg.smallWindowRate,
+    mediumWindowRate: cfg.mediumWindowRate,
+    largeWindowRate: cfg.largeWindowRate,
+  });
+
   // Fetch pricing from backend on mount
   useEffect(() => {
     const fetchPricing = async () => {
@@ -66,6 +73,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         // If we have backend config, merge with form state
         if (data && data.config) {
           const backendConfig = data.config;
+
+          // Store backend rates as default rates (for installation calculation)
+          setDefaultRates({
+            smallWindowRate: backendConfig.smallWindowRate ?? cfg.smallWindowRate,
+            mediumWindowRate: backendConfig.mediumWindowRate ?? cfg.mediumWindowRate,
+            largeWindowRate: backendConfig.largeWindowRate ?? cfg.largeWindowRate,
+          });
 
           setForm((prev) => ({
             ...prev,
@@ -126,7 +140,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           const numVal = value === '' ? 0 : parseFloat(value);
           // Only update if it's a valid number
           if (!isNaN(numVal)) {
-            console.log(`[RPM Windows] ${name} changed from ${prev[name]} to ${numVal}`);
             return { ...prev, [name]: numVal };
           }
           return prev;
@@ -180,30 +193,27 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const freqKey = mapFrequency(form.frequency);
     const freqMult = getFrequencyMultiplier(freqKey) || 1;
 
-    // Get rates from form state (these should reflect user's manual changes)
+    // Get rates from form state (these can be manually changed by user)
     const weeklySmall = form.smallWindowRate;
     const weeklyMedium = form.mediumWindowRate;
     const weeklyLarge = form.largeWindowRate;
     const weeklyTrip = form.tripCharge; // will be 0, used only for display
 
-    // Debug logging to verify we're using form values
-    console.log('[RPM Windows Calc] Using rates:', {
-      small: weeklySmall,
-      medium: weeklyMedium,
-      large: weeklyLarge,
-      frequency: freqKey,
-      freqMultiplier: freqMult
-    });
-
-    // Weekly base window cost
+    // Weekly base window cost using FORM rates (user's custom rates)
     const weeklyWindows =
       form.smallQty * weeklySmall +
       form.mediumQty * weeklyMedium +
       form.largeQty * weeklyLarge;
 
+    // Weekly cost using DEFAULT/BACKEND rates (for installation only)
+    const weeklyWindowsAtDefaultRates =
+      form.smallQty * defaultRates.smallWindowRate +
+      form.mediumQty * defaultRates.mediumWindowRate +
+      form.largeQty * defaultRates.largeWindowRate;
+
     const hasWindows = weeklyWindows > 0;
 
-    // Frequency-adjusted (this is what we show in the UI)
+    // Frequency-adjusted rates (this is what we show in the UI calculations)
     const effSmall = weeklySmall * freqMult;
     const effMedium = weeklyMedium * freqMult;
     const effLarge = weeklyLarge * freqMult;
@@ -230,10 +240,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const recurringPerVisitRated = recurringPerVisitBase * rateCfg.multiplier;
 
-    // INSTALLATION FEE — ALWAYS WEEKLY WINDOW ×3 (NO FREQUENCY MULTIPLIER)
+    // INSTALLATION FEE — ALWAYS uses DEFAULT/BACKEND rates (not user's custom rates)
+    // ALWAYS WEEKLY rates ×3 (NO FREQUENCY MULTIPLIER)
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
-        ? weeklyWindows * cfg.installMultiplierFirstTime
+        ? weeklyWindowsAtDefaultRates * cfg.installMultiplierFirstTime
         : 0;
 
     const installOneTime = installOneTimeBase * rateCfg.multiplier;
@@ -296,7 +307,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       contractTotalRated,
     };
   }, [
-    // Explicitly list all form fields that affect calculations
+    // Form fields that user can change
     form.smallQty,
     form.mediumQty,
     form.largeQty,
@@ -308,7 +319,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     form.selectedRateCategory,
     form.isFirstTimeInstall,
     form.extraCharges,
-    form.contractMonths
+    form.contractMonths,
+    // Default rates (used for installation calculation)
+    defaultRates.smallWindowRate,
+    defaultRates.mediumWindowRate,
+    defaultRates.largeWindowRate,
   ]);
 
   const quote: ServiceQuoteResult = {
