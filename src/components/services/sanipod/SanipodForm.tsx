@@ -42,7 +42,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const bags = Math.max(0, form.extraBagsPerWeek || 0);
 
   // For display: bag line amount (same base price, unit text depends on checkbox).
-  const bagLineAmount = bags * cfg.extraBagPrice;
+  const bagLineAmount = bags * form.extraBagPrice;
   const bagUnitLabel = form.extraBagsRecurring
     ? "$/bag/wk"
     : "$/bag one-time";
@@ -83,6 +83,74 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         showAddDropdown={showAddDropdown}
         onToggleAddDropdown={setShowAddDropdown}
       />
+
+      {/* Editable Rate Fields */}
+      <div className="svc-row">
+        <label>Per-Pod Rate (Option A)</label>
+        <div className="svc-row-right">
+          <span className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="altWeeklyRatePerUnit"
+              value={form.altWeeklyRatePerUnit.toFixed(2)}
+              onChange={onChange}
+            />
+          </span>
+          <span className="svc-small">$/pod/wk (flat rate)</span>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Per-Pod Rate (Option B)</label>
+        <div className="svc-row-right">
+          <span className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="weeklyRatePerUnit"
+              value={form.weeklyRatePerUnit.toFixed(2)}
+              onChange={onChange}
+            />
+          </span>
+          <span className="svc-small">$/pod/wk</span>
+          <span style={{ margin: "0 8px" }}>+</span>
+          <span className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="standaloneExtraWeeklyCharge"
+              value={form.standaloneExtraWeeklyCharge.toFixed(2)}
+              onChange={onChange}
+            />
+          </span>
+          <span className="svc-small">$/wk base</span>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Extra Bag Rate</label>
+        <div className="svc-row-right">
+          <span className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="extraBagPrice"
+              value={form.extraBagPrice.toFixed(2)}
+              onChange={onChange}
+            />
+          </span>
+          <span className="svc-small">$/bag</span>
+        </div>
+      </div>
 
       {/* Frequency used only for per-visit view (kept same UI) */}
       <div className="svc-row">
@@ -136,7 +204,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             onChange={onChange}
           />
           <span className="svc-multi">@</span>
-          <span className="svc-rate">{cfg.extraBagPrice}</span>
+          <span className="svc-rate">{form.extraBagPrice.toFixed(2)}</span>
           <span className="svc-small">{bagUnitLabel}</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
@@ -191,7 +259,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             checked={form.isNewInstall}
             onChange={onChange}
           />{" "}
-          <span className="svc-small">$25 / pod (one-time install)</span>
+          <span className="svc-small">${form.installRatePerPod.toFixed(2)} / pod (one-time install)</span>
         </div>
       </div>
 

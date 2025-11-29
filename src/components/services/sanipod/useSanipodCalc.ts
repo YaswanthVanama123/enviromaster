@@ -17,6 +17,12 @@ export interface SanipodFormState {
   /** true = recurring each visit, false = one-time only on first visit */
   extraBagsRecurring: boolean;
 
+  // Editable pricing rates (fetched from backend or config)
+  weeklyRatePerUnit: number;        // 3$/week per pod (used in 3+40 rule)
+  altWeeklyRatePerUnit: number;     // 8$/week per pod (flat per-pod option)
+  extraBagPrice: number;            // 2$/bag
+  standaloneExtraWeeklyCharge: number; // 40$/week account-level base
+
   includeTrip: boolean;
   tripChargePerVisit: number;
 
@@ -68,6 +74,12 @@ const DEFAULT_FORM_STATE: SanipodFormState = {
   extraBagsPerWeek: 0,
   extraBagsRecurring: true,
 
+  // Editable pricing rates from config (will be overridden by backend)
+  weeklyRatePerUnit: cfg.weeklyRatePerUnit,
+  altWeeklyRatePerUnit: cfg.altWeeklyRatePerUnit,
+  extraBagPrice: cfg.extraBagPrice,
+  standaloneExtraWeeklyCharge: cfg.standaloneExtraWeeklyCharge,
+
   includeTrip: false,
   tripChargePerVisit: cfg.tripChargePerVisit, // 0 and ignored in calc
 
@@ -105,16 +117,21 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
           setForm((prev) => ({
             ...prev,
-            // Update rates from backend if available
+            // Update all rate fields from backend if available
+            weeklyRatePerUnit: backendConfig.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
+            altWeeklyRatePerUnit: backendConfig.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
+            extraBagPrice: backendConfig.extraBagPrice ?? prev.extraBagPrice,
+            standaloneExtraWeeklyCharge: backendConfig.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
             installRatePerPod: backendConfig.installChargePerUnit ?? prev.installRatePerPod,
             tripChargePerVisit: backendConfig.tripChargePerVisit ?? prev.tripChargePerVisit,
           }));
 
           console.log('✅ SaniPod pricing loaded from backend:', {
-            installRate: backendConfig.installChargePerUnit,
             weeklyRate: backendConfig.weeklyRatePerUnit,
             altRate: backendConfig.altWeeklyRatePerUnit,
             extraBag: backendConfig.extraBagPrice,
+            standaloneExtra: backendConfig.standaloneExtraWeeklyCharge,
+            installRate: backendConfig.installChargePerUnit,
           });
         }
       } catch (error) {
@@ -194,17 +211,17 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     // ---------- EXTRA BAGS ----------
     // If recurring: weekly revenue; if one-time: first-visit only.
     const weeklyBagsRed = form.extraBagsRecurring
-      ? bags * cfg.extraBagPrice
+      ? bags * form.extraBagPrice
       : 0;
 
     const oneTimeBagsCost = form.extraBagsRecurring
       ? 0
-      : bags * cfg.extraBagPrice;
+      : bags * form.extraBagPrice;
 
     // ---------- WEEKLY SERVICE (RED RATE) ----------
-    const weeklyPodOptA_Red = pods * cfg.altWeeklyRatePerUnit; // 8$/wk * pods
+    const weeklyPodOptA_Red = pods * form.altWeeklyRatePerUnit; // 8$/wk * pods
     const weeklyPodOptB_Red =
-      pods * cfg.weeklyRatePerUnit + cfg.standaloneExtraWeeklyCharge; // 3$/wk * pods + 40$/wk
+      pods * form.weeklyRatePerUnit + form.standaloneExtraWeeklyCharge; // 3$/wk * pods + 40$/wk
 
     const weeklyServiceOptA_Red = weeklyPodOptA_Red + weeklyBagsRed;
     const weeklyServiceOptB_Red = weeklyPodOptB_Red + weeklyBagsRed;
@@ -288,6 +305,10 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     form.podQuantity,
     form.extraBagsPerWeek,
     form.extraBagsRecurring,
+    form.weeklyRatePerUnit,
+    form.altWeeklyRatePerUnit,
+    form.extraBagPrice,
+    form.standaloneExtraWeeklyCharge,
     form.includeTrip,
     form.tripChargePerVisit,
     form.isNewInstall,
