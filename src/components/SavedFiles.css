@@ -166,20 +166,26 @@
   font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #333;
+  color: #2563eb;
 }
 .iconbtn:hover {
-  background: #f3f3f3;
-  border-color: #ccc;
+  background: #dbeafe;
+  border-color: #2563eb;
   transform: translateY(-1px);
+  color: #1d4ed8;
 }
 .iconbtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  color: #9ca3af;
 }
 .iconbtn:disabled:hover {
   transform: none;
   background: #fff;
+  border-color: #ddd;
+}
+.iconbtn svg {
+  display: block;
 }
 
 /* ---------- Empty ---------- */
