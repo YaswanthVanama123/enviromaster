@@ -4,6 +4,15 @@ import type { SanipodPricingConfig } from "./sanipodTypes";
 /**
  * SaniPod standalone pricing configuration.
  *
+ * NOTE: These are DEFAULT/FALLBACK values.
+ * The application will attempt to fetch pricing from the backend API first.
+ * If the backend is unavailable or returns an error, these values will be used.
+ *
+ * To update production pricing:
+ * 1. Update the backend ServiceConfig in MongoDB
+ * 2. OR run: node scripts/seedSanipodPricing.js (when created)
+ * 3. OR use the admin panel (when implemented)
+ *
  * FINAL RULES (updated):
  *   - Weekly service is EITHER:
  *       8 $/week * pods

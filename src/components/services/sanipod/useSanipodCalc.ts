@@ -1,5 +1,5 @@
 // src/features/services/sanipod/useSanipodCalc.ts
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import { sanipodPricingConfig as cfg } from "./sanipodConfig";
 import type {
@@ -7,6 +7,9 @@ import type {
   SanipodRateCategory,
   SanipodServiceRuleKey,
 } from "./sanipodTypes";
+
+// API base URL - can be configured via environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export interface SanipodFormState {
   podQuantity: number;
@@ -20,6 +23,9 @@ export interface SanipodFormState {
   isNewInstall: boolean;
   installQuantity: number;
   installRatePerPod: number;
+
+  /** Custom installation override (user can manually set installation cost) */
+  customInstallationFee?: number;
 
   frequency: SanipodFrequencyKey;
   rateCategory: SanipodRateCategory;
@@ -81,6 +87,45 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     ...initialData,
   });
 
+  // Fetch pricing from backend on mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=sanipod`);
+
+        if (!response.ok) {
+          console.warn('SaniPod config not found in backend, using default values');
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data && data.config) {
+          const backendConfig = data.config;
+
+          setForm((prev) => ({
+            ...prev,
+            // Update rates from backend if available
+            installRatePerPod: backendConfig.installChargePerUnit ?? prev.installRatePerPod,
+            tripChargePerVisit: backendConfig.tripChargePerVisit ?? prev.tripChargePerVisit,
+          }));
+
+          console.log('✅ SaniPod pricing loaded from backend:', {
+            installRate: backendConfig.installChargePerUnit,
+            weeklyRate: backendConfig.weeklyRatePerUnit,
+            altRate: backendConfig.altWeeklyRatePerUnit,
+            extraBag: backendConfig.extraBagPrice,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch SaniPod pricing from backend:', error);
+        console.log('Using default hardcoded values as fallback');
+      }
+    };
+
+    fetchPricing();
+  }, []); // Run once on mount
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -92,9 +137,15 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
       if (type === "checkbox") {
         next[name as keyof SanipodFormState] = t.checked;
+      } else if (name === "customInstallationFee") {
+        // Handle custom installation fee - allow clearing by setting to undefined
+        const numVal = t.value === '' ? undefined : parseFloat(t.value);
+        if (numVal === undefined || !isNaN(numVal)) {
+          next.customInstallationFee = numVal;
+        }
       } else if (type === "number") {
         const raw = t.value;
-        const num = raw === "" ? 0 : Number(raw);
+        const num = raw === "" ? 0 : parseFloat(raw);
         next[name as keyof SanipodFormState] =
           Number.isFinite(num) && num >= 0 ? num : 0;
       } else {
@@ -180,7 +231,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
     // ---------- INSTALL (ONE-TIME) + ONE-TIME BAGS ----------
     const installQty = form.isNewInstall ? installQtyRaw : 0;
-    const installOnlyCost = installQty * installRate;
+    const calculatedInstallOnlyCost = installQty * installRate;
+
+    // Use custom installation fee if user has manually set it, otherwise use calculated
+    const installOnlyCost = form.customInstallationFee !== undefined
+      ? form.customInstallationFee
+      : calculatedInstallOnlyCost;
 
     // First visit = install-only + one-time bag cost (no normal service).
     const firstVisit = installOnlyCost + oneTimeBagsCost;
@@ -228,7 +284,20 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       ongoingMonthly,
       contractTotal,
     };
-  }, [form]);
+  }, [
+    form.podQuantity,
+    form.extraBagsPerWeek,
+    form.extraBagsRecurring,
+    form.includeTrip,
+    form.tripChargePerVisit,
+    form.isNewInstall,
+    form.installQuantity,
+    form.installRatePerPod,
+    form.customInstallationFee,
+    form.frequency,
+    form.rateCategory,
+    form.contractMonths,
+  ]);
 
   return { form, onChange, calc };
 }

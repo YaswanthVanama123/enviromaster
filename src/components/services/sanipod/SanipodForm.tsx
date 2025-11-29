@@ -197,33 +197,53 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       {/* Install details */}
       {form.isNewInstall && (
-        <div className="svc-row">
-          <label>Install Pods</label>
-          <div className="svc-row-right">
-            <input
-              className="svc-in svc-in-small"
-              type="number"
-              min={0}
-              name="installQuantity"
-              value={form.installQuantity}
-              onChange={onChange}
-            />
-            <span className="svc-multi">@</span>
-            <input
-              className="svc-in svc-in-small"
-              type="number"
-              step="0.01"
-              name="installRatePerPod"
-              value={form.installRatePerPod}
-              onChange={onChange}
-            />
-            <span className="svc-small">$/pod install</span>
-            <span className="svc-eq">=</span>
-            <span className="svc-dollar">
-              ${fmt(calc.installCost)}
-            </span>
+        <>
+          <div className="svc-row">
+            <label>Install Pods</label>
+            <div className="svc-row-right">
+              <input
+                className="svc-in svc-in-small"
+                type="number"
+                min={0}
+                name="installQuantity"
+                value={form.installQuantity}
+                onChange={onChange}
+              />
+              <span className="svc-multi">@</span>
+              <input
+                className="svc-in svc-in-small"
+                type="number"
+                step="0.01"
+                name="installRatePerPod"
+                value={form.installRatePerPod}
+                onChange={onChange}
+              />
+              <span className="svc-small">$/pod install</span>
+            </div>
           </div>
-        </div>
+
+          {/* Installation Total - Editable */}
+          <div className="svc-row">
+            <label>Installation Total (Editable)</label>
+            <div className="svc-row-right">
+              <span className="svc-dollar">
+                <span>$</span>
+                <input
+                  className="svc-in svc-in-small"
+                  type="number"
+                  step="0.01"
+                  name="customInstallationFee"
+                  value={
+                    form.customInstallationFee !== undefined
+                      ? form.customInstallationFee.toFixed(2)
+                      : calc.installCost.toFixed(2)
+                  }
+                  onChange={onChange}
+                />
+              </span>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Rate category */}
