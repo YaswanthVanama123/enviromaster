@@ -22,6 +22,15 @@ export const saniscrubFrequencyLabels: Record<SaniscrubFrequency, string> = {
 
 /**
  * Canonical SaniScrub pricing config, matching the rules.
+ *
+ * NOTE: These are DEFAULT/FALLBACK values.
+ * The application will attempt to fetch pricing from the backend API first.
+ * If the backend is unavailable or returns an error, these values will be used.
+ *
+ * To update production pricing:
+ * 1. Update the backend ServiceConfig in MongoDB
+ * 2. OR run: node scripts/seedSaniscrubPricing.js (when created)
+ * 3. OR use the admin panel (when implemented)
  */
 export const saniscrubPricingConfig: SaniscrubPricingConfig = {
   // *** ALL fixture rates & minimums here are MONTHLY ***

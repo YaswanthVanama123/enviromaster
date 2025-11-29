@@ -74,4 +74,19 @@ export interface SaniscrubFormState extends BaseServiceFormState {
 
   // Contract length in months (2–36) – drives total contract price
   contractMonths: number;
+
+  // ✅ NEW: Editable pricing rates (fetched from backend or config)
+  fixtureRateMonthly: number;        // $25/fixture/month
+  fixtureRateBimonthly: number;      // $35/fixture/month
+  fixtureRateQuarterly: number;      // $40/fixture/month
+  minimumMonthly: number;            // $175 minimum
+  minimumBimonthly: number;          // $250 minimum
+  nonBathroomFirstUnitRate: number;  // $250 for first 500 sq ft
+  nonBathroomAdditionalUnitRate: number; // $125 per additional 500 sq ft
+  installMultiplierDirty: number;    // 3× multiplier for dirty install
+  installMultiplierClean: number;    // 1× multiplier for clean install
+  twoTimesPerMonthDiscount: number;  // $15 discount for 2×/month with SaniClean
+
+  // Custom installation override (user can manually set installation cost)
+  customInstallationFee?: number;
 }

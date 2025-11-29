@@ -57,12 +57,23 @@ export const SaniscrubForm: React.FC<
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {
     if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
-      return cfg.fixtureRates.monthly; // $25
+      return form.fixtureRateMonthly; // ✅ Uses form value
     }
     if (form.frequency === "bimonthly") {
-      return cfg.fixtureRates.bimonthly; // $35
+      return form.fixtureRateBimonthly; // ✅ Uses form value
     }
-    return cfg.fixtureRates.quarterly; // $40
+    return form.fixtureRateQuarterly; // ✅ Uses form value
+  })();
+
+  //Get the corresponding rate field name for onChange
+  const fixtureRateFieldName = (() => {
+    if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
+      return "fixtureRateMonthly";
+    }
+    if (form.frequency === "bimonthly") {
+      return "fixtureRateBimonthly";
+    }
+    return "fixtureRateQuarterly";
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
@@ -150,7 +161,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Restroom fixtures */}
+      {/* Restroom fixtures with editable rate */}
       <div className="svc-row">
         <label>Restroom Fixtures</label>
         <div className="svc-row-right">
@@ -165,8 +176,10 @@ export const SaniscrubForm: React.FC<
           <input
             className="svc-in"
             type="number"
-            readOnly
-            value={displayFixtureRate}
+            step="0.01"
+            name={fixtureRateFieldName}
+            value={displayFixtureRate.toFixed(2)}
+            onChange={onChange}
           />
           <span>=</span>
           <input
@@ -182,20 +195,48 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Minimum reminder row */}
+      {/* Minimum reminder row with editable minimums */}
       <div className="svc-row svc-row-note">
         <label></label>
         <div className="svc-row-right">
           <span className="svc-micro-note">
-            Minimums (fixtures): Monthly = ${cfg.minimums.monthly} ·
-            Bi-Monthly/Quarterly = ${cfg.minimums.bimonthly}. 2× / Month with
-            SaniClean is priced as 2× Monthly − $
-            {cfg.twoTimesPerMonthDiscountFlat}.
+            Minimums (fixtures): Monthly = $
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="minimumMonthly"
+              value={form.minimumMonthly.toFixed(2)}
+              onChange={onChange}
+              style={{ width: "60px", display: "inline" }}
+            />
+            {" · "}
+            Bi-Monthly/Quarterly = $
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="minimumBimonthly"
+              value={form.minimumBimonthly.toFixed(2)}
+              onChange={onChange}
+              style={{ width: "60px", display: "inline" }}
+            />
+            . 2× / Month with SaniClean is priced as 2× Monthly − $
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="twoTimesPerMonthDiscount"
+              value={form.twoTimesPerMonthDiscount.toFixed(2)}
+              onChange={onChange}
+              style={{ width: "50px", display: "inline" }}
+            />
+            .
           </span>
         </div>
       </div>
 
-      {/* Non-bathroom SaniScrub area */}
+      {/* Non-bathroom SaniScrub area with editable rates */}
       <div className="svc-row">
         <label>Non-Bathroom Sq Ft</label>
         <div className="svc-row-right">
@@ -207,12 +248,27 @@ export const SaniscrubForm: React.FC<
             onChange={onChange}
           />
           <span>@</span>
+          <span className="svc-small">1st 500 = $</span>
           <input
-            className="svc-in"
-            type="text"
-            readOnly
-            value="1st 500 = 250; +125/500"
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="nonBathroomFirstUnitRate"
+            value={form.nonBathroomFirstUnitRate.toFixed(2)}
+            onChange={onChange}
+            style={{ width: "60px" }}
           />
+          <span className="svc-small">; +$</span>
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="nonBathroomAdditionalUnitRate"
+            value={form.nonBathroomAdditionalUnitRate.toFixed(2)}
+            onChange={onChange}
+            style={{ width: "60px" }}
+          />
+          <span className="svc-small">/500</span>
           <span>=</span>
           <input
             className="svc-in-box"
@@ -294,7 +350,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Install (3× dirty / 1× clean) – one-time job, first visit only */}
+      {/* Install (3× dirty / 1× clean) with editable multipliers */}
       <div className="svc-row svc-row-install">
         <label>Install Quote (First Visit Only)</label>
         <div className="svc-row-right">
@@ -314,20 +370,56 @@ export const SaniscrubForm: React.FC<
               checked={form.isDirtyInstall}
               onChange={onChange}
             />
-            <span>Dirty (3×)</span>
+            <span>Dirty (</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="installMultiplierDirty"
+              value={form.installMultiplierDirty.toFixed(2)}
+              onChange={onChange}
+              style={{ width: "50px", display: "inline" }}
+            />
+            <span>×)</span>
           </label>
+          <span className="svc-small">or Clean (</span>
           <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={
-              calc.installOneTime > 0
-                ? `$${calc.installOneTime.toFixed(2)} one-time`
-                : "$0 one-time"
-            }
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="installMultiplierClean"
+            value={form.installMultiplierClean.toFixed(2)}
+            onChange={onChange}
+            style={{ width: "50px", display: "inline" }}
           />
+          <span className="svc-small">×)</span>
         </div>
       </div>
+
+      {/* Installation Total - Editable */}
+      {form.includeInstall && (
+        <div className="svc-row svc-row-charge">
+          <label>Installation Total (Editable)</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customInstallationFee"
+                value={
+                  form.customInstallationFee !== undefined
+                    ? form.customInstallationFee.toFixed(2)
+                    : calc.installOneTime.toFixed(2)
+                }
+                onChange={onChange}
+              />
+            </div>
+            <span className="svc-small"> one-time</span>
+          </div>
+        </div>
+      )}
 
       {/* First month total = install-only first visit + (monthlyVisits − 1) × normal service */}
       <div className="svc-row svc-row-charge">

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { SaniscrubFormState, SaniscrubFrequency } from "./saniscrubTypes";
@@ -6,6 +6,9 @@ import {
   saniscrubPricingConfig as cfg,
   saniscrubFrequencyList,
 } from "./saniscrubConfig";
+
+// API base URL - can be configured via environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const DEFAULT_FORM: SaniscrubFormState = {
   serviceId: "saniscrub",
@@ -20,6 +23,18 @@ const DEFAULT_FORM: SaniscrubFormState = {
   isDirtyInstall: false,
   notes: "",
   contractMonths: 12, // default contract term
+
+  // ✅ NEW: Editable pricing rates from config (will be overridden by backend)
+  fixtureRateMonthly: cfg.fixtureRates.monthly,
+  fixtureRateBimonthly: cfg.fixtureRates.bimonthly,
+  fixtureRateQuarterly: cfg.fixtureRates.quarterly,
+  minimumMonthly: cfg.minimums.monthly,
+  minimumBimonthly: cfg.minimums.bimonthly,
+  nonBathroomFirstUnitRate: cfg.nonBathroomFirstUnitRate,
+  nonBathroomAdditionalUnitRate: cfg.nonBathroomAdditionalUnitRate,
+  installMultiplierDirty: cfg.installMultipliers.dirty,
+  installMultiplierClean: cfg.installMultipliers.clean,
+  twoTimesPerMonthDiscount: cfg.twoTimesPerMonthDiscountFlat,
 };
 
 function clampFrequency(f: string): SaniscrubFrequency {
@@ -42,6 +57,54 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     ...initial,
   });
 
+  // ✅ Fetch pricing from backend on mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=saniscrub`);
+
+        if (!response.ok) {
+          console.warn('SaniScrub config not found in backend, using default values');
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data && data.config) {
+          const backendConfig = data.config;
+
+          setForm((prev) => ({
+            ...prev,
+            // Update all rate fields from backend if available
+            fixtureRateMonthly: backendConfig.fixtureRateMonthly ?? prev.fixtureRateMonthly,
+            fixtureRateBimonthly: backendConfig.fixtureRateBimonthly ?? prev.fixtureRateBimonthly,
+            fixtureRateQuarterly: backendConfig.fixtureRateQuarterly ?? prev.fixtureRateQuarterly,
+            minimumMonthly: backendConfig.minimumMonthly ?? prev.minimumMonthly,
+            minimumBimonthly: backendConfig.minimumBimonthly ?? prev.minimumBimonthly,
+            nonBathroomFirstUnitRate: backendConfig.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
+            nonBathroomAdditionalUnitRate: backendConfig.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
+            installMultiplierDirty: backendConfig.installMultiplierDirty ?? prev.installMultiplierDirty,
+            installMultiplierClean: backendConfig.installMultiplierClean ?? prev.installMultiplierClean,
+            twoTimesPerMonthDiscount: backendConfig.twoTimesPerMonthDiscount ?? prev.twoTimesPerMonthDiscount,
+          }));
+
+          console.log('✅ SaniScrub pricing loaded from backend:', {
+            fixtureRateMonthly: backendConfig.fixtureRateMonthly,
+            fixtureRateBimonthly: backendConfig.fixtureRateBimonthly,
+            fixtureRateQuarterly: backendConfig.fixtureRateQuarterly,
+            minimumMonthly: backendConfig.minimumMonthly,
+            minimumBimonthly: backendConfig.minimumBimonthly,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch SaniScrub pricing from backend:', error);
+        console.log('Using default hardcoded values as fallback');
+      }
+    };
+
+    fetchPricing();
+  }, []); // Run once on mount
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -56,6 +119,33 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
             ...prev,
             [name]: Number.isFinite(num) && num > 0 ? num : 0,
           };
+        }
+
+        // ✅ NEW: Handle editable rate fields
+        case "fixtureRateMonthly":
+        case "fixtureRateBimonthly":
+        case "fixtureRateQuarterly":
+        case "minimumMonthly":
+        case "minimumBimonthly":
+        case "nonBathroomFirstUnitRate":
+        case "nonBathroomAdditionalUnitRate":
+        case "installMultiplierDirty":
+        case "installMultiplierClean":
+        case "twoTimesPerMonthDiscount": {
+          const num = parseFloat(String(value));
+          return {
+            ...prev,
+            [name]: Number.isFinite(num) && num >= 0 ? num : 0,
+          };
+        }
+
+        // ✅ NEW: Handle custom installation fee
+        case "customInstallationFee": {
+          const numVal = value === '' ? undefined : parseFloat(value);
+          if (numVal === undefined || !isNaN(numVal)) {
+            return { ...prev, customInstallationFee: numVal };
+          }
+          return prev;
         }
 
         case "frequency":
@@ -133,8 +223,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     let fixtureMinimumApplied = 0;
 
     if (fixtureCount > 0) {
-      const baseMonthlyRate = cfg.fixtureRates.monthly; // 25
-      const baseMonthlyMin = cfg.minimums.monthly; // 175
+      const baseMonthlyRate = form.fixtureRateMonthly; // ✅ Uses form value
+      const baseMonthlyMin = form.minimumMonthly; // ✅ Uses form value
       const rawMonthlyAtBase = fixtureCount * baseMonthlyRate;
       const baseMonthlyWithMin = Math.max(rawMonthlyAtBase, baseMonthlyMin);
 
@@ -153,7 +243,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         if (form.hasSaniClean) {
           twiceMonthly = Math.max(
             0,
-            twiceMonthly - cfg.twoTimesPerMonthDiscountFlat
+            twiceMonthly - form.twoTimesPerMonthDiscount // ✅ Uses form value
           );
         }
 
@@ -167,8 +257,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         }
       } else if (freq === "bimonthly") {
         // Bi-Monthly: $35 / fixture, $250 minimum PER VISIT
-        const perVisitRate = cfg.fixtureRates.bimonthly; // 35
-        const perVisitMin = cfg.minimums.bimonthly; // 250
+        const perVisitRate = form.fixtureRateBimonthly; // ✅ Uses form value
+        const perVisitMin = form.minimumBimonthly; // ✅ Uses form value
 
         const rawPerVisit = fixtureCount * perVisitRate;
         const perVisitCharge = Math.max(rawPerVisit, perVisitMin);
@@ -182,8 +272,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         }
       } else {
         // Quarterly: $40 / fixture, $250 minimum PER VISIT
-        const perVisitRate = cfg.fixtureRates.quarterly; // 40
-        const perVisitMin = cfg.minimums.quarterly; // 250
+        const perVisitRate = form.fixtureRateQuarterly; // ✅ Uses form value
+        const perVisitMin = form.minimumBimonthly; // ✅ Uses form value
 
         const rawPerVisit = fixtureCount * perVisitRate;
         const perVisitCharge = Math.max(rawPerVisit, perVisitMin);
@@ -207,8 +297,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       if (units > 0) {
         const extraUnits = Math.max(units - 1, 0);
         nonBathroomPerVisit =
-          cfg.nonBathroomFirstUnitRate +
-          extraUnits * cfg.nonBathroomAdditionalUnitRate;
+          form.nonBathroomFirstUnitRate + // ✅ Uses form value
+          extraUnits * form.nonBathroomAdditionalUnitRate; // ✅ Uses form value
 
         nonBathroomMonthly = (nonBathroomPerVisit * visitsPerYear) / 12;
       }
@@ -225,13 +315,18 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     const serviceActive = fixtureCount > 0 || nonBathSqFt > 0;
 
     // Install = 3× dirty / 1× clean of MONTHLY BASE (no trip)
-    const installOneTime =
+    const calculatedInstallOneTime =
       serviceActive && form.includeInstall
         ? monthlyBase *
           (form.isDirtyInstall
-            ? cfg.installMultipliers.dirty
-            : cfg.installMultipliers.clean)
+            ? form.installMultiplierDirty // ✅ Uses form value
+            : form.installMultiplierClean) // ✅ Uses form value
         : 0;
+
+    // ✅ Use custom installation fee if set, otherwise use calculated
+    const installOneTime = form.customInstallationFee !== undefined
+      ? form.customInstallationFee
+      : calculatedInstallOneTime;
 
     const perVisitWithoutTrip = fixturePerVisit + nonBathroomPerVisit;
 
@@ -290,7 +385,27 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       firstMonthTotal,
       contractTotal,
     };
-  }, [form]);
+  }, [
+    form.fixtureCount,
+    form.nonBathroomSqFt,
+    form.frequency,
+    form.hasSaniClean,
+    form.includeInstall,
+    form.isDirtyInstall,
+    form.contractMonths,
+    // ✅ NEW: Editable rate fields
+    form.fixtureRateMonthly,
+    form.fixtureRateBimonthly,
+    form.fixtureRateQuarterly,
+    form.minimumMonthly,
+    form.minimumBimonthly,
+    form.nonBathroomFirstUnitRate,
+    form.nonBathroomAdditionalUnitRate,
+    form.installMultiplierDirty,
+    form.installMultiplierClean,
+    form.twoTimesPerMonthDiscount,
+    form.customInstallationFee,
+  ]);
 
   const quote: ServiceQuoteResult = useMemo(
     () => ({
