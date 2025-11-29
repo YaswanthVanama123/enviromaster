@@ -335,7 +335,12 @@ export default function SavedFiles() {
                       onChange={() => toggleRow(f.id)}
                     />
                   </td>
-                  <td>{f.fileName}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <HiDocumentText size={20} style={{ color: '#2563eb', flexShrink: 0 }} />
+                      <span>{f.fileName}</span>
+                    </div>
+                  </td>
                   <td>{timeAgo(f.updatedAt)}</td>
                   <td>
                     <select
