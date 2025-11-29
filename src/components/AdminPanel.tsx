@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
+import SavedFiles from "./SavedFiles";
+import { AdminDashboard } from "./admin/AdminDashboard";
 import "./AdminPanel.css";
 
 type TabType = "dashboard" | "saved-pdfs" | "pricing-details";
@@ -122,11 +124,6 @@ export default function AdminPanel() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    if (tab === "saved-pdfs") {
-      navigate("/saved-files");
-    } else if (tab === "pricing-details") {
-      navigate("/admin-dashboard");
-    }
   };
 
   const handleLogout = () => {
@@ -194,169 +191,185 @@ export default function AdminPanel() {
 
       {/* Main Content */}
       <main className="panel-content">
-        <div className="content-left">
-          {/* Welcome Section */}
-          <div className="welcome-card">
-            <div className="welcome-content">
-              <h1 className="welcome-title">Welcome back,</h1>
-              <h2 className="welcome-name">{user?.username || "Admin"}</h2>
-              <p className="welcome-subtitle">We are happy to see you again</p>
-            </div>
-            <div className="welcome-illustration">
-              <div className="illustration-placeholder">
-                👥💼
-              </div>
-            </div>
-          </div>
-
-          {/* Upload File Section */}
-          <div className="upload-section">
-            <div className="upload-card">
-              <div className="upload-header">
-                <h3>Upload File</h3>
-                <button className="upload-btn">
-                  <span className="upload-icon">📤</span>
-                  Upload
-                </button>
-              </div>
-              <div className="upload-stats">
-                <div className="upload-date">
-                  <span className="date-label">You can upload file here</span>
-                  <div className="date-value">15 May, 2023</div>
+        {activeTab === "dashboard" && (
+          <>
+            <div className="content-left">
+              {/* Welcome Section */}
+              <div className="welcome-card">
+                <div className="welcome-content">
+                  <h1 className="welcome-title">Welcome back,</h1>
+                  <h2 className="welcome-name">{user?.username || "Admin"}</h2>
+                  <p className="welcome-subtitle">We are happy to see you again</p>
                 </div>
-                <div className="upload-count">
-                  <div className="count-value">15</div>
-                  <div className="count-label">Files uploaded</div>
+                <div className="welcome-illustration">
+                  <div className="illustration-placeholder">
+                    👥💼
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Recent Documents Table */}
-          <div className="recent-documents">
-            <h3 className="section-title">Recent Documents</h3>
-            <div className="table-container">
-              <table className="documents-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <input type="checkbox" />
-                    </th>
-                    <th>Document Name</th>
-                    <th>Received On</th>
-                    <th>Actions</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: "center", padding: "24px" }}>
-                        Loading documents...
-                      </td>
-                    </tr>
-                  ) : documents.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: "center", padding: "24px" }}>
-                        No documents found
-                      </td>
-                    </tr>
-                  ) : (
-                    documents.map((doc) => (
-                      <tr key={doc.id}>
-                        <td>
+              {/* Upload File Section */}
+              <div className="upload-section">
+                <div className="upload-card">
+                  <div className="upload-header">
+                    <h3>Upload File</h3>
+                    <button className="upload-btn">
+                      <span className="upload-icon">📤</span>
+                      Upload
+                    </button>
+                  </div>
+                  <div className="upload-stats">
+                    <div className="upload-date">
+                      <span className="date-label">You can upload file here</span>
+                      <div className="date-value">15 May, 2023</div>
+                    </div>
+                    <div className="upload-count">
+                      <div className="count-value">15</div>
+                      <div className="count-label">Files uploaded</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Documents Table */}
+              <div className="recent-documents">
+                <h3 className="section-title">Recent Documents</h3>
+                <div className="table-container">
+                  <table className="documents-table">
+                    <thead>
+                      <tr>
+                        <th>
                           <input type="checkbox" />
-                        </td>
-                        <td>
-                          <div className="doc-name">
-                            <span className="doc-icon">📄</span>
-                            {doc.name}
-                          </div>
-                        </td>
-                        <td className="text-muted">{doc.uploadedOn}</td>
-                        <td>
-                          <button
-                            className="download-btn-table"
-                            onClick={() => handleDownload(doc.id, doc.name)}
-                            title="Download PDF"
-                          >
-                            ⬇
-                          </button>
-                        </td>
-                        <td>
-                          <span className={`status-badge status-${doc.status}`}>
-                            {doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </span>
-                        </td>
+                        </th>
+                        <th>Document Name</th>
+                        <th>Received On</th>
+                        <th>Actions</th>
+                        <th>Status</th>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <aside className="content-right">
-          {/* Contract Data Card */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <h4>Contract data</h4>
-            </div>
-            <div className="stat-body">
-              <div className="stat-label">Last uploaded</div>
-              <div className="stat-value">15</div>
-            </div>
-          </div>
-
-          {/* Sent by Manager Card */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <h4>Sent by manager</h4>
-            </div>
-            <div className="stat-body">
-              <div className="stat-value">05</div>
-            </div>
-          </div>
-
-          {/* Fully Signed Card */}
-          <div className="stat-card">
-            <div className="stat-header">
-              <h4>Fully Signed</h4>
-            </div>
-            <div className="stat-body">
-              <div className="stat-value">08</div>
-            </div>
-          </div>
-
-          {/* Download App Section */}
-          <div className="download-app-card">
-            <h4 className="download-title">Download DigiDocs App</h4>
-            <p className="download-subtitle">
-              Get the full experience on mobile
-            </p>
-            <div className="app-illustration">
-              🏃‍♂️📱
-            </div>
-            <div className="app-buttons">
-              <button className="app-store-btn">
-                <span className="btn-icon">🍎</span>
-                <div className="btn-text">
-                  <div className="btn-small">Download on the</div>
-                  <div className="btn-large">App Store</div>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: "center", padding: "24px" }}>
+                            Loading documents...
+                          </td>
+                        </tr>
+                      ) : documents.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: "center", padding: "24px" }}>
+                            No documents found
+                          </td>
+                        </tr>
+                      ) : (
+                        documents.map((doc) => (
+                          <tr key={doc.id}>
+                            <td>
+                              <input type="checkbox" />
+                            </td>
+                            <td>
+                              <div className="doc-name">
+                                <span className="doc-icon">📄</span>
+                                {doc.name}
+                              </div>
+                            </td>
+                            <td className="text-muted">{doc.uploadedOn}</td>
+                            <td>
+                              <button
+                                className="download-btn-table"
+                                onClick={() => handleDownload(doc.id, doc.name)}
+                                title="Download PDF"
+                              >
+                                ⬇
+                              </button>
+                            </td>
+                            <td>
+                              <span className={`status-badge status-${doc.status}`}>
+                                {doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </button>
-              <button className="app-store-btn">
-                <span className="btn-icon">🤖</span>
-                <div className="btn-text">
-                  <div className="btn-small">GET IT ON</div>
-                  <div className="btn-large">Google Play</div>
-                </div>
-              </button>
+              </div>
             </div>
+
+            {/* Right Sidebar */}
+            <aside className="content-right">
+              {/* Contract Data Card */}
+              <div className="stat-card">
+                <div className="stat-header">
+                  <h4>Contract data</h4>
+                </div>
+                <div className="stat-body">
+                  <div className="stat-label">Last uploaded</div>
+                  <div className="stat-value">15</div>
+                </div>
+              </div>
+
+              {/* Sent by Manager Card */}
+              <div className="stat-card">
+                <div className="stat-header">
+                  <h4>Sent by manager</h4>
+                </div>
+                <div className="stat-body">
+                  <div className="stat-value">05</div>
+                </div>
+              </div>
+
+              {/* Fully Signed Card */}
+              <div className="stat-card">
+                <div className="stat-header">
+                  <h4>Fully Signed</h4>
+                </div>
+                <div className="stat-body">
+                  <div className="stat-value">08</div>
+                </div>
+              </div>
+
+              {/* Download App Section */}
+              <div className="download-app-card">
+                <h4 className="download-title">Download DigiDocs App</h4>
+                <p className="download-subtitle">
+                  Get the full experience on mobile
+                </p>
+                <div className="app-illustration">
+                  🏃‍♂️📱
+                </div>
+                <div className="app-buttons">
+                  <button className="app-store-btn">
+                    <span className="btn-icon">🍎</span>
+                    <div className="btn-text">
+                      <div className="btn-small">Download on the</div>
+                      <div className="btn-large">App Store</div>
+                    </div>
+                  </button>
+                  <button className="app-store-btn">
+                    <span className="btn-icon">🤖</span>
+                    <div className="btn-text">
+                      <div className="btn-small">GET IT ON</div>
+                      <div className="btn-large">Google Play</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </aside>
+          </>
+        )}
+
+        {activeTab === "saved-pdfs" && (
+          <div className="tab-full-width">
+            <SavedFiles />
           </div>
-        </aside>
+        )}
+
+        {activeTab === "pricing-details" && (
+          <div className="tab-full-width">
+            <AdminDashboard />
+          </div>
+        )}
       </main>
     </div>
   );

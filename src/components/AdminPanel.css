@@ -178,6 +178,12 @@
   width: 100%;
 }
 
+/* Full width tab content for SavedFiles and AdminDashboard */
+.tab-full-width {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .content-left {
   display: flex;
   flex-direction: column;
