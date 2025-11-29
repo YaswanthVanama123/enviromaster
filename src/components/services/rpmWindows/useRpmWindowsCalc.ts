@@ -131,16 +131,21 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "contractMonths":
           return { ...prev, contractMonths: Number(value) || 0 };
 
-        // Window rates - handle decimal inputs properly
+        // Window rates - user sees frequency-adjusted rate, but we store base rate
         case "smallWindowRate":
         case "mediumWindowRate":
         case "largeWindowRate":
         case "tripCharge": {
-          // Parse as float and handle empty/invalid inputs
-          const numVal = value === '' ? 0 : parseFloat(value);
-          // Only update if it's a valid number
-          if (!isNaN(numVal)) {
-            return { ...prev, [name]: numVal };
+          // Parse the displayed effective rate
+          const effectiveRate = value === '' ? 0 : parseFloat(value);
+
+          if (!isNaN(effectiveRate)) {
+            // Back-calculate to base rate by dividing by frequency multiplier
+            const freqKey = mapFrequency(prev.frequency);
+            const freqMult = getFrequencyMultiplier(freqKey) || 1;
+            const baseRate = effectiveRate / freqMult;
+
+            return { ...prev, [name]: baseRate };
           }
           return prev;
         }

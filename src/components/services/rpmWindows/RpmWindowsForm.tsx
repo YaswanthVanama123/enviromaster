@@ -101,7 +101,7 @@ export const RpmWindowsForm: React.FC<
             name="smallWindowRate"
             type="number"
             step="0.01"
-            value={form.smallWindowRate}
+            value={calc.effSmall.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
@@ -130,7 +130,7 @@ export const RpmWindowsForm: React.FC<
             name="mediumWindowRate"
             type="number"
             step="0.01"
-            value={form.mediumWindowRate}
+            value={calc.effMedium.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
@@ -159,7 +159,7 @@ export const RpmWindowsForm: React.FC<
             name="largeWindowRate"
             type="number"
             step="0.01"
-            value={form.largeWindowRate}
+            value={calc.effLarge.toFixed(2)}
             onChange={onChange}
           />
           <span>=</span>
