@@ -6,6 +6,7 @@ import { useAdminAuth } from "../backendservice/hooks";
 import SavedFiles from "./SavedFiles";
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
+import ApprovalDocuments from "./ApprovalDocuments";
 import {
   HiDocumentText,
   HiSearch,
@@ -19,7 +20,7 @@ import { MdDashboard, MdFolder, MdAttachMoney } from "react-icons/md";
 import { FaMobileAlt, FaApple, FaGooglePlay } from "react-icons/fa";
 import "./AdminPanel.css";
 
-type TabType = "dashboard" | "saved-pdfs" | "pricing-details" | "manual-uploads";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -204,6 +205,12 @@ export default function AdminPanel() {
               onClick={() => handleTabChange("saved-pdfs")}
             >
               Saved PDFs
+            </button>
+            <button
+              className={`nav-item ${activeTab === "approval-documents" ? "active" : ""}`}
+              onClick={() => handleTabChange("approval-documents")}
+            >
+              Approval Documents
             </button>
             <button
               className={`nav-item ${activeTab === "manual-uploads" ? "active" : ""}`}
@@ -422,6 +429,12 @@ export default function AdminPanel() {
         {activeTab === "saved-pdfs" && (
           <div className="tab-full-width">
             <SavedFiles />
+          </div>
+        )}
+
+        {activeTab === "approval-documents" && (
+          <div className="tab-full-width">
+            <ApprovalDocuments />
           </div>
         )}
 
