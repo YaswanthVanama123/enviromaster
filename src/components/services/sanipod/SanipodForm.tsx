@@ -235,7 +235,17 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             checked={form.isNewInstall}
             onChange={onChange}
           />{" "}
-          <span className="svc-small">${form.installRatePerPod.toFixed(2)} / pod (one-time install)</span>
+          <span className="svc-small">$</span>
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="installRatePerPod"
+            value={form.installRatePerPod.toFixed(2)}
+            onChange={onChange}
+            style={{ width: "60px" }}
+          />
+          <span className="svc-small"> / pod (one-time install)</span>
         </div>
       </div>
 
