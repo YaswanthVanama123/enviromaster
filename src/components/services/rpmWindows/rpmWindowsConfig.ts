@@ -1,6 +1,21 @@
 // src/features/services/rpmWindows/rpmWindowsConfig.ts
 import type { RpmWindowPricingConfig } from "./rpmWindowsTypes";
 
+/**
+ * RPM Windows Pricing Configuration
+ *
+ * NOTE: These are DEFAULT/FALLBACK values.
+ * The application will attempt to fetch pricing from the backend API first.
+ * If the backend is unavailable or returns an error, these values will be used.
+ *
+ * To update production pricing:
+ * 1. Update the backend ServiceConfig in MongoDB
+ * 2. OR run: node scripts/seedRpmWindowsPricing.js
+ * 3. OR use the admin panel (when implemented)
+ *
+ * Basic rates (smallWindowRate, mediumWindowRate, largeWindowRate) are
+ * fetched from backend on component mount and override these defaults.
+ */
 export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
   smallWindowRate: 1.5,
   mediumWindowRate: 3.0,

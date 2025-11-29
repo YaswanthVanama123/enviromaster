@@ -1,5 +1,5 @@
 // src/features/services/rpmWindows/useRpmWindowsCalc.ts
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type {
@@ -8,6 +8,9 @@ import type {
   RpmRateCategory,
 } from "./rpmWindowsTypes";
 import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
+
+// API base URL - can be configured via environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const DEFAULT_FORM: RpmWindowsFormState = {
   smallQty: 0,
@@ -47,6 +50,51 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     ...initial,
   });
 
+  // Fetch pricing from backend on mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=rpmWindows`);
+
+        if (!response.ok) {
+          console.warn('RPM Windows config not found in backend, using default values');
+          return;
+        }
+
+        const data = await response.json();
+
+        // If we have backend config, merge with form state
+        if (data && data.config) {
+          const backendConfig = data.config;
+
+          setForm((prev) => ({
+            ...prev,
+            // Basic rates - these are the main values fetched from backend
+            smallWindowRate: backendConfig.smallWindowRate ?? prev.smallWindowRate,
+            mediumWindowRate: backendConfig.mediumWindowRate ?? prev.mediumWindowRate,
+            largeWindowRate: backendConfig.largeWindowRate ?? prev.largeWindowRate,
+            tripCharge: backendConfig.tripCharge ?? prev.tripCharge,
+            // Note: frequency multipliers and other complex config
+            // are used from the imported cfg object, not from form state
+          }));
+
+          console.log('✅ RPM Windows pricing loaded from backend:', {
+            small: backendConfig.smallWindowRate,
+            medium: backendConfig.mediumWindowRate,
+            large: backendConfig.largeWindowRate,
+            tripCharge: backendConfig.tripCharge,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch RPM Windows pricing from backend:', error);
+        console.log('Using default hardcoded values as fallback');
+        // Continue with default values from config file
+      }
+    };
+
+    fetchPricing();
+  }, []); // Run once on mount
+
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, checked } = e.target as any;
 
@@ -69,14 +117,19 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "contractMonths":
           return { ...prev, contractMonths: Number(value) || 0 };
 
-        // convert UI “this frequency” rates back to weekly base
+        // Window rates - handle decimal inputs properly
         case "smallWindowRate":
         case "mediumWindowRate":
         case "largeWindowRate":
         case "tripCharge": {
-          const freqMult = getFrequencyMultiplier(mapFrequency(prev.frequency)) || 1;
-          const displayVal = Number(value) || 0;
-          return { ...prev, [name]: displayVal / freqMult };
+          // Parse as float and handle empty/invalid inputs
+          const numVal = value === '' ? 0 : parseFloat(value);
+          // Only update if it's a valid number
+          if (!isNaN(numVal)) {
+            console.log(`[RPM Windows] ${name} changed from ${prev[name]} to ${numVal}`);
+            return { ...prev, [name]: numVal };
+          }
+          return prev;
         }
 
         default:
@@ -127,10 +180,20 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const freqKey = mapFrequency(form.frequency);
     const freqMult = getFrequencyMultiplier(freqKey) || 1;
 
+    // Get rates from form state (these should reflect user's manual changes)
     const weeklySmall = form.smallWindowRate;
     const weeklyMedium = form.mediumWindowRate;
     const weeklyLarge = form.largeWindowRate;
     const weeklyTrip = form.tripCharge; // will be 0, used only for display
+
+    // Debug logging to verify we're using form values
+    console.log('[RPM Windows Calc] Using rates:', {
+      small: weeklySmall,
+      medium: weeklyMedium,
+      large: weeklyLarge,
+      frequency: freqKey,
+      freqMultiplier: freqMult
+    });
 
     // Weekly base window cost
     const weeklyWindows =
@@ -232,7 +295,21 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       monthlyBillRated,
       contractTotalRated,
     };
-  }, [form]);
+  }, [
+    // Explicitly list all form fields that affect calculations
+    form.smallQty,
+    form.mediumQty,
+    form.largeQty,
+    form.smallWindowRate,
+    form.mediumWindowRate,
+    form.largeWindowRate,
+    form.tripCharge,
+    form.frequency,
+    form.selectedRateCategory,
+    form.isFirstTimeInstall,
+    form.extraCharges,
+    form.contractMonths
+  ]);
 
   const quote: ServiceQuoteResult = {
     serviceId: "rpmWindows",
