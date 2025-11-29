@@ -204,17 +204,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const weeklyLarge = form.largeWindowRate;
     const weeklyTrip = form.tripCharge; // will be 0, used only for display
 
-    // Weekly base window cost using FORM rates (user's custom rates)
+    // Weekly base window cost using user's rates (base rates, not frequency-adjusted)
     const weeklyWindows =
       form.smallQty * weeklySmall +
       form.mediumQty * weeklyMedium +
       form.largeQty * weeklyLarge;
-
-    // Weekly cost using DEFAULT/BACKEND rates (for installation only)
-    const weeklyWindowsAtDefaultRates =
-      form.smallQty * defaultRates.smallWindowRate +
-      form.mediumQty * defaultRates.mediumWindowRate +
-      form.largeQty * defaultRates.largeWindowRate;
 
     const hasWindows = weeklyWindows > 0;
 
@@ -245,11 +239,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const recurringPerVisitRated = recurringPerVisitBase * rateCfg.multiplier;
 
-    // INSTALLATION FEE — ALWAYS uses DEFAULT/BACKEND rates (not user's custom rates)
+    // INSTALLATION FEE — Uses user's custom rates (base weekly rate, not frequency-adjusted)
     // ALWAYS WEEKLY rates ×3 (NO FREQUENCY MULTIPLIER)
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
-        ? weeklyWindowsAtDefaultRates * cfg.installMultiplierFirstTime
+        ? weeklyWindows * cfg.installMultiplierFirstTime
         : 0;
 
     const installOneTime = installOneTimeBase * rateCfg.multiplier;
@@ -325,10 +319,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     form.isFirstTimeInstall,
     form.extraCharges,
     form.contractMonths,
-    // Default rates (used for installation calculation)
-    defaultRates.smallWindowRate,
-    defaultRates.mediumWindowRate,
-    defaultRates.largeWindowRate,
   ]);
 
   const quote: ServiceQuoteResult = {
