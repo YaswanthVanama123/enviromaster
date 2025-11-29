@@ -5,9 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import SavedFiles from "./SavedFiles";
 import { AdminDashboard } from "./admin/AdminDashboard";
+import ManualUploads from "./ManualUploads";
 import "./AdminPanel.css";
 
-type TabType = "dashboard" | "saved-pdfs" | "pricing-details";
+type TabType = "dashboard" | "saved-pdfs" | "pricing-details" | "manual-uploads";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -155,6 +156,12 @@ export default function AdminPanel() {
               Saved PDFs
             </button>
             <button
+              className={`nav-item ${activeTab === "manual-uploads" ? "active" : ""}`}
+              onClick={() => handleTabChange("manual-uploads")}
+            >
+              Manual Uploads
+            </button>
+            <button
               className={`nav-item ${activeTab === "pricing-details" ? "active" : ""}`}
               onClick={() => handleTabChange("pricing-details")}
             >
@@ -213,7 +220,10 @@ export default function AdminPanel() {
                 <div className="upload-card">
                   <div className="upload-header">
                     <h3>Upload File</h3>
-                    <button className="upload-btn">
+                    <button
+                      className="upload-btn"
+                      onClick={() => handleTabChange("manual-uploads")}
+                    >
                       <span className="upload-icon">📤</span>
                       Upload
                     </button>
@@ -362,6 +372,12 @@ export default function AdminPanel() {
         {activeTab === "saved-pdfs" && (
           <div className="tab-full-width">
             <SavedFiles />
+          </div>
+        )}
+
+        {activeTab === "manual-uploads" && (
+          <div className="tab-full-width">
+            <ManualUploads />
           </div>
         )}
 

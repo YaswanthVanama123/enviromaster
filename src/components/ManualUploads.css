@@ -1,0 +1,316 @@
+/* ManualUploads.css */
+
+.manual-uploads {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.manual-uploads-header {
+  margin-bottom: 32px;
+}
+
+.manual-uploads-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.upload-section-card {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.upload-section-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 24px 0;
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-group input[type="file"] {
+  padding: 10px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.form-group input[type="file"]:hover {
+  border-color: #2563eb;
+}
+
+.selected-file {
+  font-size: 13px;
+  color: #059669;
+  font-weight: 500;
+}
+
+.form-group textarea {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.upload-button {
+  padding: 12px 24px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  align-self: flex-start;
+}
+
+.upload-button:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.upload-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.success-message {
+  padding: 12px 16px;
+  background-color: #d1fae5;
+  color: #065f46;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.uploads-list-card {
+  background-color: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.uploads-list-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 24px 0;
+}
+
+.loading,
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.uploads-table-container {
+  overflow-x: auto;
+}
+
+.uploads-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.uploads-table thead th {
+  text-align: left;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 2px solid #e5e7eb;
+  background-color: #f9fafb;
+}
+
+.uploads-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s;
+}
+
+.uploads-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.uploads-table tbody td {
+  padding: 16px 12px;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-icon {
+  font-size: 20px;
+}
+
+.file-title {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.file-description {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.date-cell {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-uploaded {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-processing {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-failed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.zoho-status {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.zoho-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.zoho-bigin {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.zoho-crm {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.zoho-pending {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.download-btn {
+  background-color: #dbeafe;
+}
+
+.download-btn:hover {
+  background-color: #bfdbfe;
+}
+
+.delete-btn {
+  background-color: #fee2e2;
+}
+
+.delete-btn:hover {
+  background-color: #fecaca;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .manual-uploads {
+    padding: 16px;
+  }
+
+  .upload-section-card,
+  .uploads-list-card {
+    padding: 20px;
+  }
+
+  .uploads-table-container {
+    overflow-x: scroll;
+  }
+
+  .uploads-table {
+    min-width: 800px;
+  }
+}
