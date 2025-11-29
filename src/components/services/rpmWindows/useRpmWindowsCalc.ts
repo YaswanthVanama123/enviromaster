@@ -131,6 +131,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "contractMonths":
           return { ...prev, contractMonths: Number(value) || 0 };
 
+        // Custom installation fee - user can manually override
+        case "customInstallationFee": {
+          const numVal = value === '' ? undefined : parseFloat(value);
+          if (numVal === undefined || !isNaN(numVal)) {
+            return { ...prev, customInstallationFee: numVal };
+          }
+          return prev;
+        }
+
         // Window rates - user sees frequency-adjusted rate, but we store base rate
         case "smallWindowRate":
         case "mediumWindowRate":
@@ -239,16 +248,20 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const recurringPerVisitRated = recurringPerVisitBase * rateCfg.multiplier;
 
-    // INSTALLATION FEE — Uses user's custom rates (base weekly rate, not frequency-adjusted)
-    // ALWAYS WEEKLY rates ×3 (NO FREQUENCY MULTIPLIER)
-    const installOneTimeBase =
+    // INSTALLATION FEE — Uses user's custom installation if set, otherwise calculates
+    const calculatedInstallOneTimeBase =
       form.isFirstTimeInstall && hasWindows
         ? weeklyWindows * cfg.installMultiplierFirstTime
         : 0;
 
-    const installOneTime = installOneTimeBase * rateCfg.multiplier;
+    const calculatedInstallOneTime = calculatedInstallOneTimeBase * rateCfg.multiplier;
 
-    // FIRST VISIT PRICE = INSTALLATION ONLY (no normal service on that visit)
+    // Use custom installation fee if user has manually set it, otherwise use calculated
+    const installOneTime = form.customInstallationFee !== undefined
+      ? form.customInstallationFee
+      : calculatedInstallOneTime;
+
+    // FIRST VISIT PRICE = INSTALLATION (custom or calculated)
     const firstVisitTotalRated = installOneTime;
 
     // MONTHLY VISITS using 4.33 weeks/month
@@ -319,6 +332,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     form.isFirstTimeInstall,
     form.extraCharges,
     form.contractMonths,
+    form.customInstallationFee,
   ]);
 
   const quote: ServiceQuoteResult = {

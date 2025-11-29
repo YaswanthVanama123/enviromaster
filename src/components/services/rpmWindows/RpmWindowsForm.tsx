@@ -236,9 +236,11 @@ export const RpmWindowsForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={installationFeeDisplay.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="customInstallationFee"
+              value={form.customInstallationFee !== undefined ? form.customInstallationFee.toFixed(2) : installationFeeDisplay.toFixed(2)}
+              onChange={onChange}
             />
           </div>
         </div>

@@ -95,6 +95,9 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
   selectedRateCategory: RpmRateCategory; // "redRate" / "greenRate"
   includeMirrors: boolean;               // flag only; price not yet changed
 
+  // custom installation override (user can manually set installation cost)
+  customInstallationFee?: number;        // if set, overrides calculated installation
+
   // extra custom per-visit charges (added via + button)
   extraCharges: RpmExtraChargeLine[];
 
