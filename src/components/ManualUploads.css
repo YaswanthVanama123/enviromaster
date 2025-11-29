@@ -101,6 +101,8 @@
   cursor: pointer;
   transition: background-color 0.2s;
   align-self: flex-start;
+  display: flex;
+  align-items: center;
 }
 
 .upload-button:hover:not(:disabled) {
@@ -119,6 +121,8 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
 .uploads-list-card {
@@ -239,7 +243,8 @@
 }
 
 .zoho-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: 3px 8px;
   border-radius: 8px;
   font-size: 11px;

@@ -6,6 +6,7 @@ import { useAdminAuth } from "../../backendservice/hooks";
 import { PricingTablesView } from "./PricingTablesView";
 import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
+import { MdAttachMoney, MdSettings, MdInventory } from "react-icons/md";
 
 type TabType = "pricing" | "services" | "products";
 
@@ -48,7 +49,7 @@ export const AdminDashboard: React.FC = () => {
           }}
           onClick={() => setActiveTab("pricing")}
         >
-          📊 Pricing Tables
+          <MdAttachMoney size={20} style={{ marginRight: "8px" }} /> Pricing Tables
         </button>
         <button
           style={{
@@ -57,7 +58,7 @@ export const AdminDashboard: React.FC = () => {
           }}
           onClick={() => setActiveTab("services")}
         >
-          ⚙️ Service Configs
+          <MdSettings size={20} style={{ marginRight: "8px" }} /> Service Configs
         </button>
         <button
           style={{
@@ -66,7 +67,7 @@ export const AdminDashboard: React.FC = () => {
           }}
           onClick={() => setActiveTab("products")}
         >
-          📦 Product Catalog
+          <MdInventory size={20} style={{ marginRight: "8px" }} /> Product Catalog
         </button>
       </div>
 
@@ -147,6 +148,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#666",
     transition: "all 0.2s",
     whiteSpace: "nowrap",
+    display: "flex",
+    alignItems: "center",
   },
   navButtonActive: {
     backgroundColor: "#2563eb",

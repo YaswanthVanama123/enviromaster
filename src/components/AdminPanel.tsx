@@ -6,6 +6,17 @@ import { useAdminAuth } from "../backendservice/hooks";
 import SavedFiles from "./SavedFiles";
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
+import {
+  HiDocumentText,
+  HiSearch,
+  HiUpload,
+  HiDownload,
+  HiUsers,
+  HiBriefcase,
+  HiLogout
+} from "react-icons/hi";
+import { MdDashboard, MdFolder, MdAttachMoney } from "react-icons/md";
+import { FaMobileAlt, FaApple, FaGooglePlay } from "react-icons/fa";
 import "./AdminPanel.css";
 
 type TabType = "dashboard" | "saved-pdfs" | "pricing-details" | "manual-uploads";
@@ -29,6 +40,8 @@ export default function AdminPanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [lastUploadDate, setLastUploadDate] = useState<string>("");
 
   // Fetch recent documents from backend
   useEffect(() => {
@@ -76,6 +89,33 @@ export default function AdminPanel() {
 
     fetchDocuments();
   }, []);
+
+  // Fetch manual uploads stats
+  useEffect(() => {
+    const fetchUploadStats = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/manual-upload");
+        if (!res.ok) throw new Error(`Failed with status ${res.status}`);
+
+        const data = await res.json();
+        const uploads = data.items || [];
+
+        setUploadCount(uploads.length);
+
+        // Get the most recent upload date
+        if (uploads.length > 0) {
+          const latestUpload = uploads[0]; // Already sorted by createdAt desc
+          setLastUploadDate(latestUpload.createdAt);
+        } else {
+          setLastUploadDate(new Date().toISOString());
+        }
+      } catch (err) {
+        console.error("Error fetching upload stats:", err);
+      }
+    };
+
+    fetchUploadStats();
+  }, [activeTab]); // Refresh when tab changes
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -133,13 +173,23 @@ export default function AdminPanel() {
     }
   };
 
+  const formatUploadDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="admin-panel-modern">
       {/* Header */}
       <header className="panel-header">
         <div className="header-left">
           <div className="logo">
-            <div className="logo-icon">📄</div>
+            <HiDocumentText className="logo-icon" size={28} />
             <span className="logo-text">DigiDocs</span>
           </div>
           <nav className="main-nav">
@@ -172,7 +222,7 @@ export default function AdminPanel() {
 
         <div className="header-center">
           <div className="search-bar">
-            <span className="search-icon">🔍</span>
+            <HiSearch className="search-icon" size={18} />
             <input
               type="text"
               placeholder="Searching something..."
@@ -191,7 +241,7 @@ export default function AdminPanel() {
             <span className="user-name">{user?.username || "Admin"}</span>
           </div>
           <button className="logout-btn-icon" onClick={handleLogout} title="Logout">
-            🚪
+            <HiLogout size={20} />
           </button>
         </div>
       </header>
@@ -210,7 +260,7 @@ export default function AdminPanel() {
                 </div>
                 <div className="welcome-illustration">
                   <div className="illustration-placeholder">
-                    👥💼
+                    <HiUsers size={80} style={{ color: "#2563eb", opacity: 0.8 }} />
                   </div>
                 </div>
               </div>
@@ -224,17 +274,17 @@ export default function AdminPanel() {
                       className="upload-btn"
                       onClick={() => handleTabChange("manual-uploads")}
                     >
-                      <span className="upload-icon">📤</span>
+                      <HiUpload className="upload-icon" size={18} />
                       Upload
                     </button>
                   </div>
                   <div className="upload-stats">
                     <div className="upload-date">
-                      <span className="date-label">You can upload file here</span>
-                      <div className="date-value">15 May, 2023</div>
+                      <span className="date-label">Last uploaded on</span>
+                      <div className="date-value">{formatUploadDate(lastUploadDate)}</div>
                     </div>
                     <div className="upload-count">
-                      <div className="count-value">15</div>
+                      <div className="count-value">{uploadCount}</div>
                       <div className="count-label">Files uploaded</div>
                     </div>
                   </div>
@@ -278,7 +328,7 @@ export default function AdminPanel() {
                             </td>
                             <td>
                               <div className="doc-name">
-                                <span className="doc-icon">📄</span>
+                                <HiDocumentText className="doc-icon" size={20} style={{ color: "#2563eb" }} />
                                 {doc.name}
                               </div>
                             </td>
@@ -289,7 +339,7 @@ export default function AdminPanel() {
                                 onClick={() => handleDownload(doc.id, doc.name)}
                                 title="Download PDF"
                               >
-                                ⬇
+                                <HiDownload size={16} />
                               </button>
                             </td>
                             <td>
@@ -311,31 +361,31 @@ export default function AdminPanel() {
               {/* Contract Data Card */}
               <div className="stat-card">
                 <div className="stat-header">
-                  <h4>Contract data</h4>
+                  <h4>Total Uploads</h4>
                 </div>
                 <div className="stat-body">
-                  <div className="stat-label">Last uploaded</div>
-                  <div className="stat-value">15</div>
+                  <div className="stat-label">Manual uploads</div>
+                  <div className="stat-value">{uploadCount}</div>
                 </div>
               </div>
 
-              {/* Sent by Manager Card */}
+              {/* Recent Documents Count Card */}
               <div className="stat-card">
                 <div className="stat-header">
-                  <h4>Sent by manager</h4>
+                  <h4>Saved Documents</h4>
                 </div>
                 <div className="stat-body">
-                  <div className="stat-value">05</div>
+                  <div className="stat-value">{documents.length}</div>
                 </div>
               </div>
 
-              {/* Fully Signed Card */}
+              {/* All Documents Card */}
               <div className="stat-card">
                 <div className="stat-header">
-                  <h4>Fully Signed</h4>
+                  <h4>Total Documents</h4>
                 </div>
                 <div className="stat-body">
-                  <div className="stat-value">08</div>
+                  <div className="stat-value">{uploadCount + documents.length}</div>
                 </div>
               </div>
 
@@ -346,18 +396,18 @@ export default function AdminPanel() {
                   Get the full experience on mobile
                 </p>
                 <div className="app-illustration">
-                  🏃‍♂️📱
+                  <FaMobileAlt size={60} style={{ color: "#2563eb", opacity: 0.8 }} />
                 </div>
                 <div className="app-buttons">
                   <button className="app-store-btn">
-                    <span className="btn-icon">🍎</span>
+                    <FaApple className="btn-icon" size={20} />
                     <div className="btn-text">
                       <div className="btn-small">Download on the</div>
                       <div className="btn-large">App Store</div>
                     </div>
                   </button>
                   <button className="app-store-btn">
-                    <span className="btn-icon">🤖</span>
+                    <FaGooglePlay className="btn-icon" size={20} />
                     <div className="btn-text">
                       <div className="btn-small">GET IT ON</div>
                       <div className="btn-large">Google Play</div>

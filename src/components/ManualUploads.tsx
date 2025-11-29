@@ -1,5 +1,6 @@
 // src/components/ManualUploads.tsx
 import { useEffect, useState } from "react";
+import { HiDocumentText, HiDownload, HiTrash, HiUpload, HiCheckCircle } from "react-icons/hi";
 import "./ManualUploads.css";
 
 interface ManualUpload {
@@ -198,12 +199,14 @@ export default function ManualUploads() {
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
           >
+            <HiUpload size={18} style={{ marginRight: "8px" }} />
             {uploading ? "Uploading..." : "Upload to Zoho"}
           </button>
 
           {uploadSuccess && (
             <div className="success-message">
-              ✓ File uploaded successfully! Zoho sync in progress...
+              <HiCheckCircle size={18} style={{ marginRight: "8px" }} />
+              File uploaded successfully! Zoho sync in progress...
             </div>
           )}
         </div>
@@ -234,7 +237,7 @@ export default function ManualUploads() {
                   <tr key={upload._id}>
                     <td>
                       <div className="file-name">
-                        <span className="file-icon">📄</span>
+                        <HiDocumentText className="file-icon" size={24} style={{ color: "#2563eb" }} />
                         <div>
                           <div className="file-title">{upload.fileName}</div>
                           {upload.description && (
@@ -254,12 +257,12 @@ export default function ManualUploads() {
                       <div className="zoho-status">
                         {upload.zoho?.bigin?.fileId && (
                           <span className="zoho-tag zoho-bigin" title="Uploaded to Zoho Bigin">
-                            Bigin ✓
+                            Bigin <HiCheckCircle size={12} style={{ marginLeft: "2px" }} />
                           </span>
                         )}
                         {upload.zoho?.crm?.fileId && (
                           <span className="zoho-tag zoho-crm" title="Uploaded to Zoho CRM">
-                            CRM ✓
+                            CRM <HiCheckCircle size={12} style={{ marginLeft: "2px" }} />
                           </span>
                         )}
                         {!upload.zoho?.bigin?.fileId && !upload.zoho?.crm?.fileId && (
@@ -274,14 +277,14 @@ export default function ManualUploads() {
                           onClick={() => handleDownload(upload._id, upload.fileName)}
                           title="Download PDF"
                         >
-                          ⬇
+                          <HiDownload size={16} />
                         </button>
                         <button
                           className="action-btn delete-btn"
                           onClick={() => handleDelete(upload._id)}
                           title="Delete"
                         >
-                          🗑️
+                          <HiTrash size={16} />
                         </button>
                       </div>
                     </td>

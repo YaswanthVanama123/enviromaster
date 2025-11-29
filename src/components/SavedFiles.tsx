@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
+import { HiDocumentText, HiDownload, HiMail, HiEye, HiSave } from "react-icons/hi";
 import "./SavedFiles.css";
 
 type FileStatus =
@@ -367,7 +368,7 @@ export default function SavedFiles() {
                         type="button"
                         onClick={() => handleView(f)}
                       >
-                        👁️
+                        <HiEye size={18} />
                       </button>
                       <button
                         className="iconbtn"
@@ -376,7 +377,7 @@ export default function SavedFiles() {
                         onClick={() => handleDownload(f)}
                         disabled={downloadingId === f.id}
                       >
-                        {downloadingId === f.id ? "⏳" : "⬇️"}
+                        {downloadingId === f.id ? "⏳" : <HiDownload size={18} />}
                       </button>
                       <button
                         className="iconbtn"
@@ -384,7 +385,7 @@ export default function SavedFiles() {
                         type="button"
                         onClick={() => handleEmail(f)}
                       >
-                        ✉️
+                        <HiMail size={18} />
                       </button>
                       <button
                         className="iconbtn"
@@ -392,7 +393,7 @@ export default function SavedFiles() {
                         type="button"
                         disabled
                       >
-                        {savingStatusId === f.id ? "💾…" : "✓"}
+                        {savingStatusId === f.id ? "💾…" : <HiSave size={18} />}
                       </button>
                     </div>
                   </td>
