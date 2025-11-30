@@ -112,6 +112,28 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "contractMonths":
           return { ...prev, contractMonths: Number(value) || 0 };
 
+        // Custom total overrides
+        case "customSmallTotal":
+        case "customMediumTotal":
+        case "customLargeTotal":
+        case "customPerVisitPrice":
+        case "customMonthlyRecurring":
+        case "customAnnualPrice": {
+          const numVal = value === '' ? undefined : parseFloat(value);
+          if (numVal === undefined || !isNaN(numVal)) {
+            return { ...prev, [name]: numVal };
+          }
+          return prev;
+        }
+
+        case "customInstallationFee": {
+          const numVal = value === '' ? undefined : parseFloat(value);
+          if (numVal === undefined || !isNaN(numVal)) {
+            return { ...prev, customInstallationFee: numVal };
+          }
+          return prev;
+        }
+
         // convert UI "this frequency" rates back to weekly base
         case "smallWindowRate":
         case "mediumWindowRate":

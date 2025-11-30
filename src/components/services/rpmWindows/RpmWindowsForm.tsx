@@ -107,8 +107,17 @@ export const RpmWindowsForm: React.FC<
           <span>=</span>
           <input
             className="svc-in-box"
-            readOnly
-            value={`$${(form.smallQty * calc.effSmall).toFixed(2)}`}
+            name="customSmallTotal"
+            type="number"
+            step="0.01"
+            value={
+              form.customSmallTotal !== undefined
+                ? form.customSmallTotal
+                : (form.smallQty * calc.effSmall).toFixed(2)
+            }
+            onChange={onChange}
+            placeholder={(form.smallQty * calc.effSmall).toFixed(2)}
+            style={{ backgroundColor: form.customSmallTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
       </div>
@@ -136,8 +145,17 @@ export const RpmWindowsForm: React.FC<
           <span>=</span>
           <input
             className="svc-in-box"
-            readOnly
-            value={`$${(form.mediumQty * calc.effMedium).toFixed(2)}`}
+            name="customMediumTotal"
+            type="number"
+            step="0.01"
+            value={
+              form.customMediumTotal !== undefined
+                ? form.customMediumTotal
+                : (form.mediumQty * calc.effMedium).toFixed(2)
+            }
+            onChange={onChange}
+            placeholder={(form.mediumQty * calc.effMedium).toFixed(2)}
+            style={{ backgroundColor: form.customMediumTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
       </div>
@@ -165,8 +183,17 @@ export const RpmWindowsForm: React.FC<
           <span>=</span>
           <input
             className="svc-in-box"
-            readOnly
-            value={`$${(form.largeQty * calc.effLarge).toFixed(2)}`}
+            name="customLargeTotal"
+            type="number"
+            step="0.01"
+            value={
+              form.customLargeTotal !== undefined
+                ? form.customLargeTotal
+                : (form.largeQty * calc.effLarge).toFixed(2)
+            }
+            onChange={onChange}
+            placeholder={(form.largeQty * calc.effLarge).toFixed(2)}
+            style={{ backgroundColor: form.customLargeTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
       </div>
@@ -329,9 +356,17 @@ export const RpmWindowsForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={quote.perVisitPrice.toFixed(2)}
+              name="customPerVisitPrice"
+              type="number"
+              step="0.01"
+              value={
+                form.customPerVisitPrice !== undefined
+                  ? form.customPerVisitPrice.toFixed(2)
+                  : quote.perVisitPrice.toFixed(2)
+              }
+              onChange={onChange}
+              placeholder={quote.perVisitPrice.toFixed(2)}
+              style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
         </div>
@@ -346,9 +381,17 @@ export const RpmWindowsForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={calc.monthlyBillRated.toFixed(2)}
+                name="customMonthlyRecurring"
+                type="number"
+                step="0.01"
+                value={
+                  form.customMonthlyRecurring !== undefined
+                    ? form.customMonthlyRecurring.toFixed(2)
+                    : calc.monthlyBillRated.toFixed(2)
+                }
+                onChange={onChange}
+                placeholder={calc.monthlyBillRated.toFixed(2)}
+                style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
               />
             </div>
           </div>
@@ -375,9 +418,17 @@ export const RpmWindowsForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={quote.annualPrice.toFixed(2)}
+              name="customAnnualPrice"
+              type="number"
+              step="0.01"
+              value={
+                form.customAnnualPrice !== undefined
+                  ? form.customAnnualPrice.toFixed(2)
+                  : quote.annualPrice.toFixed(2)
+              }
+              onChange={onChange}
+              placeholder={quote.annualPrice.toFixed(2)}
+              style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
         </div>

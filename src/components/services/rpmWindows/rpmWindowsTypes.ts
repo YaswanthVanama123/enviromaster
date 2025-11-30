@@ -87,6 +87,11 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
   mediumWindowRate: number;
   largeWindowRate: number;
 
+  // Custom overrides for line totals (if user wants to manually set total)
+  customSmallTotal?: number;
+  customMediumTotal?: number;
+  customLargeTotal?: number;
+
   // trip charge (always included – checkbox is just visual)
   tripCharge: number;
 
@@ -103,4 +108,9 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
 
   // contract length in months for total pricing (2–36)
   contractMonths: number;
+
+  // Custom overrides for final totals
+  customPerVisitPrice?: number;         // override for Total Price (Per Visit)
+  customMonthlyRecurring?: number;      // override for Monthly Recurring
+  customAnnualPrice?: number;           // override for Annual Price
 }
