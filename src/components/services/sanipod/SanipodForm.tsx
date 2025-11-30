@@ -28,7 +28,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       const isActive = (form.podQuantity ?? 0) > 0;
       const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
       const dataStr = JSON.stringify(data);
-
+ 
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
         servicesContext.updateService("sanipod", data);

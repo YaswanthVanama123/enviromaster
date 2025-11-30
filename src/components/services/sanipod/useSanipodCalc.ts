@@ -396,9 +396,9 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
     // ========== ADJUSTED FIRST VISIT WITH PARTIAL INSTALLATION ==========
     // If installing some pods, first visit = install + service for NON-installed pods only
-    const servicePods = Math.max(0, pods - installQty);
+    // Note: servicePods already declared above (line ~324)
 
-    // Service cost for non-installed pods on first visit
+    // Service cost for non-installed pods on first visit (with custom overrides)
     let adjustedFirstVisitServiceCost = 0;
     if (servicePods > 0 && installQty > 0) {
       // Calculate service cost for ONLY the non-installed pods
