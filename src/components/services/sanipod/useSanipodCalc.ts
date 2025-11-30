@@ -394,6 +394,28 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       ? form.customPerVisitPrice
       : (adjustedPodServiceTotal + (form.extraBagsRecurring ? adjustedBagsTotal : 0)) * rateCfg.multiplier;
 
+    // ========== ADJUSTED FIRST VISIT WITH PARTIAL INSTALLATION ==========
+    // If installing some pods, first visit = install + service for NON-installed pods only
+    const servicePods = Math.max(0, pods - installQty);
+
+    // Service cost for non-installed pods on first visit
+    let adjustedFirstVisitServiceCost = 0;
+    if (servicePods > 0 && installQty > 0) {
+      // Calculate service cost for ONLY the non-installed pods
+      const effectiveRateForServicePods = form.customWeeklyPodRate !== undefined
+        ? form.customWeeklyPodRate
+        : effectiveRatePerPod;
+
+      if (usingOptA) {
+        // Option A: servicePods × rate per pod
+        adjustedFirstVisitServiceCost = servicePods * effectiveRateForServicePods * rateCfg.multiplier;
+      } else {
+        // Option B: (servicePods × $3) + $40
+        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + form.standaloneExtraWeeklyCharge;
+        adjustedFirstVisitServiceCost = optBServiceCost * rateCfg.multiplier;
+      }
+    }
+
     // Adjusted monthly
     const weeksPerMonthCalc = weeksPerMonth;
     const oneTimeBagsCostCalc = form.extraBagsRecurring ? 0 : adjustedBagsTotal;
@@ -404,7 +426,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     const adjustedMonthly = form.customMonthlyPrice !== undefined
       ? form.customMonthlyPrice
       : (installCostCalc > 0 || oneTimeBagsCostCalc > 0)
-        ? installCostCalc + oneTimeBagsCostCalc + (Math.max(weeksPerMonthCalc - 1, 0) * adjustedPerVisit)
+        ? installCostCalc + oneTimeBagsCostCalc + adjustedFirstVisitServiceCost + (Math.max(weeksPerMonthCalc - 1, 0) * adjustedPerVisit)
         : weeksPerMonthCalc * adjustedPerVisit;
 
     // Adjusted annual
