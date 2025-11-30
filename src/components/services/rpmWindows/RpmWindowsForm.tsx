@@ -101,7 +101,7 @@ export const RpmWindowsForm: React.FC<
             name="smallWindowRate"
             type="number"
             step="0.01"
-            value={calc.effSmall.toFixed(2)}
+            value={calc.effSmall}
             onChange={onChange}
           />
           <span>=</span>
@@ -113,7 +113,7 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customSmallTotal !== undefined
                 ? form.customSmallTotal
-                : (form.smallQty * calc.effSmall).toFixed(2)
+                : ''
             }
             onChange={onChange}
             placeholder={(form.smallQty * calc.effSmall).toFixed(2)}
@@ -139,7 +139,7 @@ export const RpmWindowsForm: React.FC<
             name="mediumWindowRate"
             type="number"
             step="0.01"
-            value={calc.effMedium.toFixed(2)}
+            value={calc.effMedium}
             onChange={onChange}
           />
           <span>=</span>
@@ -151,7 +151,7 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customMediumTotal !== undefined
                 ? form.customMediumTotal
-                : (form.mediumQty * calc.effMedium).toFixed(2)
+                : ''
             }
             onChange={onChange}
             placeholder={(form.mediumQty * calc.effMedium).toFixed(2)}
@@ -177,7 +177,7 @@ export const RpmWindowsForm: React.FC<
             name="largeWindowRate"
             type="number"
             step="0.01"
-            value={calc.effLarge.toFixed(2)}
+            value={calc.effLarge}
             onChange={onChange}
           />
           <span>=</span>
@@ -189,7 +189,7 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customLargeTotal !== undefined
                 ? form.customLargeTotal
-                : (form.largeQty * calc.effLarge).toFixed(2)
+                : ''
             }
             onChange={onChange}
             placeholder={(form.largeQty * calc.effLarge).toFixed(2)}
@@ -266,8 +266,10 @@ export const RpmWindowsForm: React.FC<
               type="number"
               step="0.01"
               name="customInstallationFee"
-              value={form.customInstallationFee !== undefined ? form.customInstallationFee.toFixed(2) : installationFeeDisplay.toFixed(2)}
+              value={form.customInstallationFee !== undefined ? form.customInstallationFee : ''}
               onChange={onChange}
+              placeholder={installationFeeDisplay.toFixed(2)}
+              style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
         </div>
@@ -359,11 +361,7 @@ export const RpmWindowsForm: React.FC<
               name="customPerVisitPrice"
               type="number"
               step="0.01"
-              value={
-                form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice.toFixed(2)
-                  : quote.perVisitPrice.toFixed(2)
-              }
+              value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : ''}
               onChange={onChange}
               placeholder={quote.perVisitPrice.toFixed(2)}
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
@@ -384,11 +382,7 @@ export const RpmWindowsForm: React.FC<
                 name="customMonthlyRecurring"
                 type="number"
                 step="0.01"
-                value={
-                  form.customMonthlyRecurring !== undefined
-                    ? form.customMonthlyRecurring.toFixed(2)
-                    : calc.monthlyBillRated.toFixed(2)
-                }
+                value={form.customMonthlyRecurring !== undefined ? form.customMonthlyRecurring : ''}
                 onChange={onChange}
                 placeholder={calc.monthlyBillRated.toFixed(2)}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
@@ -421,11 +415,7 @@ export const RpmWindowsForm: React.FC<
               name="customAnnualPrice"
               type="number"
               step="0.01"
-              value={
-                form.customAnnualPrice !== undefined
-                  ? form.customAnnualPrice.toFixed(2)
-                  : quote.annualPrice.toFixed(2)
-              }
+              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : ''}
               onChange={onChange}
               placeholder={quote.annualPrice.toFixed(2)}
               style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
