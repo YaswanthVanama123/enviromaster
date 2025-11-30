@@ -142,15 +142,50 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     }
   }, [form.isNewInstall, form.installQuantity, form.installRatePerPod, setForm]);
 
+  // Track previous custom override values to clear dependent fields
+  const prevCustomRef = useRef({
+    customWeeklyPodRate: form.customWeeklyPodRate,
+    customPodServiceTotal: form.customPodServiceTotal,
+    customExtraBagsTotal: form.customExtraBagsTotal,
+    customInstallationFee: form.customInstallationFee,
+  });
+
+  // Clear dependent custom totals when upstream custom fields change
+  useEffect(() => {
+    const prev = prevCustomRef.current;
+
+    // If pod service rate or total changed, clear all downstream
+    if (prev.customWeeklyPodRate !== form.customWeeklyPodRate ||
+        prev.customPodServiceTotal !== form.customPodServiceTotal ||
+        prev.customExtraBagsTotal !== form.customExtraBagsTotal ||
+        prev.customInstallationFee !== form.customInstallationFee) {
+
+      setForm((prevForm) => ({
+        ...prevForm,
+        customPerVisitPrice: undefined,
+        customMonthlyPrice: undefined,
+        customAnnualPrice: undefined,
+      }));
+    }
+
+    prevCustomRef.current = {
+      customWeeklyPodRate: form.customWeeklyPodRate,
+      customPodServiceTotal: form.customPodServiceTotal,
+      customExtraBagsTotal: form.customExtraBagsTotal,
+      customInstallationFee: form.customInstallationFee,
+    };
+  }, [
+    form.customWeeklyPodRate,
+    form.customPodServiceTotal,
+    form.customExtraBagsTotal,
+    form.customInstallationFee,
+    setForm,
+  ]);
+
   // Derive weekly line amounts from calc result
   const pods = Math.max(0, form.podQuantity || 0);
-  const bags = Math.max(0, form.extraBagsPerWeek || 0);
 
-  // Calculate the EFFECTIVE rate per pod being used
-  const effectiveRatePerPod = pods > 0 ? calc.weeklyPodServiceRed / pods : 0;
-
-  // For display: bag line amount (same base price, unit text depends on checkbox).
-  const bagLineAmount = bags * form.extraBagPrice;
+  // For display: bag unit label
   const bagUnitLabel = form.extraBagsRecurring
     ? "$/bag/wk"
     : "$/bag one-time";
@@ -257,7 +292,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={
               form.customWeeklyPodRate !== undefined
                 ? form.customWeeklyPodRate
-                : effectiveRatePerPod
+                : calc.effectiveRatePerPod
             }
             onChange={onChange}
             onBlur={handleBlur}
@@ -274,7 +309,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={
               form.customPodServiceTotal !== undefined
                 ? form.customPodServiceTotal
-                : (pods > 0 ? (form.customWeeklyPodRate !== undefined ? form.customWeeklyPodRate : effectiveRatePerPod) * pods : 0)
+                : calc.adjustedPodServiceTotal
             }
             onChange={onChange}
             onBlur={handleBlur}
@@ -320,7 +355,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={
               form.customExtraBagsTotal !== undefined
                 ? form.customExtraBagsTotal
-                : bagLineAmount
+                : calc.adjustedBagsTotal
             }
             onChange={onChange}
             onBlur={handleBlur}
@@ -497,7 +532,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="customPerVisitPrice"
-            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : calc.perVisit}
+            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : calc.adjustedPerVisit}
             onChange={onChange}
             onBlur={handleBlur}
             style={{
@@ -517,7 +552,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="customMonthlyPrice"
-            value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : calc.monthly}
+            value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : calc.adjustedMonthly}
             onChange={onChange}
             onBlur={handleBlur}
             style={{
@@ -539,7 +574,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="customAnnualPrice"
-            value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : calc.annual}
+            value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : calc.adjustedAnnual}
             onChange={onChange}
             onBlur={handleBlur}
             style={{

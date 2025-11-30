@@ -88,6 +88,24 @@ export interface SanipodCalcResult {
 
   /** Contract total explicitly, same as `annual`. */
   contractTotal: number;
+
+  /** Adjusted per visit based on custom overrides */
+  adjustedPerVisit: number;
+
+  /** Adjusted monthly based on custom overrides */
+  adjustedMonthly: number;
+
+  /** Adjusted annual based on custom overrides */
+  adjustedAnnual: number;
+
+  /** Adjusted pod service total */
+  adjustedPodServiceTotal: number;
+
+  /** Adjusted bags total */
+  adjustedBagsTotal: number;
+
+  /** Effective rate per pod */
+  effectiveRatePerPod: number;
 }
 
 const DEFAULT_FORM_STATE: SanipodFormState = {
@@ -352,6 +370,51 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
         : firstMonth +
           Math.max(contractMonths - 1, 0) * ongoingMonthly;
 
+    // ========== ADJUSTED CALCULATIONS BASED ON CUSTOM OVERRIDES ==========
+    // Note: pods and bags already declared above
+
+    // Effective rate per pod
+    const effectiveRatePerPod = pods > 0 ? weeklyPodServiceRed / pods : 0;
+
+    // Bag line amount
+    const bagLineAmount = bags * form.extraBagPrice;
+
+    // Adjusted pod service total (uses custom rate if set)
+    const adjustedPodServiceTotal = form.customPodServiceTotal !== undefined
+      ? form.customPodServiceTotal
+      : (pods > 0 ? (form.customWeeklyPodRate !== undefined ? form.customWeeklyPodRate : effectiveRatePerPod) * pods : 0);
+
+    // Adjusted bags total
+    const adjustedBagsTotal = form.customExtraBagsTotal !== undefined
+      ? form.customExtraBagsTotal
+      : bagLineAmount;
+
+    // Adjusted per visit (uses adjusted totals and rate multiplier)
+    const adjustedPerVisit = form.customPerVisitPrice !== undefined
+      ? form.customPerVisitPrice
+      : (adjustedPodServiceTotal + (form.extraBagsRecurring ? adjustedBagsTotal : 0)) * rateCfg.multiplier;
+
+    // Adjusted monthly
+    const weeksPerMonthCalc = weeksPerMonth;
+    const oneTimeBagsCostCalc = form.extraBagsRecurring ? 0 : adjustedBagsTotal;
+    const installCostCalc = form.customInstallationFee !== undefined
+      ? form.customInstallationFee
+      : installOnlyCost;
+
+    const adjustedMonthly = form.customMonthlyPrice !== undefined
+      ? form.customMonthlyPrice
+      : (installCostCalc > 0 || oneTimeBagsCostCalc > 0)
+        ? installCostCalc + oneTimeBagsCostCalc + (Math.max(weeksPerMonthCalc - 1, 0) * adjustedPerVisit)
+        : weeksPerMonthCalc * adjustedPerVisit;
+
+    // Adjusted annual
+    const ongoingMonthlyCalc = weeksPerMonthCalc * adjustedPerVisit;
+    const adjustedAnnual = form.customAnnualPrice !== undefined
+      ? form.customAnnualPrice
+      : contractMonths <= 0
+        ? 0
+        : adjustedMonthly + Math.max(contractMonths - 1, 0) * ongoingMonthlyCalc;
+
     return {
       perVisit,
       monthly: firstMonth,
@@ -362,6 +425,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       firstVisit,
       ongoingMonthly,
       contractTotal,
+      adjustedPerVisit,
+      adjustedMonthly,
+      adjustedAnnual,
+      adjustedPodServiceTotal,
+      adjustedBagsTotal,
+      effectiveRatePerPod,
     };
   }, [
     form.podQuantity,
@@ -381,6 +450,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     form.rateCategory,
     form.contractMonths,
     form.isStandalone,
+    form.customWeeklyPodRate,
+    form.customPodServiceTotal,
+    form.customExtraBagsTotal,
+    form.customPerVisitPrice,
+    form.customMonthlyPrice,
+    form.customAnnualPrice,
   ]);
 
   return { form, setForm, onChange, calc };
