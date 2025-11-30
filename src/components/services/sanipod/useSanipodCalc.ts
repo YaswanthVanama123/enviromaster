@@ -45,6 +45,9 @@ export interface SanipodFormState {
   /** Custom override for weekly pod service rate (for display in middle field) */
   customWeeklyPodRate?: number;
 
+  /** Custom override for pod service total (after =) */
+  customPodServiceTotal?: number;
+
   /** Custom override for extra bags total */
   customExtraBagsTotal?: number;
 
@@ -180,6 +183,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
         name === "customMonthlyPrice" ||
         name === "customAnnualPrice" ||
         name === "customWeeklyPodRate" ||
+        name === "customPodServiceTotal" ||
         name === "customExtraBagsTotal"
       ) {
         // Handle custom override fields - allow clearing by setting to undefined

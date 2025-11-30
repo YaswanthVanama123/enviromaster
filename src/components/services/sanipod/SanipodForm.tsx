@@ -45,24 +45,62 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     }
   };
 
-  // Track if it's the first render to prevent clearing on mount
-  const isFirstRender = useRef(true);
+  // Track previous values to detect actual changes (not just re-renders)
+  const prevInputsRef = useRef({
+    podQuantity: form.podQuantity,
+    extraBagsPerWeek: form.extraBagsPerWeek,
+    weeklyRatePerUnit: form.weeklyRatePerUnit,
+    altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
+    extraBagPrice: form.extraBagPrice,
+    standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
+    contractMonths: form.contractMonths,
+    frequency: form.frequency,
+    rateCategory: form.rateCategory,
+    isStandalone: form.isStandalone,
+    extraBagsRecurring: form.extraBagsRecurring,
+  });
 
-  // Clear custom totals when base inputs change (but not on first render)
+  // Clear custom totals when base inputs change
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    const prev = prevInputsRef.current;
+    const hasChanged =
+      prev.podQuantity !== form.podQuantity ||
+      prev.extraBagsPerWeek !== form.extraBagsPerWeek ||
+      prev.weeklyRatePerUnit !== form.weeklyRatePerUnit ||
+      prev.altWeeklyRatePerUnit !== form.altWeeklyRatePerUnit ||
+      prev.extraBagPrice !== form.extraBagPrice ||
+      prev.standaloneExtraWeeklyCharge !== form.standaloneExtraWeeklyCharge ||
+      prev.contractMonths !== form.contractMonths ||
+      prev.frequency !== form.frequency ||
+      prev.rateCategory !== form.rateCategory ||
+      prev.isStandalone !== form.isStandalone ||
+      prev.extraBagsRecurring !== form.extraBagsRecurring;
 
-    setForm((prev) => ({
-      ...prev,
-      customWeeklyPodRate: undefined,
-      customExtraBagsTotal: undefined,
-      customPerVisitPrice: undefined,
-      customMonthlyPrice: undefined,
-      customAnnualPrice: undefined,
-    }));
+    if (hasChanged) {
+      setForm((prev) => ({
+        ...prev,
+        customWeeklyPodRate: undefined,
+        customPodServiceTotal: undefined,
+        customExtraBagsTotal: undefined,
+        customPerVisitPrice: undefined,
+        customMonthlyPrice: undefined,
+        customAnnualPrice: undefined,
+      }));
+
+      prevInputsRef.current = {
+        podQuantity: form.podQuantity,
+        extraBagsPerWeek: form.extraBagsPerWeek,
+        weeklyRatePerUnit: form.weeklyRatePerUnit,
+        altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
+        extraBagPrice: form.extraBagPrice,
+        standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
+        contractMonths: form.contractMonths,
+        frequency: form.frequency,
+        rateCategory: form.rateCategory,
+        isStandalone: form.isStandalone,
+        extraBagsRecurring: form.extraBagsRecurring,
+      };
+    }
   }, [
     form.podQuantity,
     form.extraBagsPerWeek,
@@ -75,20 +113,34 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     form.rateCategory,
     form.isStandalone,
     form.extraBagsRecurring,
+    setForm,
   ]);
 
-  // Track if it's the first render for installation fee
-  const isFirstRenderInstall = useRef(true);
+  // Track previous install values
+  const prevInstallRef = useRef({
+    isNewInstall: form.isNewInstall,
+    installQuantity: form.installQuantity,
+    installRatePerPod: form.installRatePerPod,
+  });
 
-  // Clear installation fee when install-related inputs change (but not on first render)
+  // Clear installation fee when install-related inputs change
   useEffect(() => {
-    if (isFirstRenderInstall.current) {
-      isFirstRenderInstall.current = false;
-      return;
-    }
+    const prev = prevInstallRef.current;
+    const hasChanged =
+      prev.isNewInstall !== form.isNewInstall ||
+      prev.installQuantity !== form.installQuantity ||
+      prev.installRatePerPod !== form.installRatePerPod;
 
-    setForm((prev) => ({ ...prev, customInstallationFee: undefined }));
-  }, [form.isNewInstall, form.installQuantity, form.installRatePerPod]);
+    if (hasChanged) {
+      setForm((prev) => ({ ...prev, customInstallationFee: undefined }));
+
+      prevInstallRef.current = {
+        isNewInstall: form.isNewInstall,
+        installQuantity: form.installQuantity,
+        installRatePerPod: form.installRatePerPod,
+      };
+    }
+  }, [form.isNewInstall, form.installQuantity, form.installRatePerPod, setForm]);
 
   // Derive weekly line amounts from calc result
   const pods = Math.max(0, form.podQuantity || 0);
@@ -214,9 +266,23 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           />
           <span className="svc-small">$/wk</span>
           <span className="svc-eq">=</span>
-          <span className="svc-dollar">
-            ${fmt(pods > 0 ? (form.customWeeklyPodRate !== undefined ? form.customWeeklyPodRate : effectiveRatePerPod) * pods : 0)}
-          </span>
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="customPodServiceTotal"
+            value={
+              form.customPodServiceTotal !== undefined
+                ? form.customPodServiceTotal
+                : (pods > 0 ? (form.customWeeklyPodRate !== undefined ? form.customWeeklyPodRate : effectiveRatePerPod) * pods : 0)
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customPodServiceTotal !== undefined ? '#fffacd' : 'white',
+              width: '80px'
+            }}
+          />
           <span className="svc-small" style={{ marginLeft: "8px" }}>
             (using {ruleLabel})
           </span>
