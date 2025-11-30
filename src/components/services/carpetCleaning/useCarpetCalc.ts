@@ -119,13 +119,22 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     let perVisitCharge = 0;
 
     if (areaSqFt > 0) {
-      const units = Math.ceil(areaSqFt / cfg.unitSqFt);
-      if (units > 0) {
-        const extraUnits = Math.max(units - 1, 0);
-        perVisitBase =
-          cfg.firstUnitRate + extraUnits * cfg.additionalUnitRate;
-        perVisitCharge = Math.max(perVisitBase, cfg.perVisitMinimum);
+      // ✅ CORRECTED PRICING: Per-square-foot after first 500
+      // First 500 sq ft = $250
+      // Each additional sq ft = $125/500 = $0.25/sq ft
+      // Example: 700 sq ft = $250 + (200 × $0.25) = $300
+
+      if (areaSqFt <= cfg.unitSqFt) {
+        // 500 sq ft or less: flat rate
+        perVisitBase = cfg.firstUnitRate;
+      } else {
+        // Over 500 sq ft: $250 + extra sq ft × $0.25/sq ft
+        const extraSqFt = areaSqFt - cfg.unitSqFt;
+        const ratePerSqFt = cfg.additionalUnitRate / cfg.unitSqFt; // $125/500 = $0.25
+        perVisitBase = cfg.firstUnitRate + (extraSqFt * ratePerSqFt);
       }
+
+      perVisitCharge = Math.max(perVisitBase, cfg.perVisitMinimum);
     }
 
     // Trip is disabled in math (still shown as 0.00 in UI)
@@ -134,42 +143,58 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     const serviceActive = areaSqFt > 0;
 
-    // Calculate monthly base (for installation calculation)
-    const monthlyBase = perVisitCharge * visitsPerMonth;
-
-    // ---------------- INSTALLATION FEE (SAME AS SANISCRUB) ----------------
-    // Install = 3× dirty / 1× clean of MONTHLY BASE (no trip)
+    // ---------------- INSTALLATION FEE ----------------
+    // Install = 3× dirty / 1× clean of PER-VISIT charge (NOT monthly)
+    // Installation is the same for any frequency type
     const installOneTime =
       serviceActive && form.includeInstall
-        ? monthlyBase *
+        ? perVisitCharge *
           (form.isDirtyInstall
             ? cfg.installMultipliers.dirty
             : cfg.installMultipliers.clean)
         : 0;
 
-    // ---------------- FIRST VISIT & FIRST MONTH ----------------
-    // First visit = installation only (no normal service)
-    // First month = install-only first visit + (monthlyVisits − 1) × normal service price
-    const monthlyVisits = visitsPerMonth;
-    const firstMonthNormalVisits =
-      monthlyVisits > 1 ? monthlyVisits - 1 : 0;
-
-    const firstMonthTotal =
-      serviceActive && (installOneTime > 0 || firstMonthNormalVisits > 0)
-        ? installOneTime + firstMonthNormalVisits * perVisitCharge
-        : 0;
-
-    // ---------------- RECURRING MONTHLY (after first month) ----------------
+    // ---------------- RECURRING MONTHLY (normal full month) ----------------
     const monthlyRecurring =
       serviceActive && visitsPerMonth > 0
         ? perVisitCharge * visitsPerMonth
         : 0;
 
+    // ---------------- FIRST VISIT & FIRST MONTH ----------------
+    // WITH INSTALLATION:
+    //   - First visit = installation only (no normal service)
+    //   - First month = install-only first visit + (monthlyVisits − 1) × normal service price
+    // WITHOUT INSTALLATION:
+    //   - First month = normal full month (same as monthlyRecurring)
+
+    let firstMonthTotal = 0;
+
+    if (serviceActive) {
+      if (form.includeInstall && installOneTime > 0) {
+        // With installation: install + (monthlyVisits - 1) service visits
+        const monthlyVisits = visitsPerMonth;
+        const firstMonthNormalVisits = monthlyVisits > 1 ? monthlyVisits - 1 : 0;
+        firstMonthTotal = installOneTime + (firstMonthNormalVisits * perVisitCharge);
+      } else {
+        // No installation: just a normal full month
+        firstMonthTotal = monthlyRecurring;
+      }
+    }
+
     // ---------------- CONTRACT TOTAL ----------------
     const contractMonths = clampContractMonths(form.contractMonths);
-    const remainingMonths = contractMonths > 1 ? contractMonths - 1 : 0;
-    const remainingMonthsTotal = remainingMonths * monthlyRecurring;
-    const contractTotal = firstMonthTotal + remainingMonthsTotal;
+
+    let contractTotal = 0;
+    if (contractMonths > 0) {
+      if (form.includeInstall && installOneTime > 0) {
+        // With installation: first month (special) + remaining 11 months normal
+        const remainingMonths = Math.max(contractMonths - 1, 0);
+        contractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+      } else {
+        // No installation: just contractMonths × normal monthly
+        contractTotal = contractMonths * monthlyRecurring;
+      }
+    }
 
     // Per-Visit Effective = normal per-visit service price (no install, no trip)
     const perVisitEffective = perVisitCharge;

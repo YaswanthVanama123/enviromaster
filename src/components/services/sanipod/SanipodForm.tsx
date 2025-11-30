@@ -41,6 +41,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const pods = Math.max(0, form.podQuantity || 0);
   const bags = Math.max(0, form.extraBagsPerWeek || 0);
 
+  // Calculate the EFFECTIVE rate per pod being used
+  const effectiveRatePerPod = pods > 0 ? calc.weeklyPodServiceRed / pods : 0;
+
   // For display: bag line amount (same base price, unit text depends on checkbox).
   const bagLineAmount = bags * form.extraBagPrice;
   const bagUnitLabel = form.extraBagsRecurring
@@ -48,8 +51,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     : "$/bag one-time";
 
   // Decide the label that appears after "@"
-  const ruleLabel =
-    calc.chosenServiceRule === "perPod8" ? "8" : "3+40";
+  const ruleLabel = form.isStandalone
+    ? (calc.chosenServiceRule === "perPod8" ? "8" : "3+40")
+    : "8 (always)";
 
   return (
     <div className="svc-card">
@@ -101,7 +105,33 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* SaniPods line with editable rates */}
+      {/* Standalone service checkbox */}
+      <div className="svc-row">
+        <label>Service Type</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="isStandalone"
+            value={form.isStandalone ? "standalone" : "package"}
+            onChange={(e) => {
+              const event = {
+                target: {
+                  name: "isStandalone",
+                  type: "checkbox",
+                  checked: e.target.value === "standalone",
+                  value: e.target.value === "standalone",
+                }
+              } as any;
+              onChange(event);
+            }}
+          >
+            <option value="standalone">Standalone (auto-switch: $8 or $3+$40)</option>
+            <option value="package">Part of Package (always $8/pod)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* SaniPods line - single rate field that auto-switches */}
       <div className="svc-row">
         <label>No. of SaniPods</label>
         <div className="svc-row-right">
@@ -116,12 +146,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-multi">@</span>
           <input
             className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="altWeeklyRatePerUnit"
-            value={form.altWeeklyRatePerUnit.toFixed(2)}
-            onChange={onChange}
-            title="Option A: Flat rate per pod"
+            type="text"
+            readOnly
+            value={pods > 0 ? effectiveRatePerPod.toFixed(2) : ''}
+            style={{ backgroundColor: '#f5f5f5' }}
+            title="Effective rate per pod (auto-calculated)"
           />
           <span className="svc-small">$/wk</span>
           <span className="svc-eq">=</span>
@@ -131,32 +160,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-small" style={{ marginLeft: "8px" }}>
             (using {ruleLabel})
           </span>
-        </div>
-      </div>
-
-      {/* Option B rates - shown separately for clarity */}
-      <div className="svc-row">
-        <label>Option B Rates</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="weeklyRatePerUnit"
-            value={form.weeklyRatePerUnit.toFixed(2)}
-            onChange={onChange}
-          />
-          <span className="svc-small">$/pod/wk</span>
-          <span style={{ margin: "0 8px" }}>+</span>
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="standaloneExtraWeeklyCharge"
-            value={form.standaloneExtraWeeklyCharge.toFixed(2)}
-            onChange={onChange}
-          />
-          <span className="svc-small">$/wk base</span>
         </div>
       </div>
 
@@ -293,10 +296,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                   name="customInstallationFee"
                   value={
                     form.customInstallationFee !== undefined
-                      ? form.customInstallationFee.toFixed(2)
-                      : calc.installCost.toFixed(2)
+                      ? form.customInstallationFee
+                      : calc.installCost
                   }
                   onChange={onChange}
+                  placeholder={calc.installCost.toFixed(2)}
                 />
               </span>
             </div>

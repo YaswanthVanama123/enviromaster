@@ -38,6 +38,9 @@ export interface SanipodFormState {
 
   /** Contract length in months (2–36). */
   contractMonths: number;
+
+  /** Is this a standalone service (not part of package)? If false, always use $8/pod. */
+  isStandalone: boolean;
 }
 
 export interface SanipodCalcResult {
@@ -91,6 +94,8 @@ const DEFAULT_FORM_STATE: SanipodFormState = {
   rateCategory: "redRate",
 
   contractMonths: cfg.minContractMonths ?? 12,
+
+  isStandalone: true, // Default to standalone
 };
 
 export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
@@ -219,6 +224,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       : bags * form.extraBagPrice;
 
     // ---------- WEEKLY SERVICE (RED RATE) ----------
+    // Auto-switch between Option A and B ONLY when standalone
+    // When NOT standalone (part of package), always use $8/pod (Option A)
     const weeklyPodOptA_Red = pods * form.altWeeklyRatePerUnit; // 8$/wk * pods
     const weeklyPodOptB_Red =
       pods * form.weeklyRatePerUnit + form.standaloneExtraWeeklyCharge; // 3$/wk * pods + 40$/wk
@@ -226,7 +233,11 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     const weeklyServiceOptA_Red = weeklyPodOptA_Red + weeklyBagsRed;
     const weeklyServiceOptB_Red = weeklyPodOptB_Red + weeklyBagsRed;
 
-    const usingOptA = weeklyServiceOptA_Red <= weeklyServiceOptB_Red;
+    // Only compare options when standalone; otherwise always use Option A
+    const usingOptA = form.isStandalone
+      ? weeklyServiceOptA_Red <= weeklyServiceOptB_Red  // Auto-switch to cheaper
+      : true;  // Always use Option A when not standalone
+
     const weeklyServiceRed = usingOptA
       ? weeklyServiceOptA_Red
       : weeklyServiceOptB_Red;
@@ -255,9 +266,30 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       ? form.customInstallationFee
       : calculatedInstallOnlyCost;
 
-    // First visit = install-only + one-time bag cost (no normal service).
-    const firstVisit = installOnlyCost + oneTimeBagsCost;
-    const installCost = firstVisit;
+    // ✅ PARTIAL INSTALLATION LOGIC (like Foaming Drain):
+    // If 11 pods total and 5 installed:
+    // - servicePods = 6 (not getting installed on first visit)
+    // - First visit = (5 × install) + service cost for 6 pods
+    //
+    // IMPORTANT: For Option B ($3/pod + $40), we can't use effective rate!
+    // We must calculate: (servicePods × $3) + $40
+    const servicePods = Math.max(0, pods - installQty);
+
+    let firstVisitServiceCost = 0;
+    if (servicePods > 0) {
+      if (usingOptA) {
+        // Option A: Simple per-pod rate
+        const perPodRate = form.altWeeklyRatePerUnit;
+        firstVisitServiceCost = servicePods * perPodRate * rateCfg.multiplier;
+      } else {
+        // Option B: (servicePods × $3) + $40 base
+        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + form.standaloneExtraWeeklyCharge;
+        firstVisitServiceCost = optBServiceCost * rateCfg.multiplier;
+      }
+    }
+
+    const firstVisit = installOnlyCost + firstVisitServiceCost + oneTimeBagsCost;
+    const installCost = installOnlyCost;
 
     // ---------- MONTHLY & CONTRACT ----------
     const monthlyVisits = weeksPerMonth;
@@ -318,6 +350,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     form.frequency,
     form.rateCategory,
     form.contractMonths,
+    form.isStandalone,
   ]);
 
   return { form, onChange, calc };

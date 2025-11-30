@@ -217,10 +217,9 @@ export const MicrofiberMoppingForm: React.FC<
               className="svc-in"
               type="text"
               readOnly
-              value={extraAreaRatePerSqFt.toFixed(2)}
+              value={extraAreaRatePerSqFt.toFixed(4)}
             />
           </div>
-          {/* <span>per sq ft (min ${cfg.extraAreaPricing.singleLargeAreaRate})</span> */}
           <span>=</span>
           <input
             className="svc-in-box"
@@ -228,6 +227,9 @@ export const MicrofiberMoppingForm: React.FC<
             readOnly
             value={`$${calc.extraAreaPrice.toFixed(2)}`}
           />
+          <span className="svc-small" style={{ marginLeft: "8px", fontStyle: "italic", color: "#666" }}>
+            {/* (Max: $100 flat OR $10/400 sq ft) */}
+          </span>
         </div>
       </div>
 
