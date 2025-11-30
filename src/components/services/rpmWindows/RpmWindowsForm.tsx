@@ -113,10 +113,9 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customSmallTotal !== undefined
                 ? form.customSmallTotal
-                : ''
+                : (form.smallQty * calc.effSmall)
             }
             onChange={onChange}
-            placeholder={(form.smallQty * calc.effSmall).toFixed(2)}
             style={{ backgroundColor: form.customSmallTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
@@ -151,10 +150,9 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customMediumTotal !== undefined
                 ? form.customMediumTotal
-                : ''
+                : (form.mediumQty * calc.effMedium)
             }
             onChange={onChange}
-            placeholder={(form.mediumQty * calc.effMedium).toFixed(2)}
             style={{ backgroundColor: form.customMediumTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
@@ -189,10 +187,9 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customLargeTotal !== undefined
                 ? form.customLargeTotal
-                : ''
+                : (form.largeQty * calc.effLarge)
             }
             onChange={onChange}
-            placeholder={(form.largeQty * calc.effLarge).toFixed(2)}
             style={{ backgroundColor: form.customLargeTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
@@ -266,9 +263,8 @@ export const RpmWindowsForm: React.FC<
               type="number"
               step="0.01"
               name="customInstallationFee"
-              value={form.customInstallationFee !== undefined ? form.customInstallationFee : ''}
+              value={form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay}
               onChange={onChange}
-              placeholder={installationFeeDisplay.toFixed(2)}
               style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
@@ -361,9 +357,8 @@ export const RpmWindowsForm: React.FC<
               name="customPerVisitPrice"
               type="number"
               step="0.01"
-              value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : ''}
+              value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice}
               onChange={onChange}
-              placeholder={quote.perVisitPrice.toFixed(2)}
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
@@ -382,9 +377,8 @@ export const RpmWindowsForm: React.FC<
                 name="customMonthlyRecurring"
                 type="number"
                 step="0.01"
-                value={form.customMonthlyRecurring !== undefined ? form.customMonthlyRecurring : ''}
+                value={form.customMonthlyRecurring !== undefined ? form.customMonthlyRecurring : calc.monthlyBillRated}
                 onChange={onChange}
-                placeholder={calc.monthlyBillRated.toFixed(2)}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
               />
             </div>
@@ -415,9 +409,8 @@ export const RpmWindowsForm: React.FC<
               name="customAnnualPrice"
               type="number"
               step="0.01"
-              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : ''}
+              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice}
               onChange={onChange}
-              placeholder={quote.annualPrice.toFixed(2)}
               style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
