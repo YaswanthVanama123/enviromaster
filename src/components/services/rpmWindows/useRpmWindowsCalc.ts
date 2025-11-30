@@ -119,16 +119,23 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "customPerVisitPrice":
         case "customMonthlyRecurring":
         case "customAnnualPrice": {
-          const numVal = value === '' ? undefined : parseFloat(value);
-          if (numVal === undefined || !isNaN(numVal)) {
+          // Allow empty string to clear the field (set to undefined)
+          if (value === '') {
+            return { ...prev, [name]: undefined };
+          }
+          const numVal = parseFloat(value);
+          if (!isNaN(numVal)) {
             return { ...prev, [name]: numVal };
           }
           return prev;
         }
 
         case "customInstallationFee": {
-          const numVal = value === '' ? undefined : parseFloat(value);
-          if (numVal === undefined || !isNaN(numVal)) {
+          if (value === '') {
+            return { ...prev, customInstallationFee: undefined };
+          }
+          const numVal = parseFloat(value);
+          if (!isNaN(numVal)) {
             return { ...prev, customInstallationFee: numVal };
           }
           return prev;

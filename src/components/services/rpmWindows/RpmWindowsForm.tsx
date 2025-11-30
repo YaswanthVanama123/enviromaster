@@ -44,6 +44,62 @@ export const RpmWindowsForm: React.FC<
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      setForm((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  // Clear custom totals when base inputs change
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customSmallTotal: undefined,
+    }));
+  }, [form.smallQty, calc.effSmall]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customMediumTotal: undefined,
+    }));
+  }, [form.mediumQty, calc.effMedium]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customLargeTotal: undefined,
+    }));
+  }, [form.largeQty, calc.effLarge]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customInstallationFee: undefined,
+    }));
+  }, [form.isFirstTimeInstall, calc.firstVisitTotalRated]);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customPerVisitPrice: undefined,
+      customMonthlyRecurring: undefined,
+      customAnnualPrice: undefined,
+    }));
+  }, [
+    form.smallQty,
+    form.mediumQty,
+    form.largeQty,
+    calc.effSmall,
+    calc.effMedium,
+    calc.effLarge,
+    form.extraCharges,
+    form.frequency,
+    form.contractMonths,
+  ]);
+
   // Installation Fee + First Visit (now: install-only first visit)
   const installationFeeDisplay = form.isFirstTimeInstall
     ? calc.firstVisitTotalRated
@@ -113,9 +169,11 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customSmallTotal !== undefined
                 ? form.customSmallTotal
-                : (form.smallQty * calc.effSmall)
+                : ''
             }
             onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={(form.smallQty * calc.effSmall).toFixed(2)}
             style={{ backgroundColor: form.customSmallTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
@@ -150,9 +208,11 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customMediumTotal !== undefined
                 ? form.customMediumTotal
-                : (form.mediumQty * calc.effMedium)
+                : ''
             }
             onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={(form.mediumQty * calc.effMedium).toFixed(2)}
             style={{ backgroundColor: form.customMediumTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
@@ -187,9 +247,11 @@ export const RpmWindowsForm: React.FC<
             value={
               form.customLargeTotal !== undefined
                 ? form.customLargeTotal
-                : (form.largeQty * calc.effLarge)
+                : ''
             }
             onChange={onChange}
+            onBlur={handleBlur}
+            placeholder={(form.largeQty * calc.effLarge).toFixed(2)}
             style={{ backgroundColor: form.customLargeTotal !== undefined ? '#fffacd' : 'white' }}
           />
         </div>
@@ -263,8 +325,10 @@ export const RpmWindowsForm: React.FC<
               type="number"
               step="0.01"
               name="customInstallationFee"
-              value={form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay}
+              value={form.customInstallationFee !== undefined ? form.customInstallationFee : ''}
               onChange={onChange}
+              onBlur={handleBlur}
+              placeholder={installationFeeDisplay.toFixed(2)}
               style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
@@ -357,8 +421,10 @@ export const RpmWindowsForm: React.FC<
               name="customPerVisitPrice"
               type="number"
               step="0.01"
-              value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice}
+              value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : ''}
               onChange={onChange}
+              onBlur={handleBlur}
+              placeholder={quote.perVisitPrice.toFixed(2)}
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
@@ -377,8 +443,10 @@ export const RpmWindowsForm: React.FC<
                 name="customMonthlyRecurring"
                 type="number"
                 step="0.01"
-                value={form.customMonthlyRecurring !== undefined ? form.customMonthlyRecurring : calc.monthlyBillRated}
+                value={form.customMonthlyRecurring !== undefined ? form.customMonthlyRecurring : ''}
                 onChange={onChange}
+                onBlur={handleBlur}
+                placeholder={calc.monthlyBillRated.toFixed(2)}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
               />
             </div>
@@ -409,8 +477,10 @@ export const RpmWindowsForm: React.FC<
               name="customAnnualPrice"
               type="number"
               step="0.01"
-              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice}
+              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : ''}
               onChange={onChange}
+              onBlur={handleBlur}
+              placeholder={quote.annualPrice.toFixed(2)}
               style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
