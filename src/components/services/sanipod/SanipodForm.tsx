@@ -37,6 +37,63 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      onChange({
+        target: { name, value: '', type: 'number' }
+      } as any);
+    }
+  };
+
+  // Clear custom totals when base inputs change
+  const [prevInputs, setPrevInputs] = React.useState({
+    podQuantity: form.podQuantity,
+    extraBagsPerWeek: form.extraBagsPerWeek,
+    weeklyRatePerUnit: form.weeklyRatePerUnit,
+    altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
+    extraBagPrice: form.extraBagPrice,
+    standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
+    contractMonths: form.contractMonths,
+    frequency: form.frequency,
+  });
+
+  useEffect(() => {
+    const inputsChanged =
+      prevInputs.podQuantity !== form.podQuantity ||
+      prevInputs.extraBagsPerWeek !== form.extraBagsPerWeek ||
+      prevInputs.weeklyRatePerUnit !== form.weeklyRatePerUnit ||
+      prevInputs.altWeeklyRatePerUnit !== form.altWeeklyRatePerUnit ||
+      prevInputs.extraBagPrice !== form.extraBagPrice ||
+      prevInputs.standaloneExtraWeeklyCharge !== form.standaloneExtraWeeklyCharge ||
+      prevInputs.contractMonths !== form.contractMonths ||
+      prevInputs.frequency !== form.frequency;
+
+    if (inputsChanged) {
+      // Clear all custom overrides
+      onChange({ target: { name: 'customPerVisitPrice', value: '', type: 'number' } } as any);
+      onChange({ target: { name: 'customMonthlyPrice', value: '', type: 'number' } } as any);
+      onChange({ target: { name: 'customAnnualPrice', value: '', type: 'number' } } as any);
+
+      setPrevInputs({
+        podQuantity: form.podQuantity,
+        extraBagsPerWeek: form.extraBagsPerWeek,
+        weeklyRatePerUnit: form.weeklyRatePerUnit,
+        altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
+        extraBagPrice: form.extraBagPrice,
+        standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
+        contractMonths: form.contractMonths,
+        frequency: form.frequency,
+      });
+    }
+  }, [form.podQuantity, form.extraBagsPerWeek, form.weeklyRatePerUnit, form.altWeeklyRatePerUnit, form.extraBagPrice, form.standaloneExtraWeeklyCharge, form.contractMonths, form.frequency]);
+
+  // Clear installation fee when install-related inputs change
+  useEffect(() => {
+    onChange({ target: { name: 'customInstallationFee', value: '', type: 'number' } } as any);
+  }, [form.isNewInstall, form.installQuantity, form.installRatePerPod]);
+
   // Derive weekly line amounts from calc result
   const pods = Math.max(0, form.podQuantity || 0);
   const bags = Math.max(0, form.extraBagsPerWeek || 0);
@@ -181,7 +238,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="extraBagPrice"
-            value={form.extraBagPrice.toFixed(2)}
+            value={form.extraBagPrice}
             onChange={onChange}
           />
           <span className="svc-small">{bagUnitLabel}</span>
@@ -244,7 +301,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="installRatePerPod"
-            value={form.installRatePerPod.toFixed(2)}
+            value={form.installRatePerPod}
             onChange={onChange}
             style={{ width: "60px" }}
           />
@@ -272,7 +329,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 type="number"
                 step="0.01"
                 name="installRatePerPod"
-                value={form.installRatePerPod.toFixed(2)}
+                value={form.installRatePerPod}
                 onChange={onChange}
               />
               <span className="svc-small">$/pod install</span>
@@ -300,7 +357,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                       : calc.installCost
                   }
                   onChange={onChange}
-                  placeholder={calc.installCost.toFixed(2)}
+                  onBlur={handleBlur}
+                  style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
                 />
               </span>
             </div>
@@ -351,14 +409,40 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       <div className="svc-row svc-row-total">
         <label>Per Visit (Service Only)</label>
         <div className="svc-dollar">
-          ${fmt(calc.perVisit)}
+          $<input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="customPerVisitPrice"
+            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : calc.perVisit}
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
+              border: 'none',
+              width: '100px'
+            }}
+          />
         </div>
       </div>
 
       <div className="svc-row svc-row-total">
         <label>First Month (Install + Service)</label>
         <div className="svc-dollar">
-          ${fmt(calc.monthly)}
+          $<input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="customMonthlyPrice"
+            value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : calc.monthly}
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
+              border: 'none',
+              width: '100px'
+            }}
+          />
         </div>
       </div>
 
@@ -367,7 +451,20 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           Contract Total ({form.contractMonths} Months)
         </label>
         <div className="svc-dollar">
-          ${fmt(calc.annual)}
+          $<input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="customAnnualPrice"
+            value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : calc.annual}
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',
+              border: 'none',
+              width: '100px'
+            }}
+          />
         </div>
       </div>
     </div>

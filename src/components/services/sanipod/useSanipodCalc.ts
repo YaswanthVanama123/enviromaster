@@ -33,6 +33,15 @@ export interface SanipodFormState {
   /** Custom installation override (user can manually set installation cost) */
   customInstallationFee?: number;
 
+  /** Custom override for per visit price */
+  customPerVisitPrice?: number;
+
+  /** Custom override for first month total */
+  customMonthlyPrice?: number;
+
+  /** Custom override for contract total */
+  customAnnualPrice?: number;
+
   frequency: SanipodFrequencyKey;
   rateCategory: SanipodRateCategory;
 
@@ -159,11 +168,20 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
       if (type === "checkbox") {
         next[name as keyof SanipodFormState] = t.checked;
-      } else if (name === "customInstallationFee") {
-        // Handle custom installation fee - allow clearing by setting to undefined
-        const numVal = t.value === '' ? undefined : parseFloat(t.value);
-        if (numVal === undefined || !isNaN(numVal)) {
-          next.customInstallationFee = numVal;
+      } else if (
+        name === "customInstallationFee" ||
+        name === "customPerVisitPrice" ||
+        name === "customMonthlyPrice" ||
+        name === "customAnnualPrice"
+      ) {
+        // Handle custom override fields - allow clearing by setting to undefined
+        if (t.value === '') {
+          (next as any)[name] = undefined;
+        } else {
+          const numVal = parseFloat(t.value);
+          if (!isNaN(numVal)) {
+            (next as any)[name] = numVal;
+          }
         }
       } else if (type === "number") {
         const raw = t.value;
