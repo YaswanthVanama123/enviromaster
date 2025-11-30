@@ -13,7 +13,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
   onRemove,
 }) => {
-  const { form, onChange, calc } = useSanipodCalc(initialData);
+  const { form, setForm, onChange, calc } = useSanipodCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state
@@ -39,59 +39,55 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   // Handler to reset custom values to undefined if left empty
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (value === '' || value === null) {
-      onChange({
-        target: { name, value: '', type: 'number' }
-      } as any);
+    const { name } = e.target;
+    if (e.target.value === '' || e.target.value === null) {
+      setForm((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  // Clear custom totals when base inputs change
-  const [prevInputs, setPrevInputs] = React.useState({
-    podQuantity: form.podQuantity,
-    extraBagsPerWeek: form.extraBagsPerWeek,
-    weeklyRatePerUnit: form.weeklyRatePerUnit,
-    altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
-    extraBagPrice: form.extraBagPrice,
-    standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
-    contractMonths: form.contractMonths,
-    frequency: form.frequency,
-  });
+  // Track if it's the first render to prevent clearing on mount
+  const isFirstRender = useRef(true);
 
+  // Clear custom totals when base inputs change (but not on first render)
   useEffect(() => {
-    const inputsChanged =
-      prevInputs.podQuantity !== form.podQuantity ||
-      prevInputs.extraBagsPerWeek !== form.extraBagsPerWeek ||
-      prevInputs.weeklyRatePerUnit !== form.weeklyRatePerUnit ||
-      prevInputs.altWeeklyRatePerUnit !== form.altWeeklyRatePerUnit ||
-      prevInputs.extraBagPrice !== form.extraBagPrice ||
-      prevInputs.standaloneExtraWeeklyCharge !== form.standaloneExtraWeeklyCharge ||
-      prevInputs.contractMonths !== form.contractMonths ||
-      prevInputs.frequency !== form.frequency;
-
-    if (inputsChanged) {
-      // Clear all custom overrides
-      onChange({ target: { name: 'customPerVisitPrice', value: '', type: 'number' } } as any);
-      onChange({ target: { name: 'customMonthlyPrice', value: '', type: 'number' } } as any);
-      onChange({ target: { name: 'customAnnualPrice', value: '', type: 'number' } } as any);
-
-      setPrevInputs({
-        podQuantity: form.podQuantity,
-        extraBagsPerWeek: form.extraBagsPerWeek,
-        weeklyRatePerUnit: form.weeklyRatePerUnit,
-        altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
-        extraBagPrice: form.extraBagPrice,
-        standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
-        contractMonths: form.contractMonths,
-        frequency: form.frequency,
-      });
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-  }, [form.podQuantity, form.extraBagsPerWeek, form.weeklyRatePerUnit, form.altWeeklyRatePerUnit, form.extraBagPrice, form.standaloneExtraWeeklyCharge, form.contractMonths, form.frequency]);
 
-  // Clear installation fee when install-related inputs change
+    setForm((prev) => ({
+      ...prev,
+      customWeeklyPodRate: undefined,
+      customExtraBagsTotal: undefined,
+      customPerVisitPrice: undefined,
+      customMonthlyPrice: undefined,
+      customAnnualPrice: undefined,
+    }));
+  }, [
+    form.podQuantity,
+    form.extraBagsPerWeek,
+    form.weeklyRatePerUnit,
+    form.altWeeklyRatePerUnit,
+    form.extraBagPrice,
+    form.standaloneExtraWeeklyCharge,
+    form.contractMonths,
+    form.frequency,
+    form.rateCategory,
+    form.isStandalone,
+    form.extraBagsRecurring,
+  ]);
+
+  // Track if it's the first render for installation fee
+  const isFirstRenderInstall = useRef(true);
+
+  // Clear installation fee when install-related inputs change (but not on first render)
   useEffect(() => {
-    onChange({ target: { name: 'customInstallationFee', value: '', type: 'number' } } as any);
+    if (isFirstRenderInstall.current) {
+      isFirstRenderInstall.current = false;
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, customInstallationFee: undefined }));
   }, [form.isNewInstall, form.installQuantity, form.installRatePerPod]);
 
   // Derive weekly line amounts from calc result
@@ -203,16 +199,23 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-multi">@</span>
           <input
             className="svc-in svc-in-small"
-            type="text"
-            readOnly
-            value={pods > 0 ? effectiveRatePerPod.toFixed(2) : ''}
-            style={{ backgroundColor: '#f5f5f5' }}
-            title="Effective rate per pod (auto-calculated)"
+            type="number"
+            step="0.01"
+            name="customWeeklyPodRate"
+            value={
+              form.customWeeklyPodRate !== undefined
+                ? form.customWeeklyPodRate
+                : effectiveRatePerPod
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            title="Effective rate per pod (editable)"
+            style={{ backgroundColor: form.customWeeklyPodRate !== undefined ? '#fffacd' : 'white' }}
           />
           <span className="svc-small">$/wk</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
-            ${fmt(calc.weeklyPodServiceRed)}
+            ${fmt(pods > 0 ? (form.customWeeklyPodRate !== undefined ? form.customWeeklyPodRate : effectiveRatePerPod) * pods : 0)}
           </span>
           <span className="svc-small" style={{ marginLeft: "8px" }}>
             (using {ruleLabel})
@@ -243,9 +246,23 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           />
           <span className="svc-small">{bagUnitLabel}</span>
           <span className="svc-eq">=</span>
-          <span className="svc-dollar">
-            ${fmt(bagLineAmount)}
-          </span>
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            step="0.01"
+            name="customExtraBagsTotal"
+            value={
+              form.customExtraBagsTotal !== undefined
+                ? form.customExtraBagsTotal
+                : bagLineAmount
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customExtraBagsTotal !== undefined ? '#fffacd' : 'white',
+              width: '80px'
+            }}
+          />
           <label className="svc-inline" style={{ marginLeft: "8px" }}>
             <input
               type="checkbox"
