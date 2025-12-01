@@ -157,8 +157,9 @@ export const RpmWindowsForm: React.FC<
             name="smallWindowRate"
             type="number"
             step="0.01"
-            value={calc.effSmall}
+            value={form.smallWindowRate}
             onChange={onChange}
+            title="Base weekly rate (from backend)"
           />
           <span>=</span>
           <input
@@ -174,6 +175,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customSmallTotal !== undefined ? '#fffacd' : 'white' }}
+            title={`Calculated total (Qty × $${calc.effSmall.toFixed(2)} effective rate)`}
           />
         </div>
       </div>
@@ -195,8 +197,9 @@ export const RpmWindowsForm: React.FC<
             name="mediumWindowRate"
             type="number"
             step="0.01"
-            value={calc.effMedium}
+            value={form.mediumWindowRate}
             onChange={onChange}
+            title="Base weekly rate (from backend)"
           />
           <span>=</span>
           <input
@@ -212,6 +215,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customMediumTotal !== undefined ? '#fffacd' : 'white' }}
+            title={`Calculated total (Qty × $${calc.effMedium.toFixed(2)} effective rate)`}
           />
         </div>
       </div>
@@ -233,8 +237,9 @@ export const RpmWindowsForm: React.FC<
             name="largeWindowRate"
             type="number"
             step="0.01"
-            value={calc.effLarge}
+            value={form.largeWindowRate}
             onChange={onChange}
+            title="Base weekly rate (from backend)"
           />
           <span>=</span>
           <input
@@ -250,6 +255,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customLargeTotal !== undefined ? '#fffacd' : 'white' }}
+            title={`Calculated total (Qty × $${calc.effLarge.toFixed(2)} effective rate)`}
           />
         </div>
       </div>
