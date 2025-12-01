@@ -10,7 +10,11 @@ interface ServicePricingDetailedViewProps {
   onClose: () => void;
 }
 
-type TabKey = "windowRates" | "installMultipliers" | "frequencyMultipliers" | "annualFrequencies" | "conversions" | "rateCategories";
+type TabKey =
+  // RPM Windows
+  | "windowRates" | "installMultipliers" | "frequencyMultipliers" | "annualFrequencies" | "conversions" | "rateCategories"
+  // Carpet Cleaning
+  | "unitPricing" | "minimums" | "carpetInstallMultipliers" | "frequencyMeta";
 
 interface PricingField {
   label: string;
@@ -25,7 +29,14 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   onUpdateField,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabKey>("windowRates");
+  // Set initial tab based on service type
+  const getInitialTab = (): TabKey => {
+    if (service.serviceId === "rpmWindows") return "windowRates";
+    if (service.serviceId === "carpetCleaning") return "unitPricing";
+    return "windowRates";
+  };
+
+  const [activeTab, setActiveTab] = useState<TabKey>(getInitialTab());
   const [editingField, setEditingField] = useState<{ path: string[]; value: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -44,12 +55,18 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   // Organize fields by category for RPM Windows
   const getFieldsByCategory = () => {
     const categories: Record<TabKey, PricingField[]> = {
+      // RPM Windows
       windowRates: [],
       installMultipliers: [],
       frequencyMultipliers: [],
       annualFrequencies: [],
       conversions: [],
       rateCategories: [],
+      // Carpet Cleaning
+      unitPricing: [],
+      minimums: [],
+      carpetInstallMultipliers: [],
+      frequencyMeta: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -222,6 +239,97 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // CARPET CLEANING
+    if (service.serviceId === "carpetCleaning") {
+      // Unit Pricing
+      categories.unitPricing = [
+        {
+          label: "Unit Square Feet",
+          value: getValue(["unitSqFt"]) ?? 0,
+          path: ["unitSqFt"],
+          unit: "sq ft",
+          description: "Square footage per pricing unit (e.g., charge per 500 sq ft)",
+        },
+        {
+          label: "First Unit Rate",
+          value: getValue(["firstUnitRate"]) ?? 0,
+          path: ["firstUnitRate"],
+          unit: "$",
+          description: "Price for the first unit of carpet cleaning",
+        },
+        {
+          label: "Additional Unit Rate",
+          value: getValue(["additionalUnitRate"]) ?? 0,
+          path: ["additionalUnitRate"],
+          unit: "$",
+          description: "Price for each additional unit beyond the first",
+        },
+      ];
+
+      // Minimums
+      categories.minimums = [
+        {
+          label: "Per Visit Minimum",
+          value: getValue(["perVisitMinimum"]) ?? 0,
+          path: ["perVisitMinimum"],
+          unit: "$",
+          description: "Minimum charge per service visit regardless of area",
+        },
+      ];
+
+      // Install Multipliers
+      const installMults = getValue(["installMultipliers"]) || {};
+      categories.carpetInstallMultipliers = [
+        {
+          label: "Dirty Install Multiplier",
+          value: installMults.dirty ?? 0,
+          path: ["installMultipliers", "dirty"],
+          unit: "×",
+          description: "Multiply rate by this for dirty/heavily soiled carpets (typically 3x)",
+        },
+        {
+          label: "Clean Install Multiplier",
+          value: installMults.clean ?? 0,
+          path: ["installMultipliers", "clean"],
+          unit: "×",
+          description: "Multiply rate by this for clean/lightly soiled carpets (typically 1x)",
+        },
+      ];
+
+      // Frequency Meta
+      const freqMeta = getValue(["frequencyMeta"]) || {};
+      categories.frequencyMeta = [
+        {
+          label: "Monthly Visits Per Year",
+          value: freqMeta.monthly?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "monthly", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of monthly service visits per year (typically 12)",
+        },
+        {
+          label: "Twice Per Month Visits Per Year",
+          value: freqMeta.twicePerMonth?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "twicePerMonth", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of twice-per-month service visits per year (typically 24)",
+        },
+        {
+          label: "Bimonthly Visits Per Year",
+          value: freqMeta.bimonthly?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "bimonthly", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of bimonthly service visits per year (typically 6)",
+        },
+        {
+          label: "Quarterly Visits Per Year",
+          value: freqMeta.quarterly?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "quarterly", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of quarterly service visits per year (typically 4)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -248,14 +356,33 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   };
 
   const categories = getFieldsByCategory();
-  const tabs: { key: TabKey; label: string; icon: string }[] = [
-    { key: "windowRates", label: "Window Rates", icon: "🪟" },
-    { key: "installMultipliers", label: "Install Multipliers", icon: "⚡" },
-    { key: "frequencyMultipliers", label: "Frequency Multipliers", icon: "📅" },
-    { key: "annualFrequencies", label: "Annual Frequencies", icon: "📊" },
-    { key: "conversions", label: "Billing Conversions", icon: "🔄" },
-    { key: "rateCategories", label: "Rate Tiers", icon: "💰" },
-  ];
+
+  // Dynamic tabs based on service type
+  const getTabs = (): { key: TabKey; label: string; icon: string }[] => {
+    if (service.serviceId === "rpmWindows") {
+      return [
+        { key: "windowRates", label: "Window Rates", icon: "🪟" },
+        { key: "installMultipliers", label: "Install Multipliers", icon: "⚡" },
+        { key: "frequencyMultipliers", label: "Frequency Multipliers", icon: "📅" },
+        { key: "annualFrequencies", label: "Annual Frequencies", icon: "📊" },
+        { key: "conversions", label: "Billing Conversions", icon: "🔄" },
+        { key: "rateCategories", label: "Rate Tiers", icon: "💰" },
+      ];
+    }
+
+    if (service.serviceId === "carpetCleaning") {
+      return [
+        { key: "unitPricing", label: "Unit Pricing", icon: "📐" },
+        { key: "minimums", label: "Minimums", icon: "💵" },
+        { key: "carpetInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
+        { key: "frequencyMeta", label: "Service Frequencies", icon: "📅" },
+      ];
+    }
+
+    return [];
+  };
+
+  const tabs = getTabs();
 
   return (
     <div className="spd">

@@ -155,11 +155,23 @@ export const PricingTablesView: React.FC = () => {
     if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
     if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
 
-    // CARPET CLEANING
+    // CARPET CLEANING - Complete extraction
     if (config.unitSqFt !== undefined) fields.push({ label: "Unit Square Feet", value: config.unitSqFt, path: ["unitSqFt"] });
     if (config.firstUnitRate !== undefined) fields.push({ label: "First Unit Rate", value: config.firstUnitRate, path: ["firstUnitRate"] });
     if (config.additionalUnitRate !== undefined) fields.push({ label: "Additional Unit Rate", value: config.additionalUnitRate, path: ["additionalUnitRate"] });
     if (config.perVisitMinimum !== undefined) fields.push({ label: "Per Visit Minimum", value: config.perVisitMinimum, path: ["perVisitMinimum"] });
+
+    // Install Multipliers for Carpet Cleaning
+    if (config.installMultipliers?.dirty !== undefined) fields.push({ label: "Install Multiplier - Dirty", value: config.installMultipliers.dirty, path: ["installMultipliers", "dirty"] });
+    if (config.installMultipliers?.clean !== undefined) fields.push({ label: "Install Multiplier - Clean", value: config.installMultipliers.clean, path: ["installMultipliers", "clean"] });
+
+    // Frequency Meta for Carpet Cleaning
+    if (config.frequencyMeta) {
+      if (config.frequencyMeta.monthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Monthly Visits/Year", value: config.frequencyMeta.monthly.visitsPerYear, path: ["frequencyMeta", "monthly", "visitsPerYear"] });
+      if (config.frequencyMeta.twicePerMonth?.visitsPerYear !== undefined) fields.push({ label: "Frequency - 2x Per Month Visits/Year", value: config.frequencyMeta.twicePerMonth.visitsPerYear, path: ["frequencyMeta", "twicePerMonth", "visitsPerYear"] });
+      if (config.frequencyMeta.bimonthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Bimonthly Visits/Year", value: config.frequencyMeta.bimonthly.visitsPerYear, path: ["frequencyMeta", "bimonthly", "visitsPerYear"] });
+      if (config.frequencyMeta.quarterly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Quarterly Visits/Year", value: config.frequencyMeta.quarterly.visitsPerYear, path: ["frequencyMeta", "quarterly", "visitsPerYear"] });
+    }
 
     // PURE JANITORIAL
     if (config.baseHourlyRate !== undefined) fields.push({ label: "Base Hourly Rate", value: config.baseHourlyRate, path: ["baseHourlyRate"] });
