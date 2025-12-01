@@ -424,11 +424,7 @@ export const PricingTablesView: React.FC = () => {
       setSuccessMessage("✓ Product price updated successfully!");
       setEditingProduct(null);
       // Force a page reload to refresh the catalog from the hook
-      setTimeout(() => {
-        window.location.reload();
-      }, 500); // Small delay to show the success message first
-    } else {
-      setErrorMessage("❌ Failed to update product price. Please try again.");
+
     }
     setSaving(false);
   };

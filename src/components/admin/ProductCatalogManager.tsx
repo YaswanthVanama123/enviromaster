@@ -58,6 +58,19 @@ export const ProductCatalogManager: React.FC = () => {
     if (result.success) {
       setSuccessMessage("✓ Product updated successfully!");
       setIsEditMode(false);
+
+      // Update the selectedFamily state to reflect changes in the table
+      if (selectedFamily) {
+        const updatedFamily = updatedCatalog.families.find((f: ProductFamily) => f.key === selectedFamily.key);
+        if (updatedFamily) {
+          setSelectedFamily(updatedFamily);
+        }
+      }
+
+      // Force a page reload after 800ms to fully refresh the catalog
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
     } else {
       setErrorMessage("Failed to update product: " + result.error);
     }
@@ -100,6 +113,19 @@ export const ProductCatalogManager: React.FC = () => {
     if (result.success) {
       setSuccessMessage("✓ Product added successfully!");
       setCreatingProduct(null);
+
+      // Update the selectedFamily if it's the same as the created product's family
+      if (selectedFamily && selectedFamily.key === creatingProduct.key) {
+        const updatedFamily = updatedCatalog.families.find((f: ProductFamily) => f.key === creatingProduct.key);
+        if (updatedFamily) {
+          setSelectedFamily(updatedFamily);
+        }
+      }
+
+      // Force a page reload after 800ms to fully refresh the catalog
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
     } else {
       setErrorMessage("Failed to add product: " + result.error);
     }
