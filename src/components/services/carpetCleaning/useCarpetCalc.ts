@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { CarpetFormState, CarpetFrequency } from "./carpetTypes";
@@ -6,6 +6,27 @@ import {
   carpetPricingConfig as cfg,
   carpetFrequencyList,
 } from "./carpetConfig";
+
+// API base URL - can be configured via environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+// ✅ Backend config interface matching your MongoDB JSON structure
+interface BackendCarpetConfig {
+  unitSqFt: number;
+  firstUnitRate: number;
+  additionalUnitRate: number;
+  perVisitMinimum: number;
+  installMultipliers: {
+    dirty: number;
+    clean: number;
+  };
+  frequencyMeta: {
+    monthly: { visitsPerYear: number };
+    twicePerMonth: { visitsPerYear: number };
+    bimonthly: { visitsPerYear: number };
+    quarterly: { visitsPerYear: number };
+  };
+}
 
 const DEFAULT_FORM: CarpetFormState = {
   serviceId: "carpetCleaning",
@@ -18,6 +39,14 @@ const DEFAULT_FORM: CarpetFormState = {
   contractMonths: 12,
   includeInstall: false,
   isDirtyInstall: false,
+
+  // ✅ NEW: Editable pricing rates from config (will be overridden by backend)
+  unitSqFt: cfg.unitSqFt,
+  firstUnitRate: cfg.firstUnitRate,
+  additionalUnitRate: cfg.additionalUnitRate,
+  perVisitMinimum: cfg.perVisitMinimum,
+  installMultiplierDirty: cfg.installMultipliers.dirty,
+  installMultiplierClean: cfg.installMultipliers.clean,
 };
 
 function clampFrequency(f: string): CarpetFrequency {
@@ -40,6 +69,57 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     ...initial,
   });
 
+  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+  const [backendConfig, setBackendConfig] = useState<BackendCarpetConfig | null>(null);
+
+  // ✅ Fetch COMPLETE pricing configuration from backend on mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=carpetCleaning`);
+
+        if (!response.ok) {
+          console.warn('⚠️ Carpet Cleaning config not found in backend, using default fallback values');
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data && data.config) {
+          const config = data.config as BackendCarpetConfig;
+
+          // ✅ Store the ENTIRE backend config for use in calculations
+          setBackendConfig(config);
+
+          setForm((prev) => ({
+            ...prev,
+            // Update all rate fields from backend if available
+            unitSqFt: config.unitSqFt ?? prev.unitSqFt,
+            firstUnitRate: config.firstUnitRate ?? prev.firstUnitRate,
+            additionalUnitRate: config.additionalUnitRate ?? prev.additionalUnitRate,
+            perVisitMinimum: config.perVisitMinimum ?? prev.perVisitMinimum,
+            installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
+            installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+          }));
+
+          console.log('✅ Carpet Cleaning FULL CONFIG loaded from backend:', {
+            unitSqFt: config.unitSqFt,
+            firstUnitRate: config.firstUnitRate,
+            additionalUnitRate: config.additionalUnitRate,
+            perVisitMinimum: config.perVisitMinimum,
+            installMultipliers: config.installMultipliers,
+            frequencyMeta: config.frequencyMeta,
+          });
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
+        console.log('⚠️ Using default hardcoded values as fallback');
+      }
+    };
+
+    fetchPricing();
+  }, []); // Run once on mount
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -53,6 +133,33 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
             ...prev,
             areaSqFt: Number.isFinite(num) && num > 0 ? num : 0,
           };
+        }
+
+        // ✅ NEW: Handle editable rate fields
+        case "unitSqFt":
+        case "firstUnitRate":
+        case "additionalUnitRate":
+        case "perVisitMinimum":
+        case "installMultiplierDirty":
+        case "installMultiplierClean": {
+          const num = parseFloat(String(value));
+          return {
+            ...prev,
+            [name]: Number.isFinite(num) && num >= 0 ? num : 0,
+          };
+        }
+
+        // ✅ NEW: Handle custom override fields
+        case "customPerVisitPrice":
+        case "customMonthlyRecurring":
+        case "customFirstMonthPrice":
+        case "customContractTotal":
+        case "customInstallationFee": {
+          const numVal = value === '' ? undefined : parseFloat(value);
+          if (numVal === undefined || !isNaN(numVal)) {
+            return { ...prev, [name]: numVal };
+          }
+          return prev;
         }
 
         case "frequency":
@@ -108,15 +215,25 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     firstMonthTotal,
     perVisitEffective,
   } = useMemo(() => {
+    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    const activeConfig = backendConfig || {
+      unitSqFt: cfg.unitSqFt,
+      firstUnitRate: cfg.firstUnitRate,
+      additionalUnitRate: cfg.additionalUnitRate,
+      perVisitMinimum: cfg.perVisitMinimum,
+      installMultipliers: cfg.installMultipliers,
+      frequencyMeta: cfg.frequencyMeta,
+    };
+
     const freq = clampFrequency(form.frequency);
-    const meta = cfg.frequencyMeta[freq];
+    const meta = activeConfig.frequencyMeta[freq];  // ✅ FROM BACKEND
     const visitsPerYear = meta?.visitsPerYear ?? 12;
     const visitsPerMonth = visitsPerYear / 12;
 
     const areaSqFt = form.areaSqFt ?? 0;
 
-    let perVisitBase = 0;
-    let perVisitCharge = 0;
+    let calculatedPerVisitBase = 0;
+    let calculatedPerVisitCharge = 0;
 
     if (areaSqFt > 0) {
       // ✅ CORRECTED PRICING: Per-square-foot after first 500
@@ -124,18 +241,24 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       // Each additional sq ft = $125/500 = $0.25/sq ft
       // Example: 700 sq ft = $250 + (200 × $0.25) = $300
 
-      if (areaSqFt <= cfg.unitSqFt) {
+      if (areaSqFt <= form.unitSqFt) {  // ✅ USE FORM VALUE (from backend)
         // 500 sq ft or less: flat rate
-        perVisitBase = cfg.firstUnitRate;
+        calculatedPerVisitBase = form.firstUnitRate;  // ✅ USE FORM VALUE
       } else {
         // Over 500 sq ft: $250 + extra sq ft × $0.25/sq ft
-        const extraSqFt = areaSqFt - cfg.unitSqFt;
-        const ratePerSqFt = cfg.additionalUnitRate / cfg.unitSqFt; // $125/500 = $0.25
-        perVisitBase = cfg.firstUnitRate + (extraSqFt * ratePerSqFt);
+        const extraSqFt = areaSqFt - form.unitSqFt;  // ✅ USE FORM VALUE
+        const ratePerSqFt = form.additionalUnitRate / form.unitSqFt; // ✅ USE FORM VALUES ($125/500 = $0.25)
+        calculatedPerVisitBase = form.firstUnitRate + (extraSqFt * ratePerSqFt);  // ✅ USE FORM VALUE
       }
 
-      perVisitCharge = Math.max(perVisitBase, cfg.perVisitMinimum);
+      calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, form.perVisitMinimum);  // ✅ USE FORM VALUE
     }
+
+    // Use custom override if set, otherwise use calculated
+    const perVisitBase = calculatedPerVisitBase;
+    const perVisitCharge = form.customPerVisitPrice !== undefined
+      ? form.customPerVisitPrice
+      : calculatedPerVisitCharge;
 
     // Trip is disabled in math (still shown as 0.00 in UI)
     const perVisitTrip = 0;
@@ -146,19 +269,29 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     // ---------------- INSTALLATION FEE ----------------
     // Install = 3× dirty / 1× clean of PER-VISIT charge (NOT monthly)
     // Installation is the same for any frequency type
-    const installOneTime =
+    const calculatedInstallOneTime =
       serviceActive && form.includeInstall
-        ? perVisitCharge *
+        ? calculatedPerVisitCharge *
           (form.isDirtyInstall
-            ? cfg.installMultipliers.dirty
-            : cfg.installMultipliers.clean)
+            ? form.installMultiplierDirty  // ✅ USE FORM VALUE (from backend)
+            : form.installMultiplierClean)  // ✅ USE FORM VALUE (from backend)
         : 0;
 
+    // Use custom override if set, otherwise use calculated
+    const installOneTime = form.customInstallationFee !== undefined
+      ? form.customInstallationFee
+      : calculatedInstallOneTime;
+
     // ---------------- RECURRING MONTHLY (normal full month) ----------------
-    const monthlyRecurring =
+    const calculatedMonthlyRecurring =
       serviceActive && visitsPerMonth > 0
         ? perVisitCharge * visitsPerMonth
         : 0;
+
+    // Use custom override if set
+    const monthlyRecurring = form.customMonthlyRecurring !== undefined
+      ? form.customMonthlyRecurring
+      : calculatedMonthlyRecurring;
 
     // ---------------- FIRST VISIT & FIRST MONTH ----------------
     // WITH INSTALLATION:
@@ -167,34 +300,44 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     // WITHOUT INSTALLATION:
     //   - First month = normal full month (same as monthlyRecurring)
 
-    let firstMonthTotal = 0;
+    let calculatedFirstMonthTotal = 0;
 
     if (serviceActive) {
       if (form.includeInstall && installOneTime > 0) {
         // With installation: install + (monthlyVisits - 1) service visits
         const monthlyVisits = visitsPerMonth;
         const firstMonthNormalVisits = monthlyVisits > 1 ? monthlyVisits - 1 : 0;
-        firstMonthTotal = installOneTime + (firstMonthNormalVisits * perVisitCharge);
+        calculatedFirstMonthTotal = installOneTime + (firstMonthNormalVisits * perVisitCharge);
       } else {
         // No installation: just a normal full month
-        firstMonthTotal = monthlyRecurring;
+        calculatedFirstMonthTotal = monthlyRecurring;
       }
     }
+
+    // Use custom override if set
+    const firstMonthTotal = form.customFirstMonthPrice !== undefined
+      ? form.customFirstMonthPrice
+      : calculatedFirstMonthTotal;
 
     // ---------------- CONTRACT TOTAL ----------------
     const contractMonths = clampContractMonths(form.contractMonths);
 
-    let contractTotal = 0;
+    let calculatedContractTotal = 0;
     if (contractMonths > 0) {
       if (form.includeInstall && installOneTime > 0) {
         // With installation: first month (special) + remaining 11 months normal
         const remainingMonths = Math.max(contractMonths - 1, 0);
-        contractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+        calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
       } else {
         // No installation: just contractMonths × normal monthly
-        contractTotal = contractMonths * monthlyRecurring;
+        calculatedContractTotal = contractMonths * monthlyRecurring;
       }
     }
+
+    // Use custom override if set
+    const contractTotal = form.customContractTotal !== undefined
+      ? form.customContractTotal
+      : calculatedContractTotal;
 
     // Per-Visit Effective = normal per-visit service price (no install, no trip)
     const perVisitEffective = perVisitCharge;
@@ -212,7 +355,27 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       firstMonthTotal,
       perVisitEffective,
     };
-  }, [form]);
+  }, [
+    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    form.areaSqFt,
+    form.frequency,
+    form.contractMonths,
+    form.includeInstall,
+    form.isDirtyInstall,
+    // ✅ NEW: Editable rate fields (from backend)
+    form.unitSqFt,
+    form.firstUnitRate,
+    form.additionalUnitRate,
+    form.perVisitMinimum,
+    form.installMultiplierDirty,
+    form.installMultiplierClean,
+    // ✅ NEW: Custom override fields
+    form.customPerVisitPrice,
+    form.customMonthlyRecurring,
+    form.customFirstMonthPrice,
+    form.customContractTotal,
+    form.customInstallationFee,
+  ]);
 
   const quote: ServiceQuoteResult = useMemo(
     () => ({

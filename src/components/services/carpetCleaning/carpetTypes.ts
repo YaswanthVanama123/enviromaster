@@ -55,4 +55,19 @@ export interface CarpetFormState extends BaseServiceFormState {
   // Installation fee options (same as SaniScrub)
   includeInstall: boolean;
   isDirtyInstall: boolean;  // 3× multiplier vs 1× clean
+
+  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
+  unitSqFt: number;                // 500 sq ft block
+  firstUnitRate: number;           // $250 for first 500 sq ft
+  additionalUnitRate: number;      // $125 for each additional 500 sq ft
+  perVisitMinimum: number;         // $250 minimum per visit
+  installMultiplierDirty: number;  // 3× for dirty install
+  installMultiplierClean: number;  // 1× for clean install
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customPerVisitPrice?: number;
+  customMonthlyRecurring?: number;
+  customFirstMonthPrice?: number;
+  customContractTotal?: number;
+  customInstallationFee?: number;
 }

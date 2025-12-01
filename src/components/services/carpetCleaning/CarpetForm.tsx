@@ -89,14 +89,58 @@ export const CarpetForm: React.FC<
             value={form.areaSqFt}
             onChange={onChange}
           />
-          <span>@</span>
+          <span className="svc-small">sq ft (1st</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value="1st 500 = 250; +125/500"
+            type="number"
+            min={0}
+            step={1}
+            name="unitSqFt"
+            value={form.unitSqFt}
+            onChange={onChange}
+            title="Block size (from backend, editable)"
+            style={{ width: 70 }}
           />
           <span>=</span>
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            step={0.01}
+            name="firstUnitRate"
+            value={form.firstUnitRate}
+            onChange={onChange}
+            title="First block rate (from backend, editable)"
+            style={{ width: 70 }}
+          />
+          <span>; +</span>
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            step={0.01}
+            name="additionalUnitRate"
+            value={form.additionalUnitRate}
+            onChange={onChange}
+            title="Additional block rate (from backend, editable)"
+            style={{ width: 70 }}
+          />
+          <span>/</span>
+          <input
+            className="svc-in"
+            type="number"
+            value={form.unitSqFt}
+            readOnly
+            style={{ width: 70 }}
+          />
+          <span>)</span>
+        </div>
+      </div>
+
+      {/* Per visit charge calculation result */}
+      <div className="svc-row">
+        <label>Per Visit Charge</label>
+        <div className="svc-row-right">
           <input
             className="svc-in-box"
             type="text"
@@ -107,6 +151,19 @@ export const CarpetForm: React.FC<
                 : "$0.00 / visit"
             }
           />
+          <span className="svc-small">(min</span>
+          <input
+            className="svc-in"
+            type="number"
+            min={0}
+            step={0.01}
+            name="perVisitMinimum"
+            value={form.perVisitMinimum}
+            onChange={onChange}
+            title="Minimum per visit (from backend, editable)"
+            style={{ width: 70 }}
+          />
+          <span>)</span>
         </div>
       </div>
 
@@ -200,11 +257,22 @@ export const CarpetForm: React.FC<
                   checked={form.isDirtyInstall}
                   onChange={onChange}
                 />
-                <span>Dirty (3×)</span>
+                <span>Dirty</span>
               </label>
-              <span className="svc-small">
-                {form.isDirtyInstall ? "3× monthly base" : "1× monthly base"}
-              </span>
+              <div className="svc-dollar">
+                <span>×</span>
+                <input
+                  className="svc-in"
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  name={form.isDirtyInstall ? "installMultiplierDirty" : "installMultiplierClean"}
+                  value={form.isDirtyInstall ? form.installMultiplierDirty : form.installMultiplierClean}
+                  onChange={onChange}
+                  title={`${form.isDirtyInstall ? 'Dirty' : 'Clean'} install multiplier (from backend)`}
+                />
+              </div>
+              <span className="svc-small">monthly base</span>
             </>
           )}
         </div>
