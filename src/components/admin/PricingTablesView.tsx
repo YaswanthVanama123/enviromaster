@@ -97,17 +97,44 @@ export const PricingTablesView: React.FC = () => {
     if (config.nonBathroomFirstUnitRate !== undefined) fields.push({ label: "Non-Bathroom First Unit Rate", value: config.nonBathroomFirstUnitRate, path: ["nonBathroomFirstUnitRate"] });
     if (config.nonBathroomAdditionalUnitRate !== undefined) fields.push({ label: "Non-Bathroom Additional Unit Rate", value: config.nonBathroomAdditionalUnitRate, path: ["nonBathroomAdditionalUnitRate"] });
 
-    // FOAMING DRAIN
+    // FOAMING DRAIN - Complete extraction
     if (config.standardDrainRate !== undefined) fields.push({ label: "Standard Drain Rate", value: config.standardDrainRate, path: ["standardDrainRate"] });
     if (config.altBaseCharge !== undefined) fields.push({ label: "Alternate Base Charge", value: config.altBaseCharge, path: ["altBaseCharge"] });
     if (config.altExtraPerDrain !== undefined) fields.push({ label: "Alternate Extra per Drain", value: config.altExtraPerDrain, path: ["altExtraPerDrain"] });
+
+    // Volume Pricing
+    if (config.volumePricing?.minimumDrains !== undefined) fields.push({ label: "Volume Pricing - Minimum Drains", value: config.volumePricing.minimumDrains, path: ["volumePricing", "minimumDrains"] });
     if (config.volumePricing?.weekly?.ratePerDrain !== undefined) fields.push({ label: "Volume Pricing - Weekly Rate per Drain", value: config.volumePricing.weekly.ratePerDrain, path: ["volumePricing", "weekly", "ratePerDrain"] });
     if (config.volumePricing?.bimonthly?.ratePerDrain !== undefined) fields.push({ label: "Volume Pricing - Bimonthly Rate per Drain", value: config.volumePricing.bimonthly.ratePerDrain, path: ["volumePricing", "bimonthly", "ratePerDrain"] });
+
+    // Grease Trap
     if (config.grease?.weeklyRatePerTrap !== undefined) fields.push({ label: "Grease - Weekly Rate per Trap", value: config.grease.weeklyRatePerTrap, path: ["grease", "weeklyRatePerTrap"] });
     if (config.grease?.installPerTrap !== undefined) fields.push({ label: "Grease - Install per Trap", value: config.grease.installPerTrap, path: ["grease", "installPerTrap"] });
+
+    // Green Drain
     if (config.green?.weeklyRatePerDrain !== undefined) fields.push({ label: "Green - Weekly Rate per Drain", value: config.green.weeklyRatePerDrain, path: ["green", "weeklyRatePerDrain"] });
     if (config.green?.installPerDrain !== undefined) fields.push({ label: "Green - Install per Drain", value: config.green.installPerDrain, path: ["green", "installPerDrain"] });
+
+    // Plumbing Add-on
     if (config.plumbing?.weeklyAddonPerDrain !== undefined) fields.push({ label: "Plumbing - Weekly Addon per Drain", value: config.plumbing.weeklyAddonPerDrain, path: ["plumbing", "weeklyAddonPerDrain"] });
+
+    // Installation Rules
+    if (config.installationRules?.filthyMultiplier !== undefined) fields.push({ label: "Installation - Filthy Multiplier", value: config.installationRules.filthyMultiplier, path: ["installationRules", "filthyMultiplier"] });
+
+    // Trip Charges
+    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"] });
+    if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"] });
+
+    // Billing Conversions
+    if (config.billingConversions?.weekly?.monthlyVisits !== undefined) fields.push({ label: "Billing - Weekly Monthly Visits", value: config.billingConversions.weekly.monthlyVisits, path: ["billingConversions", "weekly", "monthlyVisits"] });
+    if (config.billingConversions?.weekly?.firstMonthExtraMonths !== undefined) fields.push({ label: "Billing - First Month Extra", value: config.billingConversions.weekly.firstMonthExtraMonths, path: ["billingConversions", "weekly", "firstMonthExtraMonths"] });
+    if (config.billingConversions?.weekly?.normalMonthFactor !== undefined) fields.push({ label: "Billing - Normal Month Factor", value: config.billingConversions.weekly.normalMonthFactor, path: ["billingConversions", "weekly", "normalMonthFactor"] });
+    if (config.billingConversions?.bimonthly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Bimonthly Multiplier", value: config.billingConversions.bimonthly.monthlyMultiplier, path: ["billingConversions", "bimonthly", "monthlyMultiplier"] });
+
+    // Contract Terms
+    if (config.contract?.minMonths !== undefined) fields.push({ label: "Contract - Minimum Months", value: config.contract.minMonths, path: ["contract", "minMonths"] });
+    if (config.contract?.maxMonths !== undefined) fields.push({ label: "Contract - Maximum Months", value: config.contract.maxMonths, path: ["contract", "maxMonths"] });
+    if (config.contract?.defaultMonths !== undefined) fields.push({ label: "Contract - Default Months", value: config.contract.defaultMonths, path: ["contract", "defaultMonths"] });
 
     // MICROFIBER MOPPING
     if (config.includedBathroomRate !== undefined) fields.push({ label: "Included Bathroom Rate", value: config.includedBathroomRate, path: ["includedBathroomRate"] });

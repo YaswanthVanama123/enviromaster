@@ -14,7 +14,9 @@ type TabKey =
   // RPM Windows
   | "windowRates" | "installMultipliers" | "frequencyMultipliers" | "annualFrequencies" | "conversions" | "rateCategories"
   // Carpet Cleaning
-  | "unitPricing" | "minimums" | "carpetInstallMultipliers" | "frequencyMeta";
+  | "unitPricing" | "minimums" | "carpetInstallMultipliers" | "frequencyMeta"
+  // Foaming Drain
+  | "standardRates" | "volumePricing" | "greaseTrap" | "greenDrain" | "addonsMultipliers" | "tripCharges" | "billingConversions" | "contractTerms";
 
 interface PricingField {
   label: string;
@@ -33,6 +35,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   const getInitialTab = (): TabKey => {
     if (service.serviceId === "rpmWindows") return "windowRates";
     if (service.serviceId === "carpetCleaning") return "unitPricing";
+    if (service.serviceId === "foamingDrain") return "standardRates";
     return "windowRates";
   };
 
@@ -67,6 +70,15 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       minimums: [],
       carpetInstallMultipliers: [],
       frequencyMeta: [],
+      // Foaming Drain
+      standardRates: [],
+      volumePricing: [],
+      greaseTrap: [],
+      greenDrain: [],
+      addonsMultipliers: [],
+      tripCharges: [],
+      billingConversions: [],
+      contractTerms: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -330,6 +342,196 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // FOAMING DRAIN
+    if (service.serviceId === "foamingDrain") {
+      // Standard Rates
+      categories.standardRates = [
+        {
+          label: "Standard Drain Rate",
+          value: getValue(["standardDrainRate"]) ?? 0,
+          path: ["standardDrainRate"],
+          unit: "$ per drain",
+          description: "Base rate per drain for standard foaming treatment",
+        },
+        {
+          label: "Alternate Base Charge",
+          value: getValue(["altBaseCharge"]) ?? 0,
+          path: ["altBaseCharge"],
+          unit: "$",
+          description: "Alternative pricing model - base charge",
+        },
+        {
+          label: "Alternate Extra Per Drain",
+          value: getValue(["altExtraPerDrain"]) ?? 0,
+          path: ["altExtraPerDrain"],
+          unit: "$ per drain",
+          description: "Alternative pricing model - additional charge per drain",
+        },
+      ];
+
+      // Volume Pricing
+      const volPricing = getValue(["volumePricing"]) || {};
+      categories.volumePricing = [
+        {
+          label: "Minimum Drains for Volume Pricing",
+          value: volPricing.minimumDrains ?? 0,
+          path: ["volumePricing", "minimumDrains"],
+          unit: "drains",
+          description: "Minimum number of drains required to qualify for volume pricing",
+        },
+        {
+          label: "Weekly Volume Rate Per Drain",
+          value: volPricing.weekly?.ratePerDrain ?? 0,
+          path: ["volumePricing", "weekly", "ratePerDrain"],
+          unit: "$ per drain",
+          description: "Discounted rate per drain for weekly service with volume pricing",
+        },
+        {
+          label: "Bimonthly Volume Rate Per Drain",
+          value: volPricing.bimonthly?.ratePerDrain ?? 0,
+          path: ["volumePricing", "bimonthly", "ratePerDrain"],
+          unit: "$ per drain",
+          description: "Discounted rate per drain for bimonthly service with volume pricing",
+        },
+      ];
+
+      // Grease Trap
+      const grease = getValue(["grease"]) || {};
+      categories.greaseTrap = [
+        {
+          label: "Weekly Rate Per Trap",
+          value: grease.weeklyRatePerTrap ?? 0,
+          path: ["grease", "weeklyRatePerTrap"],
+          unit: "$ per trap",
+          description: "Weekly service rate for grease trap treatment",
+        },
+        {
+          label: "Install Charge Per Trap",
+          value: grease.installPerTrap ?? 0,
+          path: ["grease", "installPerTrap"],
+          unit: "$",
+          description: "One-time installation charge for grease trap service",
+        },
+      ];
+
+      // Green Drain
+      const green = getValue(["green"]) || {};
+      categories.greenDrain = [
+        {
+          label: "Weekly Rate Per Drain",
+          value: green.weeklyRatePerDrain ?? 0,
+          path: ["green", "weeklyRatePerDrain"],
+          unit: "$ per drain",
+          description: "Weekly service rate for eco-friendly green drain treatment",
+        },
+        {
+          label: "Install Charge Per Drain",
+          value: green.installPerDrain ?? 0,
+          path: ["green", "installPerDrain"],
+          unit: "$",
+          description: "One-time installation charge for green drain service",
+        },
+      ];
+
+      // Add-ons & Multipliers
+      const plumbing = getValue(["plumbing"]) || {};
+      const installRules = getValue(["installationRules"]) || {};
+      categories.addonsMultipliers = [
+        {
+          label: "Plumbing Weekly Addon Per Drain",
+          value: plumbing.weeklyAddonPerDrain ?? 0,
+          path: ["plumbing", "weeklyAddonPerDrain"],
+          unit: "$ per drain",
+          description: "Additional weekly charge per drain for plumbing addon service",
+        },
+        {
+          label: "Filthy Installation Multiplier",
+          value: installRules.filthyMultiplier ?? 0,
+          path: ["installationRules", "filthyMultiplier"],
+          unit: "×",
+          description: "Multiply rate by this for heavily clogged/filthy drains (typically 2-3x)",
+        },
+      ];
+
+      // Trip Charges
+      const tripChargesData = getValue(["tripCharges"]) || {};
+      categories.tripCharges = [
+        {
+          label: "Standard Trip Charge",
+          value: tripChargesData.standard ?? 0,
+          path: ["tripCharges", "standard"],
+          unit: "$",
+          description: "Standard trip charge for service visits",
+        },
+        {
+          label: "Beltway Trip Charge",
+          value: tripChargesData.beltway ?? 0,
+          path: ["tripCharges", "beltway"],
+          unit: "$",
+          description: "Trip charge for locations inside the beltway area",
+        },
+      ];
+
+      // Billing Conversions
+      const billingConv = getValue(["billingConversions"]) || {};
+      categories.billingConversions = [
+        {
+          label: "Weekly Monthly Visits",
+          value: billingConv.weekly?.monthlyVisits ?? 0,
+          path: ["billingConversions", "weekly", "monthlyVisits"],
+          unit: "visits/month",
+          description: "Number of weekly service visits billed per month (typically 4.33)",
+        },
+        {
+          label: "First Month Extra Months",
+          value: billingConv.weekly?.firstMonthExtraMonths ?? 0,
+          path: ["billingConversions", "weekly", "firstMonthExtraMonths"],
+          unit: "months",
+          description: "Additional months charged in first billing cycle",
+        },
+        {
+          label: "Normal Month Factor",
+          value: billingConv.weekly?.normalMonthFactor ?? 0,
+          path: ["billingConversions", "weekly", "normalMonthFactor"],
+          unit: "factor",
+          description: "Billing factor for standard months (typically 1.0)",
+        },
+        {
+          label: "Bimonthly Monthly Multiplier",
+          value: billingConv.bimonthly?.monthlyMultiplier ?? 0,
+          path: ["billingConversions", "bimonthly", "monthlyMultiplier"],
+          unit: "×",
+          description: "Multiplier to convert bimonthly rate to monthly billing",
+        },
+      ];
+
+      // Contract Terms
+      const contract = getValue(["contract"]) || {};
+      categories.contractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: contract.minMonths ?? 0,
+          path: ["contract", "minMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (e.g., 6 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: contract.maxMonths ?? 0,
+          path: ["contract", "maxMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (e.g., 36 months)",
+        },
+        {
+          label: "Default Contract Months",
+          value: contract.defaultMonths ?? 0,
+          path: ["contract", "defaultMonths"],
+          unit: "months",
+          description: "Default contract duration if not specified (e.g., 12 months)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -376,6 +578,19 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "minimums", label: "Minimums", icon: "💵" },
         { key: "carpetInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
         { key: "frequencyMeta", label: "Service Frequencies", icon: "📅" },
+      ];
+    }
+
+    if (service.serviceId === "foamingDrain") {
+      return [
+        { key: "standardRates", label: "Standard Rates", icon: "💧" },
+        { key: "volumePricing", label: "Volume Pricing", icon: "📊" },
+        { key: "greaseTrap", label: "Grease Trap", icon: "🛢️" },
+        { key: "greenDrain", label: "Green Drain", icon: "🌿" },
+        { key: "addonsMultipliers", label: "Add-ons & Multipliers", icon: "➕" },
+        { key: "tripCharges", label: "Trip Charges", icon: "🚗" },
+        { key: "billingConversions", label: "Billing Conversions", icon: "🔄" },
+        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
