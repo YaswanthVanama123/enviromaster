@@ -129,7 +129,7 @@ export const PricingTablesView: React.FC = () => {
     if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
     if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
 
-    // SANISCRUB - fixtureRates
+    // SANISCRUB - Complete extraction
     if (config.fixtureRates) {
       if (config.fixtureRates.monthly !== undefined) fields.push({ label: "Fixture Rate - Monthly", value: config.fixtureRates.monthly, path: ["fixtureRates", "monthly"] });
       if (config.fixtureRates.twicePerMonth !== undefined) fields.push({ label: "Fixture Rate - Twice per Month", value: config.fixtureRates.twicePerMonth, path: ["fixtureRates", "twicePerMonth"] });
@@ -145,6 +145,23 @@ export const PricingTablesView: React.FC = () => {
     if (config.nonBathroomUnitSqFt !== undefined) fields.push({ label: "Non-Bathroom Unit Sq Ft", value: config.nonBathroomUnitSqFt, path: ["nonBathroomUnitSqFt"] });
     if (config.nonBathroomFirstUnitRate !== undefined) fields.push({ label: "Non-Bathroom First Unit Rate", value: config.nonBathroomFirstUnitRate, path: ["nonBathroomFirstUnitRate"] });
     if (config.nonBathroomAdditionalUnitRate !== undefined) fields.push({ label: "Non-Bathroom Additional Unit Rate", value: config.nonBathroomAdditionalUnitRate, path: ["nonBathroomAdditionalUnitRate"] });
+
+    // SaniScrub Install Multipliers
+    if (config.installMultipliers?.dirty !== undefined) fields.push({ label: "Install Multiplier - Dirty", value: config.installMultipliers.dirty, path: ["installMultipliers", "dirty"] });
+    if (config.installMultipliers?.clean !== undefined) fields.push({ label: "Install Multiplier - Clean", value: config.installMultipliers.clean, path: ["installMultipliers", "clean"] });
+
+    // SaniScrub Frequency Meta
+    if (config.frequencyMeta) {
+      if (config.frequencyMeta.monthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Monthly Visits/Year", value: config.frequencyMeta.monthly.visitsPerYear, path: ["frequencyMeta", "monthly", "visitsPerYear"] });
+      if (config.frequencyMeta.twicePerMonth?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Twice Per Month Visits/Year", value: config.frequencyMeta.twicePerMonth.visitsPerYear, path: ["frequencyMeta", "twicePerMonth", "visitsPerYear"] });
+      if (config.frequencyMeta.bimonthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Bimonthly Visits/Year", value: config.frequencyMeta.bimonthly.visitsPerYear, path: ["frequencyMeta", "bimonthly", "visitsPerYear"] });
+      if (config.frequencyMeta.quarterly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Quarterly Visits/Year", value: config.frequencyMeta.quarterly.visitsPerYear, path: ["frequencyMeta", "quarterly", "visitsPerYear"] });
+    }
+
+    // SaniScrub Discounts & Fees
+    if (config.twoTimesPerMonthDiscountFlat !== undefined) fields.push({ label: "Twice Per Month Discount (w/ SaniClean)", value: config.twoTimesPerMonthDiscountFlat, path: ["twoTimesPerMonthDiscountFlat"] });
+    if (config.tripChargeBase !== undefined) fields.push({ label: "Trip Charge Base", value: config.tripChargeBase, path: ["tripChargeBase"] });
+    if (config.parkingFee !== undefined) fields.push({ label: "Parking Fee", value: config.parkingFee, path: ["parkingFee"] });
 
     // FOAMING DRAIN - Complete extraction
     if (config.standardDrainRate !== undefined) fields.push({ label: "Standard Drain Rate", value: config.standardDrainRate, path: ["standardDrainRate"] });

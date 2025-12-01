@@ -24,7 +24,9 @@ type TabKey =
   // SaniClean
   | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers"
   // SaniPod
-  | "podRates" | "extraBags" | "installation" | "standaloneService" | "frequencySettings" | "sanipodBillingConversions" | "sanipodContractTerms" | "sanipodRateTiers";
+  | "podRates" | "extraBags" | "installation" | "standaloneService" | "frequencySettings" | "sanipodBillingConversions" | "sanipodContractTerms" | "sanipodRateTiers"
+  // SaniScrub
+  | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees";
 
 interface PricingField {
   label: string;
@@ -48,6 +50,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "pureJanitorial") return "baseRates";
     if (service.serviceId === "saniclean") return "insideBeltway";
     if (service.serviceId === "sanipod") return "podRates";
+    if (service.serviceId === "saniscrub") return "fixtureRates";
     return "windowRates";
   };
 
@@ -122,6 +125,13 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       sanipodBillingConversions: [],
       sanipodContractTerms: [],
       sanipodRateTiers: [],
+      // SaniScrub
+      fixtureRates: [],
+      saniscrubMinimums: [],
+      nonBathroomPricing: [],
+      saniscrubInstallMultipliers: [],
+      serviceFrequencies: [],
+      discountsAndFees: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -1081,6 +1091,177 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // SANISCRUB
+    if (service.serviceId === "saniscrub") {
+      // Fixture Rates
+      const fixtureRates = getValue(["fixtureRates"]) || {};
+      categories.fixtureRates = [
+        {
+          label: "Monthly Rate Per Fixture",
+          value: fixtureRates.monthly ?? 0,
+          path: ["fixtureRates", "monthly"],
+          unit: "$ per fixture",
+          description: "Monthly rate per bathroom fixture (typically $25)",
+        },
+        {
+          label: "Twice Per Month Rate Per Fixture",
+          value: fixtureRates.twicePerMonth ?? 0,
+          path: ["fixtureRates", "twicePerMonth"],
+          unit: "$ per fixture",
+          description: "Rate per fixture for twice-monthly service (typically $25 base, doubled)",
+        },
+        {
+          label: "Bimonthly Rate Per Fixture",
+          value: fixtureRates.bimonthly ?? 0,
+          path: ["fixtureRates", "bimonthly"],
+          unit: "$ per fixture",
+          description: "Rate per fixture for bimonthly service - charged per visit (typically $35)",
+        },
+        {
+          label: "Quarterly Rate Per Fixture",
+          value: fixtureRates.quarterly ?? 0,
+          path: ["fixtureRates", "quarterly"],
+          unit: "$ per fixture",
+          description: "Rate per fixture for quarterly service - charged per visit (typically $40)",
+        },
+      ];
+
+      // Minimums
+      const minimums = getValue(["minimums"]) || {};
+      categories.saniscrubMinimums = [
+        {
+          label: "Monthly Minimum Charge",
+          value: minimums.monthly ?? 0,
+          path: ["minimums", "monthly"],
+          unit: "$",
+          description: "Minimum monthly charge regardless of fixture count (typically $175)",
+        },
+        {
+          label: "Twice Per Month Minimum Charge",
+          value: minimums.twicePerMonth ?? 0,
+          path: ["minimums", "twicePerMonth"],
+          unit: "$",
+          description: "Minimum charge for twice-monthly service (typically $175 base)",
+        },
+        {
+          label: "Bimonthly Minimum Per Visit",
+          value: minimums.bimonthly ?? 0,
+          path: ["minimums", "bimonthly"],
+          unit: "$",
+          description: "Minimum charge per visit for bimonthly service (typically $250)",
+        },
+        {
+          label: "Quarterly Minimum Per Visit",
+          value: minimums.quarterly ?? 0,
+          path: ["minimums", "quarterly"],
+          unit: "$",
+          description: "Minimum charge per visit for quarterly service (typically $250)",
+        },
+      ];
+
+      // Non-Bathroom Pricing
+      categories.nonBathroomPricing = [
+        {
+          label: "Non-Bathroom Unit Square Feet",
+          value: getValue(["nonBathroomUnitSqFt"]) ?? 0,
+          path: ["nonBathroomUnitSqFt"],
+          unit: "sq ft",
+          description: "Square footage per pricing unit for non-bathroom areas (e.g., 500 sq ft per unit)",
+        },
+        {
+          label: "First Unit Rate",
+          value: getValue(["nonBathroomFirstUnitRate"]) ?? 0,
+          path: ["nonBathroomFirstUnitRate"],
+          unit: "$",
+          description: "Price for the first unit of non-bathroom area scrubbing",
+        },
+        {
+          label: "Additional Unit Rate",
+          value: getValue(["nonBathroomAdditionalUnitRate"]) ?? 0,
+          path: ["nonBathroomAdditionalUnitRate"],
+          unit: "$",
+          description: "Price for each additional unit beyond the first",
+        },
+      ];
+
+      // Install Multipliers
+      const installMults = getValue(["installMultipliers"]) || {};
+      categories.saniscrubInstallMultipliers = [
+        {
+          label: "Dirty Install Multiplier",
+          value: installMults.dirty ?? 0,
+          path: ["installMultipliers", "dirty"],
+          unit: "×",
+          description: "Multiply monthly base by this for dirty first-time installations (typically 3x)",
+        },
+        {
+          label: "Clean Install Multiplier",
+          value: installMults.clean ?? 0,
+          path: ["installMultipliers", "clean"],
+          unit: "×",
+          description: "Multiply monthly base by this for clean installations (typically 1x)",
+        },
+      ];
+
+      // Service Frequencies
+      const freqMeta = getValue(["frequencyMeta"]) || {};
+      categories.serviceFrequencies = [
+        {
+          label: "Monthly Visits Per Year",
+          value: freqMeta.monthly?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "monthly", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of monthly service visits per year (typically 12)",
+        },
+        {
+          label: "Twice Per Month Visits Per Year",
+          value: freqMeta.twicePerMonth?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "twicePerMonth", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of twice-monthly service visits per year (typically 24)",
+        },
+        {
+          label: "Bimonthly Visits Per Year",
+          value: freqMeta.bimonthly?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "bimonthly", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of bimonthly service visits per year (typically 6)",
+        },
+        {
+          label: "Quarterly Visits Per Year",
+          value: freqMeta.quarterly?.visitsPerYear ?? 0,
+          path: ["frequencyMeta", "quarterly", "visitsPerYear"],
+          unit: "visits/year",
+          description: "Number of quarterly service visits per year (typically 4)",
+        },
+      ];
+
+      // Discounts & Fees
+      categories.discountsAndFees = [
+        {
+          label: "Twice Per Month Discount (w/ SaniClean)",
+          value: getValue(["twoTimesPerMonthDiscountFlat"]) ?? 0,
+          path: ["twoTimesPerMonthDiscountFlat"],
+          unit: "$",
+          description: "Flat discount applied to twice-monthly service when customer has SaniClean (typically $15)",
+        },
+        {
+          label: "Trip Charge Base",
+          value: getValue(["tripChargeBase"]) ?? 0,
+          path: ["tripChargeBase"],
+          unit: "$",
+          description: "Base trip charge (currently disabled in calculations)",
+        },
+        {
+          label: "Parking Fee",
+          value: getValue(["parkingFee"]) ?? 0,
+          path: ["parkingFee"],
+          unit: "$",
+          description: "Pass-through parking fee for paid parking locations",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -1187,6 +1368,17 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "sanipodBillingConversions", label: "Billing Conversions", icon: "🔄" },
         { key: "sanipodContractTerms", label: "Contract Terms", icon: "📋" },
         { key: "sanipodRateTiers", label: "Rate Tiers", icon: "💰" },
+      ];
+    }
+
+    if (service.serviceId === "saniscrub") {
+      return [
+        { key: "fixtureRates", label: "Fixture Rates", icon: "🚿" },
+        { key: "saniscrubMinimums", label: "Minimums", icon: "💵" },
+        { key: "nonBathroomPricing", label: "Non-Bathroom Areas", icon: "🏛️" },
+        { key: "saniscrubInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
+        { key: "serviceFrequencies", label: "Service Frequencies", icon: "📅" },
+        { key: "discountsAndFees", label: "Discounts & Fees", icon: "🎟️" },
       ];
     }
 
