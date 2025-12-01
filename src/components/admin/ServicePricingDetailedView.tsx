@@ -16,7 +16,9 @@ type TabKey =
   // Carpet Cleaning
   | "unitPricing" | "minimums" | "carpetInstallMultipliers" | "frequencyMeta"
   // Foaming Drain
-  | "standardRates" | "volumePricing" | "greaseTrap" | "greenDrain" | "addonsMultipliers" | "tripCharges" | "billingConversions" | "contractTerms";
+  | "standardRates" | "volumePricing" | "greaseTrap" | "greenDrain" | "addonsMultipliers" | "tripCharges" | "billingConversions" | "contractTerms"
+  // Microfiber Mopping
+  | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing";
 
 interface PricingField {
   label: string;
@@ -36,6 +38,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "rpmWindows") return "windowRates";
     if (service.serviceId === "carpetCleaning") return "unitPricing";
     if (service.serviceId === "foamingDrain") return "standardRates";
+    if (service.serviceId === "microfiberMopping") return "basicRates";
     return "windowRates";
   };
 
@@ -79,6 +82,11 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       tripCharges: [],
       billingConversions: [],
       contractTerms: [],
+      // Microfiber Mopping
+      basicRates: [],
+      hugeBathrooms: [],
+      extraAreas: [],
+      standalonePricing: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -532,6 +540,70 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // MICROFIBER MOPPING
+    if (service.serviceId === "microfiberMopping") {
+      // Basic Rates
+      categories.basicRates = [
+        {
+          label: "Included Bathroom Rate",
+          value: getValue(["includedBathroomRate"]) ?? 0,
+          path: ["includedBathroomRate"],
+          unit: "$ per bathroom",
+          description: "Base rate per bathroom included in the service package",
+        },
+      ];
+
+      // Huge Bathrooms
+      const hugeBathroom = getValue(["hugeBathroomPricing"]) || {};
+      categories.hugeBathrooms = [
+        {
+          label: "Rate Per Square Foot",
+          value: hugeBathroom.ratePerSqFt ?? 0,
+          path: ["hugeBathroomPricing", "ratePerSqFt"],
+          unit: "$ per sq ft",
+          description: "Price per square foot for bathrooms exceeding standard size (typically >150 sq ft)",
+        },
+      ];
+
+      // Extra Areas
+      const extraArea = getValue(["extraAreaPricing"]) || {};
+      categories.extraAreas = [
+        {
+          label: "Single Large Area Rate",
+          value: extraArea.singleLargeAreaRate ?? 0,
+          path: ["extraAreaPricing", "singleLargeAreaRate"],
+          unit: "$",
+          description: "Flat rate for a single large extra area (e.g., lobby, hallway)",
+        },
+        {
+          label: "Extra Area Rate Per Unit",
+          value: extraArea.extraAreaRatePerUnit ?? 0,
+          path: ["extraAreaPricing", "extraAreaRatePerUnit"],
+          unit: "$ per unit",
+          description: "Rate per additional area unit beyond the first large area",
+        },
+      ];
+
+      // Standalone Pricing
+      const standalone = getValue(["standalonePricing"]) || {};
+      categories.standalonePricing = [
+        {
+          label: "Standalone Rate Per Unit",
+          value: standalone.standaloneRatePerUnit ?? 0,
+          path: ["standalonePricing", "standaloneRatePerUnit"],
+          unit: "$ per unit",
+          description: "Rate per unit when purchased as a standalone service (not bundled)",
+        },
+        {
+          label: "Standalone Minimum Charge",
+          value: standalone.standaloneMinimum ?? 0,
+          path: ["standalonePricing", "standaloneMinimum"],
+          unit: "$",
+          description: "Minimum charge for standalone microfiber mopping service",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -591,6 +663,15 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "tripCharges", label: "Trip Charges", icon: "🚗" },
         { key: "billingConversions", label: "Billing Conversions", icon: "🔄" },
         { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+      ];
+    }
+
+    if (service.serviceId === "microfiberMopping") {
+      return [
+        { key: "basicRates", label: "Basic Rates", icon: "🧹" },
+        { key: "hugeBathrooms", label: "Huge Bathrooms", icon: "🏢" },
+        { key: "extraAreas", label: "Extra Areas", icon: "🏛️" },
+        { key: "standalonePricing", label: "Standalone Service", icon: "⭐" },
       ];
     }
 
