@@ -5,6 +5,7 @@ import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import type { Product } from "../../backendservice/types/productCatalog.types";
 import { Toast } from "./Toast";
+import { ServicePricingDetailedView } from "./ServicePricingDetailedView";
 
 export const PricingTablesView: React.FC = () => {
   const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
@@ -17,6 +18,7 @@ export const PricingTablesView: React.FC = () => {
   // Service state
   const [selectedService, setSelectedService] = useState<string>("");
   const [editingServiceField, setEditingServiceField] = useState<{ serviceId: string; path: string[]; value: string } | null>(null);
+  const [detailedViewService, setDetailedViewService] = useState<ServiceConfig | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -115,11 +117,43 @@ export const PricingTablesView: React.FC = () => {
     if (config.standalonePricing?.standaloneRatePerUnit !== undefined) fields.push({ label: "Standalone - Rate per Unit", value: config.standalonePricing.standaloneRatePerUnit, path: ["standalonePricing", "standaloneRatePerUnit"] });
     if (config.standalonePricing?.standaloneMinimum !== undefined) fields.push({ label: "Standalone - Minimum", value: config.standalonePricing.standaloneMinimum, path: ["standalonePricing", "standaloneMinimum"] });
 
-    // RPM WINDOWS
+    // RPM WINDOWS - Complete extraction
     if (config.smallWindowRate !== undefined) fields.push({ label: "Small Window Rate", value: config.smallWindowRate, path: ["smallWindowRate"] });
     if (config.mediumWindowRate !== undefined) fields.push({ label: "Medium Window Rate", value: config.mediumWindowRate, path: ["mediumWindowRate"] });
     if (config.largeWindowRate !== undefined) fields.push({ label: "Large Window Rate", value: config.largeWindowRate, path: ["largeWindowRate"] });
     if (config.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.tripCharge, path: ["tripCharge"] });
+
+    // Install Multipliers
+    if (config.installMultiplierFirstTime !== undefined) fields.push({ label: "Install Multiplier - First Time", value: config.installMultiplierFirstTime, path: ["installMultiplierFirstTime"] });
+    if (config.installMultiplierClean !== undefined) fields.push({ label: "Install Multiplier - Clean", value: config.installMultiplierClean, path: ["installMultiplierClean"] });
+
+    // Frequency Multipliers
+    if (config.frequencyMultipliers) {
+      if (config.frequencyMultipliers.weekly !== undefined) fields.push({ label: "Frequency Multiplier - Weekly", value: config.frequencyMultipliers.weekly, path: ["frequencyMultipliers", "weekly"] });
+      if (config.frequencyMultipliers.biweekly !== undefined) fields.push({ label: "Frequency Multiplier - Biweekly", value: config.frequencyMultipliers.biweekly, path: ["frequencyMultipliers", "biweekly"] });
+      if (config.frequencyMultipliers.monthly !== undefined) fields.push({ label: "Frequency Multiplier - Monthly", value: config.frequencyMultipliers.monthly, path: ["frequencyMultipliers", "monthly"] });
+      if (config.frequencyMultipliers.quarterly !== undefined) fields.push({ label: "Frequency Multiplier - Quarterly", value: config.frequencyMultipliers.quarterly, path: ["frequencyMultipliers", "quarterly"] });
+      if (config.frequencyMultipliers.quarterlyFirstTime !== undefined) fields.push({ label: "Frequency Multiplier - Quarterly First Time", value: config.frequencyMultipliers.quarterlyFirstTime, path: ["frequencyMultipliers", "quarterlyFirstTime"] });
+    }
+
+    // Annual Frequencies
+    if (config.annualFrequencies) {
+      if (config.annualFrequencies.weekly !== undefined) fields.push({ label: "Annual Frequency - Weekly", value: config.annualFrequencies.weekly, path: ["annualFrequencies", "weekly"] });
+      if (config.annualFrequencies.biweekly !== undefined) fields.push({ label: "Annual Frequency - Biweekly", value: config.annualFrequencies.biweekly, path: ["annualFrequencies", "biweekly"] });
+      if (config.annualFrequencies.monthly !== undefined) fields.push({ label: "Annual Frequency - Monthly", value: config.annualFrequencies.monthly, path: ["annualFrequencies", "monthly"] });
+      if (config.annualFrequencies.quarterly !== undefined) fields.push({ label: "Annual Frequency - Quarterly", value: config.annualFrequencies.quarterly, path: ["annualFrequencies", "quarterly"] });
+    }
+
+    // Monthly Conversions
+    if (config.monthlyConversions) {
+      if (config.monthlyConversions.weekly !== undefined) fields.push({ label: "Monthly Conversion - Weekly", value: config.monthlyConversions.weekly, path: ["monthlyConversions", "weekly"] });
+      if (config.monthlyConversions.actualWeeksPerMonth !== undefined) fields.push({ label: "Actual Weeks Per Month", value: config.monthlyConversions.actualWeeksPerMonth, path: ["monthlyConversions", "actualWeeksPerMonth"] });
+      if (config.monthlyConversions.actualWeeksPerYear !== undefined) fields.push({ label: "Actual Weeks Per Year", value: config.monthlyConversions.actualWeeksPerYear, path: ["monthlyConversions", "actualWeeksPerYear"] });
+    }
+
+    // Rate Categories
+    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
+    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
 
     // CARPET CLEANING
     if (config.unitSqFt !== undefined) fields.push({ label: "Unit Square Feet", value: config.unitSqFt, path: ["unitSqFt"] });
@@ -232,6 +266,37 @@ export const PricingTablesView: React.FC = () => {
     setEditingProduct(null);
     setEditingServiceField(null);
   };
+
+  // Handler for detailed view field updates
+  const handleDetailedViewUpdate = async (path: string[], value: number) => {
+    if (!detailedViewService) return;
+
+    const newConfig = JSON.parse(JSON.stringify(detailedViewService.config));
+    let current: any = newConfig;
+
+    for (let i = 0; i < path.length - 1; i++) {
+      current = current[path[i]];
+    }
+
+    current[path[path.length - 1]] = value;
+
+    const result = await updateConfig(detailedViewService._id, { config: newConfig });
+
+    if (result.success) {
+      setSuccessMessage("✓ Price updated successfully!");
+    }
+  };
+
+  // If detailed view is open, show it full-screen
+  if (detailedViewService) {
+    return (
+      <ServicePricingDetailedView
+        service={detailedViewService}
+        onUpdateField={handleDetailedViewUpdate}
+        onClose={() => setDetailedViewService(null)}
+      />
+    );
+  }
 
   // Show loading only if currently loading
   if (catalogLoading || servicesLoading) {
@@ -414,13 +479,23 @@ export const PricingTablesView: React.FC = () => {
 
         {selectedServiceData && (
           <div style={styles.tableContainer}>
-            <h3 style={styles.tableTitle}>
-              {selectedServiceData.label}
-              <span style={selectedServiceData.isActive ? styles.badgeActive : styles.badgeInactive}>
-                {selectedServiceData.isActive ? "● Active" : "● Inactive"}
-              </span>
-            </h3>
-            <p style={styles.tableSubtitle}>{selectedServiceData.description}</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3 style={styles.tableTitle}>
+                  {selectedServiceData.label}
+                  <span style={selectedServiceData.isActive ? styles.badgeActive : styles.badgeInactive}>
+                    {selectedServiceData.isActive ? "● Active" : "● Inactive"}
+                  </span>
+                </h3>
+                <p style={styles.tableSubtitle}>{selectedServiceData.description}</p>
+              </div>
+              <button
+                style={styles.viewAllFieldsBtn}
+                onClick={() => setDetailedViewService(selectedServiceData)}
+              >
+                🪟 View All Fields (Organized)
+              </button>
+            </div>
 
             {(() => {
               const pricingFields = extractServicePricing(selectedServiceData.config);
@@ -701,6 +776,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "13px",
     fontWeight: "700",
     cursor: "pointer",
+  },
+  viewAllFieldsBtn: {
+    padding: "12px 24px",
+    backgroundColor: "#8b5cf6",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "700",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.3)",
   },
   badgeActive: {
     padding: "6px 12px",
