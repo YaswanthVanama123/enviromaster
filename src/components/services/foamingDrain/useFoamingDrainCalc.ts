@@ -330,34 +330,30 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     // ---------- 7) One-time installation ----------
 
-    // 7a) Filthy standard drains – only when using 20 + 4$/drain
-    //     FilthyInstall = (alt weekly total for filthy drains) × 3
-    const usingFilthyAlt =
-      condition === "filthy" &&
-      useAltPricing &&
-      standardDrainsActive > 0;
-
+    // 7a) Filthy standard drains installation
+    //     FilthyInstall = (weekly cost for filthy drains) × filthyMultiplier (usually 3)
     let filthyInstallOneTime = 0;
 
-    if (usingFilthyAlt) {
-      // How many of the alt drains are filthy?
-      const filthyAltDrains =
+    if (condition === "filthy" && standardDrainsActive > 0) {
+      // How many drains are filthy?
+      const filthyDrainCount =
         filthyDrains > 0 && filthyDrains <= standardDrainsActive
           ? filthyDrains
           : standardDrainsActive;
 
-      // Alt weekly for those filthy drains:
-      // example: 10 drains → 20 + 4×10 = 60
-      const filthyAltWeekly =
-        state.altBaseCharge + state.altExtraPerDrain * filthyAltDrains;  // ✅ USE FORM VALUES
+      let weeklyFilthyCost = 0;
+
+      if (useAltPricing) {
+        // Alt weekly for those filthy drains: $20 + $4/drain
+        weeklyFilthyCost =
+          state.altBaseCharge + state.altExtraPerDrain * filthyDrainCount;  // ✅ USE FORM VALUES
+      } else {
+        // Standard pricing: standardDrainRate × filthyDrains
+        weeklyFilthyCost = state.standardDrainRate * filthyDrainCount;  // ✅ USE FORM VALUE
+      }
 
       filthyInstallOneTime =
-        filthyAltWeekly * state.filthyMultiplier; // ✅ USE FORM VALUE (from backend, ×3)
-    }
-
-    // If they are NOT on 20+4 (i.e. $10/drain), filthy install is waived.
-    if (!useAltPricing) {
-      filthyInstallOneTime = 0;
+        weeklyFilthyCost * state.filthyMultiplier; // ✅ USE FORM VALUE (from backend, ×3)
     }
 
     // 7b) Grease traps install – $300 × #traps (one-time)
@@ -375,14 +371,14 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const installation = round2(installationRaw);
 
     // ---------- 7d) FIRST VISIT LOGIC ----------
-    // Filthy + 20+4$/drain:
+    // Filthy facility:
     //   FirstVisit = filthyInstall + weeklyInstallDrains + greaseInstall + greenInstall
     //
-    // All other cases ($10/drain, normal, all-inclusive):
+    // Normal facility:
     //   FirstVisit = greaseInstall + greenInstall + weeklyStandardDrains + weeklyInstallDrains
     let firstVisitPrice: number;
 
-    if (usingFilthyAlt) {
+    if (condition === "filthy" && filthyInstallOneTime > 0) {
       firstVisitPrice =
         filthyInstallOneTime +
         weeklyInstallDrains +
