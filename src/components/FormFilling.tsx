@@ -313,6 +313,13 @@ export default function FormFilling() {
     payload?.products?.rows?.map((row: string[]) => row[6] ?? "") ??
     undefined;
 
+  console.log("📦 Initial products extracted from payload:", {
+    initialSmallProducts,
+    initialDispensers,
+    initialBigProducts,
+    rawProductRows: payload?.products?.rows
+  });
+
   return (
     <ServicesProvider>
       <div className="center-align">
@@ -328,7 +335,12 @@ export default function FormFilling() {
               onHeaderRowsChange={handleHeaderRowsChange}
             />
 
-            <ProductsSection ref={productsRef} />
+            <ProductsSection
+              ref={productsRef}
+              initialSmallProducts={initialSmallProducts}
+              initialDispensers={initialDispensers}
+              initialBigProducts={initialBigProducts}
+            />
 
             <ServicesSection initialServices={payload.services} />
             <ServicesDataCollector ref={servicesRef} />

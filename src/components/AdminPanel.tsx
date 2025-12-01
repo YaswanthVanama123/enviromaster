@@ -494,13 +494,13 @@ export default function AdminPanel() {
         )}
 
         {activeTab === "manual-uploads" && (
-          <div className="tab-content-full">
+          <div className="tab-content-full tab-content-transparent">
             <ManualUploads />
           </div>
         )}
 
         {activeTab === "pricing-details" && (
-          <div className="tab-content-full">
+          <div className="tab-content-full tab-content-transparent">
             <AdminDashboard />
           </div>
         )}

@@ -14,6 +14,13 @@ export interface ProductsSectionHandle {
   };
 }
 
+// Props interface
+interface ProductsSectionProps {
+  initialSmallProducts?: string[];
+  initialDispensers?: string[];
+  initialBigProducts?: string[];
+}
+
 // ---------------------------
 // Responsive breakpoint hook
 // ---------------------------
@@ -485,7 +492,45 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
   return includedProducts.includes(productKey);
 }
 
-const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
+// Helper: Convert initial product names to ProductRow objects
+function convertInitialToRows(
+  bucket: ColumnKey,
+  productNames: string[],
+  allProducts: EnvProduct[]
+): ProductRow[] {
+  // Create a map of product names to product keys
+  const nameToProductMap = new Map<string, EnvProduct>();
+  allProducts.forEach((p) => {
+    nameToProductMap.set(p.name.toLowerCase(), p);
+  });
+
+  return productNames
+    .filter((name) => name && name.trim() !== "")
+    .map((name, index) => {
+      const normalizedName = name.toLowerCase();
+      const product = nameToProductMap.get(normalizedName);
+
+      if (product) {
+        // Found matching product in catalog
+        return {
+          id: `${bucket}-${Date.now()}-${index}`,
+          productKey: product.key,
+          isCustom: false,
+        };
+      } else {
+        // Product not found in catalog, treat as custom
+        return {
+          id: `${bucket}-${Date.now()}-${index}`,
+          productKey: null,
+          isCustom: true,
+          customName: name,
+        };
+      }
+    });
+}
+
+const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>((props, ref) => {
+  const { initialSmallProducts, initialDispensers, initialBigProducts } = props;
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
@@ -507,13 +552,36 @@ const ProductsSection = forwardRef<ProductsSectionHandle>((props, ref) => {
   // Initialize default rows when products load
   useEffect(() => {
     if (!loading && allProducts.length > 0) {
-      setData({
-        smallProducts: getDefaultRows("smallProducts", allProducts),
-        dispensers: getDefaultRows("dispensers", allProducts),
-        bigProducts: getDefaultRows("bigProducts", allProducts),
-      });
+      // If initial data is provided, use it; otherwise use defaults
+      const hasInitialData = initialSmallProducts || initialDispensers || initialBigProducts;
+
+      if (hasInitialData) {
+        console.log("📦 Loading products from edit mode:", {
+          initialSmallProducts,
+          initialDispensers,
+          initialBigProducts
+        });
+
+        setData({
+          smallProducts: initialSmallProducts
+            ? convertInitialToRows("smallProducts", initialSmallProducts, allProducts)
+            : getDefaultRows("smallProducts", allProducts),
+          dispensers: initialDispensers
+            ? convertInitialToRows("dispensers", initialDispensers, allProducts)
+            : getDefaultRows("dispensers", allProducts),
+          bigProducts: initialBigProducts
+            ? convertInitialToRows("bigProducts", initialBigProducts, allProducts)
+            : getDefaultRows("bigProducts", allProducts),
+        });
+      } else {
+        setData({
+          smallProducts: getDefaultRows("smallProducts", allProducts),
+          dispensers: getDefaultRows("dispensers", allProducts),
+          bigProducts: getDefaultRows("bigProducts", allProducts),
+        });
+      }
     }
-  }, [loading, allProducts]);
+  }, [loading, allProducts, initialSmallProducts, initialDispensers, initialBigProducts]);
 
   const [extraCols, setExtraCols] = useState<{
     smallProducts: { id: string; label: string }[];

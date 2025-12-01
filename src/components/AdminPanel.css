@@ -672,6 +672,12 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
+/* Transparent variant for tabs that need gradient background */
+.tab-content-transparent {
+  background: transparent;
+  box-shadow: none;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .dashboard-grid {
