@@ -204,6 +204,16 @@ export const PricingTablesView: React.FC = () => {
     if (config.baseHourlyRate !== undefined) fields.push({ label: "Base Hourly Rate", value: config.baseHourlyRate, path: ["baseHourlyRate"] });
     if (config.shortJobHourlyRate !== undefined) fields.push({ label: "Short Job Hourly Rate", value: config.shortJobHourlyRate, path: ["shortJobHourlyRate"] });
     if (config.minHoursPerVisit !== undefined) fields.push({ label: "Minimum Hours per Visit", value: config.minHoursPerVisit, path: ["minHoursPerVisit"] });
+    if (config.weeksPerMonth !== undefined) fields.push({ label: "Weeks Per Month", value: config.weeksPerMonth, path: ["weeksPerMonth"] });
+    if (config.dirtyInitialMultiplier !== undefined) fields.push({ label: "Dirty Initial Multiplier", value: config.dirtyInitialMultiplier, path: ["dirtyInitialMultiplier"] });
+    if (config.infrequentMultiplier !== undefined) fields.push({ label: "Infrequent Service Multiplier", value: config.infrequentMultiplier, path: ["infrequentMultiplier"] });
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"] });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"] });
+    if (config.dustingPlacesPerHour !== undefined) fields.push({ label: "Dusting Places Per Hour", value: config.dustingPlacesPerHour, path: ["dustingPlacesPerHour"] });
+    if (config.dustingPricePerPlace !== undefined) fields.push({ label: "Dusting Price Per Place", value: config.dustingPricePerPlace, path: ["dustingPricePerPlace"] });
+    if (config.vacuumingDefaultHours !== undefined) fields.push({ label: "Vacuuming Default Hours", value: config.vacuumingDefaultHours, path: ["vacuumingDefaultHours"] });
+    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
+    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
 
     // STRIP & WAX - variants
     if (config.variants?.standardFull) {

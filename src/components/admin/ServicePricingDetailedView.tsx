@@ -20,7 +20,7 @@ type TabKey =
   // Microfiber Mopping
   | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing"
   // Pure Janitorial
-  | "baseRates" | "shortJobPricing";
+  | "baseRates" | "shortJobPricing" | "serviceMultipliers" | "monthlyConversions" | "contractSettings" | "dustingVacuuming" | "rateTiers";
 
 interface PricingField {
   label: string;
@@ -93,6 +93,11 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       // Pure Janitorial
       baseRates: [],
       shortJobPricing: [],
+      serviceMultipliers: [],
+      monthlyConversions: [],
+      contractSettings: [],
+      dustingVacuuming: [],
+      rateTiers: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -640,6 +645,97 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Premium hourly rate for jobs under minimum hours (typically 1.5x base rate)",
         },
       ];
+
+      // Service Multipliers
+      categories.serviceMultipliers = [
+        {
+          label: "Dirty Initial Multiplier",
+          value: getValue(["dirtyInitialMultiplier"]) ?? 0,
+          path: ["dirtyInitialMultiplier"],
+          unit: "×",
+          description: "Multiplier for first-time dirty/heavily soiled facilities (typically 3x dusting time)",
+        },
+        {
+          label: "Infrequent Service Multiplier",
+          value: getValue(["infrequentMultiplier"]) ?? 0,
+          path: ["infrequentMultiplier"],
+          unit: "×",
+          description: "Multiplier for infrequent service (e.g., quarterly - typically 3x dusting time)",
+        },
+      ];
+
+      // Monthly Conversions
+      categories.monthlyConversions = [
+        {
+          label: "Weeks Per Month",
+          value: getValue(["weeksPerMonth"]) ?? 0,
+          path: ["weeksPerMonth"],
+          unit: "weeks",
+          description: "Average weeks per month for billing calculations (typically 4.33 = 52/12)",
+        },
+      ];
+
+      // Contract Settings
+      categories.contractSettings = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (e.g., 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (e.g., 36 months)",
+        },
+      ];
+
+      // Dusting & Vacuuming
+      categories.dustingVacuuming = [
+        {
+          label: "Dusting Places Per Hour",
+          value: getValue(["dustingPlacesPerHour"]) ?? 0,
+          path: ["dustingPlacesPerHour"],
+          unit: "places/hour",
+          description: "Number of dusting locations that can be cleaned per hour",
+        },
+        {
+          label: "Dusting Price Per Place",
+          value: getValue(["dustingPricePerPlace"]) ?? 0,
+          path: ["dustingPricePerPlace"],
+          unit: "$",
+          description: "Price per individual dusting location (alternative pricing method)",
+        },
+        {
+          label: "Vacuuming Default Hours",
+          value: getValue(["vacuumingDefaultHours"]) ?? 0,
+          path: ["vacuumingDefaultHours"],
+          unit: "hours",
+          description: "Default hours estimated for vacuuming tasks",
+        },
+      ];
+
+      // Rate Tiers
+      const rateCategories = getValue(["rateCategories"]) || {};
+      categories.rateTiers = [
+        {
+          label: "Red Rate Multiplier",
+          value: rateCategories.redRate?.multiplier ?? 0,
+          path: ["rateCategories", "redRate", "multiplier"],
+          unit: "×",
+          description: "Standard rate multiplier for Red Rate tier (typically 1.0)",
+        },
+        {
+          label: "Green Rate Multiplier",
+          value: rateCategories.greenRate?.multiplier ?? 0,
+          path: ["rateCategories", "greenRate", "multiplier"],
+          unit: "×",
+          description: "Premium rate multiplier for Green Rate tier (typically 1.3 = 30% higher)",
+        },
+      ];
     }
 
     return categories;
@@ -717,6 +813,11 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       return [
         { key: "baseRates", label: "Base Rates", icon: "🕐" },
         { key: "shortJobPricing", label: "Short Job Pricing", icon: "⚡" },
+        { key: "serviceMultipliers", label: "Service Multipliers", icon: "✖️" },
+        { key: "monthlyConversions", label: "Monthly Conversions", icon: "📅" },
+        { key: "contractSettings", label: "Contract Terms", icon: "📋" },
+        { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: "🧹" },
+        { key: "rateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
