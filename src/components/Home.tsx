@@ -108,8 +108,9 @@ export default function Home() {
   };
 
   const chartData = getChartData();
-  const maxValue = Math.max(...chartData.map(d => d.done + d.pending + d.drafts), 10);
-  console.log("📈 Max Value for Chart:", maxValue);
+  // Don't use maxValue for scaling - use absolute pixel heights
+  const pixelsPerUnit = 20; // Each document = 20px height
+  console.log("📈 Chart will use absolute heights:", pixelsPerUnit, "px per unit");
 
   const agreementOptions = [
     {
@@ -262,17 +263,18 @@ export default function Home() {
               <>
                 <div className="home__chart">
                   {chartData.map((data, index) => {
-                    const doneHeight = (data.done / maxValue) * 100;
-                    const pendingHeight = (data.pending / maxValue) * 100;
-                    const draftsHeight = (data.drafts / maxValue) * 100;
+                    // Use absolute pixel heights based on actual numbers
+                    const doneHeight = data.done * pixelsPerUnit;
+                    const pendingHeight = data.pending * pixelsPerUnit;
+                    const draftsHeight = data.drafts * pixelsPerUnit;
 
                     console.log(`📊 Bar ${index} (${data.day}):`, {
                       done: data.done,
                       pending: data.pending,
                       drafts: data.drafts,
-                      doneHeight: `${doneHeight.toFixed(1)}%`,
-                      pendingHeight: `${pendingHeight.toFixed(1)}%`,
-                      draftsHeight: `${draftsHeight.toFixed(1)}%`
+                      doneHeight: `${doneHeight}px`,
+                      pendingHeight: `${pendingHeight}px`,
+                      draftsHeight: `${draftsHeight}px`
                     });
 
                     return (
@@ -280,15 +282,15 @@ export default function Home() {
                         <div className="home__chart-bars">
                           <div
                             className="home__chart-bar home__chart-bar--done"
-                            style={{ height: `${doneHeight}%` }}
+                            style={{ height: `${doneHeight}px` }}
                           ></div>
                           <div
                             className="home__chart-bar home__chart-bar--pending"
-                            style={{ height: `${pendingHeight}%` }}
+                            style={{ height: `${pendingHeight}px` }}
                           ></div>
                           <div
                             className="home__chart-bar home__chart-bar--drafts"
-                            style={{ height: `${draftsHeight}%` }}
+                            style={{ height: `${draftsHeight}px` }}
                           ></div>
                         </div>
                         <div className="home__chart-label">{data.day}</div>
