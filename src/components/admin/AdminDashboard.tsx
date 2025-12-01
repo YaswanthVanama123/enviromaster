@@ -82,10 +82,12 @@ export const AdminDashboard: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: "100vh",
-    backgroundColor: "#f5f5f5",
+    minHeight: "100%",
+    backgroundColor: "white",
     width: "100%",
     maxWidth: "100%",
+    borderRadius: "20px",
+    overflow: "hidden",
   },
   topBar: {
     display: "flex",

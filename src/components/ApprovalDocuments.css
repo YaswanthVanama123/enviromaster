@@ -1,9 +1,9 @@
 .ad {
-  width: 99vw;
-  min-height: 100vh;
+  width: 100%;
+  min-height: 100%;
   margin: 0 auto;
   padding: 24px 32px;
-  background: #f9fafc;
+  background: transparent;
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color: #222;
 }
