@@ -82,6 +82,14 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
 
+  // ✅ Store base weekly rates (from backend) separately
+  const [baseWeeklyRates, setBaseWeeklyRates] = useState({
+    small: cfg.smallWindowRate,
+    medium: cfg.mediumWindowRate,
+    large: cfg.largeWindowRate,
+    trip: cfg.tripCharge,
+  });
+
   // ✅ Fetch COMPLETE pricing configuration from backend on mount
   useEffect(() => {
     const fetchPricing = async () => {
@@ -100,6 +108,14 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
           // ✅ Store the ENTIRE backend config for use in calculations
           setBackendConfig(config);
+
+          // ✅ Store base weekly rates for frequency adjustment
+          setBaseWeeklyRates({
+            small: config.smallWindowRate ?? cfg.smallWindowRate,
+            medium: config.mediumWindowRate ?? cfg.mediumWindowRate,
+            large: config.largeWindowRate ?? cfg.largeWindowRate,
+            trip: config.tripCharge ?? cfg.tripCharge,
+          });
 
           // ✅ Update form state with base window rates
           setForm((prev) => ({
@@ -134,6 +150,23 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     fetchPricing();
   }, []); // Run once on mount
+
+  // ✅ Update rate fields when frequency changes (apply frequency multiplier)
+  useEffect(() => {
+    if (!backendConfig) return; // Wait for backend config to load
+
+    const freqKey = mapFrequency(form.frequency);
+    const freqMult = backendConfig.frequencyMultipliers[freqKey] || 1;
+
+    // Apply frequency multiplier to base weekly rates
+    setForm((prev) => ({
+      ...prev,
+      smallWindowRate: baseWeeklyRates.small * freqMult,
+      mediumWindowRate: baseWeeklyRates.medium * freqMult,
+      largeWindowRate: baseWeeklyRates.large * freqMult,
+      tripCharge: baseWeeklyRates.trip * freqMult,
+    }));
+  }, [form.frequency, backendConfig, baseWeeklyRates]); // Run when frequency, backend config, or base rates change
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, checked } = e.target as any;
@@ -186,12 +219,29 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           return prev;
         }
 
-        // Rate fields - store directly as entered
+        // Rate fields - when manually edited, update base weekly rate
         case "smallWindowRate":
         case "mediumWindowRate":
         case "largeWindowRate":
         case "tripCharge": {
           const displayVal = Number(value) || 0;
+
+          // Calculate base weekly rate from current frequency-adjusted value
+          const freqKey = mapFrequency(prev.frequency);
+          const freqMult = backendConfig?.frequencyMultipliers[freqKey] || 1;
+          const weeklyBase = displayVal / freqMult;
+
+          // Update base weekly rates
+          if (name === "smallWindowRate") {
+            setBaseWeeklyRates(b => ({ ...b, small: weeklyBase }));
+          } else if (name === "mediumWindowRate") {
+            setBaseWeeklyRates(b => ({ ...b, medium: weeklyBase }));
+          } else if (name === "largeWindowRate") {
+            setBaseWeeklyRates(b => ({ ...b, large: weeklyBase }));
+          } else if (name === "tripCharge") {
+            setBaseWeeklyRates(b => ({ ...b, trip: weeklyBase }));
+          }
+
           return { ...prev, [name]: displayVal };
         }
 
@@ -260,10 +310,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     // When you select bi-weekly, this will be 1.25 FROM YOUR MONGODB CONFIG
     const freqMult = activeConfig.frequencyMultipliers[freqKey] || 1;
 
-    const weeklySmall = form.smallWindowRate;
-    const weeklyMedium = form.mediumWindowRate;
-    const weeklyLarge = form.largeWindowRate;
-    const weeklyTrip = form.tripCharge; // will be 0, used only for display
+    // ✅ USE FREQUENCY-ADJUSTED RATES FROM FORM (already multiplied by useEffect)
+    const weeklySmall = baseWeeklyRates.small;
+    const weeklyMedium = baseWeeklyRates.medium;
+    const weeklyLarge = baseWeeklyRates.large;
+    const weeklyTrip = baseWeeklyRates.trip; // will be 0, used only for display
 
     // Weekly base window cost
     const weeklyWindows =
@@ -273,11 +324,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const hasWindows = weeklyWindows > 0;
 
-    // Frequency-adjusted (this is what we show in the UI)
-    const effSmall = weeklySmall * freqMult;
-    const effMedium = weeklyMedium * freqMult;
-    const effLarge = weeklyLarge * freqMult;
-    const effTrip = weeklyTrip * freqMult; // display only
+    // Use form rates directly (already frequency-adjusted by useEffect)
+    const effSmall = form.smallWindowRate;
+    const effMedium = form.mediumWindowRate;
+    const effLarge = form.largeWindowRate;
+    const effTrip = form.tripCharge; // display only
 
     // Per-visit, at chosen frequency (NO TRIP CHARGE ANYMORE)
     const perVisitWindows =
