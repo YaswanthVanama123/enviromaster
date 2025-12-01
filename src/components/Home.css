@@ -212,6 +212,15 @@
   margin-bottom: 20px;
 }
 
+.home__chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
 .home__chart-bar-group {
   flex: 1;
   display: flex;

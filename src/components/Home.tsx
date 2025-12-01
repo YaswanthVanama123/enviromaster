@@ -1,11 +1,102 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Toast } from "./admin/Toast";
+import type { ToastType } from "./admin/Toast";
 import "./Home.css";
+
+type Document = {
+  id: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export default function Home() {
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState("Today");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // Fetch documents from backend
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("http://localhost:5000/api/pdf/customer-headers", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed with status ${res.status}`);
+        }
+
+        const data = await res.json();
+        const items = data.items || [];
+        setDocuments(items);
+      } catch (err) {
+        console.error("Error fetching documents:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, []);
+
+  // Fetch manual uploads count
+  useEffect(() => {
+    const fetchUploadStats = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/manual-upload");
+        if (!res.ok) throw new Error(`Failed with status ${res.status}`);
+
+        const data = await res.json();
+        const uploads = data.items || [];
+        setUploadCount(uploads.length);
+      } catch (err) {
+        console.error("Error fetching upload stats:", err);
+      }
+    };
+
+    fetchUploadStats();
+  }, []);
+
+  // Calculate chart data dynamically from documents
+  const getChartData = () => {
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = new Date();
+    const chartData = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dayName = dayNames[date.getDay()].charAt(0);
+
+      // Filter documents for this day
+      const dayDocs = documents.filter((doc) => {
+        const docDate = new Date(doc.createdAt);
+        return docDate.toDateString() === date.toDateString();
+      });
+
+      // Count by status
+      const done = dayDocs.filter((d) => d.status === "approved_admin").length;
+      const pending = dayDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
+      const drafts = dayDocs.filter((d) => d.status === "draft").length;
+
+      chartData.push({ day: dayName, done, pending, drafts });
+    }
+
+    return chartData;
+  };
+
+  const chartData = getChartData();
+  const maxValue = Math.max(...chartData.map(d => d.done + d.pending + d.drafts), 10);
 
   const agreementOptions = [
     {
@@ -40,17 +131,6 @@ export default function Home() {
     },
   ];
 
-  const chartData = [
-    { day: "J", done: 70, pending: 60, drafts: 50 },
-    { day: "M", done: 120, pending: 80, drafts: 60 },
-    { day: "T", done: 180, pending: 100, drafts: 80 },
-    { day: "W", done: 140, pending: 90, drafts: 70 },
-    { day: "T", done: 200, pending: 120, drafts: 90 },
-    { day: "A", done: 220, pending: 140, drafts: 100 },
-  ];
-
-  const maxValue = 400;
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setUploadedFile(e.target.files[0]);
@@ -68,10 +148,35 @@ export default function Home() {
     }
   };
 
-  const handleUpload = () => {
-    if (uploadedFile) {
-      alert(`Uploading: ${uploadedFile.name}`);
-      // Add actual upload logic here
+  const handleUpload = async () => {
+    if (!uploadedFile) {
+      setToastMessage({ message: "Please select a file first", type: "error" });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+
+      const res = await fetch("http://localhost:5000/api/manual-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upload failed with status ${res.status}`);
+      }
+
+      setToastMessage({ message: `Successfully uploaded: ${uploadedFile.name}`, type: "success" });
+      setUploadedFile(null);
+
+      // Refresh upload count
+      const statsRes = await fetch("http://localhost:5000/api/manual-upload");
+      const data = await statsRes.json();
+      setUploadCount(data.items?.length || 0);
+    } catch (err) {
+      console.error("Error uploading file:", err);
+      setToastMessage({ message: "Failed to upload file. Please try again.", type: "error" });
     }
   };
 
@@ -134,48 +239,55 @@ export default function Home() {
                 <option>This Month</option>
               </select>
             </div>
-            <div className="home__chart">
-              {chartData.map((data, index) => {
-                const total = data.done + data.pending + data.drafts;
-                const doneHeight = (data.done / maxValue) * 100;
-                const pendingHeight = (data.pending / maxValue) * 100;
-                const draftsHeight = (data.drafts / maxValue) * 100;
+            {loading ? (
+              <div className="home__chart-loading">
+                <p>Loading chart data...</p>
+              </div>
+            ) : (
+              <>
+                <div className="home__chart">
+                  {chartData.map((data, index) => {
+                    const doneHeight = (data.done / maxValue) * 100;
+                    const pendingHeight = (data.pending / maxValue) * 100;
+                    const draftsHeight = (data.drafts / maxValue) * 100;
 
-                return (
-                  <div key={index} className="home__chart-bar-group">
-                    <div className="home__chart-bars">
-                      <div
-                        className="home__chart-bar home__chart-bar--done"
-                        style={{ height: `${doneHeight}%` }}
-                      ></div>
-                      <div
-                        className="home__chart-bar home__chart-bar--pending"
-                        style={{ height: `${pendingHeight}%` }}
-                      ></div>
-                      <div
-                        className="home__chart-bar home__chart-bar--drafts"
-                        style={{ height: `${draftsHeight}%` }}
-                      ></div>
-                    </div>
-                    <div className="home__chart-label">{data.day}</div>
+                    return (
+                      <div key={index} className="home__chart-bar-group">
+                        <div className="home__chart-bars">
+                          <div
+                            className="home__chart-bar home__chart-bar--done"
+                            style={{ height: `${doneHeight}%` }}
+                          ></div>
+                          <div
+                            className="home__chart-bar home__chart-bar--pending"
+                            style={{ height: `${pendingHeight}%` }}
+                          ></div>
+                          <div
+                            className="home__chart-bar home__chart-bar--drafts"
+                            style={{ height: `${draftsHeight}%` }}
+                          ></div>
+                        </div>
+                        <div className="home__chart-label">{data.day}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="home__chart-legend">
+                  <div className="home__legend-item">
+                    <span className="home__legend-dot home__legend-dot--done"></span>
+                    Done
                   </div>
-                );
-              })}
-            </div>
-            <div className="home__chart-legend">
-              <div className="home__legend-item">
-                <span className="home__legend-dot home__legend-dot--done"></span>
-                Done
-              </div>
-              <div className="home__legend-item">
-                <span className="home__legend-dot home__legend-dot--pending"></span>
-                Pending Approval
-              </div>
-              <div className="home__legend-item">
-                <span className="home__legend-dot home__legend-dot--drafts"></span>
-                Drafts
-              </div>
-            </div>
+                  <div className="home__legend-item">
+                    <span className="home__legend-dot home__legend-dot--pending"></span>
+                    Pending Approval
+                  </div>
+                  <div className="home__legend-item">
+                    <span className="home__legend-dot home__legend-dot--drafts"></span>
+                    Drafts
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Upload Section */}
@@ -210,6 +322,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage.message}
+          type={toastMessage.type}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </section>
   );
 }
