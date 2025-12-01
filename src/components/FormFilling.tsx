@@ -76,7 +76,7 @@ type LocationState = {
 // customer document we were using before (for saving when not editing an existing one)
 const CUSTOMER_FALLBACK_ID = "6918cecbf0b2846a9c562fd6";
 // admin template for "new" forms (read-only template to prefill)
-const ADMIN_TEMPLATE_ID = "691b6ea14e85329ebac5f752";
+const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 
 export default function FormFilling() {
   const location = useLocation();
