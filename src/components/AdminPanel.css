@@ -302,18 +302,24 @@
   font-weight: 700;
 }
 
+.stat-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 .stat-icon-blue {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
 }
 
 .stat-icon-green {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(34, 197, 94, 0.15);
   color: #22c55e;
 }
 
 .stat-icon-dark {
-  background: rgba(30, 41, 59, 0.1);
+  background: rgba(30, 41, 59, 0.15);
   color: #1e293b;
 }
 
@@ -382,7 +388,7 @@
 }
 
 .modern-table-wrapper {
-  overflow-x: auto;
+  overflow-x: visible;
   border-radius: 12px;
   border: 1px solid rgba(226, 232, 240, 0.5);
 }
@@ -441,6 +447,9 @@
 .doc-icon-table {
   color: #64748b;
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .status-pill {
@@ -473,14 +482,14 @@
 
 .action-buttons-group {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .action-btn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
@@ -488,51 +497,36 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-size: 16px;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.action-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .action-view {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.15);
   color: #3b82f6;
 }
 
 .action-view:hover {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.25);
   color: #2563eb;
-  transform: scale(1.1);
-}
-
-.action-email {
-  background: rgba(139, 92, 246, 0.1);
-  color: #8b5cf6;
-}
-
-.action-email:hover {
-  background: rgba(139, 92, 246, 0.2);
-  color: #7c3aed;
-  transform: scale(1.1);
-}
-
-.action-edit {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-.action-edit:hover {
-  background: rgba(245, 158, 11, 0.2);
-  color: #d97706;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .action-download {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(16, 185, 129, 0.15);
   color: #10b981;
 }
 
 .action-download:hover {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.25);
   color: #059669;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .action-btn:active {
