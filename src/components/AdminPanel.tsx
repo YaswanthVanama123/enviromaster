@@ -14,9 +14,9 @@ import {
   HiDownload,
   HiLogout,
   HiChevronDown,
-  HiBriefcase,
-  HiEye
+  HiBriefcase
 } from "react-icons/hi";
+import { HiOutlineEye, HiOutlineDownload } from "react-icons/hi";
 import { MdAttachMoney } from "react-icons/md";
 import "./AdminPanel.css";
 
@@ -433,14 +433,14 @@ export default function AdminPanel() {
                                   onClick={() => handleViewPDF(doc.id, doc.name)}
                                   title="View PDF"
                                 >
-                                  <HiEye size={18} />
+                                  <HiOutlineEye size={20} />
                                 </button>
                                 <button
                                   className="action-btn action-download"
                                   onClick={() => handleDownload(doc.id, doc.name)}
                                   title="Download PDF"
                                 >
-                                  <HiDownload size={18} />
+                                  <HiOutlineDownload size={20} />
                                 </button>
                               </div>
                             </td>
