@@ -173,12 +173,30 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   // Chemical we sell them for self-mopping (gallons/month)
   chemicalGallons: number;
 
-  // If true, all microfiber is baked into an “all-inclusive” package pricing
+  // If true, all microfiber is baked into an "all-inclusive" package pricing
   isAllInclusive: boolean;
 
   // Trip info (kept for UI only)
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
+
+  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
+  includedBathroomRate: number;         // $10 per bathroom
+  hugeBathroomRatePerSqFt: number;      // $10 per 300 sq ft
+  extraAreaRatePerUnit: number;         // $10 per 400 sq ft
+  standaloneRatePerUnit: number;        // $10 per 200 sq ft
+  dailyChemicalPerGallon: number;       // $27.34 per gallon
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customStandardBathroomTotal?: number;
+  customHugeBathroomTotal?: number;
+  customExtraAreaTotal?: number;
+  customStandaloneTotal?: number;
+  customChemicalTotal?: number;
+  customPerVisitPrice?: number;
+  customMonthlyRecurring?: number;
+  customFirstMonthPrice?: number;
+  customContractTotal?: number;
 }
 
 /**

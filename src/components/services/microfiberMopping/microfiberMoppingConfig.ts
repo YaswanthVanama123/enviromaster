@@ -1,6 +1,20 @@
 // src/features/services/microfiberMopping/microfiberMoppingConfig.ts
 import type { MicrofiberMoppingPricingConfig } from "./microfiberMoppingTypes";
 
+/**
+ * Microfiber Mopping Pricing Configuration
+ *
+ * NOTE: These are DEFAULT/FALLBACK values.
+ * The application will attempt to fetch pricing from the backend API first.
+ * If the backend is unavailable or returns an error, these values will be used.
+ *
+ * To update production pricing:
+ * 1. Update the backend ServiceConfig in MongoDB
+ * 2. OR run: node scripts/seedMicrofiberMoppingPricing.js (when created)
+ * 3. OR use the admin panel (when implemented)
+ *
+ * Basic rates are fetched from backend on component mount and override these defaults.
+ */
 export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
   // $10 per bathroom when bundled with Sani (per visit)
   includedBathroomRate: 10,

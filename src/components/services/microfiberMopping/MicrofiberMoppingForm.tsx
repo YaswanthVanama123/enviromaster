@@ -10,7 +10,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData, onRemove }) => {
-  const { form, onChange, calc } = useMicrofiberMoppingCalc(initialData);
+  const { form, setForm, onChange, calc } = useMicrofiberMoppingCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state
@@ -38,8 +38,94 @@ export const MicrofiberMoppingForm: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      setForm((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  // Track previous values to detect actual changes (not just re-renders)
+  const prevInputsRef = useRef({
+    bathroomCount: form.bathroomCount,
+    hugeBathroomSqFt: form.hugeBathroomSqFt,
+    extraAreaSqFt: form.extraAreaSqFt,
+    standaloneSqFt: form.standaloneSqFt,
+    chemicalGallons: form.chemicalGallons,
+    includedBathroomRate: form.includedBathroomRate,
+    hugeBathroomRatePerSqFt: form.hugeBathroomRatePerSqFt,
+    extraAreaRatePerUnit: form.extraAreaRatePerUnit,
+    standaloneRatePerUnit: form.standaloneRatePerUnit,
+    dailyChemicalPerGallon: form.dailyChemicalPerGallon,
+    frequency: form.frequency,
+    contractTermMonths: form.contractTermMonths,
+  });
+
+  // Clear custom totals when base inputs change
+  useEffect(() => {
+    const prev = prevInputsRef.current;
+    const hasChanged =
+      prev.bathroomCount !== form.bathroomCount ||
+      prev.hugeBathroomSqFt !== form.hugeBathroomSqFt ||
+      prev.extraAreaSqFt !== form.extraAreaSqFt ||
+      prev.standaloneSqFt !== form.standaloneSqFt ||
+      prev.chemicalGallons !== form.chemicalGallons ||
+      prev.includedBathroomRate !== form.includedBathroomRate ||
+      prev.hugeBathroomRatePerSqFt !== form.hugeBathroomRatePerSqFt ||
+      prev.extraAreaRatePerUnit !== form.extraAreaRatePerUnit ||
+      prev.standaloneRatePerUnit !== form.standaloneRatePerUnit ||
+      prev.dailyChemicalPerGallon !== form.dailyChemicalPerGallon ||
+      prev.frequency !== form.frequency ||
+      prev.contractTermMonths !== form.contractTermMonths;
+
+    if (hasChanged) {
+      setForm((prev) => ({
+        ...prev,
+        customStandardBathroomTotal: undefined,
+        customHugeBathroomTotal: undefined,
+        customExtraAreaTotal: undefined,
+        customStandaloneTotal: undefined,
+        customChemicalTotal: undefined,
+        customPerVisitPrice: undefined,
+        customMonthlyRecurring: undefined,
+        customFirstMonthPrice: undefined,
+        customContractTotal: undefined,
+      }));
+
+      prevInputsRef.current = {
+        bathroomCount: form.bathroomCount,
+        hugeBathroomSqFt: form.hugeBathroomSqFt,
+        extraAreaSqFt: form.extraAreaSqFt,
+        standaloneSqFt: form.standaloneSqFt,
+        chemicalGallons: form.chemicalGallons,
+        includedBathroomRate: form.includedBathroomRate,
+        hugeBathroomRatePerSqFt: form.hugeBathroomRatePerSqFt,
+        extraAreaRatePerUnit: form.extraAreaRatePerUnit,
+        standaloneRatePerUnit: form.standaloneRatePerUnit,
+        dailyChemicalPerGallon: form.dailyChemicalPerGallon,
+        frequency: form.frequency,
+        contractTermMonths: form.contractTermMonths,
+      };
+    }
+  }, [
+    form.bathroomCount,
+    form.hugeBathroomSqFt,
+    form.extraAreaSqFt,
+    form.standaloneSqFt,
+    form.chemicalGallons,
+    form.includedBathroomRate,
+    form.hugeBathroomRatePerSqFt,
+    form.extraAreaRatePerUnit,
+    form.standaloneRatePerUnit,
+    form.dailyChemicalPerGallon,
+    form.frequency,
+    form.contractTermMonths,
+    setForm,
+  ]);
+
   const extraAreaRatePerSqFt =
-    cfg.extraAreaPricing.extraAreaRatePerUnit /
+    form.extraAreaRatePerUnit /
     cfg.extraAreaPricing.extraAreaSqFtUnit;
 
   const isBathroomDisabled =
@@ -150,17 +236,29 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={cfg.includedBathroomRate.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="includedBathroomRate"
+              value={form.includedBathroomRate}
+              onChange={onChange}
             />
           </div>
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${calc.standardBathroomPrice.toFixed(2)}`}
+            type="number"
+            step="0.01"
+            name="customStandardBathroomTotal"
+            value={
+              form.customStandardBathroomTotal !== undefined
+                ? form.customStandardBathroomTotal
+                : calc.standardBathroomPrice
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customStandardBathroomTotal !== undefined ? '#fffacd' : 'white'
+            }}
           />
         </div>
       </div>
@@ -182,18 +280,30 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={cfg.hugeBathroomPricing.ratePerSqFt.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="hugeBathroomRatePerSqFt"
+              value={form.hugeBathroomRatePerSqFt}
+              onChange={onChange}
             />
           </div>
-          {/* <span>per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span> */}
+          <span className="svc-small">per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span>
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${calc.hugeBathroomPrice.toFixed(2)}`}
+            type="number"
+            step="0.01"
+            name="customHugeBathroomTotal"
+            value={
+              form.customHugeBathroomTotal !== undefined
+                ? form.customHugeBathroomTotal
+                : calc.hugeBathroomPrice
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customHugeBathroomTotal !== undefined ? '#fffacd' : 'white'
+            }}
           />
         </div>
       </div>
@@ -215,20 +325,34 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={extraAreaRatePerSqFt.toFixed(4)}
+              type="number"
+              step="0.01"
+              name="extraAreaRatePerUnit"
+              value={form.extraAreaRatePerUnit}
+              onChange={onChange}
+              title="Rate per 400 sq ft unit (from backend)"
             />
           </div>
+          <span className="svc-small">per {cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft</span>
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${calc.extraAreaPrice.toFixed(2)}`}
+            type="number"
+            step="0.01"
+            name="customExtraAreaTotal"
+            value={
+              form.customExtraAreaTotal !== undefined
+                ? form.customExtraAreaTotal
+                : calc.extraAreaPrice
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customExtraAreaTotal !== undefined ? '#fffacd' : 'white'
+            }}
           />
           <span className="svc-small" style={{ marginLeft: "8px", fontStyle: "italic", color: "#666" }}>
-            {/* (Max: $100 flat OR $10/400 sq ft) */}
+            (≈${extraAreaRatePerSqFt.toFixed(4)}/sq ft; max: $100 flat OR rate × area)
           </span>
         </div>
       </div>
@@ -250,18 +374,30 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={cfg.standalonePricing.standaloneRatePerUnit.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="standaloneRatePerUnit"
+              value={form.standaloneRatePerUnit}
+              onChange={onChange}
             />
           </div>
-          {/* <span>per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span> */}
+          <span className="svc-small">per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span>
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${calc.standaloneServicePrice.toFixed(2)}`}
+            type="number"
+            step="0.01"
+            name="customStandaloneTotal"
+            value={
+              form.customStandaloneTotal !== undefined
+                ? form.customStandaloneTotal
+                : calc.standaloneServicePrice
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customStandaloneTotal !== undefined ? '#fffacd' : 'white'
+            }}
           />
         </div>
       </div>
@@ -338,17 +474,29 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={cfg.chemicalProducts.dailyChemicalPerGallon.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="dailyChemicalPerGallon"
+              value={form.dailyChemicalPerGallon}
+              onChange={onChange}
             />
           </div>
           <span>=</span>
           <input
             className="svc-in-box"
-            type="text"
-            readOnly
-            value={`$${calc.chemicalSupplyMonthly.toFixed(2)}`}
+            type="number"
+            step="0.01"
+            name="customChemicalTotal"
+            value={
+              form.customChemicalTotal !== undefined
+                ? form.customChemicalTotal
+                : calc.chemicalSupplyMonthly
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customChemicalTotal !== undefined ? '#fffacd' : 'white'
+            }}
           />
         </div>
       </div>
@@ -378,9 +526,20 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.perVisitPrice.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="customPerVisitPrice"
+              value={
+                form.customPerVisitPrice !== undefined
+                  ? form.customPerVisitPrice
+                  : calc.perVisitPrice
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none'
+              }}
             />
           </div>
         </div>
@@ -417,9 +576,20 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.monthlyRecurring.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="customMonthlyRecurring"
+              value={
+                form.customMonthlyRecurring !== undefined
+                  ? form.customMonthlyRecurring
+                  : calc.monthlyRecurring
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
+                border: 'none'
+              }}
             />
           </div>
         </div>
@@ -450,9 +620,20 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.firstMonthPrice.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="customFirstMonthPrice"
+              value={
+                form.customFirstMonthPrice !== undefined
+                  ? form.customFirstMonthPrice
+                  : calc.firstMonthPrice
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none'
+              }}
             />
           </div>
         </div>
@@ -464,9 +645,20 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.contractTotal.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="customContractTotal"
+              value={
+                form.customContractTotal !== undefined
+                  ? form.customContractTotal
+                  : calc.contractTotal
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',
+                border: 'none'
+              }}
             />
           </div>
         </div>
