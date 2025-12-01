@@ -352,8 +352,30 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />{" "}
                 Small-job alt:{" "}
                 <span className="svc-note">
-                  weekly &lt; 10 drains → $20 + $4/drain
+                  weekly &lt; 10 drains → $
                 </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  className="svc-in sm"
+                  style={{ width: 60 }}
+                  value={state.altBaseCharge}
+                  onChange={(e) => updateField("altBaseCharge", parseFloat(e.target.value) || 0)}
+                  title="Alt base charge (from backend)"
+                />
+                <span className="svc-note"> + $</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  className="svc-in sm"
+                  style={{ width: 60 }}
+                  value={state.altExtraPerDrain}
+                  onChange={(e) => updateField("altExtraPerDrain", parseFloat(e.target.value) || 0)}
+                  title="Alt per drain charge (from backend)"
+                />
+                <span className="svc-note">/drain</span>
               </label>
             </div>
             <div className="svc-inline">
