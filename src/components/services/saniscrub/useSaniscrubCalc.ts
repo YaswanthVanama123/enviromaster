@@ -411,7 +411,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
     let contractTotal = 0;
 
-    if (installOneTime > 0) {
+    if (form.includeInstall && installOneTime > 0) {
       // With installation: first month includes install, remaining months are normal
       const remainingMonths = contractMonths > 1 ? contractMonths - 1 : 0;
       contractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
