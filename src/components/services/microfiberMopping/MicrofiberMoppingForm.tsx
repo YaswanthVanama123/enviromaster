@@ -287,7 +287,7 @@ export const MicrofiberMoppingForm: React.FC<
               onChange={onChange}
             />
           </div>
-          <span className="svc-small">per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span>
+          {/* <span className="svc-small">per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span> */}
           <span>=</span>
           <input
             className="svc-in-box"
@@ -321,19 +321,19 @@ export const MicrofiberMoppingForm: React.FC<
             disabled={form.isAllInclusive}
           />
           <span>@</span>
-          <div className="svc-dollar">
+          <div className="svc-row-right">
             <span>$</span>
             <input
               className="svc-in"
               type="number"
               step="0.01"
               name="extraAreaRatePerUnit"
-              value={form.extraAreaRatePerUnit}
+              value={extraAreaRatePerSqFt.toFixed(4)}
               onChange={onChange}
               title="Rate per 400 sq ft unit (from backend)"
             />
           </div>
-          <span className="svc-small">per {cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft</span>
+          {/* <span className="svc-small">per {cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft</span> */}
           <span>=</span>
           <input
             className="svc-in-box"
@@ -351,9 +351,9 @@ export const MicrofiberMoppingForm: React.FC<
               backgroundColor: form.customExtraAreaTotal !== undefined ? '#fffacd' : 'white'
             }}
           />
-          <span className="svc-small" style={{ marginLeft: "8px", fontStyle: "italic", color: "#666" }}>
+          {/* <span className="svc-small" style={{ marginLeft: "8px", fontStyle: "italic", color: "#666" }}>
             (≈${extraAreaRatePerSqFt.toFixed(4)}/sq ft; max: $100 flat OR rate × area)
-          </span>
+          </span> */}
         </div>
       </div>
 
@@ -381,7 +381,7 @@ export const MicrofiberMoppingForm: React.FC<
               onChange={onChange}
             />
           </div>
-          <span className="svc-small">per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span>
+          {/* <span className="svc-small">per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span> */}
           <span>=</span>
           <input
             className="svc-in-box"
