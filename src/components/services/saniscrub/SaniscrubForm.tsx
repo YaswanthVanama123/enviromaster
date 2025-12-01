@@ -259,7 +259,6 @@ export const SaniscrubForm: React.FC<
               value={form.nonBathroomAdditionalUnitRate.toFixed(2)}
               onChange={onChange}
               title="Rate per 500 sq ft after first 500 (from backend)"
-              style={{ width: "70px" }}
             />
           </div>
           <span className="svc-small">/ 500 sq ft</span>
