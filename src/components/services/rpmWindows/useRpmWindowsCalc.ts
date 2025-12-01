@@ -242,17 +242,17 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
   const calc = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    const activeConfig = backendConfig || {
-      smallWindowRate: cfg.smallWindowRate,
-      mediumWindowRate: cfg.mediumWindowRate,
-      largeWindowRate: cfg.largeWindowRate,
-      tripCharge: cfg.tripCharge,
-      installMultiplierFirstTime: cfg.installMultiplierFirstTime,
-      installMultiplierClean: cfg.installMultiplierClean,
-      frequencyMultipliers: cfg.frequencyMultipliers,
-      rateCategories: cfg.rateCategories,
-      monthlyConversions: cfg.monthlyConversions,
-      annualFrequencies: cfg.annualFrequencies,
+    const activeConfig = {
+      smallWindowRate: backendConfig?.smallWindowRate ?? cfg.smallWindowRate,
+      mediumWindowRate: backendConfig?.mediumWindowRate ?? cfg.mediumWindowRate,
+      largeWindowRate: backendConfig?.largeWindowRate ?? cfg.largeWindowRate,
+      tripCharge: backendConfig?.tripCharge ?? cfg.tripCharge,
+      installMultiplierFirstTime: backendConfig?.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime,
+      installMultiplierClean: backendConfig?.installMultiplierClean ?? cfg.installMultiplierClean,
+      frequencyMultipliers: backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers,
+      rateCategories: backendConfig?.rateCategories ?? cfg.rateCategories,
+      monthlyConversions: backendConfig?.monthlyConversions ?? cfg.monthlyConversions,
+      annualFrequencies: backendConfig?.annualFrequencies ?? cfg.annualFrequencies,
     };
 
     const freqKey = mapFrequency(form.frequency);
