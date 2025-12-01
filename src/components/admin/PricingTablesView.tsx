@@ -102,12 +102,32 @@ export const PricingTablesView: React.FC = () => {
       fields.push({ label: "Green Rate Multiplier", value: config.rateTiers.greenRate.multiplier, path: ["rateTiers", "greenRate", "multiplier"] });
     }
 
-    // SANIPOD
-    if (config.weeklyRatePerUnit !== undefined) fields.push({ label: "Weekly Rate per Unit", value: config.weeklyRatePerUnit, path: ["weeklyRatePerUnit"] });
-    if (config.altWeeklyRatePerUnit !== undefined) fields.push({ label: "Alternate Weekly Rate per Unit", value: config.altWeeklyRatePerUnit, path: ["altWeeklyRatePerUnit"] });
+    // SANIPOD - Complete extraction
+    if (config.weeklyRatePerUnit !== undefined) fields.push({ label: "Weekly Rate per Unit (Option A)", value: config.weeklyRatePerUnit, path: ["weeklyRatePerUnit"] });
+    if (config.altWeeklyRatePerUnit !== undefined) fields.push({ label: "Alternate Weekly Rate per Unit (Option B)", value: config.altWeeklyRatePerUnit, path: ["altWeeklyRatePerUnit"] });
+    if (config.tripChargePerVisit !== undefined) fields.push({ label: "Trip Charge Per Visit", value: config.tripChargePerVisit, path: ["tripChargePerVisit"] });
     if (config.extraBagPrice !== undefined) fields.push({ label: "Extra Bag Price", value: config.extraBagPrice, path: ["extraBagPrice"] });
-    if (config.installChargePerUnit !== undefined) fields.push({ label: "Install Charge per Unit", value: config.installChargePerUnit, path: ["installChargePerUnit"] });
+    if (config.installChargePerUnit !== undefined) fields.push({ label: "Install Charge Per Unit", value: config.installChargePerUnit, path: ["installChargePerUnit"] });
     if (config.standaloneExtraWeeklyCharge !== undefined) fields.push({ label: "Standalone Extra Weekly Charge", value: config.standaloneExtraWeeklyCharge, path: ["standaloneExtraWeeklyCharge"] });
+
+    // SaniPod Frequency Settings
+    if (config.annualFrequencies) {
+      if (config.annualFrequencies.weekly !== undefined) fields.push({ label: "Annual Frequency - Weekly Visits", value: config.annualFrequencies.weekly, path: ["annualFrequencies", "weekly"] });
+      if (config.annualFrequencies.biweekly !== undefined) fields.push({ label: "Annual Frequency - Biweekly Visits", value: config.annualFrequencies.biweekly, path: ["annualFrequencies", "biweekly"] });
+      if (config.annualFrequencies.monthly !== undefined) fields.push({ label: "Annual Frequency - Monthly Visits", value: config.annualFrequencies.monthly, path: ["annualFrequencies", "monthly"] });
+    }
+
+    // SaniPod Billing Conversions
+    if (config.weeksPerMonth !== undefined) fields.push({ label: "Weeks Per Month", value: config.weeksPerMonth, path: ["weeksPerMonth"] });
+    if (config.weeksPerYear !== undefined) fields.push({ label: "Weeks Per Year", value: config.weeksPerYear, path: ["weeksPerYear"] });
+
+    // SaniPod Contract Terms
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"] });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"] });
+
+    // SaniPod Rate Tiers
+    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
+    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
 
     // SANISCRUB - fixtureRates
     if (config.fixtureRates) {

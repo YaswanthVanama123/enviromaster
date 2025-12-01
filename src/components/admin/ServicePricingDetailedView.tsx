@@ -22,7 +22,9 @@ type TabKey =
   // Pure Janitorial
   | "baseRates" | "shortJobPricing" | "serviceMultipliers" | "monthlyConversions" | "contractSettings" | "dustingVacuuming" | "rateTiers"
   // SaniClean
-  | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers";
+  | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers"
+  // SaniPod
+  | "podRates" | "extraBags" | "installation" | "standaloneService" | "frequencySettings" | "sanipodBillingConversions" | "sanipodContractTerms" | "sanipodRateTiers";
 
 interface PricingField {
   label: string;
@@ -45,6 +47,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "microfiberMopping") return "basicRates";
     if (service.serviceId === "pureJanitorial") return "baseRates";
     if (service.serviceId === "saniclean") return "insideBeltway";
+    if (service.serviceId === "sanipod") return "podRates";
     return "windowRates";
   };
 
@@ -110,6 +113,15 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       warrantyCredits: [],
       sanicleanBillingConversions: [],
       sanicleanRateTiers: [],
+      // SaniPod
+      podRates: [],
+      extraBags: [],
+      installation: [],
+      standaloneService: [],
+      frequencySettings: [],
+      sanipodBillingConversions: [],
+      sanipodContractTerms: [],
+      sanipodRateTiers: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -927,6 +939,148 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // SANIPOD
+    if (service.serviceId === "sanipod") {
+      // Pod Rates
+      categories.podRates = [
+        {
+          label: "Weekly Rate Per Unit (Option A)",
+          value: getValue(["weeklyRatePerUnit"]) ?? 0,
+          path: ["weeklyRatePerUnit"],
+          unit: "$ per pod",
+          description: "Base rate per pod per week (used in $3+$40 pricing model)",
+        },
+        {
+          label: "Alternate Weekly Rate Per Unit (Option B)",
+          value: getValue(["altWeeklyRatePerUnit"]) ?? 0,
+          path: ["altWeeklyRatePerUnit"],
+          unit: "$ per pod",
+          description: "Flat rate per pod per week (typically $8/pod, no base charge)",
+        },
+        {
+          label: "Trip Charge Per Visit",
+          value: getValue(["tripChargePerVisit"]) ?? 0,
+          path: ["tripChargePerVisit"],
+          unit: "$",
+          description: "Trip charge added per visit",
+        },
+      ];
+
+      // Extra Bags
+      categories.extraBags = [
+        {
+          label: "Extra Bag Price",
+          value: getValue(["extraBagPrice"]) ?? 0,
+          path: ["extraBagPrice"],
+          unit: "$ per bag",
+          description: "Price per additional waste bag (typically $2/bag)",
+        },
+      ];
+
+      // Installation
+      categories.installation = [
+        {
+          label: "Install Charge Per Unit",
+          value: getValue(["installChargePerUnit"]) ?? 0,
+          path: ["installChargePerUnit"],
+          unit: "$ per pod",
+          description: "One-time installation charge per SaniPod unit (typically $25)",
+        },
+      ];
+
+      // Standalone Service
+      categories.standaloneService = [
+        {
+          label: "Standalone Extra Weekly Charge",
+          value: getValue(["standaloneExtraWeeklyCharge"]) ?? 0,
+          path: ["standaloneExtraWeeklyCharge"],
+          unit: "$ per week",
+          description: "Account-level base charge for standalone service (used in $3+$40 model)",
+        },
+      ];
+
+      // Frequency Settings
+      const annualFreqs = getValue(["annualFrequencies"]) || {};
+      categories.frequencySettings = [
+        {
+          label: "Weekly Visits Per Year",
+          value: annualFreqs.weekly ?? 0,
+          path: ["annualFrequencies", "weekly"],
+          unit: "visits/year",
+          description: "Number of weekly service visits per year (typically 52)",
+        },
+        {
+          label: "Biweekly Visits Per Year",
+          value: annualFreqs.biweekly ?? 0,
+          path: ["annualFrequencies", "biweekly"],
+          unit: "visits/year",
+          description: "Number of biweekly service visits per year (typically 26)",
+        },
+        {
+          label: "Monthly Visits Per Year",
+          value: annualFreqs.monthly ?? 0,
+          path: ["annualFrequencies", "monthly"],
+          unit: "visits/year",
+          description: "Number of monthly service visits per year (typically 12)",
+        },
+      ];
+
+      // Billing Conversions
+      categories.sanipodBillingConversions = [
+        {
+          label: "Weeks Per Month",
+          value: getValue(["weeksPerMonth"]) ?? 0,
+          path: ["weeksPerMonth"],
+          unit: "weeks",
+          description: "Average weeks per month for billing (typically 4.33 = 52/12)",
+        },
+        {
+          label: "Weeks Per Year",
+          value: getValue(["weeksPerYear"]) ?? 0,
+          path: ["weeksPerYear"],
+          unit: "weeks",
+          description: "Total weeks per year (typically 52)",
+        },
+      ];
+
+      // Contract Terms
+      categories.sanipodContractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (e.g., 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (e.g., 36 months)",
+        },
+      ];
+
+      // Rate Tiers
+      const rateCategories = getValue(["rateCategories"]) || {};
+      categories.sanipodRateTiers = [
+        {
+          label: "Red Rate Multiplier",
+          value: rateCategories.redRate?.multiplier ?? 0,
+          path: ["rateCategories", "redRate", "multiplier"],
+          unit: "×",
+          description: "Standard rate multiplier (typically 1.0)",
+        },
+        {
+          label: "Green Rate Multiplier",
+          value: rateCategories.greenRate?.multiplier ?? 0,
+          path: ["rateCategories", "greenRate", "multiplier"],
+          unit: "×",
+          description: "Premium rate multiplier (typically 1.3 = 30% higher)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -1020,6 +1174,19 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "warrantyCredits", label: "Warranty & Credits", icon: "🎫" },
         { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: "🔄" },
         { key: "sanicleanRateTiers", label: "Rate Tiers", icon: "💰" },
+      ];
+    }
+
+    if (service.serviceId === "sanipod") {
+      return [
+        { key: "podRates", label: "Pod Rates", icon: "🗑️" },
+        { key: "extraBags", label: "Extra Bags", icon: "🛍️" },
+        { key: "installation", label: "Installation", icon: "🔧" },
+        { key: "standaloneService", label: "Standalone Service", icon: "⭐" },
+        { key: "frequencySettings", label: "Service Frequencies", icon: "📅" },
+        { key: "sanipodBillingConversions", label: "Billing Conversions", icon: "🔄" },
+        { key: "sanipodContractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "sanipodRateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
