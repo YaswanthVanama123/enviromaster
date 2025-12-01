@@ -25,18 +25,11 @@ export interface FoamingDrainFormState {
   location: FoamingDrainLocation;
 
   // Standard drain pricing toggles
-  // We still support:
-  //  - auto choose cheaper (10$/drain vs 20+4)
-  //  - "force 20+4" (small account)
-  //  - "force 10$/drain" (big account)
   useSmallAltPricingWeekly: boolean; // force 20+4
   useBigAccountTenWeekly: boolean;   // force 10$/drain
   isAllInclusive: boolean;           // standard drains included elsewhere (0$ here)
 
   // Install-level mode for 10+ program
-  //  "none"    → not using install-level program
-  //  "weekly"  → 20$/drain weekly
-  //  "bimonth" → 10$/drain 2× per month
   installServiceMode: "none" | "weekly" | "bimonth";
 
   // Grease install toggle
@@ -49,6 +42,32 @@ export interface FoamingDrainFormState {
   contractMonths: number;
 
   notes: string;
+
+  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
+  standardDrainRate: number;           // $10/drain
+  altBaseCharge: number;               // $20 base
+  altExtraPerDrain: number;            // $4/drain
+  volumeWeeklyRate: number;            // $20/drain for 10+ weekly
+  volumeBimonthlyRate: number;         // $10/drain for 10+ bimonthly
+  greaseWeeklyRate: number;            // $125/trap weekly
+  greaseInstallRate: number;           // $300/trap install
+  greenWeeklyRate: number;             // $5/drain weekly
+  greenInstallRate: number;            // $100/drain install
+  plumbingAddonRate: number;           // $10/drain weekly
+  filthyMultiplier: number;            // 3x for filthy install
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customStandardDrainTotal?: number;
+  customGreaseTrapTotal?: number;
+  customGreenDrainTotal?: number;
+  customPlumbingTotal?: number;
+  customFilthyInstall?: number;
+  customGreaseInstall?: number;
+  customGreenInstall?: number;
+  customWeeklyService?: number;
+  customMonthlyRecurring?: number;
+  customFirstMonthPrice?: number;
+  customContractTotal?: number;
 }
 
 export interface FoamingDrainBreakdown {

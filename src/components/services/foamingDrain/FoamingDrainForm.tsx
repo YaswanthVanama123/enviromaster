@@ -438,12 +438,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
 
                 <span>@</span>
-                {/* RATE = AUTO (read-only) */}
+                {/* RATE = EDITABLE (from backend) */}
                 <input
-                  readOnly
+                  type="number"
+                  min={0}
+                  step={0.01}
                   className="svc-in sm"
                   style={{ width: 80 }}
-                  value={formatAmount(stdRate)}
+                  value={state.standardDrainRate}
+                  onChange={(e) => updateField("standardDrainRate", parseFloat(e.target.value) || 0)}
+                  title="Standard drain rate (from backend)"
                 />
                 <span>=</span>
                 {/* TOTAL = AUTO (read-only) */}
@@ -492,12 +496,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     onChange={handleNumberChange("installDrainCount")}
                   />
                   <span>@</span>
-                  {/* RATE depends on frequency: weekly 20$, bi-monthly 10$ */}
+                  {/* RATE depends on frequency: weekly/bimonthly - EDITABLE */}
                   <input
-                    readOnly
+                    type="number"
+                    min={0}
+                    step={0.01}
                     className="svc-in sm"
                     style={{ width: 80 }}
-                    value={formatAmount(installRate)}
+                    value={state.frequency === "weekly" ? state.volumeWeeklyRate : state.volumeBimonthlyRate}
+                    onChange={(e) => updateField(
+                      state.frequency === "weekly" ? "volumeWeeklyRate" : "volumeBimonthlyRate",
+                      parseFloat(e.target.value) || 0
+                    )}
+                    title={`Volume ${state.frequency} rate (from backend)`}
                   />
                   <span>=</span>
                   {/* TOTAL weekly cost for install drains */}
@@ -533,12 +544,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   onChange={handleNumberChange("greaseTrapCount")}
                 />
                 <span>@</span>
-                {/* RATE */}
+                {/* RATE - EDITABLE */}
                 <input
-                  readOnly
+                  type="number"
+                  min={0}
+                  step={0.01}
                   className="svc-in sm"
                   style={{ width: 80 }}
-                  value={formatAmount(greaseRate)}
+                  value={state.greaseWeeklyRate}
+                  onChange={(e) => updateField("greaseWeeklyRate", parseFloat(e.target.value) || 0)}
+                  title="Grease trap weekly rate (from backend)"
                 />
                 <span>=</span>
                 {/* TOTAL */}
@@ -569,12 +584,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   onChange={handleNumberChange("greenDrainCount")}
                 />
                 <span>@</span>
-                {/* RATE */}
+                {/* RATE - EDITABLE */}
                 <input
-                  readOnly
+                  type="number"
+                  min={0}
+                  step={0.01}
                   className="svc-in sm"
                   style={{ width: 80 }}
-                  value={formatAmount(greenRate)}
+                  value={state.greenWeeklyRate}
+                  onChange={(e) => updateField("greenWeeklyRate", parseFloat(e.target.value) || 0)}
+                  title="Green drain weekly rate (from backend)"
                 />
                 <span>=</span>
                 {/* TOTAL */}
