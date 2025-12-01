@@ -18,7 +18,9 @@ type TabKey =
   // Foaming Drain
   | "standardRates" | "volumePricing" | "greaseTrap" | "greenDrain" | "addonsMultipliers" | "tripCharges" | "billingConversions" | "contractTerms"
   // Microfiber Mopping
-  | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing";
+  | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing"
+  // Pure Janitorial
+  | "baseRates" | "shortJobPricing";
 
 interface PricingField {
   label: string;
@@ -39,6 +41,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "carpetCleaning") return "unitPricing";
     if (service.serviceId === "foamingDrain") return "standardRates";
     if (service.serviceId === "microfiberMopping") return "basicRates";
+    if (service.serviceId === "pureJanitorial") return "baseRates";
     return "windowRates";
   };
 
@@ -87,6 +90,9 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       hugeBathrooms: [],
       extraAreas: [],
       standalonePricing: [],
+      // Pure Janitorial
+      baseRates: [],
+      shortJobPricing: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -604,6 +610,38 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // PURE JANITORIAL
+    if (service.serviceId === "pureJanitorial") {
+      // Base Rates
+      categories.baseRates = [
+        {
+          label: "Base Hourly Rate",
+          value: getValue(["baseHourlyRate"]) ?? 0,
+          path: ["baseHourlyRate"],
+          unit: "$ per hour",
+          description: "Standard hourly rate for janitorial services",
+        },
+        {
+          label: "Minimum Hours Per Visit",
+          value: getValue(["minHoursPerVisit"]) ?? 0,
+          path: ["minHoursPerVisit"],
+          unit: "hours",
+          description: "Minimum billable hours required per service visit (e.g., 2 hours minimum)",
+        },
+      ];
+
+      // Short Job Pricing
+      categories.shortJobPricing = [
+        {
+          label: "Short Job Hourly Rate",
+          value: getValue(["shortJobHourlyRate"]) ?? 0,
+          path: ["shortJobHourlyRate"],
+          unit: "$ per hour",
+          description: "Premium hourly rate for jobs under minimum hours (typically 1.5x base rate)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -672,6 +710,13 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "hugeBathrooms", label: "Huge Bathrooms", icon: "🏢" },
         { key: "extraAreas", label: "Extra Areas", icon: "🏛️" },
         { key: "standalonePricing", label: "Standalone Service", icon: "⭐" },
+      ];
+    }
+
+    if (service.serviceId === "pureJanitorial") {
+      return [
+        { key: "baseRates", label: "Base Rates", icon: "🕐" },
+        { key: "shortJobPricing", label: "Short Job Pricing", icon: "⚡" },
       ];
     }
 
