@@ -178,14 +178,13 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
       }
 
       if (type === "checkbox") {
-        next[name as keyof StripWaxFormState] = t.checked;
+        (next as any)[name] = t.checked;
       } else if (type === "number") {
         const raw = t.value;
         const num = raw === "" ? 0 : Number(raw);
-        next[name as keyof StripWaxFormState] =
-          Number.isFinite(num) && num >= 0 ? num : 0;
+        (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
       } else {
-        next[name as keyof StripWaxFormState] = t.value;
+        (next as any)[name] = t.value;
       }
 
       return next;
@@ -228,7 +227,17 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
 
     const weeksPerMonth = form.weeksPerMonth;  // ✅ USE FORM VALUE (from backend)
 
-    // ✅ Get variant config from form values (from backend)
+    // ✅ Calculate visits per month based on frequency
+    let monthlyVisits = 0;
+    if (form.frequency === "weekly") {
+      monthlyVisits = weeksPerMonth;  // 4.33 visits/month
+    } else if (form.frequency === "biweekly") {
+      monthlyVisits = weeksPerMonth / 2;  // ~2.165 visits/month
+    } else if (form.frequency === "monthly") {
+      monthlyVisits = 1;  // 1 visit/month
+    } else {
+      monthlyVisits = weeksPerMonth;  // default to weekly
+    }
     const getVariantConfig = (variant: StripWaxServiceVariant) => {
       if (variant === "standardFull") {
         return {
@@ -266,7 +275,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
 
     const firstVisit = perVisit;
 
-    const monthlyVisits = weeksPerMonth;
+    // monthlyVisits already calculated above based on frequency
 
     const firstMonth = monthlyVisits * perVisit;
     const ongoingMonthly = monthlyVisits * perVisit;
@@ -313,11 +322,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
     form.wellMaintainedMinCharge,
     form.redRateMultiplier,
     form.greenRateMultiplier,
-    // ✅ NEW: Custom override fields
-    form.customPerVisit,
-    form.customMonthly,
-    form.customOngoingMonthly,
-    form.customContractTotal,
   ]);
 
   return { form, onChange, calc };
