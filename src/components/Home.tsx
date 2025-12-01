@@ -38,6 +38,8 @@ export default function Home() {
 
         const data = await res.json();
         const items = data.items || [];
+        console.log("📊 Fetched Documents:", items);
+        console.log("📊 Total Documents Count:", items.length);
         setDocuments(items);
       } catch (err) {
         console.error("Error fetching documents:", err);
@@ -58,6 +60,8 @@ export default function Home() {
 
         const data = await res.json();
         const uploads = data.items || [];
+        console.log("📤 Manual Uploads:", uploads);
+        console.log("📤 Total Upload Count:", uploads.length);
         setUploadCount(uploads.length);
       } catch (err) {
         console.error("Error fetching upload stats:", err);
@@ -69,6 +73,9 @@ export default function Home() {
 
   // Calculate chart data dynamically from documents
   const getChartData = () => {
+    console.log("📈 Calculating chart data...");
+    console.log("📈 Documents available for chart:", documents.length);
+
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const today = new Date();
     const chartData = [];
@@ -84,19 +91,25 @@ export default function Home() {
         return docDate.toDateString() === date.toDateString();
       });
 
+      console.log(`📅 ${date.toDateString()} (${dayName}): ${dayDocs.length} documents`);
+
       // Count by status
       const done = dayDocs.filter((d) => d.status === "approved_admin").length;
       const pending = dayDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
       const drafts = dayDocs.filter((d) => d.status === "draft").length;
 
+      console.log(`   ✅ Done: ${done}, ⏳ Pending: ${pending}, 📝 Drafts: ${drafts}`);
+
       chartData.push({ day: dayName, done, pending, drafts });
     }
 
+    console.log("📈 Final Chart Data:", chartData);
     return chartData;
   };
 
   const chartData = getChartData();
   const maxValue = Math.max(...chartData.map(d => d.done + d.pending + d.drafts), 10);
+  console.log("📈 Max Value for Chart:", maxValue);
 
   const agreementOptions = [
     {
@@ -173,7 +186,9 @@ export default function Home() {
       // Refresh upload count
       const statsRes = await fetch("http://localhost:5000/api/manual-upload");
       const data = await statsRes.json();
-      setUploadCount(data.items?.length || 0);
+      const newCount = data.items?.length || 0;
+      console.log("📤 Upload Complete! New count:", newCount);
+      setUploadCount(newCount);
     } catch (err) {
       console.error("Error uploading file:", err);
       setToastMessage({ message: "Failed to upload file. Please try again.", type: "error" });
@@ -250,6 +265,15 @@ export default function Home() {
                     const doneHeight = (data.done / maxValue) * 100;
                     const pendingHeight = (data.pending / maxValue) * 100;
                     const draftsHeight = (data.drafts / maxValue) * 100;
+
+                    console.log(`📊 Bar ${index} (${data.day}):`, {
+                      done: data.done,
+                      pending: data.pending,
+                      drafts: data.drafts,
+                      doneHeight: `${doneHeight.toFixed(1)}%`,
+                      pendingHeight: `${pendingHeight.toFixed(1)}%`,
+                      draftsHeight: `${draftsHeight.toFixed(1)}%`
+                    });
 
                     return (
                       <div key={index} className="home__chart-bar-group">
