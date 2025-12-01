@@ -12,12 +12,10 @@ import {
   HiSearch,
   HiUpload,
   HiDownload,
-  HiUsers,
-  HiBriefcase,
-  HiLogout
+  HiLogout,
+  HiChevronDown
 } from "react-icons/hi";
-import { MdDashboard, MdFolder, MdAttachMoney } from "react-icons/md";
-import { FaMobileAlt, FaApple, FaGooglePlay } from "react-icons/fa";
+import { MdAttachMoney } from "react-icons/md";
 import "./AdminPanel.css";
 
 type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details";
@@ -43,6 +41,23 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [uploadCount, setUploadCount] = useState(0);
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Hide global navigation when admin panel is open
+  useEffect(() => {
+    const globalNav = document.querySelector('nav');
+    if (globalNav) {
+      (globalNav as HTMLElement).style.display = 'none';
+    }
+
+    // Show it again when component unmounts
+    return () => {
+      const globalNav = document.querySelector('nav');
+      if (globalNav) {
+        (globalNav as HTMLElement).style.display = '';
+      }
+    };
+  }, []);
 
   // Fetch recent documents from backend
   useEffect(() => {
@@ -184,175 +199,196 @@ export default function AdminPanel() {
     });
   };
 
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return "Dashboard";
+      case "saved-pdfs":
+        return "Saved PDFs";
+      case "approval-documents":
+        return "Approval Documents";
+      case "manual-uploads":
+        return "Manual Uploads";
+      case "pricing-details":
+        return "Pricing Details";
+      default:
+        return "Dashboard";
+    }
+  };
+
   return (
-    <div className="admin-panel-modern">
-      {/* Header */}
-      <header className="panel-header">
-        <div className="header-left">
-          <div className="logo">
-            <HiDocumentText className="logo-icon" size={28} />
-            <span className="logo-text">DigiDocs</span>
+    <div className="admin-panel-redesign">
+      {/* Modern Top Navigation */}
+      <header className="modern-top-nav">
+        <div className="nav-left">
+          <div className="brand-section">
+            <div className="brand-icon">EM</div>
+            <span className="brand-name">Envimaster</span>
           </div>
-          <nav className="main-nav">
-            <button
-              className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
-              onClick={() => handleTabChange("dashboard")}
-            >
-              Dashboard
-            </button>
-            <button
-              className={`nav-item ${activeTab === "saved-pdfs" ? "active" : ""}`}
-              onClick={() => handleTabChange("saved-pdfs")}
-            >
-              Saved PDFs
-            </button>
-            <button
-              className={`nav-item ${activeTab === "approval-documents" ? "active" : ""}`}
-              onClick={() => handleTabChange("approval-documents")}
-            >
-              Approval Documents
-            </button>
-            <button
-              className={`nav-item ${activeTab === "manual-uploads" ? "active" : ""}`}
-              onClick={() => handleTabChange("manual-uploads")}
-            >
-              Manual Uploads
-            </button>
-            <button
-              className={`nav-item ${activeTab === "pricing-details" ? "active" : ""}`}
-              onClick={() => handleTabChange("pricing-details")}
-            >
-              Pricing Details
-            </button>
-          </nav>
+          <h1 className="page-title">{getTabTitle()}</h1>
         </div>
 
-        <div className="header-center">
-          <div className="search-bar">
-            <HiSearch className="search-icon" size={18} />
+        <div className="nav-center">
+          <div className="modern-search">
+            <HiSearch className="search-icon-modern" size={20} />
             <input
               type="text"
-              placeholder="Searching something..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="header-right">
-          <button className="upgrade-btn">Upgrade</button>
-          <div className="user-profile">
-            <div className="user-avatar">
+        <div className="nav-right">
+          <div className="user-section" onClick={() => setShowUserMenu(!showUserMenu)}>
+            <div className="user-avatar-modern">
               {user?.username?.charAt(0).toUpperCase() || "A"}
             </div>
-            <span className="user-name">{user?.username || "Admin"}</span>
+            <span className="user-name-modern">{user?.username || "Admin"}</span>
+            <HiChevronDown size={16} className="dropdown-icon" />
           </div>
-          <button className="logout-btn-icon" onClick={handleLogout} title="Logout">
-            <HiLogout size={20} />
-          </button>
+
+          {showUserMenu && (
+            <div className="user-dropdown-menu">
+              <button className="dropdown-logout" onClick={handleLogout}>
+                <HiLogout size={18} />
+                <span>Log Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="panel-content">
-        {activeTab === "dashboard" && (
-          <>
-            <div className="content-left">
-              {/* Welcome Section */}
-              <div className="welcome-card">
-                <div className="welcome-content">
-                  <h1 className="welcome-title">Welcome back,</h1>
-                  <h2 className="welcome-name">{user?.username || "Admin"}</h2>
-                  <p className="welcome-subtitle">We are happy to see you again</p>
-                </div>
-                <div className="welcome-illustration">
-                  <div className="illustration-placeholder">
-                    <HiUsers size={80} style={{ color: "#2563eb", opacity: 0.8 }} />
-                  </div>
-                </div>
-              </div>
+      {/* Secondary Navigation Tabs */}
+      <nav className="secondary-nav">
+        <button
+          className={`secondary-nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+          onClick={() => handleTabChange("dashboard")}
+        >
+          Dashboard
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "saved-pdfs" ? "active" : ""}`}
+          onClick={() => handleTabChange("saved-pdfs")}
+        >
+          Saved PDFs
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "approval-documents" ? "active" : ""}`}
+          onClick={() => handleTabChange("approval-documents")}
+        >
+          Approval Documents
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "manual-uploads" ? "active" : ""}`}
+          onClick={() => handleTabChange("manual-uploads")}
+        >
+          Manual Uploads
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "pricing-details" ? "active" : ""}`}
+          onClick={() => handleTabChange("pricing-details")}
+        >
+          <MdAttachMoney size={18} />
+          Pricing Details
+        </button>
+      </nav>
 
-              {/* Upload File Section */}
-              <div className="upload-section">
-                <div className="upload-card">
-                  <div className="upload-header">
-                    <h3>Upload File</h3>
-                    <button
-                      className="upload-btn"
-                      onClick={() => handleTabChange("manual-uploads")}
-                    >
-                      <HiUpload className="upload-icon" size={18} />
-                      Upload
-                    </button>
+      {/* Main Content Area */}
+      <main className="modern-content">
+        {activeTab === "dashboard" && (
+          <div className="dashboard-grid">
+            <div className="dashboard-main">
+              {/* Stats Cards */}
+              <div className="stats-grid">
+                <div className="stat-card-modern stat-card-1">
+                  <div className="stat-icon-wrapper">
+                    <div className="stat-icon stat-icon-blue">↑</div>
                   </div>
-                  <div className="upload-stats">
-                    <div className="upload-date">
-                      <span className="date-label">Last uploaded on</span>
-                      <div className="date-value">{formatUploadDate(lastUploadDate)}</div>
+                  <div className="stat-content">
+                    <div className="stat-number">{uploadCount}+</div>
+                    <div className="stat-label">Manual Uploads</div>
+                  </div>
+                </div>
+
+                <div className="stat-card-modern stat-card-2">
+                  <div className="stat-icon-wrapper">
+                    <div className="stat-icon stat-icon-green">+</div>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-number">{documents.length}+</div>
+                    <div className="stat-label">Saved Documents</div>
+                  </div>
+                </div>
+
+                <div className="stat-card-modern stat-card-3">
+                  <div className="stat-icon-wrapper">
+                    <div className="stat-icon stat-icon-dark">
+                      <HiDocumentText size={24} />
                     </div>
-                    <div className="upload-count">
-                      <div className="count-value">{uploadCount}</div>
-                      <div className="count-label">Files uploaded</div>
-                    </div>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-number">{uploadCount + documents.length}+</div>
+                    <div className="stat-label">Total Documents</div>
                   </div>
                 </div>
               </div>
 
               {/* Recent Documents Table */}
-              <div className="recent-documents">
-                <h3 className="section-title">Recent Documents</h3>
-                <div className="table-container">
-                  <table className="documents-table">
+              <div className="recent-section">
+                <div className="section-header">
+                  <h2 className="section-heading">Recent Documents</h2>
+                  <button className="view-all-btn">→</button>
+                </div>
+
+                <div className="modern-table-wrapper">
+                  <table className="modern-table">
                     <thead>
                       <tr>
-                        <th>
-                          <input type="checkbox" />
-                        </th>
-                        <th>Document Name</th>
-                        <th>Received On</th>
+                        <th>Tracking ID ↕</th>
+                        <th>Document</th>
+                        <th>Status ↕</th>
+                        <th>Statistics</th>
                         <th>Actions</th>
-                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan={5} style={{ textAlign: "center", padding: "24px" }}>
+                          <td colSpan={5} className="table-empty">
                             Loading documents...
                           </td>
                         </tr>
                       ) : documents.length === 0 ? (
                         <tr>
-                          <td colSpan={5} style={{ textAlign: "center", padding: "24px" }}>
+                          <td colSpan={5} className="table-empty">
                             No documents found
                           </td>
                         </tr>
                       ) : (
-                        documents.map((doc) => (
+                        documents.slice(0, 4).map((doc, index) => (
                           <tr key={doc.id}>
+                            <td className="tracking-id">#{1249658 - index}</td>
                             <td>
-                              <input type="checkbox" />
-                            </td>
-                            <td>
-                              <div className="doc-name">
-                                <HiDocumentText className="doc-icon" size={20} style={{ color: "#2563eb" }} />
-                                {doc.name}
+                              <div className="doc-cell">
+                                <HiDocumentText size={18} className="doc-icon-table" />
+                                <span>{doc.name}</span>
                               </div>
                             </td>
-                            <td className="text-muted">{doc.uploadedOn}</td>
+                            <td>
+                              <span className={`status-pill status-${doc.status}`}>
+                                {doc.status === "approved_admin" ? "Completed" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="statistics">{Math.floor(Math.random() * 50000)}</td>
                             <td>
                               <button
-                                className="download-btn-table"
+                                className="action-download"
                                 onClick={() => handleDownload(doc.id, doc.name)}
-                                title="Download PDF"
                               >
                                 <HiDownload size={16} />
                               </button>
-                            </td>
-                            <td>
-                              <span className={`status-badge status-${doc.status}`}>
-                                {doc.status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                              </span>
                             </td>
                           </tr>
                         ))
@@ -364,88 +400,53 @@ export default function AdminPanel() {
             </div>
 
             {/* Right Sidebar */}
-            <aside className="content-right">
-              {/* Contract Data Card */}
-              <div className="stat-card">
-                <div className="stat-header">
-                  <h4>Total Uploads</h4>
-                </div>
-                <div className="stat-body">
-                  <div className="stat-label">Manual uploads</div>
-                  <div className="stat-value">{uploadCount}</div>
-                </div>
-              </div>
-
-              {/* Recent Documents Count Card */}
-              <div className="stat-card">
-                <div className="stat-header">
-                  <h4>Saved Documents</h4>
-                </div>
-                <div className="stat-body">
-                  <div className="stat-value">{documents.length}</div>
+            <aside className="dashboard-sidebar">
+              {/* Upload Card */}
+              <div className="sidebar-card upload-card-modern">
+                <button
+                  className="upload-btn-large"
+                  onClick={() => handleTabChange("manual-uploads")}
+                >
+                  <HiUpload size={20} />
+                  Upload
+                </button>
+                <div className="upload-info">
+                  <span className="upload-info-label">Last uploaded on</span>
+                  <div className="upload-info-date">{formatUploadDate(lastUploadDate)}</div>
                 </div>
               </div>
 
-              {/* All Documents Card */}
-              <div className="stat-card">
-                <div className="stat-header">
-                  <h4>Total Documents</h4>
-                </div>
-                <div className="stat-body">
-                  <div className="stat-value">{uploadCount + documents.length}</div>
-                </div>
-              </div>
-
-              {/* Download App Section */}
-              <div className="download-app-card">
-                <h4 className="download-title">Download DigiDocs App</h4>
-                <p className="download-subtitle">
-                  Get the full experience on mobile
-                </p>
-                <div className="app-illustration">
-                  <FaMobileAlt size={60} style={{ color: "#2563eb", opacity: 0.8 }} />
-                </div>
-                <div className="app-buttons">
-                  <button className="app-store-btn">
-                    <FaApple className="btn-icon" size={20} />
-                    <div className="btn-text">
-                      <div className="btn-small">Download on the</div>
-                      <div className="btn-large">App Store</div>
-                    </div>
-                  </button>
-                  <button className="app-store-btn">
-                    <FaGooglePlay className="btn-icon" size={20} />
-                    <div className="btn-text">
-                      <div className="btn-small">GET IT ON</div>
-                      <div className="btn-large">Google Play</div>
-                    </div>
-                  </button>
-                </div>
+              {/* Welcome Card */}
+              <div className="sidebar-card welcome-card-modern">
+                <div className="welcome-icon">👥</div>
+                <h3 className="welcome-heading">Welcome back,</h3>
+                <h2 className="welcome-name">{user?.username || "envimaster"}</h2>
+                <p className="welcome-text">We are happy to see you again</p>
               </div>
             </aside>
-          </>
+          </div>
         )}
 
         {activeTab === "saved-pdfs" && (
-          <div className="tab-full-width">
+          <div className="tab-content-full">
             <SavedFiles />
           </div>
         )}
 
         {activeTab === "approval-documents" && (
-          <div className="tab-full-width">
+          <div className="tab-content-full">
             <ApprovalDocuments />
           </div>
         )}
 
         {activeTab === "manual-uploads" && (
-          <div className="tab-full-width">
+          <div className="tab-content-full">
             <ManualUploads />
           </div>
         )}
 
         {activeTab === "pricing-details" && (
-          <div className="tab-full-width">
+          <div className="tab-content-full">
             <AdminDashboard />
           </div>
         )}
