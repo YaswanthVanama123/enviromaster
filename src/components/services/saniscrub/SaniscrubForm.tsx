@@ -247,39 +247,32 @@ export const SaniscrubForm: React.FC<
             value={form.nonBathroomSqFt}
             onChange={onChange}
           />
+          <span className="svc-small">sq ft</span>
           <span>@</span>
-          <span className="svc-small">1st 500 = $</span>
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="nonBathroomFirstUnitRate"
-            value={form.nonBathroomFirstUnitRate.toFixed(2)}
-            onChange={onChange}
-            style={{ width: "60px" }}
-          />
-          <span className="svc-small">; +$</span>
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="nonBathroomAdditionalUnitRate"
-            value={form.nonBathroomAdditionalUnitRate.toFixed(2)}
-            onChange={onChange}
-            style={{ width: "60px" }}
-          />
-          <span className="svc-small">/500</span>
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="number"
+              step="0.01"
+              name="nonBathroomAdditionalUnitRate"
+              value={form.nonBathroomAdditionalUnitRate.toFixed(2)}
+              onChange={onChange}
+              title="Rate per 500 sq ft after first 500 (from backend)"
+              style={{ width: "70px" }}
+            />
+          </div>
+          <span className="svc-small">/ 500 sq ft</span>
           <span>=</span>
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={
-              calc.nonBathroomPerVisit > 0
-                ? `$${calc.nonBathroomPerVisit.toFixed(2)} / visit`
-                : "$0.00"
-            }
-          />
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in-box"
+              type="text"
+              readOnly
+              value={calc.nonBathroomPerVisit.toFixed(2)}
+            />
+          </div>
         </div>
       </div>
 
