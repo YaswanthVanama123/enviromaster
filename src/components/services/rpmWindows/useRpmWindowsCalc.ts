@@ -440,6 +440,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     };
   }, [
     backendConfig, // ✅ CRITICAL: Re-calculate when backend config loads!
+    baseWeeklyRates, // ✅ CRITICAL: Re-calculate when base rates change!
     form.smallQty,
     form.mediumQty,
     form.largeQty,

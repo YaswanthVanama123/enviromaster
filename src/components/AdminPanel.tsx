@@ -15,9 +15,7 @@ import {
   HiLogout,
   HiChevronDown,
   HiBriefcase,
-  HiEye,
-  HiMail,
-  HiPencilAlt
+  HiEye
 } from "react-icons/hi";
 import { MdAttachMoney } from "react-icons/md";
 import "./AdminPanel.css";
@@ -213,39 +211,6 @@ export default function AdminPanel() {
         fileName: fileName,
       },
     });
-  };
-
-  const handleSendEmail = async (docId: string, fileName: string) => {
-    const email = prompt("Enter recipient email address:");
-    if (!email) return;
-
-    try {
-      const res = await fetch(`http://localhost:5000/api/pdf/send-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          documentId: docId,
-          recipientEmail: email,
-          fileName: fileName,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Email sending failed with status ${res.status}`);
-      }
-
-      alert(`Email sent successfully to ${email}!`);
-    } catch (err) {
-      console.error("Error sending email:", err);
-      alert("Unable to send email. Please try again.");
-    }
-  };
-
-  const handleEditDocument = (docId: string) => {
-    // Navigate to form filling page with document ID
-    navigate(`/form/${docId}`);
   };
 
   const handleTabChange = (tab: TabType) => {
@@ -468,28 +433,14 @@ export default function AdminPanel() {
                                   onClick={() => handleViewPDF(doc.id, doc.name)}
                                   title="View PDF"
                                 >
-                                  <HiEye size={16} />
-                                </button>
-                                <button
-                                  className="action-btn action-email"
-                                  onClick={() => handleSendEmail(doc.id, doc.name)}
-                                  title="Send via Email"
-                                >
-                                  <HiMail size={16} />
-                                </button>
-                                <button
-                                  className="action-btn action-edit"
-                                  onClick={() => handleEditDocument(doc.id)}
-                                  title="Edit Document"
-                                >
-                                  <HiPencilAlt size={16} />
+                                  <HiEye size={18} />
                                 </button>
                                 <button
                                   className="action-btn action-download"
                                   onClick={() => handleDownload(doc.id, doc.name)}
                                   title="Download PDF"
                                 >
-                                  <HiDownload size={16} />
+                                  <HiDownload size={18} />
                                 </button>
                               </div>
                             </td>

@@ -104,7 +104,7 @@ export default function PDFViewer() {
   };
 
   const handleBack = () => {
-    navigate("/saved-pdfs");
+    navigate(-1); // Go back to previous page
   };
 
   if (loading) {
