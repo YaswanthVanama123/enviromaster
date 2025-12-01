@@ -291,7 +291,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     }
 
     // apply rate category multiplier
-    const rateCfg = activeConfig.rateCategories[form.rateCategory];  // ✅ USE ACTIVE CONFIG (from backend)
+    const rateCfg = (backendConfig?.rateCategories ?? cfg.rateCategories)[form.rateCategory];  // ✅ USE BACKEND OR FALLBACK
     const perVisit = perVisitService * rateCfg.multiplier;
     const firstVisit = firstVisitService * rateCfg.multiplier;
 
