@@ -1,7 +1,8 @@
 // src/components/admin/ServicePricingDetailedView.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
+import { Toast } from "./Toast";
 import "./ServicePricingDetailedView.css";
 
 interface ServicePricingDetailedViewProps {
@@ -63,6 +64,23 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   const [activeTab, setActiveTab] = useState<TabKey>(getInitialTab());
   const [editingField, setEditingField] = useState<{ path: string[]; value: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Auto-clear messages after 5 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => setErrorMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const config = service.config;
 
@@ -1505,9 +1523,11 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     setSaving(true);
     try {
       await onUpdateField(editingField.path, parseFloat(editingField.value) || 0);
+      setSuccessMessage("✓ Price updated successfully!");
       setEditingField(null);
     } catch (error) {
       console.error("Error saving field:", error);
+      setErrorMessage("❌ Failed to update price. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -1733,6 +1753,22 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           </div>
         )}
       </div>
+
+      {/* Toast Notifications */}
+      {successMessage && (
+        <Toast
+          message={successMessage}
+          type="success"
+          onClose={() => setSuccessMessage(null)}
+        />
+      )}
+      {errorMessage && (
+        <Toast
+          message={errorMessage}
+          type="error"
+          onClose={() => setErrorMessage(null)}
+        />
+      )}
     </div>
   );
 };

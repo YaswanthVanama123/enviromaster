@@ -51,35 +51,104 @@ export const PricingTablesView: React.FC = () => {
     }
   }, [errorMessage]);
 
+  // Helper function to intelligently format field values based on label or unit
+  const formatFieldValue = (field: { label: string; value: number; unit?: string }): string => {
+    // If unit is provided, use it
+    if (field.unit) {
+      // For dollar units, format with $
+      if (field.unit === "$" || field.unit.startsWith("$")) {
+        return `$${field.value.toFixed(2)}`;
+      }
+      // For other units, show value with unit
+      return `${field.value.toFixed(2)} ${field.unit}`;
+    }
+
+    // Fallback: intelligent formatting based on label patterns
+    const label = field.label.toLowerCase();
+
+    // Multipliers (shown as is with × symbol)
+    if (label.includes("multiplier") || label.includes("factor")) {
+      return `${field.value.toFixed(2)}×`;
+    }
+
+    // Square feet
+    if (label.includes("sq ft") || label.includes("square f")) {
+      return `${field.value.toFixed(0)} sq ft`;
+    }
+
+    // Fixtures
+    if (label.includes("fixture") && !label.includes("rate") && !label.includes("per")) {
+      return `${field.value.toFixed(0)} fixtures`;
+    }
+
+    // Visits per year
+    if (label.includes("visits") && label.includes("year")) {
+      return `${field.value.toFixed(0)} visits/year`;
+    }
+
+    // Weeks/Months
+    if (label.includes("weeks per") || label.includes("weeks/")) {
+      return `${field.value.toFixed(2)} weeks`;
+    }
+    if (label.includes("months")) {
+      return `${field.value.toFixed(0)} months`;
+    }
+
+    // Hours
+    if (label.includes("hours") && !label.includes("rate")) {
+      return `${field.value.toFixed(1)} hours`;
+    }
+
+    // Drains
+    if (label.includes("drains") && !label.includes("rate") && !label.includes("per")) {
+      return `${field.value.toFixed(0)} drains`;
+    }
+
+    // Places (dusting)
+    if (label.includes("places")) {
+      return `${field.value.toFixed(0)} places`;
+    }
+
+    // Default to dollar amount for rates, charges, prices, fees, minimums
+    if (label.includes("rate") || label.includes("charge") || label.includes("price") ||
+        label.includes("fee") || label.includes("minimum") || label.includes("credit") ||
+        label.includes("addon") || label.includes("base") || label.includes("upgrade")) {
+      return `$${field.value.toFixed(2)}`;
+    }
+
+    // Final fallback
+    return `${field.value.toFixed(2)}`;
+  };
+
   // Extract pricing fields from service config
   const extractServicePricing = (config: any) => {
-    const fields: Array<{ label: string; value: number; path: string[] }> = [];
+    const fields: Array<{ label: string; value: number; path: string[]; unit?: string }> = [];
 
     // SANICLEAN - geographicPricing structure
     if (config.geographicPricing?.insideBeltway) {
       const ib = config.geographicPricing.insideBeltway;
-      if (ib.ratePerFixture !== undefined) fields.push({ label: "Inside Beltway - Rate per Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"] });
-      if (ib.weeklyMinimum !== undefined) fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"] });
-      if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["geographicPricing", "insideBeltway", "tripCharge"] });
-      if (ib.parkingFee !== undefined) fields.push({ label: "Inside Beltway - Parking Fee", value: ib.parkingFee, path: ["geographicPricing", "insideBeltway", "parkingFee"] });
+      if (ib.ratePerFixture !== undefined) fields.push({ label: "Inside Beltway - Rate per Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"], unit: "$ per fixture" });
+      if (ib.weeklyMinimum !== undefined) fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"], unit: "$" });
+      if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["geographicPricing", "insideBeltway", "tripCharge"], unit: "$" });
+      if (ib.parkingFee !== undefined) fields.push({ label: "Inside Beltway - Parking Fee", value: ib.parkingFee, path: ["geographicPricing", "insideBeltway", "parkingFee"], unit: "$" });
     }
     if (config.geographicPricing?.outsideBeltway) {
       const ob = config.geographicPricing.outsideBeltway;
-      if (ob.ratePerFixture !== undefined) fields.push({ label: "Outside Beltway - Rate per Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"] });
-      if (ob.weeklyMinimum !== undefined) fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"] });
-      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["geographicPricing", "outsideBeltway", "tripCharge"] });
+      if (ob.ratePerFixture !== undefined) fields.push({ label: "Outside Beltway - Rate per Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"], unit: "$ per fixture" });
+      if (ob.weeklyMinimum !== undefined) fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"], unit: "$" });
+      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["geographicPricing", "outsideBeltway", "tripCharge"], unit: "$" });
     }
     if (config.allInclusivePackage?.weeklyRatePerFixture !== undefined) {
-      fields.push({ label: "All-Inclusive - Weekly Rate per Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"] });
+      fields.push({ label: "All-Inclusive - Weekly Rate per Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"], unit: "$ per fixture" });
     }
     if (config.smallFacilityMinimum?.fixtureThreshold !== undefined) {
-      fields.push({ label: "Small Facility - Fixture Threshold", value: config.smallFacilityMinimum.fixtureThreshold, path: ["smallFacilityMinimum", "fixtureThreshold"] });
+      fields.push({ label: "Small Facility - Fixture Threshold", value: config.smallFacilityMinimum.fixtureThreshold, path: ["smallFacilityMinimum", "fixtureThreshold"], unit: "fixtures" });
     }
     if (config.smallFacilityMinimum?.minimumWeeklyCharge !== undefined) {
-      fields.push({ label: "Small Facility - Minimum Weekly Charge", value: config.smallFacilityMinimum.minimumWeeklyCharge, path: ["smallFacilityMinimum", "minimumWeeklyCharge"] });
+      fields.push({ label: "Small Facility - Minimum Weekly Charge", value: config.smallFacilityMinimum.minimumWeeklyCharge, path: ["smallFacilityMinimum", "minimumWeeklyCharge"], unit: "$" });
     }
-    if (config.warrantyFeePerDispenser !== undefined) fields.push({ label: "Warranty Fee per Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"] });
-    if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
+    if (config.warrantyFeePerDispenser !== undefined) fields.push({ label: "Warranty Fee per Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"], unit: "$ per dispenser" });
+    if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"], unit: "$ per fixture" });
     if (config.soapUpgrades?.excessUsageCharges?.standardSoap !== undefined) {
       fields.push({ label: "Excess Standard Soap Charge", value: config.soapUpgrades.excessUsageCharges.standardSoap, path: ["soapUpgrades", "excessUsageCharges", "standardSoap"] });
     }
@@ -409,7 +478,11 @@ export const PricingTablesView: React.FC = () => {
     const result = await updateConfig(detailedViewService._id, { config: newConfig });
 
     if (result.success) {
-      setSuccessMessage("✓ Price updated successfully!");
+      // Update the detailedViewService with the new config to refresh UI
+      setDetailedViewService({
+        ...detailedViewService,
+        config: newConfig
+      });
     }
   };
 
@@ -670,7 +743,7 @@ export const PricingTablesView: React.FC = () => {
                                   step="0.01"
                                 />
                               ) : (
-                                <span style={styles.priceValue}>${field.value.toFixed(2)}</span>
+                                <span style={styles.priceValue}>{formatFieldValue(field)}</span>
                               )}
                             </td>
                             <td style={styles.td}>
