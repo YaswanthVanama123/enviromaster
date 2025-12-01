@@ -61,17 +61,46 @@ export const PricingTablesView: React.FC = () => {
       if (ib.ratePerFixture !== undefined) fields.push({ label: "Inside Beltway - Rate per Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"] });
       if (ib.weeklyMinimum !== undefined) fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"] });
       if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["geographicPricing", "insideBeltway", "tripCharge"] });
+      if (ib.parkingFee !== undefined) fields.push({ label: "Inside Beltway - Parking Fee", value: ib.parkingFee, path: ["geographicPricing", "insideBeltway", "parkingFee"] });
     }
     if (config.geographicPricing?.outsideBeltway) {
       const ob = config.geographicPricing.outsideBeltway;
       if (ob.ratePerFixture !== undefined) fields.push({ label: "Outside Beltway - Rate per Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"] });
       if (ob.weeklyMinimum !== undefined) fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"] });
+      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["geographicPricing", "outsideBeltway", "tripCharge"] });
     }
     if (config.allInclusivePackage?.weeklyRatePerFixture !== undefined) {
       fields.push({ label: "All-Inclusive - Weekly Rate per Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"] });
     }
+    if (config.smallFacilityMinimum?.fixtureThreshold !== undefined) {
+      fields.push({ label: "Small Facility - Fixture Threshold", value: config.smallFacilityMinimum.fixtureThreshold, path: ["smallFacilityMinimum", "fixtureThreshold"] });
+    }
+    if (config.smallFacilityMinimum?.minimumWeeklyCharge !== undefined) {
+      fields.push({ label: "Small Facility - Minimum Weekly Charge", value: config.smallFacilityMinimum.minimumWeeklyCharge, path: ["smallFacilityMinimum", "minimumWeeklyCharge"] });
+    }
     if (config.warrantyFeePerDispenser !== undefined) fields.push({ label: "Warranty Fee per Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"] });
     if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"] });
+    if (config.soapUpgrades?.excessUsageCharges?.standardSoap !== undefined) {
+      fields.push({ label: "Excess Standard Soap Charge", value: config.soapUpgrades.excessUsageCharges.standardSoap, path: ["soapUpgrades", "excessUsageCharges", "standardSoap"] });
+    }
+    if (config.soapUpgrades?.excessUsageCharges?.luxurySoap !== undefined) {
+      fields.push({ label: "Excess Luxury Soap Charge", value: config.soapUpgrades.excessUsageCharges.luxurySoap, path: ["soapUpgrades", "excessUsageCharges", "luxurySoap"] });
+    }
+    if (config.paperCredit?.creditPerFixturePerWeek !== undefined) {
+      fields.push({ label: "Paper Credit per Fixture per Week", value: config.paperCredit.creditPerFixturePerWeek, path: ["paperCredit", "creditPerFixturePerWeek"] });
+    }
+    if (config.billingConversions?.weekly?.monthlyMultiplier !== undefined) {
+      fields.push({ label: "Weekly to Monthly Multiplier", value: config.billingConversions.weekly.monthlyMultiplier, path: ["billingConversions", "weekly", "monthlyMultiplier"] });
+    }
+    if (config.billingConversions?.weekly?.annualMultiplier !== undefined) {
+      fields.push({ label: "Weekly to Annual Multiplier", value: config.billingConversions.weekly.annualMultiplier, path: ["billingConversions", "weekly", "annualMultiplier"] });
+    }
+    if (config.rateTiers?.redRate?.multiplier !== undefined) {
+      fields.push({ label: "Red Rate Multiplier", value: config.rateTiers.redRate.multiplier, path: ["rateTiers", "redRate", "multiplier"] });
+    }
+    if (config.rateTiers?.greenRate?.multiplier !== undefined) {
+      fields.push({ label: "Green Rate Multiplier", value: config.rateTiers.greenRate.multiplier, path: ["rateTiers", "greenRate", "multiplier"] });
+    }
 
     // SANIPOD
     if (config.weeklyRatePerUnit !== undefined) fields.push({ label: "Weekly Rate per Unit", value: config.weeklyRatePerUnit, path: ["weeklyRatePerUnit"] });

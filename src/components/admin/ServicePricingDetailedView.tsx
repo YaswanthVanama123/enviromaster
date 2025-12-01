@@ -20,7 +20,9 @@ type TabKey =
   // Microfiber Mopping
   | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing"
   // Pure Janitorial
-  | "baseRates" | "shortJobPricing" | "serviceMultipliers" | "monthlyConversions" | "contractSettings" | "dustingVacuuming" | "rateTiers";
+  | "baseRates" | "shortJobPricing" | "serviceMultipliers" | "monthlyConversions" | "contractSettings" | "dustingVacuuming" | "rateTiers"
+  // SaniClean
+  | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers";
 
 interface PricingField {
   label: string;
@@ -42,6 +44,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "foamingDrain") return "standardRates";
     if (service.serviceId === "microfiberMopping") return "basicRates";
     if (service.serviceId === "pureJanitorial") return "baseRates";
+    if (service.serviceId === "saniclean") return "insideBeltway";
     return "windowRates";
   };
 
@@ -98,6 +101,15 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       contractSettings: [],
       dustingVacuuming: [],
       rateTiers: [],
+      // SaniClean
+      insideBeltway: [],
+      outsideBeltway: [],
+      allInclusive: [],
+      smallFacility: [],
+      soapUpgrades: [],
+      warrantyCredits: [],
+      sanicleanBillingConversions: [],
+      sanicleanRateTiers: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -738,6 +750,183 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // SANICLEAN
+    if (service.serviceId === "saniclean") {
+      // Inside Beltway
+      const insideBeltway = getValue(["geographicPricing", "insideBeltway"]) || {};
+      categories.insideBeltway = [
+        {
+          label: "Rate Per Fixture",
+          value: insideBeltway.ratePerFixture ?? 0,
+          path: ["geographicPricing", "insideBeltway", "ratePerFixture"],
+          unit: "$ per fixture",
+          description: "Weekly rate per fixture for locations inside the beltway (typically $7)",
+        },
+        {
+          label: "Weekly Minimum",
+          value: insideBeltway.weeklyMinimum ?? 0,
+          path: ["geographicPricing", "insideBeltway", "weeklyMinimum"],
+          unit: "$",
+          description: "Minimum weekly charge regardless of fixture count (typically $40)",
+        },
+        {
+          label: "Trip Charge",
+          value: insideBeltway.tripCharge ?? 0,
+          path: ["geographicPricing", "insideBeltway", "tripCharge"],
+          unit: "$",
+          description: "Standard trip charge for inside beltway locations",
+        },
+        {
+          label: "Parking Fee",
+          value: insideBeltway.parkingFee ?? 0,
+          path: ["geographicPricing", "insideBeltway", "parkingFee"],
+          unit: "$",
+          description: "Pass-through parking fee for paid parking locations",
+        },
+      ];
+
+      // Outside Beltway
+      const outsideBeltway = getValue(["geographicPricing", "outsideBeltway"]) || {};
+      categories.outsideBeltway = [
+        {
+          label: "Rate Per Fixture",
+          value: outsideBeltway.ratePerFixture ?? 0,
+          path: ["geographicPricing", "outsideBeltway", "ratePerFixture"],
+          unit: "$ per fixture",
+          description: "Weekly rate per fixture for locations outside the beltway",
+        },
+        {
+          label: "Weekly Minimum",
+          value: outsideBeltway.weeklyMinimum ?? 0,
+          path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"],
+          unit: "$",
+          description: "Minimum weekly charge for outside beltway locations",
+        },
+        {
+          label: "Trip Charge",
+          value: outsideBeltway.tripCharge ?? 0,
+          path: ["geographicPricing", "outsideBeltway", "tripCharge"],
+          unit: "$",
+          description: "Trip charge for outside beltway locations",
+        },
+      ];
+
+      // All-Inclusive Package
+      const allInclusive = getValue(["allInclusivePackage"]) || {};
+      categories.allInclusive = [
+        {
+          label: "Weekly Rate Per Fixture",
+          value: allInclusive.weeklyRatePerFixture ?? 0,
+          path: ["allInclusivePackage", "weeklyRatePerFixture"],
+          unit: "$ per fixture",
+          description: "All-inclusive package rate (includes SaniClean, SaniPod, microfiber mopping, monthly SaniScrub)",
+        },
+      ];
+
+      // Small Facility Minimum
+      const smallFacility = getValue(["smallFacilityMinimum"]) || {};
+      categories.smallFacility = [
+        {
+          label: "Fixture Threshold",
+          value: smallFacility.fixtureThreshold ?? 0,
+          path: ["smallFacilityMinimum", "fixtureThreshold"],
+          unit: "fixtures",
+          description: "Maximum fixtures to qualify as small facility (typically 6)",
+        },
+        {
+          label: "Minimum Weekly Charge",
+          value: smallFacility.minimumWeeklyCharge ?? 0,
+          path: ["smallFacilityMinimum", "minimumWeeklyCharge"],
+          unit: "$",
+          description: "Minimum charge for small facilities (includes trip)",
+        },
+      ];
+
+      // Soap Upgrades
+      const soapUpgrades = getValue(["soapUpgrades"]) || {};
+      const excessCharges = soapUpgrades.excessUsageCharges || {};
+      categories.soapUpgrades = [
+        {
+          label: "Standard to Luxury Upgrade",
+          value: soapUpgrades.standardToLuxury ?? 0,
+          path: ["soapUpgrades", "standardToLuxury"],
+          unit: "$ per fixture",
+          description: "Upgrade charge from standard to luxury soap per fixture",
+        },
+        {
+          label: "Excess Standard Soap Charge",
+          value: excessCharges.standardSoap ?? 0,
+          path: ["soapUpgrades", "excessUsageCharges", "standardSoap"],
+          unit: "$",
+          description: "Charge for excessive standard soap usage beyond normal",
+        },
+        {
+          label: "Excess Luxury Soap Charge",
+          value: excessCharges.luxurySoap ?? 0,
+          path: ["soapUpgrades", "excessUsageCharges", "luxurySoap"],
+          unit: "$",
+          description: "Charge for excessive luxury soap usage beyond normal",
+        },
+      ];
+
+      // Warranty & Credits
+      const paperCredit = getValue(["paperCredit"]) || {};
+      categories.warrantyCredits = [
+        {
+          label: "Warranty Fee Per Dispenser",
+          value: getValue(["warrantyFeePerDispenser"]) ?? 0,
+          path: ["warrantyFeePerDispenser"],
+          unit: "$ per dispenser",
+          description: "Monthly warranty fee per dispenser (waived in all-inclusive)",
+        },
+        {
+          label: "Paper Credit Per Fixture Per Week",
+          value: paperCredit.creditPerFixturePerWeek ?? 0,
+          path: ["paperCredit", "creditPerFixturePerWeek"],
+          unit: "$",
+          description: "Credit applied per fixture per week for paper products",
+        },
+      ];
+
+      // Billing Conversions
+      const billingConversions = getValue(["billingConversions", "weekly"]) || {};
+      categories.sanicleanBillingConversions = [
+        {
+          label: "Weekly to Monthly Multiplier",
+          value: billingConversions.monthlyMultiplier ?? 0,
+          path: ["billingConversions", "weekly", "monthlyMultiplier"],
+          unit: "×",
+          description: "Multiply weekly rate by this to get monthly (typically 4.33)",
+        },
+        {
+          label: "Weekly to Annual Multiplier",
+          value: billingConversions.annualMultiplier ?? 0,
+          path: ["billingConversions", "weekly", "annualMultiplier"],
+          unit: "×",
+          description: "Multiply weekly rate by this to get annual (typically 52)",
+        },
+      ];
+
+      // Rate Tiers
+      const rateTiers = getValue(["rateTiers"]) || {};
+      categories.sanicleanRateTiers = [
+        {
+          label: "Red Rate Multiplier",
+          value: rateTiers.redRate?.multiplier ?? 0,
+          path: ["rateTiers", "redRate", "multiplier"],
+          unit: "×",
+          description: "Standard rate multiplier (typically 1.0)",
+        },
+        {
+          label: "Green Rate Multiplier",
+          value: rateTiers.greenRate?.multiplier ?? 0,
+          path: ["rateTiers", "greenRate", "multiplier"],
+          unit: "×",
+          description: "Premium rate multiplier (typically 1.3 = 30% higher)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -818,6 +1007,19 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "contractSettings", label: "Contract Terms", icon: "📋" },
         { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: "🧹" },
         { key: "rateTiers", label: "Rate Tiers", icon: "💰" },
+      ];
+    }
+
+    if (service.serviceId === "saniclean") {
+      return [
+        { key: "insideBeltway", label: "Inside Beltway", icon: "🏙️" },
+        { key: "outsideBeltway", label: "Outside Beltway", icon: "🌳" },
+        { key: "allInclusive", label: "All-Inclusive Package", icon: "📦" },
+        { key: "smallFacility", label: "Small Facility", icon: "🏪" },
+        { key: "soapUpgrades", label: "Soap Upgrades", icon: "🧴" },
+        { key: "warrantyCredits", label: "Warranty & Credits", icon: "🎫" },
+        { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: "🔄" },
+        { key: "sanicleanRateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
