@@ -10,6 +10,38 @@ import {
 // API base URL - can be configured via environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+// ✅ Backend config interface matching your MongoDB JSON structure
+interface BackendSaniscrubConfig {
+  fixtureRates: {
+    monthly: number;
+    twicePerMonth: number;
+    bimonthly: number;
+    quarterly: number;
+  };
+  minimums: {
+    monthly: number;
+    twicePerMonth: number;
+    bimonthly: number;
+    quarterly: number;
+  };
+  nonBathroomUnitSqFt: number;
+  nonBathroomFirstUnitRate: number;
+  nonBathroomAdditionalUnitRate: number;
+  installMultipliers: {
+    dirty: number;
+    clean: number;
+  };
+  tripChargeBase: number;
+  parkingFee: number;
+  frequencyMeta: {
+    monthly: { visitsPerYear: number };
+    twicePerMonth: { visitsPerYear: number };
+    bimonthly: { visitsPerYear: number };
+    quarterly: { visitsPerYear: number };
+  };
+  twoTimesPerMonthDiscountFlat: number;
+}
+
 const DEFAULT_FORM: SaniscrubFormState = {
   serviceId: "saniscrub",
   fixtureCount: 0,
@@ -57,48 +89,59 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     ...initial,
   });
 
-  // ✅ Fetch pricing from backend on mount
+  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+  const [backendConfig, setBackendConfig] = useState<BackendSaniscrubConfig | null>(null);
+
+  // ✅ Fetch COMPLETE pricing configuration from backend on mount
   useEffect(() => {
     const fetchPricing = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=saniscrub`);
 
         if (!response.ok) {
-          console.warn('SaniScrub config not found in backend, using default values');
+          console.warn('⚠️ SaniScrub config not found in backend, using default fallback values');
           return;
         }
 
         const data = await response.json();
 
         if (data && data.config) {
-          const backendConfig = data.config;
+          const config = data.config as BackendSaniscrubConfig;
+
+          // ✅ Store the ENTIRE backend config for use in calculations
+          setBackendConfig(config);
 
           setForm((prev) => ({
             ...prev,
             // Update all rate fields from backend if available
-            fixtureRateMonthly: backendConfig.fixtureRateMonthly ?? prev.fixtureRateMonthly,
-            fixtureRateBimonthly: backendConfig.fixtureRateBimonthly ?? prev.fixtureRateBimonthly,
-            fixtureRateQuarterly: backendConfig.fixtureRateQuarterly ?? prev.fixtureRateQuarterly,
-            minimumMonthly: backendConfig.minimumMonthly ?? prev.minimumMonthly,
-            minimumBimonthly: backendConfig.minimumBimonthly ?? prev.minimumBimonthly,
-            nonBathroomFirstUnitRate: backendConfig.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
-            nonBathroomAdditionalUnitRate: backendConfig.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
-            installMultiplierDirty: backendConfig.installMultiplierDirty ?? prev.installMultiplierDirty,
-            installMultiplierClean: backendConfig.installMultiplierClean ?? prev.installMultiplierClean,
-            twoTimesPerMonthDiscount: backendConfig.twoTimesPerMonthDiscount ?? prev.twoTimesPerMonthDiscount,
+            fixtureRateMonthly: config.fixtureRates?.monthly ?? prev.fixtureRateMonthly,
+            fixtureRateBimonthly: config.fixtureRates?.bimonthly ?? prev.fixtureRateBimonthly,
+            fixtureRateQuarterly: config.fixtureRates?.quarterly ?? prev.fixtureRateQuarterly,
+            minimumMonthly: config.minimums?.monthly ?? prev.minimumMonthly,
+            minimumBimonthly: config.minimums?.bimonthly ?? prev.minimumBimonthly,
+            nonBathroomFirstUnitRate: config.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
+            nonBathroomAdditionalUnitRate: config.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
+            installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
+            installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+            twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat ?? prev.twoTimesPerMonthDiscount,
           }));
 
-          console.log('✅ SaniScrub pricing loaded from backend:', {
-            fixtureRateMonthly: backendConfig.fixtureRateMonthly,
-            fixtureRateBimonthly: backendConfig.fixtureRateBimonthly,
-            fixtureRateQuarterly: backendConfig.fixtureRateQuarterly,
-            minimumMonthly: backendConfig.minimumMonthly,
-            minimumBimonthly: backendConfig.minimumBimonthly,
+          console.log('✅ SaniScrub FULL CONFIG loaded from backend:', {
+            fixtureRates: config.fixtureRates,
+            minimums: config.minimums,
+            nonBathroomPricing: {
+              unitSqFt: config.nonBathroomUnitSqFt,
+              firstUnitRate: config.nonBathroomFirstUnitRate,
+              additionalUnitRate: config.nonBathroomAdditionalUnitRate,
+            },
+            installMultipliers: config.installMultipliers,
+            frequencyMeta: config.frequencyMeta,
+            twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat,
           });
         }
       } catch (error) {
-        console.error('Failed to fetch SaniScrub pricing from backend:', error);
-        console.log('Using default hardcoded values as fallback');
+        console.error('❌ Failed to fetch SaniScrub config from backend:', error);
+        console.log('⚠️ Using default hardcoded values as fallback');
       }
     };
 
@@ -208,8 +251,22 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     firstMonthTotal,
     contractTotal,
   } = useMemo(() => {
+    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    const activeConfig = backendConfig || {
+      fixtureRates: cfg.fixtureRates,
+      minimums: cfg.minimums,
+      nonBathroomUnitSqFt: cfg.nonBathroomUnitSqFt,
+      nonBathroomFirstUnitRate: cfg.nonBathroomFirstUnitRate,
+      nonBathroomAdditionalUnitRate: cfg.nonBathroomAdditionalUnitRate,
+      installMultipliers: cfg.installMultipliers,
+      tripChargeBase: cfg.tripChargeBase,
+      parkingFee: cfg.parkingFee,
+      frequencyMeta: cfg.frequencyMeta,
+      twoTimesPerMonthDiscountFlat: cfg.twoTimesPerMonthDiscountFlat,
+    };
+
     const freq = clampFrequency(form.frequency);
-    const freqMeta = cfg.frequencyMeta[freq];
+    const freqMeta = activeConfig.frequencyMeta[freq];  // ✅ FROM BACKEND
     const visitsPerYear = freqMeta?.visitsPerYear ?? 12;
     const visitsPerMonth = visitsPerYear / 12;
 
@@ -293,12 +350,12 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     let nonBathroomMonthly = 0;
 
     if (nonBathSqFt > 0) {
-      const units = Math.ceil(nonBathSqFt / cfg.nonBathroomUnitSqFt);
+      const units = Math.ceil(nonBathSqFt / activeConfig.nonBathroomUnitSqFt);  // ✅ FROM BACKEND
       if (units > 0) {
         const extraUnits = Math.max(units - 1, 0);
         nonBathroomPerVisit =
-          form.nonBathroomFirstUnitRate + // ✅ Uses form value
-          extraUnits * form.nonBathroomAdditionalUnitRate; // ✅ Uses form value
+          form.nonBathroomFirstUnitRate + // ✅ Uses form value (from backend)
+          extraUnits * form.nonBathroomAdditionalUnitRate; // ✅ Uses form value (from backend)
 
         nonBathroomMonthly = (nonBathroomPerVisit * visitsPerYear) / 12;
       }
@@ -386,6 +443,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       contractTotal,
     };
   }, [
+    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form.fixtureCount,
     form.nonBathroomSqFt,
     form.frequency,
