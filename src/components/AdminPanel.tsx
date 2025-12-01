@@ -45,16 +45,38 @@ export default function AdminPanel() {
 
   // Hide global navigation when admin panel is open
   useEffect(() => {
+    // Hide all navigation elements
     const globalNav = document.querySelector('nav');
+    const header = document.querySelector('header');
+    const topBar = document.querySelector('.top-bar');
+    const mainHeader = document.querySelector('.main-header');
+
     if (globalNav) {
       (globalNav as HTMLElement).style.display = 'none';
     }
+    if (header) {
+      (header as HTMLElement).style.display = 'none';
+    }
+    if (topBar) {
+      (topBar as HTMLElement).style.display = 'none';
+    }
+    if (mainHeader) {
+      (mainHeader as HTMLElement).style.display = 'none';
+    }
 
-    // Show it again when component unmounts
+    // Show them again when component unmounts
     return () => {
-      const globalNav = document.querySelector('nav');
       if (globalNav) {
         (globalNav as HTMLElement).style.display = '';
+      }
+      if (header) {
+        (header as HTMLElement).style.display = '';
+      }
+      if (topBar) {
+        (topBar as HTMLElement).style.display = '';
+      }
+      if (mainHeader) {
+        (mainHeader as HTMLElement).style.display = '';
       }
     };
   }, []);
@@ -304,7 +326,9 @@ export default function AdminPanel() {
               <div className="stats-grid">
                 <div className="stat-card-modern stat-card-1">
                   <div className="stat-icon-wrapper">
-                    <div className="stat-icon stat-icon-blue">↑</div>
+                    <div className="stat-icon stat-icon-blue">
+                      <HiUpload size={28} />
+                    </div>
                   </div>
                   <div className="stat-content">
                     <div className="stat-number">{uploadCount}+</div>
@@ -314,7 +338,9 @@ export default function AdminPanel() {
 
                 <div className="stat-card-modern stat-card-2">
                   <div className="stat-icon-wrapper">
-                    <div className="stat-icon stat-icon-green">+</div>
+                    <div className="stat-icon stat-icon-green">
+                      <HiDocumentText size={28} />
+                    </div>
                   </div>
                   <div className="stat-content">
                     <div className="stat-number">{documents.length}+</div>
@@ -325,7 +351,7 @@ export default function AdminPanel() {
                 <div className="stat-card-modern stat-card-3">
                   <div className="stat-icon-wrapper">
                     <div className="stat-icon stat-icon-dark">
-                      <HiDocumentText size={24} />
+                      <HiBriefcase size={28} />
                     </div>
                   </div>
                   <div className="stat-content">
@@ -349,7 +375,7 @@ export default function AdminPanel() {
                         <th>Tracking ID ↕</th>
                         <th>Document</th>
                         <th>Status ↕</th>
-                        <th>Statistics</th>
+                        <th>Uploaded On</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -367,9 +393,9 @@ export default function AdminPanel() {
                           </td>
                         </tr>
                       ) : (
-                        documents.slice(0, 4).map((doc, index) => (
+                        documents.slice(0, 4).map((doc) => (
                           <tr key={doc.id}>
-                            <td className="tracking-id">#{1249658 - index}</td>
+                            <td className="tracking-id">#{doc.id.slice(-8).toUpperCase()}</td>
                             <td>
                               <div className="doc-cell">
                                 <HiDocumentText size={18} className="doc-icon-table" />
@@ -381,7 +407,7 @@ export default function AdminPanel() {
                                 {doc.status === "approved_admin" ? "Completed" : "Pending"}
                               </span>
                             </td>
-                            <td className="statistics">{Math.floor(Math.random() * 50000)}</td>
+                            <td className="statistics">{doc.uploadedOn}</td>
                             <td>
                               <button
                                 className="action-download"
