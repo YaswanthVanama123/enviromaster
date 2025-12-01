@@ -186,14 +186,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           return prev;
         }
 
-        // convert UI "this frequency" rates back to weekly base
+        // Rate fields - store directly as entered
         case "smallWindowRate":
         case "mediumWindowRate":
         case "largeWindowRate":
         case "tripCharge": {
-          const freqMult = getFrequencyMultiplier(mapFrequency(prev.frequency)) || 1;
           const displayVal = Number(value) || 0;
-          return { ...prev, [name]: displayVal / freqMult };
+          return { ...prev, [name]: displayVal };
         }
 
         default:
