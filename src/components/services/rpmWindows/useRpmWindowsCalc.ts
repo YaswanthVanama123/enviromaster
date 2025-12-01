@@ -86,7 +86,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=rpmwindows`);
+        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=rpmWindows`);
 
         if (!response.ok) {
           console.warn('⚠️ RPM Windows config not found in backend, using default fallback values');
