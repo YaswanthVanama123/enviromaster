@@ -13,7 +13,8 @@ import {
   HiUpload,
   HiDownload,
   HiLogout,
-  HiChevronDown
+  HiChevronDown,
+  HiBriefcase
 } from "react-icons/hi";
 import { MdAttachMoney } from "react-icons/md";
 import "./AdminPanel.css";
