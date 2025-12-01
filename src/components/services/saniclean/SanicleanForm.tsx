@@ -208,9 +208,12 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value={formatMoney(baseRateDisplay)}
+            type="number"
+            step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            value={baseRateDisplay}
+            onChange={onChange}
+            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -236,9 +239,12 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value={formatMoney(baseRateDisplay)}
+            type="number"
+            step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            value={baseRateDisplay}
+            onChange={onChange}
+            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -264,9 +270,12 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value={formatMoney(baseRateDisplay)}
+            type="number"
+            step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            value={baseRateDisplay}
+            onChange={onChange}
+            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -292,9 +301,12 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value={formatMoney(baseRateDisplay)}
+            type="number"
+            step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            value={baseRateDisplay}
+            onChange={onChange}
+            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -335,9 +347,13 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value={form.soapType === "luxury" ? "$5.00" : "$0.00"}
+            type="number"
+            step="0.01"
+            name="standardToLuxuryRate"
+            value={form.soapType === "luxury" ? form.standardToLuxuryRate : 0}
+            onChange={onChange}
+            disabled={form.soapType !== "luxury"}
+            title="Luxury soap upgrade rate per dispenser per week (from backend)"
           />
           <span>=</span>
           <input
@@ -363,9 +379,12 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             className="svc-in"
-            type="text"
-            readOnly
-            value={formatMoney(extraSoapRatePerGallon)}
+            type="number"
+            step="0.01"
+            name={form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate"}
+            value={extraSoapRatePerGallon}
+            onChange={onChange}
+            title={`Excess ${form.soapType} soap rate per gallon (from backend)`}
           />
           <span>=</span>
           <input
@@ -399,9 +418,12 @@ export const SanicleanForm: React.FC<
               <span>@</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={formatMoney(cfg.warrantyFeePerDispenser)}
+                type="number"
+                step="0.01"
+                name="warrantyFeePerDispenser"
+                value={form.warrantyFeePerDispenser}
+                onChange={onChange}
+                title="Warranty fee per dispenser per week (from backend)"
               />
               <span>=</span>
               <input
@@ -456,15 +478,13 @@ export const SanicleanForm: React.FC<
             <span>@</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={
-                form.addMicrofiberMopping
-                  ? formatMoney(
-                      cfg.addOnServices.microfiberMopping.pricePerBathroom
-                    )
-                  : "$0.00"
-              }
+              type="number"
+              step="0.01"
+              name="microfiberMoppingPerBathroom"
+              disabled={!form.addMicrofiberMopping}
+              value={form.addMicrofiberMopping ? form.microfiberMoppingPerBathroom : 0}
+              onChange={onChange}
+              title="Microfiber mopping rate per bathroom per week (from backend)"
             />
             <span>=</span>
             <input
@@ -473,8 +493,7 @@ export const SanicleanForm: React.FC<
               readOnly
               value={formatMoney(
                 form.addMicrofiberMopping
-                  ? form.microfiberBathrooms *
-                      cfg.addOnServices.microfiberMopping.pricePerBathroom
+                  ? form.microfiberBathrooms * form.microfiberMoppingPerBathroom
                   : 0
               )}
             />

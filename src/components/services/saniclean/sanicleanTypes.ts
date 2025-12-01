@@ -126,7 +126,7 @@ export interface SanicleanFormState {
   // paper usage (for all-inclusive credit/overage)
   estimatedPaperSpendPerWeek: number;
 
-  // contract length (replaces “annual” logic globally)
+  // contract length (replaces "annual" logic globally)
   contractMonths: number;
 
   // rate tier (multiplier currently = 1 so pricing rules are unchanged)
@@ -134,4 +134,62 @@ export interface SanicleanFormState {
 
   // notes
   notes: string;
+
+  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
+  // Geographic pricing rates
+  insideBeltwayRatePerFixture: number;
+  insideBeltwayWeeklyMinimum: number;
+  insideBeltwayTripCharge: number;
+  insideBeltwayParkingFee: number;
+  outsideBeltwayRatePerFixture: number;
+  outsideBeltwayWeeklyMinimum: number;
+  outsideBeltwayTripCharge: number;
+
+  // Small facility minimum
+  smallFacilityThreshold: number;
+  smallFacilityMinimumWeekly: number;
+
+  // All-inclusive package
+  allInclusiveWeeklyRate: number;
+  allInclusiveMinFixtures: number;
+
+  // Soap upgrades
+  standardToLuxuryRate: number;
+  excessStandardSoapRate: number;
+  excessLuxurySoapRate: number;
+
+  // Warranty
+  warrantyFeePerDispenser: number;
+
+  // Paper credit
+  paperCreditPerFixturePerWeek: number;
+
+  // Facility components (monthly rates)
+  urinalScreenRate: number;
+  urinalMatRate: number;
+  toiletClipsRate: number;
+  seatCoverDispenserRate: number;
+  sanipodServiceRate: number;
+
+  // Add-on services
+  microfiberMoppingPerBathroom: number;
+
+  // Billing conversions
+  weeklyToMonthlyMultiplier: number;
+  weeklyToAnnualMultiplier: number;
+
+  // Rate tier multipliers
+  redRateMultiplier: number;
+  greenRateMultiplier: number;
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customWeeklyBase?: number;
+  customWeeklyTrip?: number;
+  customFacilityComponents?: number;
+  customSoapUpgrade?: number;
+  customWarranty?: number;
+  customMicrofiber?: number;
+  customWeeklyTotal?: number;
+  customMonthlyTotal?: number;
+  customAnnualTotal?: number;
 }
