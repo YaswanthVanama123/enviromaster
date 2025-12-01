@@ -1,7 +1,7 @@
 // src/features/services/stripWax/StripWaxForm.tsx
 import React, { useEffect, useRef, useState } from "react";
 import { useStripWaxCalc } from "./useStripWaxCalc";
-import type { StripWaxFormState } from "./useStripWaxCalc";
+import type { StripWaxFormState } from "./stripWaxTypes";
 import { stripWaxPricingConfig as cfg } from "./stripWaxConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
@@ -102,16 +102,20 @@ export const StripWaxForm: React.FC<
             onChange={onChange}
           />
           <span className="svc-multi">@</span>
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            min={0}
-            step={0.01}
-            name="ratePerSqFt"
-            value={form.ratePerSqFt}
-            onChange={onChange}
-          />
-          <span className="svc-small">$/sq ft</span>
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              min={0}
+              step={0.01}
+              name="ratePerSqFt"
+              value={form.ratePerSqFt}
+              onChange={onChange}
+              title="Rate per sq ft (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">per sq ft</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
             ${fmt(calc.perVisit)}
@@ -123,16 +127,20 @@ export const StripWaxForm: React.FC<
       <div className="svc-row">
         <label>Minimum Charge</label>
         <div className="svc-row-right">
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            min={0}
-            step={1}
-            name="minCharge"
-            value={form.minCharge}
-            onChange={onChange}
-          />
-          <span className="svc-small">$/visit minimum</span>
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              min={0}
+              step={1}
+              name="minCharge"
+              value={form.minCharge}
+              onChange={onChange}
+              title="Minimum charge per visit (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">per visit minimum</span>
         </div>
       </div>
 

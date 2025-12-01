@@ -45,3 +45,34 @@ export interface StripWaxPricingConfig {
     greenRate: StripWaxRateCategoryConfig;
   };
 }
+
+export interface StripWaxFormState {
+  floorAreaSqFt: number;
+  ratePerSqFt: number;
+  minCharge: number;
+
+  serviceVariant: StripWaxServiceVariant;
+
+  frequency: StripWaxFrequencyKey;
+  rateCategory: StripWaxRateCategory;
+
+  /** Contract length in months (2–36). */
+  contractMonths: number;
+
+  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
+  weeksPerMonth: number;                           // 4.33 weeks per month
+  standardFullRatePerSqFt: number;                 // $0.75 per sq ft
+  standardFullMinCharge: number;                   // $550 minimum
+  noSealantRatePerSqFt: number;                    // $0.70 per sq ft
+  noSealantMinCharge: number;                      // $550 minimum
+  wellMaintainedRatePerSqFt: number;               // $0.40 per sq ft
+  wellMaintainedMinCharge: number;                 // $400 minimum
+  redRateMultiplier: number;                       // red rate multiplier (1.0)
+  greenRateMultiplier: number;                     // green rate multiplier (1.3)
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customPerVisit?: number;
+  customMonthly?: number;
+  customOngoingMonthly?: number;
+  customContractTotal?: number;
+}
