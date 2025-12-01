@@ -111,7 +111,7 @@ export const JanitorialForm: React.FC<
         <div className="svc-h-sub">Task-Specific Inputs</div>
       </div>
 
-      {/* Scheduling mode */}
+      {/* Scheduling mode with editable rates inline */}
       <div className="svc-row">
         <label>Scheduling Mode</label>
         <div className="svc-row-right">
@@ -121,15 +121,68 @@ export const JanitorialForm: React.FC<
             value={form.schedulingMode}
             onChange={onChange}
           >
-            <option value="normalRoute">
-              Normal Route (bundled with other services, $30/hr, 4 hr min)
-            </option>
-            <option value="standalone">
-              Standalone / Short Job ($50/hr)
-            </option>
+            <option value="normalRoute">Normal Route</option>
+            <option value="standalone">Standalone / Short Job</option>
           </select>
         </div>
       </div>
+
+      {/* Normal Route Pricing - shown when normalRoute selected */}
+      {form.schedulingMode === "normalRoute" && (
+        <div className="svc-row">
+          <label>Normal Route Pricing</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in svc-in-small"
+                type="number"
+                min={0}
+                step={0.01}
+                name="baseHourlyRate"
+                value={form.baseHourlyRate}
+                onChange={onChange}
+                title="Base hourly rate (from backend)"
+              />
+            </div>
+            <span className="svc-small">/hr, min</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              min={0}
+              step={0.25}
+              name="minHoursPerVisit"
+              value={form.minHoursPerVisit}
+              onChange={onChange}
+              title="Minimum hours per visit (from backend)"
+            />
+            <span className="svc-small">hrs (=${(form.minHoursPerVisit * form.baseHourlyRate).toFixed(2)} min)</span>
+          </div>
+        </div>
+      )}
+
+      {/* Standalone Pricing - shown when standalone selected */}
+      {form.schedulingMode === "standalone" && (
+        <div className="svc-row">
+          <label>Standalone Pricing</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in svc-in-small"
+                type="number"
+                min={0}
+                step={0.01}
+                name="shortJobHourlyRate"
+                value={form.shortJobHourlyRate}
+                onChange={onChange}
+                title="Standalone hourly rate (from backend)"
+              />
+            </div>
+            <span className="svc-small">/hr</span>
+          </div>
+        </div>
+      )}
 
       {/* Is Addon toggle (kept for info) */}
       {form.schedulingMode === "normalRoute" && (
@@ -186,8 +239,22 @@ export const JanitorialForm: React.FC<
             onChange={onChange}
             placeholder="30"
           />
+          <span className="svc-small">places @ </span>
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in svc-in-small"
+              type="number"
+              min={0}
+              step={0.01}
+              name="dustingPricePerPlace"
+              value={form.dustingPricePerPlace}
+              onChange={onChange}
+              title="Price per dusting place (from backend)"
+            />
+          </div>
           <span className="svc-small">
-            ~30 places/hr @ ${cfg.dustingPricePerPlace.toFixed(2)}.
+            /place (~{form.dustingPlacesPerHour} places/hr).
             {form.dirtyInitial &&
               " – Dirty initial: first visit dusting at 3× time (non-quarterly)."}
             {form.frequency === "quarterly" &&

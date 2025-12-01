@@ -60,3 +60,35 @@ export interface JanitorialPricingConfig {
     greenRate: JanitorialRateCategoryConfig;
   };
 }
+
+export interface JanitorialFormState {
+  manualHours: number;
+  schedulingMode: SchedulingMode;
+  isAddonToLargerService: boolean;
+  vacuumingHours: number;
+  dustingPlaces: number;
+  dirtyInitial: boolean; // kept for UI text only now
+  frequency: JanitorialFrequencyKey;
+  rateCategory: JanitorialRateCategory;
+  contractMonths: number;
+
+  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
+  baseHourlyRate: number;               // $30/hr for normal route
+  shortJobHourlyRate: number;           // $50/hr for standalone
+  minHoursPerVisit: number;             // 4 hours minimum per visit
+  weeksPerMonth: number;                // 4.33 weeks per month
+  dirtyInitialMultiplier: number;       // 3× for dirty initial clean
+  infrequentMultiplier: number;         // 3× for quarterly dusting
+  dustingPlacesPerHour: number;         // places per hour
+  dustingPricePerPlace: number;         // price per place
+  vacuumingDefaultHours: number;        // default vacuuming hours
+  redRateMultiplier: number;            // red rate multiplier
+  greenRateMultiplier: number;          // green rate multiplier
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customPerVisit?: number;
+  customFirstVisit?: number;
+  customMonthly?: number;
+  customOngoingMonthly?: number;
+  customContractTotal?: number;
+}
