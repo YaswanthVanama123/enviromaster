@@ -408,12 +408,17 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
     // ---------------- 6) Contract term (2–36 months) ----------------
     const contractMonths = clampContractMonths(form.contractMonths);
-    const remainingMonths =
-      contractMonths > 1 ? contractMonths - 1 : 0;
 
-    const remainingMonthsTotal = remainingMonths * monthlyRecurring;
+    let contractTotal = 0;
 
-    const contractTotal = firstMonthTotal + remainingMonthsTotal;
+    if (installOneTime > 0) {
+      // With installation: first month includes install, remaining months are normal
+      const remainingMonths = contractMonths > 1 ? contractMonths - 1 : 0;
+      contractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+    } else {
+      // No installation: all months are the same
+      contractTotal = contractMonths * monthlyRecurring;
+    }
 
     // What we expose on the UI:
     //  - Monthly SaniScrub   = normal recurring month (after first)
