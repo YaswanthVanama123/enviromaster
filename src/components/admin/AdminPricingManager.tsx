@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
+import { ServicePricingEditor } from "./ServicePricingEditor";
 
 // Import all service forms
 import { SanicleanForm } from "../services/saniclean/SanicleanForm";
@@ -25,8 +26,6 @@ export const AdminPricingManager: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedService, setSelectedService] = useState<ServiceConfig | null>(null);
-  const [editingConfig, setEditingConfig] = useState<any>(null);
-  const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleViewService = (config: ServiceConfig) => {
@@ -36,16 +35,14 @@ export const AdminPricingManager: React.FC = () => {
 
   const handleEditConfig = (config: ServiceConfig) => {
     setSelectedService(config);
-    setEditingConfig({ ...config.config });
     setViewMode("editConfig");
   };
 
-  const handleSaveConfig = async () => {
-    if (!selectedService?._id || !editingConfig) return;
+  const handleSaveConfig = async (editedConfig: Record<string, any>) => {
+    if (!selectedService?._id) return;
 
-    setSaving(true);
     const result = await updateConfig(selectedService._id, {
-      config: editingConfig,
+      config: editedConfig,
     });
 
     if (result.success) {
@@ -55,7 +52,11 @@ export const AdminPricingManager: React.FC = () => {
         setViewMode("list");
       }, 2000);
     }
-    setSaving(false);
+  };
+
+  const handleCancelEdit = () => {
+    setViewMode("list");
+    setSelectedService(null);
   };
 
   const renderServiceForm = (config: ServiceConfig) => {
@@ -197,64 +198,13 @@ export const AdminPricingManager: React.FC = () => {
   }
 
   // EDIT CONFIG VIEW
-  if (viewMode === "editConfig" && selectedService && editingConfig) {
+  if (viewMode === "editConfig" && selectedService) {
     return (
-      <div style={styles.container}>
-        <div style={styles.header}>
-          <div>
-            <button style={styles.backButton} onClick={() => setViewMode("list")}>
-              ← Cancel
-            </button>
-            <h2 style={styles.title}>Edit Configuration: {selectedService.label}</h2>
-          </div>
-          <button
-            style={styles.saveButton}
-            onClick={handleSaveConfig}
-            disabled={saving}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-
-        <div style={styles.editorContainer}>
-          <div style={styles.editorInfo}>
-            <p style={styles.infoText}>
-              ⚠️ Warning: Editing the configuration JSON directly can break the pricing calculator.
-              Make sure you understand the structure before making changes.
-            </p>
-          </div>
-
-          <textarea
-            style={styles.jsonEditor}
-            value={JSON.stringify(editingConfig, null, 2)}
-            onChange={(e) => {
-              try {
-                const parsed = JSON.parse(e.target.value);
-                setEditingConfig(parsed);
-              } catch (err) {
-                // Invalid JSON, don't update
-              }
-            }}
-            rows={30}
-          />
-
-          <div style={styles.editorActions}>
-            <button
-              style={styles.cancelButton}
-              onClick={() => setViewMode("service")}
-            >
-              Cancel
-            </button>
-            <button
-              style={styles.saveButton}
-              onClick={handleSaveConfig}
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save Configuration"}
-            </button>
-          </div>
-        </div>
-      </div>
+      <ServicePricingEditor
+        config={selectedService}
+        onSave={handleSaveConfig}
+        onCancel={handleCancelEdit}
+      />
     );
   }
 

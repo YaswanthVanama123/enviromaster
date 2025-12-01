@@ -7,3 +7,4 @@ export { AdminPricingManager } from "./AdminPricingManager";
 export { ServiceConfigManager } from "./ServiceConfigManager";
 export { ProductCatalogManager } from "./ProductCatalogManager";
 export { AdminDashboard } from "./AdminDashboard";
+export { ServicePricingEditor } from "./ServicePricingEditor";
