@@ -42,11 +42,11 @@ export const SanicleanForm: React.FC<
   }, [form, calc, fixtures, customFields, servicesContext?.updateSaniclean]);
 
   // Per-fixture UI price:
-  //  - All Inclusive → $20/fixture/week
-  //  - Else          → geographic rate ($7 or $6)
+  //  - All Inclusive → $20/fixture/week (from form, editable)
+  //  - Else          → geographic rate ($7 or $6, from form, editable)
   const baseRateDisplay = isAllInclusive
-    ? cfg.allInclusivePackage.weeklyRatePerFixture
-    : cfg.geographicPricing[form.location].ratePerFixture;
+    ? form.allInclusiveWeeklyRate
+    : (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture);
 
   // Dispensers from sinks
   const soapDispensers =
@@ -63,13 +63,13 @@ export const SanicleanForm: React.FC<
 
   const luxuryUpgradeWeekly =
     form.soapType === "luxury" && soapDispensers > 0
-      ? soapDispensers * cfg.soapUpgrades.standardToLuxury
+      ? soapDispensers * form.standardToLuxuryRate  // ✅ USE FORM VALUE (editable)
       : 0;
 
   const extraSoapRatePerGallon =
     form.soapType === "luxury"
-      ? cfg.soapUpgrades.excessUsageCharges.luxurySoap
-      : cfg.soapUpgrades.excessUsageCharges.standardSoap;
+      ? form.excessLuxurySoapRate  // ✅ USE FORM VALUE (editable)
+      : form.excessStandardSoapRate;  // ✅ USE FORM VALUE (editable)
 
   const extraSoapWeekly =
     Math.max(0, form.excessSoapGallonsPerWeek) * extraSoapRatePerGallon;
