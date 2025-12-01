@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { HiUpload, HiCloudUpload, HiDocumentAdd } from "react-icons/hi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import "./Home.css";
@@ -325,9 +326,11 @@ export default function Home() {
               onDrop={handleDrop}
               onClick={() => document.getElementById("file-input")?.click()}
             >
-              <p className="home__upload-text">Drag and drop a file here</p>
-              <div className="home__upload-icon">⬆️</div>
-              <p className="home__upload-label">Upload File</p>
+              <div className="home__upload-icon">
+                <HiCloudUpload size={64} />
+              </div>
+              <p className="home__upload-label">Drag and drop a file here</p>
+              <p className="home__upload-text">or click to browse</p>
               <input
                 id="file-input"
                 type="file"
@@ -338,10 +341,12 @@ export default function Home() {
             </div>
             {uploadedFile && (
               <p className="home__upload-filename">
-                Selected: {uploadedFile.name}
+                <HiDocumentAdd size={18} />
+                {uploadedFile.name}
               </p>
             )}
             <button className="home__upload-button" onClick={handleUpload}>
+              <HiUpload size={20} />
               Upload File
             </button>
             <p className="home__upload-formats">PDF, DOCK</p>
