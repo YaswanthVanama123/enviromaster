@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { HiUpload, HiCloudUpload, HiDocumentAdd } from "react-icons/hi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
+import { pdfApi, manualUploadApi } from "../backendservice/api";
 import "./Home.css";
 
 type Document = {
@@ -26,18 +27,7 @@ export default function Home() {
     const fetchDocuments = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:5000/api/pdf/customer-headers", {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
+        const data = await pdfApi.getCustomerHeaders();
         const items = data.items || [];
         console.log("📊 Fetched Documents:", items);
         console.log("📊 Total Documents Count:", items.length);
@@ -56,10 +46,7 @@ export default function Home() {
   useEffect(() => {
     const fetchUploadStats = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/manual-upload");
-        if (!res.ok) throw new Error(`Failed with status ${res.status}`);
-
-        const data = await res.json();
+        const data = await manualUploadApi.getManualUploads();
         const uploads = data.items || [];
         console.log("📤 Manual Uploads:", uploads);
         console.log("📤 Total Upload Count:", uploads.length);
@@ -170,24 +157,12 @@ export default function Home() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("file", uploadedFile);
-
-      const res = await fetch("http://localhost:5000/api/manual-upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Upload failed with status ${res.status}`);
-      }
-
+      await manualUploadApi.uploadFile(uploadedFile);
       setToastMessage({ message: `Successfully uploaded: ${uploadedFile.name}`, type: "success" });
       setUploadedFile(null);
 
       // Refresh upload count
-      const statsRes = await fetch("http://localhost:5000/api/manual-upload");
-      const data = await statsRes.json();
+      const data = await manualUploadApi.getManualUploads();
       const newCount = data.items?.length || 0;
       console.log("📤 Upload Complete! New count:", newCount);
       setUploadCount(newCount);

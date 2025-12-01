@@ -6,9 +6,7 @@ import {
   carpetPricingConfig as cfg,
   carpetFrequencyList,
 } from "./carpetConfig";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendCarpetConfig {
@@ -76,41 +74,37 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=carpetCleaning`);
+        const data = await serviceConfigApi.getActive("carpetCleaning");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ Carpet Cleaning config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendCarpetConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendCarpetConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        setForm((prev) => ({
+          ...prev,
+          // Update all rate fields from backend if available
+          unitSqFt: config.unitSqFt ?? prev.unitSqFt,
+          firstUnitRate: config.firstUnitRate ?? prev.firstUnitRate,
+          additionalUnitRate: config.additionalUnitRate ?? prev.additionalUnitRate,
+          perVisitMinimum: config.perVisitMinimum ?? prev.perVisitMinimum,
+          installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
+          installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+        }));
 
-          setForm((prev) => ({
-            ...prev,
-            // Update all rate fields from backend if available
-            unitSqFt: config.unitSqFt ?? prev.unitSqFt,
-            firstUnitRate: config.firstUnitRate ?? prev.firstUnitRate,
-            additionalUnitRate: config.additionalUnitRate ?? prev.additionalUnitRate,
-            perVisitMinimum: config.perVisitMinimum ?? prev.perVisitMinimum,
-            installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
-            installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
-          }));
-
-          console.log('✅ Carpet Cleaning FULL CONFIG loaded from backend:', {
-            unitSqFt: config.unitSqFt,
-            firstUnitRate: config.firstUnitRate,
-            additionalUnitRate: config.additionalUnitRate,
-            perVisitMinimum: config.perVisitMinimum,
-            installMultipliers: config.installMultipliers,
-            frequencyMeta: config.frequencyMeta,
-          });
-        }
+        console.log('✅ Carpet Cleaning FULL CONFIG loaded from backend:', {
+          unitSqFt: config.unitSqFt,
+          firstUnitRate: config.firstUnitRate,
+          additionalUnitRate: config.additionalUnitRate,
+          perVisitMinimum: config.perVisitMinimum,
+          installMultipliers: config.installMultipliers,
+          frequencyMeta: config.frequencyMeta,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

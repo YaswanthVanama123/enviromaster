@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import CustomerSection from "./CustomerSection";
 import ProductsSection from "./products/ProductsSection";
@@ -11,7 +11,7 @@ import { ServicesProvider } from "./services/ServicesContext";
 import ConfirmationModal from "./ConfirmationModal";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
-import axios from "axios";
+import { pdfApi } from "../backendservice/api";
 
 type HeaderRow = {
   labelLeft: string;
@@ -102,20 +102,13 @@ export default function FormFilling() {
     // ---- PICK API FOR INITIAL DATA ----
     const useCustomerDoc = editing && !!id;
 
-    const url = useCustomerDoc
-      ? `http://localhost:5000/api/pdf/customer-headers/${id}`
-      : `http://localhost:5000/api/pdf/admin-headers/${ADMIN_TEMPLATE_ID}`;
-
     const fetchHeaders = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(url, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
+        const json = useCustomerDoc
+          ? await pdfApi.getCustomerHeaderById(id!)
+          : await pdfApi.getAdminHeaderById(ADMIN_TEMPLATE_ID);
 
-        const json = res.data;
         const fromBackend = json.payload ?? json;
 
         const cleanPayload: FormPayload = {
@@ -163,6 +156,40 @@ export default function FormFilling() {
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
   };
 
+  // Helper function to transform products data to backend format
+  const transformProductsToBackendFormat = (productsData: any) => {
+    const { smallProducts, dispensers, bigProducts } = productsData;
+
+    // Transform to array of products with proper field names for backend
+    const transformedSmallProducts = smallProducts.map((p: any) => ({
+      displayName: p.displayName || "",
+      qty: p.qty || 0,
+      unitPrice: p.unitPrice || 0,
+      total: p.total || 0,
+    }));
+
+    const transformedDispensers = dispensers.map((d: any) => ({
+      displayName: d.displayName || "",
+      qty: d.qty || 0,
+      warrantyRate: d.warrantyRate || 0,
+      replacementRate: d.replacementRate || 0,
+      total: d.total || 0,
+    }));
+
+    const transformedBigProducts = bigProducts.map((b: any) => ({
+      displayName: b.displayName || "",
+      qty: b.qty || 0,
+      amount: b.amount || 0,
+      total: b.total || 0,
+    }));
+
+    return {
+      smallProducts: transformedSmallProducts,
+      dispensers: transformedDispensers,
+      bigProducts: transformedBigProducts,
+    };
+  };
+
   // Helper function to collect all current form data
   const collectFormData = () => {
     // Get products data from ProductsSection ref
@@ -171,6 +198,13 @@ export default function FormFilling() {
       dispensers: [],
       bigProducts: [],
     };
+
+    console.log("📦 Products data from ProductsSection:", productsData);
+
+    // Transform products to backend format
+    const productsForBackend = transformProductsToBackendFormat(productsData);
+
+    console.log("📦 Products transformed for backend:", productsForBackend);
 
     // Get services data from ServicesDataCollector ref
     const servicesData = servicesRef.current?.getData() || {
@@ -189,7 +223,7 @@ export default function FormFilling() {
     return {
       headerTitle: payload?.headerTitle || "",
       headerRows: payload?.headerRows || [],
-      products: productsData,
+      products: productsForBackend,
       services: servicesData,
       agreement: payload?.agreement || {
         enviroOf: "",
@@ -213,34 +247,16 @@ export default function FormFilling() {
     try {
       if (documentId) {
         // Update existing draft
-        const res = await axios.put(
-          `http://localhost:5000/api/pdf/customer-headers/${documentId}`,
-          payloadToSend,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        if (res.status === 200) {
-          console.log("Draft updated successfully:", res.data);
-          setToastMessage({ message: "Draft saved successfully!", type: "success" });
-        }
+        await pdfApi.updateCustomerHeader(documentId, payloadToSend);
+        console.log("Draft updated successfully");
+        setToastMessage({ message: "Draft saved successfully!", type: "success" });
       } else {
         // Create new draft
-        const res = await axios.post(
-          "http://localhost:5000/api/pdf/customer-header",
-          payloadToSend,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        if (res.status === 200 || res.status === 201) {
-          const newId = res.headers["x-customerheaderdoc-id"] || res.data._id || res.data.id;
-          setDocumentId(newId);
-          console.log("Draft created successfully with ID:", newId);
-          setToastMessage({ message: "Draft saved successfully!", type: "success" });
-        }
+        const result = await pdfApi.createCustomerHeader(payloadToSend);
+        const newId = result.headers["x-customerheaderdoc-id"] || result.data._id || result.data.id;
+        setDocumentId(newId);
+        console.log("Draft created successfully with ID:", newId);
+        setToastMessage({ message: "Draft saved successfully!", type: "success" });
       }
     } catch (err) {
       console.error("Error saving draft:", err);
@@ -264,35 +280,17 @@ export default function FormFilling() {
 
     try {
       if (documentId) {
-        // Update existing document
-        const res = await axios.put(
-          `http://localhost:5000/api/pdf/customer-headers/${documentId}?recompile=true`,
-          payloadToSend,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        if (res.status === 200) {
-          console.log("Document saved and PDF compiled:", res.data);
-          setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
-        }
+        // Update existing document with PDF recompilation
+        await pdfApi.updateAndRecompileCustomerHeader(documentId, payloadToSend);
+        console.log("Document saved and PDF compiled");
+        setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
       } else {
         // Create new document with PDF compilation
-        const res = await axios.post(
-          "http://localhost:5000/api/pdf/customer-header",
-          payloadToSend,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-
-        if (res.status === 200 || res.status === 201) {
-          const newId = res.headers["x-customerheaderdoc-id"] || res.data._id || res.data.id;
-          setDocumentId(newId);
-          console.log("Document created and PDF compiled:", newId);
-          setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
-        }
+        const result = await pdfApi.createCustomerHeader(payloadToSend);
+        const newId = result.headers["x-customerheaderdoc-id"] || result.data._id || result.data.id;
+        setDocumentId(newId);
+        console.log("Document created and PDF compiled:", newId);
+        setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
       }
     } catch (err) {
       console.error("Error saving document:", err);
@@ -302,21 +300,133 @@ export default function FormFilling() {
     }
   };
 
-  // map backend product rows → lists for ProductsSection
-  const initialSmallProducts =
-    payload?.products?.rows?.map((row: string[]) => row[0] ?? "") ??
-    undefined;
-  const initialDispensers =
-    payload?.products?.rows?.map((row: string[]) => row[2] ?? "") ??
-    undefined;
-  const initialBigProducts =
-    payload?.products?.rows?.map((row: string[]) => row[6] ?? "") ??
-    undefined;
+  // Helper function to safely parse numbers, returning undefined for empty/invalid values
+  const safeParseFloat = (value: string | undefined): number | undefined => {
+    if (!value || value.trim() === "") return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  const safeParseInt = (value: string | undefined): number | undefined => {
+    if (!value || value.trim() === "") return undefined;
+    const parsed = parseInt(value);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+
+  // Helper function to extract products from backend format
+  const extractProductsFromBackend = () => {
+    const products = payload?.products;
+    if (!products) {
+      return {
+        smallProducts: undefined,
+        dispensers: undefined,
+        bigProducts: undefined,
+      };
+    }
+
+    // Check if backend sent data in new format (smallProducts/dispensers/bigProducts)
+    if (products.smallProducts || products.dispensers || products.bigProducts) {
+      // New format - extract fields the backend sends
+      const extractProductData = (productArray: any[], type: 'small' | 'dispenser' | 'big') => {
+        return productArray.map((p: any) => {
+          // Backend can send: displayName, productName, customName, or productKey
+          const name = p.displayName || p.productName || p.customName || p.productKey || "";
+
+          if (type === 'small') {
+            return {
+              name,
+              unitPrice: safeParseFloat(String(p.unitPrice || p.unitPriceOverride || p.amountPerUnit || p.amount || "")),
+              qty: safeParseInt(String(p.qty || p.quantity || "")),
+              total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
+            };
+          } else if (type === 'dispenser') {
+            return {
+              name,
+              qty: safeParseInt(String(p.qty || p.quantity || "")),
+              warrantyRate: safeParseFloat(String(p.warrantyRate || p.warrantyPriceOverride || p.warranty || "")),
+              replacementRate: safeParseFloat(String(p.replacementRate || p.replacementPriceOverride || p.replacement || "")),
+              total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
+            };
+          } else { // big
+            return {
+              name,
+              qty: safeParseInt(String(p.qty || p.quantity || "")),
+              amount: safeParseFloat(String(p.amount || p.amountPerUnit || p.unitPriceOverride || p.unitPrice || "")),
+              total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
+            };
+          }
+        });
+      };
+
+      return {
+        smallProducts: products.smallProducts ? extractProductData(products.smallProducts, 'small') : undefined,
+        dispensers: products.dispensers ? extractProductData(products.dispensers, 'dispenser') : undefined,
+        bigProducts: products.bigProducts ? extractProductData(products.bigProducts, 'big') : undefined,
+      };
+    }
+
+    // Legacy format - extract from rows (for backward compatibility)
+    const rows = products.rows;
+    if (!rows || rows.length === 0) {
+      return {
+        smallProducts: undefined,
+        dispensers: undefined,
+        bigProducts: undefined,
+      };
+    }
+
+    const smallProducts: any[] = [];
+    const dispensers: any[] = [];
+    const bigProducts: any[] = [];
+
+    rows.forEach((row: string[]) => {
+      // Small products (columns 0-3)
+      if (row[0] && row[0].trim() !== "") {
+        smallProducts.push({
+          name: row[0],
+          unitPrice: safeParseFloat(row[1]),
+          qty: safeParseInt(row[2]),
+          total: safeParseFloat(row[3]),
+        });
+      }
+
+      // Dispensers (columns 4-8)
+      if (row[4] && row[4].trim() !== "") {
+        dispensers.push({
+          name: row[4],
+          qty: safeParseInt(row[5]),
+          warrantyRate: safeParseFloat(row[6]),
+          replacementRate: safeParseFloat(row[7]),
+          total: safeParseFloat(row[8]),
+        });
+      }
+
+      // Big products (columns 9-13)
+      if (row[9] && row[9].trim() !== "") {
+        bigProducts.push({
+          name: row[9],
+          qty: safeParseInt(row[10]),
+          amount: safeParseFloat(row[11]),
+          total: safeParseFloat(row[13]),
+        });
+      }
+    });
+
+    return {
+      smallProducts: smallProducts.length > 0 ? smallProducts : undefined,
+      dispensers: dispensers.length > 0 ? dispensers : undefined,
+      bigProducts: bigProducts.length > 0 ? bigProducts : undefined,
+    };
+  };
+
+  // Extract products when payload is available
+  const extractedProducts = useMemo(() => {
+    if (!payload?.products) return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
+    return extractProductsFromBackend();
+  }, [payload?.products]);
 
   console.log("📦 Initial products extracted from payload:", {
-    initialSmallProducts,
-    initialDispensers,
-    initialBigProducts,
+    extractedProducts,
     rawProductRows: payload?.products?.rows
   });
 
@@ -337,9 +447,9 @@ export default function FormFilling() {
 
             <ProductsSection
               ref={productsRef}
-              initialSmallProducts={initialSmallProducts}
-              initialDispensers={initialDispensers}
-              initialBigProducts={initialBigProducts}
+              initialSmallProducts={extractedProducts.smallProducts}
+              initialDispensers={extractedProducts.dispensers}
+              initialBigProducts={extractedProducts.bigProducts}
             />
 
             <ServicesSection initialServices={payload.services} />

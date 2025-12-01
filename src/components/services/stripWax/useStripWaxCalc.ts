@@ -8,9 +8,7 @@ import type {
   StripWaxServiceVariant,
   StripWaxFormState,
 } from "./stripWaxTypes";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendStripWaxConfig {
@@ -105,41 +103,37 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=stripWax`);
+        const data = await serviceConfigApi.getActive("stripWax");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ Strip Wax config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendStripWaxConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendStripWaxConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        setForm((prev) => ({
+          ...prev,
+          // Update all rate fields from backend if available
+          weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
+          standardFullRatePerSqFt: config.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
+          standardFullMinCharge: config.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
+          noSealantRatePerSqFt: config.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
+          noSealantMinCharge: config.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
+          wellMaintainedRatePerSqFt: config.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
+          wellMaintainedMinCharge: config.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
+          redRateMultiplier: config.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
+          greenRateMultiplier: config.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+        }));
 
-          setForm((prev) => ({
-            ...prev,
-            // Update all rate fields from backend if available
-            weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
-            standardFullRatePerSqFt: config.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
-            standardFullMinCharge: config.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
-            noSealantRatePerSqFt: config.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
-            noSealantMinCharge: config.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
-            wellMaintainedRatePerSqFt: config.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
-            wellMaintainedMinCharge: config.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
-            redRateMultiplier: config.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
-            greenRateMultiplier: config.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
-          }));
-
-          console.log('✅ Strip Wax FULL CONFIG loaded from backend:', {
-            weeksPerMonth: config.weeksPerMonth,
-            variants: config.variants,
-            rateCategories: config.rateCategories,
-          });
-        }
+        console.log('✅ Strip Wax FULL CONFIG loaded from backend:', {
+          weeksPerMonth: config.weeksPerMonth,
+          variants: config.variants,
+          rateCategories: config.rateCategories,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch Strip Wax config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

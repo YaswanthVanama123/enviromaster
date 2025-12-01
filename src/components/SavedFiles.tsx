@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { pdfApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { HiDocumentText, HiDownload, HiMail, HiEye, HiSave } from "react-icons/hi";
@@ -80,21 +81,7 @@ export default function SavedFiles() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/pdf/customer-headers",
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-
-        if (!res.ok) {
-          throw new Error(`Failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
+        const data = await pdfApi.getCustomerHeaders();
         const items = data.items || [];
 
         const mapped: SavedFile[] = items.map((item: any) => ({
@@ -179,18 +166,7 @@ export default function SavedFiles() {
     try {
       setDownloadingId(file.id);
 
-      const res = await fetch(
-        `http://localhost:5000/api/pdf/viewer/download/${file.id}`,
-        {
-          method: "GET",
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Download failed with status ${res.status}`);
-      }
-
-      const blob = await res.blob();
+      const blob = await pdfApi.downloadPdf(file.id);
       const url = window.URL.createObjectURL(blob);
 
       const a = document.createElement("a");
@@ -217,26 +193,8 @@ export default function SavedFiles() {
     try {
       setSavingStatusId(id);
 
-      const res = await fetch(
-        `http://localhost:5000/api/pdf/customer-headers/${id}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            status: status,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Status update failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log("Status updated successfully:", data);
+      await pdfApi.updateDocumentStatus(id, status);
+      console.log("Status updated successfully");
       setToastMessage({ message: "Status updated successfully!", type: "success" });
     } catch (err) {
       console.error("Error updating status:", err);
@@ -256,7 +214,7 @@ export default function SavedFiles() {
     const subject = encodeURIComponent(
       `${file.fileName || "Customer Header Document"}`
     );
-    const downloadUrl = `http://localhost:5000/api/pdf/viewer/download/${file.id}`;
+    const downloadUrl = pdfApi.getPdfDownloadUrl(file.id);
     const body = encodeURIComponent(
       `Hello,\n\nPlease find the attached customer header document.\n\nDocument: ${file.fileName}\nStatus: ${STATUS_LABEL[file.status]}\n\nYou can download the PDF here:\n${downloadUrl}\n\nBest regards`
     );

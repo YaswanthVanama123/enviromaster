@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
+import { pdfApi } from "../backendservice/api";
 import "./PDFViewer.css";
 
 type LocationState = {
@@ -30,15 +31,7 @@ export default function PDFViewer() {
     const fetchPDF = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `http://localhost:5000/api/pdf/viewer/download/${documentId}`
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch PDF: ${response.status}`);
-        }
-
-        const blob = await response.blob();
+        const blob = await pdfApi.downloadPdf(documentId);
         const url = window.URL.createObjectURL(blob);
         setPdfUrl(url);
       } catch (err) {
@@ -73,15 +66,7 @@ export default function PDFViewer() {
     try {
       setDownloading(true);
 
-      const response = await fetch(
-        `http://localhost:5000/api/pdf/viewer/download/${documentId}`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Download failed: ${response.status}`);
-      }
-
-      const blob = await response.blob();
+      const blob = await pdfApi.downloadPdf(documentId);
       const url = window.URL.createObjectURL(blob);
 
       const a = document.createElement("a");

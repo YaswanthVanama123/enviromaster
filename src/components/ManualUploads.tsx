@@ -1,6 +1,7 @@
 // src/components/ManualUploads.tsx
 import { useEffect, useState } from "react";
 import { HiDocumentText, HiDownload, HiTrash, HiUpload, HiCheckCircle } from "react-icons/hi";
+import { manualUploadApi } from "../backendservice/api";
 import "./ManualUploads.css";
 
 interface ManualUpload {
@@ -40,9 +41,7 @@ export default function ManualUploads() {
   const fetchUploads = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/manual-upload");
-      if (!res.ok) throw new Error(`Failed with status ${res.status}`);
-      const data = await res.json();
+      const data = await manualUploadApi.getManualUploads();
       setUploads(data.items || []);
     } catch (err) {
       console.error("Error fetching uploads:", err);
@@ -67,19 +66,7 @@ export default function ManualUploads() {
     setUploadSuccess(false);
 
     try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("description", description);
-      formData.append("uploadedBy", "admin");
-
-      const res = await fetch("http://localhost:5000/api/manual-upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error(`Upload failed with status ${res.status}`);
-
-      const data = await res.json();
+      const data = await manualUploadApi.uploadFile(selectedFile, description);
       console.log("Upload successful:", data);
 
       // Reset form
@@ -102,12 +89,7 @@ export default function ManualUploads() {
 
   const handleDownload = async (id: string, fileName: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/manual-upload/${id}/download`
-      );
-      if (!res.ok) throw new Error(`Download failed with status ${res.status}`);
-
-      const blob = await res.blob();
+      const blob = await manualUploadApi.downloadFile(id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -126,12 +108,7 @@ export default function ManualUploads() {
     if (!confirm("Are you sure you want to delete this upload?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/manual-upload/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error(`Delete failed with status ${res.status}`);
-
+      await manualUploadApi.deleteFile(id);
       fetchUploads();
     } catch (err) {
       console.error("Error deleting upload:", err);

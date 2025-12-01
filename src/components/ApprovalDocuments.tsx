@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
+import { pdfApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import "./ApprovalDocuments.css";
@@ -88,21 +89,7 @@ export default function ApprovalDocuments() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/pdf/customer-headers",
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-
-        if (!res.ok) {
-          throw new Error(`Failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
+        const data = await pdfApi.getCustomerHeaders();
         const items = data.items || [];
 
         // Map and filter for pending_approval status only
@@ -193,18 +180,7 @@ export default function ApprovalDocuments() {
     try {
       setDownloadingId(doc.id);
 
-      const res = await fetch(
-        `http://localhost:5000/api/pdf/viewer/download/${doc.id}`,
-        {
-          method: "GET",
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Download failed with status ${res.status}`);
-      }
-
-      const blob = await res.blob();
+      const blob = await pdfApi.downloadPdf(doc.id);
       const url = window.URL.createObjectURL(blob);
 
       const a = document.createElement("a");
@@ -231,26 +207,8 @@ export default function ApprovalDocuments() {
     try {
       setSavingStatusId(id);
 
-      const res = await fetch(
-        `http://localhost:5000/api/pdf/customer-headers/${id}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            status: status,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Status update failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log("Status updated successfully:", data);
+      await pdfApi.updateDocumentStatus(id, status);
+      console.log("Status updated successfully");
 
       // If status changed from pending_approval, remove from this view
       if (status !== "pending_approval") {
@@ -270,7 +228,7 @@ export default function ApprovalDocuments() {
     const subject = encodeURIComponent(
       `${doc.fileName || "Customer Header Document"} - Approval Request`
     );
-    const downloadUrl = `http://localhost:5000/api/pdf/viewer/download/${doc.id}`;
+    const downloadUrl = pdfApi.getPdfDownloadUrl(doc.id);
     const body = encodeURIComponent(
       `Hello,\n\nPlease review the following customer header document for approval.\n\nDocument: ${doc.fileName}\nStatus: ${STATUS_LABEL[doc.status]}\nUpdated: ${timeAgo(doc.updatedAt)}\n\nYou can download the PDF here:\n${downloadUrl}\n\nBest regards`
     );

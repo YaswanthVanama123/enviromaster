@@ -9,9 +9,7 @@ import type {
   FoamingDrainCondition,
   FoamingDrainBreakdown,
 } from "./foamingDrainTypes";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendFoamingDrainConfig {
@@ -125,52 +123,48 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=foamingDrain`);
+        const data = await serviceConfigApi.getActive("foamingDrain");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ Foaming Drain config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendFoamingDrainConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendFoamingDrainConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        setState((prev) => ({
+          ...prev,
+          // Update all rate fields from backend if available
+          standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
+          altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
+          altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
+          volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
+          volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
+          greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
+          greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
+          greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
+          greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
+          plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
+          filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
+        }));
 
-          setState((prev) => ({
-            ...prev,
-            // Update all rate fields from backend if available
-            standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
-            altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
-            altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
-            volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
-            volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
-            greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
-            greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
-            greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
-            greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
-            plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
-            filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
-          }));
-
-          console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
-            standardDrainRate: config.standardDrainRate,
-            altPricing: {
-              baseCharge: config.altBaseCharge,
-              extraPerDrain: config.altExtraPerDrain,
-            },
-            volumePricing: config.volumePricing,
-            grease: config.grease,
-            green: config.green,
-            plumbing: config.plumbing,
-            installationRules: config.installationRules,
-            billingConversions: config.billingConversions,
-            contract: config.contract,
-          });
-        }
+        console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
+          standardDrainRate: config.standardDrainRate,
+          altPricing: {
+            baseCharge: config.altBaseCharge,
+            extraPerDrain: config.altExtraPerDrain,
+          },
+          volumePricing: config.volumePricing,
+          grease: config.grease,
+          green: config.green,
+          plumbing: config.plumbing,
+          installationRules: config.installationRules,
+          billingConversions: config.billingConversions,
+          contract: config.contract,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch Foaming Drain config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

@@ -8,9 +8,7 @@ import type {
   MicrofiberMoppingCalcResult,
 } from "./microfiberMoppingTypes";
 import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendMicrofiberConfig {
@@ -132,47 +130,43 @@ export function useMicrofiberMoppingCalc(
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=microfiberMopping`);
+        const data = await serviceConfigApi.getActive("microfiberMopping");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ Microfiber Mopping config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendMicrofiberConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendMicrofiberConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        setForm((prev) => ({
+          ...prev,
+          // Update all rate fields from backend if available
+          includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
+          hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
+          extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
+          standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
+          dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
+        }));
 
-          setForm((prev) => ({
-            ...prev,
-            // Update all rate fields from backend if available
-            includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
-            hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
-            extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
-            standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
-            dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
-          }));
-
-          console.log('✅ Microfiber Mopping FULL CONFIG loaded from backend:', {
-            pricing: {
-              bathroomRate: config.includedBathroomRate,
-              hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
-              extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
-              standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
-              chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
-            },
-            hugeBathroomPricing: config.hugeBathroomPricing,
-            extraAreaPricing: config.extraAreaPricing,
-            standalonePricing: config.standalonePricing,
-            rateCategories: config.rateCategories,
-            billingConversions: config.billingConversions,
-            allowedFrequencies: config.allowedFrequencies,
-          });
-        }
+        console.log('✅ Microfiber Mopping FULL CONFIG loaded from backend:', {
+          pricing: {
+            bathroomRate: config.includedBathroomRate,
+            hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
+            extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
+            standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
+            chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
+          },
+          hugeBathroomPricing: config.hugeBathroomPricing,
+          extraAreaPricing: config.extraAreaPricing,
+          standalonePricing: config.standalonePricing,
+          rateCategories: config.rateCategories,
+          billingConversions: config.billingConversions,
+          allowedFrequencies: config.allowedFrequencies,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch Microfiber Mopping config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

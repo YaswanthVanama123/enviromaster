@@ -14,11 +14,22 @@ export interface ProductsSectionHandle {
   };
 }
 
+// Initial product data from backend
+export interface InitialProductData {
+  name: string;
+  qty?: number;
+  unitPrice?: number;
+  warrantyRate?: number;
+  replacementRate?: number;
+  amount?: number;
+  total?: number;
+}
+
 // Props interface
 interface ProductsSectionProps {
-  initialSmallProducts?: string[];
-  initialDispensers?: string[];
-  initialBigProducts?: string[];
+  initialSmallProducts?: string[] | InitialProductData[];
+  initialDispensers?: string[] | InitialProductData[];
+  initialBigProducts?: string[] | InitialProductData[];
 }
 
 // ---------------------------
@@ -141,11 +152,18 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
+  // Clean value: convert NaN, null, undefined to empty string
+  const cleanValue = (val: number | "" | null | undefined): string => {
+    if (val === null || val === undefined || val === "" || (typeof val === 'number' && isNaN(val))) {
+      return "";
+    }
+    return String(val);
+  };
+
   // Initialize the input value on mount only
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
-      const initialValue = value === null || value === undefined || value === "" ? "" : String(value);
-      inputRef.current.value = initialValue;
+      inputRef.current.value = cleanValue(value);
       lastValueRef.current = value;
     }
   }, []);
@@ -157,8 +175,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
 
       // Only update if not editing AND not focused
       if (inputRef.current && !isEditingRef.current && !isFocused) {
-        const newValue = value === null || value === undefined || value === "" ? "" : String(value);
-        inputRef.current.value = newValue;
+        inputRef.current.value = cleanValue(value);
         lastValueRef.current = value;
       }
     }
@@ -187,12 +204,11 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     lastValueRef.current = value;
     // Sync value on blur
     if (inputRef.current) {
-      const newValue = value === null || value === undefined || value === "" ? "" : String(value);
-      inputRef.current.value = newValue;
+      inputRef.current.value = cleanValue(value);
     }
   };
 
-  const defaultValue = value === null || value === undefined || value === "" ? "" : String(value);
+  const defaultValue = cleanValue(value);
 
   return (
     <div className="dcell">
@@ -236,11 +252,18 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
+  // Clean value: convert NaN, null, undefined, 0 to empty string
+  const cleanValue = (val: number | "" | undefined): string => {
+    if (val === undefined || val === "" || (typeof val === 'number' && isNaN(val))) {
+      return "";
+    }
+    return String(val);
+  };
+
   // Initialize the input value on mount only
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
-      const initialValue = value === "" || value === undefined ? "" : String(value);
-      inputRef.current.value = initialValue;
+      inputRef.current.value = cleanValue(value);
       lastValueRef.current = value;
     }
   }, []);
@@ -252,8 +275,7 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
 
       // Only update if not editing AND not focused
       if (inputRef.current && !isEditingRef.current && !isFocused) {
-        const newValue = value === "" || value === undefined ? "" : String(value);
-        inputRef.current.value = newValue;
+        inputRef.current.value = cleanValue(value);
         lastValueRef.current = value;
       }
     }
@@ -284,12 +306,11 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     lastValueRef.current = value;
     // Sync value on blur
     if (inputRef.current) {
-      const newValue = value === "" || value === undefined ? "" : String(value);
-      inputRef.current.value = newValue;
+      inputRef.current.value = cleanValue(value);
     }
   };
 
-  const defaultValue = value === "" || value === undefined ? "" : String(value);
+  const defaultValue = cleanValue(value);
 
   return (
     <input
@@ -492,10 +513,10 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
   return includedProducts.includes(productKey);
 }
 
-// Helper: Convert initial product names to ProductRow objects
+// Helper: Convert initial product data to ProductRow objects
 function convertInitialToRows(
   bucket: ColumnKey,
-  productNames: string[],
+  productData: string[] | InitialProductData[],
   allProducts: EnvProduct[]
 ): ProductRow[] {
   // Create a map of product names to product keys
@@ -504,27 +525,107 @@ function convertInitialToRows(
     nameToProductMap.set(p.name.toLowerCase(), p);
   });
 
-  return productNames
-    .filter((name) => name && name.trim() !== "")
-    .map((name, index) => {
+  // Helper to safely get number value (filter out NaN, 0, null, undefined)
+  const safeNumber = (value: number | undefined | null): number | undefined => {
+    if (value === null || value === undefined || isNaN(value) || value === 0) {
+      return undefined;
+    }
+    return value;
+  };
+
+  return productData
+    .filter((item) => {
+      if (typeof item === 'string') {
+        return item && item.trim() !== "";
+      } else {
+        return item && item.name && item.name.trim() !== "";
+      }
+    })
+    .map((item, index) => {
+      // Handle both string and InitialProductData formats
+      const name = typeof item === 'string' ? item : item.name;
       const normalizedName = name.toLowerCase();
       const product = nameToProductMap.get(normalizedName);
 
       if (product) {
         // Found matching product in catalog
-        return {
+        const row: ProductRow = {
           id: `${bucket}-${Date.now()}-${index}`,
           productKey: product.key,
           isCustom: false,
         };
+
+        // Add quantity and price overrides if provided
+        if (typeof item !== 'string') {
+          const qty = safeNumber(item.qty);
+          if (qty !== undefined) {
+            row.qty = qty;
+          }
+
+          // For small products
+          if (bucket === 'smallProducts') {
+            const unitPrice = safeNumber(item.unitPrice);
+            if (unitPrice !== undefined) {
+              row.unitPriceOverride = unitPrice;
+            }
+            const total = safeNumber(item.total);
+            if (total !== undefined) {
+              row.totalOverride = total;
+            }
+          }
+
+          // For dispensers
+          if (bucket === 'dispensers') {
+            const warrantyRate = safeNumber(item.warrantyRate);
+            if (warrantyRate !== undefined) {
+              row.warrantyPriceOverride = warrantyRate;
+            }
+            const replacementRate = safeNumber(item.replacementRate);
+            if (replacementRate !== undefined) {
+              row.replacementPriceOverride = replacementRate;
+            }
+            const total = safeNumber(item.total);
+            if (total !== undefined) {
+              row.totalOverride = total;
+            }
+          }
+
+          // For big products
+          if (bucket === 'bigProducts') {
+            const amount = safeNumber(item.amount);
+            if (amount !== undefined) {
+              row.amountOverride = amount;
+            }
+            const total = safeNumber(item.total);
+            if (total !== undefined) {
+              row.totalOverride = total;
+            }
+          }
+        }
+
+        return row;
       } else {
         // Product not found in catalog, treat as custom
-        return {
+        const row: ProductRow = {
           id: `${bucket}-${Date.now()}-${index}`,
           productKey: null,
           isCustom: true,
           customName: name,
         };
+
+        // Add quantity and price overrides for custom products too
+        if (typeof item !== 'string') {
+          const qty = safeNumber(item.qty);
+          if (qty !== undefined) {
+            row.qty = qty;
+          }
+          const total = safeNumber(item.total);
+          if (total !== undefined) {
+            row.totalOverride = total;
+          }
+        }
+
+        return row;
       }
     });
 }

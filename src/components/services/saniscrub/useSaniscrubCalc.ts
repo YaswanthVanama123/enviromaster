@@ -6,9 +6,7 @@ import {
   saniscrubPricingConfig as cfg,
   saniscrubFrequencyList,
 } from "./saniscrubConfig";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendSaniscrubConfig {
@@ -96,49 +94,45 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=saniscrub`);
+        const data = await serviceConfigApi.getActive("saniscrub");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ SaniScrub config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendSaniscrubConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendSaniscrubConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        setForm((prev) => ({
+          ...prev,
+          // Update all rate fields from backend if available
+          fixtureRateMonthly: config.fixtureRates?.monthly ?? prev.fixtureRateMonthly,
+          fixtureRateBimonthly: config.fixtureRates?.bimonthly ?? prev.fixtureRateBimonthly,
+          fixtureRateQuarterly: config.fixtureRates?.quarterly ?? prev.fixtureRateQuarterly,
+          minimumMonthly: config.minimums?.monthly ?? prev.minimumMonthly,
+          minimumBimonthly: config.minimums?.bimonthly ?? prev.minimumBimonthly,
+          nonBathroomFirstUnitRate: config.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
+          nonBathroomAdditionalUnitRate: config.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
+          installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
+          installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+          twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat ?? prev.twoTimesPerMonthDiscount,
+        }));
 
-          setForm((prev) => ({
-            ...prev,
-            // Update all rate fields from backend if available
-            fixtureRateMonthly: config.fixtureRates?.monthly ?? prev.fixtureRateMonthly,
-            fixtureRateBimonthly: config.fixtureRates?.bimonthly ?? prev.fixtureRateBimonthly,
-            fixtureRateQuarterly: config.fixtureRates?.quarterly ?? prev.fixtureRateQuarterly,
-            minimumMonthly: config.minimums?.monthly ?? prev.minimumMonthly,
-            minimumBimonthly: config.minimums?.bimonthly ?? prev.minimumBimonthly,
-            nonBathroomFirstUnitRate: config.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
-            nonBathroomAdditionalUnitRate: config.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
-            installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
-            installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
-            twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat ?? prev.twoTimesPerMonthDiscount,
-          }));
-
-          console.log('✅ SaniScrub FULL CONFIG loaded from backend:', {
-            fixtureRates: config.fixtureRates,
-            minimums: config.minimums,
-            nonBathroomPricing: {
-              unitSqFt: config.nonBathroomUnitSqFt,
-              firstUnitRate: config.nonBathroomFirstUnitRate,
-              additionalUnitRate: config.nonBathroomAdditionalUnitRate,
-            },
-            installMultipliers: config.installMultipliers,
-            frequencyMeta: config.frequencyMeta,
-            twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat,
-          });
-        }
+        console.log('✅ SaniScrub FULL CONFIG loaded from backend:', {
+          fixtureRates: config.fixtureRates,
+          minimums: config.minimums,
+          nonBathroomPricing: {
+            unitSqFt: config.nonBathroomUnitSqFt,
+            firstUnitRate: config.nonBathroomFirstUnitRate,
+            additionalUnitRate: config.nonBathroomAdditionalUnitRate,
+          },
+          installMultipliers: config.installMultipliers,
+          frequencyMeta: config.frequencyMeta,
+          twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch SaniScrub config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

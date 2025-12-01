@@ -8,9 +8,7 @@ import type {
   RpmRateCategory,
 } from "./rpmWindowsTypes";
 import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendRpmConfig {
@@ -94,54 +92,50 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=rpmWindows`);
+        const data = await serviceConfigApi.getActive("rpmWindows");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ RPM Windows config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendRpmConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendRpmConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        // ✅ Store base weekly rates for frequency adjustment
+        setBaseWeeklyRates({
+          small: config.smallWindowRate ?? cfg.smallWindowRate,
+          medium: config.mediumWindowRate ?? cfg.mediumWindowRate,
+          large: config.largeWindowRate ?? cfg.largeWindowRate,
+          trip: config.tripCharge ?? cfg.tripCharge,
+        });
 
-          // ✅ Store base weekly rates for frequency adjustment
-          setBaseWeeklyRates({
-            small: config.smallWindowRate ?? cfg.smallWindowRate,
-            medium: config.mediumWindowRate ?? cfg.mediumWindowRate,
-            large: config.largeWindowRate ?? cfg.largeWindowRate,
-            trip: config.tripCharge ?? cfg.tripCharge,
-          });
+        // ✅ Update form state with base window rates
+        setForm((prev) => ({
+          ...prev,
+          smallWindowRate: config.smallWindowRate ?? prev.smallWindowRate,
+          mediumWindowRate: config.mediumWindowRate ?? prev.mediumWindowRate,
+          largeWindowRate: config.largeWindowRate ?? prev.largeWindowRate,
+          tripCharge: config.tripCharge ?? prev.tripCharge,
+        }));
 
-          // ✅ Update form state with base window rates
-          setForm((prev) => ({
-            ...prev,
-            smallWindowRate: config.smallWindowRate ?? prev.smallWindowRate,
-            mediumWindowRate: config.mediumWindowRate ?? prev.mediumWindowRate,
-            largeWindowRate: config.largeWindowRate ?? prev.largeWindowRate,
-            tripCharge: config.tripCharge ?? prev.tripCharge,
-          }));
-
-          console.log('✅ RPM Windows FULL CONFIG loaded from backend:', {
-            windowRates: {
-              small: config.smallWindowRate,
-              medium: config.mediumWindowRate,
-              large: config.largeWindowRate,
-            },
-            frequencyMultipliers: config.frequencyMultipliers,
-            installMultipliers: {
-              firstTime: config.installMultiplierFirstTime,
-              clean: config.installMultiplierClean,
-            },
-            rateCategories: config.rateCategories,
-            monthlyConversions: config.monthlyConversions,
-            annualFrequencies: config.annualFrequencies,
-          });
-        }
+        console.log('✅ RPM Windows FULL CONFIG loaded from backend:', {
+          windowRates: {
+            small: config.smallWindowRate,
+            medium: config.mediumWindowRate,
+            large: config.largeWindowRate,
+          },
+          frequencyMultipliers: config.frequencyMultipliers,
+          installMultipliers: {
+            firstTime: config.installMultiplierFirstTime,
+            clean: config.installMultiplierClean,
+          },
+          rateCategories: config.rateCategories,
+          monthlyConversions: config.monthlyConversions,
+          annualFrequencies: config.annualFrequencies,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch RPM Windows config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

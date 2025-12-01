@@ -8,9 +8,7 @@ import type {
   SanicleanRateTier,
 } from "./sanicleanTypes";
 import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
-
-// API base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { serviceConfigApi } from "../../../backendservice/api";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendSanicleanConfig {
@@ -173,65 +171,61 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=saniclean`);
+        const data = await serviceConfigApi.getActive("saniclean");
 
-        if (!response.ok) {
+        if (!data || typeof data !== "object" || !("config" in data)) {
           console.warn('⚠️ SaniClean config not found in backend, using default fallback values');
           return;
         }
 
-        const data = await response.json();
+        const config = data.config as BackendSanicleanConfig;
 
-        if (data && data.config) {
-          const config = data.config as BackendSanicleanConfig;
+        // ✅ Store the ENTIRE backend config for use in calculations
+        setBackendConfig(config);
 
-          // ✅ Store the ENTIRE backend config for use in calculations
-          setBackendConfig(config);
+        setForm((prev) => ({
+          ...prev,
+          // Update all rate fields from backend if available
+          insideBeltwayRatePerFixture: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.insideBeltwayRatePerFixture,
+          insideBeltwayWeeklyMinimum: config.geographicPricing?.insideBeltway?.weeklyMinimum ?? prev.insideBeltwayWeeklyMinimum,
+          insideBeltwayTripCharge: config.geographicPricing?.insideBeltway?.tripCharge ?? prev.insideBeltwayTripCharge,
+          insideBeltwayParkingFee: config.geographicPricing?.insideBeltway?.parkingFee ?? prev.insideBeltwayParkingFee,
+          outsideBeltwayRatePerFixture: config.geographicPricing?.outsideBeltway?.ratePerFixture ?? prev.outsideBeltwayRatePerFixture,
+          outsideBeltwayWeeklyMinimum: config.geographicPricing?.outsideBeltway?.weeklyMinimum ?? prev.outsideBeltwayWeeklyMinimum,
+          outsideBeltwayTripCharge: config.geographicPricing?.outsideBeltway?.tripCharge ?? prev.outsideBeltwayTripCharge,
+          smallFacilityThreshold: config.smallFacilityMinimum?.fixtureThreshold ?? prev.smallFacilityThreshold,
+          smallFacilityMinimumWeekly: config.smallFacilityMinimum?.minimumWeeklyCharge ?? prev.smallFacilityMinimumWeekly,
+          allInclusiveWeeklyRate: config.allInclusivePackage?.weeklyRatePerFixture ?? prev.allInclusiveWeeklyRate,
+          allInclusiveMinFixtures: config.allInclusivePackage?.autoAllInclusiveMinFixtures ?? prev.allInclusiveMinFixtures,
+          standardToLuxuryRate: config.soapUpgrades?.standardToLuxury ?? prev.standardToLuxuryRate,
+          excessStandardSoapRate: config.soapUpgrades?.excessUsageCharges?.standardSoap ?? prev.excessStandardSoapRate,
+          excessLuxurySoapRate: config.soapUpgrades?.excessUsageCharges?.luxurySoap ?? prev.excessLuxurySoapRate,
+          warrantyFeePerDispenser: config.warrantyFeePerDispenser ?? prev.warrantyFeePerDispenser,
+          paperCreditPerFixturePerWeek: config.paperCredit?.creditPerFixturePerWeek ?? prev.paperCreditPerFixturePerWeek,
+          urinalScreenRate: config.facilityComponents?.urinals?.urinalScreen ?? prev.urinalScreenRate,
+          urinalMatRate: config.facilityComponents?.urinals?.urinalMat ?? prev.urinalMatRate,
+          toiletClipsRate: config.facilityComponents?.maleToilets?.toiletClips ?? prev.toiletClipsRate,
+          seatCoverDispenserRate: config.facilityComponents?.maleToilets?.seatCoverDispenser ?? prev.seatCoverDispenserRate,
+          sanipodServiceRate: config.facilityComponents?.femaleToilets?.sanipodService ?? prev.sanipodServiceRate,
+          microfiberMoppingPerBathroom: config.addOnServices?.microfiberMopping?.pricePerBathroom ?? prev.microfiberMoppingPerBathroom,
+          weeklyToMonthlyMultiplier: config.billingConversions?.weekly?.monthlyMultiplier ?? prev.weeklyToMonthlyMultiplier,
+          weeklyToAnnualMultiplier: config.billingConversions?.weekly?.annualMultiplier ?? prev.weeklyToAnnualMultiplier,
+          redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
+          greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+        }));
 
-          setForm((prev) => ({
-            ...prev,
-            // Update all rate fields from backend if available
-            insideBeltwayRatePerFixture: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.insideBeltwayRatePerFixture,
-            insideBeltwayWeeklyMinimum: config.geographicPricing?.insideBeltway?.weeklyMinimum ?? prev.insideBeltwayWeeklyMinimum,
-            insideBeltwayTripCharge: config.geographicPricing?.insideBeltway?.tripCharge ?? prev.insideBeltwayTripCharge,
-            insideBeltwayParkingFee: config.geographicPricing?.insideBeltway?.parkingFee ?? prev.insideBeltwayParkingFee,
-            outsideBeltwayRatePerFixture: config.geographicPricing?.outsideBeltway?.ratePerFixture ?? prev.outsideBeltwayRatePerFixture,
-            outsideBeltwayWeeklyMinimum: config.geographicPricing?.outsideBeltway?.weeklyMinimum ?? prev.outsideBeltwayWeeklyMinimum,
-            outsideBeltwayTripCharge: config.geographicPricing?.outsideBeltway?.tripCharge ?? prev.outsideBeltwayTripCharge,
-            smallFacilityThreshold: config.smallFacilityMinimum?.fixtureThreshold ?? prev.smallFacilityThreshold,
-            smallFacilityMinimumWeekly: config.smallFacilityMinimum?.minimumWeeklyCharge ?? prev.smallFacilityMinimumWeekly,
-            allInclusiveWeeklyRate: config.allInclusivePackage?.weeklyRatePerFixture ?? prev.allInclusiveWeeklyRate,
-            allInclusiveMinFixtures: config.allInclusivePackage?.autoAllInclusiveMinFixtures ?? prev.allInclusiveMinFixtures,
-            standardToLuxuryRate: config.soapUpgrades?.standardToLuxury ?? prev.standardToLuxuryRate,
-            excessStandardSoapRate: config.soapUpgrades?.excessUsageCharges?.standardSoap ?? prev.excessStandardSoapRate,
-            excessLuxurySoapRate: config.soapUpgrades?.excessUsageCharges?.luxurySoap ?? prev.excessLuxurySoapRate,
-            warrantyFeePerDispenser: config.warrantyFeePerDispenser ?? prev.warrantyFeePerDispenser,
-            paperCreditPerFixturePerWeek: config.paperCredit?.creditPerFixturePerWeek ?? prev.paperCreditPerFixturePerWeek,
-            urinalScreenRate: config.facilityComponents?.urinals?.urinalScreen ?? prev.urinalScreenRate,
-            urinalMatRate: config.facilityComponents?.urinals?.urinalMat ?? prev.urinalMatRate,
-            toiletClipsRate: config.facilityComponents?.maleToilets?.toiletClips ?? prev.toiletClipsRate,
-            seatCoverDispenserRate: config.facilityComponents?.maleToilets?.seatCoverDispenser ?? prev.seatCoverDispenserRate,
-            sanipodServiceRate: config.facilityComponents?.femaleToilets?.sanipodService ?? prev.sanipodServiceRate,
-            microfiberMoppingPerBathroom: config.addOnServices?.microfiberMopping?.pricePerBathroom ?? prev.microfiberMoppingPerBathroom,
-            weeklyToMonthlyMultiplier: config.billingConversions?.weekly?.monthlyMultiplier ?? prev.weeklyToMonthlyMultiplier,
-            weeklyToAnnualMultiplier: config.billingConversions?.weekly?.annualMultiplier ?? prev.weeklyToAnnualMultiplier,
-            redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
-            greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
-          }));
-
-          console.log('✅ SaniClean FULL CONFIG loaded from backend:', {
-            geographicPricing: config.geographicPricing,
-            smallFacilityMinimum: config.smallFacilityMinimum,
-            allInclusivePackage: config.allInclusivePackage,
-            soapUpgrades: config.soapUpgrades,
-            warrantyFee: config.warrantyFeePerDispenser,
-            paperCredit: config.paperCredit,
-            facilityComponents: config.facilityComponents,
-            addOnServices: config.addOnServices,
-            billingConversions: config.billingConversions,
-            rateTiers: config.rateTiers,
-          });
-        }
+        console.log('✅ SaniClean FULL CONFIG loaded from backend:', {
+          geographicPricing: config.geographicPricing,
+          smallFacilityMinimum: config.smallFacilityMinimum,
+          allInclusivePackage: config.allInclusivePackage,
+          soapUpgrades: config.soapUpgrades,
+          warrantyFee: config.warrantyFeePerDispenser,
+          paperCredit: config.paperCredit,
+          facilityComponents: config.facilityComponents,
+          addOnServices: config.addOnServices,
+          billingConversions: config.billingConversions,
+          rateTiers: config.rateTiers,
+        });
       } catch (error) {
         console.error('❌ Failed to fetch SaniClean config from backend:', error);
         console.log('⚠️ Using default hardcoded values as fallback');

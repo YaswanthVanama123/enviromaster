@@ -1,5 +1,6 @@
 // src/components/services/hooks/usePricing.ts
 import { useEffect, useState } from "react";
+import { pricingApi, type PriceFixDocument } from "../../../backendservice/api";
 
 export type Pricing = {
   sani: {
@@ -73,13 +74,7 @@ type ServicesPricingFromApi = {
   // other services can be added later
 };
 
-type PriceFixDoc = {
-  _id: string;
-  key: string;
-  services: ServicesPricingFromApi;
-};
-
-function mapPriceFixToPricing(doc: PriceFixDoc | null): Pricing {
+function mapPriceFixToPricing(doc: PriceFixDocument | null): Pricing {
   if (!doc || !doc.services) return DEFAULTS;
 
   const rh = doc.services.restroomHygiene || {};
@@ -127,30 +122,7 @@ export function usePricing(): Pricing {
 
     async function load() {
       try {
-        const base =
-          import.meta.env.VITE_API_BASE_URL ||
-          "http://localhost:5000";
-
-        const token =
-          localStorage.getItem("adminToken") ||
-          localStorage.getItem("token") ||
-          "";
-
-        const res = await fetch(`${base}/api/pricefix`, {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!res.ok) return;
-
-        const data = await res.json();
-        const list: PriceFixDoc[] = Array.isArray(data) ? data : [];
-        const master =
-          list.find((d) => d.key === "servicePricingMaster") ||
-          null;
-
+        const master = await pricingApi.getMasterPricing();
         const mapped = mapPriceFixToPricing(master);
         if (!cancelled) setPricing(mapped);
       } catch (err) {

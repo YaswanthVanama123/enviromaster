@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
+import { pdfApi, manualUploadApi } from "../backendservice/api";
 import SavedFiles from "./SavedFiles";
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
@@ -88,18 +89,7 @@ export default function AdminPanel() {
     const fetchDocuments = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:5000/api/pdf/customer-headers", {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
+        const data = await pdfApi.getCustomerHeaders();
         const items = data.items || [];
 
         const mapped: Document[] = items.map((item: any) => ({
@@ -134,10 +124,7 @@ export default function AdminPanel() {
   useEffect(() => {
     const fetchUploadStats = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/manual-upload");
-        if (!res.ok) throw new Error(`Failed with status ${res.status}`);
-
-        const data = await res.json();
+        const data = await manualUploadApi.getManualUploads();
         const uploads = data.items || [];
 
         setUploadCount(uploads.length);
@@ -174,18 +161,7 @@ export default function AdminPanel() {
 
   const handleDownload = async (docId: string, fileName: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/pdf/viewer/download/${docId}`,
-        {
-          method: "GET",
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`Download failed with status ${res.status}`);
-      }
-
-      const blob = await res.blob();
+      const blob = await pdfApi.downloadPdf(docId);
       const url = window.URL.createObjectURL(blob);
 
       const a = document.createElement("a");
