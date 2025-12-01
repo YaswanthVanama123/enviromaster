@@ -28,7 +28,9 @@ type TabKey =
   // SaniScrub
   | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees"
   // Strip & Wax
-  | "standardFull" | "noSealant" | "wellMaintained" | "stripWaxContractTerms" | "stripWaxBillingConversions" | "stripWaxRateTiers";
+  | "standardFull" | "noSealant" | "wellMaintained" | "stripWaxContractTerms" | "stripWaxBillingConversions" | "stripWaxRateTiers"
+  // Refresh Power Scrub
+  | "defaultRates" | "kitchenPricing" | "fohPricing" | "patioPricing" | "sqftPricing";
 
 interface PricingField {
   label: string;
@@ -54,6 +56,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "sanipod") return "podRates";
     if (service.serviceId === "saniscrub") return "fixtureRates";
     if (service.serviceId === "stripWax") return "standardFull";
+    if (service.serviceId === "refreshPowerScrub") return "defaultRates";
     return "windowRates";
   };
 
@@ -142,6 +145,12 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       stripWaxContractTerms: [],
       stripWaxBillingConversions: [],
       stripWaxRateTiers: [],
+      // Refresh Power Scrub
+      defaultRates: [],
+      kitchenPricing: [],
+      fohPricing: [],
+      patioPricing: [],
+      sqftPricing: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -1380,6 +1389,109 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // REFRESH POWER SCRUB
+    if (service.serviceId === "refreshPowerScrub") {
+      // Default Rates
+      categories.defaultRates = [
+        {
+          label: "Default Hourly Rate",
+          value: getValue(["defaultHourly"]) ?? 0,
+          path: ["defaultHourly"],
+          unit: "$ per hour per worker",
+          description: "Standard hourly rate per worker (typically $200/hr/worker)",
+        },
+        {
+          label: "Default Trip Charge",
+          value: getValue(["defaultTrip"]) ?? 0,
+          path: ["defaultTrip"],
+          unit: "$",
+          description: "Trip charge added to hourly/sq ft pricing (typically $75)",
+        },
+        {
+          label: "Default Minimum",
+          value: getValue(["defaultMinimum"]) ?? 0,
+          path: ["defaultMinimum"],
+          unit: "$",
+          description: "Minimum charge per visit regardless of service size (typically $475)",
+        },
+      ];
+
+      // Kitchen Pricing
+      const kitchenPricing = getValue(["kitchenPricing"]) || {};
+      categories.kitchenPricing = [
+        {
+          label: "Small/Medium Kitchen",
+          value: kitchenPricing.smallMedium ?? 0,
+          path: ["kitchenPricing", "smallMedium"],
+          unit: "$",
+          description: "Package price for small/medium kitchen back of house (typically $1,500)",
+        },
+        {
+          label: "Large Kitchen",
+          value: kitchenPricing.large ?? 0,
+          path: ["kitchenPricing", "large"],
+          unit: "$",
+          description: "Package price for large kitchen back of house (typically $2,500)",
+        },
+      ];
+
+      // Front of House Pricing
+      categories.fohPricing = [
+        {
+          label: "Front of House Rate",
+          value: getValue(["fohRate"]) ?? 0,
+          path: ["fohRate"],
+          unit: "$",
+          description: "Package price for front of house deep clean (typically $2,500)",
+        },
+      ];
+
+      // Patio Pricing
+      const patioPricing = getValue(["patioPricing"]) || {};
+      categories.patioPricing = [
+        {
+          label: "Patio Standalone",
+          value: patioPricing.standalone ?? 0,
+          path: ["patioPricing", "standalone"],
+          unit: "$",
+          description: "Package price for patio only service (typically $875)",
+        },
+        {
+          label: "Patio Upsell",
+          value: patioPricing.upsell ?? 0,
+          path: ["patioPricing", "upsell"],
+          unit: "$",
+          description: "Upsell price when adding patio to FOH service (typically $500)",
+        },
+      ];
+
+      // Square Footage Pricing
+      const sqftPricing = getValue(["sqftPricing"]) || {};
+      categories.sqftPricing = [
+        {
+          label: "Fixed Fee",
+          value: sqftPricing.fixedFee ?? 0,
+          path: ["sqftPricing", "fixedFee"],
+          unit: "$",
+          description: "Fixed base fee for square footage pricing (typically $200)",
+        },
+        {
+          label: "Inside Rate",
+          value: sqftPricing.insideRate ?? 0,
+          path: ["sqftPricing", "insideRate"],
+          unit: "$ per sq ft",
+          description: "Rate per square foot for inside areas (typically $0.60/sq ft)",
+        },
+        {
+          label: "Outside Rate",
+          value: sqftPricing.outsideRate ?? 0,
+          path: ["sqftPricing", "outsideRate"],
+          unit: "$ per sq ft",
+          description: "Rate per square foot for outside areas (typically $0.40/sq ft)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -1508,6 +1620,16 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "stripWaxContractTerms", label: "Contract Terms", icon: "📋" },
         { key: "stripWaxBillingConversions", label: "Billing Conversions", icon: "🔄" },
         { key: "stripWaxRateTiers", label: "Rate Tiers", icon: "💰" },
+      ];
+    }
+
+    if (service.serviceId === "refreshPowerScrub") {
+      return [
+        { key: "defaultRates", label: "Default Rates", icon: "💵" },
+        { key: "kitchenPricing", label: "Kitchen Pricing", icon: "🍳" },
+        { key: "fohPricing", label: "Front of House", icon: "🏛️" },
+        { key: "patioPricing", label: "Patio Pricing", icon: "🌿" },
+        { key: "sqftPricing", label: "Square Footage", icon: "📐" },
       ];
     }
 
