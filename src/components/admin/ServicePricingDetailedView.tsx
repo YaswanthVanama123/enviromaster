@@ -26,7 +26,9 @@ type TabKey =
   // SaniPod
   | "podRates" | "extraBags" | "installation" | "standaloneService" | "frequencySettings" | "sanipodBillingConversions" | "sanipodContractTerms" | "sanipodRateTiers"
   // SaniScrub
-  | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees";
+  | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees"
+  // Strip & Wax
+  | "standardFull" | "noSealant" | "wellMaintained" | "stripWaxContractTerms" | "stripWaxBillingConversions" | "stripWaxRateTiers";
 
 interface PricingField {
   label: string;
@@ -51,6 +53,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "saniclean") return "insideBeltway";
     if (service.serviceId === "sanipod") return "podRates";
     if (service.serviceId === "saniscrub") return "fixtureRates";
+    if (service.serviceId === "stripWax") return "standardFull";
     return "windowRates";
   };
 
@@ -132,6 +135,13 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       saniscrubInstallMultipliers: [],
       serviceFrequencies: [],
       discountsAndFees: [],
+      // Strip & Wax
+      standardFull: [],
+      noSealant: [],
+      wellMaintained: [],
+      stripWaxContractTerms: [],
+      stripWaxBillingConversions: [],
+      stripWaxRateTiers: [],
     };
 
     if (service.serviceId === "rpmWindows") {
@@ -1262,6 +1272,114 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
+    // STRIP & WAX
+    if (service.serviceId === "stripWax") {
+      // Standard Full Strip & Wax
+      const standardFull = getValue(["variants", "standardFull"]) || {};
+      categories.standardFull = [
+        {
+          label: "Rate Per Square Foot",
+          value: standardFull.ratePerSqFt ?? 0,
+          path: ["variants", "standardFull", "ratePerSqFt"],
+          unit: "$ per sq ft",
+          description: "Standard full strip & wax rate per square foot (complete strip, reseal, wax)",
+        },
+        {
+          label: "Minimum Charge",
+          value: standardFull.minCharge ?? 0,
+          path: ["variants", "standardFull", "minCharge"],
+          unit: "$",
+          description: "Minimum charge for standard full strip & wax regardless of square footage",
+        },
+      ];
+
+      // No Sealant Variant
+      const noSealant = getValue(["variants", "noSealant"]) || {};
+      categories.noSealant = [
+        {
+          label: "Rate Per Square Foot",
+          value: noSealant.ratePerSqFt ?? 0,
+          path: ["variants", "noSealant", "ratePerSqFt"],
+          unit: "$ per sq ft",
+          description: "Strip & wax without sealant - rate per square foot (lighter service)",
+        },
+        {
+          label: "Minimum Charge",
+          value: noSealant.minCharge ?? 0,
+          path: ["variants", "noSealant", "minCharge"],
+          unit: "$",
+          description: "Minimum charge for no-sealant strip & wax",
+        },
+      ];
+
+      // Well Maintained Variant
+      const wellMaintained = getValue(["variants", "wellMaintained"]) || {};
+      categories.wellMaintained = [
+        {
+          label: "Rate Per Square Foot",
+          value: wellMaintained.ratePerSqFt ?? 0,
+          path: ["variants", "wellMaintained", "ratePerSqFt"],
+          unit: "$ per sq ft",
+          description: "Well-maintained floor rate - discounted for regularly maintained floors",
+        },
+        {
+          label: "Minimum Charge",
+          value: wellMaintained.minCharge ?? 0,
+          path: ["variants", "wellMaintained", "minCharge"],
+          unit: "$",
+          description: "Minimum charge for well-maintained floor strip & wax",
+        },
+      ];
+
+      // Contract Terms
+      categories.stripWaxContractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (typically 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (typically 36 months)",
+        },
+      ];
+
+      // Billing Conversions
+      categories.stripWaxBillingConversions = [
+        {
+          label: "Weeks Per Month",
+          value: getValue(["weeksPerMonth"]) ?? 0,
+          path: ["weeksPerMonth"],
+          unit: "weeks",
+          description: "Average weeks per month for billing calculations (typically 4.33 = 52/12)",
+        },
+      ];
+
+      // Rate Tiers
+      const rateCategories = getValue(["rateCategories"]) || {};
+      categories.stripWaxRateTiers = [
+        {
+          label: "Red Rate Multiplier",
+          value: rateCategories.redRate?.multiplier ?? 0,
+          path: ["rateCategories", "redRate", "multiplier"],
+          unit: "×",
+          description: "Standard rate multiplier (typically 1.0)",
+        },
+        {
+          label: "Green Rate Multiplier",
+          value: rateCategories.greenRate?.multiplier ?? 0,
+          path: ["rateCategories", "greenRate", "multiplier"],
+          unit: "×",
+          description: "Premium rate multiplier (typically 1.3 = 30% higher)",
+        },
+      ];
+    }
+
     return categories;
   };
 
@@ -1379,6 +1497,17 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "saniscrubInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
         { key: "serviceFrequencies", label: "Service Frequencies", icon: "📅" },
         { key: "discountsAndFees", label: "Discounts & Fees", icon: "🎟️" },
+      ];
+    }
+
+    if (service.serviceId === "stripWax") {
+      return [
+        { key: "standardFull", label: "Standard Full", icon: "🌟" },
+        { key: "noSealant", label: "No Sealant", icon: "💧" },
+        { key: "wellMaintained", label: "Well Maintained", icon: "✨" },
+        { key: "stripWaxContractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "stripWaxBillingConversions", label: "Billing Conversions", icon: "🔄" },
+        { key: "stripWaxRateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
