@@ -12,6 +12,44 @@ import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
 // API base URL - can be configured via environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+// ✅ Backend config interface matching your MongoDB JSON structure
+interface BackendRpmConfig {
+  smallWindowRate: number;
+  mediumWindowRate: number;
+  largeWindowRate: number;
+  tripCharge: number;
+  installMultiplierFirstTime: number;
+  installMultiplierClean: number;
+  frequencyMultipliers: {
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+    quarterly: number;
+    quarterlyFirstTime: number;
+  };
+  annualFrequencies: {
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+    quarterly: number;
+  };
+  monthlyConversions: {
+    weekly: number;
+    actualWeeksPerMonth: number;
+    actualWeeksPerYear: number;
+  };
+  rateCategories: {
+    redRate: {
+      multiplier: number;
+      commissionRate: string;
+    };
+    greenRate: {
+      multiplier: number;
+      commissionRate: string;
+    };
+  };
+}
+
 const DEFAULT_FORM: RpmWindowsFormState = {
   smallQty: 0,
   mediumQty: 0,
@@ -35,55 +73,62 @@ function mapFrequency(v: string): RpmFrequencyKey {
   return "weekly";
 }
 
-function getFrequencyMultiplier(freq: RpmFrequencyKey): number {
-  return cfg.frequencyMultipliers[freq];
-}
-
-// kept but no longer used; safe to leave
-function getAnnualFrequency(freq: RpmFrequencyKey): number {
-  return cfg.annualFrequencies[freq] ?? 0;
-}
-
 export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   const [form, setForm] = useState<RpmWindowsFormState>({
     ...DEFAULT_FORM,
     ...initial,
   });
 
-  // ✅ Fetch pricing from backend on mount
+  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+  const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
+
+  // ✅ Fetch COMPLETE pricing configuration from backend on mount
   useEffect(() => {
     const fetchPricing = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/service-configs/active?serviceId=rpmwindows`);
 
         if (!response.ok) {
-          console.warn('RPM Windows config not found in backend, using default values');
+          console.warn('⚠️ RPM Windows config not found in backend, using default fallback values');
           return;
         }
 
         const data = await response.json();
 
         if (data && data.config) {
-          const backendConfig = data.config;
+          const config = data.config as BackendRpmConfig;
 
+          // ✅ Store the ENTIRE backend config for use in calculations
+          setBackendConfig(config);
+
+          // ✅ Update form state with base window rates
           setForm((prev) => ({
             ...prev,
-            smallWindowRate: backendConfig.smallWindowRate ?? prev.smallWindowRate,
-            mediumWindowRate: backendConfig.mediumWindowRate ?? prev.mediumWindowRate,
-            largeWindowRate: backendConfig.largeWindowRate ?? prev.largeWindowRate,
-            tripCharge: backendConfig.tripCharge ?? prev.tripCharge,
+            smallWindowRate: config.smallWindowRate ?? prev.smallWindowRate,
+            mediumWindowRate: config.mediumWindowRate ?? prev.mediumWindowRate,
+            largeWindowRate: config.largeWindowRate ?? prev.largeWindowRate,
+            tripCharge: config.tripCharge ?? prev.tripCharge,
           }));
 
-          console.log('✅ RPM Windows pricing loaded from backend:', {
-            small: backendConfig.smallWindowRate,
-            medium: backendConfig.mediumWindowRate,
-            large: backendConfig.largeWindowRate,
-            tripCharge: backendConfig.tripCharge,
+          console.log('✅ RPM Windows FULL CONFIG loaded from backend:', {
+            windowRates: {
+              small: config.smallWindowRate,
+              medium: config.mediumWindowRate,
+              large: config.largeWindowRate,
+            },
+            frequencyMultipliers: config.frequencyMultipliers,
+            installMultipliers: {
+              firstTime: config.installMultiplierFirstTime,
+              clean: config.installMultiplierClean,
+            },
+            rateCategories: config.rateCategories,
+            monthlyConversions: config.monthlyConversions,
+            annualFrequencies: config.annualFrequencies,
           });
         }
       } catch (error) {
-        console.error('Failed to fetch RPM Windows pricing from backend:', error);
-        console.log('Using default hardcoded values as fallback');
+        console.error('❌ Failed to fetch RPM Windows config from backend:', error);
+        console.log('⚠️ Using default hardcoded values as fallback');
       }
     };
 
@@ -196,8 +241,25 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   };
 
   const calc = useMemo(() => {
+    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    const activeConfig = backendConfig || {
+      smallWindowRate: cfg.smallWindowRate,
+      mediumWindowRate: cfg.mediumWindowRate,
+      largeWindowRate: cfg.largeWindowRate,
+      tripCharge: cfg.tripCharge,
+      installMultiplierFirstTime: cfg.installMultiplierFirstTime,
+      installMultiplierClean: cfg.installMultiplierClean,
+      frequencyMultipliers: cfg.frequencyMultipliers,
+      rateCategories: cfg.rateCategories,
+      monthlyConversions: cfg.monthlyConversions,
+      annualFrequencies: cfg.annualFrequencies,
+    };
+
     const freqKey = mapFrequency(form.frequency);
-    const freqMult = getFrequencyMultiplier(freqKey) || 1;
+
+    // ✅ FREQUENCY MULTIPLIER FROM BACKEND (NOT HARDCODED!)
+    // When you select bi-weekly, this will be 1.25 FROM YOUR MONGODB CONFIG
+    const freqMult = activeConfig.frequencyMultipliers[freqKey] || 1;
 
     const weeklySmall = form.smallWindowRate;
     const weeklyMedium = form.mediumWindowRate;
@@ -233,16 +295,22 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const recurringPerVisitBase = perVisitService + extrasTotal;
 
+    // ✅ RATE CATEGORY FROM BACKEND (red/green multipliers)
     const rateCfg =
-      cfg.rateCategories[form.selectedRateCategory] ??
-      cfg.rateCategories.redRate;
+      activeConfig.rateCategories[form.selectedRateCategory] ??
+      activeConfig.rateCategories.redRate;
 
     const recurringPerVisitRated = recurringPerVisitBase * rateCfg.multiplier;
 
-    // INSTALLATION FEE — ALWAYS WEEKLY WINDOW ×3 (NO FREQUENCY MULTIPLIER)
+    // ✅ INSTALLATION MULTIPLIER FROM BACKEND (NOT HARDCODED!)
+    // First time install = 3x, Clean = 1x (from your MongoDB config)
+    const installMultiplier = form.isFirstTimeInstall
+      ? activeConfig.installMultiplierFirstTime
+      : activeConfig.installMultiplierClean;
+
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
-        ? weeklyWindows * cfg.installMultiplierFirstTime
+        ? weeklyWindows * installMultiplier
         : 0;
 
     const installOneTime = installOneTimeBase * rateCfg.multiplier;
@@ -250,16 +318,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     // FIRST VISIT PRICE = INSTALLATION ONLY (no normal service on that visit)
     const firstVisitTotalRated = installOneTime;
 
-    // MONTHLY VISITS using 4.33 weeks/month
-    // weekly    -> 4.33 visits / month
-    // biweekly  -> 4.33 / 2 visits / month
-    // monthly   -> 1 visit / month
-    // quarterly -> we will NOT show monthly (0 here, UI hides row)
+    // ✅ MONTHLY VISITS FROM BACKEND CONFIG (NOT HARDCODED!)
+    // Uses your monthlyConversions.weekly: 4.33 from MongoDB
     let monthlyVisits = 0;
-    if (freqKey === "weekly") monthlyVisits = 4.33;
-    else if (freqKey === "biweekly") monthlyVisits = 4.33 / 2;
+    const weeksPerMonth = activeConfig.monthlyConversions.actualWeeksPerMonth ?? 4.33;
+
+    if (freqKey === "weekly") monthlyVisits = weeksPerMonth;
+    else if (freqKey === "biweekly") monthlyVisits = weeksPerMonth / 2;
     else if (freqKey === "monthly") monthlyVisits = 1;
-    else if (freqKey === "quarterly") monthlyVisits = 0; // no monthly form for quarterly
+    else if (freqKey === "quarterly") monthlyVisits = 0; // no monthly for quarterly
 
     // Standard ongoing monthly bill (after the first month)
     const standardMonthlyBillRated = recurringPerVisitRated * monthlyVisits;
@@ -284,9 +351,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     let contractTotalRated = 0;
     if (contractMonths > 0) {
       if (freqKey === "quarterly") {
-        // For quarterly: calculate based on number of visits in contract period
-        // Quarterly = 4 visits per year
-        const totalQuarterlyVisits = (contractMonths / 12) * 4;
+        // ✅ For quarterly: use annual frequencies FROM BACKEND
+        // Uses annualFrequencies.quarterly: 4 from your MongoDB config
+        const visitsPerYear = activeConfig.annualFrequencies?.quarterly ?? 4;
+        const totalQuarterlyVisits = (contractMonths / 12) * visitsPerYear;
 
         if (form.isFirstTimeInstall) {
           // First visit is install only, remaining visits are service
@@ -321,6 +389,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       contractTotalRated,
     };
   }, [
+    backendConfig, // ✅ CRITICAL: Re-calculate when backend config loads!
     form.smallQty,
     form.mediumQty,
     form.largeQty,
