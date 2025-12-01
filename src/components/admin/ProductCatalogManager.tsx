@@ -10,6 +10,7 @@ export const ProductCatalogManager: React.FC = () => {
   const [selectedFamily, setSelectedFamily] = useState<ProductFamily | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [creatingProduct, setCreatingProduct] = useState<ProductFamily | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -119,6 +120,42 @@ export const ProductCatalogManager: React.FC = () => {
       }
     } else {
       setErrorMessage("Failed to add product: " + result.error);
+    }
+
+    setSaving(false);
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!deletingProduct || !catalog) return;
+
+    setSaving(true);
+    const updatedCatalog = JSON.parse(JSON.stringify(catalog));
+    const family = updatedCatalog.families.find((f: ProductFamily) => f.key === deletingProduct.familyKey);
+
+    if (family) {
+      // Remove the product from the family
+      family.products = family.products.filter((p: Product) => p.key !== deletingProduct.key);
+    }
+
+    const result = await updateCatalog(catalog._id!, {
+      families: updatedCatalog.families,
+      version: catalog.version
+    });
+
+    if (result.success) {
+      setSuccessMessage(`✓ Product "${deletingProduct.name}" deleted successfully!`);
+      setDeletingProduct(null);
+      setEditingProduct(null);
+
+      // Update the selectedFamily to remove the deleted product immediately
+      if (selectedFamily && selectedFamily.key === deletingProduct.familyKey) {
+        const updatedFamily = updatedCatalog.families.find((f: ProductFamily) => f.key === deletingProduct.familyKey);
+        if (updatedFamily) {
+          setSelectedFamily(updatedFamily);
+        }
+      }
+    } else {
+      setErrorMessage("Failed to delete product: " + result.error);
     }
 
     setSaving(false);
@@ -367,6 +404,13 @@ export const ProductCatalogManager: React.FC = () => {
                 </div>
 
                 <div style={styles.modalActions}>
+                  <button
+                    style={styles.deleteButton}
+                    onClick={() => setDeletingProduct(editingProduct)}
+                  >
+                    🗑️ Delete Product
+                  </button>
+                  <div style={{ flex: 1 }}></div>
                   <button
                     style={styles.editButton}
                     onClick={handleToggleEditMode}
@@ -626,6 +670,54 @@ export const ProductCatalogManager: React.FC = () => {
                 disabled={saving}
               >
                 {saving ? "Saving..." : "Add Product"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingProduct && (
+        <div style={styles.modal}>
+          <div style={styles.confirmationModal}>
+            <div style={styles.confirmationHeader}>
+              <h3 style={styles.confirmationTitle}>⚠️ Confirm Delete</h3>
+            </div>
+
+            <div style={styles.confirmationBody}>
+              <p style={styles.confirmationText}>
+                Are you sure you want to delete this product?
+              </p>
+              <div style={styles.productInfoBox}>
+                <div style={styles.productInfoRow}>
+                  <strong>Product Name:</strong> {deletingProduct.name}
+                </div>
+                <div style={styles.productInfoRow}>
+                  <strong>Product Key:</strong> <code style={styles.code}>{deletingProduct.key}</code>
+                </div>
+                <div style={styles.productInfoRow}>
+                  <strong>Family:</strong> {deletingProduct.familyKey}
+                </div>
+              </div>
+              <p style={styles.warningText}>
+                ⚠️ This action cannot be undone!
+              </p>
+            </div>
+
+            <div style={styles.confirmationActions}>
+              <button
+                style={styles.confirmCancelButton}
+                onClick={() => setDeletingProduct(null)}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.confirmDeleteButton}
+                onClick={handleDeleteProduct}
+                disabled={saving}
+              >
+                {saving ? "Deleting..." : "Yes, Delete Product"}
               </button>
             </div>
           </div>
@@ -1006,5 +1098,93 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "4px",
     fontSize: "12px",
     fontWeight: "600",
+  },
+  deleteButton: {
+    padding: "10px 20px",
+    backgroundColor: "#dc2626",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+  },
+  confirmationModal: {
+    backgroundColor: "white",
+    borderRadius: "12px",
+    padding: "0",
+    width: "90%",
+    maxWidth: "500px",
+    overflow: "hidden",
+  },
+  confirmationHeader: {
+    padding: "20px 24px",
+    backgroundColor: "#fef2f2",
+    borderBottom: "2px solid #fecaca",
+  },
+  confirmationTitle: {
+    margin: 0,
+    fontSize: "20px",
+    fontWeight: "600",
+    color: "#991b1b",
+  },
+  confirmationBody: {
+    padding: "24px",
+  },
+  confirmationText: {
+    fontSize: "16px",
+    color: "#333",
+    marginBottom: "20px",
+    fontWeight: "500",
+  },
+  productInfoBox: {
+    backgroundColor: "#f9fafb",
+    padding: "16px",
+    borderRadius: "8px",
+    marginBottom: "16px",
+    border: "1px solid #e5e7eb",
+  },
+  productInfoRow: {
+    fontSize: "14px",
+    color: "#374151",
+    marginBottom: "8px",
+  },
+  warningText: {
+    fontSize: "14px",
+    color: "#dc2626",
+    fontWeight: "600",
+    margin: 0,
+    textAlign: "center",
+  },
+  confirmationActions: {
+    display: "flex",
+    gap: "12px",
+    padding: "20px 24px",
+    backgroundColor: "#f9fafb",
+    borderTop: "1px solid #e5e7eb",
+    justifyContent: "flex-end",
+  },
+  confirmCancelButton: {
+    padding: "10px 20px",
+    backgroundColor: "#f3f4f6",
+    color: "#374151",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  confirmDeleteButton: {
+    padding: "10px 20px",
+    backgroundColor: "#dc2626",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "background-color 0.2s",
   },
 };
