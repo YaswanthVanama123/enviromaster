@@ -14,7 +14,10 @@ import {
   HiDownload,
   HiLogout,
   HiChevronDown,
-  HiBriefcase
+  HiBriefcase,
+  HiEye,
+  HiMail,
+  HiPencilAlt
 } from "react-icons/hi";
 import { MdAttachMoney } from "react-icons/md";
 import "./AdminPanel.css";
@@ -202,6 +205,49 @@ export default function AdminPanel() {
     }
   };
 
+  const handleViewPDF = (docId: string, fileName: string) => {
+    // Navigate to PDF viewer like in SavedFiles
+    navigate("/pdf-viewer", {
+      state: {
+        documentId: docId,
+        fileName: fileName,
+      },
+    });
+  };
+
+  const handleSendEmail = async (docId: string, fileName: string) => {
+    const email = prompt("Enter recipient email address:");
+    if (!email) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/pdf/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentId: docId,
+          recipientEmail: email,
+          fileName: fileName,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Email sending failed with status ${res.status}`);
+      }
+
+      alert(`Email sent successfully to ${email}!`);
+    } catch (err) {
+      console.error("Error sending email:", err);
+      alert("Unable to send email. Please try again.");
+    }
+  };
+
+  const handleEditDocument = (docId: string) => {
+    // Navigate to form filling page with document ID
+    navigate(`/form/${docId}`);
+  };
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
   };
@@ -373,7 +419,7 @@ export default function AdminPanel() {
                   <table className="modern-table">
                     <thead>
                       <tr>
-                        <th>Tracking ID ↕</th>
+                        <th>Created Date</th>
                         <th>Document</th>
                         <th>Status ↕</th>
                         <th>Uploaded On</th>
@@ -396,7 +442,13 @@ export default function AdminPanel() {
                       ) : (
                         documents.slice(0, 4).map((doc) => (
                           <tr key={doc.id}>
-                            <td className="tracking-id">#{doc.id.slice(-8).toUpperCase()}</td>
+                            <td className="created-date">
+                              {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }) : "—"}
+                            </td>
                             <td>
                               <div className="doc-cell">
                                 <HiDocumentText size={18} className="doc-icon-table" />
@@ -410,12 +462,36 @@ export default function AdminPanel() {
                             </td>
                             <td className="statistics">{doc.uploadedOn}</td>
                             <td>
-                              <button
-                                className="action-download"
-                                onClick={() => handleDownload(doc.id, doc.name)}
-                              >
-                                <HiDownload size={16} />
-                              </button>
+                              <div className="action-buttons-group">
+                                <button
+                                  className="action-btn action-view"
+                                  onClick={() => handleViewPDF(doc.id, doc.name)}
+                                  title="View PDF"
+                                >
+                                  <HiEye size={16} />
+                                </button>
+                                <button
+                                  className="action-btn action-email"
+                                  onClick={() => handleSendEmail(doc.id, doc.name)}
+                                  title="Send via Email"
+                                >
+                                  <HiMail size={16} />
+                                </button>
+                                <button
+                                  className="action-btn action-edit"
+                                  onClick={() => handleEditDocument(doc.id)}
+                                  title="Edit Document"
+                                >
+                                  <HiPencilAlt size={16} />
+                                </button>
+                                <button
+                                  className="action-btn action-download"
+                                  onClick={() => handleDownload(doc.id, doc.name)}
+                                  title="Download PDF"
+                                >
+                                  <HiDownload size={16} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
