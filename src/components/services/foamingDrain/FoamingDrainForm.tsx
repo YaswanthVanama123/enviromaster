@@ -438,16 +438,24 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
 
                 <span>@</span>
-                {/* RATE = EDITABLE (from backend) */}
+                {/* RATE = Shows effective rate based on active pricing model */}
                 <input
                   type="number"
                   min={0}
                   step={0.01}
                   className="svc-in sm"
                   style={{ width: 80 }}
-                  value={state.standardDrainRate}
-                  onChange={(e) => updateField("standardDrainRate", parseFloat(e.target.value) || 0)}
-                  title="Standard drain rate (from backend)"
+                  value={stdRate > 0 ? stdRate.toFixed(2) : state.standardDrainRate}
+                  onChange={(e) => {
+                    // Allow editing the effective rate
+                    const newRate = parseFloat(e.target.value) || 0;
+                    updateField("standardDrainRate", newRate);
+                  }}
+                  title={breakdown.usedSmallAlt
+                    ? `Effective rate (from alt pricing: $${state.altBaseCharge} + $${state.altExtraPerDrain}/drain)`
+                    : breakdown.usedBigAccountAlt
+                    ? "Effective rate (big account: $10/week per drain)"
+                    : "Standard drain rate (editable)"}
                 />
                 <span>=</span>
                 {/* TOTAL = AUTO (read-only) */}
