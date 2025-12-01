@@ -280,13 +280,13 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     if (isQuarterly && dustingHoursBase > 0) {
       // Quarterly: installation is recurring => first visit SAME as ongoing
       firstVisitService = perVisitService;
-    } else if (!isQuarterly && dustingHoursBase > 0) {
-      // Non-quarterly: first visit dusting at 3× time
+    } else if (!isQuarterly && form.dirtyInitial && dustingHoursBase > 0) {
+      // Non-quarterly WITH dirty initial checkbox: first visit dusting at 3× time
       // base has 1× dust, so add extra 2× dust
       firstVisitService =
         basePerVisit + normalDustPrice * (form.dirtyInitialMultiplier - 1);  // ✅ USE FORM VALUE (from backend)
     } else {
-      // no dust: first visit = normal base
+      // no dust OR dirty initial not checked: first visit = normal base
       firstVisitService = basePerVisit;
     }
 
