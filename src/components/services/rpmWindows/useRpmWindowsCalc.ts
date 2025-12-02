@@ -88,60 +88,104 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     trip: cfg.tripCharge,
   });
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const data = await serviceConfigApi.getActive("rpmWindows");
+  // ✅ Loading state for refresh button
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-        if (!data || typeof data !== "object" || !("config" in data)) {
-          console.warn('⚠️ RPM Windows config not found in backend, using default fallback values');
-          return;
-        }
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    console.log('🔍 [RPM Windows] Fetching config from backend...');
+    console.log('🔍 [RPM Windows] API call: serviceConfigApi.getActive("rpmWindows")');
 
-        const config = data.config as BackendRpmConfig;
+    try {
+      const response = await serviceConfigApi.getActive("rpmWindows");
 
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
+      console.log('📥 [RPM Windows] Backend response:', response);
+      console.log('📥 [RPM Windows] Response type:', typeof response);
+      console.log('📥 [RPM Windows] Has "data" property?', response && 'data' in response);
 
-        // ✅ Store base weekly rates for frequency adjustment
-        setBaseWeeklyRates({
-          small: config.smallWindowRate ?? cfg.smallWindowRate,
-          medium: config.mediumWindowRate ?? cfg.mediumWindowRate,
-          large: config.largeWindowRate ?? cfg.largeWindowRate,
-          trip: config.tripCharge ?? cfg.tripCharge,
-        });
-
-        // ✅ Update form state with base window rates
-        setForm((prev) => ({
-          ...prev,
-          smallWindowRate: config.smallWindowRate ?? prev.smallWindowRate,
-          mediumWindowRate: config.mediumWindowRate ?? prev.mediumWindowRate,
-          largeWindowRate: config.largeWindowRate ?? prev.largeWindowRate,
-          tripCharge: config.tripCharge ?? prev.tripCharge,
-        }));
-
-        console.log('✅ RPM Windows FULL CONFIG loaded from backend:', {
-          windowRates: {
-            small: config.smallWindowRate,
-            medium: config.mediumWindowRate,
-            large: config.largeWindowRate,
-          },
-          frequencyMultipliers: config.frequencyMultipliers,
-          installMultipliers: {
-            firstTime: config.installMultiplierFirstTime,
-            clean: config.installMultiplierClean,
-          },
-          rateCategories: config.rateCategories,
-          monthlyConversions: config.monthlyConversions,
-          annualFrequencies: config.annualFrequencies,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch RPM Windows config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ RPM Windows config not found in backend, using default fallback values');
+        console.warn('⚠️ [RPM Windows] Error:', response?.error);
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+      console.log('📥 [RPM Windows] Document from response.data:', document);
+      console.log('📥 [RPM Windows] Has "config" in document?', 'config' in document);
+
+      if (!document.config) {
+        console.warn('⚠️ RPM Windows document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendRpmConfig;
+
+      console.log('✅ [RPM Windows] Config found! Details:', {
+        serviceId: document.serviceId,
+        version: document.version,
+        isActive: document.isActive,
+        configKeys: Object.keys(config),
+      });
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      // ✅ Store base weekly rates for frequency adjustment
+      const newBaseRates = {
+        small: config.smallWindowRate ?? cfg.smallWindowRate,
+        medium: config.mediumWindowRate ?? cfg.mediumWindowRate,
+        large: config.largeWindowRate ?? cfg.largeWindowRate,
+        trip: config.tripCharge ?? cfg.tripCharge,
+      };
+
+      console.log('📊 [RPM Windows] Setting new base rates:', newBaseRates);
+      console.log('📊 [RPM Windows] Old hardcoded defaults:', {
+        small: cfg.smallWindowRate,
+        medium: cfg.mediumWindowRate,
+        large: cfg.largeWindowRate,
+      });
+
+      setBaseWeeklyRates(newBaseRates);
+
+      // ✅ Note: We don't update form rates here - the useEffect at line 200-215
+      // will automatically update form rates when baseWeeklyRates changes.
+      // This prevents race conditions between multiple setForm() calls.
+      console.log('📊 [RPM Windows] Base rates updated, useEffect will apply frequency multiplier');
+
+      console.log('✅ RPM Windows FULL CONFIG loaded from backend:', {
+        windowRates: {
+          small: config.smallWindowRate,
+          medium: config.mediumWindowRate,
+          large: config.largeWindowRate,
+        },
+        frequencyMultipliers: config.frequencyMultipliers,
+        installMultipliers: {
+          firstTime: config.installMultiplierFirstTime,
+          clean: config.installMultiplierClean,
+        },
+        rateCategories: config.rateCategories,
+        monthlyConversions: config.monthlyConversions,
+        annualFrequencies: config.annualFrequencies,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch RPM Windows config from backend:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // Fetch on mount
+  useEffect(() => {
     fetchPricing();
   }, []); // Run once on mount
 
@@ -469,5 +513,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     removeExtraCharge,
     calc,
     quote,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
   };
 }

@@ -123,14 +123,23 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const data = await serviceConfigApi.getActive("foamingDrain");
+        const response = await serviceConfigApi.getActive("foamingDrain");
 
-        if (!data || typeof data !== "object" || !("config" in data)) {
+        // ✅ Check if response has error or no data
+        if (!response || response.error || !response.data) {
           console.warn('⚠️ Foaming Drain config not found in backend, using default fallback values');
           return;
         }
 
-        const config = data.config as BackendFoamingDrainConfig;
+        // ✅ Extract the actual document from response.data
+        const document = response.data;
+
+        if (!document.config) {
+          console.warn('⚠️ Foaming Drain document has no config property');
+          return;
+        }
+
+        const config = document.config as BackendFoamingDrainConfig;
 
         // ✅ Store the ENTIRE backend config for use in calculations
         setBackendConfig(config);

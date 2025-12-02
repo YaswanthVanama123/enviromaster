@@ -117,14 +117,23 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const data = await serviceConfigApi.getActive("pureJanitorial");
+        const response = await serviceConfigApi.getActive("pureJanitorial");
 
-        if (!data || typeof data !== "object" || !("config" in data)) {
+        // ✅ Check if response has error or no data
+        if (!response || response.error || !response.data) {
           console.warn('⚠️ Pure Janitorial config not found in backend, using default fallback values');
           return;
         }
 
-        const config = data.config as BackendJanitorialConfig;
+        // ✅ Extract the actual document from response.data
+        const document = response.data;
+
+        if (!document.config) {
+          console.warn('⚠️ Pure Janitorial document has no config property');
+          return;
+        }
+
+        const config = document.config as BackendJanitorialConfig;
 
         // ✅ Store the ENTIRE backend config for use in calculations
         setBackendConfig(config);

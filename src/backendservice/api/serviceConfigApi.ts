@@ -34,7 +34,17 @@ export const serviceConfigApi = {
     const endpoint = serviceId
       ? `/api/service-configs/active?serviceId=${serviceId}`
       : "/api/service-configs/active";
-    return apiClient.get<ServiceConfig | ServiceConfig[]>(endpoint);
+
+    console.log(`🌐 [API] GET ${endpoint}`);
+
+    try {
+      const result = await apiClient.get<ServiceConfig | ServiceConfig[]>(endpoint);
+      console.log(`✅ [API] Response from ${endpoint}:`, result);
+      return result;  // ✅ Return the full response object
+    } catch (error) {
+      console.error(`❌ [API] Error fetching ${endpoint}:`, error);
+      throw error;
+    }
   },
 
   /**

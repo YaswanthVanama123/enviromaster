@@ -176,14 +176,23 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const data = await serviceConfigApi.getActive("sanipod");
+        const response = await serviceConfigApi.getActive("sanipod");
 
-        if (!data || typeof data !== "object" || !("config" in data)) {
+        // ✅ Check if response has error or no data
+        if (!response || response.error || !response.data) {
           console.warn('⚠️ SaniPod config not found in backend, using default fallback values');
           return;
         }
 
-        const config = data.config as BackendSanipodConfig;
+        // ✅ Extract the actual document from response.data
+        const document = response.data;
+
+        if (!document.config) {
+          console.warn('⚠️ SaniPod document has no config property');
+          return;
+        }
+
+        const config = document.config as BackendSanipodConfig;
 
         // ✅ Store the ENTIRE backend config for use in calculations
         setBackendConfig(config);

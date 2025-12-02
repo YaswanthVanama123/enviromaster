@@ -94,14 +94,23 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const data = await serviceConfigApi.getActive("saniscrub");
+        const response = await serviceConfigApi.getActive("saniscrub");
 
-        if (!data || typeof data !== "object" || !("config" in data)) {
+        // ✅ Check if response has error or no data
+        if (!response || response.error || !response.data) {
           console.warn('⚠️ SaniScrub config not found in backend, using default fallback values');
           return;
         }
 
-        const config = data.config as BackendSaniscrubConfig;
+        // ✅ Extract the actual document from response.data
+        const document = response.data;
+
+        if (!document.config) {
+          console.warn('⚠️ SaniScrub document has no config property');
+          return;
+        }
+
+        const config = document.config as BackendSaniscrubConfig;
 
         // ✅ Store the ENTIRE backend config for use in calculations
         setBackendConfig(config);

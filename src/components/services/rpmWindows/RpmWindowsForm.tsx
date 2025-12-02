@@ -17,6 +17,8 @@ export const RpmWindowsForm: React.FC<
     updateExtraCharge,
     calc,
     quote,
+    refreshConfig,
+    isLoadingConfig,
   } = useRpmWindowsCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -109,6 +111,16 @@ export const RpmWindowsForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">RPM WINDOW</div>
+        <button
+          type="button"
+          className="svc-mini"
+          onClick={refreshConfig}
+          disabled={isLoadingConfig}
+          title="Refresh config from database"
+          style={{ fontSize: '14px' }}
+        >
+          {isLoadingConfig ? '⟳' : '🔄'}
+        </button>
         <button
           type="button"
           className="svc-mini"
