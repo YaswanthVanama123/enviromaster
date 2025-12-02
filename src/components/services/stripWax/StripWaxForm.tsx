@@ -24,7 +24,7 @@ export const StripWaxForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.sqft ?? 0) > 0;
+      const isActive = (form.floorAreaSqFt ?? 0) > 0;
 
       const data = isActive ? {
         serviceId: "stripwax",
@@ -42,7 +42,7 @@ export const StripWaxForm: React.FC<
         service: {
           label: "Floor Area",
           type: "calc" as const,
-          qty: form.sqft,
+          qty: form.floorAreaSqFt,
           rate: form.ratePerSqFt,
           total: calc.perVisitPrice,
           unit: "sq ft",

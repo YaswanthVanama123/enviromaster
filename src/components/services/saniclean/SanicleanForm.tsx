@@ -53,7 +53,7 @@ export const SanicleanForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = fixtures > 0 && calc.weeklyTotal > 0;
+      const isActive = fixtures > 0;
 
       const data = isActive ? {
         serviceId: "saniclean",

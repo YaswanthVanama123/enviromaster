@@ -24,7 +24,7 @@ export const JanitorialForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.hours ?? 0) > 0;
+      const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingPlaces ?? 0) > 0;
 
       const data = isActive ? {
         serviceId: "janitorial",
@@ -48,9 +48,9 @@ export const JanitorialForm: React.FC<
         service: {
           label: "Service",
           type: "calc" as const,
-          qty: form.hours,
-          rate: form.hourlyRate,
-          total: calc.weeklyTotal,
+          qty: calc.totalHours,
+          rate: form.schedulingMode === "normalRoute" ? form.baseHourlyRate : form.shortJobHourlyRate,
+          total: calc.perVisit,
           unit: "hours",
         },
 
@@ -74,12 +74,12 @@ export const JanitorialForm: React.FC<
           weekly: {
             label: "Weekly Total",
             type: "dollar" as const,
-            amount: calc.weeklyTotal,
+            amount: calc.perVisit,
           },
           monthly: {
             label: "Monthly Total",
             type: "dollar" as const,
-            amount: calc.monthlyTotal,
+            amount: calc.monthly,
           },
           contract: {
             label: "Contract Total",

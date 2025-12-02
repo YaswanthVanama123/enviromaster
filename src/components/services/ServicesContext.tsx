@@ -9,13 +9,7 @@ import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
  */
 
 export interface ServicesState {
-  saniclean?: {
-    pricingMode: SanicleanFormState["pricingMode"];
-    fixtureCount: number;
-    isActive: boolean;
-    // Complete form data for saving
-    formData?: any;
-  };
+  saniclean?: any;
   foamingDrain?: any;
   saniscrub?: any;
   microfiberMopping?: any;
@@ -25,6 +19,8 @@ export interface ServicesState {
   carpetclean?: any;
   janitorial?: any;
   stripwax?: any;
+  greaseTrap?: any;
+  customServices?: any;
 }
 
 interface ServicesContextValue {
@@ -51,11 +47,7 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
       setServicesState((prev) => ({
         ...prev,
         saniclean: {
-          ...(prev.saniclean ?? {
-            pricingMode: "auto",
-            fixtureCount: 0,
-            isActive: false,
-          }),
+          ...(prev.saniclean ?? {}),
           ...update,
         },
       }));
@@ -76,14 +68,19 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const value = useMemo<ServicesContextValue>(() => {
     // Computed: Is SaniClean in all-inclusive mode?
+    // Access the structured data format
+    const sanicleanData = servicesState.saniclean;
     const isSanicleanAllInclusive = Boolean(
-      servicesState.saniclean?.isActive &&
-      servicesState.saniclean?.pricingMode === "all_inclusive"
+      sanicleanData?.isActive &&
+      (sanicleanData?.pricingMode?.value === "All Inclusive" ||
+       sanicleanData?.pricingMode === "all_inclusive")
     );
 
     // Computed: Paper credit (all-inclusive only)
+    // Extract fixture count from the structured data
+    const fixtureCount = sanicleanData?.fixtureBreakdown?.reduce((sum: number, item: any) => sum + (item.qty || 0), 0) || 0;
     const sanicleanPaperCreditPerWeek = isSanicleanAllInclusive
-      ? (servicesState.saniclean?.fixtureCount ?? 0) * 5 // $5 per fixture per week
+      ? fixtureCount * 5 // $5 per fixture per week
       : 0;
 
     return {

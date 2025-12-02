@@ -30,7 +30,7 @@ export const CarpetForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.sqft ?? 0) > 0;
+      const isActive = (form.areaSqFt ?? 0) > 0;
 
       const data = isActive ? {
         serviceId: "carpetclean",
@@ -46,8 +46,8 @@ export const CarpetForm: React.FC<
         service: {
           label: "Carpet Area",
           type: "calc" as const,
-          qty: form.sqft,
-          rate: form.ratePerSqFt,
+          qty: form.areaSqFt,
+          rate: form.firstUnitRate,
           total: calc.perVisitTotal,
           unit: "sq ft",
         },
