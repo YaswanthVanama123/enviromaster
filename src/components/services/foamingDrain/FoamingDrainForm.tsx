@@ -34,10 +34,84 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  const breakdown = quote.breakdown;
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
-      const data = isActive ? { ...state, ...quote, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "foamingDrain",
+        displayName: "Foaming Drain",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: state.frequency.charAt(0).toUpperCase() + state.frequency.slice(1),
+        },
+
+        location: {
+          label: "Location",
+          type: "text" as const,
+          value: state.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        },
+
+        drainBreakdown: [
+          ...(state.standardDrainCount > 0 ? [{
+            label: "Standard Drains",
+            type: "calc" as const,
+            qty: state.standardDrainCount,
+            rate: state.standardDrainRatePerWeek,
+            total: breakdown.standardWeekly,
+          }] : []),
+          ...(state.greaseTrapCount > 0 ? [{
+            label: "Grease Trap Drains",
+            type: "calc" as const,
+            qty: state.greaseTrapCount,
+            rate: state.greaseTrapRatePerWeek,
+            total: breakdown.greaseTrapWeekly,
+          }] : []),
+          ...(state.greenDrainCount > 0 ? [{
+            label: "Green Drains",
+            type: "calc" as const,
+            qty: state.greenDrainCount,
+            rate: state.greenDrainRatePerWeek,
+            total: breakdown.greenWeekly,
+          }] : []),
+        ],
+
+        ...(breakdown.tripWeekly > 0 ? {
+          tripCharge: {
+            label: "Trip Charge",
+            type: "dollar" as const,
+            amount: breakdown.tripWeekly,
+          },
+        } : {}),
+
+        totals: {
+          weekly: {
+            label: "Weekly Total",
+            type: "dollar" as const,
+            amount: quote.weeklyTotal,
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: quote.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: state.contractMonths,
+            amount: quote.contractTotal,
+          },
+        },
+
+        notes: state.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       // Only update if data actually changed
@@ -47,9 +121,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, quote, customFields]);
-
-  const breakdown = quote.breakdown;
+  }, [state, quote, breakdown, customFields]);
 
   // Availability for alt options
   const isWeekly = state.frequency === "weekly";

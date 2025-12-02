@@ -40,20 +40,6 @@ export const SaniscrubForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = React.useRef<string>("");
 
-  React.useEffect(() => {
-    if (servicesContext) {
-      const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
-      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
-      const dataStr = JSON.stringify(data);
-
-      if (dataStr !== prevDataRef.current) {
-        prevDataRef.current = dataStr;
-        servicesContext.updateService("saniscrub", data);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc, customFields]);
-
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {
     if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
@@ -63,17 +49,6 @@ export const SaniscrubForm: React.FC<
       return form.fixtureRateBimonthly; // ✅ Uses form value
     }
     return form.fixtureRateQuarterly; // ✅ Uses form value
-  })();
-
-  //Get the corresponding rate field name for onChange
-  const fixtureRateFieldName = (() => {
-    if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
-      return "fixtureRateMonthly";
-    }
-    if (form.frequency === "bimonthly") {
-      return "fixtureRateBimonthly";
-    }
-    return "fixtureRateQuarterly";
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
@@ -90,6 +65,92 @@ export const SaniscrubForm: React.FC<
         ? calc.fixtureMinimumApplied
         : calc.fixtureRawForMinimum
       : 0;
+
+  React.useEffect(() => {
+    if (servicesContext) {
+      const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
+
+      const data = isActive ? {
+        serviceId: "saniscrub",
+        displayName: "SaniScrub",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: saniscrubFrequencyLabels[form.frequency] || form.frequency,
+        },
+
+        location: {
+          label: "Location",
+          type: "text" as const,
+          value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        },
+
+        ...(form.fixtureCount > 0 ? {
+          restroomFixtures: {
+            label: "Restroom Fixtures",
+            type: "calc" as const,
+            qty: form.fixtureCount,
+            rate: displayFixtureRate,
+            total: fixtureLineDisplayAmount,
+          },
+        } : {}),
+
+        ...(form.nonBathroomSqFt > 0 ? {
+          nonBathroomArea: {
+            label: "Non-Bathroom Area",
+            type: "calc" as const,
+            qty: form.nonBathroomSqFt,
+            rate: form.nonBathroomRatePerSqFt,
+            total: calc.nonBathroomMonthly,
+            unit: "sq ft",
+          },
+        } : {}),
+
+        totals: {
+          monthly: {
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: calc.baseMonthly,
+          },
+          firstMonth: {
+            label: "First Month",
+            type: "dollar" as const,
+            amount: calc.firstMonthly,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("saniscrub", data);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc, customFields, displayFixtureRate, fixtureLineDisplayAmount]);
+
+  //Get the corresponding rate field name for onChange
+  const fixtureRateFieldName = (() => {
+    if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
+      return "fixtureRateMonthly";
+    }
+    if (form.frequency === "bimonthly") {
+      return "fixtureRateBimonthly";
+    }
+    return "fixtureRateQuarterly";
+  })();
 
   return (
     <div className="svc-card">

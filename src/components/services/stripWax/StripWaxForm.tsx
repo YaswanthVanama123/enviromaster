@@ -25,7 +25,44 @@ export const StripWaxForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.sqft ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "stripwax",
+        displayName: "Strip & Wax",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+        },
+
+        service: {
+          label: "Floor Area",
+          type: "calc" as const,
+          qty: form.sqft,
+          rate: form.ratePerSqFt,
+          total: calc.perVisitPrice,
+          unit: "sq ft",
+        },
+
+        totals: {
+          perVisit: {
+            label: "Per Visit Price",
+            type: "dollar" as const,
+            amount: calc.perVisitPrice,
+          },
+          annual: {
+            label: "Annual Price",
+            type: "dollar" as const,
+            amount: calc.annualPrice,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

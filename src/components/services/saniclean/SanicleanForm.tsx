@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "../ServicesSection.css";
 import { useSanicleanCalc } from "./useSanicleanCalc";
 import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
@@ -22,37 +22,175 @@ export const SanicleanForm: React.FC<
   const fixtures = Math.max(0, form.fixtureCount);
   const isAllInclusive = calc.method === "all_inclusive";
 
-  // Broadcast SaniClean state to context for cross-service integration
-  useEffect(() => {
-    if (servicesContext) {
-      const isActive = fixtures > 0 && calc.weeklyTotal > 0;
-      servicesContext.updateSaniclean({
-        pricingMode: form.pricingMode,
-        fixtureCount: fixtures,
-        isActive,
-        // Save complete form data for form submission INCLUDING custom fields
-        formData: {
-          ...form,
-          ...calc,
-          isActive,
-          customFields, // ADD THIS - save custom fields!
-        },
-      });
-    }
-  }, [form, calc, fixtures, customFields, servicesContext?.updateSaniclean]);
+  // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
 
-  // ✅ Determine which rate to DISPLAY based on user selection (form.pricingMode), not calc.method
-  // This ensures the input field updates immediately when dropdown changes
+  // Calculate dispensers
+  const soapDispensers = form.sinks * cfg.facilityComponents.sinks.ratioSinkToSoap;
+  const airFreshDispensers = form.sinks > 0
+    ? Math.ceil(form.sinks / cfg.facilityComponents.sinks.ratioSinkToAirFreshener)
+    : 0;
+  const dispenserCount = soapDispensers + airFreshDispensers;
+
+  // Determine which rate to display based on pricing mode
   const shouldShowAllInclusiveRate =
     form.pricingMode === "all_inclusive" ||
     (form.pricingMode === "auto" && fixtures >= form.allInclusiveMinFixtures);
 
-  // Per-fixture UI price:
-  //  - All Inclusive → $20/fixture/week (from form, editable)
-  //  - Else          → geographic rate ($7 or $6, from form, editable)
   const baseRateDisplay = shouldShowAllInclusiveRate
     ? form.allInclusiveWeeklyRate
     : (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture);
+
+  const luxuryUpgradeWeekly = form.soapType === "luxury" && soapDispensers > 0
+    ? soapDispensers * form.standardToLuxuryRate
+    : 0;
+
+  const extraSoapRatePerGallon = form.soapType === "luxury"
+    ? form.excessLuxurySoapRate
+    : form.excessStandardSoapRate;
+
+  const extraSoapWeekly = Math.max(0, form.excessSoapGallonsPerWeek) * extraSoapRatePerGallon;
+
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = fixtures > 0 && calc.weeklyTotal > 0;
+
+      const data = isActive ? {
+        serviceId: "saniclean",
+        displayName: "SaniClean",
+        isActive: true,
+
+        pricingMode: {
+          label: "Pricing Mode",
+          type: "text" as const,
+          value: form.pricingMode === "all_inclusive" ? "All Inclusive" :
+                 form.pricingMode === "geographic_standard" ? "Per Fixture / Geographic Standard" :
+                 `Auto (${calc.method === "all_inclusive" ? "All Inclusive" : "Geographic Standard"})`,
+        },
+
+        location: {
+          label: "Location",
+          type: "text" as const,
+          value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        },
+
+        fixtureBreakdown: [
+          ...(form.sinks > 0 ? [{
+            label: "Sinks",
+            type: "calc" as const,
+            qty: form.sinks,
+            rate: baseRateDisplay,
+            total: form.sinks * baseRateDisplay,
+          }] : []),
+          ...(form.urinals > 0 ? [{
+            label: "Urinals",
+            type: "calc" as const,
+            qty: form.urinals,
+            rate: baseRateDisplay,
+            total: form.urinals * baseRateDisplay,
+          }] : []),
+          ...(form.maleToilets > 0 ? [{
+            label: "Male Toilets",
+            type: "calc" as const,
+            qty: form.maleToilets,
+            rate: baseRateDisplay,
+            total: form.maleToilets * baseRateDisplay,
+          }] : []),
+          ...(form.femaleToilets > 0 ? [{
+            label: "Female Toilets",
+            type: "calc" as const,
+            qty: form.femaleToilets,
+            rate: baseRateDisplay,
+            total: form.femaleToilets * baseRateDisplay,
+          }] : []),
+        ],
+
+        soapType: {
+          label: "Soap Type",
+          type: "text" as const,
+          value: form.soapType === "luxury" ? "Luxury" : "Standard",
+        },
+
+        ...(luxuryUpgradeWeekly > 0 ? {
+          luxuryUpgrade: {
+            label: "Luxury Soap Upgrade",
+            type: "calc" as const,
+            qty: soapDispensers,
+            rate: form.standardToLuxuryRate,
+            total: luxuryUpgradeWeekly,
+          },
+        } : {}),
+
+        ...(extraSoapWeekly > 0 ? {
+          extraSoap: {
+            label: "Extra Soap",
+            type: "calc" as const,
+            qty: form.excessSoapGallonsPerWeek,
+            rate: extraSoapRatePerGallon,
+            total: extraSoapWeekly,
+          },
+        } : {}),
+
+        ...(!isAllInclusive && dispenserCount > 0 ? {
+          warranty: {
+            label: "Dispenser Warranty",
+            type: "calc" as const,
+            qty: dispenserCount,
+            rate: form.warrantyFeePerDispenser,
+            total: dispenserCount * form.warrantyFeePerDispenser,
+          },
+        } : {}),
+
+        ...(form.addMicrofiberMopping && form.microfiberBathrooms > 0 && !isAllInclusive ? {
+          microfiberMopping: {
+            label: "Microfiber Mopping",
+            type: "calc" as const,
+            qty: form.microfiberBathrooms,
+            rate: form.microfiberMoppingPerBathroom,
+            total: form.microfiberBathrooms * form.microfiberMoppingPerBathroom,
+          },
+        } : {}),
+
+        ...(isAllInclusive ? {
+          paperCreditInfo: {
+            label: "Paper Credit/Overage",
+            type: "text" as const,
+            value: `Spend: $${form.estimatedPaperSpendPerWeek.toFixed(2)} - Credit: $${calc.weeklyPaperCredit.toFixed(2)} = Overage: $${calc.weeklyPaperOverage.toFixed(2)}`,
+          },
+        } : {}),
+
+        totals: {
+          weekly: {
+            label: "Weekly Total",
+            type: "dollar" as const,
+            amount: calc.weeklyTotal,
+          },
+          monthly: {
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: calc.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.monthlyTotal * (form.contractMonths || 12),
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("saniclean", data);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, calc, fixtures, customFields, soapDispensers, dispenserCount, isAllInclusive, shouldShowAllInclusiveRate, baseRateDisplay, luxuryUpgradeWeekly, extraSoapRatePerGallon, extraSoapWeekly]);
 
   console.log('📊 [SaniClean Form] Display Rate:', {
     pricingMode: form.pricingMode,
@@ -67,32 +205,6 @@ export const SanicleanForm: React.FC<
     fixtures: fixtures,
     allInclusiveMinFixtures: form.allInclusiveMinFixtures,
   });
-
-  // Dispensers from sinks
-  const soapDispensers =
-    form.sinks * cfg.facilityComponents.sinks.ratioSinkToSoap;
-
-  const airFreshDispensers =
-    form.sinks > 0
-      ? Math.ceil(
-          form.sinks / cfg.facilityComponents.sinks.ratioSinkToAirFreshener
-        )
-      : 0;
-
-  const dispenserCount = soapDispensers + airFreshDispensers;
-
-  const luxuryUpgradeWeekly =
-    form.soapType === "luxury" && soapDispensers > 0
-      ? soapDispensers * form.standardToLuxuryRate  // ✅ USE FORM VALUE (editable)
-      : 0;
-
-  const extraSoapRatePerGallon =
-    form.soapType === "luxury"
-      ? form.excessLuxurySoapRate  // ✅ USE FORM VALUE (editable)
-      : form.excessStandardSoapRate;  // ✅ USE FORM VALUE (editable)
-
-  const extraSoapWeekly =
-    Math.max(0, form.excessSoapGallonsPerWeek) * extraSoapRatePerGallon;
 
   const paperCreditPerWeek = calc.weeklyPaperCredit;
   const paperOveragePerWeek = calc.weeklyPaperOverage;

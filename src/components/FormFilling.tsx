@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import CustomerSection from "./CustomerSection";
 import ProductsSection from "./products/ProductsSection";
 import type { ProductsSectionHandle } from "./products/ProductsSection";
@@ -80,6 +80,7 @@ const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 
 export default function FormFilling() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [payload, setPayload] = useState<FormPayload | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,6 +88,7 @@ export default function FormFilling() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
 
   // Refs to collect data from child components
   const productsRef = useRef<ProductsSectionHandle>(null);
@@ -98,6 +100,7 @@ export default function FormFilling() {
 
     // Update documentId when location changes
     setDocumentId(id || null);
+    setIsEditMode(editing); // Set edit mode state
 
     // ---- PICK API FOR INITIAL DATA ----
     const useCustomerDoc = editing && !!id;
@@ -111,6 +114,13 @@ export default function FormFilling() {
 
         const fromBackend = json.payload ?? json;
 
+        console.log("📋 [FormFilling] Loaded from backend:", {
+          isEditMode: useCustomerDoc,
+          hasServices: !!fromBackend.services,
+          services: fromBackend.services,
+          servicesKeys: fromBackend.services ? Object.keys(fromBackend.services) : []
+        });
+
         const cleanPayload: FormPayload = {
           headerTitle: fromBackend.headerTitle ?? "Customer Update Addendum",
           headerRows: fromBackend.headerRows ?? [],
@@ -118,20 +128,7 @@ export default function FormFilling() {
             headers: [],
             rows: [],
           },
-          services: fromBackend.services ?? {
-            topRow: [],
-            bottomRow: [],
-            refreshPowerScrub: {
-              heading: "REFRESH POWER SCRUB",
-              columns: [],
-              freqLabels: [],
-            },
-            notes: {
-              heading: "SERVICE NOTES",
-              lines: 3,
-              textLines: [],
-            },
-          },
+          services: fromBackend.services ?? {},
           agreement: {
             enviroOf: fromBackend.agreement?.enviroOf ?? "",
             customerExecutedOn:
@@ -220,6 +217,9 @@ export default function FormFilling() {
       stripwax: null,
     };
 
+    // Extract customer name from headerRows
+    const customerName = extractCustomerName(payload?.headerRows || []);
+
     return {
       headerTitle: payload?.headerTitle || "",
       headerRows: payload?.headerRows || [],
@@ -230,7 +230,23 @@ export default function FormFilling() {
         customerExecutedOn: "",
         additionalMonths: "",
       },
+      customerName, // Add customer name for PDF filename
     };
+  };
+
+  // Helper function to extract customer name from headerRows
+  const extractCustomerName = (headerRows: HeaderRow[]): string => {
+    for (const row of headerRows) {
+      // Check left side
+      if (row.labelLeft && row.labelLeft.toUpperCase().includes("CUSTOMER NAME")) {
+        return row.valueLeft?.trim() || "Unnamed_Customer";
+      }
+      // Check right side
+      if (row.labelRight && row.labelRight.toUpperCase().includes("CUSTOMER NAME")) {
+        return row.valueRight?.trim() || "Unnamed_Customer";
+      }
+    }
+    return "Unnamed_Customer";
   };
 
   // Draft handler: Save without PDF compilation and Zoho
@@ -284,6 +300,11 @@ export default function FormFilling() {
         await pdfApi.updateAndRecompileCustomerHeader(documentId, payloadToSend);
         console.log("Document saved and PDF compiled");
         setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
+
+        // Redirect to saved files after a short delay to show the success message
+        setTimeout(() => {
+          navigate("/saved-files");
+        }, 1500);
       } else {
         // Create new document with PDF compilation
         const result = await pdfApi.createCustomerHeader(payloadToSend);
@@ -291,6 +312,11 @@ export default function FormFilling() {
         setDocumentId(newId);
         console.log("Document created and PDF compiled:", newId);
         setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
+
+        // Redirect to saved files after a short delay to show the success message
+        setTimeout(() => {
+          navigate("/saved-files");
+        }, 1500);
       }
     } catch (err) {
       console.error("Error saving document:", err);
@@ -420,14 +446,28 @@ export default function FormFilling() {
   };
 
   // Extract products when payload is available
+  // ONLY use initial products if we're in EDIT MODE
   const extractedProducts = useMemo(() => {
+    // If NOT in edit mode, return undefined so ProductsSection uses catalog defaults
+    if (!isEditMode) {
+      return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
+    }
+
+    // If in edit mode, use saved products
     if (!payload?.products) return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
     return extractProductsFromBackend();
-  }, [payload?.products]);
+  }, [payload?.products, isEditMode]);
 
   console.log("📦 Initial products extracted from payload:", {
+    isEditMode,
     extractedProducts,
     rawProductRows: payload?.products?.rows
+  });
+
+  console.log("🔧 Services being passed to ServicesSection:", {
+    hasPayload: !!payload,
+    servicesData: payload?.services,
+    servicesKeys: payload?.services ? Object.keys(payload.services) : []
   });
 
   return (

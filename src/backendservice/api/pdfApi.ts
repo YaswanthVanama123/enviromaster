@@ -115,7 +115,7 @@ export const pdfApi = {
    * Update document status
    */
   async updateDocumentStatus(id: string, status: string): Promise<void> {
-    await axios.put(
+    await axios.patch(
       `${API_BASE_URL}/api/pdf/customer-headers/${id}/status`,
       { status },
       {

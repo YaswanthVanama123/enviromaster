@@ -27,7 +27,67 @@ export const MicrofiberMoppingForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "microfiberMopping",
+        displayName: "Microfiber Mopping",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+        },
+
+        serviceBreakdown: [
+          ...(form.bathroomCount > 0 ? [{
+            label: "Bathrooms",
+            type: "calc" as const,
+            qty: form.bathroomCount,
+            rate: form.bathroomRate,
+            total: calc.bathroomTotal,
+          }] : []),
+          ...(form.hugeBathroomSqFt > 0 ? [{
+            label: "Huge Bathrooms",
+            type: "calc" as const,
+            qty: form.hugeBathroomSqFt,
+            rate: form.hugeBathroomRate,
+            total: calc.hugeBathroomTotal,
+            unit: "sq ft",
+          }] : []),
+          ...(form.extraAreaSqFt > 0 ? [{
+            label: "Extra Area",
+            type: "calc" as const,
+            qty: form.extraAreaSqFt,
+            rate: form.extraAreaRate,
+            total: calc.extraAreaTotal,
+            unit: "sq ft",
+          }] : []),
+        ],
+
+        totals: {
+          weekly: {
+            label: "Weekly Total",
+            type: "dollar" as const,
+            amount: calc.weeklyTotal,
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: calc.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

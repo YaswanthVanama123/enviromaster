@@ -25,7 +25,72 @@ export const JanitorialForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.hours ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "janitorial",
+        displayName: "Pure Janitorial",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+        },
+
+        schedulingMode: {
+          label: "Scheduling Mode",
+          type: "text" as const,
+          value: form.schedulingMode === "normalRoute" ? "Normal Route" : "Service Type",
+        },
+
+        service: {
+          label: "Service",
+          type: "calc" as const,
+          qty: form.hours,
+          rate: form.hourlyRate,
+          total: calc.weeklyTotal,
+          unit: "hours",
+        },
+
+        ...(form.vacuumingHours > 0 ? {
+          vacuuming: {
+            label: "Vacuuming",
+            type: "text" as const,
+            value: `${form.vacuumingHours} hours`,
+          },
+        } : {}),
+
+        ...(form.dustingPlaces > 0 ? {
+          dusting: {
+            label: "Dusting",
+            type: "text" as const,
+            value: `${form.dustingPlaces} places`,
+          },
+        } : {}),
+
+        totals: {
+          weekly: {
+            label: "Weekly Total",
+            type: "dollar" as const,
+            amount: calc.weeklyTotal,
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: calc.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

@@ -26,9 +26,40 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "sanipod",
+        displayName: "SaniPod",
+        isActive: true,
+
+        service: {
+          label: "SaniPods",
+          type: "calc" as const,
+          qty: form.podQuantity,
+          rate: form.podRate,
+          total: calc.monthlyTotal,
+        },
+
+        totals: {
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: calc.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
- 
+
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
         servicesContext.updateService("sanipod", data);

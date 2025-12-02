@@ -31,8 +31,87 @@ export const RpmWindowsForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.smallWindows ?? 0) > 0 || (form.mediumWindows ?? 0) > 0 || (form.largeWindows ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, ...quote, isActive, customFields } : null;
+      const isActive = (form.smallQty ?? 0) > 0 || (form.mediumQty ?? 0) > 0 || (form.largeQty ?? 0) > 0;
+
+      const data = isActive ? {
+        serviceId: "rpmWindows",
+        displayName: "RPM Window",
+        isActive: true,
+        windows: [
+          ...(form.smallQty > 0 ? [{
+            label: "Small Windows",
+            type: "calc" as const,
+            qty: form.smallQty,
+            rate: calc.effSmall,
+            total: form.customSmallTotal ?? (form.smallQty * calc.effSmall),
+          }] : []),
+          ...(form.mediumQty > 0 ? [{
+            label: "Medium Windows",
+            type: "calc" as const,
+            qty: form.mediumQty,
+            rate: calc.effMedium,
+            total: form.customMediumTotal ?? (form.mediumQty * calc.effMedium),
+          }] : []),
+          ...(form.largeQty > 0 ? [{
+            label: "Large Windows",
+            type: "calc" as const,
+            qty: form.largeQty,
+            rate: calc.effLarge,
+            total: form.customLargeTotal ?? (form.largeQty * calc.effLarge),
+          }] : []),
+        ],
+        installationFee: {
+          label: "Installation Fee + First Visit",
+          type: "dollar" as const,
+          amount: form.customInstallationFee ?? calc.installOneTime,
+        },
+        installType: {
+          label: "Install Type",
+          type: "text" as const,
+          value: form.isFirstTimeInstall ? "First Time (Install)" : "Ongoing / Clean",
+        },
+        serviceFrequency: {
+          label: "Service Frequency",
+          type: "text" as const,
+          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+        },
+        mirrorCleaning: {
+          label: "Mirror Cleaning",
+          type: "text" as const,
+          value: form.includeMirrors ? "Include (same chemicals)" : "Not included",
+        },
+        rateCategory: {
+          label: "Rate Category",
+          type: "text" as const,
+          value: form.selectedRateCategory === "redRate" ? "Red Rate" : "Green Rate",
+        },
+        extraCharges: form.extraCharges.map(charge => ({
+          label: charge.description || "Extra Charge",
+          type: "dollar" as const,
+          amount: charge.amount,
+        })),
+        totals: {
+          perVisit: {
+            label: "Total Price (Per Visit)",
+            type: "dollar" as const,
+            amount: form.customPerVisitPrice ?? quote.perVisitPrice,
+          },
+          monthlyRecurring: {
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: form.customMonthlyRecurring ?? calc.monthlyBillRated,
+          },
+          annual: {
+            label: "Annual Price",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: form.customAnnualPrice ?? quote.annualPrice,
+          },
+        },
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

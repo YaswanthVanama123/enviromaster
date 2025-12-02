@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { pdfApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
-import { HiDocumentText, HiDownload, HiMail, HiEye, HiSave } from "react-icons/hi";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import "./SavedFiles.css";
 
 type FileStatus =
@@ -62,6 +63,33 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   approved_admin: "Approved by Admin",
 };
 
+// Helper function to extract customer name from payload
+function extractCustomerNameFromPayload(payload: any): string | null {
+  if (!payload) return null;
+
+  // Try customerName field first
+  if (payload.customerName && payload.customerName.trim()) {
+    return payload.customerName.trim();
+  }
+
+  // Fallback: search in headerRows for CUSTOMER NAME field
+  const headerRows = payload.headerRows || [];
+  for (const row of headerRows) {
+    // Check left side
+    if (row.labelLeft && row.labelLeft.toUpperCase().includes("CUSTOMER NAME")) {
+      const name = row.valueLeft?.trim();
+      if (name) return name;
+    }
+    // Check right side
+    if (row.labelRight && row.labelRight.toUpperCase().includes("CUSTOMER NAME")) {
+      const name = row.valueRight?.trim();
+      if (name) return name;
+    }
+  }
+
+  return null;
+}
+
 export default function SavedFiles() {
   const [files, setFiles] = useState<SavedFile[]>([]);
   const [query, setQuery] = useState("");
@@ -86,7 +114,7 @@ export default function SavedFiles() {
 
         const mapped: SavedFile[] = items.map((item: any) => ({
           id: item._id || item.id,
-          fileName: item.payload?.headerTitle ?? "Untitled",
+          fileName: extractCustomerNameFromPayload(item.payload) || item.payload?.headerTitle || "Untitled",
           updatedAt: item.updatedAt,
           status: item.status ?? "draft",
           createdAt: item.createdAt,
@@ -143,12 +171,48 @@ export default function SavedFiles() {
     saveStatusToBackend(id, next);
   }
 
-  function sendForApproval() {
+  async function sendForApproval() {
     const ids = Object.entries(selected)
       .filter(([, v]) => v)
       .map(([k]) => k);
+
     if (ids.length === 0) return;
-    setToastMessage({ message: `Send for approval:\n${ids.join(", ")}`, type: "info" });
+
+    try {
+      setLoading(true);
+
+      // Update all selected documents to pending_approval
+      const updatePromises = ids.map(id =>
+        pdfApi.updateDocumentStatus(id, "pending_approval")
+      );
+
+      await Promise.all(updatePromises);
+
+      // Update local state - change status for all selected documents
+      setFiles(prevFiles =>
+        prevFiles.map(file =>
+          ids.includes(file.id)
+            ? { ...file, status: "pending_approval" }
+            : file
+        )
+      );
+
+      // Clear selection
+      setSelected({});
+
+      setToastMessage({
+        message: `Successfully sent ${ids.length} document${ids.length > 1 ? 's' : ''} for approval!`,
+        type: "success"
+      });
+    } catch (err) {
+      console.error("Error sending for approval:", err);
+      setToastMessage({
+        message: "Failed to update some documents. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ---- View handler (eye icon) ----
@@ -223,6 +287,16 @@ export default function SavedFiles() {
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  // ---- Edit handler ----
+  const handleEdit = (file: SavedFile) => {
+    navigate("/form-filling", {
+      state: {
+        editing: true,
+        id: file.id,
+      },
+    });
+  };
+
   return (
     <section className="sf">
       {/* <div className="sf__hero">Saved Files</div> */}
@@ -295,7 +369,7 @@ export default function SavedFiles() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <HiDocumentText size={20} style={{ color: '#2563eb', flexShrink: 0 }} />
+                      <FontAwesomeIcon icon={faFileAlt} style={{ color: '#2563eb', fontSize: '18px' }} />
                       <span>{f.fileName}</span>
                     </div>
                   </td>
@@ -327,11 +401,19 @@ export default function SavedFiles() {
                     <div className="rowactions">
                       <button
                         className="iconbtn"
+                        title="Edit"
+                        type="button"
+                        onClick={() => handleEdit(f)}
+                      >
+                        <FontAwesomeIcon icon={faPencilAlt} />
+                      </button>
+                      <button
+                        className="iconbtn"
                         title="View"
                         type="button"
                         onClick={() => handleView(f)}
                       >
-                        <HiEye size={18} />
+                        <FontAwesomeIcon icon={faEye} />
                       </button>
                       <button
                         className="iconbtn"
@@ -340,7 +422,7 @@ export default function SavedFiles() {
                         onClick={() => handleDownload(f)}
                         disabled={downloadingId === f.id}
                       >
-                        {downloadingId === f.id ? "⏳" : <HiDownload size={18} />}
+                        {downloadingId === f.id ? "⏳" : <FontAwesomeIcon icon={faDownload} />}
                       </button>
                       <button
                         className="iconbtn"
@@ -348,7 +430,7 @@ export default function SavedFiles() {
                         type="button"
                         onClick={() => handleEmail(f)}
                       >
-                        <HiMail size={18} />
+                        <FontAwesomeIcon icon={faEnvelope} />
                       </button>
                       <button
                         className="iconbtn"
@@ -356,7 +438,7 @@ export default function SavedFiles() {
                         type="button"
                         disabled
                       >
-                        {savingStatusId === f.id ? "💾…" : <HiSave size={18} />}
+                        {savingStatusId === f.id ? "💾..." : <FontAwesomeIcon icon={faSave} />}
                       </button>
                     </div>
                   </td>

@@ -20,7 +20,49 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.numberOfTraps ?? 0) > 0;
-      const data = isActive ? { ...form, ...quote, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "greaseTrap",
+        displayName: "Grease Trap",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+        },
+
+        service: {
+          label: "Grease Traps",
+          type: "calc" as const,
+          qty: form.numberOfTraps,
+          rate: form.pricePerTrap,
+          total: quote.perVisitTotal,
+        },
+
+        totals: {
+          perVisit: {
+            label: "Per Visit Total",
+            type: "dollar" as const,
+            amount: quote.perVisitTotal,
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: quote.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: quote.contractTotal,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

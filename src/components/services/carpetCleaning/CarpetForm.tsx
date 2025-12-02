@@ -31,7 +31,50 @@ export const CarpetForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.sqft ?? 0) > 0;
-      const data = isActive ? { ...form, ...calc, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "carpetclean",
+        displayName: "Carpet Cleaning",
+        isActive: true,
+
+        frequency: {
+          label: "Frequency",
+          type: "text" as const,
+          value: carpetFrequencyLabels[form.frequency] || form.frequency,
+        },
+
+        service: {
+          label: "Carpet Area",
+          type: "calc" as const,
+          qty: form.sqft,
+          rate: form.ratePerSqFt,
+          total: calc.perVisitTotal,
+          unit: "sq ft",
+        },
+
+        totals: {
+          perVisit: {
+            label: "Per Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisitTotal,
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: calc.monthlyTotal,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

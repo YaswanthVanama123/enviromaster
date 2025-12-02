@@ -60,7 +60,52 @@ export const RefreshPowerScrubForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = AREA_ORDER.some(key => form[key]?.enabled);
-      const data = isActive ? { ...form, areaTotals, isActive, customFields } : null;
+
+      const data = isActive ? {
+        serviceId: "refreshPowerScrub",
+        displayName: "Refresh Power Scrub",
+        isActive: true,
+
+        rateInfo: {
+          label: "Rate Information",
+          type: "text" as const,
+          value: `$${form.hourlyRate}/hr | Trip: $${form.tripCharge} | Minimum: $${form.minimumVisit}`,
+        },
+
+        areaBreakdown: AREA_ORDER
+          .filter(key => form[key]?.enabled)
+          .map(key => {
+            const area = form[key];
+            return {
+              label: key.charAt(0).toUpperCase() + key.slice(1),
+              type: "text" as const,
+              value: `${area.frequency || ''} - ${area.hours || 0} hrs @ $${form.hourlyRate}/hr = $${(area.hours || 0) * form.hourlyRate}`,
+            };
+          }),
+
+        totals: {
+          perVisit: {
+            label: "Total Per Visit",
+            type: "dollar" as const,
+            amount: areaTotals.totalPerVisit || 0,
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: areaTotals.monthlyTotal || 0,
+          },
+          contract: {
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: (areaTotals.monthlyTotal || 0) * (form.contractMonths || 12),
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {

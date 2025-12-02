@@ -8,17 +8,18 @@ import SavedFiles from "./SavedFiles";
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  HiDocumentText,
-  HiSearch,
-  HiUpload,
-  HiDownload,
-  HiLogout,
-  HiChevronDown,
-  HiBriefcase
-} from "react-icons/hi";
-import { HiOutlineEye, HiOutlineDownload } from "react-icons/hi";
-import { MdAttachMoney } from "react-icons/md";
+  faFileAlt,
+  faSearch,
+  faUpload,
+  faDownload,
+  faSignOutAlt,
+  faChevronDown,
+  faBriefcase,
+  faEye,
+  faDollarSign
+} from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
 type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details";
@@ -240,7 +241,7 @@ export default function AdminPanel() {
 
         <div className="nav-center">
           <div className="modern-search">
-            <HiSearch className="search-icon-modern" size={20} />
+            <FontAwesomeIcon icon={faSearch} className="search-icon-modern" size="lg" />
             <input
               type="text"
               placeholder="Search"
@@ -256,13 +257,13 @@ export default function AdminPanel() {
               {user?.username?.charAt(0).toUpperCase() || "A"}
             </div>
             <span className="user-name-modern">{user?.username || "Admin"}</span>
-            <HiChevronDown size={16} className="dropdown-icon" />
+            <FontAwesomeIcon icon={faChevronDown} className="dropdown-icon" />
           </div>
 
           {showUserMenu && (
             <div className="user-dropdown-menu">
               <button className="dropdown-logout" onClick={handleLogout}>
-                <HiLogout size={18} />
+                <FontAwesomeIcon icon={faSignOutAlt} size="lg" />
                 <span>Log Out</span>
               </button>
             </div>
@@ -300,7 +301,7 @@ export default function AdminPanel() {
           className={`secondary-nav-item ${activeTab === "pricing-details" ? "active" : ""}`}
           onClick={() => handleTabChange("pricing-details")}
         >
-          <MdAttachMoney size={18} />
+          <FontAwesomeIcon icon={faDollarSign} size="lg" />
           Pricing Details
         </button>
       </nav>
@@ -315,7 +316,7 @@ export default function AdminPanel() {
                 <div className="stat-card-modern stat-card-1">
                   <div className="stat-icon-wrapper">
                     <div className="stat-icon stat-icon-blue">
-                      <HiUpload size={28} />
+                      <FontAwesomeIcon icon={faUpload} size="2x" />
                     </div>
                   </div>
                   <div className="stat-content">
@@ -327,7 +328,7 @@ export default function AdminPanel() {
                 <div className="stat-card-modern stat-card-2">
                   <div className="stat-icon-wrapper">
                     <div className="stat-icon stat-icon-green">
-                      <HiDocumentText size={28} />
+                      <FontAwesomeIcon icon={faFileAlt} size="2x" />
                     </div>
                   </div>
                   <div className="stat-content">
@@ -339,7 +340,7 @@ export default function AdminPanel() {
                 <div className="stat-card-modern stat-card-3">
                   <div className="stat-icon-wrapper">
                     <div className="stat-icon stat-icon-dark">
-                      <HiBriefcase size={28} />
+                      <FontAwesomeIcon icon={faBriefcase} size="2x" />
                     </div>
                   </div>
                   <div className="stat-content">
@@ -392,7 +393,7 @@ export default function AdminPanel() {
                             </td>
                             <td>
                               <div className="doc-cell">
-                                <HiDocumentText size={18} className="doc-icon-table" />
+                                <FontAwesomeIcon icon={faFileAlt} className="doc-icon-table" />
                                 <span>{doc.name}</span>
                               </div>
                             </td>
@@ -409,14 +410,14 @@ export default function AdminPanel() {
                                   onClick={() => handleViewPDF(doc.id, doc.name)}
                                   title="View PDF"
                                 >
-                                  <HiOutlineEye size={20} />
+                                  <FontAwesomeIcon icon={faEye} size="lg" />
                                 </button>
                                 <button
                                   className="action-btn action-download"
                                   onClick={() => handleDownload(doc.id, doc.name)}
                                   title="Download PDF"
                                 >
-                                  <HiOutlineDownload size={20} />
+                                  <FontAwesomeIcon icon={faDownload} size="lg" />
                                 </button>
                               </div>
                             </td>
@@ -437,7 +438,7 @@ export default function AdminPanel() {
                   className="upload-btn-large"
                   onClick={() => handleTabChange("manual-uploads")}
                 >
-                  <HiUpload size={20} />
+                  <FontAwesomeIcon icon={faUpload} size="lg" />
                   Upload
                 </button>
                 <div className="upload-info">
