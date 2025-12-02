@@ -265,7 +265,7 @@ export const MicrofiberMoppingForm: React.FC<
 
       {/* Huge bathroom exception */}
       <div className="svc-row">
-        <label>Huge bathroom exception (sq ft)</label>
+        <label>Huge bathroom(sq ft)</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -310,7 +310,7 @@ export const MicrofiberMoppingForm: React.FC<
 
       {/* Extra non-bathroom area */}
       <div className="svc-row">
-        <label>Extra non-bathroom area (sq ft)</label>
+        <label>Extra non-bathroom(sq ft)</label>
         <div className="svc-row-right">
           <input
             className="svc-in"

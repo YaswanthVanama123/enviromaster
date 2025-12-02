@@ -12,7 +12,7 @@ const formatMoney = (n: number): string => `$${n.toFixed(2)}`;
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData, onRemove }) => {
-  const { form, onChange, calc } = useSanicleanCalc(initialData);
+  const { form, onChange, calc, refreshConfig, isLoadingConfig } = useSanicleanCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state
@@ -41,12 +41,32 @@ export const SanicleanForm: React.FC<
     }
   }, [form, calc, fixtures, customFields, servicesContext?.updateSaniclean]);
 
+  // ✅ Determine which rate to DISPLAY based on user selection (form.pricingMode), not calc.method
+  // This ensures the input field updates immediately when dropdown changes
+  const shouldShowAllInclusiveRate =
+    form.pricingMode === "all_inclusive" ||
+    (form.pricingMode === "auto" && fixtures >= form.allInclusiveMinFixtures);
+
   // Per-fixture UI price:
   //  - All Inclusive → $20/fixture/week (from form, editable)
   //  - Else          → geographic rate ($7 or $6, from form, editable)
-  const baseRateDisplay = isAllInclusive
+  const baseRateDisplay = shouldShowAllInclusiveRate
     ? form.allInclusiveWeeklyRate
     : (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture);
+
+  console.log('📊 [SaniClean Form] Display Rate:', {
+    pricingMode: form.pricingMode,
+    calcMethod: calc.method,
+    isAllInclusive,
+    shouldShowAllInclusiveRate,
+    allInclusiveWeeklyRate: form.allInclusiveWeeklyRate,
+    insideBeltwayRatePerFixture: form.insideBeltwayRatePerFixture,
+    outsideBeltwayRatePerFixture: form.outsideBeltwayRatePerFixture,
+    baseRateDisplay,
+    location: form.location,
+    fixtures: fixtures,
+    allInclusiveMinFixtures: form.allInclusiveMinFixtures,
+  });
 
   // Dispensers from sinks
   const soapDispensers =
@@ -92,6 +112,16 @@ export const SanicleanForm: React.FC<
       {/* HEADER */}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>
+        <button
+          type="button"
+          className="svc-mini"
+          onClick={refreshConfig}
+          disabled={isLoadingConfig}
+          title="Refresh config from database"
+          style={{ fontSize: '14px' }}
+        >
+          {isLoadingConfig ? '⟳' : '🔄'}
+        </button>
         <button
           type="button"
           className="svc-mini"
@@ -207,13 +237,14 @@ export const SanicleanForm: React.FC<
           />
           <span>@</span>
           <input
+            key={`sinks-rate-${form.pricingMode}-${form.location}`}
             className="svc-in"
             type="number"
             step="0.01"
-            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={baseRateDisplay}
             onChange={onChange}
-            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
+            title={shouldShowAllInclusiveRate ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -238,13 +269,14 @@ export const SanicleanForm: React.FC<
           />
           <span>@</span>
           <input
+            key={`urinals-rate-${form.pricingMode}-${form.location}`}
             className="svc-in"
             type="number"
             step="0.01"
-            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={baseRateDisplay}
             onChange={onChange}
-            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
+            title={shouldShowAllInclusiveRate ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -269,13 +301,14 @@ export const SanicleanForm: React.FC<
           />
           <span>@</span>
           <input
+            key={`maletoilets-rate-${form.pricingMode}-${form.location}`}
             className="svc-in"
             type="number"
             step="0.01"
-            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={baseRateDisplay}
             onChange={onChange}
-            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
+            title={shouldShowAllInclusiveRate ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -300,13 +333,14 @@ export const SanicleanForm: React.FC<
           />
           <span>@</span>
           <input
+            key={`femaletoilets-rate-${form.pricingMode}-${form.location}`}
             className="svc-in"
             type="number"
             step="0.01"
-            name={isAllInclusive ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={baseRateDisplay}
             onChange={onChange}
-            title={isAllInclusive ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
+            title={shouldShowAllInclusiveRate ? "All-inclusive rate per fixture (from backend)" : "Geographic rate per fixture (from backend)"}
           />
           <span>=</span>
           <input
@@ -436,6 +470,119 @@ export const SanicleanForm: React.FC<
           )}
         </div>
       </div>
+
+      {/* ================== FACILITY COMPONENTS BREAKDOWN ================== */}
+      {!isAllInclusive && (form.urinals > 0 || form.maleToilets > 0 || form.femaleToilets > 0) && (
+        <>
+          <div className="svc-h" style={{ marginTop: 10 }}>
+            FACILITY COMPONENTS (Monthly Charges)
+          </div>
+
+          {form.urinals > 0 && (
+            <div className="svc-row">
+              <label>Urinal Components (screens + mats)</label>
+              <div className="svc-row-right">
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={form.urinals}
+                />
+                <span>@</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={formatMoney(form.urinalScreenRate + form.urinalMatRate)}
+                  title="Urinal screen + urinal mat per month (from backend)"
+                />
+                <span>=</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={formatMoney(form.urinals * (form.urinalScreenRate + form.urinalMatRate))}
+                />
+              </div>
+            </div>
+          )}
+
+          {form.maleToilets > 0 && (
+            <div className="svc-row">
+              <label>Male Toilet Components (clips + covers)</label>
+              <div className="svc-row-right">
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={form.maleToilets}
+                />
+                <span>@</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={formatMoney(form.toiletClipsRate + form.seatCoverDispenserRate)}
+                  title="Toilet clips + seat cover dispenser per month (from backend)"
+                />
+                <span>=</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={formatMoney(form.maleToilets * (form.toiletClipsRate + form.seatCoverDispenserRate))}
+                />
+              </div>
+            </div>
+          )}
+
+          {form.femaleToilets > 0 && (
+            <div className="svc-row">
+              <label>Female Toilet Components (SaniPods)</label>
+              <div className="svc-row-right">
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={form.femaleToilets}
+                />
+                <span>@</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={formatMoney(form.sanipodServiceRate)}
+                  title="SaniPod service per month (from backend)"
+                />
+                <span>=</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={formatMoney(form.femaleToilets * form.sanipodServiceRate)}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="svc-row">
+            <label>Total Facility Components (weekly equivalent)</label>
+            <div className="svc-row-right">
+              <input
+                className="svc-in-box"
+                type="text"
+                readOnly
+                value={formatMoney(
+                  (form.urinals * (form.urinalScreenRate + form.urinalMatRate) +
+                   form.maleToilets * (form.toiletClipsRate + form.seatCoverDispenserRate) +
+                   form.femaleToilets * form.sanipodServiceRate) / form.weeklyToMonthlyMultiplier
+                )}
+                title="Monthly facility components ÷ 4.33 weeks/month"
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ================== MICROFIBER ================== */}
       <div className="svc-h" style={{ marginTop: 10 }}>
@@ -628,7 +775,7 @@ export const SanicleanForm: React.FC<
               calc.method === "all_inclusive"
                 ? "All Inclusive"
                 : calc.method === "small_facility_minimum"
-                ? "Small Facility Minimum ($50/wk)"
+                ? `Small Facility Minimum ($${form.smallFacilityMinimumWeekly}/wk)`
                 : "Per Fixture / Geographic Standard"
             }
           />

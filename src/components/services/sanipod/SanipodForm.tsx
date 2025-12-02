@@ -282,6 +282,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             name="podQuantity"
             value={form.podQuantity}
             onChange={onChange}
+            style={{width:"70px"}}
           />
           <span className="svc-multi">@</span>
           <input
@@ -297,7 +298,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             onChange={onChange}
             onBlur={handleBlur}
             title="Effective rate per pod (editable)"
-            style={{ backgroundColor: form.customWeeklyPodRate !== undefined ? '#fffacd' : 'white' }}
+            style={{ backgroundColor: form.customWeeklyPodRate !== undefined ? '#fffacd' : 'white', width: "70px"}}
           />
           <span className="svc-small">$/wk</span>
           <span className="svc-eq">=</span>
@@ -315,7 +316,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customPodServiceTotal !== undefined ? '#fffacd' : 'white',
-              width: '80px'
+              width: '70px'
             }}
           />
           <span className="svc-small" style={{ marginLeft: "8px" }}>

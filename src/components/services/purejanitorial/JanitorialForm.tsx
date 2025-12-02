@@ -196,10 +196,10 @@ export const JanitorialForm: React.FC<
                 checked={form.isAddonToLargerService}
                 onChange={onChange}
               />
-              <span className="svc-small">
+              {/* <span className="svc-small">
                 This is an add-on to a larger route service (SaniClean, RPM,
                 etc.)
-              </span>
+              </span> */}
             </label>
           </div>
         </div>
@@ -255,10 +255,10 @@ export const JanitorialForm: React.FC<
           </div>
           <span className="svc-small">
             /place (~{form.dustingPlacesPerHour} places/hr).
-            {form.dirtyInitial &&
+            {/* {form.dirtyInitial &&
               " – Dirty initial: first visit dusting at 3× time (non-quarterly)."}
             {form.frequency === "quarterly" &&
-              " – Quarterly: from 2nd visit onwards dusting is 3× time each visit; first visit dusting is included in the main installation fee."}
+              " – Quarterly: from 2nd visit onwards dusting is 3× time each visit; first visit dusting is included in the main installation fee."} */}
           </span>
         </div>
       </div>
@@ -306,12 +306,12 @@ export const JanitorialForm: React.FC<
               checked={form.dirtyInitial}
               onChange={onChange}
             />
-            <span className="svc-small">
+            {/* <span className="svc-small">
               Dirty initial clean – first visit dusting at{" "}
               {cfg.dirtyInitialMultiplier}× time (non-quarterly only). Ongoing
               visits use normal dusting hours; quarterly already uses 3× time on
               recurring visits with first visit dusting covered by install.
-            </span>
+            </span> */}
           </label>
         </div>
       </div>

@@ -335,9 +335,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     // 7a) Filthy standard drains installation
     //     FilthyInstall = (weekly cost for filthy drains) × filthyMultiplier (usually 3)
+    //     ✅ WAIVED when "$10/drain for all standard drains" checkbox is enabled
     let filthyInstallOneTime = 0;
 
-    if (condition === "filthy" && standardDrainsActive > 0) {
+    if (condition === "filthy" && standardDrainsActive > 0 && !state.useBigAccountTenWeekly) {
       // How many drains are filthy?
       const filthyDrainCount =
         filthyDrains > 0 && filthyDrains <= standardDrainsActive

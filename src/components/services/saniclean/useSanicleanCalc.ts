@@ -167,32 +167,62 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendSanicleanConfig | null>(null);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("saniclean");
+  // ✅ Loading state for refresh button
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ SaniClean config not found in backend, using default fallback values');
-          return;
-        }
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("saniclean");
 
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ SaniClean config not found in backend, using default fallback values');
+        return;
+      }
 
-        if (!document.config) {
-          console.warn('⚠️ SaniClean document has no config property');
-          return;
-        }
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
 
-        const config = document.config as BackendSanicleanConfig;
+      if (!document.config) {
+        console.warn('⚠️ SaniClean document has no config property');
+        return;
+      }
 
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
+      const config = document.config as BackendSanicleanConfig;
 
-        setForm((prev) => ({
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      console.log('📊 [SaniClean] Backend Config Received:', {
+        allInclusiveRate: config.allInclusivePackage?.weeklyRatePerFixture,
+        smallFacilityMinimum: config.smallFacilityMinimum?.minimumWeeklyCharge,
+        insideBeltway: {
+          ratePerFixture: config.geographicPricing?.insideBeltway?.ratePerFixture,
+          weeklyMinimum: config.geographicPricing?.insideBeltway?.weeklyMinimum,
+        },
+        outsideBeltway: {
+          ratePerFixture: config.geographicPricing?.outsideBeltway?.ratePerFixture,
+          weeklyMinimum: config.geographicPricing?.outsideBeltway?.weeklyMinimum,
+        },
+      });
+
+      setForm((prev) => {
+        console.log('📊 [SaniClean] Updating Form State:', {
+          before: {
+            allInclusiveWeeklyRate: prev.allInclusiveWeeklyRate,
+            smallFacilityMinimumWeekly: prev.smallFacilityMinimumWeekly,
+            insideBeltwayRatePerFixture: prev.insideBeltwayRatePerFixture,
+          },
+          after: {
+            allInclusiveWeeklyRate: config.allInclusivePackage?.weeklyRatePerFixture ?? prev.allInclusiveWeeklyRate,
+            smallFacilityMinimumWeekly: config.smallFacilityMinimum?.minimumWeeklyCharge ?? prev.smallFacilityMinimumWeekly,
+            insideBeltwayRatePerFixture: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.insideBeltwayRatePerFixture,
+          },
+        });
+
+        return {
           ...prev,
           // Update all rate fields from backend if available
           insideBeltwayRatePerFixture: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.insideBeltwayRatePerFixture,
@@ -221,26 +251,31 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
           weeklyToAnnualMultiplier: config.billingConversions?.weekly?.annualMultiplier ?? prev.weeklyToAnnualMultiplier,
           redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
           greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
-        }));
+        };
+      });
 
-        console.log('✅ SaniClean FULL CONFIG loaded from backend:', {
-          geographicPricing: config.geographicPricing,
-          smallFacilityMinimum: config.smallFacilityMinimum,
-          allInclusivePackage: config.allInclusivePackage,
-          soapUpgrades: config.soapUpgrades,
-          warrantyFee: config.warrantyFeePerDispenser,
-          paperCredit: config.paperCredit,
-          facilityComponents: config.facilityComponents,
-          addOnServices: config.addOnServices,
-          billingConversions: config.billingConversions,
-          rateTiers: config.rateTiers,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch SaniClean config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
-      }
-    };
+      console.log('✅ SaniClean FULL CONFIG loaded from backend:', {
+        geographicPricing: config.geographicPricing,
+        smallFacilityMinimum: config.smallFacilityMinimum,
+        allInclusivePackage: config.allInclusivePackage,
+        soapUpgrades: config.soapUpgrades,
+        warrantyFee: config.warrantyFeePerDispenser,
+        paperCredit: config.paperCredit,
+        facilityComponents: config.facilityComponents,
+        addOnServices: config.addOnServices,
+        billingConversions: config.billingConversions,
+        rateTiers: config.rateTiers,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch SaniClean config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
 
+  // Fetch on mount
+  useEffect(() => {
     fetchPricing();
   }, []); // Run once on mount
 
@@ -520,6 +555,14 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     } else if (method === "small_facility_minimum") {
       // $50 minimum including trip (trip itself is 0 now)
       weeklyBase = form.smallFacilityMinimumWeekly;  // ✅ USE FORM VALUE (from backend)
+
+      console.log('📊 [SaniClean Calc] Small Facility Minimum Applied:', {
+        weeklyBase: form.smallFacilityMinimumWeekly,
+        fromFormValue: form.smallFacilityMinimumWeekly,
+        fixtureThreshold: form.smallFacilityThreshold,
+        currentFixtures: fixtures,
+      });
+
       if (activeConfig.smallFacilityMinimum.includesTripCharge) {  // ✅ FROM BACKEND
         weeklyTrip = 0;
       } else {
@@ -530,6 +573,16 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       // Geographic per-fixture with weekly facility minimum
       const perFixtureWeekly = baseFixtureChargeRaw;
       weeklyBase = Math.max(perFixtureWeekly, weeklyMinimum);  // ✅ USE weeklyMinimum from form
+
+      console.log('📊 [SaniClean Calc] Geographic Standard Applied:', {
+        perFixtureWeekly,
+        weeklyMinimum: weeklyMinimum,
+        weeklyBase,
+        location: form.location,
+        ratePerFixture: ratePerFixture,
+        fixtures: fixtures,
+      });
+
       weeklyTrip = tripCharge + parkingAddon; // tripCharge is 0 now
     }
 
@@ -788,5 +841,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     onChange,
     quote,
     calc,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
   };
 }
