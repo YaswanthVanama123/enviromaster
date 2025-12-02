@@ -36,7 +36,9 @@ export const MicrofiberMoppingForm: React.FC<
         frequency: {
           label: "Frequency",
           type: "text" as const,
-          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+          value: typeof form.frequency === 'string'
+            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+            : String(form.frequency || ''),
         },
 
         serviceBreakdown: [

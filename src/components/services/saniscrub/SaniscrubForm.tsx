@@ -112,12 +112,12 @@ export const SaniscrubForm: React.FC<
           monthly: {
             label: "Monthly Recurring",
             type: "dollar" as const,
-            amount: calc.baseMonthly,
+            amount: calc.monthlyBase,
           },
           firstMonth: {
             label: "First Month",
             type: "dollar" as const,
-            amount: calc.firstMonthly,
+            amount: calc.firstMonthTotal,
           },
           contract: {
             label: "Contract Total",

@@ -73,7 +73,9 @@ export const RpmWindowsForm: React.FC<
         serviceFrequency: {
           label: "Service Frequency",
           type: "text" as const,
-          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+          value: typeof form.frequency === 'string'
+            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+            : String(form.frequency || ''),
         },
         mirrorCleaning: {
           label: "Mirror Cleaning",

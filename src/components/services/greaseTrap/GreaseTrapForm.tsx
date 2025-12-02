@@ -1,10 +1,9 @@
-// src/features/services/greaseTrap/GreaseTrapForm.tsx
-
 import React, { useEffect, useRef, useState } from "react";
 import { useGreaseTrapCalc } from "./useGreaseTrapCalc";
 import type { GreaseTrapFormState } from "./greaseTrapTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
+import { GREASE_TRAP_PER_TRAP_RATE } from "./greaseTrapConfig";
 
 export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRemove?: () => void }> = ({ initialData, onRemove }) => {
   const { form, handleChange, quote } = useGreaseTrapCalc(initialData);
@@ -29,14 +28,16 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
         frequency: {
           label: "Frequency",
           type: "text" as const,
-          value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1),
+          value: typeof form.frequency === 'string'
+            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+            : String(form.frequency || ''),
         },
 
         service: {
           label: "Grease Traps",
           type: "calc" as const,
           qty: form.numberOfTraps,
-          rate: form.pricePerTrap,
+          rate: GREASE_TRAP_PER_TRAP_RATE,
           total: quote.perVisitTotal,
         },
 

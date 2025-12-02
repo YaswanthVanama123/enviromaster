@@ -48,7 +48,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         frequency: {
           label: "Frequency",
           type: "text" as const,
-          value: state.frequency.charAt(0).toUpperCase() + state.frequency.slice(1),
+          value: typeof state.frequency === 'string'
+            ? state.frequency.charAt(0).toUpperCase() + state.frequency.slice(1)
+            : String(state.frequency || 'Weekly'),
         },
 
         location: {
@@ -98,13 +100,13 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           monthly: {
             label: "Monthly Total",
             type: "dollar" as const,
-            amount: quote.monthlyTotal,
+            amount: quote.monthlyRecurring,
           },
           contract: {
             label: "Contract Total",
             type: "dollar" as const,
             months: state.contractMonths,
-            amount: quote.contractTotal,
+            amount: quote.annualRecurring,
           },
         },
 
