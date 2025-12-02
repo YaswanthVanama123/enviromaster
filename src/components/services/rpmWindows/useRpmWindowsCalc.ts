@@ -147,10 +147,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
   // ✅ Update rate fields when frequency changes (apply frequency multiplier)
   useEffect(() => {
-    if (!backendConfig) return; // Wait for backend config to load
+    // Use backend config if available, otherwise use fallback
+    const activeFreqMult = backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers;
 
     const freqKey = mapFrequency(form.frequency);
-    const freqMult = backendConfig.frequencyMultipliers[freqKey] || 1;
+    const freqMult = activeFreqMult[freqKey] || 1;
 
     // Apply frequency multiplier to base weekly rates
     setForm((prev) => ({
@@ -222,7 +223,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
           // Calculate base weekly rate from current frequency-adjusted value
           const freqKey = mapFrequency(prev.frequency);
-          const freqMult = backendConfig?.frequencyMultipliers[freqKey] || 1;
+          const activeFreqMult = backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers;
+          const freqMult = activeFreqMult[freqKey] || 1;
           const weeklyBase = displayVal / freqMult;
 
           // Update base weekly rates

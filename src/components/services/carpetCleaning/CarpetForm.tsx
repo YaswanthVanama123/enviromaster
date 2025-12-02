@@ -104,7 +104,7 @@ export const CarpetForm: React.FC<
               title="Rate per 500 sq ft (from backend, editable)"
             />
           </div>
-          <span className="svc-small">/ 500 sq ft</span>
+          {/* <span className="svc-small">/ 500 sq ft</span> */}
           <span>=</span>
           <div className="svc-dollar">
             <span>$</span>
@@ -123,7 +123,7 @@ export const CarpetForm: React.FC<
               title="Per visit total (editable)"
             />
           </div>
-          <span className="svc-small">(min $</span>
+          {/* <span className="svc-small">(min $</span> */}
           <input
             className="svc-in"
             type="number"
