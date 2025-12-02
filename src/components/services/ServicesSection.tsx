@@ -15,6 +15,7 @@ import { StripWaxForm } from "./stripWax/StripWaxForm";
 import { GreaseTrapForm } from "./greaseTrap/GreaseTrapForm";
 import { CustomService, type CustomServiceData } from "./CustomService";
 import { useServicesContextOptional } from "./ServicesContext";
+import { transformServiceData } from "./common/dataTransformers";
 
 // Map service IDs to their corresponding form components
 const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
@@ -71,7 +72,17 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
   // State for which services are currently visible
   const [visibleServices, setVisibleServices] = useState<Set<string>>(() => {
-    // Initially show all active services
+    // If we have initial services (edit mode), show those services
+    if (initialServices && typeof initialServices === 'object') {
+      const activeServiceIds = Object.keys(initialServices).filter(
+        (key) => initialServices[key as keyof typeof initialServices]?.isActive
+      );
+      if (activeServiceIds.length > 0) {
+        console.log('📋 [ServicesSection] Edit mode detected, showing saved services:', activeServiceIds);
+        return new Set(activeServiceIds);
+      }
+    }
+    // Otherwise, show all active services from configs
     return new Set(configs.filter(c => c.isActive).map(c => c.serviceId));
   });
 
@@ -84,13 +95,23 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   // Use ref to track if configs have been initialized to prevent infinite loop
   const configsInitializedRef = useRef(false);
 
-  // Update visible services when configs load (only once)
+  // Update visible services when configs load (only once, and only if not in edit mode)
   React.useEffect(() => {
     if (configs.length > 0 && !configsInitializedRef.current) {
       configsInitializedRef.current = true;
-      setVisibleServices(new Set(configs.filter(c => c.isActive).map(c => c.serviceId)));
+
+      // Only update visible services if we're NOT in edit mode
+      const hasInitialServices = initialServices && typeof initialServices === 'object' &&
+        Object.keys(initialServices).some((key) => initialServices[key as keyof typeof initialServices]?.isActive);
+
+      if (!hasInitialServices) {
+        console.log('📋 [ServicesSection] New form mode, showing active services from config');
+        setVisibleServices(new Set(configs.filter(c => c.isActive).map(c => c.serviceId)));
+      } else {
+        console.log('📋 [ServicesSection] Edit mode, keeping visible services from saved data');
+      }
     }
-  }, [configs]);
+  }, [configs, initialServices]);
 
   // Memoize the array conversion to prevent infinite loops
   const visibleServicesArray = useMemo(() => Array.from(visibleServices), [visibleServices]);
@@ -293,7 +314,18 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                 −
               </button>
               <ServiceComponent
-                initialData={initialServices?.[config.serviceId as keyof typeof initialServices]}
+                initialData={(() => {
+                  const rawData = initialServices?.[config.serviceId as keyof typeof initialServices];
+                  if (!rawData) return undefined;
+
+                  // Transform structured data back to form state
+                  const transformedData = transformServiceData(config.serviceId, rawData);
+                  console.log(`🔄 [ServicesSection] Transformed ${config.serviceId} data:`, {
+                    raw: rawData,
+                    transformed: transformedData
+                  });
+                  return transformedData;
+                })()}
               />
             </div>
           );
@@ -313,7 +345,18 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       {/* RefreshPowerScrub is special - render outside grid for full width */}
       {refreshPowerScrubVisible && (
         <RefreshPowerScrubForm
-          initialData={initialServices?.refreshPowerScrub}
+          initialData={(() => {
+            const rawData = initialServices?.refreshPowerScrub;
+            if (!rawData) return undefined;
+
+            // Transform structured data back to form state
+            const transformedData = transformServiceData("refreshPowerScrub", rawData);
+            console.log('🔄 [ServicesSection] Transformed refreshPowerScrub data:', {
+              raw: rawData,
+              transformed: transformedData
+            });
+            return transformedData;
+          })()}
           onRemove={() => handleRemoveService("refreshPowerScrub")}
         />
       )}
