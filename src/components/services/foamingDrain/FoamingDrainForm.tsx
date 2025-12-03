@@ -37,6 +37,25 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const breakdown = quote.breakdown;
 
   useEffect(() => {
+    // Calculate effective rates for payload (these match what's shown in the UI)
+    const isVolume = state.standardDrainCount >= cfg.volumePricing.minimumDrains;
+
+    const stdQty = state.isAllInclusive
+      ? 0
+      : isVolume && !state.useBigAccountTenWeekly && !state.isAllInclusive
+      ? Math.max(state.standardDrainCount - state.installDrainCount, 0)
+      : state.standardDrainCount;
+    const stdTotal = breakdown.weeklyStandardDrains;
+    const stdRate = stdQty > 0 ? stdTotal / stdQty : state.standardDrainRate;
+
+    const greaseQty = state.greaseTrapCount;
+    const greaseTotal = breakdown.weeklyGreaseTraps;
+    const greaseRate = greaseQty > 0 ? greaseTotal / greaseQty : state.greaseWeeklyRate;
+
+    const greenQty = state.greenDrainCount;
+    const greenTotal = breakdown.weeklyGreenDrains;
+    const greenRate = greenQty > 0 ? greenTotal / greenQty : state.greenWeeklyRate;
+
     if (servicesContext) {
       const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
 
@@ -64,21 +83,21 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             label: "Standard Drains",
             type: "calc" as const,
             qty: state.standardDrainCount,
-            rate: state.standardDrainRatePerWeek,
+            rate: stdRate,
             total: breakdown.standardWeekly,
           }] : []),
           ...(state.greaseTrapCount > 0 ? [{
             label: "Grease Trap Drains",
             type: "calc" as const,
             qty: state.greaseTrapCount,
-            rate: state.greaseTrapRatePerWeek,
+            rate: greaseRate,
             total: breakdown.greaseTrapWeekly,
           }] : []),
           ...(state.greenDrainCount > 0 ? [{
             label: "Green Drains",
             type: "calc" as const,
             qty: state.greenDrainCount,
-            rate: state.greenDrainRatePerWeek,
+            rate: greenRate,
             total: breakdown.greenWeekly,
           }] : []),
         ],

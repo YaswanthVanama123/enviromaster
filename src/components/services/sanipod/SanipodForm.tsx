@@ -23,6 +23,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  // Calculate effective rate per pod for payload
+  const effectiveRate = form.podQuantity > 0 && calc.monthlyTotal > 0
+    ? calc.monthlyTotal / form.podQuantity
+    : calc.effectiveRatePerPod || 0;
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
@@ -36,15 +41,43 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           label: "SaniPods",
           type: "calc" as const,
           qty: form.podQuantity,
-          rate: form.podRate,
-          total: calc.monthlyTotal,
+          rate: effectiveRate,
+          total: calc.perVisit,
         },
 
+        // Extra bags (if any)
+        ...(form.extraBagsPerWeek > 0 ? {
+          extraBags: {
+            label: form.extraBagsRecurring ? "Extra Bags (Weekly)" : "Extra Bags (One-time)",
+            type: "calc" as const,
+            qty: form.extraBagsPerWeek,
+            rate: form.extraBagPrice,
+            total: form.extraBagsPerWeek * form.extraBagPrice,
+            recurring: form.extraBagsRecurring,
+          },
+        } : {}),
+
+        // Installation (if new install)
+        ...(form.isNewInstall && form.installQuantity > 0 ? {
+          installation: {
+            label: "Installation",
+            type: "calc" as const,
+            qty: form.installQuantity,
+            rate: form.installRatePerPod,
+            total: calc.installCost,
+          },
+        } : {}),
+
         totals: {
+          perVisit: {
+            label: "Per Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisit,
+          },
           monthly: {
             label: "Monthly Total",
             type: "dollar" as const,
-            amount: calc.monthlyTotal,
+            amount: calc.monthly,
           },
           contract: {
             label: "Contract Total",
@@ -62,6 +95,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
+        console.log('🔧 [SaniPod] Sending to context:', JSON.stringify(data, null, 2));
         servicesContext.updateService("sanipod", data);
       }
     }

@@ -24,9 +24,22 @@ export const MicrofiberMoppingForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  // Calculate effective rates for each service type
+  const bathroomRate = form.bathroomCount > 0 && calc.bathroomTotal > 0
+    ? calc.bathroomTotal / form.bathroomCount
+    : form.includedBathroomRate;
+
+  const hugeBathroomRate = form.hugeBathroomSqFt > 0 && calc.hugeBathroomTotal > 0
+    ? calc.hugeBathroomTotal / form.hugeBathroomSqFt
+    : form.hugeBathroomRatePerSqFt;
+
+  const extraAreaRate = form.extraAreaSqFt > 0 && calc.extraAreaTotal > 0
+    ? calc.extraAreaTotal / form.extraAreaSqFt
+    : form.extraAreaRatePerUnit;
+
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0;
+      const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0 || (form.standaloneSqFt ?? 0) > 0 || (form.chemicalGallons ?? 0) > 0;
 
       const data = isActive ? {
         serviceId: "microfiberMopping",
@@ -46,14 +59,14 @@ export const MicrofiberMoppingForm: React.FC<
             label: "Bathrooms",
             type: "calc" as const,
             qty: form.bathroomCount,
-            rate: form.bathroomRate,
+            rate: bathroomRate,
             total: calc.bathroomTotal,
           }] : []),
           ...(form.hugeBathroomSqFt > 0 ? [{
             label: "Huge Bathrooms",
             type: "calc" as const,
             qty: form.hugeBathroomSqFt,
-            rate: form.hugeBathroomRate,
+            rate: hugeBathroomRate,
             total: calc.hugeBathroomTotal,
             unit: "sq ft",
           }] : []),
@@ -61,22 +74,38 @@ export const MicrofiberMoppingForm: React.FC<
             label: "Extra Area",
             type: "calc" as const,
             qty: form.extraAreaSqFt,
-            rate: form.extraAreaRate,
+            rate: extraAreaRate,
             total: calc.extraAreaTotal,
             unit: "sq ft",
+          }] : []),
+          ...(form.standaloneSqFt > 0 ? [{
+            label: "Standalone Service",
+            type: "calc" as const,
+            qty: form.standaloneSqFt,
+            rate: form.standaloneRatePerUnit,
+            total: calc.standaloneServicePrice,
+            unit: "sq ft",
+          }] : []),
+          ...(form.chemicalGallons > 0 ? [{
+            label: "Chemical Supply",
+            type: "calc" as const,
+            qty: form.chemicalGallons,
+            rate: form.dailyChemicalPerGallon,
+            total: calc.chemicalSupplyMonthly,
+            unit: "gallons",
           }] : []),
         ],
 
         totals: {
-          weekly: {
-            label: "Weekly Total",
+          perVisit: {
+            label: "Per Visit Total",
             type: "dollar" as const,
-            amount: calc.weeklyTotal,
+            amount: calc.perVisitPrice,
           },
           monthly: {
             label: "Monthly Total",
             type: "dollar" as const,
-            amount: calc.monthlyTotal,
+            amount: calc.monthlyRecurring,
           },
           contract: {
             label: "Contract Total",
@@ -94,6 +123,7 @@ export const MicrofiberMoppingForm: React.FC<
 
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
+        console.log('🔧 [MicrofiberMopping] Sending to context:', JSON.stringify(data, null, 2));
         servicesContext.updateService("microfiberMopping", data);
       }
     }

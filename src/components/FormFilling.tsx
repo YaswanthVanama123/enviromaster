@@ -294,6 +294,12 @@ export default function FormFilling() {
       status: "pending_approval",
     };
 
+    // Log the complete payload being sent to backend
+    console.log("📤 [FormFilling] COMPLETE PAYLOAD BEING SENT TO BACKEND:");
+    console.log(JSON.stringify(payloadToSend, null, 2));
+    console.log("📤 [FormFilling] SERVICES DATA:");
+    console.log(JSON.stringify(payloadToSend.services, null, 2));
+
     try {
       if (documentId) {
         // Update existing document with PDF recompilation
@@ -303,7 +309,7 @@ export default function FormFilling() {
 
         // Redirect to saved files after a short delay to show the success message
         setTimeout(() => {
-          navigate("/saved-files");
+          navigate("/saved-pdfs");
         }, 1500);
       } else {
         // Create new document with PDF compilation
@@ -315,7 +321,7 @@ export default function FormFilling() {
 
         // Redirect to saved files after a short delay to show the success message
         setTimeout(() => {
-          navigate("/saved-files");
+          navigate("/saved-pdfs");
         }, 1500);
       }
     } catch (err) {

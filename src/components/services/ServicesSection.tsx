@@ -79,7 +79,20 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       );
       if (activeServiceIds.length > 0) {
         console.log('📋 [ServicesSection] Edit mode detected, showing saved services:', activeServiceIds);
-        return new Set(activeServiceIds);
+
+        // Normalize service IDs to handle aliases
+        const normalizedIds = activeServiceIds.map(id => {
+          // Map common aliases to their canonical form
+          if (id === 'carpetclean') return 'carpetclean'; // Keep as-is, config will match via alias check
+          if (id === 'carpetCleaning') return 'carpetclean';
+          if (id === 'janitorial') return 'janitorial';
+          if (id === 'pureJanitorial') return 'janitorial';
+          if (id === 'stripwax') return 'stripwax';
+          if (id === 'stripWax') return 'stripwax';
+          return id;
+        });
+
+        return new Set(normalizedIds);
       }
     }
     // Otherwise, show all active services from configs
@@ -202,9 +215,26 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   );
 
   // Filter visible services (show all services in visibleServices, active or inactive)
-  const activeVisibleServices = configs.filter(
-    (config) => visibleServices.has(config.serviceId)
-  );
+  const activeVisibleServices = configs.filter((config) => {
+    // Check if the config's serviceId is in visibleServices
+    if (visibleServices.has(config.serviceId)) return true;
+
+    // Also check for aliases
+    if ((config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') &&
+        (visibleServices.has('carpetCleaning') || visibleServices.has('carpetclean'))) {
+      return true;
+    }
+    if ((config.serviceId === 'pureJanitorial' || config.serviceId === 'janitorial') &&
+        (visibleServices.has('pureJanitorial') || visibleServices.has('janitorial'))) {
+      return true;
+    }
+    if ((config.serviceId === 'stripWax' || config.serviceId === 'stripwax') &&
+        (visibleServices.has('stripWax') || visibleServices.has('stripwax'))) {
+      return true;
+    }
+
+    return false;
+  });
 
   // Separate RefreshPowerScrub from grid services
   const gridServices = activeVisibleServices.filter(
@@ -315,7 +345,20 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
               </button>
               <ServiceComponent
                 initialData={(() => {
-                  const rawData = initialServices?.[config.serviceId as keyof typeof initialServices];
+                  // Try to find initial data by checking both the serviceId and common aliases
+                  let rawData = initialServices?.[config.serviceId as keyof typeof initialServices];
+
+                  // If not found, try common aliases
+                  if (!rawData) {
+                    if (config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') {
+                      rawData = initialServices?.carpetCleaning || initialServices?.carpetclean;
+                    } else if (config.serviceId === 'pureJanitorial' || config.serviceId === 'janitorial') {
+                      rawData = initialServices?.pureJanitorial || initialServices?.janitorial;
+                    } else if (config.serviceId === 'stripWax' || config.serviceId === 'stripwax') {
+                      rawData = initialServices?.stripWax || initialServices?.stripwax;
+                    }
+                  }
+
                   if (!rawData) return undefined;
 
                   // Transform structured data back to form state

@@ -335,13 +335,29 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     structuredData.serviceBreakdown.forEach((item: any) => {
       if (item.label === "Bathrooms") {
         formState.bathroomCount = item.qty || 0;
-        formState.bathroomRate = item.rate || 0;
+        if (item.rate != null) {
+          formState.includedBathroomRate = item.rate;
+        }
       } else if (item.label === "Huge Bathrooms") {
         formState.hugeBathroomSqFt = item.qty || 0;
-        formState.hugeBathroomRate = item.rate || 0;
+        if (item.rate != null) {
+          formState.hugeBathroomRatePerSqFt = item.rate;
+        }
       } else if (item.label === "Extra Area") {
         formState.extraAreaSqFt = item.qty || 0;
-        formState.extraAreaRate = item.rate || 0;
+        if (item.rate != null) {
+          formState.extraAreaRatePerUnit = item.rate;
+        }
+      } else if (item.label === "Standalone Service") {
+        formState.standaloneSqFt = item.qty || 0;
+        if (item.rate != null) {
+          formState.standaloneRatePerUnit = item.rate;
+        }
+      } else if (item.label === "Chemical Supply") {
+        formState.chemicalGallons = item.qty || 0;
+        if (item.rate != null) {
+          formState.dailyChemicalPerGallon = item.rate;
+        }
       }
     });
   }
@@ -364,7 +380,25 @@ export function transformSanipodData(structuredData: any): any {
   // Extract service (sanipods)
   if (structuredData.service) {
     formState.podQuantity = structuredData.service.qty || 0;
-    formState.podRate = structuredData.service.rate || 0;
+    // Note: Don't extract rate here as it's calculated from totals
+  }
+
+  // Extract extra bags
+  if (structuredData.extraBags) {
+    formState.extraBagsPerWeek = structuredData.extraBags.qty || 0;
+    formState.extraBagsRecurring = structuredData.extraBags.recurring !== false; // default true
+    if (structuredData.extraBags.rate != null) {
+      formState.extraBagPrice = structuredData.extraBags.rate;
+    }
+  }
+
+  // Extract installation
+  if (structuredData.installation) {
+    formState.isNewInstall = true;
+    formState.installQuantity = structuredData.installation.qty || 0;
+    if (structuredData.installation.rate != null) {
+      formState.installRatePerPod = structuredData.installation.rate;
+    }
   }
 
   // Extract contract months
