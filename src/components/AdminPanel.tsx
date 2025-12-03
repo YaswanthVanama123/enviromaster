@@ -47,6 +47,12 @@ export default function AdminPanel() {
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // Pie chart states
+  const [pieTimeFilter, setPieTimeFilter] = useState("This Week");
+  const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
+  const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   // Hide global navigation when admin panel is open
   useEffect(() => {
     // Hide all navigation elements
@@ -224,6 +230,80 @@ export default function AdminPanel() {
         return "Pricing Details";
       default:
         return "Dashboard";
+    }
+  };
+
+  // Calculate pie chart data based on time filter
+  const getPieChartData = () => {
+    const today = new Date();
+    let filteredDocs = [...documents];
+
+    if (pieTimeFilter === "This Week") {
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      filteredDocs = documents.filter((doc) => {
+        const docDate = new Date(doc.createdAt || doc.updatedAt);
+        return docDate >= startOfWeek;
+      });
+    } else if (pieTimeFilter === "This Month") {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+      filteredDocs = documents.filter((doc) => {
+        const docDate = new Date(doc.createdAt || doc.updatedAt);
+        return docDate >= startOfMonth;
+      });
+    } else if (pieTimeFilter === "This Year") {
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+      filteredDocs = documents.filter((doc) => {
+        const docDate = new Date(doc.createdAt || doc.updatedAt);
+        return docDate >= startOfYear;
+      });
+    } else if (pieTimeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
+      filteredDocs = documents.filter((doc) => {
+        const docDate = new Date(doc.createdAt || doc.updatedAt);
+        return docDate >= selectedDateFrom && docDate <= selectedDateTo;
+      });
+    }
+
+    // Count statuses
+    const done = filteredDocs.filter((d) => d.status === "approved_admin").length;
+    const pending = filteredDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
+    const saved = filteredDocs.filter((d) => d.status === "saved").length;
+    const drafts = filteredDocs.filter((d) => d.status === "draft").length;
+    const total = done + pending + saved + drafts;
+
+    return {
+      done,
+      pending,
+      saved,
+      drafts,
+      total,
+      donePercent: total > 0 ? (done / total) * 100 : 0,
+      pendingPercent: total > 0 ? (pending / total) * 100 : 0,
+      savedPercent: total > 0 ? (saved / total) * 100 : 0,
+      draftsPercent: total > 0 ? (drafts / total) * 100 : 0,
+    };
+  };
+
+  const pieData = getPieChartData();
+
+  const handlePieTimeFilterChange = (value: string) => {
+    setPieTimeFilter(value);
+    if (value === "Date Range") {
+      setShowDatePicker(true);
+    } else {
+      setShowDatePicker(false);
+      setSelectedDateFrom(null);
+      setSelectedDateTo(null);
+    }
+  };
+
+  const handleDateRangeApply = () => {
+    if (selectedDateFrom && selectedDateTo) {
+      setShowDatePicker(false);
     }
   };
 
@@ -447,12 +527,164 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Welcome Card */}
-              <div className="sidebar-card welcome-card-modern">
-                <div className="welcome-icon">👥</div>
-                <h3 className="welcome-heading">Welcome back,</h3>
-                <h2 className="welcome-name">{user?.username || "envimaster"}</h2>
-                <p className="welcome-text">We are happy to see you again</p>
+              {/* Pie Chart Card */}
+              <div className="sidebar-card pie-chart-card">
+                <div className="pie-chart-header">
+                  <h3 className="pie-chart-title">Document Status</h3>
+                  <select
+                    className="pie-filter-dropdown"
+                    value={pieTimeFilter}
+                    onChange={(e) => handlePieTimeFilterChange(e.target.value)}
+                  >
+                    <option>This Week</option>
+                    <option>This Month</option>
+                    <option>This Year</option>
+                    <option>Date Range</option>
+                  </select>
+                </div>
+
+                {showDatePicker && (
+                  <div className="date-picker-overlay" onClick={() => setShowDatePicker(false)}>
+                    <div className="date-picker-modal" onClick={(e) => e.stopPropagation()}>
+                      <h3 className="date-picker-title">Select Date Range</h3>
+
+                      <div className="date-range-inputs">
+                        <div className="date-input-group">
+                          <label className="date-label">From Date</label>
+                          <input
+                            type="date"
+                            className="date-picker-input"
+                            value={selectedDateFrom ? selectedDateFrom.toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                setSelectedDateFrom(new Date(e.target.value));
+                              }
+                            }}
+                            max={new Date().toISOString().split('T')[0]}
+                          />
+                        </div>
+
+                        <div className="date-input-group">
+                          <label className="date-label">To Date</label>
+                          <input
+                            type="date"
+                            className="date-picker-input"
+                            value={selectedDateTo ? selectedDateTo.toISOString().split('T')[0] : ''}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                setSelectedDateTo(new Date(e.target.value));
+                              }
+                            }}
+                            max={new Date().toISOString().split('T')[0]}
+                            min={selectedDateFrom ? selectedDateFrom.toISOString().split('T')[0] : ''}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="date-picker-actions">
+                        <button
+                          className="date-picker-apply"
+                          onClick={handleDateRangeApply}
+                          disabled={!selectedDateFrom || !selectedDateTo}
+                        >
+                          Apply
+                        </button>
+                        <button
+                          className="date-picker-close"
+                          onClick={() => setShowDatePicker(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {pieData.total > 0 ? (
+                  <>
+                    <div className="pie-chart-container">
+                      <svg viewBox="0 0 200 200" className="pie-chart-svg">
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill="none"
+                          stroke="#22c55e"
+                          strokeWidth="40"
+                          strokeDasharray={`${pieData.donePercent * 5.024} 502.4`}
+                          strokeDashoffset="0"
+                          transform="rotate(-90 100 100)"
+                        />
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill="none"
+                          stroke="#f59e0b"
+                          strokeWidth="40"
+                          strokeDasharray={`${pieData.pendingPercent * 5.024} 502.4`}
+                          strokeDashoffset={`-${pieData.donePercent * 5.024}`}
+                          transform="rotate(-90 100 100)"
+                        />
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill="none"
+                          stroke="#0ea5e9"
+                          strokeWidth="40"
+                          strokeDasharray={`${pieData.savedPercent * 5.024} 502.4`}
+                          strokeDashoffset={`-${(pieData.donePercent + pieData.pendingPercent) * 5.024}`}
+                          transform="rotate(-90 100 100)"
+                        />
+                        <circle
+                          cx="100"
+                          cy="100"
+                          r="80"
+                          fill="none"
+                          stroke="#9ca3af"
+                          strokeWidth="40"
+                          strokeDasharray={`${pieData.draftsPercent * 5.024} 502.4`}
+                          strokeDashoffset={`-${(pieData.donePercent + pieData.pendingPercent + pieData.savedPercent) * 5.024}`}
+                          transform="rotate(-90 100 100)"
+                        />
+                        <text x="100" y="95" textAnchor="middle" fontSize="32" fontWeight="700" fill="#1f2937">
+                          {pieData.total}
+                        </text>
+                        <text x="100" y="115" textAnchor="middle" fontSize="14" fill="#6b7280">
+                          Total
+                        </text>
+                      </svg>
+                    </div>
+
+                    <div className="pie-chart-legend">
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ backgroundColor: "#22c55e" }}></span>
+                        <span className="legend-label">Done</span>
+                        <span className="legend-value">{pieData.done}</span>
+                      </div>
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ backgroundColor: "#f59e0b" }}></span>
+                        <span className="legend-label">Pending</span>
+                        <span className="legend-value">{pieData.pending}</span>
+                      </div>
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ backgroundColor: "#0ea5e9" }}></span>
+                        <span className="legend-label">Saved</span>
+                        <span className="legend-value">{pieData.saved}</span>
+                      </div>
+                      <div className="legend-item">
+                        <span className="legend-dot" style={{ backgroundColor: "#9ca3af" }}></span>
+                        <span className="legend-label">Drafts</span>
+                        <span className="legend-value">{pieData.drafts}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="pie-chart-empty">
+                    <p>No data available for this period</p>
+                  </div>
+                )}
               </div>
             </aside>
           </div>
