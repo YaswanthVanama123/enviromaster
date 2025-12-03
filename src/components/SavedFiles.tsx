@@ -8,6 +8,7 @@ import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt } from "@
 import "./SavedFiles.css";
 
 type FileStatus =
+  | "saved"
   | "draft"
   | "pending_approval"
   | "approved_salesman"
@@ -57,6 +58,7 @@ function timeAgo(iso: string) {
 }
 
 const STATUS_LABEL: Record<FileStatus, string> = {
+  saved: "Saved",
   draft: "Draft",
   pending_approval: "Pending Approval",
   approved_salesman: "Approved by Salesman",
@@ -93,7 +95,8 @@ function extractCustomerNameFromPayload(payload: any): string | null {
 export default function SavedFiles() {
   const [files, setFiles] = useState<SavedFile[]>([]);
   const [query, setQuery] = useState("");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortBy, setSortBy] = useState<"date" | "status">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc"); // desc = newest first
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +119,7 @@ export default function SavedFiles() {
           id: item._id || item.id,
           fileName: extractCustomerNameFromPayload(item.payload) || item.payload?.headerTitle || "Untitled",
           updatedAt: item.updatedAt,
-          status: item.status ?? "draft",
+          status: item.status ?? "saved", // Default to "saved" instead of "draft"
           createdAt: item.createdAt,
           headerTitle: item.payload?.headerTitle,
           zoho: item.zoho,
@@ -137,14 +140,26 @@ export default function SavedFiles() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = files.filter((f) => f.fileName.toLowerCase().includes(q));
+
+    // Sort by selected criteria
     out = out.sort((a, b) => {
-      const order = STATUS_LABEL[a.status].localeCompare(
-        STATUS_LABEL[b.status]
-      );
-      return sortDir === "asc" ? order : -order;
+      if (sortBy === "date") {
+        // Sort by updatedAt date
+        const dateA = new Date(a.updatedAt).getTime();
+        const dateB = new Date(b.updatedAt).getTime();
+        const order = dateB - dateA; // Default: newest first
+        return sortDir === "desc" ? order : -order;
+      } else {
+        // Sort by status
+        const order = STATUS_LABEL[a.status].localeCompare(
+          STATUS_LABEL[b.status]
+        );
+        return sortDir === "asc" ? order : -order;
+      }
     });
+
     return out;
-  }, [files, query, sortDir]);
+  }, [files, query, sortBy, sortDir]);
 
   const allSelected =
     filtered.length > 0 && filtered.every((f) => selected[f.id]);
@@ -315,9 +330,33 @@ export default function SavedFiles() {
           <button
             type="button"
             className="sf__btn sf__btn--light"
-            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+            onClick={() => {
+              if (sortBy === "date") {
+                setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+              } else {
+                setSortBy("date");
+                setSortDir("desc"); // Newest first when switching to date
+              }
+            }}
+            style={sortBy === "date" ? { backgroundColor: "#3b82f6", color: "white" } : {}}
           >
-            Sort by Status
+            Sort by Date {sortBy === "date" && (sortDir === "desc" ? "↓" : "↑")}
+          </button>
+
+          <button
+            type="button"
+            className="sf__btn sf__btn--light"
+            onClick={() => {
+              if (sortBy === "status") {
+                setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+              } else {
+                setSortBy("status");
+                setSortDir("asc");
+              }
+            }}
+            style={sortBy === "status" ? { backgroundColor: "#3b82f6", color: "white" } : {}}
+          >
+            Sort by Status {sortBy === "status" && (sortDir === "asc" ? "↑" : "↓")}
           </button>
 
           <button
@@ -385,6 +424,7 @@ export default function SavedFiles() {
                         )
                       }
                     >
+                      <option value="saved">Saved</option>
                       <option value="draft">Draft</option>
                       <option value="pending_approval">
                         Pending Approval
