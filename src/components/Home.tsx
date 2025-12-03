@@ -13,14 +13,26 @@ type Document = {
   updatedAt: string;
 };
 
+type ChartDataPoint = {
+  label: string;
+  done: number;
+  pending: number;
+  drafts: number;
+  saved: number;
+};
+
 export default function Home() {
   const navigate = useNavigate();
-  const [timeFilter, setTimeFilter] = useState("Today");
+  const [timeFilter, setTimeFilter] = useState("This Week");
+  const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
+  const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadCount, setUploadCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+  const [hoveredBar, setHoveredBar] = useState<{ index: number; type: string } | null>(null);
 
   // Fetch documents from backend
   useEffect(() => {
@@ -59,46 +71,115 @@ export default function Home() {
     fetchUploadStats();
   }, []);
 
-  // Calculate chart data dynamically from documents
-  const getChartData = () => {
-    console.log("📈 Calculating chart data...");
-    console.log("📈 Documents available for chart:", documents.length);
-
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Calculate chart data dynamically based on time filter
+  const getChartData = (): ChartDataPoint[] => {
     const today = new Date();
-    const chartData = [];
+    const chartData: ChartDataPoint[] = [];
 
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dayName = dayNames[date.getDay()].charAt(0);
+    if (timeFilter === "This Week") {
+      // Show all 7 days of current week (Mon-Sun)
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
 
-      // Filter documents for this day
-      const dayDocs = documents.filter((doc) => {
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        const dayName = dayNames[date.getDay()];
+
+        const dayDocs = documents.filter((doc) => {
+          const docDate = new Date(doc.createdAt);
+          return docDate.toDateString() === date.toDateString();
+        });
+
+        const done = dayDocs.filter((d) => d.status === "approved_admin").length;
+        const pending = dayDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
+        const saved = dayDocs.filter((d) => d.status === "saved").length;
+        const drafts = dayDocs.filter((d) => d.status === "draft").length;
+
+        chartData.push({ label: dayName, done, pending, drafts, saved });
+      }
+    }
+    else if (timeFilter === "This Month") {
+      // Show 4 weeks of current month
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+      for (let week = 1; week <= 4; week++) {
+        const weekStart = new Date(startOfMonth);
+        weekStart.setDate(1 + (week - 1) * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+
+        const weekDocs = documents.filter((doc) => {
+          const docDate = new Date(doc.createdAt);
+          return docDate >= weekStart && docDate <= weekEnd;
+        });
+
+        const done = weekDocs.filter((d) => d.status === "approved_admin").length;
+        const pending = weekDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
+        const saved = weekDocs.filter((d) => d.status === "saved").length;
+        const drafts = weekDocs.filter((d) => d.status === "draft").length;
+
+        chartData.push({ label: `Week ${week}`, done, pending, drafts, saved });
+      }
+    }
+    else if (timeFilter === "This Year") {
+      // Show all 12 months
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      for (let month = 0; month < 12; month++) {
+        const monthDocs = documents.filter((doc) => {
+          const docDate = new Date(doc.createdAt);
+          return docDate.getFullYear() === today.getFullYear() && docDate.getMonth() === month;
+        });
+
+        const done = monthDocs.filter((d) => d.status === "approved_admin").length;
+        const pending = monthDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
+        const saved = monthDocs.filter((d) => d.status === "saved").length;
+        const drafts = monthDocs.filter((d) => d.status === "draft").length;
+
+        chartData.push({ label: monthNames[month], done, pending, drafts, saved });
+      }
+    }
+    else if (timeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
+      // Show data for the selected date range
+      const dateDocs = documents.filter((doc) => {
         const docDate = new Date(doc.createdAt);
-        return docDate.toDateString() === date.toDateString();
+        return docDate >= selectedDateFrom && docDate <= selectedDateTo;
       });
 
-      console.log(`📅 ${date.toDateString()} (${dayName}): ${dayDocs.length} documents`);
+      const done = dateDocs.filter((d) => d.status === "approved_admin").length;
+      const pending = dateDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
+      const saved = dateDocs.filter((d) => d.status === "saved").length;
+      const drafts = dateDocs.filter((d) => d.status === "draft").length;
 
-      // Count by status
-      const done = dayDocs.filter((d) => d.status === "approved_admin").length;
-      const pending = dayDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
-      const drafts = dayDocs.filter((d) => d.status === "draft").length;
-
-      console.log(`   ✅ Done: ${done}, ⏳ Pending: ${pending}, 📝 Drafts: ${drafts}`);
-
-      chartData.push({ day: dayName, done, pending, drafts });
+      const formattedRange = `${selectedDateFrom.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${selectedDateTo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      chartData.push({ label: formattedRange, done, pending, drafts, saved });
     }
 
-    console.log("📈 Final Chart Data:", chartData);
     return chartData;
   };
 
   const chartData = getChartData();
-  // Don't use maxValue for scaling - use absolute pixel heights
   const pixelsPerUnit = 20; // Each document = 20px height
-  console.log("📈 Chart will use absolute heights:", pixelsPerUnit, "px per unit");
+
+  const handleTimeFilterChange = (value: string) => {
+    setTimeFilter(value);
+    if (value === "Date Range") {
+      setShowDatePicker(true);
+    } else {
+      setShowDatePicker(false);
+      setSelectedDateFrom(null);
+      setSelectedDateTo(null);
+    }
+  };
+
+  const handleDateRangeApply = () => {
+    if (selectedDateFrom && selectedDateTo) {
+      setShowDatePicker(false);
+    }
+  };
 
   const agreementOptions = [
     {
@@ -224,13 +305,72 @@ export default function Home() {
               <select
                 className="home__filter-dropdown"
                 value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value)}
+                onChange={(e) => handleTimeFilterChange(e.target.value)}
               >
-                <option>Today</option>
                 <option>This Week</option>
                 <option>This Month</option>
+                <option>This Year</option>
+                <option>Date Range</option>
               </select>
             </div>
+
+            {showDatePicker && (
+              <div className="home__date-picker-overlay" onClick={() => setShowDatePicker(false)}>
+                <div className="home__date-picker-modal" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="home__date-picker-title">Select Date Range</h3>
+
+                  <div className="home__date-range-inputs">
+                    <div className="home__date-input-group">
+                      <label className="home__date-label">From Date</label>
+                      <input
+                        type="date"
+                        className="home__date-picker-input"
+                        value={selectedDateFrom ? selectedDateFrom.toISOString().split('T')[0] : ''}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setSelectedDateFrom(new Date(e.target.value));
+                          }
+                        }}
+                        max={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+
+                    <div className="home__date-input-group">
+                      <label className="home__date-label">To Date</label>
+                      <input
+                        type="date"
+                        className="home__date-picker-input"
+                        value={selectedDateTo ? selectedDateTo.toISOString().split('T')[0] : ''}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setSelectedDateTo(new Date(e.target.value));
+                          }
+                        }}
+                        max={new Date().toISOString().split('T')[0]}
+                        min={selectedDateFrom ? selectedDateFrom.toISOString().split('T')[0] : ''}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="home__date-picker-actions">
+                    <button
+                      className="home__date-picker-apply"
+                      onClick={handleDateRangeApply}
+                      disabled={!selectedDateFrom || !selectedDateTo}
+                    >
+                      Apply
+                    </button>
+                    <button
+                      className="home__date-picker-close"
+                      onClick={() => setShowDatePicker(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="home__chart-loading">
                 <p>Loading chart data...</p>
@@ -239,37 +379,83 @@ export default function Home() {
               <>
                 <div className="home__chart">
                   {chartData.map((data, index) => {
-                    // Use absolute pixel heights based on actual numbers
-                    const doneHeight = data.done * pixelsPerUnit;
-                    const pendingHeight = data.pending * pixelsPerUnit;
-                    const draftsHeight = data.drafts * pixelsPerUnit;
-
-                    console.log(`📊 Bar ${index} (${data.day}):`, {
-                      done: data.done,
-                      pending: data.pending,
-                      drafts: data.drafts,
-                      doneHeight: `${doneHeight}px`,
-                      pendingHeight: `${pendingHeight}px`,
-                      draftsHeight: `${draftsHeight}px`
-                    });
+                    const doneHeight = Math.max(data.done * pixelsPerUnit, data.done > 0 ? 20 : 0);
+                    const pendingHeight = Math.max(data.pending * pixelsPerUnit, data.pending > 0 ? 20 : 0);
+                    const savedHeight = Math.max(data.saved * pixelsPerUnit, data.saved > 0 ? 20 : 0);
+                    const draftsHeight = Math.max(data.drafts * pixelsPerUnit, data.drafts > 0 ? 20 : 0);
 
                     return (
                       <div key={index} className="home__chart-bar-group">
                         <div className="home__chart-bars">
-                          <div
-                            className="home__chart-bar home__chart-bar--done"
-                            style={{ height: `${doneHeight}px` }}
-                          ></div>
-                          <div
-                            className="home__chart-bar home__chart-bar--pending"
-                            style={{ height: `${pendingHeight}px` }}
-                          ></div>
-                          <div
-                            className="home__chart-bar home__chart-bar--drafts"
-                            style={{ height: `${draftsHeight}px` }}
-                          ></div>
+                          {/* Done Bar */}
+                          {data.done > 0 && (
+                            <div
+                              className="home__chart-bar home__chart-bar--done"
+                              style={{ height: `${doneHeight}px` }}
+                              onMouseEnter={() => setHoveredBar({ index, type: 'done' })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                            >
+                              {hoveredBar?.index === index && hoveredBar?.type === 'done' && (
+                                <div className="home__chart-tooltip">
+                                  <span className="home__chart-tooltip-label">Done: </span>
+                                  <span className="home__chart-tooltip-value">{data.done}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Pending Bar */}
+                          {data.pending > 0 && (
+                            <div
+                              className="home__chart-bar home__chart-bar--pending"
+                              style={{ height: `${pendingHeight}px` }}
+                              onMouseEnter={() => setHoveredBar({ index, type: 'pending' })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                            >
+                              {hoveredBar?.index === index && hoveredBar?.type === 'pending' && (
+                                <div className="home__chart-tooltip">
+                                  <span className="home__chart-tooltip-label">Pending: </span>
+                                  <span className="home__chart-tooltip-value">{data.pending}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Saved Bar */}
+                          {data.saved > 0 && (
+                            <div
+                              className="home__chart-bar home__chart-bar--saved"
+                              style={{ height: `${savedHeight}px` }}
+                              onMouseEnter={() => setHoveredBar({ index, type: 'saved' })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                            >
+                              {hoveredBar?.index === index && hoveredBar?.type === 'saved' && (
+                                <div className="home__chart-tooltip">
+                                  <span className="home__chart-tooltip-label">Saved: </span>
+                                  <span className="home__chart-tooltip-value">{data.saved}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Drafts Bar */}
+                          {data.drafts > 0 && (
+                            <div
+                              className="home__chart-bar home__chart-bar--drafts"
+                              style={{ height: `${draftsHeight}px` }}
+                              onMouseEnter={() => setHoveredBar({ index, type: 'drafts' })}
+                              onMouseLeave={() => setHoveredBar(null)}
+                            >
+                              {hoveredBar?.index === index && hoveredBar?.type === 'drafts' && (
+                                <div className="home__chart-tooltip">
+                                  <span className="home__chart-tooltip-label">Drafts: </span>
+                                  <span className="home__chart-tooltip-value">{data.drafts}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <div className="home__chart-label">{data.day}</div>
+                        <div className="home__chart-label">{data.label}</div>
                       </div>
                     );
                   })}
@@ -281,7 +467,11 @@ export default function Home() {
                   </div>
                   <div className="home__legend-item">
                     <span className="home__legend-dot home__legend-dot--pending"></span>
-                    Pending Approval
+                    Pending
+                  </div>
+                  <div className="home__legend-item">
+                    <span className="home__legend-dot home__legend-dot--saved"></span>
+                    Saved
                   </div>
                   <div className="home__legend-item">
                     <span className="home__legend-dot home__legend-dot--drafts"></span>
