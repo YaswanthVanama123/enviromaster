@@ -13,6 +13,7 @@ import { CarpetForm } from "./carpetCleaning/CarpetForm";
 import { JanitorialForm } from "./purejanitorial/JanitorialForm";
 import { StripWaxForm } from "./stripWax/StripWaxForm";
 import { GreaseTrapForm } from "./greaseTrap/GreaseTrapForm";
+import { ElectrostaticSprayForm } from "./electrostaticSpray/ElectrostaticSprayForm";
 import { CustomService, type CustomServiceData } from "./CustomService";
 import { useServicesContextOptional } from "./ServicesContext";
 import { transformServiceData } from "./common/dataTransformers";
@@ -33,6 +34,7 @@ const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   stripwax: StripWaxForm,
   stripWax: StripWaxForm,            // Alias for backend compatibility
   greaseTrap: GreaseTrapForm,
+  electrostaticSpray: ElectrostaticSprayForm,
 };
 
 // Optional prop if you prefill from backend
@@ -52,6 +54,7 @@ type ServicesSectionProps = {
     stripwax?: any;
     stripWax?: any;        // Alias for backend compatibility
     greaseTrap?: any;
+    electrostaticSpray?: any;
   };
 };
 
@@ -210,9 +213,26 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
   // Get available services to add
   // Only show services that are NOT currently visible
-  const availableServices = configs.filter(
-    (config) => !visibleServices.has(config.serviceId)
-  );
+  const availableServices = configs.filter((config) => {
+    // Direct check
+    if (visibleServices.has(config.serviceId)) return false;
+
+    // Check for aliases - if any alias is visible, don't show this service
+    if ((config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') &&
+        (visibleServices.has('carpetCleaning') || visibleServices.has('carpetclean'))) {
+      return false;
+    }
+    if ((config.serviceId === 'pureJanitorial' || config.serviceId === 'janitorial') &&
+        (visibleServices.has('pureJanitorial') || visibleServices.has('janitorial'))) {
+      return false;
+    }
+    if ((config.serviceId === 'stripWax' || config.serviceId === 'stripwax') &&
+        (visibleServices.has('stripWax') || visibleServices.has('stripwax'))) {
+      return false;
+    }
+
+    return true;
+  });
 
   // Filter visible services (show all services in visibleServices, active or inactive)
   const activeVisibleServices = configs.filter((config) => {

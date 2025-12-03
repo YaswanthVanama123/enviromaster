@@ -193,15 +193,59 @@ export function transformCarpetCleanData(structuredData: any): any {
     }
   }
 
+  // Extract location
+  if (structuredData.location) {
+    formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
+  }
+
   // Extract service (carpet area)
   if (structuredData.service) {
     formState.areaSqFt = structuredData.service.qty || 0;
     formState.firstUnitRate = structuredData.service.rate || 0;
   }
 
-  // Extract contract months
-  if (structuredData.totals && structuredData.totals.contract) {
-    formState.contractMonths = structuredData.totals.contract.months || 12;
+  // Extract installation data
+  if (structuredData.installation) {
+    formState.includeInstall = true;
+    formState.isDirtyInstall = structuredData.installation.isDirty || false;
+
+    // Extract multiplier if available
+    if (structuredData.installation.multiplier != null) {
+      if (formState.isDirtyInstall) {
+        formState.installMultiplierDirty = structuredData.installation.multiplier;
+      } else {
+        formState.installMultiplierClean = structuredData.installation.multiplier;
+      }
+    }
+
+    // Extract custom installation fee if set
+    if (structuredData.installation.total != null) {
+      formState.customInstallationFee = structuredData.installation.total;
+    }
+  }
+
+  // Extract totals
+  if (structuredData.totals) {
+    // Per visit
+    if (structuredData.totals.perVisit) {
+      formState.customPerVisitPrice = structuredData.totals.perVisit.amount;
+    }
+
+    // Monthly
+    if (structuredData.totals.monthly) {
+      formState.customMonthlyRecurring = structuredData.totals.monthly.amount;
+    }
+
+    // First month (with installation)
+    if (structuredData.totals.firstMonth) {
+      formState.customFirstMonthPrice = structuredData.totals.firstMonth.amount;
+    }
+
+    // Contract
+    if (structuredData.totals.contract) {
+      formState.contractMonths = structuredData.totals.contract.months || 12;
+      formState.customContractTotal = structuredData.totals.contract.amount;
+    }
   }
 
   return formState;
@@ -480,6 +524,63 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
   return formState;
 }
 
+export function transformElectrostaticSprayData(structuredData: any): any {
+  if (!structuredData || !structuredData.isActive) return undefined;
+
+  const formState: any = {
+    notes: structuredData.notes || "",
+  };
+
+  // Extract pricing method
+  if (structuredData.pricingMethod) {
+    formState.pricingMethod = structuredData.pricingMethod.value?.includes("Room") ? "byRoom" : "bySqFt";
+  }
+
+  // Extract service data
+  if (structuredData.service) {
+    if (formState.pricingMethod === "byRoom") {
+      formState.roomCount = structuredData.service.qty || 0;
+      if (structuredData.service.rate != null) {
+        formState.ratePerRoom = structuredData.service.rate;
+      }
+    } else {
+      formState.squareFeet = structuredData.service.qty || 0;
+      if (structuredData.service.rate != null) {
+        formState.ratePerThousandSqFt = structuredData.service.rate;
+      }
+    }
+  }
+
+  // Extract frequency
+  if (structuredData.frequency) {
+    formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
+  }
+
+  // Extract location
+  if (structuredData.location) {
+    const loc = structuredData.location.value?.toLowerCase();
+    formState.location = loc?.includes("inside") ? "insideBeltway" :
+                        loc?.includes("outside") ? "outsideBeltway" : "standard";
+  }
+
+  // Extract combined flag
+  if (structuredData.combinedService) {
+    formState.isCombinedWithSaniClean = structuredData.combinedService.value?.includes("Sani-Clean");
+  }
+
+  // Extract trip charge if present
+  if (structuredData.tripCharge) {
+    formState.tripChargePerVisit = structuredData.tripCharge.amount || 0;
+  }
+
+  // Extract contract months
+  if (structuredData.totals?.contract) {
+    formState.contractMonths = structuredData.totals.contract.months || 12;
+  }
+
+  return formState;
+}
+
 /**
  * Main transformer function that routes to the appropriate service transformer
  */
@@ -512,6 +613,8 @@ export function transformServiceData(serviceId: string, structuredData: any): an
       return transformGreaseTrapData(structuredData);
     case "refreshPowerScrub":
       return transformRefreshPowerScrubData(structuredData);
+    case "electrostaticSpray":
+      return transformElectrostaticSprayData(structuredData);
     default:
       console.warn(`No transformer found for service: ${serviceId}`);
       return undefined;

@@ -20,6 +20,7 @@ export interface ServicesState {
   janitorial?: any;
   stripwax?: any;
   greaseTrap?: any;
+  electrostaticSpray?: any;
   customServices?: any;
 }
 

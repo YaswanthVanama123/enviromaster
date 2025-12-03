@@ -15,6 +15,7 @@ export interface ServicesDataHandle {
     janitorial: any | null;
     stripwax: any | null;
     greaseTrap: any | null;
+    electrostaticSpray: any | null;
     customServices: any[];
   };
 }
@@ -40,6 +41,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
           janitorial: null,
           stripwax: null,
           greaseTrap: null,
+          electrostaticSpray: null,
           customServices: [],
         };
       }
@@ -62,6 +64,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         janitorial: state.janitorial || null,
         stripwax: state.stripwax || null,
         greaseTrap: state.greaseTrap || null,
+        electrostaticSpray: state.electrostaticSpray || null,
         customServices: customServicesData?.customServices || [],
       };
     }

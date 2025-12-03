@@ -43,6 +43,12 @@ export const CarpetForm: React.FC<
           value: carpetFrequencyLabels[form.frequency] || form.frequency,
         },
 
+        location: {
+          label: "Location",
+          type: "text" as const,
+          value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        },
+
         service: {
           label: "Carpet Area",
           type: "calc" as const,
@@ -51,6 +57,19 @@ export const CarpetForm: React.FC<
           total: calc.perVisitTotal,
           unit: "sq ft",
         },
+
+        // Installation data
+        ...(form.includeInstall ? {
+          installation: {
+            label: form.isDirtyInstall ? "Installation (Dirty - 3×)" : "Installation (Clean - 1×)",
+            type: "calc" as const,
+            qty: 1,
+            rate: calc.installOneTime,
+            total: calc.installOneTime,
+            multiplier: form.isDirtyInstall ? form.installMultiplierDirty : form.installMultiplierClean,
+            isDirty: form.isDirtyInstall,
+          },
+        } : {}),
 
         totals: {
           perVisit: {
@@ -63,6 +82,13 @@ export const CarpetForm: React.FC<
             type: "dollar" as const,
             amount: calc.monthlyTotal,
           },
+          ...(form.includeInstall && calc.firstMonthTotal > 0 ? {
+            firstMonth: {
+              label: "First Month (Install + Service)",
+              type: "dollar" as const,
+              amount: calc.firstMonthTotal,
+            },
+          } : {}),
           contract: {
             label: "Contract Total",
             type: "dollar" as const,
