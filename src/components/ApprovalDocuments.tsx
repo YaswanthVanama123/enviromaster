@@ -246,9 +246,9 @@ export default function ApprovalDocuments() {
 
   return (
     <section className="ad">
-      <div className="ad__hero">Approval Documents</div>
+      {/* <div className="ad__hero">Approval Documents</div> */}
 
-      <div className="ad__breadcrumb">Admin Panel &gt; Approval Documents</div>
+      {/* <div className="ad__breadcrumb">Admin Panel &gt; Approval Documents</div> */}
 
       <div className="ad__toolbar">
         <input

@@ -1,6 +1,7 @@
 // src/components/ManualUploads.tsx
 import { useEffect, useState } from "react";
-import { HiDocumentText, HiDownload, HiTrash, HiUpload, HiCheckCircle } from "react-icons/hi";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFileAlt, faDownload, faTrash, faUpload, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 import { manualUploadApi } from "../backendservice/api";
 import "./ManualUploads.css";
 
@@ -30,9 +31,10 @@ export default function ManualUploads() {
   const [uploads, setUploads] = useState<ManualUpload[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [description, setDescription] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
 
   useEffect(() => {
     fetchUploads();
@@ -51,39 +53,65 @@ export default function ManualUploads() {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedFiles(filesArray);
     }
   };
 
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleUpload = async () => {
-    if (!selectedFile) {
-      alert("Please select a file");
+    if (selectedFiles.length === 0) {
+      alert("Please select at least one file");
       return;
     }
 
     setUploading(true);
     setUploadSuccess(false);
+    setUploadProgress({ current: 0, total: selectedFiles.length });
+
+    let successCount = 0;
+    let failCount = 0;
 
     try {
-      const data = await manualUploadApi.uploadFile(selectedFile, description);
-      console.log("Upload successful:", data);
+      // Upload files one by one
+      for (let i = 0; i < selectedFiles.length; i++) {
+        try {
+          setUploadProgress({ current: i + 1, total: selectedFiles.length });
+          await manualUploadApi.uploadFile(selectedFiles[i], description);
+          successCount++;
+          console.log(`Upload ${i + 1}/${selectedFiles.length} successful`);
+        } catch (err) {
+          console.error(`Error uploading file ${selectedFiles[i].name}:`, err);
+          failCount++;
+        }
+      }
 
       // Reset form
-      setSelectedFile(null);
+      setSelectedFiles([]);
       setDescription("");
-      setUploadSuccess(true);
+      setUploadProgress(null);
 
-      // Refresh list
-      fetchUploads();
+      if (successCount > 0) {
+        setUploadSuccess(true);
+        // Refresh list
+        fetchUploads();
+        // Clear success message after 3 seconds
+        setTimeout(() => setUploadSuccess(false), 3000);
+      }
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setUploadSuccess(false), 3000);
+      if (failCount > 0) {
+        alert(`${successCount} file(s) uploaded successfully. ${failCount} file(s) failed.`);
+      }
     } catch (err) {
-      console.error("Error uploading file:", err);
-      alert("Failed to upload file. Please try again.");
+      console.error("Error uploading files:", err);
+      alert("Failed to upload files. Please try again.");
     } finally {
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -141,21 +169,55 @@ export default function ManualUploads() {
 
       {/* Upload Section */}
       <div className="upload-section-card">
-        <h3>Upload New PDF</h3>
+        <h3>Upload New PDF(s)</h3>
         <div className="upload-form">
           <div className="form-group">
-            <label htmlFor="file-input">Select PDF File:</label>
-            <input
-              id="file-input"
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileSelect}
-              disabled={uploading}
-            />
-            {selectedFile && (
-              <span className="selected-file">
-                Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-              </span>
+            <label>Select PDF File(s):</label>
+            <div className="file-input-wrapper">
+              <input
+                id="file-input"
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileSelect}
+                disabled={uploading}
+                multiple
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                className="choose-files-btn"
+                onClick={() => document.getElementById('file-input')?.click()}
+                disabled={uploading}
+              >
+                <FontAwesomeIcon icon={faFileAlt} style={{ marginRight: "10px" }} />
+                Choose PDF Files
+              </button>
+              {selectedFiles.length === 0 && (
+                <span className="no-files-text">No files selected</span>
+              )}
+            </div>
+            {selectedFiles.length > 0 && (
+              <div className="selected-files-container">
+                <div className="selected-files-header">
+                  Selected {selectedFiles.length} file(s):
+                </div>
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="selected-file-item">
+                    <FontAwesomeIcon icon={faFileAlt} size="lg" style={{ color: "#2563eb" }} />
+                    <span className="file-info">
+                      {file.name} <span className="file-size">({formatFileSize(file.size)})</span>
+                    </span>
+                    <button
+                      className="remove-file-btn"
+                      onClick={() => removeFile(index)}
+                      disabled={uploading}
+                      title="Remove file"
+                    >
+                      <FontAwesomeIcon icon={faTrash} size="sm" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -165,7 +227,7 @@ export default function ManualUploads() {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter a description for this upload..."
+              placeholder="Enter a description for these uploads..."
               rows={3}
               disabled={uploading}
             />
@@ -174,16 +236,18 @@ export default function ManualUploads() {
           <button
             className="upload-button"
             onClick={handleUpload}
-            disabled={!selectedFile || uploading}
+            disabled={selectedFiles.length === 0 || uploading}
           >
-            <HiUpload size={18} style={{ marginRight: "8px" }} />
-            {uploading ? "Uploading..." : "Upload to Zoho"}
+            <FontAwesomeIcon icon={faUpload} style={{ marginRight: "8px" }} />
+            {uploading
+              ? `Uploading ${uploadProgress?.current || 0}/${uploadProgress?.total || 0}...`
+              : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} file(s)` : 'to Zoho'}`}
           </button>
 
           {uploadSuccess && (
             <div className="success-message">
-              <HiCheckCircle size={18} style={{ marginRight: "8px" }} />
-              File uploaded successfully! Zoho sync in progress...
+              <FontAwesomeIcon icon={faCheckCircle} style={{ marginRight: "8px" }} />
+              Files uploaded successfully! Zoho sync in progress...
             </div>
           )}
         </div>
@@ -214,7 +278,7 @@ export default function ManualUploads() {
                   <tr key={upload._id}>
                     <td>
                       <div className="file-name">
-                        <HiDocumentText className="file-icon" size={24} style={{ color: "#2563eb" }} />
+                        <FontAwesomeIcon icon={faFileAlt} className="file-icon" size="lg" style={{ color: "#2563eb" }} />
                         <div>
                           <div className="file-title">{upload.fileName}</div>
                           {upload.description && (
@@ -234,12 +298,12 @@ export default function ManualUploads() {
                       <div className="zoho-status">
                         {upload.zoho?.bigin?.fileId && (
                           <span className="zoho-tag zoho-bigin" title="Uploaded to Zoho Bigin">
-                            Bigin <HiCheckCircle size={12} style={{ marginLeft: "2px" }} />
+                            Bigin <FontAwesomeIcon icon={faCheckCircle} size="xs" style={{ marginLeft: "2px" }} />
                           </span>
                         )}
                         {upload.zoho?.crm?.fileId && (
                           <span className="zoho-tag zoho-crm" title="Uploaded to Zoho CRM">
-                            CRM <HiCheckCircle size={12} style={{ marginLeft: "2px" }} />
+                            CRM <FontAwesomeIcon icon={faCheckCircle} size="xs" style={{ marginLeft: "2px" }} />
                           </span>
                         )}
                         {!upload.zoho?.bigin?.fileId && !upload.zoho?.crm?.fileId && (
@@ -254,14 +318,14 @@ export default function ManualUploads() {
                           onClick={() => handleDownload(upload._id, upload.fileName)}
                           title="Download PDF"
                         >
-                          <HiDownload size={16} />
+                          <FontAwesomeIcon icon={faDownload} />
                         </button>
                         <button
                           className="action-btn delete-btn"
                           onClick={() => handleDelete(upload._id)}
                           title="Delete"
                         >
-                          <HiTrash size={16} />
+                          <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
                     </td>

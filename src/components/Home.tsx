@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiUpload, HiCloudUpload, HiDocumentAdd } from "react-icons/hi";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUpload,
+  faCloudUpload,
+  faFileAlt,
+  faTrash,
+  faClipboardList,
+  faCalendarPlus,
+  faPencilAlt
+} from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
@@ -27,12 +36,13 @@ export default function Home() {
   const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
   const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadCount, setUploadCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ index: number; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch documents from backend
   useEffect(() => {
@@ -186,7 +196,7 @@ export default function Home() {
       id: "create",
       title: "Create Agreement",
       description: "Create a new customer agreement with comprehensive service details and product selections",
-      icon: "📋",
+      icon: faClipboardList,
       action: () => navigate("/form-filling"),
       buttonText: "Get Started →",
       buttonClass: "home__button-green",
@@ -196,7 +206,7 @@ export default function Home() {
       id: "extend",
       title: "Extend Agreement",
       description: "Extend an existing customer agreement with new terms and updated service packages",
-      icon: "📅",
+      icon: faCalendarPlus,
       action: () => alert("Extend Agreement - Coming Soon"),
       buttonText: "Coming Soon",
       buttonClass: "home__button-gray",
@@ -206,7 +216,7 @@ export default function Home() {
       id: "edit",
       title: "Edit Agreement",
       description: "Modify existing agreement details, update services, or adjust product configurations",
-      icon: "✏️",
+      icon: faPencilAlt,
       action: () => navigate("/saved-pdfs"),
       buttonText: "Get Started →",
       buttonClass: "home__button-blue",
@@ -215,9 +225,14 @@ export default function Home() {
   ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray = Array.from(e.target.files);
+      setUploadedFiles(filesArray);
     }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -226,30 +241,61 @@ export default function Home() {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setUploadedFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      setUploadedFiles(filesArray);
     }
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  };
+
   const handleUpload = async () => {
-    if (!uploadedFile) {
-      setToastMessage({ message: "Please select a file first", type: "error" });
+    if (uploadedFiles.length === 0) {
+      setToastMessage({ message: "Please select at least one file", type: "error" });
       return;
     }
 
-    try {
-      await manualUploadApi.uploadFile(uploadedFile);
-      setToastMessage({ message: `Successfully uploaded: ${uploadedFile.name}`, type: "success" });
-      setUploadedFile(null);
+    setUploading(true);
+    let successCount = 0;
+    let failCount = 0;
 
-      // Refresh upload count
-      const data = await manualUploadApi.getManualUploads();
-      const newCount = data.items?.length || 0;
-      console.log("📤 Upload Complete! New count:", newCount);
-      setUploadCount(newCount);
+    try {
+      // Upload files one by one
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        try {
+          await manualUploadApi.uploadFile(uploadedFiles[i]);
+          successCount++;
+        } catch (err) {
+          console.error(`Error uploading file ${uploadedFiles[i].name}:`, err);
+          failCount++;
+        }
+      }
+
+      // Show success message
+      if (successCount > 0) {
+        setToastMessage({
+          message: `Successfully uploaded ${successCount} file(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+          type: successCount === uploadedFiles.length ? "success" : "error"
+        });
+        setUploadedFiles([]);
+
+        // Refresh upload count
+        const data = await manualUploadApi.getManualUploads();
+        const newCount = data.items?.length || 0;
+        console.log("📤 Upload Complete! New count:", newCount);
+        setUploadCount(newCount);
+      } else {
+        setToastMessage({ message: "Failed to upload files. Please try again.", type: "error" });
+      }
     } catch (err) {
-      console.error("Error uploading file:", err);
-      setToastMessage({ message: "Failed to upload file. Please try again.", type: "error" });
+      console.error("Error uploading files:", err);
+      setToastMessage({ message: "Failed to upload files. Please try again.", type: "error" });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -283,7 +329,9 @@ export default function Home() {
                 !option.available ? "home__card--disabled" : ""
               }`}
             >
-              <div className="home__card-icon">{option.icon}</div>
+              <div className="home__card-icon">
+                <FontAwesomeIcon icon={option.icon} />
+              </div>
               <h3 className="home__card-title">{option.title}</h3>
               <p className="home__card-description">{option.description}</p>
               <button
@@ -492,9 +540,9 @@ export default function Home() {
               onClick={() => document.getElementById("file-input")?.click()}
             >
               <div className="home__upload-icon">
-                <HiCloudUpload size={64} />
+                <FontAwesomeIcon icon={faCloudUpload} size="2x" />
               </div>
-              <p className="home__upload-label">Drag and drop a file here</p>
+              <p className="home__upload-label">Drag and drop files here</p>
               <p className="home__upload-text">or click to browse</p>
               <input
                 id="file-input"
@@ -502,19 +550,35 @@ export default function Home() {
                 accept=".pdf,.doc,.docx"
                 onChange={handleFileSelect}
                 style={{ display: "none" }}
+                multiple
               />
             </div>
-            {uploadedFile && (
-              <p className="home__upload-filename">
-                <HiDocumentAdd size={18} />
-                {uploadedFile.name}
-              </p>
+            {uploadedFiles.length > 0 && (
+              <div className="home__upload-files-list">
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="home__upload-file-item">
+                    <FontAwesomeIcon icon={faFileAlt} style={{ color: "#3b82f6", fontSize: "16px" }} />
+                    <span className="home__upload-file-name">
+                      {file.name}
+                      <span className="home__upload-file-size"> ({formatFileSize(file.size)})</span>
+                    </span>
+                    <button
+                      className="home__upload-file-remove"
+                      onClick={() => removeFile(index)}
+                      disabled={uploading}
+                      title="Remove file"
+                    >
+                      <FontAwesomeIcon icon={faTrash} size="sm" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-            <button className="home__upload-button" onClick={handleUpload}>
-              <HiUpload size={20} />
-              Upload File
+            <button className="home__upload-button" onClick={handleUpload} disabled={uploadedFiles.length === 0 || uploading}>
+              <FontAwesomeIcon icon={faUpload} size="lg" />
+              {uploading ? `Uploading ${uploadedFiles.length} file(s)...` : `Upload ${uploadedFiles.length > 0 ? uploadedFiles.length : ''} File${uploadedFiles.length !== 1 ? 's' : ''}`}
             </button>
-            <p className="home__upload-formats">PDF, DOCK</p>
+            <p className="home__upload-formats">PDF, DOC, DOCX</p>
           </div>
         </div>
       </div>
