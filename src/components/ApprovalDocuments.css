@@ -170,6 +170,60 @@
   box-shadow: 0 0 0 2px rgba(0, 86, 216, 0.15);
 }
 
+/* Status Pills */
+.pill {
+  width: 100%;
+  height: 34px;
+  border-radius: 8px;
+  padding: 0 10px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  font-weight: 500;
+  font-size: 13.5px;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+.pill:focus {
+  border-color: #0056d8;
+  outline: none;
+}
+
+/* Status-specific pill colors */
+.pill--saved {
+  background: #e0f2fe;
+  border-color: #0ea5e9;
+  color: #075985;
+  font-weight: 600;
+}
+
+.pill--draft {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.pill--pending_approval {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.pill--approved_salesman {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.pill--approved_admin {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #14532d;
+  font-weight: 600;
+}
+
 /* Row actions */
 .rowactions {
   display: flex;
@@ -185,14 +239,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  color: #2563eb;
 }
 .iconbtn:hover {
-  background: #f0f4ff;
-  border-color: #0056d8;
+  background: #dbeafe;
+  border-color: #2563eb;
   transform: translateY(-1px);
+  color: #1d4ed8;
+}
+.iconbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+.iconbtn:disabled:hover {
+  transform: none;
+  background: #fff;
+  border-color: #dcdcdc;
+}
+.iconbtn svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 /* Empty state */

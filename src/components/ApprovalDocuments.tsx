@@ -4,6 +4,8 @@ import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFileAlt, faEye, faDownload, faEnvelope, faSave } from "@fortawesome/free-solid-svg-icons";
 import "./ApprovalDocuments.css";
 
 type FileStatus =
@@ -310,11 +312,16 @@ export default function ApprovalDocuments() {
                       onChange={() => toggleRow(doc.id)}
                     />
                   </td>
-                  <td>{doc.fileName}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FontAwesomeIcon icon={faFileAlt} style={{ color: '#2563eb', fontSize: '18px' }} />
+                      <span>{doc.fileName}</span>
+                    </div>
+                  </td>
                   <td>{timeAgo(doc.updatedAt)}</td>
                   <td>
                     <select
-                      className={`dropdown dropdown--${doc.status}`}
+                      className={`pill pill--${doc.status}`}
                       value={doc.status}
                       onChange={(e) =>
                         changeStatus(doc.id, e.target.value as FileStatus)
@@ -340,7 +347,7 @@ export default function ApprovalDocuments() {
                         type="button"
                         onClick={() => handleView(doc)}
                       >
-                        👁️
+                        <FontAwesomeIcon icon={faEye} />
                       </button>
                       <button
                         className="iconbtn"
@@ -349,7 +356,7 @@ export default function ApprovalDocuments() {
                         onClick={() => handleDownload(doc)}
                         disabled={downloadingId === doc.id}
                       >
-                        {downloadingId === doc.id ? "⏳" : "⬇️"}
+                        {downloadingId === doc.id ? "⏳" : <FontAwesomeIcon icon={faDownload} />}
                       </button>
                       <button
                         className="iconbtn"
@@ -357,7 +364,7 @@ export default function ApprovalDocuments() {
                         type="button"
                         onClick={() => handleEmail(doc)}
                       >
-                        ✉️
+                        <FontAwesomeIcon icon={faEnvelope} />
                       </button>
                       <button
                         className="iconbtn"
@@ -365,7 +372,7 @@ export default function ApprovalDocuments() {
                         type="button"
                         disabled
                       >
-                        {savingStatusId === doc.id ? "💾…" : "✓"}
+                        {savingStatusId === doc.id ? "💾…" : <FontAwesomeIcon icon={faSave} />}
                       </button>
                     </div>
                   </td>
