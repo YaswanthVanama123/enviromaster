@@ -388,6 +388,36 @@ export const PricingTablesView: React.FC = () => {
     if (config.sqftPricing?.insideRate !== undefined) fields.push({ label: "Sq Ft Pricing - Inside Rate", value: config.sqftPricing.insideRate, path: ["sqftPricing", "insideRate"] });
     if (config.sqftPricing?.outsideRate !== undefined) fields.push({ label: "Sq Ft Pricing - Outside Rate", value: config.sqftPricing.outsideRate, path: ["sqftPricing", "outsideRate"] });
 
+    // ELECTROSTATIC SPRAY - Complete extraction
+    if (config.defaultRatePerRoom !== undefined) fields.push({ label: "Default Rate Per Room", value: config.defaultRatePerRoom, path: ["defaultRatePerRoom"], unit: "$ per room" });
+    if (config.defaultRatePerSqFt !== undefined) fields.push({ label: "Default Rate Per Sq Ft", value: config.defaultRatePerSqFt, path: ["defaultRatePerSqFt"], unit: "$ per sq ft" });
+    if (config.defaultTripCharge !== undefined) fields.push({ label: "Default Trip Charge", value: config.defaultTripCharge, path: ["defaultTripCharge"], unit: "$" });
+    if (config.ratePerRoom !== undefined) fields.push({ label: "Rate Per Room", value: config.ratePerRoom, path: ["ratePerRoom"], unit: "$ per room" });
+    if (config.ratePerThousandSqFt !== undefined) fields.push({ label: "Rate Per 1000 Sq Ft", value: config.ratePerThousandSqFt, path: ["ratePerThousandSqFt"], unit: "$ per 1000 sq ft" });
+    if (config.sqFtUnit !== undefined) fields.push({ label: "Sq Ft Unit", value: config.sqFtUnit, path: ["sqFtUnit"], unit: "sq ft" });
+
+    // Electrostatic Spray Trip Charges
+    if (config.tripCharges?.insideBeltway !== undefined) fields.push({ label: "Trip Charge - Inside Beltway", value: config.tripCharges.insideBeltway, path: ["tripCharges", "insideBeltway"], unit: "$" });
+    if (config.tripCharges?.outsideBeltway !== undefined) fields.push({ label: "Trip Charge - Outside Beltway", value: config.tripCharges.outsideBeltway, path: ["tripCharges", "outsideBeltway"], unit: "$" });
+    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
+
+    // Electrostatic Spray Billing Conversions
+    if (config.billingConversions?.weekly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Weekly Monthly Multiplier", value: config.billingConversions.weekly.monthlyMultiplier, path: ["billingConversions", "weekly", "monthlyMultiplier"] });
+    if (config.billingConversions?.weekly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Weekly Annual Multiplier", value: config.billingConversions.weekly.annualMultiplier, path: ["billingConversions", "weekly", "annualMultiplier"] });
+    if (config.billingConversions?.biweekly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Biweekly Monthly Multiplier", value: config.billingConversions.biweekly.monthlyMultiplier, path: ["billingConversions", "biweekly", "monthlyMultiplier"] });
+    if (config.billingConversions?.biweekly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Biweekly Annual Multiplier", value: config.billingConversions.biweekly.annualMultiplier, path: ["billingConversions", "biweekly", "annualMultiplier"] });
+    if (config.billingConversions?.monthly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Monthly Multiplier", value: config.billingConversions.monthly.monthlyMultiplier, path: ["billingConversions", "monthly", "monthlyMultiplier"] });
+    if (config.billingConversions?.monthly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Monthly Annual Multiplier", value: config.billingConversions.monthly.annualMultiplier, path: ["billingConversions", "monthly", "annualMultiplier"] });
+    if (config.billingConversions?.bimonthly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Bimonthly Monthly Multiplier", value: config.billingConversions.bimonthly.monthlyMultiplier, path: ["billingConversions", "bimonthly", "monthlyMultiplier"] });
+    if (config.billingConversions?.bimonthly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Bimonthly Annual Multiplier", value: config.billingConversions.bimonthly.annualMultiplier, path: ["billingConversions", "bimonthly", "annualMultiplier"] });
+    if (config.billingConversions?.quarterly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Quarterly Monthly Multiplier", value: config.billingConversions.quarterly.monthlyMultiplier, path: ["billingConversions", "quarterly", "monthlyMultiplier"] });
+    if (config.billingConversions?.quarterly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Quarterly Annual Multiplier", value: config.billingConversions.quarterly.annualMultiplier, path: ["billingConversions", "quarterly", "annualMultiplier"] });
+    if (config.billingConversions?.actualWeeksPerMonth !== undefined) fields.push({ label: "Billing - Actual Weeks Per Month", value: config.billingConversions.actualWeeksPerMonth, path: ["billingConversions", "actualWeeksPerMonth"] });
+
+    // Electrostatic Spray Contract Terms
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"], unit: "months" });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"], unit: "months" });
+
     return fields;
   };
 

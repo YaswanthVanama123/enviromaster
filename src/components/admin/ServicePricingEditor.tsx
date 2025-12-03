@@ -89,7 +89,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     ];
 
     // Add frequency tab for services with frequency-based pricing
-    if (["saniscrub", "microfiberMopping", "rpmWindows", "carpetCleaning", "stripWax", "foamingDrain", "sanipod"].includes(serviceId)) {
+    if (["saniscrub", "microfiberMopping", "rpmWindows", "carpetCleaning", "stripWax", "foamingDrain", "sanipod", "electrostaticSpray"].includes(serviceId)) {
       allTabs.push({ key: "frequencies", label: "Frequencies", icon: "📅" });
     }
 
@@ -119,7 +119,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     }
 
     // Add addons tab
-    if (["saniclean", "microfiberMopping"].includes(serviceId)) {
+    if (["saniclean", "microfiberMopping", "electrostaticSpray"].includes(serviceId)) {
       allTabs.push({ key: "addons", label: "Add-Ons", icon: "➕" });
     }
 
@@ -620,6 +620,76 @@ const FrequenciesTab: React.FC<{
               className="spe__input"
               value={getConfigValue(["weeksPerYear"]) || ""}
               onChange={(e) => updateConfig(["weeksPerYear"], Number(e.target.value))}
+              min="0"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    if (serviceId === "electrostaticSpray") {
+      const billingConversions = getConfigValue(["billingConversions"]) || {};
+      const frequencies = ["weekly", "biweekly", "monthly", "bimonthly", "quarterly"];
+
+      return (
+        <div className="spe__table-container">
+          <table className="spe__table">
+            <thead>
+              <tr>
+                <th>Frequency</th>
+                <th>Monthly Multiplier</th>
+                <th>Annual Multiplier</th>
+              </tr>
+            </thead>
+            <tbody>
+              {frequencies.map((freq) => (
+                <tr key={freq}>
+                  <td className="spe__freq-label">
+                    {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="spe__input"
+                      value={billingConversions[freq]?.monthlyMultiplier || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "monthlyMultiplier"],
+                          Number(e.target.value)
+                        )
+                      }
+                      step="0.001"
+                      min="0"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="spe__input"
+                      value={billingConversions[freq]?.annualMultiplier || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "annualMultiplier"],
+                          Number(e.target.value)
+                        )
+                      }
+                      step="0.01"
+                      min="0"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Actual Weeks Per Month</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={getConfigValue(["billingConversions", "actualWeeksPerMonth"]) || ""}
+              onChange={(e) => updateConfig(["billingConversions", "actualWeeksPerMonth"], Number(e.target.value))}
+              step="0.01"
               min="0"
             />
           </div>
@@ -1492,6 +1562,130 @@ const AddonsTab: React.FC<{
                 updateConfig(["extraAreaPricing", "extraAreaRatePerUnit"], Number(e.target.value))
               }
               step="0.01"
+              min="0"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (serviceId === "electrostaticSpray") {
+    const tripCharges = getConfigValue(["tripCharges"]) || {};
+
+    return (
+      <div className="spe__tab-content">
+        <h3 className="spe__section-title">Pricing Rates & Trip Charges</h3>
+
+        <div className="spe__geo-section">
+          <h4 className="spe__subsection-title">Pricing Rates</h4>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Rate Per Room</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={getConfigValue(["ratePerRoom"]) || ""}
+              onChange={(e) => updateConfig(["ratePerRoom"], Number(e.target.value))}
+              step="0.01"
+              min="0"
+            />
+            <div className="spe__hint">Price per moderately sized room</div>
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Rate Per 1000 Sq Ft</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={getConfigValue(["ratePerThousandSqFt"]) || ""}
+              onChange={(e) => updateConfig(["ratePerThousandSqFt"], Number(e.target.value))}
+              step="0.01"
+              min="0"
+            />
+            <div className="spe__hint">Price per 1000 square feet</div>
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Sq Ft Unit</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={getConfigValue(["sqFtUnit"]) || ""}
+              onChange={(e) => updateConfig(["sqFtUnit"], Number(e.target.value))}
+              min="0"
+            />
+            <div className="spe__hint">Square footage unit (typically 1000)</div>
+          </div>
+        </div>
+
+        <div className="spe__geo-section">
+          <h4 className="spe__subsection-title">Trip Charges</h4>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Inside Beltway</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={tripCharges.insideBeltway || ""}
+              onChange={(e) =>
+                updateConfig(["tripCharges", "insideBeltway"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+            />
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Outside Beltway</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={tripCharges.outsideBeltway || ""}
+              onChange={(e) =>
+                updateConfig(["tripCharges", "outsideBeltway"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+            />
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Standard</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={tripCharges.standard || ""}
+              onChange={(e) =>
+                updateConfig(["tripCharges", "standard"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+            />
+          </div>
+        </div>
+
+        <div className="spe__geo-section">
+          <h4 className="spe__subsection-title">Contract Settings</h4>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Min Contract Months</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={getConfigValue(["minContractMonths"]) || ""}
+              onChange={(e) => updateConfig(["minContractMonths"], Number(e.target.value))}
+              min="0"
+            />
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Max Contract Months</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={getConfigValue(["maxContractMonths"]) || ""}
+              onChange={(e) => updateConfig(["maxContractMonths"], Number(e.target.value))}
               min="0"
             />
           </div>

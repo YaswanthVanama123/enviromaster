@@ -17,6 +17,7 @@ import { CarpetForm } from "../services/carpetCleaning/CarpetForm";
 import { JanitorialForm } from "../services/purejanitorial/JanitorialForm";
 import { StripWaxForm } from "../services/stripWax/StripWaxForm";
 import { RefreshPowerScrubForm } from "../services/refreshPowerScrub/RefreshPowerScrubForm";
+import { ElectrostaticSprayForm } from "../services/electrostaticSpray/ElectrostaticSprayForm";
 
 type ViewMode = "list" | "service" | "products" | "editConfig";
 
@@ -75,6 +76,7 @@ export const AdminPricingManager: React.FC = () => {
       pureJanitorial: <JanitorialForm initialData={initialData} />,
       stripWax: <StripWaxForm initialData={initialData} />,
       refreshPowerScrub: <RefreshPowerScrubForm initialData={initialData} />,
+      electrostaticSpray: <ElectrostaticSprayForm initialData={initialData} />,
     };
 
     return serviceComponents[serviceId] || (
