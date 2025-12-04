@@ -8,6 +8,7 @@ export type JanitorialFrequencyKey =
 
 export type JanitorialRateCategory = "redRate" | "greenRate";
 export type SchedulingMode = "normalRoute" | "standalone";
+export type ServiceType = "recurring" | "oneTime";
 
 export interface JanitorialRateCategoryConfig {
   multiplier: number;
@@ -64,13 +65,15 @@ export interface JanitorialPricingConfig {
 export interface JanitorialFormState {
   manualHours: number;
   schedulingMode: SchedulingMode;
-  isAddonToLargerService: boolean;
+  serviceType: ServiceType; // recurring or one-time
   vacuumingHours: number;
   dustingPlaces: number;
   dirtyInitial: boolean; // kept for UI text only now
   frequency: JanitorialFrequencyKey;
   rateCategory: JanitorialRateCategory;
   contractMonths: number;
+  addonTimeMinutes: number; // Add-on time in minutes for one-time service
+  installation: boolean; // Installation checkbox for recurring service
 
   // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
   baseHourlyRate: number;               // $30/hr for normal route

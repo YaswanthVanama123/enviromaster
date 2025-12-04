@@ -1,8 +1,10 @@
 // src/components/ManualUploads.tsx
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileAlt, faDownload, faTrash, faUpload, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { faFileAlt, faDownload, faTrash, faUpload, faCheckCircle, faTimes, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { manualUploadApi } from "../backendservice/api";
+import { Toast } from "./admin/Toast";
+import type { ToastType } from "./admin/Toast";
 import "./ManualUploads.css";
 
 interface ManualUpload {
@@ -35,6 +37,9 @@ export default function ManualUploads() {
   const [description, setDescription] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUploads();
