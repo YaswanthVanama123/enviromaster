@@ -13,8 +13,10 @@ export const MicrofiberMoppingForm: React.FC<
   const { form, setForm, onChange, calc } = useMicrofiberMoppingCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Custom fields state
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Check if SaniClean All-Inclusive is active

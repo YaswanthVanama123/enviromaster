@@ -16,8 +16,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const { form, setForm, onChange, calc } = useSanipodCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Custom fields state
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Save form data to context for form submission

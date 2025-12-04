@@ -15,8 +15,10 @@ export const SanicleanForm: React.FC<
   const { form, onChange, calc, refreshConfig, isLoadingConfig } = useSanicleanCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Custom fields state
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   const fixtures = Math.max(0, form.fixtureCount);

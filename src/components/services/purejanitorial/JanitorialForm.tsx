@@ -15,8 +15,10 @@ export const JanitorialForm: React.FC<
   const { form, onChange, calc } = useJanitorialCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Custom fields state
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Save form data to context for form submission
@@ -46,7 +48,15 @@ export const JanitorialForm: React.FC<
           unit: "hours",
         },
 
-        ...(form.vacuumingHours > 0 ? {
+        ...(form.manualHours !== undefined ? {
+          otherTasks: {
+            label: "Other Tasks",
+            type: "text" as const,
+            value: `${form.manualHours} hours`,
+          },
+        } : {}),
+
+        ...(form.vacuumingHours !== undefined ? {
           vacuuming: {
             label: "Vacuuming",
             type: "text" as const,
@@ -54,7 +64,7 @@ export const JanitorialForm: React.FC<
           },
         } : {}),
 
-        ...(form.dustingPlaces > 0 ? {
+        ...(form.dustingPlaces !== undefined ? {
           dusting: {
             label: "Dusting",
             type: "text" as const,
@@ -62,7 +72,7 @@ export const JanitorialForm: React.FC<
           },
         } : {}),
 
-        ...(form.addonTimeMinutes > 0 ? {
+        ...(form.addonTimeMinutes !== undefined ? {
           addonTime: {
             label: "Add-on Time",
             type: "text" as const,
@@ -78,12 +88,37 @@ export const JanitorialForm: React.FC<
           },
         } : {}),
 
+        ...(form.serviceType === "recurring" ? {
+          visitsPerWeek: {
+            label: "Visits per Week",
+            type: "text" as const,
+            value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
+          },
+        } : {}),
+
         totals: form.serviceType === "recurring" ? {
           perVisit: {
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
           },
+          weekly: {
+            label: "Weekly Total",
+            type: "dollar" as const,
+            amount: calc.weekly,
+          },
+          monthlyRecurring: {
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: calc.recurringMonthly,
+          },
+          ...(form.installation ? {
+            firstMonth: {
+              label: "First Month Total",
+              type: "dollar" as const,
+              amount: calc.firstMonth,
+            },
+          } : {}),
           contract: {
             label: "Contract Total",
             type: "dollar" as const,
@@ -105,6 +140,10 @@ export const JanitorialForm: React.FC<
       const dataStr = JSON.stringify(data);
 
       if (dataStr !== prevDataRef.current) {
+        console.log('🔄 Janitorial form updating services context with data:');
+        console.log('✅ Full data being sent:', JSON.stringify(data, null, 2));
+        console.log('✅ Totals section:', JSON.stringify(data?.totals, null, 2));
+
         prevDataRef.current = dataStr;
         servicesContext.updateService("janitorial", data);
       }
@@ -176,6 +215,32 @@ export const JanitorialForm: React.FC<
           </select>
         </div>
       </div>
+
+      {/* Visits per Week (only for recurring) */}
+      {form.serviceType === "recurring" && (
+        <div className="svc-row">
+          <label>Visits per Week</label>
+          <div className="svc-row-right">
+            <select
+              className="svc-in"
+              name="visitsPerWeek"
+              value={form.visitsPerWeek}
+              onChange={onChange}
+            >
+              <option value={1}>1 visit per week</option>
+              <option value={2}>2 visits per week</option>
+              <option value={3}>3 visits per week</option>
+              <option value={4}>4 visits per week</option>
+              <option value={5}>5 visits per week</option>
+              <option value={6}>6 visits per week</option>
+              <option value={7}>7 visits per week (daily)</option>
+            </select>
+            <span className="svc-small">
+              Monthly visits: {(form.weeksPerMonth * form.visitsPerWeek).toFixed(1)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* TASK-SPECIFIC INPUTS */}
       <div className="svc-h-row svc-h-row-sub">
@@ -396,6 +461,60 @@ export const JanitorialForm: React.FC<
           </div>
         </div>
       </div>
+
+      {/* Weekly total - Only show for recurring */}
+      {form.serviceType === "recurring" && (
+        <div className="svc-row svc-row-charge">
+          <label>Weekly Total ({form.visitsPerWeek} visit{form.visitsPerWeek !== 1 ? 's' : ''})</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={fmt(calc.weekly)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recurring monthly total - Only show for recurring */}
+      {form.serviceType === "recurring" && (
+        <div className="svc-row svc-row-charge">
+          <label>Monthly Recurring ({(form.weeksPerMonth * form.visitsPerWeek).toFixed(1)} visits/month)</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={fmt(calc.recurringMonthly)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* First month total - Only show for recurring with installation */}
+      {form.serviceType === "recurring" && form.installation && (
+        <div className="svc-row svc-row-charge">
+          <label>First Month Total (incl. installation)</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={fmt(calc.firstMonth)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contract total - Only show for recurring */}
       {form.serviceType === "recurring" && (

@@ -70,6 +70,7 @@ export interface JanitorialFormState {
   dustingPlaces: number;
   dirtyInitial: boolean; // kept for UI text only now
   frequency: JanitorialFrequencyKey;
+  visitsPerWeek: number; // NEW: 1-7 visits per week
   rateCategory: JanitorialRateCategory;
   contractMonths: number;
   addonTimeMinutes: number; // Add-on time in minutes for one-time service

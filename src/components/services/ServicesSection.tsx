@@ -55,6 +55,7 @@ type ServicesSectionProps = {
     stripWax?: any;        // Alias for backend compatibility
     greaseTrap?: any;
     electrostaticSpray?: any;
+    customServices?: CustomServiceData[];  // Add custom services support
   };
 };
 
@@ -102,8 +103,17 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return new Set(configs.filter(c => c.isActive).map(c => c.serviceId));
   });
 
-  // State for custom services
-  const [customServices, setCustomServices] = useState<CustomServiceData[]>([]);
+  // State for custom services - initialize from initialServices if available
+  const [customServices, setCustomServices] = useState<CustomServiceData[]>(() => {
+    if (initialServices?.customServices) {
+      console.log('📋 [ServicesSection] Initializing custom services from saved data:', initialServices.customServices);
+      // Transform the custom services data using our transformer
+      const transformedCustomServices = transformServiceData("customServices", initialServices.customServices);
+      console.log('📋 [ServicesSection] Transformed custom services:', transformedCustomServices);
+      return transformedCustomServices || [];
+    }
+    return [];
+  });
 
   // State for "New Service" dropdown
   const [showNewServiceDropdown, setShowNewServiceDropdown] = useState(false);

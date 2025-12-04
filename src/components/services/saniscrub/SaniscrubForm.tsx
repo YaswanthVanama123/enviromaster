@@ -24,8 +24,10 @@ export const SaniscrubForm: React.FC<
   const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Custom fields state
-  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // Check if SaniClean All-Inclusive is active

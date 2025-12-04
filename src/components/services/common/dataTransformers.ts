@@ -4,6 +4,46 @@
  * that the service forms can use to initialize their fields.
  */
 
+/**
+ * Helper function to extract and format custom fields for all services
+ */
+function extractCustomFields(structuredData: any): any[] {
+  if (structuredData.customFields && Array.isArray(structuredData.customFields)) {
+    console.log('🔄 Processing custom fields for reverse mapping:', structuredData.customFields);
+    const customFields = structuredData.customFields.map((field: any) => {
+      const baseField = {
+        id: field.id || Date.now().toString(),
+        type: field.type || 'text',
+        name: field.name || field.label || 'Custom Field',
+        label: field.label || field.name || 'Custom Field',
+      };
+
+      // Handle calc fields with calcValues
+      if (field.type === 'calc' && field.calcValues) {
+        return {
+          ...baseField,
+          calcValues: {
+            left: field.calcValues.left || '',
+            middle: field.calcValues.middle || '',
+            right: field.calcValues.right || ''
+          }
+        };
+      } else {
+        // Handle text and dollar fields with value
+        return {
+          ...baseField,
+          value: field.value || ''
+        };
+      }
+    });
+    console.log(`  ✅ Custom Fields mapped: ${customFields.length} found`);
+    return customFields;
+  } else {
+    console.log('  ⚠️ No custom fields found in structured data');
+    return [];
+  }
+}
+
 export function transformRpmWindowsData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
@@ -77,6 +117,9 @@ export function transformRpmWindowsData(structuredData: any): any {
     }
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
 }
 
@@ -128,6 +171,9 @@ export function transformSanicleanData(structuredData: any): any {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
 }
 
@@ -168,6 +214,9 @@ export function transformFoamingDrainData(structuredData: any): any {
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
+
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
 
   return formState;
 }
@@ -248,6 +297,9 @@ export function transformCarpetCleanData(structuredData: any): any {
     }
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
 }
 
@@ -269,51 +321,149 @@ export function transformStripWaxData(structuredData: any): any {
     formState.ratePerSqFt = structuredData.service.rate || 0;
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
 }
 
 export function transformJanitorialData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
+  console.log('🔄 Transforming janitorial data:', structuredData);
+
   const formState: any = {
     notes: structuredData.notes || "",
   };
 
+  // Extract service type (recurring vs one-time)
+  if (structuredData.serviceType) {
+    formState.serviceType = structuredData.serviceType.value?.includes("One-Time") ? "one-time" : "recurring";
+  }
+
   // Extract frequency
   if (structuredData.frequency) {
-    formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
+    const freq = structuredData.frequency.value?.toLowerCase();
+    if (freq) {
+      // Map display names back to internal values
+      const frequencyMap: Record<string, string> = {
+        'daily': 'daily',
+        'weekly': 'weekly',
+        'bi-weekly': 'biweekly',
+        'biweekly': 'biweekly',
+        'monthly': 'monthly'
+      };
+      formState.frequency = frequencyMap[freq] || 'weekly';
+    }
   }
 
-  // Extract scheduling mode
-  if (structuredData.schedulingMode) {
-    formState.schedulingMode = structuredData.schedulingMode.value?.includes("Normal") ? "normalRoute" : "standalone";
+  // Extract scheduling mode from location (if present)
+  if (structuredData.location) {
+    const location = structuredData.location.value?.toLowerCase() || '';
+    // For now, default to normalRoute - adjust if you have specific location mapping
+    formState.schedulingMode = 'normalRoute';
   }
 
-  // Extract service (hours)
+  // STEP 1: Extract individual components first
+  let totalHours = 0;
+  let manualHours = 0;
+  let vacuumingHours = 0;
+  let dustingPlaces = 0;
+  let addonTimeMinutes = 0;
+
+  // Extract total hours from service
   if (structuredData.service) {
-    formState.manualHours = structuredData.service.qty || 0;
+    totalHours = Number(structuredData.service.qty) || 0;
+
+    // Extract rate and set appropriate rate field
+    if (structuredData.service.rate) {
+      const rate = typeof structuredData.service.rate === 'string'
+        ? parseFloat(structuredData.service.rate.replace(/[^0-9.]/g, ''))
+        : structuredData.service.rate;
+
+      // Set the hourly rate (adjust based on service type when we have that info)
+      formState.baseHourlyRate = rate;
+      formState.shortJobHourlyRate = rate; // Set both for consistency
+    }
   }
 
-  // Extract vacuuming
-  if (structuredData.vacuuming) {
-    const hoursMatch = structuredData.vacuuming.value?.match(/(\d+)/);
+  // Extract manual hours (Other Tasks) directly
+  if (structuredData.otherTasks) {
+    const hoursMatch = structuredData.otherTasks.value?.match(/(\d+(?:\.\d+)?)/);
     if (hoursMatch) {
-      formState.vacuumingHours = parseInt(hoursMatch[1]);
+      manualHours = parseFloat(hoursMatch[1]);
+      formState.manualHours = manualHours;
     }
   }
 
-  // Extract dusting
-  if (structuredData.dusting) {
-    const placesMatch = structuredData.dusting.value?.match(/(\d+)/);
-    if (placesMatch) {
-      formState.dustingPlaces = parseInt(placesMatch[1]);
+  // Extract vacuuming hours
+  if (structuredData.vacuuming) {
+    const hoursMatch = structuredData.vacuuming.value?.match(/(\d+(?:\.\d+)?)/);
+    if (hoursMatch) {
+      vacuumingHours = parseFloat(hoursMatch[1]);
+      formState.vacuumingHours = vacuumingHours;
     }
+  }
+
+  // Extract dusting places
+  if (structuredData.dusting) {
+    const placesMatch = structuredData.dusting.value?.match(/(\d+(?:\.\d+)?)/);
+    if (placesMatch) {
+      dustingPlaces = parseInt(placesMatch[1]);
+      formState.dustingPlaces = dustingPlaces;
+    }
+  }
+
+  // Extract add-on time
+  if (structuredData.addonTime) {
+    const minutesMatch = structuredData.addonTime.value?.match(/(\d+(?:\.\d+)?)/);
+    if (minutesMatch) {
+      addonTimeMinutes = parseInt(minutesMatch[1]);
+      formState.addonTimeMinutes = addonTimeMinutes;
+    }
+  }
+
+  // Extract visits per week (for recurring services)
+  if (structuredData.visitsPerWeek) {
+    const visitsMatch = structuredData.visitsPerWeek.value?.match(/(\d+)/);
+    if (visitsMatch) {
+      formState.visitsPerWeek = parseInt(visitsMatch[1]);
+    }
+  }
+
+  // STEP 2: Validate that the breakdown makes sense
+  // If we have individual components but no manual hours extracted, calculate it
+  if (!manualHours && totalHours > 0) {
+    // Default dustingPlacesPerHour (this should match the backend config default)
+    const dustingPlacesPerHour = 4; // Default from purejanitorial config
+    const dustingHours = dustingPlaces / dustingPlacesPerHour;
+
+    const calculatedManualHours = Math.max(0, totalHours - vacuumingHours - dustingHours);
+    formState.manualHours = Math.round(calculatedManualHours * 100) / 100; // Round to 2 decimal places
+    manualHours = formState.manualHours;
   }
 
   // Extract contract months
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
+
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
+  // Set defaults for required fields
+  formState.rateCategory = formState.rateCategory || 'red';
+  formState.dirtyInitial = false; // Default value
+  formState.installation = false; // Default value
+
+  console.log('🔄 Janitorial reverse mapping breakdown:');
+  console.log(`  Total Hours from PDF: ${totalHours}`);
+  console.log(`  Manual Hours (Other Tasks): ${manualHours}`);
+  console.log(`  Vacuuming Hours: ${vacuumingHours}`);
+  console.log(`  Dusting Places: ${dustingPlaces}`);
+  console.log(`  Addon Time Minutes: ${addonTimeMinutes}`);
+  console.log(`  Visits per Week: ${formState.visitsPerWeek || 'not set'}`);
+  console.log('✅ Final mapped janitorial form state:', formState);
 
   return formState;
 }
@@ -358,6 +508,9 @@ export function transformSaniscrubData(structuredData: any): any {
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
+
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
 
   return formState;
 }
@@ -411,6 +564,9 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
 }
 
@@ -450,6 +606,9 @@ export function transformSanipodData(structuredData: any): any {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
 }
 
@@ -474,6 +633,9 @@ export function transformGreaseTrapData(structuredData: any): any {
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
+
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
 
   return formState;
 }
@@ -520,6 +682,9 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
+
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
 
   return formState;
 }
@@ -578,7 +743,22 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
+  // Extract custom fields
+  formState.customFields = extractCustomFields(structuredData);
+
   return formState;
+}
+
+export function transformCustomServicesData(structuredData: any): any {
+  if (!structuredData || !Array.isArray(structuredData)) return [];
+
+  console.log('🔄 Transforming custom services data:', structuredData);
+
+  return structuredData.map((customService: any) => ({
+    id: customService.id || Date.now().toString(),
+    name: customService.name || customService.label || 'Custom Service',
+    fields: extractCustomFields({ customFields: customService.fields || [] })
+  }));
 }
 
 /**
@@ -615,6 +795,8 @@ export function transformServiceData(serviceId: string, structuredData: any): an
       return transformRefreshPowerScrubData(structuredData);
     case "electrostaticSpray":
       return transformElectrostaticSprayData(structuredData);
+    case "customServices":
+      return transformCustomServicesData(structuredData);
     default:
       console.warn(`No transformer found for service: ${serviceId}`);
       return undefined;

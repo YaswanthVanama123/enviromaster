@@ -61,6 +61,7 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   dustingPlaces: 0,
   dirtyInitial: false,
   frequency: cfg.defaultFrequency,
+  visitsPerWeek: 1, // Default to once per week
   rateCategory: "redRate",
   contractMonths: cfg.minContractMonths ?? 12,
   addonTimeMinutes: 0, // Add-on time for one-time service
@@ -315,7 +316,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
 
     // ========== FOR RECURRING SERVICES: 4-hour minimum + add-on time ==========
     const weeksPerMonth = form.weeksPerMonth;  // ✅ USE FORM VALUE (from backend)
-    const monthlyVisits = weeksPerMonth;
+    const monthlyVisits = weeksPerMonth * form.visitsPerWeek; // visits per month = weeks per month * visits per week
 
     // Apply 4-hour minimum for recurring
     const billableHours = Math.max(totalHoursBase, form.minHoursPerVisit);
@@ -329,8 +330,15 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     );
     const recurringPerVisit = recurringBasePrice + addonTimePrice;
 
-    // Monthly: per visit * 4.33 visits/month
+    // Monthly: per visit * monthly visits
     const recurringMonthly = recurringPerVisit * monthlyVisits;
+
+    // Weekly: per visit * visits per week
+    const recurringWeekly = recurringPerVisit * form.visitsPerWeek;
+
+    // First month: monthly + installation fee (if applicable)
+    const installationFee = form.installation ? (recurringPerVisit * 0.5) : 0; // 50% of visit cost as installation
+    const firstMonth = recurringMonthly + installationFee;
 
     // Contract total: monthly * contract months
     const minMonths = activeConfig.minContractMonths ?? 2;
@@ -348,7 +356,10 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     return {
       totalHours: totalHoursBase,
       perVisit: recurringPerVisit,
+      weekly: recurringWeekly,
       monthly: recurringMonthly,
+      firstMonth: firstMonth,
+      recurringMonthly: recurringMonthly, // Same as monthly for clarity
       annual: recurringContractTotal,
       firstVisit: recurringPerVisit,
       ongoingMonthly: recurringMonthly,
@@ -360,6 +371,8 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
         pricingMode: `Recurring Service ($${form.baseHourlyRate}/hr, min ${form.minHoursPerVisit} hrs)`,
         basePrice: recurringBasePrice,
         appliedMultiplier: 1,
+        installationFee,
+        monthlyVisits,
       },
     };
   }, [
