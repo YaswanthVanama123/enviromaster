@@ -1,8 +1,9 @@
 // src/components/services/janitorial/JanitorialForm.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useJanitorialCalc } from "./useJanitorialCalc";
 import type { JanitorialFormState } from "./janitorialTypes";
 import type { ServiceInitialData, CustomField } from "../common/serviceTypes";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // ServiceCard wrapper component (you may need to import this from your shared components)
 const ServiceCard: React.FC<{
@@ -29,6 +30,133 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
   // Custom fields state (for user-added fields)
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // Services context integration (CRITICAL - like other services)
+  const servicesContext = useServicesContextOptional();
+  const prevDataRef = useRef<string>('');
+
+  // Update services context when form changes (CRITICAL PATTERN)
+  useEffect(() => {
+    if (servicesContext) {
+      // Determine if service is active (has meaningful data)
+      const isActive = form.baseHours > 0 && (form.recurringServiceRate > 0 || form.oneTimeServiceRate > 0);
+
+      const data = isActive ? {
+        serviceId: "janitorial" as const,
+        displayName: "Pure Janitorial",
+        isActive: true,
+
+        // Service type as text field
+        serviceType: {
+          label: "Service Type",
+          type: "text" as const,
+          value: form.serviceType === "recurringService" ? "Recurring Service" : "One-Time Service"
+        },
+
+        // Main service as calc field (CRITICAL - same as other services)
+        service: {
+          label: "Service",
+          type: "calc" as const,
+          qty: Math.round(form.baseHours * 100) / 100, // Fix decimal precision properly
+          rate: form.serviceType === "recurringService" ? form.recurringServiceRate : form.oneTimeServiceRate,
+          total: Number(calc.baseServiceCost.toFixed(2)),
+          unit: "hours"
+        },
+
+        // Vacuuming as text field
+        vacuuming: {
+          label: "Vacuuming",
+          type: "text" as const,
+          value: `${form.vacuumingHours} hours`
+        },
+
+        // Dusting as text field
+        dusting: {
+          label: "Dusting",
+          type: "text" as const,
+          value: `${form.dustingHours} places`
+        },
+
+        // Add frequency if not one-time
+        ...(form.serviceType === "recurringService" && {
+          frequency: {
+            label: "Frequency",
+            type: "text" as const,
+            value: form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+          }
+        }),
+
+        // Add location info
+        location: {
+          label: "Location",
+          type: "text" as const,
+          value: form.location === "insideBeltway" ? "Inside Beltway" :
+                 form.location === "outsideBeltway" ? "Outside Beltway" :
+                 "Paid Parking"
+        },
+
+        // Add custom fields in the same format
+        ...customFields.reduce((acc, field, index) => {
+          const key = `custom_${index}`;
+          if (field.type === "calc") {
+            const calcValue = field.value as { qty: number; rate: number; total: number };
+            acc[key] = {
+              label: field.label,
+              type: "calc" as const,
+              qty: calcValue.qty,
+              rate: calcValue.rate,
+              total: calcValue.total
+            };
+          } else if (field.type === "dollar" || field.type === "money") {
+            acc[key] = {
+              label: field.label,
+              type: "dollar" as const,
+              amount: Number(field.value) || 0
+            };
+          } else {
+            acc[key] = {
+              label: field.label,
+              type: "text" as const,
+              value: field.value as string
+            };
+          }
+          return acc;
+        }, {} as Record<string, any>),
+
+        // Totals section (dollar fields)
+        totals: {
+          perVisit: {
+            label: "Per Visit Total",
+            type: "dollar" as const,
+            amount: quote.perVisitPrice
+          },
+          monthly: {
+            label: "Monthly Total",
+            type: "dollar" as const,
+            amount: quote.monthlyPrice
+          },
+          ...(form.serviceType === "recurringService" && {
+            contract: {
+              label: "Contract Total",
+              type: "dollar" as const,
+              months: form.contractMonths,
+              amount: quote.contractTotal
+            }
+          })
+        },
+
+        notes: "", // You can add form field for this if needed
+        customFields: customFields
+      } : null;
+
+      // Only update if data actually changed (performance optimization)
+      const dataStr = JSON.stringify(data);
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("janitorial", data);
+      }
+    }
+  }, [form, calc, quote, customFields, servicesContext]);
 
   const addCustomField = (type: "text" | "money" | "calc") => {
     const newField: CustomField = {
@@ -153,24 +281,25 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Frequency */}
-        <div className="svc-row">
-          <label>Frequency</label>
-          <div className="svc-row-right">
-            <select
-              name="frequency"
-              value={form.frequency}
-              onChange={onChange}
-              className="svc-in"
-            >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="oneTime">One-Time</option>
-            </select>
+        {/* Frequency (for recurring services) */}
+        {form.serviceType === "recurringService" && (
+          <div className="svc-row">
+            <label>Frequency</label>
+            <div className="svc-row-right">
+              <select
+                name="frequency"
+                value={form.frequency}
+                onChange={onChange}
+                className="svc-in"
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Location */}
         <div className="svc-row">
