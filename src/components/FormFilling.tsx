@@ -273,7 +273,10 @@ export default function FormFilling() {
     return {
       headerTitle: payload?.headerTitle || "",
       headerRows: payload?.headerRows || [],
-      products: productsForBackend,
+      products: {
+        ...productsForBackend,
+        customColumns: productsData.customColumns || { products: [], dispensers: [] }, // Include custom columns inside products
+      },
       services: servicesData,
       agreement: payload?.agreement || {
         enviroOf: "",
@@ -281,7 +284,6 @@ export default function FormFilling() {
         additionalMonths: "",
       },
       customerName, // Add customer name for PDF filename
-      customColumns: productsData.customColumns || { products: [], dispensers: [] }, // Include custom columns
     };
   };
 
@@ -461,7 +463,12 @@ export default function FormFilling() {
         smallProducts: smallProducts.length,
         bigProducts: bigProducts.length,
         dispensers: extractedDispensers.length,
-        dispenserFrequencies: extractedDispensers.map(d => ({ name: d.name, frequency: d.frequency }))
+        dispenserFrequencies: extractedDispensers.map(d => ({ name: d.name, frequency: d.frequency })),
+        customFieldsDebug: {
+          smallProductsWithCustomFields: smallProducts.filter(p => p.customFields && Object.keys(p.customFields).length > 0),
+          bigProductsWithCustomFields: bigProducts.filter(p => p.customFields && Object.keys(p.customFields).length > 0),
+          dispensersWithCustomFields: extractedDispensers.filter(d => d.customFields && Object.keys(d.customFields).length > 0)
+        }
       });
 
       return {
@@ -633,7 +640,7 @@ export default function FormFilling() {
               initialSmallProducts={extractedProducts.smallProducts}
               initialDispensers={extractedProducts.dispensers}
               initialBigProducts={extractedProducts.bigProducts}
-              initialCustomColumns={payload?.customColumns}
+              initialCustomColumns={payload?.products?.customColumns}
               activeTab={productTab}
               onTabChange={(tab) => {
                 const newParams = new URLSearchParams(searchParams);

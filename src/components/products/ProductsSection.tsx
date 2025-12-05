@@ -611,6 +611,12 @@ function convertInitialToRows(
             row.frequency = item.frequency;
           }
 
+          // ✅ CRITICAL: Preserve custom fields from backend data
+          if (item.customFields) {
+            row.customFields = item.customFields;
+            console.log(`📦 [convertInitialToRows] Preserved custom fields for "${name}":`, item.customFields);
+          }
+
           // For small products
           if (bucket === 'products') {
             const unitPrice = safeNumber(item.unitPrice);
@@ -672,6 +678,12 @@ function convertInitialToRows(
           // ✅ CRITICAL: Preserve frequency from backend data for custom products too
           if (item.frequency) {
             row.frequency = item.frequency;
+          }
+
+          // ✅ CRITICAL: Preserve custom fields from backend data for custom products too
+          if (item.customFields) {
+            row.customFields = item.customFields;
+            console.log(`📦 [convertInitialToRows] Preserved custom fields for custom product "${name}":`, item.customFields);
           }
 
           const total = safeNumber(item.total);
