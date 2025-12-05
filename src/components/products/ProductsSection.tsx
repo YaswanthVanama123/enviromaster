@@ -8,9 +8,9 @@ import { useServicesContextOptional } from "../services/ServicesContext";
 // Export interface for ref handle
 export interface ProductsSectionHandle {
   getData: () => {
-    smallProducts: ProductRow[];
+    products: ProductRow[];
     dispensers: ProductRow[];
-    bigProducts: ProductRow[];
+    products: ProductRow[];
   };
 }
 
@@ -30,8 +30,6 @@ interface ProductsSectionProps {
   initialSmallProducts?: string[] | InitialProductData[];
   initialDispensers?: string[] | InitialProductData[];
   initialBigProducts?: string[] | InitialProductData[];
-  activeTab?: string;
-  onTabChange?: (tab: string | null) => void;
 }
 
 // ---------------------------
@@ -88,16 +86,13 @@ function useProductCatalog() {
   }, [catalog, loading]);
 }
 
-// Which families live in which band/column group
+// Which families live in which band/column group - MERGED: Products = small + big combined
 const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
-  // LEFT band: paper products
-  smallProducts: (p) => p.familyKey === "paper",
+  // Products column: ALL non-dispenser products (paper + other products combined)
+  products: (p) => p.familyKey !== "dispensers",
 
-  // MIDDLE band: dispensers
+  // Dispensers column: dispensers only
   dispensers: (p) => p.familyKey === "dispensers",
-
-  // RIGHT band: everything else
-  bigProducts: (p) => p.familyKey !== "paper" && p.familyKey !== "dispensers",
 };
 
 function getProductsForColumn(column: ColumnKey, allProducts: EnvProduct[]): EnvProduct[] {
@@ -327,6 +322,46 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   );
 }, (prevProps, nextProps) => {
   // Only re-render if value actually changed
+  return prevProps.value === nextProps.value;
+});
+
+type FrequencyCellProps = {
+  value?: string;
+  onChange: (value: string) => void;
+};
+
+const FrequencyCell = React.memo(function FrequencyCell({ value, onChange }: FrequencyCellProps) {
+  const frequencyOptions = [
+    { value: "", label: "Select..." },
+    { value: "daily", label: "Daily" },
+    { value: "weekly", label: "Weekly" },
+    { value: "bi-weekly", label: "Bi-Weekly" },
+    { value: "monthly", label: "Monthly" },
+    { value: "yearly", label: "Yearly" },
+  ];
+
+  return (
+    <select
+      className="in frequency-select"
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        width: "100%",
+        padding: "4px 8px",
+        border: "1px solid #ccc",
+        borderRadius: "4px",
+        fontSize: "14px",
+        backgroundColor: "white",
+      }}
+    >
+      {frequencyOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}, (prevProps, nextProps) => {
   return prevProps.value === nextProps.value;
 });
 
@@ -565,7 +600,7 @@ function convertInitialToRows(
           }
 
           // For small products
-          if (bucket === 'smallProducts') {
+          if (bucket === 'products') {
             const unitPrice = safeNumber(item.unitPrice);
             if (unitPrice !== undefined) {
               row.unitPriceOverride = unitPrice;
@@ -593,7 +628,7 @@ function convertInitialToRows(
           }
 
           // For big products
-          if (bucket === 'bigProducts') {
+          if (bucket === 'products') {
             const amount = safeNumber(item.amount);
             if (amount !== undefined) {
               row.amountOverride = amount;
@@ -633,73 +668,107 @@ function convertInitialToRows(
 }
 
 const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>((props, ref) => {
-  const { initialSmallProducts, initialDispensers, initialBigProducts, activeTab, onTabChange } = props;
+  const { initialSmallProducts, initialDispensers, initialBigProducts } = props;
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-  // Valid tab values
-  const validTabs = ['smallProducts', 'dispensers', 'bigProducts'];
-
-  // Determine current active tab with default
-  const currentTab = activeTab && validTabs.includes(activeTab) ? activeTab : null;
+  // Valid tab values - MERGED: Only 2 categories now
+  const validTabs = ['products', 'dispensers'];
 
   // Fetch products from backend
   const { products: allProducts, loading } = useProductCatalog();
 
   const [data, setData] = useState<{
-    smallProducts: ProductRow[];
-    dispensers: ProductRow[];
-    bigProducts: ProductRow[];
+    products: ProductRow[];      // MERGED: small + big products combined
+    dispensers: ProductRow[];    // Dispensers remain separate
   }>(() => ({
-    smallProducts: [],
+    products: [],
     dispensers: [],
-    bigProducts: [],
   }));
 
   // Initialize default rows when products load
   useEffect(() => {
     if (!loading && allProducts.length > 0) {
       // If initial data is provided, use it; otherwise use defaults
+      // MERGE small and big products into single "products" category
       const hasInitialData = initialSmallProducts || initialDispensers || initialBigProducts;
 
       if (hasInitialData) {
-        console.log("📦 Loading products from edit mode:", {
+        console.log("📦 Loading products from edit mode (MERGED structure):", {
           initialSmallProducts,
           initialDispensers,
           initialBigProducts
         });
 
+        // Combine products + products into single products array
+        const mergedProducts = [
+          ...(initialSmallProducts ? convertInitialToRows("products", initialSmallProducts, allProducts) : []),
+          ...(initialBigProducts ? convertInitialToRows("products", initialBigProducts, allProducts) : [])
+        ];
+
+        // If no initial data provided, get default rows for both product types
+        if (!initialSmallProducts && !initialBigProducts) {
+          const smallProductDefaults = getProductsForColumn("products", allProducts)
+            .filter((p) => p.familyKey === "paper" && p.displayByAdmin !== false)
+            .map((p) => ({
+              id: `products_${p.key}`,
+              productKey: p.key,
+              isDefault: true,
+            }));
+
+          const bigProductDefaults = getProductsForColumn("products", allProducts)
+            .filter((p) => p.familyKey !== "paper" && p.familyKey !== "dispensers" && p.displayByAdmin !== false)
+            .map((p) => ({
+              id: `products_${p.key}`,
+              productKey: p.key,
+              isDefault: true,
+            }));
+
+          mergedProducts.push(...smallProductDefaults, ...bigProductDefaults);
+        }
+
         setData({
-          smallProducts: initialSmallProducts
-            ? convertInitialToRows("smallProducts", initialSmallProducts, allProducts)
-            : getDefaultRows("smallProducts", allProducts),
+          products: mergedProducts,  // MERGED: small + big combined
           dispensers: initialDispensers
             ? convertInitialToRows("dispensers", initialDispensers, allProducts)
             : getDefaultRows("dispensers", allProducts),
-          bigProducts: initialBigProducts
-            ? convertInitialToRows("bigProducts", initialBigProducts, allProducts)
-            : getDefaultRows("bigProducts", allProducts),
         });
       } else {
+        // Default: merge small and big default rows
+        const smallProductDefaults = getProductsForColumn("products", allProducts)
+          .filter((p) => p.familyKey === "paper" && p.displayByAdmin !== false)
+          .map((p) => ({
+            id: `products_${p.key}`,
+            productKey: p.key,
+            isDefault: true,
+          }));
+
+        const bigProductDefaults = getProductsForColumn("products", allProducts)
+          .filter((p) => p.familyKey !== "paper" && p.familyKey !== "dispensers" && p.displayByAdmin !== false)
+          .map((p) => ({
+            id: `products_${p.key}`,
+            productKey: p.key,
+            isDefault: true,
+          }));
+
+        const mergedProducts = [...smallProductDefaults, ...bigProductDefaults];
+
         setData({
-          smallProducts: getDefaultRows("smallProducts", allProducts),
+          products: mergedProducts,  // MERGED: small + big combined
           dispensers: getDefaultRows("dispensers", allProducts),
-          bigProducts: getDefaultRows("bigProducts", allProducts),
         });
       }
     }
   }, [loading, allProducts, initialSmallProducts, initialDispensers, initialBigProducts]);
 
   const [extraCols, setExtraCols] = useState<{
-    smallProducts: { id: string; label: string }[];
+    products: { id: string; label: string }[];    // MERGED: small + big combined
     dispensers: { id: string; label: string }[];
-    bigProducts: { id: string; label: string }[];
   }>({
-    smallProducts: [],
+    products: [],
     dispensers: [],
-    bigProducts: [],
   });
 
   const productMap = useMemo(() => {
@@ -752,17 +821,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
   const addRowAll = useCallback(() => {
     setData((prev) => ({
-      smallProducts: [
-        ...prev.smallProducts,
-        { id: makeRowId("smallProducts"), productKey: null, isDefault: false },
+      products: [
+        ...prev.products,
+        { id: makeRowId("products"), productKey: null, isDefault: false },
       ],
       dispensers: [
         ...prev.dispensers,
         { id: makeRowId("dispensers"), productKey: null, isDefault: false },
-      ],
-      bigProducts: [
-        ...prev.bigProducts,
-        { id: makeRowId("bigProducts"), productKey: null, isDefault: false },
       ],
     }));
   }, []);
@@ -800,9 +865,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   const addColAll = useCallback(
     () =>
       setExtraCols((c) => ({
-        smallProducts: [...c.smallProducts, mkCol()],
+        products: [...c.products, mkCol()],
         dispensers: [...c.dispensers, mkCol()],
-        bigProducts: [...c.bigProducts, mkCol()],
       })),
     []
   );
@@ -843,9 +907,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   const rowsCount = useMemo(
     () =>
       Math.max(
-        data.smallProducts.length,
-        data.dispensers.length,
-        data.bigProducts.length
+        data.products.length,    // MERGED: products column
+        data.dispensers.length   // Dispensers column
       ),
     [data]
   );
@@ -889,21 +952,50 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   // Expose getData method via ref
   useImperativeHandle(ref, () => ({
     getData: () => {
-      // Enrich data with calculated values
-      const enrichedSmallProducts = data.smallProducts.map((row) => {
+      // MERGED PRODUCTS: Handle mixed small + big products in single array
+      // Split them back into separate categories for backend compatibility
+      const allProducts = data.products.map((row) => {
         const product = getProduct(row);
-        const unitPrice = row.unitPriceOverride ?? product?.basePrice?.amount;
-        const qty = row.qty ?? 0;
-        const total = row.totalOverride ?? (unitPrice ? unitPrice * qty : 0);
 
-        return {
-          ...row,
-          displayName: row.customName || product?.name || row.productKey || "",
-          unitPrice,
-          qty,
-          total,
-        };
+        // Determine if this is a small product (paper) or big product (other)
+        const isSmallProduct = product?.familyKey === "paper";
+
+        if (isSmallProduct) {
+          // Small product pricing logic
+          const unitPrice = row.unitPriceOverride ?? product?.basePrice?.amount;
+          const qty = row.qty ?? 0;
+          const total = row.totalOverride ?? (unitPrice ? unitPrice * qty : 0);
+
+          return {
+            ...row,
+            displayName: row.customName || product?.name || row.productKey || "",
+            unitPrice,
+            qty,
+            total,
+            frequency: row.frequency,
+            productType: 'small'
+          };
+        } else {
+          // Big product pricing logic
+          const qty = row.qty ?? 0;
+          const amount = row.amountOverride ?? product?.basePrice?.amount;
+          const total = row.totalOverride ?? (amount ? amount * qty : 0);
+
+          return {
+            ...row,
+            displayName: row.customName || product?.name || row.productKey || "",
+            qty,
+            amount,
+            total,
+            frequency: row.frequency,
+            productType: 'big'
+          };
+        }
       });
+
+      // Split merged products back into small/big for backend compatibility
+      const enrichedSmallProducts = allProducts.filter(p => p.productType === 'small');
+      const enrichedBigProducts = allProducts.filter(p => p.productType === 'big');
 
       const enrichedDispensers = data.dispensers.map((row) => {
         const product = getProduct(row);
@@ -919,22 +1011,14 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           warrantyRate,
           replacementRate,
           total,
+          frequency: row.frequency,
         };
       });
 
-      const enrichedBigProducts = data.bigProducts.map((row) => {
-        const product = getProduct(row);
-        const qty = row.qty ?? 0;
-        const amount = row.amountOverride ?? product?.basePrice?.amount;
-        const total = row.totalOverride ?? (amount ? amount * qty : 0);
-
-        return {
-          ...row,
-          displayName: row.customName || product?.name || row.productKey || "",
-          qty,
-          amount,
-          total,
-        };
+      console.log("📊 [ProductsSection] getData() called");
+      console.log("📊 [ProductsSection] Raw data state:", {
+        productsCount: data.products.length,
+        dispensersCount: data.dispensers.length
       });
 
       return {
@@ -942,6 +1026,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         dispensers: enrichedDispensers,
         bigProducts: enrichedBigProducts,
       };
+
+      console.log("📊 [ProductsSection] Returning data:", {
+        smallProductsCount: enrichedSmallProducts.length,
+        dispensersCount: enrichedDispensers.length,
+        bigProductsCount: enrichedBigProducts.length
+      });
     }
   }), [data, getProduct]);
 
@@ -950,11 +1040,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   // ---------------------------
 
   const DesktopTable = () => {
-    // Determine which products to show based on tab
-    const showSmallProducts = !currentTab || currentTab === 'smallProducts';
-    const showDispensers = !currentTab || currentTab === 'dispensers';
-    const showBigProducts = !currentTab || currentTab === 'bigProducts';
-
     return (
       <>
         <div className="prod__ribbon">
@@ -971,495 +1056,318 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        {onTabChange && (
-          <div className="prod__tabs">
-            <button
-              type="button"
-              className={`prod__tab ${!currentTab ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange(null)}
-            >
-              All Products
-            </button>
-            <button
-              type="button"
-              className={`prod__tab ${currentTab === 'smallProducts' ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange('smallProducts')}
-            >
-              Small Products
-            </button>
-            <button
-              type="button"
-              className={`prod__tab ${currentTab === 'dispensers' ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange('dispensers')}
-            >
-              Dispensers
-            </button>
-            <button
-              type="button"
-              className={`prod__tab ${currentTab === 'bigProducts' ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange('bigProducts')}
-            >
-              Big Products
-            </button>
-          </div>
-        )}
-
         <div className="table-desktop">
           <table className="grid10">
             <thead>
               <tr>
-                {/* LEFT band – paper products */}
-                {showSmallProducts && (
-                  <>
-                    <th className="h h-blue">Products</th>
-                    <th className="h h-blue center">Amount Per Unit</th>
-                    <th className="h h-blue center">Qty</th>
-                    <th className="h h-blue center">Total</th>
-                    {extraCols.smallProducts.map((col) => (
-                      <th className="h h-blue center th-edit" key={col.id}>
-                        <input
-                          className="th-edit-input"
-                          value={col.label}
-                          onChange={(e) =>
-                            changeColLabel("smallProducts", col.id, e.target.value)
-                          }
-                        />
-                        <button
-                          className="th-remove"
-                          title="Remove column"
-                          type="button"
-                          onClick={() => removeCol("smallProducts", col.id)}
-                        >
-                          –
-                        </button>
-                      </th>
-                    ))}
-                  </>
-                )}
+                {/* Products band */}
+                <th className="h h-blue">Products</th>
+                <th className="h h-blue center">Qty</th>
+                <th className="h h-blue center">Unit Price/Amount</th>
+                <th className="h h-blue center">Frequency of Service</th>
+                <th className="h h-blue center">Total</th>
+                {extraCols.products.map((col) => (
+                  <th className="h h-blue center th-edit" key={col.id}>
+                    <input
+                      className="th-edit-input"
+                      value={col.label}
+                      onChange={(e) =>
+                        changeColLabel("products", col.id, e.target.value)
+                      }
+                    />
+                    <button
+                      className="th-remove"
+                      title="Remove column"
+                      type="button"
+                      onClick={() => removeCol("products", col.id)}
+                    >
+                      –
+                    </button>
+                  </th>
+                ))}
 
-                {/* MIDDLE band – dispensers */}
-                {showDispensers && (
-                  <>
-                    <th className="h h-blue">Dispensers</th>
-                    <th className="h h-blue center">Qty</th>
-                    <th className="h h-blue center">Warranty Rate</th>
-                    <th className="h h-blue center">Replacement Rate/Install</th>
-                    <th className="h h-blue center">Total</th>
-                    {extraCols.dispensers.map((col) => (
-                      <th className="h h-blue center th-edit" key={col.id}>
-                        <input
-                          className="th-edit-input"
-                          value={col.label}
-                          onChange={(e) =>
-                            changeColLabel("dispensers", col.id, e.target.value)
-                          }
-                        />
-                        <button
-                          className="th-remove"
-                          title="Remove column"
-                          type="button"
-                          onClick={() => removeCol("dispensers", col.id)}
-                        >
-                          –
-                        </button>
-                      </th>
-                    ))}
-                  </>
-                )}
-
-                {/* RIGHT band – other products */}
-                {showBigProducts && (
-                  <>
-                    <th className="h h-blue">Products</th>
-                    <th className="h h-blue center">Qty</th>
-                    <th className="h h-blue center">Amount</th>
-                    <th className="h h-blue center">Frequency of Service</th>
-                    <th className="h h-blue center">Total</th>
-                    {extraCols.bigProducts.map((col) => (
-                      <th className="h h-blue center th-edit" key={col.id}>
-                        <input
-                          className="th-edit-input"
-                          value={col.label}
-                          onChange={(e) =>
-                            changeColLabel("bigProducts", col.id, e.target.value)
-                          }
-                        />
-                        <button
-                          className="th-remove"
-                          title="Remove column"
-                          type="button"
-                          onClick={() => removeCol("bigProducts", col.id)}
-                        >
-                          –
-                        </button>
-                      </th>
-                    ))}
-                  </>
-                )}
+                {/* Dispensers band */}
+                <th className="h h-blue">Dispensers</th>
+                <th className="h h-blue center">Qty</th>
+                <th className="h h-blue center">Warranty Rate</th>
+                <th className="h h-blue center">Replacement Rate/Install</th>
+                <th className="h h-blue center">Frequency of Service</th>
+                <th className="h h-blue center">Total</th>
+                {extraCols.dispensers.map((col) => (
+                  <th className="h h-blue center th-edit" key={col.id}>
+                    <input
+                      className="th-edit-input"
+                      value={col.label}
+                      onChange={(e) =>
+                        changeColLabel("dispensers", col.id, e.target.value)
+                      }
+                    />
+                    <button
+                      className="th-remove"
+                      title="Remove column"
+                      type="button"
+                      onClick={() => removeCol("dispensers", col.id)}
+                    >
+                      –
+                    </button>
+                  </th>
+                ))}
               </tr>
             </thead>
 
             <tbody>
               {Array.from({ length: rowsCount }).map((_, i) => {
-                const rowSmall = data.smallProducts[i];
+                const rowProduct = data.products[i];
                 const rowDisp = data.dispensers[i];
-                const rowBig = data.bigProducts[i];
 
-                const pSmall = getProduct(rowSmall);
+                const pProduct = getProduct(rowProduct);
                 const pDisp = getProduct(rowDisp);
-                const pBig = getProduct(rowBig);
 
-                // Stable row key: combine all three IDs plus index
-                const rowKey = `${rowSmall?.id ?? `s${i}`}_${rowDisp?.id ?? `d${i}`}_${rowBig?.id ?? `b${i}`}`;
+                // Row key for React
+                const rowKey = `${rowProduct?.id ?? `p${i}`}_${rowDisp?.id ?? `d${i}`}`;
 
                 return (
                   <tr key={rowKey}>
-                    {/* LEFT band: Products + Amount Per Unit + Qty + Total */}
-                    {showSmallProducts && (rowSmall ? (
-                    <>
-                      <td className="label">
-                        <NameCell
-                          product={pSmall}
-                          options={getRowOptions("smallProducts", rowSmall.id)}
-                          onChangeProduct={(key) =>
-                            updateRowProductKey(
-                              "smallProducts",
-                              rowSmall.id,
-                              key
-                            )
-                          }
-                          onSelectCustom={() =>
-                            updateRowField("smallProducts", rowSmall.id, {
-                              productKey: null,
-                              isCustom: true,
-                              customName: "",
-                            })
-                          }
-                          isCustom={rowSmall.isCustom}
-                          customName={rowSmall.customName}
-                          onChangeCustomName={(name) =>
-                            updateRowField("smallProducts", rowSmall.id, {
-                              customName: name,
-                            })
-                          }
-                          onRemove={() =>
-                            removeRow("smallProducts", rowSmall.id)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            rowSmall.unitPriceOverride ??
-                            pSmall?.basePrice?.amount ??
-                            ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("smallProducts", rowSmall.id, {
-                              unitPriceOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td className="center">
-                        <QtyCell
-                          value={rowSmall.qty ?? ""}
-                          onChange={(val) =>
-                            updateRowField("smallProducts", rowSmall.id, {
-                              qty: val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            (rowSmall.totalOverride ??
-                            getSmallUnitPrice(rowSmall, pSmall) *
-                              getQty(rowSmall)) || ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("smallProducts", rowSmall.id, {
-                              totalOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      {extraCols.smallProducts.map((col) => (
-                        <td key={col.id}>
-                          <DollarCell
-                            value={rowSmall.customFields?.[col.id] ?? ""}
+                    {/* Products column */}
+                    {rowProduct ? (
+                      <>
+                        <td className="label">
+                          <NameCell
+                            product={pProduct}
+                            options={getRowOptions("products", rowProduct.id)}
+                            onChangeProduct={(key) =>
+                              updateRowProductKey("products", rowProduct.id, key)
+                            }
+                            onSelectCustom={() =>
+                              updateRowField("products", rowProduct.id, {
+                                productKey: null,
+                                isCustom: true,
+                                customName: "",
+                              })
+                            }
+                            isCustom={rowProduct.isCustom}
+                            customName={rowProduct.customName}
+                            onChangeCustomName={(name) =>
+                              updateRowField("products", rowProduct.id, {
+                                customName: name,
+                              })
+                            }
+                            onRemove={() =>
+                              removeRow("products", rowProduct.id)
+                            }
+                          />
+                        </td>
+                        <td className="center">
+                          <QtyCell
+                            value={rowProduct.qty ?? ""}
                             onChange={(val) =>
-                              updateRowField("smallProducts", rowSmall.id, {
-                                customFields: {
-                                  ...rowSmall.customFields,
-                                  [col.id]: val,
-                                },
+                              updateRowField("products", rowProduct.id, {
+                                qty: val === "" ? undefined : (val as number),
                               })
                             }
                           />
                         </td>
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      <td className="label" />
-                      <td>
-                        <PlainCell />
-                      </td>
-                      <td className="center">
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <PlainCell />
-                      </td>
-                      {extraCols.smallProducts.map((col) => (
-                        <td key={col.id}>
-                          <PlainCell />
-                        </td>
-                      ))}
-                    </>
-                  ))}
-
-                  {/* MIDDLE band: Dispensers + Qty + Warranty + Replacement + Total */}
-                  {showDispensers && (rowDisp ? (
-                    <>
-                      <td className="label">
-                        <NameCell
-                          product={pDisp}
-                          options={getRowOptions("dispensers", rowDisp.id)}
-                          onChangeProduct={(key) =>
-                            updateRowProductKey("dispensers", rowDisp.id, key)
-                          }
-                          onSelectCustom={() =>
-                            updateRowField("dispensers", rowDisp.id, {
-                              productKey: null,
-                              isCustom: true,
-                              customName: "",
-                            })
-                          }
-                          isCustom={rowDisp.isCustom}
-                          customName={rowDisp.customName}
-                          onChangeCustomName={(name) =>
-                            updateRowField("dispensers", rowDisp.id, {
-                              customName: name,
-                            })
-                          }
-                          onRemove={() => removeRow("dispensers", rowDisp.id)}
-                        />
-                      </td>
-                      <td className="center">
-                        <QtyCell
-                          value={rowDisp.qty ?? ""}
-                          onChange={(val) =>
-                            updateRowField("dispensers", rowDisp.id, {
-                              qty: val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            rowDisp.warrantyPriceOverride ??
-                            pDisp?.warrantyPricePerUnit?.amount ??
-                            ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("dispensers", rowDisp.id, {
-                              warrantyPriceOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            rowDisp.replacementPriceOverride ??
-                            pDisp?.basePrice?.amount ??
-                            ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("dispensers", rowDisp.id, {
-                              replacementPriceOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            (rowDisp.totalOverride ??
-                            getDispReplacementPrice(rowDisp, pDisp) *
-                              getQty(rowDisp)) || ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("dispensers", rowDisp.id, {
-                              totalOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      {extraCols.dispensers.map((col) => (
-                        <td key={col.id}>
+                        <td>
                           <DollarCell
-                            value={rowDisp.customFields?.[col.id] ?? ""}
+                            value={
+                              (pProduct?.familyKey === "paper"
+                                ? rowProduct.unitPriceOverride ?? pProduct?.basePrice?.amount
+                                : rowProduct.amountOverride ?? pProduct?.basePrice?.amount
+                              ) ?? ""
+                            }
+                            onChange={(val) => {
+                              const field = pProduct?.familyKey === "paper" ? "unitPriceOverride" : "amountOverride";
+                              updateRowField("products", rowProduct.id, {
+                                [field]: val === "" ? undefined : (val as number),
+                              });
+                            }}
+                          />
+                        </td>
+                        <td className="center">
+                          <FrequencyCell
+                            value={rowProduct.frequency}
+                            onChange={(val) =>
+                              updateRowField("products", rowProduct.id, {
+                                frequency: val,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <DollarCell
+                            value={
+                              (rowProduct.totalOverride ??
+                              ((pProduct?.familyKey === "paper"
+                                ? getSmallUnitPrice(rowProduct, pProduct)
+                                : getBigAmount(rowProduct, pProduct)
+                              ) * getQty(rowProduct))) || ""
+                            }
+                            onChange={(val) =>
+                              updateRowField("products", rowProduct.id, {
+                                totalOverride:
+                                  val === "" ? undefined : (val as number),
+                              })
+                            }
+                          />
+                        </td>
+                        {extraCols.products.map((col) => (
+                          <td key={col.id}>
+                            <DollarCell
+                              value={rowProduct.customFields?.[col.id] ?? ""}
+                              onChange={(val) =>
+                                updateRowField("products", rowProduct.id, {
+                                  customFields: {
+                                    ...rowProduct.customFields,
+                                    [col.id]: val,
+                                  },
+                                })
+                              }
+                            />
+                          </td>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <td className="label" />
+                        <td className="center"><PlainCell /></td>
+                        <td><PlainCell /></td>
+                        <td className="center"><PlainCell /></td>
+                        <td><PlainCell /></td>
+                        {extraCols.products.map((col) => (
+                          <td key={col.id}><PlainCell /></td>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Dispensers column */}
+                    {rowDisp ? (
+                      <>
+                        <td className="label">
+                          <NameCell
+                            product={pDisp}
+                            options={getRowOptions("dispensers", rowDisp.id)}
+                            onChangeProduct={(key) =>
+                              updateRowProductKey("dispensers", rowDisp.id, key)
+                            }
+                            onSelectCustom={() =>
+                              updateRowField("dispensers", rowDisp.id, {
+                                productKey: null,
+                                isCustom: true,
+                                customName: "",
+                              })
+                            }
+                            isCustom={rowDisp.isCustom}
+                            customName={rowDisp.customName}
+                            onChangeCustomName={(name) =>
+                              updateRowField("dispensers", rowDisp.id, {
+                                customName: name,
+                              })
+                            }
+                            onRemove={() => removeRow("dispensers", rowDisp.id)}
+                          />
+                        </td>
+                        <td className="center">
+                          <QtyCell
+                            value={rowDisp.qty ?? ""}
                             onChange={(val) =>
                               updateRowField("dispensers", rowDisp.id, {
-                                customFields: {
-                                  ...rowDisp.customFields,
-                                  [col.id]: val,
-                                },
+                                qty: val === "" ? undefined : (val as number),
                               })
                             }
                           />
                         </td>
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      <td className="label" />
-                      <td className="center">
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <PlainCell />
-                      </td>
-                      {extraCols.dispensers.map((col) => (
-                        <td key={col.id}>
-                          <PlainCell />
-                        </td>
-                      ))}
-                    </>
-                  ))}
-
-                  {/* RIGHT band: Products + Qty + Amount + Frequency + Total */}
-                  {showBigProducts && (rowBig ? (
-                    <>
-                      <td className="label">
-                        <NameCell
-                          product={pBig}
-                          options={getRowOptions("bigProducts", rowBig.id)}
-                          onChangeProduct={(key) =>
-                            updateRowProductKey("bigProducts", rowBig.id, key)
-                          }
-                          onSelectCustom={() =>
-                            updateRowField("bigProducts", rowBig.id, {
-                              productKey: null,
-                              isCustom: true,
-                              customName: "",
-                            })
-                          }
-                          isCustom={rowBig.isCustom}
-                          customName={rowBig.customName}
-                          onChangeCustomName={(name) =>
-                            updateRowField("bigProducts", rowBig.id, {
-                              customName: name,
-                            })
-                          }
-                          onRemove={() => removeRow("bigProducts", rowBig.id)}
-                        />
-                      </td>
-                      <td className="center">
-                        <QtyCell
-                          value={rowBig.qty ?? ""}
-                          onChange={(val) =>
-                            updateRowField("bigProducts", rowBig.id, {
-                              qty: val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            rowBig.amountOverride ??
-                            pBig?.basePrice?.amount ??
-                            ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("bigProducts", rowBig.id, {
-                              amountOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      <td className="center">
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <DollarCell
-                          value={
-                            (rowBig.totalOverride ??
-                            getBigAmount(rowBig, pBig) * getQty(rowBig)) || ""
-                          }
-                          onChange={(val) =>
-                            updateRowField("bigProducts", rowBig.id, {
-                              totalOverride:
-                                val === "" ? undefined : (val as number),
-                            })
-                          }
-                        />
-                      </td>
-                      {extraCols.bigProducts.map((col) => (
-                        <td key={col.id}>
+                        <td>
                           <DollarCell
-                            value={rowBig.customFields?.[col.id] ?? ""}
+                            value={
+                              rowDisp.warrantyPriceOverride ??
+                              pDisp?.warrantyPricePerUnit?.amount ??
+                              ""
+                            }
                             onChange={(val) =>
-                              updateRowField("bigProducts", rowBig.id, {
-                                customFields: {
-                                  ...rowBig.customFields,
-                                  [col.id]: val,
-                                },
+                              updateRowField("dispensers", rowDisp.id, {
+                                warrantyPriceOverride:
+                                  val === "" ? undefined : (val as number),
                               })
                             }
                           />
                         </td>
-                      ))}
-                    </>
-                  ) : (
-                    <>
-                      <td className="label" />
-                      <td className="center">
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <PlainCell />
-                      </td>
-                      <td className="center">
-                        <PlainCell />
-                      </td>
-                      <td>
-                        <PlainCell />
-                      </td>
-                      {extraCols.bigProducts.map((col) => (
-                        <td key={col.id}>
-                          <PlainCell />
+                        <td>
+                          <DollarCell
+                            value={
+                              rowDisp.replacementPriceOverride ??
+                              pDisp?.basePrice?.amount ??
+                              ""
+                            }
+                            onChange={(val) =>
+                              updateRowField("dispensers", rowDisp.id, {
+                                replacementPriceOverride:
+                                  val === "" ? undefined : (val as number),
+                              })
+                            }
+                          />
                         </td>
-                      ))}
-                    </>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
+                        <td className="center">
+                          <FrequencyCell
+                            value={rowDisp.frequency}
+                            onChange={(val) =>
+                              updateRowField("dispensers", rowDisp.id, {
+                                frequency: val,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <DollarCell
+                            value={
+                              (rowDisp.totalOverride ??
+                              getDispReplacementPrice(rowDisp, pDisp) *
+                                getQty(rowDisp)) || ""
+                            }
+                            onChange={(val) =>
+                              updateRowField("dispensers", rowDisp.id, {
+                                totalOverride:
+                                  val === "" ? undefined : (val as number),
+                              })
+                            }
+                          />
+                        </td>
+                        {extraCols.dispensers.map((col) => (
+                          <td key={col.id}>
+                            <DollarCell
+                              value={rowDisp.customFields?.[col.id] ?? ""}
+                              onChange={(val) =>
+                                updateRowField("dispensers", rowDisp.id, {
+                                  customFields: {
+                                    ...rowDisp.customFields,
+                                    [col.id]: val,
+                                  },
+                                })
+                              }
+                            />
+                          </td>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <td className="label" />
+                        <td className="center"><PlainCell /></td>
+                        <td><PlainCell /></td>
+                        <td><PlainCell /></td>
+                        <td className="center"><PlainCell /></td>
+                        <td><PlainCell /></td>
+                        {extraCols.dispensers.map((col) => (
+                          <td key={col.id}><PlainCell /></td>
+                        ))}
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
   };
 
   // ---------------------------
@@ -1510,10 +1418,11 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           <thead>
             <tr>
               <th className="h h-blue">{title}</th>
-              {bucket === "smallProducts" ? (
+              {bucket === "products" ? (
                 <>
-                  <th className="h h-blue center">Amount Per Unit</th>
                   <th className="h h-blue center">Qty</th>
+                  <th className="h h-blue center">Unit Price/Amount</th>
+                  <th className="h h-blue center">Frequency of Service</th>
                   <th className="h h-blue center">Total</th>
                 </>
               ) : bucket === "dispensers" ? (
@@ -1523,6 +1432,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   <th className="h h-blue center">
                     Replacement Rate/Install
                   </th>
+                  <th className="h h-blue center">Frequency of Service</th>
                   <th className="h h-blue center">Total</th>
                 </>
               ) : (
@@ -1613,216 +1523,152 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   };
 
   const GroupedTables = () => {
-    // Determine which products to show based on tab
-    const showSmallProducts = !currentTab || currentTab === 'smallProducts';
-    const showDispensers = !currentTab || currentTab === 'dispensers';
-    const showBigProducts = !currentTab || currentTab === 'bigProducts';
-
     return (
       <>
         <div className="prod__ribbon">
           <div className="prod__title">PRODUCTS</div>
         </div>
 
-        {/* Tab Navigation */}
-        {onTabChange && (
-          <div className="prod__tabs">
-            <button
-              type="button"
-              className={`prod__tab ${!currentTab ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange(null)}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              className={`prod__tab ${currentTab === 'smallProducts' ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange('smallProducts')}
-            >
-              Small
-            </button>
-            <button
-              type="button"
-              className={`prod__tab ${currentTab === 'dispensers' ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange('dispensers')}
-            >
-              Dispensers
-            </button>
-            <button
-              type="button"
-              className={`prod__tab ${currentTab === 'bigProducts' ? 'prod__tab--active' : ''}`}
-              onClick={() => onTabChange('bigProducts')}
-            >
-              Big
-            </button>
-          </div>
-        )}
+        {/* Products grouped table */}
+        <GroupedTable
+          title="Products"
+          bucket="products"
+          renderAmountCells={(row, product) => {
+            // Determine if this is a paper product (small) or other product (big)
+            const isSmallProduct = product?.familyKey === "paper";
 
-        {/* smallProducts grouped */}
-        {showSmallProducts && (
-          <GroupedTable
-            title="Products"
-            bucket="smallProducts"
-            renderAmountCells={(row, product) => (
-          <>
-            <td>
-              <DollarCell
-                value={
-                  row.unitPriceOverride ?? product?.basePrice?.amount ?? ""
-                }
-                onChange={(val) =>
-                  updateRowField("smallProducts", row.id, {
-                    unitPriceOverride:
-                      val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td className="center">
-              <QtyCell
-                value={row.qty ?? ""}
-                onChange={(val) =>
-                  updateRowField("smallProducts", row.id, {
-                    qty: val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td>
-              <DollarCell
-                value={
-                  (row.totalOverride ??
-                  getSmallUnitPrice(row, product) * getQty(row)) || ""
-                }
-                onChange={(val) =>
-                  updateRowField("smallProducts", row.id, {
-                    totalOverride: val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-          </>
-        )}
-      />
-        )}
+            return (
+              <>
+                <td className="center">
+                  <QtyCell
+                    value={row.qty ?? ""}
+                    onChange={(val) =>
+                      updateRowField("products", row.id, {
+                        qty: val === "" ? undefined : (val as number),
+                      })
+                    }
+                  />
+                </td>
+                <td>
+                  <DollarCell
+                    value={
+                      isSmallProduct
+                        ? (row.unitPriceOverride ?? product?.basePrice?.amount ?? "")
+                        : (row.amountOverride ?? product?.basePrice?.amount ?? "")
+                    }
+                    onChange={(val) => {
+                      const field = isSmallProduct ? "unitPriceOverride" : "amountOverride";
+                      updateRowField("products", row.id, {
+                        [field]: val === "" ? undefined : (val as number),
+                      });
+                    }}
+                  />
+                </td>
+                <td className="center">
+                  <FrequencyCell
+                    value={row.frequency}
+                    onChange={(val) =>
+                      updateRowField("products", row.id, {
+                        frequency: val,
+                      })
+                    }
+                  />
+                </td>
+                <td>
+                  <DollarCell
+                    value={
+                      (row.totalOverride ??
+                      (isSmallProduct
+                        ? getSmallUnitPrice(row, product) * getQty(row)
+                        : getBigAmount(row, product) * getQty(row)
+                      )) || ""
+                    }
+                    onChange={(val) =>
+                      updateRowField("products", row.id, {
+                        totalOverride: val === "" ? undefined : (val as number),
+                      })
+                    }
+                  />
+                </td>
+              </>
+            );
+          }}
+        />
 
-      {/* dispensers grouped */}
-      {showDispensers && (
-      <GroupedTable
-        title="Dispensers"
-        bucket="dispensers"
-        renderAmountCells={(row, product) => (
-          <>
-            <td className="center">
-              <QtyCell
-                value={row.qty ?? ""}
-                onChange={(val) =>
-                  updateRowField("dispensers", row.id, {
-                    qty: val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td>
-              <DollarCell
-                value={
-                  row.warrantyPriceOverride ??
-                  product?.warrantyPricePerUnit?.amount ??
-                  ""
-                }
-                onChange={(val) =>
-                  updateRowField("dispensers", row.id, {
-                    warrantyPriceOverride:
-                      val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td>
-              <DollarCell
-                value={
-                  row.replacementPriceOverride ??
-                  product?.basePrice?.amount ??
-                  ""
-                }
-                onChange={(val) =>
-                  updateRowField("dispensers", row.id, {
-                    replacementPriceOverride:
-                      val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td>
-              <DollarCell
-                value={
-                  row.totalOverride ??
-                  getDispReplacementPrice(row, product) * getQty(row)
-                }
-                onChange={(val) =>
-                  updateRowField("dispensers", row.id, {
-                    totalOverride: val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-          </>
-        )}
-      />
-      )}
-
-      {/* bigProducts grouped */}
-      {showBigProducts && (
-      <GroupedTable
-        title="Products"
-        bucket="bigProducts"
-        renderAmountCells={(row, product) => (
-          <>
-            <td className="center">
-              <QtyCell
-                value={row.qty ?? ""}
-                onChange={(val) =>
-                  updateRowField("bigProducts", row.id, {
-                    qty: val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td>
-              <DollarCell
-                value={
-                  row.amountOverride ?? product?.basePrice?.amount ?? ""
-                }
-                onChange={(val) =>
-                  updateRowField("bigProducts", row.id, {
-                    amountOverride:
-                      val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-            <td className="center">
-              <PlainCell />
-            </td>
-            <td>
-              <DollarCell
-                value={
-                  row.totalOverride ??
-                  getBigAmount(row, product) * getQty(row)
-                }
-                onChange={(val) =>
-                  updateRowField("bigProducts", row.id, {
-                    totalOverride: val === "" ? undefined : (val as number),
-                  })
-                }
-              />
-            </td>
-          </>
-        )}
-      />
-      )}
-    </>
-  );
+        {/* Dispensers grouped table */}
+        <GroupedTable
+          title="Dispensers"
+          bucket="dispensers"
+          renderAmountCells={(row, product) => (
+            <>
+              <td className="center">
+                <QtyCell
+                  value={row.qty ?? ""}
+                  onChange={(val) =>
+                    updateRowField("dispensers", row.id, {
+                      qty: val === "" ? undefined : (val as number),
+                    })
+                  }
+                />
+              </td>
+              <td>
+                <DollarCell
+                  value={
+                    row.warrantyPriceOverride ??
+                    product?.warrantyPricePerUnit?.amount ??
+                    ""
+                  }
+                  onChange={(val) =>
+                    updateRowField("dispensers", row.id, {
+                      warrantyPriceOverride:
+                        val === "" ? undefined : (val as number),
+                    })
+                  }
+                />
+              </td>
+              <td>
+                <DollarCell
+                  value={
+                    row.replacementPriceOverride ??
+                    product?.basePrice?.amount ??
+                    ""
+                  }
+                  onChange={(val) =>
+                    updateRowField("dispensers", row.id, {
+                      replacementPriceOverride:
+                        val === "" ? undefined : (val as number),
+                    })
+                  }
+                />
+              </td>
+              <td className="center">
+                <FrequencyCell
+                  value={row.frequency}
+                  onChange={(val) =>
+                    updateRowField("dispensers", row.id, {
+                      frequency: val,
+                    })
+                  }
+                />
+              </td>
+              <td>
+                <DollarCell
+                  value={
+                    row.totalOverride ??
+                    getDispReplacementPrice(row, product) * getQty(row)
+                  }
+                  onChange={(val) =>
+                    updateRowField("dispensers", row.id, {
+                      totalOverride: val === "" ? undefined : (val as number),
+                    })
+                  }
+                />
+              </td>
+            </>
+          )}
+        />
+      </>
+    );
   };
 
   return (

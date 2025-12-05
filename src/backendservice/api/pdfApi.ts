@@ -17,10 +17,27 @@ export interface CustomerHeadersResponse {
   items: CustomerHeader[];
 }
 
+export interface ProductItem {
+  displayName: string;
+  qty: number;
+  frequency?: string;
+  total: number;
+  unitPrice?: number;      // For small products
+  warrantyRate?: number;   // For dispensers
+  replacementRate?: number;// For dispensers
+  amount?: number;         // For big products
+}
+
+export interface ProductsPayload {
+  smallProducts: ProductItem[];
+  dispensers: ProductItem[];
+  bigProducts: ProductItem[];
+}
+
 export interface FormPayload {
   headerTitle: string;
   headerRows: any[];
-  products: any;
+  products: ProductsPayload;
   services: any;
   agreement: any;
 }

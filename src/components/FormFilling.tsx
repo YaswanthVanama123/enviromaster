@@ -188,33 +188,39 @@ export default function FormFilling() {
   const transformProductsToBackendFormat = (productsData: any) => {
     const { smallProducts, dispensers, bigProducts } = productsData;
 
-    // Transform to array of products with proper field names for backend
-    const transformedSmallProducts = smallProducts.map((p: any) => ({
-      displayName: p.displayName || "",
-      qty: p.qty || 0,
-      unitPrice: p.unitPrice || 0,
-      total: p.total || 0,
-    }));
+    // MERGE small and big products into single "products" array for 2-category backend
+    const mergedProducts = [
+      // Small products with unitPrice
+      ...smallProducts.map((p: any) => ({
+        displayName: p.displayName || "",
+        qty: p.qty || 0,
+        unitPrice: p.unitPrice || 0,
+        frequency: p.frequency || "",
+        total: p.total || 0,
+      })),
+      // Big products with amount
+      ...bigProducts.map((b: any) => ({
+        displayName: b.displayName || "",
+        qty: b.qty || 0,
+        amount: b.amount || 0,
+        frequency: b.frequency || "",
+        total: b.total || 0,
+      }))
+    ];
 
     const transformedDispensers = dispensers.map((d: any) => ({
       displayName: d.displayName || "",
       qty: d.qty || 0,
       warrantyRate: d.warrantyRate || 0,
       replacementRate: d.replacementRate || 0,
+      frequency: d.frequency || "",
       total: d.total || 0,
     }));
 
-    const transformedBigProducts = bigProducts.map((b: any) => ({
-      displayName: b.displayName || "",
-      qty: b.qty || 0,
-      amount: b.amount || 0,
-      total: b.total || 0,
-    }));
-
+    // Return 2-category structure that backend expects
     return {
-      smallProducts: transformedSmallProducts,
+      products: mergedProducts,  // MERGED: small + big products combined
       dispensers: transformedDispensers,
-      bigProducts: transformedBigProducts,
     };
   };
 
@@ -232,7 +238,9 @@ export default function FormFilling() {
     // Transform products to backend format
     const productsForBackend = transformProductsToBackendFormat(productsData);
 
-    console.log("📦 Products transformed for backend:", productsForBackend);
+    console.log("📦 Products transformed for backend (2-category):", productsForBackend);
+    console.log("📦 Merged products count:", productsForBackend.products.length);
+    console.log("📦 Dispensers count:", productsForBackend.dispensers.length);
 
     // Get services data from ServicesDataCollector ref
     const servicesData = servicesRef.current?.getData() || {
@@ -400,6 +408,7 @@ export default function FormFilling() {
               name,
               unitPrice: safeParseFloat(String(p.unitPrice || p.unitPriceOverride || p.amountPerUnit || p.amount || "")),
               qty: safeParseInt(String(p.qty || p.quantity || "")),
+              frequency: p.frequency || "",
               total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
             };
           } else if (type === 'dispenser') {
@@ -408,6 +417,7 @@ export default function FormFilling() {
               qty: safeParseInt(String(p.qty || p.quantity || "")),
               warrantyRate: safeParseFloat(String(p.warrantyRate || p.warrantyPriceOverride || p.warranty || "")),
               replacementRate: safeParseFloat(String(p.replacementRate || p.replacementPriceOverride || p.replacement || "")),
+              frequency: p.frequency || "",
               total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
             };
           } else { // big
@@ -415,6 +425,7 @@ export default function FormFilling() {
               name,
               qty: safeParseInt(String(p.qty || p.quantity || "")),
               amount: safeParseFloat(String(p.amount || p.amountPerUnit || p.unitPriceOverride || p.unitPrice || "")),
+              frequency: p.frequency || "",
               total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
             };
           }
@@ -443,34 +454,37 @@ export default function FormFilling() {
     const bigProducts: any[] = [];
 
     rows.forEach((row: string[]) => {
-      // Small products (columns 0-3)
+      // Small products (columns 0-4): name, unitPrice, frequency, qty, total
       if (row[0] && row[0].trim() !== "") {
         smallProducts.push({
           name: row[0],
           unitPrice: safeParseFloat(row[1]),
-          qty: safeParseInt(row[2]),
-          total: safeParseFloat(row[3]),
+          frequency: row[2] || "",
+          qty: safeParseInt(row[3]),
+          total: safeParseFloat(row[4]),
         });
       }
 
-      // Dispensers (columns 4-8)
-      if (row[4] && row[4].trim() !== "") {
+      // Dispensers (columns 5-10): name, qty, warrantyRate, replacementRate, frequency, total
+      if (row[5] && row[5].trim() !== "") {
         dispensers.push({
-          name: row[4],
-          qty: safeParseInt(row[5]),
-          warrantyRate: safeParseFloat(row[6]),
-          replacementRate: safeParseFloat(row[7]),
-          total: safeParseFloat(row[8]),
+          name: row[5],
+          qty: safeParseInt(row[6]),
+          warrantyRate: safeParseFloat(row[7]),
+          replacementRate: safeParseFloat(row[8]),
+          frequency: row[9] || "",
+          total: safeParseFloat(row[10]),
         });
       }
 
-      // Big products (columns 9-13)
-      if (row[9] && row[9].trim() !== "") {
+      // Big products (columns 11-15): name, qty, amount, frequency, total
+      if (row[11] && row[11].trim() !== "") {
         bigProducts.push({
-          name: row[9],
-          qty: safeParseInt(row[10]),
-          amount: safeParseFloat(row[11]),
-          total: safeParseFloat(row[13]),
+          name: row[11],
+          qty: safeParseInt(row[12]),
+          amount: safeParseFloat(row[13]),
+          frequency: row[14] || "",
+          total: safeParseFloat(row[15]),
         });
       }
     });

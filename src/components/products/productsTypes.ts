@@ -38,8 +38,8 @@ export type EnvProductCatalog = {
   families: EnvProductFamily[];
 };
 
-// Columns / buckets in the UI
-export type ColumnKey = "smallProducts" | "dispensers" | "bigProducts";
+// Columns / buckets in the UI - 2 categories: Products (small+big merged) + Dispensers
+export type ColumnKey = "products" | "dispensers";
 
 // Row in the UI table
 // src/components/products/productsTypes.ts  (example)
@@ -59,6 +59,9 @@ export type ProductRow = {
 
   // NEW – editable Total column
   totalOverride?: number;
+
+  // NEW - frequency field
+  frequency?: string;
 
   // Custom column data (columnId -> value)
   customFields?: Record<string, string | number>;
