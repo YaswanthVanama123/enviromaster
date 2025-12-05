@@ -140,16 +140,19 @@ export default function FormFilling() {
       setLoading(true);
       try {
         const json = useCustomerDoc
-          ? await pdfApi.getCustomerHeaderById(finalId!)
+          ? await pdfApi.getCustomerHeaderForEdit(finalId!) // ← FIXED: Use edit-format endpoint
           : await pdfApi.getAdminHeaderById(ADMIN_TEMPLATE_ID);
 
         const fromBackend = json.payload ?? json;
 
         console.log("📋 [FormFilling] Loaded from backend:", {
           isEditMode: useCustomerDoc,
+          endpoint: useCustomerDoc ? 'edit-format' : 'admin-template',
           hasServices: !!fromBackend.services,
           services: fromBackend.services,
-          servicesKeys: fromBackend.services ? Object.keys(fromBackend.services) : []
+          servicesKeys: fromBackend.services ? Object.keys(fromBackend.services) : [],
+          hasProducts: !!fromBackend.products,
+          productsStructure: fromBackend.products ? Object.keys(fromBackend.products) : []
         });
 
         const cleanPayload: FormPayload = {
@@ -395,9 +398,72 @@ export default function FormFilling() {
       };
     }
 
-    // Check if backend sent data in new format (smallProducts/dispensers/bigProducts)
+    console.log("🔍 [extractProductsFromBackend] Raw products data:", products);
+
+    // Check if backend sent data in edit-format (products[] + dispensers[])
+    if (products.products && products.dispensers) {
+      console.log("✅ [extractProductsFromBackend] Using edit-format structure");
+
+      // Extract products array (which contains merged small + big products)
+      const extractedProducts = products.products.map((p: any) => {
+        const name = p.displayName || p.customName || p.productName || p.productKey || "";
+        const productType = p._productType || (p.unitPrice ? 'small' : 'big');
+
+        if (productType === 'small') {
+          return {
+            name,
+            unitPrice: safeParseFloat(String(p.unitPrice || "")),
+            qty: safeParseInt(String(p.qty || "")),
+            frequency: p.frequency || "", // ← PRESERVED from edit-format endpoint
+            total: safeParseFloat(String(p.total || "")),
+          };
+        } else {
+          return {
+            name,
+            qty: safeParseInt(String(p.qty || "")),
+            amount: safeParseFloat(String(p.amount || "")),
+            frequency: p.frequency || "", // ← PRESERVED from edit-format endpoint
+            total: safeParseFloat(String(p.total || "")),
+          };
+        }
+      });
+
+      // Separate small and big products
+      const smallProducts = extractedProducts.filter(p => 'unitPrice' in p);
+      const bigProducts = extractedProducts.filter(p => 'amount' in p);
+
+      // Extract dispensers with preserved frequency
+      const extractedDispensers = products.dispensers.map((d: any) => {
+        const name = d.displayName || d.customName || d.productName || d.productKey || "";
+        return {
+          name,
+          qty: safeParseInt(String(d.qty || "")),
+          warrantyRate: safeParseFloat(String(d.warrantyRate || "")),
+          replacementRate: safeParseFloat(String(d.replacementRate || "")),
+          frequency: d.frequency || "", // ← CRITICAL: PRESERVED from edit-format endpoint
+          total: safeParseFloat(String(d.total || "")),
+        };
+      });
+
+      console.log("✅ [extractProductsFromBackend] Extracted data:", {
+        smallProducts: smallProducts.length,
+        bigProducts: bigProducts.length,
+        dispensers: extractedDispensers.length,
+        dispenserFrequencies: extractedDispensers.map(d => ({ name: d.name, frequency: d.frequency }))
+      });
+
+      return {
+        smallProducts: smallProducts.length > 0 ? smallProducts : undefined,
+        dispensers: extractedDispensers.length > 0 ? extractedDispensers : undefined,
+        bigProducts: bigProducts.length > 0 ? bigProducts : undefined,
+      };
+    }
+
+    // Check if backend sent data in legacy format (smallProducts/dispensers/bigProducts)
     if (products.smallProducts || products.dispensers || products.bigProducts) {
-      // New format - extract fields the backend sends
+      console.log("⚠️ [extractProductsFromBackend] Using legacy 3-array structure");
+
+      // Legacy format - extract fields the backend sends
       const extractProductData = (productArray: any[], type: 'small' | 'dispenser' | 'big') => {
         return productArray.map((p: any) => {
           // Backend can send: displayName, productName, customName, or productKey

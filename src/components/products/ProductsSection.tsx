@@ -23,6 +23,7 @@ export interface InitialProductData {
   replacementRate?: number;
   amount?: number;
   total?: number;
+  frequency?: string;  // ✅ CRITICAL: Added frequency field
 }
 
 // Props interface
@@ -599,6 +600,11 @@ function convertInitialToRows(
             row.qty = qty;
           }
 
+          // ✅ CRITICAL: Preserve frequency from backend data
+          if (item.frequency) {
+            row.frequency = item.frequency;
+          }
+
           // For small products
           if (bucket === 'products') {
             const unitPrice = safeNumber(item.unitPrice);
@@ -656,6 +662,12 @@ function convertInitialToRows(
           if (qty !== undefined) {
             row.qty = qty;
           }
+
+          // ✅ CRITICAL: Preserve frequency from backend data for custom products too
+          if (item.frequency) {
+            row.frequency = item.frequency;
+          }
+
           const total = safeNumber(item.total);
           if (total !== undefined) {
             row.totalOverride = total;

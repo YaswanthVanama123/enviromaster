@@ -68,6 +68,17 @@ export const pdfApi = {
   },
 
   /**
+   * Get a specific customer header by ID in edit-friendly format
+   * This endpoint converts backend data structure for proper edit mode mapping
+   */
+  async getCustomerHeaderForEdit(id: string): Promise<{ payload: FormPayload }> {
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/customer-headers/${id}/edit-format`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
    * Get admin template header by ID
    */
   async getAdminHeaderById(id: string): Promise<{ payload: FormPayload }> {
