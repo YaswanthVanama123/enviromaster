@@ -43,6 +43,211 @@
 }
 .prod__add:hover{ background:#ffecec; }
 
+/* ===================================
+   PRODUCT TABS NAVIGATION STYLES
+   (Matching Services Tabs Styling)
+   ================================= */
+
+.product-tabs-container {
+  margin-bottom: 10px;
+}
+
+.product-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 0 8px;
+  flex-wrap: wrap;
+}
+
+.product-tab {
+  appearance: none;
+  border: 1px solid #c00000;
+  background: #fff;
+  color: #c00000;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.product-tab:hover {
+  background: #ffecec;
+}
+
+.product-tab.active {
+  background: #c00000;
+  color: #fff;
+}
+
+.product-tab.active:hover {
+  background: #a00000;
+}
+
+/* ===================================
+   REFERENCE TABLES STYLES
+   (Matching Existing Form UI)
+   ================================= */
+
+.reference-table-container {
+  margin-top: 0;
+}
+
+.reference-table-wrapper {
+  border: 1.4px solid #000;
+  background: #fff;
+  overflow-x: auto;
+}
+
+.reference-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.reference-table th {
+  background: #dae9f8;
+  color: #000;
+  padding: 10px 8px;
+  text-align: center;
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* First column header (Product Name) - same sky blue as others */
+.reference-table th:first-child {
+  background: #dae9f8;
+  color: #000;
+  text-align: left;
+  padding-left: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.reference-table th:last-child {
+  border-right: none;
+}
+
+.reference-table td {
+  padding: 8px;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  vertical-align: middle;
+  text-align: center;
+  background: #fff;
+}
+
+.reference-table td:last-child {
+  border-right: none;
+}
+
+.reference-table tr:nth-child(even) td {
+  background: #f9f9f9;
+}
+
+.reference-table tr:hover td {
+  background: #ffe6e6;
+}
+
+.reference-table .label {
+  font-weight: 600;
+  text-align: left;
+  padding-left: 12px;
+}
+
+/* Column widths for better layout */
+.reference-table th:nth-child(1),
+.reference-table td:nth-child(1) {
+  width: 30%;
+  min-width: 200px;
+}
+
+.reference-table th:nth-child(2),
+.reference-table td:nth-child(2) {
+  width: 15%;
+}
+
+.reference-table th:nth-child(3),
+.reference-table td:nth-child(3) {
+  width: 15%;
+}
+
+.reference-table th:nth-child(4),
+.reference-table td:nth-child(4) {
+  width: 15%;
+}
+
+.reference-table th:nth-child(5),
+.reference-table td:nth-child(5) {
+  width: 25%;
+}
+
+/* Loading message */
+.loading-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive adjustments for tabs and tables */
+@media (max-width: 768px) {
+  .product-tabs {
+    gap: 4px;
+    padding: 0 4px;
+  }
+
+  .product-tab {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .reference-table {
+    font-size: 12px;
+    table-layout: auto;
+  }
+
+  .reference-table th,
+  .reference-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  .reference-table th {
+    font-size: 11px;
+  }
+
+  .reference-table .label {
+    padding-left: 8px;
+  }
+
+  /* Allow horizontal scrolling on mobile for better table display */
+  .reference-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Adjust column widths for mobile */
+  .reference-table th:nth-child(1),
+  .reference-table td:nth-child(1) {
+    min-width: 150px;
+    width: auto;
+  }
+}
+
+/* ===================================
+   EXISTING STYLES CONTINUE BELOW
+   ================================= */
+
 /* Tab Navigation Styles */
 .prod__tabs {
   display: flex;

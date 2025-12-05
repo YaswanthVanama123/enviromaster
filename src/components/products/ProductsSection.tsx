@@ -31,6 +31,8 @@ interface ProductsSectionProps {
   initialSmallProducts?: string[] | InitialProductData[];
   initialDispensers?: string[] | InitialProductData[];
   initialBigProducts?: string[] | InitialProductData[];
+  activeTab?: string; // ✅ Added activeTab prop for URL-based tab switching
+  onTabChange?: (tab: string) => void; // ✅ Added tab change callback
 }
 
 // ---------------------------
@@ -680,11 +682,29 @@ function convertInitialToRows(
 }
 
 const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>((props, ref) => {
-  const { initialSmallProducts, initialDispensers, initialBigProducts } = props;
+  const { initialSmallProducts, initialDispensers, initialBigProducts, activeTab, onTabChange } = props;
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
+
+  // ✅ Tab Management
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    return activeTab || 'form'; // Default to 'form' tab
+  });
+
+  // Update tab when activeTab prop changes
+  useEffect(() => {
+    if (activeTab && activeTab !== currentTab) {
+      setCurrentTab(activeTab);
+    }
+  }, [activeTab, currentTab]);
+
+  // Handle tab change with callback to parent
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
+    onTabChange?.(tab);
+  };
 
   // Valid tab values - MERGED: Only 2 categories now
   const validTabs = ['products', 'dispensers'];
@@ -1046,6 +1066,129 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       });
     }
   }), [data, getProduct]);
+
+  // ---------------------------
+  // Reference Tables for Salespeople
+  // ---------------------------
+
+  const ProductsReferenceTable = () => {
+    const productsForReference = getProductsForColumn("products", allProducts);
+
+    return (
+      <div className="reference-table-container">
+        <div className="prod__ribbon">
+          <div className="prod__title">PRODUCTS REFERENCE - FOR SALESPEOPLE</div>
+        </div>
+        <div className="reference-table-wrapper">
+          <table className="reference-table">
+            <thead>
+              <tr>
+                <th className="h h-blue">Product Name</th>
+                <th className="h h-blue center">Family</th>
+                <th className="h h-blue center">Base Price</th>
+                <th className="h h-blue center">Unit</th>
+                <th className="h h-blue center">Case Info</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productsForReference.map((product) => (
+                <tr key={product.key}>
+                  <td className="label">{product.name}</td>
+                  <td className="center">{product.familyKey}</td>
+                  <td className="center">
+                    ${product.basePrice?.amount ? product.basePrice.amount.toFixed(2) : 'N/A'}
+                  </td>
+                  <td className="center">{product.basePrice?.uom || 'Each'}</td>
+                  <td className="center">
+                    {product.quantityPerCase ? `${product.quantityPerCase} per case` : 'N/A'}
+                    {product.basePrice?.unitSizeLabel && (
+                      <div style={{fontSize: '12px', color: '#666'}}>
+                        {product.basePrice.unitSizeLabel}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const DispensersReferenceTable = () => {
+    const dispensersForReference = getProductsForColumn("dispensers", allProducts);
+
+    return (
+      <div className="reference-table-container">
+        <div className="prod__ribbon">
+          <div className="prod__title">DISPENSERS REFERENCE - FOR SALESPEOPLE</div>
+        </div>
+        <div className="reference-table-wrapper">
+          <table className="reference-table">
+            <thead>
+              <tr>
+                <th className="h h-blue">Dispenser Name</th>
+                <th className="h h-blue center">Base Price</th>
+                <th className="h h-blue center">Unit</th>
+                <th className="h h-blue center">Warranty Rate</th>
+                <th className="h h-blue center">Warranty Period</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dispensersForReference.map((dispenser) => (
+                <tr key={dispenser.key}>
+                  <td className="label">{dispenser.name}</td>
+                  <td className="center">
+                    ${dispenser.basePrice?.amount ? dispenser.basePrice.amount.toFixed(2) : 'N/A'}
+                  </td>
+                  <td className="center">{dispenser.basePrice?.uom || 'Each'}</td>
+                  <td className="center">
+                    ${dispenser.warrantyPricePerUnit?.amount ? dispenser.warrantyPricePerUnit.amount.toFixed(2) : 'N/A'}
+                  </td>
+                  <td className="center">
+                    {dispenser.warrantyPricePerUnit?.billingPeriod || 'Per week'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  // ---------------------------
+  // Tab Navigation Component
+  // ---------------------------
+
+  const TabNavigation = () => (
+    <div className="product-tabs-container">
+      <div className="product-tabs">
+        <button
+          type="button"
+          className={`product-tab ${currentTab === 'form' ? 'active' : ''}`}
+          onClick={() => handleTabChange('form')}
+        >
+          Form
+        </button>
+        <button
+          type="button"
+          className={`product-tab ${currentTab === 'products' ? 'active' : ''}`}
+          onClick={() => handleTabChange('products')}
+        >
+          Products Reference
+        </button>
+        <button
+          type="button"
+          className={`product-tab ${currentTab === 'dispensers' ? 'active' : ''}`}
+          onClick={() => handleTabChange('dispensers')}
+        >
+          Dispensers Reference
+        </button>
+      </div>
+    </div>
+  );
 
   // ---------------------------
   // Desktop table
@@ -1685,7 +1828,23 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
   return (
     <section className="prod">
-      {isDesktop ? DesktopTable() : GroupedTables()}
+      <TabNavigation />
+
+      {loading && (
+        <div className="loading-message">
+          Loading products...
+        </div>
+      )}
+
+      {!loading && (
+        <>
+          {currentTab === 'form' && (
+            isDesktop ? DesktopTable() : GroupedTables()
+          )}
+          {currentTab === 'products' && <ProductsReferenceTable />}
+          {currentTab === 'dispensers' && <DispensersReferenceTable />}
+        </>
+      )}
     </section>
   );
 });
