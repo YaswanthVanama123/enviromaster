@@ -304,7 +304,46 @@
 .h-blue { background: #dae9f8; }
 .center { text-align: center; }
 
-.th-edit { position: relative; padding: 6px 30px 6px 8px; min-width: 150px; }
+.th-edit {
+  position: relative;
+  padding: 4px 18px 4px 4px;
+  min-width: 60px;
+  max-width: 80px;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  vertical-align: top;
+}
+
+/* Force custom columns to stay narrow */
+.th-edit,
+.th-edit td,
+td:has(.th-edit) {
+  width: 70px !important;
+  min-width: 60px !important;
+  max-width: 80px !important;
+}
+
+/* Specific targeting for custom columns in products table */
+.table-desktop .grid10 th.th-edit,
+.table-desktop .grid10 td:last-child,
+.table-desktop .grid10 td:nth-last-child(2),
+.table-desktop .grid10 td:nth-last-child(3) {
+  width: 70px !important;
+  min-width: 60px !important;
+  max-width: 80px !important;
+}
+
+/* Mobile table custom columns */
+.gtable th.th-edit,
+.gtable td:last-child,
+.gtable td:nth-last-child(2),
+.gtable td:nth-last-child(3) {
+  width: 70px !important;
+  min-width: 60px !important;
+  max-width: 80px !important;
+}
 .th-edit-input{
   width: 100%;
   background: transparent;
@@ -313,20 +352,40 @@
   font-weight: 800;
   color: #c20000;
   text-align: center;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  resize: none;
+  overflow: hidden;
+  min-height: 1.4em;
+  max-height: 4em;
+  line-height: 1.1;
+  padding: 1px;
+  font-family: inherit;
+  font-size: 11px;
+  vertical-align: middle;
 }
 .void {
   background: #d9d9d9 !important;
   padding: 0 !important;
   height: 100%;
 }
-.th-remove{
+.th-remove{ 
   position: absolute;
-  right: 6px;
+  right: 3px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px; height: 20px; line-height: 18px;
-  text-align: center; border: 1px solid #666; border-radius: 50%;
-  background: #f6f6f6; cursor: pointer;
+  width: 10px; height: 10px;
+  text-align: center; border: 1px solid #ccc; border-radius: 25px;
+  background: #ffffff; cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-weight: bold;
+  z-index: 10;
 }
 .th-remove:hover{ background:#eee; }
 

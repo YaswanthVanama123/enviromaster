@@ -1223,12 +1223,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 <th className="h h-blue center">Total</th>
                 {extraCols.products.map((col) => (
                   <th className="h h-blue center th-edit" key={col.id}>
-                    <input
+                    <textarea
                       className="th-edit-input"
                       value={col.label}
                       onChange={(e) =>
                         changeColLabel("products", col.id, e.target.value)
                       }
+                      rows={1}
                     />
                     <button
                       className="th-remove"
@@ -1250,12 +1251,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 <th className="h h-blue center">Total</th>
                 {extraCols.dispensers.map((col) => (
                   <th className="h h-blue center th-edit" key={col.id}>
-                    <input
+                    <textarea
                       className="th-edit-input"
                       value={col.label}
                       onChange={(e) =>
                         changeColLabel("dispensers", col.id, e.target.value)
                       }
+                      rows={1}
                     />
                     <button
                       className="th-remove"
@@ -1602,12 +1604,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
               )}
               {extraCols[extraKey].map((col) => (
                 <th className="h h-blue center th-edit" key={col.id}>
-                  <input
+                  <textarea
                     className="th-edit-input"
                     value={col.label}
                     onChange={(e) =>
                       changeColLabel(extraKey, col.id, e.target.value)
                     }
+                    rows={1}
                   />
                   <button
                     className="th-remove"
