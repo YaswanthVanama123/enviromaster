@@ -14,6 +14,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
   grid-template-rows:auto 1fr; /* header, content */
 }
 
+/* Edit mode - full height layout without navbar */
+.shell.edit-mode {
+  grid-template-rows: 1fr; /* Only content, no navbar */
+}
+
+.edit-mode-body {
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+}
+
 /* Your page content stays centered with a max width */
 .container{
   /* max-width:1200px; */

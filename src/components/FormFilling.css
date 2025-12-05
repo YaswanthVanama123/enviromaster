@@ -5,6 +5,54 @@
   margin: 30px;
 }
 
+/* Edit Mode Styles */
+.edit-mode-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 12px 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.edit-back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-back-button:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #212529;
+}
+
+.edit-back-button:active {
+  background: #dee2e6;
+  transform: translateY(1px);
+}
+
+.edit-back-button svg {
+  font-size: 16px;
+}
+
+/* Add top padding to content when edit header is present */
+.edit-mode-container {
+  padding-top: 60px;
+}
+
 .formfilling__loading {
   text-align: center;
   padding: 40px;

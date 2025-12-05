@@ -30,6 +30,8 @@ interface ProductsSectionProps {
   initialSmallProducts?: string[] | InitialProductData[];
   initialDispensers?: string[] | InitialProductData[];
   initialBigProducts?: string[] | InitialProductData[];
+  activeTab?: string;
+  onTabChange?: (tab: string | null) => void;
 }
 
 // ---------------------------
@@ -631,11 +633,17 @@ function convertInitialToRows(
 }
 
 const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>((props, ref) => {
-  const { initialSmallProducts, initialDispensers, initialBigProducts } = props;
+  const { initialSmallProducts, initialDispensers, initialBigProducts, activeTab, onTabChange } = props;
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
+
+  // Valid tab values
+  const validTabs = ['smallProducts', 'dispensers', 'bigProducts'];
+
+  // Determine current active tab with default
+  const currentTab = activeTab && validTabs.includes(activeTab) ? activeTab : null;
 
   // Fetch products from backend
   const { products: allProducts, loading } = useProductCatalog();
@@ -941,122 +949,174 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   // Desktop table
   // ---------------------------
 
-  const DesktopTable = () => (
-    <>
-      <div className="prod__ribbon">
-        <div className="prod__title prod__title--hasActions">
-          PRODUCTS
-          <div className="prod__title-actions">
-            <button className="prod__add" onClick={addRowAll} type="button">
-              + Row
-            </button>
-            <button className="prod__add" onClick={addColAll} type="button">
-              + Column
-            </button>
+  const DesktopTable = () => {
+    // Determine which products to show based on tab
+    const showSmallProducts = !currentTab || currentTab === 'smallProducts';
+    const showDispensers = !currentTab || currentTab === 'dispensers';
+    const showBigProducts = !currentTab || currentTab === 'bigProducts';
+
+    return (
+      <>
+        <div className="prod__ribbon">
+          <div className="prod__title prod__title--hasActions">
+            PRODUCTS
+            <div className="prod__title-actions">
+              <button className="prod__add" onClick={addRowAll} type="button">
+                + Row
+              </button>
+              <button className="prod__add" onClick={addColAll} type="button">
+                + Column
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="table-desktop">
-        <table className="grid10">
-          <thead>
-            <tr>
-              {/* LEFT band – paper products */}
-              <th className="h h-blue">Products</th>
-              <th className="h h-blue center">Amount Per Unit</th>
-              <th className="h h-blue center">Qty</th>
-              <th className="h h-blue center">Total</th>
-              {extraCols.smallProducts.map((col) => (
-                <th className="h h-blue center th-edit" key={col.id}>
-                  <input
-                    className="th-edit-input"
-                    value={col.label}
-                    onChange={(e) =>
-                      changeColLabel("smallProducts", col.id, e.target.value)
-                    }
-                  />
-                  <button
-                    className="th-remove"
-                    title="Remove column"
-                    type="button"
-                    onClick={() => removeCol("smallProducts", col.id)}
-                  >
-                    –
-                  </button>
-                </th>
-              ))}
+        {/* Tab Navigation */}
+        {onTabChange && (
+          <div className="prod__tabs">
+            <button
+              type="button"
+              className={`prod__tab ${!currentTab ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange(null)}
+            >
+              All Products
+            </button>
+            <button
+              type="button"
+              className={`prod__tab ${currentTab === 'smallProducts' ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange('smallProducts')}
+            >
+              Small Products
+            </button>
+            <button
+              type="button"
+              className={`prod__tab ${currentTab === 'dispensers' ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange('dispensers')}
+            >
+              Dispensers
+            </button>
+            <button
+              type="button"
+              className={`prod__tab ${currentTab === 'bigProducts' ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange('bigProducts')}
+            >
+              Big Products
+            </button>
+          </div>
+        )}
 
-              {/* MIDDLE band – dispensers */}
-              <th className="h h-blue">Dispensers</th>
-              <th className="h h-blue center">Qty</th>
-              <th className="h h-blue center">Warranty Rate</th>
-              <th className="h h-blue center">Replacement Rate/Install</th>
-              <th className="h h-blue center">Total</th>
-              {extraCols.dispensers.map((col) => (
-                <th className="h h-blue center th-edit" key={col.id}>
-                  <input
-                    className="th-edit-input"
-                    value={col.label}
-                    onChange={(e) =>
-                      changeColLabel("dispensers", col.id, e.target.value)
-                    }
-                  />
-                  <button
-                    className="th-remove"
-                    title="Remove column"
-                    type="button"
-                    onClick={() => removeCol("dispensers", col.id)}
-                  >
-                    –
-                  </button>
-                </th>
-              ))}
+        <div className="table-desktop">
+          <table className="grid10">
+            <thead>
+              <tr>
+                {/* LEFT band – paper products */}
+                {showSmallProducts && (
+                  <>
+                    <th className="h h-blue">Products</th>
+                    <th className="h h-blue center">Amount Per Unit</th>
+                    <th className="h h-blue center">Qty</th>
+                    <th className="h h-blue center">Total</th>
+                    {extraCols.smallProducts.map((col) => (
+                      <th className="h h-blue center th-edit" key={col.id}>
+                        <input
+                          className="th-edit-input"
+                          value={col.label}
+                          onChange={(e) =>
+                            changeColLabel("smallProducts", col.id, e.target.value)
+                          }
+                        />
+                        <button
+                          className="th-remove"
+                          title="Remove column"
+                          type="button"
+                          onClick={() => removeCol("smallProducts", col.id)}
+                        >
+                          –
+                        </button>
+                      </th>
+                    ))}
+                  </>
+                )}
 
-              {/* RIGHT band – other products */}
-              <th className="h h-blue">Products</th>
-              <th className="h h-blue center">Qty</th>
-              <th className="h h-blue center">Amount</th>
-              <th className="h h-blue center">Frequency of Service</th>
-              <th className="h h-blue center">Total</th>
-              {extraCols.bigProducts.map((col) => (
-                <th className="h h-blue center th-edit" key={col.id}>
-                  <input
-                    className="th-edit-input"
-                    value={col.label}
-                    onChange={(e) =>
-                      changeColLabel("bigProducts", col.id, e.target.value)
-                    }
-                  />
-                  <button
-                    className="th-remove"
-                    title="Remove column"
-                    type="button"
-                    onClick={() => removeCol("bigProducts", col.id)}
-                  >
-                    –
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
+                {/* MIDDLE band – dispensers */}
+                {showDispensers && (
+                  <>
+                    <th className="h h-blue">Dispensers</th>
+                    <th className="h h-blue center">Qty</th>
+                    <th className="h h-blue center">Warranty Rate</th>
+                    <th className="h h-blue center">Replacement Rate/Install</th>
+                    <th className="h h-blue center">Total</th>
+                    {extraCols.dispensers.map((col) => (
+                      <th className="h h-blue center th-edit" key={col.id}>
+                        <input
+                          className="th-edit-input"
+                          value={col.label}
+                          onChange={(e) =>
+                            changeColLabel("dispensers", col.id, e.target.value)
+                          }
+                        />
+                        <button
+                          className="th-remove"
+                          title="Remove column"
+                          type="button"
+                          onClick={() => removeCol("dispensers", col.id)}
+                        >
+                          –
+                        </button>
+                      </th>
+                    ))}
+                  </>
+                )}
 
-          <tbody>
-            {Array.from({ length: rowsCount }).map((_, i) => {
-              const rowSmall = data.smallProducts[i];
-              const rowDisp = data.dispensers[i];
-              const rowBig = data.bigProducts[i];
+                {/* RIGHT band – other products */}
+                {showBigProducts && (
+                  <>
+                    <th className="h h-blue">Products</th>
+                    <th className="h h-blue center">Qty</th>
+                    <th className="h h-blue center">Amount</th>
+                    <th className="h h-blue center">Frequency of Service</th>
+                    <th className="h h-blue center">Total</th>
+                    {extraCols.bigProducts.map((col) => (
+                      <th className="h h-blue center th-edit" key={col.id}>
+                        <input
+                          className="th-edit-input"
+                          value={col.label}
+                          onChange={(e) =>
+                            changeColLabel("bigProducts", col.id, e.target.value)
+                          }
+                        />
+                        <button
+                          className="th-remove"
+                          title="Remove column"
+                          type="button"
+                          onClick={() => removeCol("bigProducts", col.id)}
+                        >
+                          –
+                        </button>
+                      </th>
+                    ))}
+                  </>
+                )}
+              </tr>
+            </thead>
 
-              const pSmall = getProduct(rowSmall);
-              const pDisp = getProduct(rowDisp);
-              const pBig = getProduct(rowBig);
+            <tbody>
+              {Array.from({ length: rowsCount }).map((_, i) => {
+                const rowSmall = data.smallProducts[i];
+                const rowDisp = data.dispensers[i];
+                const rowBig = data.bigProducts[i];
 
-              // Stable row key: combine all three IDs plus index
-              const rowKey = `${rowSmall?.id ?? `s${i}`}_${rowDisp?.id ?? `d${i}`}_${rowBig?.id ?? `b${i}`}`;
+                const pSmall = getProduct(rowSmall);
+                const pDisp = getProduct(rowDisp);
+                const pBig = getProduct(rowBig);
 
-              return (
-                <tr key={rowKey}>
-                  {/* LEFT band: Products + Amount Per Unit + Qty + Total */}
-                  {rowSmall ? (
+                // Stable row key: combine all three IDs plus index
+                const rowKey = `${rowSmall?.id ?? `s${i}`}_${rowDisp?.id ?? `d${i}`}_${rowBig?.id ?? `b${i}`}`;
+
+                return (
+                  <tr key={rowKey}>
+                    {/* LEFT band: Products + Amount Per Unit + Qty + Total */}
+                    {showSmallProducts && (rowSmall ? (
                     <>
                       <td className="label">
                         <NameCell
@@ -1116,9 +1176,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                       <td>
                         <DollarCell
                           value={
-                            rowSmall.totalOverride ??
+                            (rowSmall.totalOverride ??
                             getSmallUnitPrice(rowSmall, pSmall) *
-                              getQty(rowSmall)
+                              getQty(rowSmall)) || ""
                           }
                           onChange={(val) =>
                             updateRowField("smallProducts", rowSmall.id, {
@@ -1162,10 +1222,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         </td>
                       ))}
                     </>
-                  )}
+                  ))}
 
                   {/* MIDDLE band: Dispensers + Qty + Warranty + Replacement + Total */}
-                  {rowDisp ? (
+                  {showDispensers && (rowDisp ? (
                     <>
                       <td className="label">
                         <NameCell
@@ -1234,9 +1294,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                       <td>
                         <DollarCell
                           value={
-                            rowDisp.totalOverride ??
+                            (rowDisp.totalOverride ??
                             getDispReplacementPrice(rowDisp, pDisp) *
-                              getQty(rowDisp)
+                              getQty(rowDisp)) || ""
                           }
                           onChange={(val) =>
                             updateRowField("dispensers", rowDisp.id, {
@@ -1283,10 +1343,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         </td>
                       ))}
                     </>
-                  )}
+                  ))}
 
                   {/* RIGHT band: Products + Qty + Amount + Frequency + Total */}
-                  {rowBig ? (
+                  {showBigProducts && (rowBig ? (
                     <>
                       <td className="label">
                         <NameCell
@@ -1343,8 +1403,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                       <td>
                         <DollarCell
                           value={
-                            rowBig.totalOverride ??
-                            getBigAmount(rowBig, pBig) * getQty(rowBig)
+                            (rowBig.totalOverride ??
+                            getBigAmount(rowBig, pBig) * getQty(rowBig)) || ""
                           }
                           onChange={(val) =>
                             updateRowField("bigProducts", rowBig.id, {
@@ -1391,7 +1451,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         </td>
                       ))}
                     </>
-                  )}
+                  ))}
                 </tr>
               );
             })}
@@ -1400,6 +1460,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       </div>
     </>
   );
+  };
 
   // ---------------------------
   // Mobile / grouped tables
@@ -1551,17 +1612,58 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     );
   };
 
-  const GroupedTables = () => (
-    <>
-      <div className="prod__ribbon">
-        <div className="prod__title">PRODUCTS</div>
-      </div>
+  const GroupedTables = () => {
+    // Determine which products to show based on tab
+    const showSmallProducts = !currentTab || currentTab === 'smallProducts';
+    const showDispensers = !currentTab || currentTab === 'dispensers';
+    const showBigProducts = !currentTab || currentTab === 'bigProducts';
 
-      {/* smallProducts grouped */}
-      <GroupedTable
-        title="Products"
-        bucket="smallProducts"
-        renderAmountCells={(row, product) => (
+    return (
+      <>
+        <div className="prod__ribbon">
+          <div className="prod__title">PRODUCTS</div>
+        </div>
+
+        {/* Tab Navigation */}
+        {onTabChange && (
+          <div className="prod__tabs">
+            <button
+              type="button"
+              className={`prod__tab ${!currentTab ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange(null)}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              className={`prod__tab ${currentTab === 'smallProducts' ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange('smallProducts')}
+            >
+              Small
+            </button>
+            <button
+              type="button"
+              className={`prod__tab ${currentTab === 'dispensers' ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange('dispensers')}
+            >
+              Dispensers
+            </button>
+            <button
+              type="button"
+              className={`prod__tab ${currentTab === 'bigProducts' ? 'prod__tab--active' : ''}`}
+              onClick={() => onTabChange('bigProducts')}
+            >
+              Big
+            </button>
+          </div>
+        )}
+
+        {/* smallProducts grouped */}
+        {showSmallProducts && (
+          <GroupedTable
+            title="Products"
+            bucket="smallProducts"
+            renderAmountCells={(row, product) => (
           <>
             <td>
               <DollarCell
@@ -1589,8 +1691,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             <td>
               <DollarCell
                 value={
-                  row.totalOverride ??
-                  getSmallUnitPrice(row, product) * getQty(row)
+                  (row.totalOverride ??
+                  getSmallUnitPrice(row, product) * getQty(row)) || ""
                 }
                 onChange={(val) =>
                   updateRowField("smallProducts", row.id, {
@@ -1602,8 +1704,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           </>
         )}
       />
+        )}
 
       {/* dispensers grouped */}
+      {showDispensers && (
       <GroupedTable
         title="Dispensers"
         bucket="dispensers"
@@ -1665,8 +1769,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           </>
         )}
       />
+      )}
 
       {/* bigProducts grouped */}
+      {showBigProducts && (
       <GroupedTable
         title="Products"
         bucket="bigProducts"
@@ -1714,8 +1820,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           </>
         )}
       />
+      )}
     </>
   );
+  };
 
   return (
     <section className="prod">

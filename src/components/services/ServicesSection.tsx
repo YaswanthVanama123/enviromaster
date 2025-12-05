@@ -57,6 +57,8 @@ type ServicesSectionProps = {
     electrostaticSpray?: any;
     customServices?: CustomServiceData[];  // Add custom services support
   };
+  activeTab?: string;
+  onTabChange?: (tab: string | null) => void;
 };
 
 // Export handle to get custom services data
@@ -69,10 +71,16 @@ export interface ServicesSectionHandle {
 
 export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSectionProps>(({
   initialServices,
+  activeTab,
+  onTabChange,
 }, ref) => {
   // Fetch service configs to determine which services are active
   const { configs, loading } = useServiceConfigs();
   const servicesContext = useServicesContextOptional();
+
+  // Determine current active tab with validation
+  const validTabs = configs.map(c => c.serviceId);
+  const currentTab = activeTab && validTabs.includes(activeTab) ? activeTab : null;
 
   // State for which services are currently visible
   const [visibleServices, setVisibleServices] = useState<Set<string>>(() => {
@@ -266,11 +274,16 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return false;
   });
 
+  // Apply tab filter if a specific tab is selected
+  const tabFilteredServices = currentTab
+    ? activeVisibleServices.filter(config => config.serviceId === currentTab)
+    : activeVisibleServices;
+
   // Separate RefreshPowerScrub from grid services
-  const gridServices = activeVisibleServices.filter(
+  const gridServices = tabFilteredServices.filter(
     (config) => config.serviceId !== "refreshPowerScrub"
   );
-  const refreshPowerScrubVisible = activeVisibleServices.some(
+  const refreshPowerScrubVisible = tabFilteredServices.some(
     (c) => c.serviceId === "refreshPowerScrub"
   );
 
@@ -339,6 +352,29 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      {onTabChange && activeVisibleServices.length > 0 && (
+        <div className="svc-tabs">
+          <button
+            type="button"
+            className={`svc-tab ${!currentTab ? 'svc-tab--active' : ''}`}
+            onClick={() => onTabChange(null)}
+          >
+            All Services
+          </button>
+          {activeVisibleServices.map((config) => (
+            <button
+              key={config.serviceId}
+              type="button"
+              className={`svc-tab ${currentTab === config.serviceId ? 'svc-tab--active' : ''}`}
+              onClick={() => onTabChange(config.serviceId)}
+            >
+              {config.label || config.serviceId}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="svc-grid">
         {gridServices.map((config) => {
           const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
@@ -404,8 +440,8 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
           );
         })}
 
-        {/* Render custom services */}
-        {customServices.map((service) => (
+        {/* Render custom services - only show if no tab filter or if "All Services" is selected */}
+        {!currentTab && customServices.map((service) => (
           <CustomService
             key={service.id}
             service={service}

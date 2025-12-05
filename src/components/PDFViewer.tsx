@@ -52,10 +52,12 @@ export default function PDFViewer() {
   }, [documentId]);
 
   const handleEdit = () => {
-    navigate("/form-filling", {
+    navigate(`/edit/pdf/${documentId}`, {
       state: {
         editing: true,
         id: documentId,
+        returnPath: "/pdf-viewer",
+        returnState: { documentId, fileName },
       },
     });
   };

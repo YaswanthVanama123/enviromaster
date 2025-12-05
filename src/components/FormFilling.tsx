@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import CustomerSection from "./CustomerSection";
 import ProductsSection from "./products/ProductsSection";
 import type { ProductsSectionHandle } from "./products/ProductsSection";
@@ -21,8 +23,11 @@ type HeaderRow = {
 };
 
 type ProductsPayload = {
-  headers: string[]; 
+  headers: string[];
   rows: string[][];
+  smallProducts?: any[];
+  dispensers?: any[];
+  bigProducts?: any[];
 };
 
 type ServiceLine = {
@@ -71,6 +76,8 @@ export type FormPayload = {
 type LocationState = {
   editing?: boolean;
   id?: string;
+  returnPath?: string;
+  returnState?: any;
 };
 
 // customer document we were using before (for saving when not editing an existing one)
@@ -81,6 +88,8 @@ const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 export default function FormFilling() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { id: urlId } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [payload, setPayload] = useState<FormPayload | null>(null);
   const [loading, setLoading] = useState(false);
@@ -90,26 +99,48 @@ export default function FormFilling() {
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
 
+  // Detect if we're in edit mode based on URL path
+  const isInEditMode = location.pathname.startsWith('/edit/pdf');
+  const locationState = (location.state ?? {}) as LocationState;
+
+  // Get tab parameters from URL
+  const productTab = searchParams.get('productTab') || undefined;
+  const serviceTab = searchParams.get('serviceTab') || undefined;
+
   // Refs to collect data from child components
   const productsRef = useRef<ProductsSectionHandle>(null);
   const servicesRef = useRef<ServicesDataHandle>(null);
 
+  // Handle back navigation
+  const handleBack = () => {
+    if (locationState.returnPath && locationState.returnState) {
+      navigate(locationState.returnPath, { state: locationState.returnState });
+    } else if (locationState.returnPath) {
+      navigate(locationState.returnPath);
+    } else {
+      navigate(-1); // Fallback to browser back
+    }
+  };
+
   useEffect(() => {
     // Extract editing and id from location.state inside useEffect to ensure fresh values
-    const { editing = false, id }: LocationState = (location.state ?? {}) as LocationState;
+    const { editing = false, id } = locationState;
+
+    // Use URL param if available, otherwise use location state id
+    const finalId = urlId || id;
 
     // Update documentId when location changes
-    setDocumentId(id || null);
-    setIsEditMode(editing); // Set edit mode state
+    setDocumentId(finalId || null);
+    setIsEditMode(editing || isInEditMode); // Set edit mode state based on URL or state
 
     // ---- PICK API FOR INITIAL DATA ----
-    const useCustomerDoc = editing && !!id;
+    const useCustomerDoc = (editing || isInEditMode) && !!finalId;
 
     const fetchHeaders = async () => {
       setLoading(true);
       try {
         const json = useCustomerDoc
-          ? await pdfApi.getCustomerHeaderById(id!)
+          ? await pdfApi.getCustomerHeaderById(finalId!)
           : await pdfApi.getAdminHeaderById(ADMIN_TEMPLATE_ID);
 
         const fromBackend = json.payload ?? json;
@@ -147,7 +178,7 @@ export default function FormFilling() {
     };
 
     fetchHeaders();
-  }, [location]);
+  }, [location, urlId]);
 
   const handleHeaderRowsChange = (rows: HeaderRow[]) => {
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
@@ -478,7 +509,21 @@ export default function FormFilling() {
 
   return (
     <ServicesProvider>
-      <div className="center-align">
+      <div className={`center-align ${isInEditMode ? 'edit-mode-container' : ''}`}>
+        {isInEditMode && (
+          <div className="edit-mode-header">
+            <button
+              type="button"
+              className="edit-back-button"
+              onClick={handleBack}
+              title="Go back"
+            >
+              <FontAwesomeIcon icon={faArrowLeft} />
+              <span>Back</span>
+            </button>
+          </div>
+        )}
+
         {loading && !payload && (
           <div className="formfilling__loading">Loading…</div>
         )}
@@ -496,9 +541,31 @@ export default function FormFilling() {
               initialSmallProducts={extractedProducts.smallProducts}
               initialDispensers={extractedProducts.dispensers}
               initialBigProducts={extractedProducts.bigProducts}
+              activeTab={productTab}
+              onTabChange={(tab) => {
+                const newParams = new URLSearchParams(searchParams);
+                if (tab) {
+                  newParams.set('productTab', tab);
+                } else {
+                  newParams.delete('productTab');
+                }
+                setSearchParams(newParams, { replace: true });
+              }}
             />
 
-            <ServicesSection initialServices={payload.services} />
+            <ServicesSection
+              initialServices={payload.services}
+              activeTab={serviceTab}
+              onTabChange={(tab) => {
+                const newParams = new URLSearchParams(searchParams);
+                if (tab) {
+                  newParams.set('serviceTab', tab);
+                } else {
+                  newParams.delete('serviceTab');
+                }
+                setSearchParams(newParams, { replace: true });
+              }}
+            />
             <ServicesDataCollector ref={servicesRef} />
 
             <div className="formfilling__actions">

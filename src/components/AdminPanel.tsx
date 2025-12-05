@@ -1,7 +1,7 @@
 // src/components/AdminPanel.tsx
 
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
 import SavedFiles from "./SavedFiles";
@@ -37,9 +37,38 @@ interface Document {
 
 export default function AdminPanel() {
   const navigate = useNavigate();
+  const { tab, subtab, modalType, itemId } = useParams<{
+    tab: string;
+    subtab: string;
+    modalType: string;
+    itemId: string;
+  }>();
   const { isAuthenticated, user, logout } = useAdminAuth();
   const isNavigatingRef = useRef(false);
-  const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+
+  // Extract subtab from URL path for nested routes
+  const getSubtabFromUrl = (): string | undefined => {
+    const path = window.location.pathname;
+    if (path.includes('/admin-panel/') && path.includes('/services/')) {
+      return 'services';
+    }
+    if (path.includes('/admin-panel/') && path.includes('/products/')) {
+      return 'products';
+    }
+    return subtab;
+  };
+
+  const currentSubtab = getSubtabFromUrl();
+
+  // Determine active tab from URL parameter with fallback to dashboard
+  const getActiveTabFromUrl = (): TabType => {
+    if (!tab) return "dashboard";
+
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details"];
+    return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getActiveTabFromUrl());
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,6 +81,20 @@ export default function AdminPanel() {
   const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
   const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    const urlTab = getActiveTabFromUrl();
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [tab]);
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab: TabType) => {
+    setActiveTab(newTab);
+    navigate(`/admin-panel/${newTab}`, { replace: true });
+  };
 
   // Hide global navigation when admin panel is open
   useEffect(() => {
@@ -194,10 +237,6 @@ export default function AdminPanel() {
         fileName: fileName,
       },
     });
-  };
-
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
   };
 
   const handleLogout = () => {
@@ -710,7 +749,13 @@ export default function AdminPanel() {
 
         {activeTab === "pricing-details" && (
           <div className="tab-content-full tab-content-transparent">
-            <AdminDashboard />
+            <AdminDashboard
+              isEmbedded={true}
+              parentPath="/admin-panel/pricing-details"
+              initialSubtab={currentSubtab}
+              modalType={modalType}
+              itemId={itemId}
+            />
           </div>
         )}
       </main>

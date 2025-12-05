@@ -1,17 +1,60 @@
 // src/components/admin/ServiceConfigManager.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useServiceConfigs } from "../../backendservice/hooks";
 import type { ServiceConfig, UpdateServiceConfigPayload } from "../../backendservice/types/serviceConfig.types";
 import { Toast } from "./Toast";
 import type { ToastType } from "./Toast";
 
-export const ServiceConfigManager: React.FC = () => {
+interface ServiceConfigManagerProps {
+  modalType?: string;
+  itemId?: string;
+  isEmbedded?: boolean;
+  parentPath?: string;
+}
+
+export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
+  modalType,
+  itemId,
+  isEmbedded = false,
+  parentPath
+}) => {
+  const navigate = useNavigate();
   const { configs, loading, error, updateConfig } = useServiceConfigs();
   const [editingConfig, setEditingConfig] = useState<ServiceConfig | null>(null);
   const [formData, setFormData] = useState<UpdateServiceConfigPayload>({});
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // URL-based modal management
+  useEffect(() => {
+    if (modalType === 'edit' && itemId && configs.length > 0) {
+      const config = configs.find(c => c._id === itemId);
+      if (config) {
+        handleEdit(config);
+      }
+    } else if (!modalType) {
+      setEditingConfig(null);
+    }
+  }, [modalType, itemId, configs]);
+
+  // Update URL when modal opens/closes
+  const openEditModal = (config: ServiceConfig) => {
+    if (isEmbedded && parentPath) {
+      navigate(`${parentPath}/services/edit/${config._id}`, { replace: true });
+    } else {
+      navigate(`/pricing-tables/services/edit/${config._id}`, { replace: true });
+    }
+  };
+
+  const closeModal = () => {
+    if (isEmbedded && parentPath) {
+      navigate(`${parentPath}/services`, { replace: true });
+    } else {
+      navigate('/pricing-tables/services', { replace: true });
+    }
+  };
 
   const handleEdit = (config: ServiceConfig) => {
     setEditingConfig(config);
@@ -33,7 +76,7 @@ export const ServiceConfigManager: React.FC = () => {
 
     if (result.success) {
       setToastMessage({ message: "Service config updated successfully!", type: "success" });
-      setEditingConfig(null);
+      closeModal();
     } else {
       setToastMessage({ message: "Failed to update service config. Please try again.", type: "error" });
     }
@@ -42,7 +85,7 @@ export const ServiceConfigManager: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setEditingConfig(null);
+    closeModal();
     setFormData({});
   };
 
@@ -82,7 +125,7 @@ export const ServiceConfigManager: React.FC = () => {
                 ))}
               </div>
             )}
-            <button style={styles.editButton} onClick={() => handleEdit(config)}>
+            <button style={styles.editButton} onClick={() => openEditModal(config)}>
               Edit Configuration
             </button>
           </div>

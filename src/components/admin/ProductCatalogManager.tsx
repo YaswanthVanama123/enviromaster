@@ -1,11 +1,25 @@
 // src/components/admin/ProductCatalogManager.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { Product, ProductFamily } from "../../backendservice/types/productCatalog.types";
 import { Toast } from "./Toast";
 
-export const ProductCatalogManager: React.FC = () => {
+interface ProductCatalogManagerProps {
+  modalType?: string;
+  itemId?: string;
+  isEmbedded?: boolean;
+  parentPath?: string;
+}
+
+export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
+  modalType,
+  itemId,
+  isEmbedded = false,
+  parentPath
+}) => {
+  const navigate = useNavigate();
   const { catalog, loading, error, updateCatalog } = useActiveProductCatalog();
   const [selectedFamily, setSelectedFamily] = useState<ProductFamily | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -27,6 +41,84 @@ export const ProductCatalogManager: React.FC = () => {
     warrantyPricePerUnit: { amount: 0, currency: "USD", billingPeriod: "monthly" },
     displayByAdmin: true,
   });
+
+  // URL-based modal management
+  useEffect(() => {
+    if (!catalog || catalog.families.length === 0) return;
+
+    if (modalType === 'edit' && itemId) {
+      // Find product by key across all families
+      let foundProduct: Product | null = null;
+      for (const family of catalog.families) {
+        const product = family.products.find(p => p.key === itemId);
+        if (product) {
+          foundProduct = product;
+          break;
+        }
+      }
+      if (foundProduct) {
+        handleEditProduct(foundProduct);
+      }
+    } else if (modalType === 'create' && itemId) {
+      // Find family by key
+      const family = catalog.families.find(f => f.key === itemId);
+      if (family) {
+        handleAddProduct(family);
+      }
+    } else if (modalType === 'delete' && itemId) {
+      // Find product for deletion
+      let foundProduct: Product | null = null;
+      for (const family of catalog.families) {
+        const product = family.products.find(p => p.key === itemId);
+        if (product) {
+          foundProduct = product;
+          break;
+        }
+      }
+      if (foundProduct) {
+        setDeletingProduct(foundProduct);
+      }
+    } else if (!modalType) {
+      // Close all modals
+      setEditingProduct(null);
+      setCreatingProduct(null);
+      setDeletingProduct(null);
+      setIsEditMode(false);
+    }
+  }, [modalType, itemId, catalog]);
+
+  // URL navigation helpers
+  const openEditModal = (product: Product) => {
+    if (isEmbedded && parentPath) {
+      navigate(`${parentPath}/products/edit/${product.key}`, { replace: true });
+    } else {
+      navigate(`/pricing-tables/products/edit/${product.key}`, { replace: true });
+    }
+  };
+
+  const openCreateModal = (family: ProductFamily) => {
+    if (isEmbedded && parentPath) {
+      navigate(`${parentPath}/products/create/${family.key}`, { replace: true });
+    } else {
+      navigate(`/pricing-tables/products/create/${family.key}`, { replace: true });
+    }
+  };
+
+  const openDeleteModal = (product: Product) => {
+    if (isEmbedded && parentPath) {
+      navigate(`${parentPath}/products/delete/${product.key}`, { replace: true });
+    } else {
+      navigate(`/pricing-tables/products/delete/${product.key}`, { replace: true });
+    }
+  };
+
+  const closeModal = () => {
+    if (isEmbedded && parentPath) {
+      navigate(`${parentPath}/products`, { replace: true });
+    } else {
+      navigate('/pricing-tables/products', { replace: true });
+    }
+  };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
@@ -59,7 +151,7 @@ export const ProductCatalogManager: React.FC = () => {
     if (result.success) {
       setSuccessMessage("✓ Product updated successfully!");
       setIsEditMode(false);
-      setEditingProduct(null);
+      closeModal();
 
       // Update the selectedFamily state to reflect changes in the table immediately
       if (selectedFamily) {
@@ -109,7 +201,7 @@ export const ProductCatalogManager: React.FC = () => {
 
     if (result.success) {
       setSuccessMessage("✓ Product added successfully!");
-      setCreatingProduct(null);
+      closeModal();
 
       // Update the selectedFamily to show the new product immediately
       if (selectedFamily && selectedFamily.key === creatingProduct.key) {
@@ -144,8 +236,7 @@ export const ProductCatalogManager: React.FC = () => {
 
     if (result.success) {
       setSuccessMessage(`✓ Product "${deletingProduct.name}" deleted successfully!`);
-      setDeletingProduct(null);
-      setEditingProduct(null);
+      closeModal();
 
       // Update the selectedFamily to remove the deleted product immediately
       if (selectedFamily && selectedFamily.key === deletingProduct.familyKey) {
@@ -219,7 +310,7 @@ export const ProductCatalogManager: React.FC = () => {
               style={styles.addProductBtn}
               onClick={(e) => {
                 e.stopPropagation();
-                handleAddProduct(family);
+                openCreateModal(family);
               }}
             >
               + Add Product
@@ -280,7 +371,7 @@ export const ProductCatalogManager: React.FC = () => {
                     <td style={styles.td}>
                       <button
                         style={styles.viewButton}
-                        onClick={() => handleEditProduct(product)}
+                        onClick={() => openEditModal(product)}
                       >
                         View Details
                       </button>
@@ -301,7 +392,7 @@ export const ProductCatalogManager: React.FC = () => {
               <button
                 style={styles.modalCloseButton}
                 onClick={() => {
-                  setEditingProduct(null);
+                  closeModal();
                   setIsEditMode(false);
                 }}
               >
@@ -419,7 +510,7 @@ export const ProductCatalogManager: React.FC = () => {
                   </button>
                   <button
                     style={styles.modalCancelButton}
-                    onClick={() => setEditingProduct(null)}
+                    onClick={() => closeModal()}
                   >
                     Close
                   </button>
@@ -546,7 +637,7 @@ export const ProductCatalogManager: React.FC = () => {
               <h3>Add New Product to {creatingProduct.label}</h3>
               <button
                 style={styles.modalCloseButton}
-                onClick={() => setCreatingProduct(null)}
+                onClick={() => closeModal()}
               >
                 ✕
               </button>
@@ -660,7 +751,7 @@ export const ProductCatalogManager: React.FC = () => {
             <div style={styles.modalActions}>
               <button
                 style={styles.modalCancelButton}
-                onClick={() => setCreatingProduct(null)}
+                onClick={() => closeModal()}
               >
                 Cancel
               </button>
@@ -707,7 +798,7 @@ export const ProductCatalogManager: React.FC = () => {
             <div style={styles.confirmationActions}>
               <button
                 style={styles.confirmCancelButton}
-                onClick={() => setDeletingProduct(null)}
+                onClick={() => closeModal()}
                 disabled={saving}
               >
                 Cancel

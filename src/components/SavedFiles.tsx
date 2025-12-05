@@ -304,10 +304,12 @@ export default function SavedFiles() {
 
   // ---- Edit handler ----
   const handleEdit = (file: SavedFile) => {
-    navigate("/form-filling", {
+    navigate(`/edit/pdf/${file.id}`, {
       state: {
         editing: true,
         id: file.id,
+        returnPath: "/saved-pdfs",
+        returnState: null,
       },
     });
   };

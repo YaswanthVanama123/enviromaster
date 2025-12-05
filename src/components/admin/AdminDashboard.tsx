@@ -1,7 +1,7 @@
 // src/components/admin/AdminDashboard.tsx
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../../backendservice/hooks";
 import { PricingTablesView } from "./PricingTablesView";
 import { ServiceConfigManager } from "./ServiceConfigManager";
@@ -10,10 +10,85 @@ import { MdAttachMoney, MdSettings, MdInventory } from "react-icons/md";
 
 type TabType = "pricing" | "services" | "products";
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  isEmbedded?: boolean;
+  parentPath?: string;
+  initialSubtab?: string;
+  modalType?: string;
+  itemId?: string;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  isEmbedded = false,
+  parentPath,
+  initialSubtab,
+  modalType: propModalType,
+  itemId: propItemId
+}) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { subtab, modalType, itemId } = useParams<{ subtab: string; modalType: string; itemId: string }>();
   const { user, isAuthenticated, logout } = useAdminAuth();
-  const [activeTab, setActiveTab] = useState<TabType>("pricing");
+
+  // Use props when embedded, URL params when standalone
+  const currentSubtab = isEmbedded ? initialSubtab : subtab;
+  const currentModalType = isEmbedded ? propModalType : modalType;
+  const currentItemId = isEmbedded ? propItemId : itemId;
+
+  // Determine active tab from URL parameter with fallback to pricing
+  const getActiveTabFromUrl = (): TabType => {
+    const path = window.location.pathname;
+
+    if (isEmbedded) {
+      // When embedded in admin panel, check URL path first
+      if (path.includes('/admin-panel/') && (path.includes('/services') || path.includes('/services/'))) {
+        return "services";
+      }
+      if (path.includes('/admin-panel/') && (path.includes('/products') || path.includes('/products/'))) {
+        return "products";
+      }
+
+      // Then use currentSubtab as fallback
+      if (!currentSubtab) return "pricing";
+      const validTabs: TabType[] = ["pricing", "services", "products"];
+      return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
+    }
+
+    // Check if URL is /pricing-tables/services or /pricing-tables/products
+    if (path.includes('/pricing-tables/services')) {
+      return "services";
+    }
+    if (path.includes('/pricing-tables/products')) {
+      return "products";
+    }
+
+    if (!currentSubtab) return "pricing";
+    const validTabs: TabType[] = ["pricing", "services", "products"];
+    return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getActiveTabFromUrl());
+
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    const urlTab = getActiveTabFromUrl();
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [currentSubtab, isEmbedded, location.pathname]);
+
+  // Update URL when tab changes
+  const handleTabChange = (newTab: TabType) => {
+    setActiveTab(newTab);
+
+    if (isEmbedded && parentPath) {
+      // When embedded, use admin panel URL structure
+      navigate(`${parentPath}/${newTab}`, { replace: true });
+    } else {
+      // When standalone, use pricing-tables URL structure
+      navigate(`/pricing-tables/${newTab}`, { replace: true });
+    }
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -29,17 +104,19 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.topBar}>
-        <div style={styles.topBarLeft}>
-          <h1 style={styles.logo}>Enviro-Master Admin</h1>
-          <div style={styles.userInfo}>
-            <span style={styles.userName}>{user.username}</span>
+      {!isEmbedded && (
+        <div style={styles.topBar}>
+          <div style={styles.topBarLeft}>
+            <h1 style={styles.logo}>Enviro-Master Admin</h1>
+            <div style={styles.userInfo}>
+              <span style={styles.userName}>{user.username}</span>
+            </div>
           </div>
+          <button style={styles.logoutButton} onClick={logout}>
+            Logout
+          </button>
         </div>
-        <button style={styles.logoutButton} onClick={logout}>
-          Logout
-        </button>
-      </div>
+      )}
 
       <div style={styles.navigation}>
         <button
@@ -47,7 +124,7 @@ export const AdminDashboard: React.FC = () => {
             ...styles.navButton,
             ...(activeTab === "pricing" ? styles.navButtonActive : {}),
           }}
-          onClick={() => setActiveTab("pricing")}
+          onClick={() => handleTabChange("pricing")}
         >
           <MdAttachMoney size={20} style={{ marginRight: "8px" }} /> Pricing Tables
         </button>
@@ -56,7 +133,7 @@ export const AdminDashboard: React.FC = () => {
             ...styles.navButton,
             ...(activeTab === "services" ? styles.navButtonActive : {}),
           }}
-          onClick={() => setActiveTab("services")}
+          onClick={() => handleTabChange("services")}
         >
           <MdSettings size={20} style={{ marginRight: "8px" }} /> Service Configs
         </button>
@@ -65,7 +142,7 @@ export const AdminDashboard: React.FC = () => {
             ...styles.navButton,
             ...(activeTab === "products" ? styles.navButtonActive : {}),
           }}
-          onClick={() => setActiveTab("products")}
+          onClick={() => handleTabChange("products")}
         >
           <MdInventory size={20} style={{ marginRight: "8px" }} /> Product Catalog
         </button>
@@ -73,8 +150,22 @@ export const AdminDashboard: React.FC = () => {
 
       <div style={styles.content}>
         {activeTab === "pricing" && <PricingTablesView />}
-        {activeTab === "services" && <ServiceConfigManager />}
-        {activeTab === "products" && <ProductCatalogManager />}
+        {activeTab === "services" && (
+          <ServiceConfigManager
+            modalType={currentModalType}
+            itemId={currentItemId}
+            isEmbedded={isEmbedded}
+            parentPath={parentPath}
+          />
+        )}
+        {activeTab === "products" && (
+          <ProductCatalogManager
+            modalType={currentModalType}
+            itemId={currentItemId}
+            isEmbedded={isEmbedded}
+            parentPath={parentPath}
+          />
+        )}
       </div>
     </div>
   );

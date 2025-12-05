@@ -43,6 +43,38 @@
 }
 .prod__add:hover{ background:#ffecec; }
 
+/* Tab Navigation Styles */
+.prod__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 0 8px;
+  flex-wrap: wrap;
+}
+.prod__tab {
+  appearance: none;
+  border: 1px solid #c00000;
+  background: #fff;
+  color: #c00000;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.prod__tab:hover {
+  background: #ffecec;
+}
+.prod__tab--active {
+  background: #c00000;
+  color: #fff;
+}
+.prod__tab--active:hover {
+  background: #a00000;
+}
+
 .table-desktop { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table-desktop .grid10 {
   width: max(1120px, 100%);
