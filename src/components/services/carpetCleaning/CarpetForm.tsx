@@ -233,7 +233,7 @@ export const CarpetForm: React.FC<
 
       {/* Trip & location – visible but $0 in math */}
       <div className="svc-row">
-        <label>Trip &amp; Location</label>
+        <label>Location</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -252,7 +252,7 @@ export const CarpetForm: React.FC<
               checked={form.needsParking}
               onChange={onChange}
             />
-            <span>Parking Needed (+$0)</span>
+            <span>Parking (+$0)</span>
           </label>
         </div>
       </div>
@@ -279,7 +279,7 @@ export const CarpetForm: React.FC<
 
       {/* Installation options (same as SaniScrub) */}
       <div className="svc-row">
-        <label>Installation Fee</label>
+        <label>Installation</label>
         <div className="svc-row-right">
           <label className="svc-inline">
             <input
@@ -324,7 +324,7 @@ export const CarpetForm: React.FC<
       {/* Installation fee display (when enabled) */}
       {form.includeInstall && calc.installOneTime > 0 && (
         <div className="svc-row svc-row-charge">
-          <label>Installation (One-Time)</label>
+          <label>Installation Total</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -341,7 +341,7 @@ export const CarpetForm: React.FC<
 
       {/* Monthly recurring charge */}
       <div className="svc-row svc-row-charge">
-        <label>Monthly Carpet Clean</label>
+        <label>Monthly Recurring</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -358,7 +358,7 @@ export const CarpetForm: React.FC<
       {/* First month total (when installation is included) */}
       {form.includeInstall && calc.firstMonthTotal > 0 && (
         <div className="svc-row svc-row-charge">
-          <label>First Month (Install + Service)</label>
+          <label>First Month Total</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -403,7 +403,7 @@ export const CarpetForm: React.FC<
 
       {/* Per-Visit Effective (just the per-visit service price) */}
       <div className="svc-row svc-row-charge">
-        <label>Per-Visit Effective</label>
+        <label>Per-Visit Total</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>

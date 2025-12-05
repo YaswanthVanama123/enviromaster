@@ -250,7 +250,7 @@ export const JanitorialForm: React.FC<
       {/* One-Time Service Pricing - Show rate for one-time */}
       {form.serviceType === "oneTime" && (
         <div className="svc-row">
-          <label>One-Time Service Rate</label>
+          <label>One-Time Rate</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -273,7 +273,7 @@ export const JanitorialForm: React.FC<
       {/* Recurring Service Pricing - Show rate for recurring */}
       {form.serviceType === "recurring" && (
         <div className="svc-row">
-          <label>Recurring Service Rate</label>
+          <label>Recurring Rate</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -333,7 +333,7 @@ export const JanitorialForm: React.FC<
 
       {/* Dusting */}
       <div className="svc-row">
-        <label>Dusting (# of places)</label>
+        <label>Dusting (places)</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
@@ -371,7 +371,7 @@ export const JanitorialForm: React.FC<
 
       {/* Other Tasks (hours) */}
       <div className="svc-row">
-        <label>Other Tasks (hours)</label>
+        <label>Other Tasks (hrs)</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
@@ -390,7 +390,7 @@ export const JanitorialForm: React.FC<
 
       {/* Add-on Time (minutes) - For BOTH recurring and one-time */}
       <div className="svc-row">
-        <label>Add-on Time (minutes)</label>
+        <label>Add-on Time (mins)</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"

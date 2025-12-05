@@ -277,7 +277,7 @@ export const SanicleanForm: React.FC<
             <option value="auto">Auto (recommended)</option>
             <option value="all_inclusive">All Inclusive</option>
             <option value="geographic_standard">
-              Per Fixture / Geographic Standard
+              Per Fixture / Geographic
             </option>
           </select>
         </div>
@@ -285,7 +285,7 @@ export const SanicleanForm: React.FC<
 
       {/* Total Restroom Fixtures */}
       <div className="svc-row">
-        <label>Total Restroom Fixtures</label>
+        <label>Restroom Fixtures</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -325,7 +325,7 @@ export const SanicleanForm: React.FC<
                 checked={form.needsParking}
                 onChange={onChange}
               />
-              <span>Parking needed (+parking fee in trip)</span>
+              <span>Parking needed (+fee)</span>
             </label>
           ) : (
             <span className="svc-muted">Not applicable outside beltway</span>
@@ -468,7 +468,7 @@ export const SanicleanForm: React.FC<
 
       {/* ================== SOAP & UPGRADES ================== */}
       <div className="svc-h" style={{ marginTop: 10 }}>
-        SOAP, AIR FRESHENER &amp; UPGRADES
+        SOAP &amp; UPGRADES
       </div>
 
       {/* Soap type selector */}
@@ -482,7 +482,7 @@ export const SanicleanForm: React.FC<
             onChange={onChange}
           >
             <option value="standard">Standard (included)</option>
-            <option value="luxury">Luxury (+$5/dispenser/wk)</option>
+            <option value="luxury">Luxury (+$5/disp/wk)</option>
           </select>
         </div>
       </div>
@@ -546,7 +546,7 @@ export const SanicleanForm: React.FC<
 
       {/* Warranty – free in all-inclusive, charged otherwise */}
       <div className="svc-row">
-        <label>Dispenser Warranty</label>
+        <label>Warranty</label>
         <div className="svc-row-right">
           {isAllInclusive ? (
             <input

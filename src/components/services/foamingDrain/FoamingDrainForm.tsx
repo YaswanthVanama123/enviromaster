@@ -355,7 +355,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         {state.facilityCondition === "filthy" && isInstallLevelUi && (
           <div className="svc-row">
             <div className="svc-label">
-              <span>Filthy Install Drains (3×)</span>
+              <span>Filthy Install (3×)</span>
             </div>
             <div className="svc-field">
               <input
@@ -376,7 +376,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         {/* Location / trip */}
         <div className="svc-row">
           <div className="svc-label">
-            <span>Location / Trip Band</span>
+            <span>Location</span>
           </div>
           <div className="svc-field">
             <select
@@ -410,7 +410,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     }
                   }}
                 />{" "}
-                Plumbing work (+$10 / drain) – Drains:{" "}
+                Plumbing (+$10/drain) – Drains:{" "}
                 {state.needsPlumbing && (
                   <input
                     type="number"
@@ -490,7 +490,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />{" "}
                 Big account:{" "}
                 <span className="svc-note">
-                  weekly 10+ drains → $10/week per drain, install waived
+                  weekly &lt;10 drains → $10/week, install waived
                 </span>
               </label>
             </div>
@@ -509,7 +509,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   updateField("isAllInclusive", e.target.checked)
                 }
               />{" "}
-              All-Inclusive (standard drains included, trip waived)
+              All-Inclusive (drains included, trip waived)
             </label>
           </div>
         </div>
@@ -529,7 +529,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   )
                 }
               />{" "}
-              Apply Grease Trap Install (min $300 if possible)
+              Grease Trap Install (min $300 if possible)
             </label>
           </div>
         </div>
@@ -606,7 +606,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         </div>
             <div className="svc-row">
               <div className="svc-label">
-                <span>Drains Install(10+)</span>
+                <span>Install Drains (10+)</span>
               </div>
               <div className="svc-field">
                 <div className="svc-inline">
@@ -747,7 +747,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           {/* Weekly per visit */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Weekly Service Subtotal</span>
+              <span>Weekly Subtotal</span>
             </div>
             <div className="svc-field svc-dollar">
               <span>$</span>
@@ -778,7 +778,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           {/* Weekly total */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Weekly Total (Service + Trip)</span>
+              <span>Weekly Total</span>
             </div>
             <div className="svc-field svc-dollar">
               <span>$</span>
@@ -793,7 +793,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           {/* Contract length dropdown: 2–36 months */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Contract Length (Months)</span>
+              <span>Contract Length</span>
             </div>
             <div className="svc-field">
               <select
@@ -842,7 +842,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           {/* Normal month (recurring) */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Normal Month (Recurring)</span>
+              <span>Monthly Recurring</span>
             </div>
             <div className="svc-field svc-dollar">
               <span>$</span>

@@ -297,7 +297,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       {/* Frequency used only for per-visit view (kept same UI) */}
       <div className="svc-row">
-        <label>Frequency (for per-visit view)</label>
+        <label>Frequency</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -340,7 +340,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       {/* SaniPods line - single rate field that auto-switches */}
       <div className="svc-row">
-        <label>No. of SaniPods</label>
+        <label>SaniPods</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
@@ -440,7 +440,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               onChange={onChange}
             />{" "}
             <span className="svc-small">
-              Recurring each visit
+              Recurring
             </span>
           </label>
         </div>
@@ -491,7 +491,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             onChange={onChange}
             style={{ width: "60px" }}
           />
-          <span className="svc-small"> / pod (one-time install)</span>
+          <span className="svc-small"> / pod install</span>
         </div>
       </div>
 
@@ -528,7 +528,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
           {/* Installation Total - Editable */}
           <div className="svc-row">
-            <label>Installation Total (Editable)</label>
+            <label>Installation Total</label>
             <div className="svc-row-right">
               <span className="svc-dollar">
                 <span>$</span>
@@ -570,7 +570,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       {/* Contract length (2–36 months) */}
       <div className="svc-row">
-        <label>Contract Length (Months)</label>
+        <label>Contract Length</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -593,7 +593,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       {/* Totals */}
       <div className="svc-row svc-row-total">
-        <label>Per Visit (Service Only)</label>
+        <label>Per Visit Service</label>
         <div className="svc-dollar">
           $<input
             className="svc-in svc-in-small"
@@ -613,7 +613,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>First Month (Install + Service)</label>
+        <label>First Month Total</label>
         <div className="svc-dollar">
           $<input
             className="svc-in svc-in-small"

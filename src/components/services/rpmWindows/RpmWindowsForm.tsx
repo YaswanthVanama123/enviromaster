@@ -414,7 +414,7 @@ export const RpmWindowsForm: React.FC<
 
       {/* Install Fee + First Visit */}
       <div className="svc-row svc-row-charge">
-        <label>Installation Fee + First Visit</label>
+        <label>Installation + First Visit</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -459,7 +459,7 @@ export const RpmWindowsForm: React.FC<
 
       {/* Frequency */}
       <div className="svc-row">
-        <label>Service Frequency</label>
+        <label>Frequency</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -502,14 +502,14 @@ export const RpmWindowsForm: React.FC<
               checked={form.includeMirrors}
               onChange={onChange}
             />
-            <span>Include (same chemicals)</span>
+            <span>Include mirrors</span>
           </label>
         </div>
       </div>
 
       {/* Total Per Visit */}
       <div className="svc-row svc-row-charge">
-        <label>Total Price (Per Visit)</label>
+        <label>Per Visit Price</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -551,7 +551,7 @@ export const RpmWindowsForm: React.FC<
 
       {/* Annual Price (now: total for selected months) */}
       <div className="svc-row svc-row-charge">
-        <label>Annual Price</label>
+        <label>Contract Total</label>
         <div className="svc-row-right">
           <select
             className="svc-in"

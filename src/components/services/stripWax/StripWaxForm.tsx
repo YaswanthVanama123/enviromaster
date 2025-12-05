@@ -114,7 +114,7 @@ export const StripWaxForm: React.FC<
 
       {/* Frequency row (for per-visit view label only) */}
       <div className="svc-row">
-        <label>Frequency (for per-visit view)</label>
+        <label>Frequency</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -131,7 +131,7 @@ export const StripWaxForm: React.FC<
 
       {/* Floor area row */}
       <div className="svc-row">
-        <label>Floor Area (sq ft)</label>
+        <label>Floor Area</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
@@ -156,7 +156,7 @@ export const StripWaxForm: React.FC<
               title="Rate per sq ft (from backend, editable)"
             />
           </div>
-          <span className="svc-small">per sq ft</span>
+          <span className="svc-small">/sq ft</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
             ${fmt(calc.perVisit)}
@@ -181,7 +181,7 @@ export const StripWaxForm: React.FC<
               title="Minimum charge per visit (from backend, editable)"
             />
           </div>
-          <span className="svc-small">per visit minimum</span>
+          <span className="svc-small">minimum</span>
         </div>
       </div>
 
@@ -251,14 +251,14 @@ export const StripWaxForm: React.FC<
 
       {/* Totals */}
       <div className="svc-row svc-row-total">
-        <label>Per Visit (Service Only)</label>
+        <label>Per Visit Total</label>
         <div className="svc-dollar">
           ${fmt(calc.perVisit)}
         </div>
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>First Month (Install + Service)</label>
+        <label>First Month Total</label>
         <div className="svc-dollar">
           ${fmt(calc.monthly)}
         </div>

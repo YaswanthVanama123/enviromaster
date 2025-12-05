@@ -184,7 +184,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         {form.pricingMethod === "byRoom" && (
           <div className="svc-row">
             <div className="svc-label">
-              <span>Number of Rooms</span>
+            <span>Room Count</span>
             </div>
             <div className="svc-field">
               <input
@@ -221,7 +221,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         {/* Frequency */}
         <div className="svc-row">
           <div className="svc-label">
-            <span>Service Frequency</span>
+            <span>Frequency</span>
           </div>
           <div className="svc-field">
             <select
@@ -242,7 +242,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         {/* Location */}
         <div className="svc-row">
           <div className="svc-label">
-            <span>Location / Trip Band</span>
+            <span>Location</span>
           </div>
           <div className="svc-field">
             <select
@@ -269,7 +269,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 checked={form.isCombinedWithSaniClean}
                 onChange={onChange}
               />{" "}
-              Combined with Sani-Clean (trip waived)
+              Combined with Sani-Clean
             </label>
           </div>
         </div>
@@ -277,7 +277,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         {/* Value Proposition Info */}
         <div className="svc-row">
           <div className="svc-label">
-            <span className="svc-note">Value Proposition:</span>
+            <span className="svc-note">Value:</span>
           </div>
           <div className="svc-field">
             <span className="svc-note">
@@ -339,7 +339,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           {/* Contract Length */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Contract Length (Months)</span>
+            <span>Contract Length (Months)</span>
             </div>
             <div className="svc-field">
               <select

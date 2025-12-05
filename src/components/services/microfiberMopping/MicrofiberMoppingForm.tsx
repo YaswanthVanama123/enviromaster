@@ -281,7 +281,7 @@ export const MicrofiberMoppingForm: React.FC<
 
       {/* Link to existing Sani program */}
       <div className="svc-row">
-        <label>Combined with existing Sani program?</label>
+        <label>Combined with Sani program?</label>
         <div className="svc-row-right">
           <label className="svc-check">
             <input
@@ -297,7 +297,7 @@ export const MicrofiberMoppingForm: React.FC<
 
       {/* All-inclusive flag */}
       <div className="svc-row">
-        <label>Part of all-inclusive package?</label>
+        <label>All-inclusive package?</label>
         <div className="svc-row-right">
           <label className="svc-check">
             <input
@@ -306,14 +306,14 @@ export const MicrofiberMoppingForm: React.FC<
               checked={form.isAllInclusive}
               onChange={onChange}
             />
-            <span>Yes, microfiber is included (do not price separately)</span>
+            <span>Microfiber included (no separate pricing)</span>
           </label>
         </div>
       </div>
 
       {/* Standard bathrooms */}
       <div className="svc-row">
-        <label>Standard bathrooms (#)</label>
+        <label>Standard Bathrooms</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -359,7 +359,7 @@ export const MicrofiberMoppingForm: React.FC<
 
       {/* Huge bathroom exception */}
       <div className="svc-row">
-        <label>Huge bathroom(sq ft)</label>
+        <label>Huge Bathroom (sq ft)</label>
         <div className="svc-row-right">
           <input
             className="svc-in"

@@ -301,7 +301,7 @@ export const SaniscrubForm: React.FC<
 
       {/* Non-bathroom SaniScrub area with editable rates */}
       <div className="svc-row">
-        <label>Non-Bathroom Sq Ft</label>
+        <label>Non-Bathroom Area</label>
         <div className="svc-row-right">
           <input
             className="svc-in"
@@ -361,7 +361,7 @@ export const SaniscrubForm: React.FC<
 
       {/* Trip & location – still visible for UI, but math is locked to $0 */}
       <div className="svc-row">
-        <label>Trip &amp; Location</label>
+        <label>Location</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
@@ -380,7 +380,7 @@ export const SaniscrubForm: React.FC<
               checked={form.needsParking}
               onChange={onChange}
             />
-            <span>Parking Needed (+$0)</span>
+            <span>Parking (+$0)</span>
           </label>
         </div>
       </div>
@@ -407,7 +407,7 @@ export const SaniscrubForm: React.FC<
 
       {/* Install (3× dirty / 1× clean) with editable multipliers */}
       <div className="svc-row svc-row-install">
-        <label>Install Quote (First Visit Only)</label>
+        <label>Install (First Visit Only)</label>
         <div className="svc-row-right">
           <label className="svc-inline">
             <input
@@ -454,7 +454,7 @@ export const SaniscrubForm: React.FC<
       {/* Installation Total - Editable */}
       {form.includeInstall && (
         <div className="svc-row svc-row-charge">
-          <label>Installation Total (Editable)</label>
+          <label>Installation Total</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -494,7 +494,7 @@ export const SaniscrubForm: React.FC<
 
       {/* Normal recurring month (after first) */}
       <div className="svc-row svc-row-charge">
-        <label>Monthly SaniScrub</label>
+        <label>Monthly Recurring</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -538,7 +538,7 @@ export const SaniscrubForm: React.FC<
 
       {/* Per-Visit Effective (no install, no trip) */}
       <div className="svc-row svc-row-charge">
-        <label>Per-Visit Effective</label>
+        <label>Per-Visit Total</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>

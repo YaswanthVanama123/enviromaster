@@ -237,9 +237,9 @@ export const RefreshPowerScrubForm: React.FC<
                         : areaKey === "walkway"
                         ? "WALKWAY"
                         : areaKey === "foh"
-                        ? "FRONT OF HOUSE"
+                        ? "FRONT HOUSE"
                         : areaKey === "boh"
-                        ? "BACK OF HOUSE"
+                        ? "BACK HOUSE"
                         : "OTHER"}
                     </span>
                   </label>
@@ -261,7 +261,7 @@ export const RefreshPowerScrubForm: React.FC<
               {/* PATIO */}
               <td>
                 <div className="rps-inline">
-                  <span className="rps-label">Patio Type</span>
+                  <span className="rps-label">Type</span>
                   <select
                     className="rps-line"
                     value={form.patio.patioMode}
@@ -305,7 +305,7 @@ export const RefreshPowerScrubForm: React.FC<
               {/* BACK OF HOUSE */}
               <td>
                 <div className="rps-inline">
-                  <span className="rps-label">Kitchen Size</span>
+                  <span className="rps-label">Size</span>
                   <select
                     className="rps-line"
                     value={form.boh.kitchenSize}
@@ -332,7 +332,7 @@ export const RefreshPowerScrubForm: React.FC<
               <td>
                 <div className="rps-inline">
                   <span className="rps-label">
-                    Custom – use hours or sq-ft
+                    Custom – use hrs or sq-ft
                   </span>
                 </div>
               </td>
