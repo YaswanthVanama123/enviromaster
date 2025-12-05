@@ -31,6 +31,10 @@ interface ProductsSectionProps {
   initialSmallProducts?: string[] | InitialProductData[];
   initialDispensers?: string[] | InitialProductData[];
   initialBigProducts?: string[] | InitialProductData[];
+  initialCustomColumns?: {
+    products: { id: string; label: string }[];
+    dispensers: { id: string; label: string }[];
+  };
   activeTab?: string; // ✅ Added activeTab prop for URL-based tab switching
   onTabChange?: (tab: string) => void; // ✅ Added tab change callback
 }
@@ -682,7 +686,7 @@ function convertInitialToRows(
 }
 
 const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>((props, ref) => {
-  const { initialSmallProducts, initialDispensers, initialBigProducts, activeTab, onTabChange } = props;
+  const { initialSmallProducts, initialDispensers, initialBigProducts, initialCustomColumns, activeTab, onTabChange } = props;
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
@@ -798,10 +802,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   const [extraCols, setExtraCols] = useState<{
     products: { id: string; label: string }[];    // MERGED: small + big combined
     dispensers: { id: string; label: string }[];
-  }>({
-    products: [],
-    dispensers: [],
-  });
+  }>(() => ({
+    products: initialCustomColumns?.products || [],
+    dispensers: initialCustomColumns?.dispensers || [],
+  }));
 
   const productMap = useMemo(() => {
     const map = new Map<string, EnvProduct>();
@@ -1005,7 +1009,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             qty,
             total,
             frequency: row.frequency,
-            productType: 'small'
+            productType: 'small',
+            customFields: row.customFields || {}
           };
         } else {
           // Big product pricing logic
@@ -1020,7 +1025,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             amount,
             total,
             frequency: row.frequency,
-            productType: 'big'
+            productType: 'big',
+            customFields: row.customFields || {}
           };
         }
       });
@@ -1044,19 +1050,48 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           replacementRate,
           total,
           frequency: row.frequency,
+          customFields: row.customFields || {}
         };
       });
 
       console.log("📊 [ProductsSection] getData() called");
       console.log("📊 [ProductsSection] Raw data state:", {
         productsCount: data.products.length,
-        dispensersCount: data.dispensers.length
+        dispensersCount: data.dispensers.length,
+        customColumnsProducts: extraCols.products.length,
+        customColumnsDispensers: extraCols.dispensers.length
       });
+
+      // Debug: Check if any products have customFields
+      const productsWithCustomFields = allProducts.filter(p => p.customFields && Object.keys(p.customFields).length > 0);
+      const dispensersWithCustomFields = enrichedDispensers.filter(d => d.customFields && Object.keys(d.customFields).length > 0);
+
+      console.log("📊 [ProductsSection] Custom Fields Debug:", {
+        productsWithCustomFields: productsWithCustomFields.length,
+        dispensersWithCustomFields: dispensersWithCustomFields.length,
+        customColumnDefs: {
+          products: extraCols.products,
+          dispensers: extraCols.dispensers
+        }
+      });
+
+      // Debug: Show sample custom fields if they exist
+      if (productsWithCustomFields.length > 0) {
+        console.log("📊 [ProductsSection] Sample product with custom fields:", productsWithCustomFields[0]);
+      }
+      if (dispensersWithCustomFields.length > 0) {
+        console.log("📊 [ProductsSection] Sample dispenser with custom fields:", dispensersWithCustomFields[0]);
+      }
 
       return {
         smallProducts: enrichedSmallProducts,
         dispensers: enrichedDispensers,
         bigProducts: enrichedBigProducts,
+        // Include custom column definitions
+        customColumns: {
+          products: extraCols.products,
+          dispensers: extraCols.dispensers
+        }
       };
 
       console.log("📊 [ProductsSection] Returning data:", {

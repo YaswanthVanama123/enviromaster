@@ -71,6 +71,10 @@ export type FormPayload = {
   products: ProductsPayload;
   services: ServicesPayload;
   agreement: AgreementPayload;
+  customColumns?: {
+    products: { id: string; label: string }[];
+    dispensers: { id: string; label: string }[];
+  };
 };
 
 type LocationState = {
@@ -170,6 +174,7 @@ export default function FormFilling() {
             additionalMonths:
               fromBackend.agreement?.additionalMonths ?? "",
           },
+          customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
         };
 
         setPayload(cleanPayload);
@@ -200,6 +205,7 @@ export default function FormFilling() {
         unitPrice: p.unitPrice || 0,
         frequency: p.frequency || "",
         total: p.total || 0,
+        customFields: p.customFields || {}, // ✅ Include custom fields
       })),
       // Big products with amount
       ...bigProducts.map((b: any) => ({
@@ -208,6 +214,7 @@ export default function FormFilling() {
         amount: b.amount || 0,
         frequency: b.frequency || "",
         total: b.total || 0,
+        customFields: b.customFields || {}, // ✅ Include custom fields
       }))
     ];
 
@@ -218,6 +225,7 @@ export default function FormFilling() {
       replacementRate: d.replacementRate || 0,
       frequency: d.frequency || "",
       total: d.total || 0,
+      customFields: d.customFields || {}, // ✅ Include custom fields
     }));
 
     // Return 2-category structure that backend expects
@@ -273,6 +281,7 @@ export default function FormFilling() {
         additionalMonths: "",
       },
       customerName, // Add customer name for PDF filename
+      customColumns: productsData.customColumns || { products: [], dispensers: [] }, // Include custom columns
     };
   };
 
@@ -416,6 +425,7 @@ export default function FormFilling() {
             qty: safeParseInt(String(p.qty || "")),
             frequency: p.frequency || "", // ← PRESERVED from edit-format endpoint
             total: safeParseFloat(String(p.total || "")),
+            customFields: p.customFields || {}, // ← PRESERVE custom fields
           };
         } else {
           return {
@@ -424,6 +434,7 @@ export default function FormFilling() {
             amount: safeParseFloat(String(p.amount || "")),
             frequency: p.frequency || "", // ← PRESERVED from edit-format endpoint
             total: safeParseFloat(String(p.total || "")),
+            customFields: p.customFields || {}, // ← PRESERVE custom fields
           };
         }
       });
@@ -442,6 +453,7 @@ export default function FormFilling() {
           replacementRate: safeParseFloat(String(d.replacementRate || "")),
           frequency: d.frequency || "", // ← CRITICAL: PRESERVED from edit-format endpoint
           total: safeParseFloat(String(d.total || "")),
+          customFields: d.customFields || {}, // ← PRESERVE custom fields
         };
       });
 
@@ -621,6 +633,7 @@ export default function FormFilling() {
               initialSmallProducts={extractedProducts.smallProducts}
               initialDispensers={extractedProducts.dispensers}
               initialBigProducts={extractedProducts.bigProducts}
+              initialCustomColumns={payload?.customColumns}
               activeTab={productTab}
               onTabChange={(tab) => {
                 const newParams = new URLSearchParams(searchParams);
