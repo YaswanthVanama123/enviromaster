@@ -102,6 +102,11 @@ export const RpmWindowsForm: React.FC<
             type: "dollar" as const,
             amount: form.customPerVisitPrice ?? quote.perVisitPrice,
           },
+          firstMonth: {
+            label: "First Month Total",
+            type: "dollar" as const,
+            amount: form.customFirstMonthTotal ?? calc.firstMonthBillRated,
+          },
           monthlyRecurring: {
             label: "Monthly Recurring",
             type: "dollar" as const,
@@ -172,6 +177,7 @@ export const RpmWindowsForm: React.FC<
     setForm((prev) => ({
       ...prev,
       customPerVisitPrice: undefined,
+      customFirstMonthTotal: undefined,
       customMonthlyRecurring: undefined,
       customAnnualPrice: undefined,
     }));
@@ -536,6 +542,28 @@ export const RpmWindowsForm: React.FC<
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
             />
           </div>
+        </div>
+      </div>
+
+      {/* First Month Total */}
+      <div className="svc-row svc-row-charge">
+        <label>First Month Total</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              name="customFirstMonthTotal"
+              type="number"
+              step="0.01"
+              value={form.customFirstMonthTotal !== undefined ? form.customFirstMonthTotal : (form.isFirstTimeInstall ? calc.firstMonthBillRated : calc.monthlyBillRated)}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
+              title={form.isFirstTimeInstall ? "First month including installation + service" : "First month (ongoing service only)"}
+            />
+          </div>
+          <span className="svc-small">{form.isFirstTimeInstall ? "(Install + Service)" : "(Service Only)"}</span>
         </div>
       </div>
 
