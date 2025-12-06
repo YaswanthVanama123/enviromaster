@@ -1,13 +1,7 @@
 /**
- * Webmail Integration Service
- * Handles PDF sharing through EnviroMaster's webmail system
+ * Email Service for PDF Sharing
+ * Simple mailto integration with automatic PDF download
  */
-
-export interface WebmailConfig {
-  baseUrl: string;
-  client: 'roundcube' | 'horde' | 'squirrelmail' | 'generic';
-  fallbackToMailto: boolean;
-}
 
 export interface EmailData {
   subject: string;
@@ -15,43 +9,14 @@ export interface EmailData {
   to?: string;
 }
 
-// Default configuration for EnviroMaster webmail
-const DEFAULT_CONFIG: WebmailConfig = {
-  baseUrl: 'https://enviromasternva.com:2096',
-  client: 'roundcube', // Most common cPanel webmail client
-  fallbackToMailto: true
-};
-
-/**
- * Generate webmail compose URL based on client type
- */
-function generateWebmailUrl(config: WebmailConfig, emailData: EmailData): string {
-  const { baseUrl, client } = config;
-  const { subject, body, to = '' } = emailData;
-
-  // Encode parameters for URL
-  const encodedTo = encodeURIComponent(to);
-  const encodedSubject = encodeURIComponent(subject);
-  const encodedBody = encodeURIComponent(body);
-
-  switch (client) {
-    case 'roundcube':
-      return `${baseUrl}/webmail/?_task=mail&_action=compose&_to=${encodedTo}&_subject=${encodedSubject}&_body=${encodedBody}`;
-
-    case 'horde':
-      return `${baseUrl}/webmail/horde/imp/dynamic.php?page=compose&to=${encodedTo}&subject=${encodedSubject}&body=${encodedBody}`;
-
-    case 'squirrelmail':
-      return `${baseUrl}/webmail/src/compose.php?send_to=${encodedTo}&subject=${encodedSubject}&body=${encodedBody}`;
-
-    case 'generic':
-    default:
-      return `${baseUrl}/webmail/compose.php?to=${encodedTo}&subject=${encodedSubject}&body=${encodedBody}`;
-  }
+export interface PdfAttachment {
+  fileName: string;
+  downloadUrl: string;
+  blob?: Blob;
 }
 
 /**
- * Generate mailto fallback URL
+ * Generate mailto URL
  */
 function generateMailtoUrl(emailData: EmailData): string {
   const { subject, body, to = '' } = emailData;
@@ -63,110 +28,76 @@ function generateMailtoUrl(emailData: EmailData): string {
 }
 
 /**
- * Open webmail compose tab with PDF sharing content
+ * Download PDF file automatically
  */
-export function shareViaPdf(emailData: EmailData, config: WebmailConfig = DEFAULT_CONFIG): void {
+async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
   try {
-    const webmailUrl = generateWebmailUrl(config, emailData);
+    let blob: Blob;
 
-    // Open webmail in new tab (not window)
-    const newWindow = window.open(webmailUrl, '_blank');
-
-    // Check if popup was blocked or failed to open
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-      throw new Error('Unable to open webmail tab');
-    }
-
-    // Focus the new tab
-    newWindow.focus();
-
-    console.log('✅ Webmail compose tab opened successfully');
-
-  } catch (error) {
-    console.warn('⚠️ Webmail failed, falling back to mailto:', error);
-
-    if (config.fallbackToMailto) {
-      // Fallback to mailto if webmail fails
-      const mailtoUrl = generateMailtoUrl(emailData);
-      window.location.href = mailtoUrl;
+    if (attachment.blob) {
+      // Use provided blob
+      blob = attachment.blob;
     } else {
-      // Re-throw error if no fallback desired
-      throw new Error(`Failed to open webmail: ${error}`);
+      // Download from URL
+      const response = await fetch(attachment.downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download PDF: ${response.statusText}`);
+      }
+      blob = await response.blob();
     }
-  }
-}
 
-/**
- * Test webmail connectivity and URL format
- */
-export async function testWebmailConnectivity(config: WebmailConfig = DEFAULT_CONFIG): Promise<{
-  success: boolean;
-  message: string;
-  testedUrl: string;
-}> {
-  const testEmailData: EmailData = {
-    subject: 'EnviroMaster Webmail Test',
-    body: 'This is a test message to verify webmail integration is working.',
-    to: ''
-  };
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = attachment.fileName.endsWith('.pdf') ? attachment.fileName : `${attachment.fileName}.pdf`;
 
-  const testUrl = generateWebmailUrl(config, testEmailData);
+    // Trigger download
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 
-  try {
-    // Try to fetch the webmail page to check if it's accessible
-    const response = await fetch(testUrl, {
-      method: 'HEAD',
-      mode: 'no-cors' // Avoid CORS issues for testing
-    });
+    // Clean up
+    window.URL.revokeObjectURL(url);
 
-    return {
-      success: true,
-      message: 'Webmail appears to be accessible',
-      testedUrl: testUrl
-    };
+    console.log('✅ PDF download completed');
   } catch (error) {
-    return {
-      success: false,
-      message: `Unable to reach webmail: ${error}`,
-      testedUrl: testUrl
-    };
+    console.error('❌ PDF download failed:', error);
+    throw error;
   }
 }
 
 /**
- * Get all available webmail client options for testing
+ * Share PDF via email - Opens mailto and downloads PDF for attachment
  */
-export function getWebmailClientOptions(): Array<{
-  client: WebmailConfig['client'];
-  name: string;
-  description: string;
-}> {
-  return [
-    {
-      client: 'roundcube',
-      name: 'RoundCube',
-      description: 'Modern webmail interface (most common in cPanel)'
-    },
-    {
-      client: 'horde',
-      name: 'Horde',
-      description: 'Feature-rich webmail with calendar integration'
-    },
-    {
-      client: 'squirrelmail',
-      name: 'SquirrelMail',
-      description: 'Lightweight, simple webmail interface'
-    },
-    {
-      client: 'generic',
-      name: 'Generic',
-      description: 'Generic cPanel webmail URL format'
+export function shareViaPdf(emailData: EmailData, attachment?: PdfAttachment): void {
+  try {
+    // Generate mailto URL
+    const mailtoUrl = generateMailtoUrl(emailData);
+
+    // Open default email client
+    window.location.href = mailtoUrl;
+
+    // Automatically download PDF if provided
+    if (attachment) {
+      // Small delay to ensure mailto opens first
+      setTimeout(() => {
+        downloadPdfAttachment(attachment).catch(error => {
+          console.error('Failed to download PDF attachment:', error);
+        });
+      }, 500);
     }
-  ];
+
+    console.log('✅ Email client opened and PDF download initiated');
+
+  } catch (error) {
+    console.error('❌ Failed to open email client:', error);
+    throw new Error(`Failed to open email: ${error}`);
+  }
 }
 
 /**
- * Create email data for PDF document sharing
+ * Create email data for PDF document sharing with mailto
  */
 export function createPdfEmailData(options: {
   fileName?: string;
@@ -174,7 +105,7 @@ export function createPdfEmailData(options: {
   downloadUrl: string;
   isApprovalRequest?: boolean;
   updatedAt?: string;
-}): EmailData {
+}): { emailData: EmailData; attachment: PdfAttachment } {
   const { fileName, status, downloadUrl, isApprovalRequest, updatedAt } = options;
 
   const docName = fileName || "Customer Header Document";
@@ -186,7 +117,7 @@ export function createPdfEmailData(options: {
   if (isApprovalRequest) {
     body += `Please review the following customer header document for approval.\n\n`;
   } else {
-    body += `Please find the attached customer header document.\n\n`;
+    body += `Please find the customer header document attached.\n\n`;
   }
 
   body += `Document: ${docName}\n`;
@@ -199,18 +130,23 @@ export function createPdfEmailData(options: {
     body += `Updated: ${updatedAt}\n`;
   }
 
-  body += `\nYou can download the PDF here:\n${downloadUrl}\n\nBest regards`;
+  body += `\nThe PDF file will download automatically for you to attach to this email.\n\nBest regards`;
 
-  return {
+  const emailData: EmailData = {
     subject,
-    body
+    body,
+    to: '' // User will enter recipient
   };
+
+  const attachment: PdfAttachment = {
+    fileName: docName,
+    downloadUrl
+  };
+
+  return { emailData, attachment };
 }
 
 export default {
   shareViaPdf,
-  testWebmailConnectivity,
-  getWebmailClientOptions,
-  createPdfEmailData,
-  DEFAULT_CONFIG
+  createPdfEmailData
 };

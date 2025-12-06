@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { pdfApi } from "../backendservice/api";
+import { pdfApi, emailApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
-import { shareViaPdf, createPdfEmailData } from "../utils/webmailService";
+import EmailComposer, { type EmailData } from "./EmailComposer";
 import "./SavedFiles.css";
 
 type FileStatus =
@@ -104,6 +104,10 @@ export default function SavedFiles() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // Email composer state
+  const [emailComposerOpen, setEmailComposerOpen] = useState(false);
+  const [currentEmailFile, setCurrentEmailFile] = useState<SavedFile | null>(null);
 
   const navigate = useNavigate();
 
@@ -291,33 +295,43 @@ export default function SavedFiles() {
 
   // ---- Email handler ----
   const handleEmail = (file: SavedFile) => {
-    try {
-      const downloadUrl = pdfApi.getPdfDownloadUrl(file.id);
+    setCurrentEmailFile(file);
+    setEmailComposerOpen(true);
+  };
 
-      // Create email data using the webmail service utility
-      const emailData = createPdfEmailData({
-        fileName: file.fileName,
-        status: STATUS_LABEL[file.status],
-        downloadUrl: downloadUrl,
-        isApprovalRequest: false
+  // ---- Send email handler ----
+  const handleSendEmail = async (emailData: EmailData) => {
+    if (!currentEmailFile) return;
+
+    try {
+      await emailApi.sendEmailWithPdfById({
+        to: emailData.to,
+        from: emailData.from,
+        subject: emailData.subject,
+        body: emailData.body,
+        documentId: currentEmailFile.id,
+        fileName: currentEmailFile.fileName
       });
 
-      // Share via webmail (opens in new tab with fallback to mailto)
-      shareViaPdf(emailData);
-
-      // Show success message
       setToastMessage({
-        message: "Opening webmail compose window...",
+        message: "Email sent successfully with PDF attachment!",
         type: "success"
       });
 
+      // Close composer
+      setEmailComposerOpen(false);
+      setCurrentEmailFile(null);
+
     } catch (error) {
-      console.error("Error opening email:", error);
-      setToastMessage({
-        message: "Unable to open email. Please try again.",
-        type: "error"
-      });
+      console.error("Error sending email:", error);
+      throw error; // Let EmailComposer handle the error display
     }
+  };
+
+  // ---- Close email composer ----
+  const handleCloseEmailComposer = () => {
+    setEmailComposerOpen(false);
+    setCurrentEmailFile(null);
   };
 
   // ---- Edit handler ----
@@ -541,6 +555,21 @@ export default function SavedFiles() {
           onClose={() => setToastMessage(null)}
         />
       )}
+
+      {/* Email Composer Modal */}
+      <EmailComposer
+        isOpen={emailComposerOpen}
+        onClose={handleCloseEmailComposer}
+        onSend={handleSendEmail}
+        attachment={currentEmailFile ? {
+          id: currentEmailFile.id,
+          fileName: currentEmailFile.fileName,
+          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+        } : undefined}
+        defaultSubject={currentEmailFile ? `${currentEmailFile.fileName} - ${STATUS_LABEL[currentEmailFile.status]}` : ''}
+        defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.fileName}\nStatus: ${STATUS_LABEL[currentEmailFile.status]}\n\nBest regards` : ''}
+        userEmail="" // TODO: Get from user login context
+      />
     </section>
   );
 }

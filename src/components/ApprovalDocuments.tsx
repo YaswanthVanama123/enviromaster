@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
-import { pdfApi } from "../backendservice/api";
+import { pdfApi, emailApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faEye, faDownload, faEnvelope, faSave } from "@fortawesome/free-solid-svg-icons";
-import { shareViaPdf, createPdfEmailData } from "../utils/webmailService";
+import EmailComposer, { type EmailData } from "./EmailComposer";
 import "./ApprovalDocuments.css";
 
 type FileStatus =
@@ -75,6 +75,10 @@ export default function ApprovalDocuments() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // Email composer state
+  const [emailComposerOpen, setEmailComposerOpen] = useState(false);
+  const [currentEmailDoc, setCurrentEmailDoc] = useState<Document | null>(null);
 
   const navigate = useNavigate();
   const { isAuthenticated } = useAdminAuth();
@@ -228,34 +232,43 @@ export default function ApprovalDocuments() {
 
   // ---- Email handler ----
   const handleEmail = (doc: Document) => {
-    try {
-      const downloadUrl = pdfApi.getPdfDownloadUrl(doc.id);
+    setCurrentEmailDoc(doc);
+    setEmailComposerOpen(true);
+  };
 
-      // Create email data using the webmail service utility
-      const emailData = createPdfEmailData({
-        fileName: doc.fileName,
-        status: STATUS_LABEL[doc.status],
-        downloadUrl: downloadUrl,
-        isApprovalRequest: true,
-        updatedAt: timeAgo(doc.updatedAt)
+  // ---- Send email handler ----
+  const handleSendEmail = async (emailData: EmailData) => {
+    if (!currentEmailDoc) return;
+
+    try {
+      await emailApi.sendEmailWithPdfById({
+        to: emailData.to,
+        from: emailData.from,
+        subject: emailData.subject,
+        body: emailData.body,
+        documentId: currentEmailDoc.id,
+        fileName: currentEmailDoc.fileName
       });
 
-      // Share via webmail (opens in new tab with fallback to mailto)
-      shareViaPdf(emailData);
-
-      // Show success message
       setToastMessage({
-        message: "Opening webmail compose window...",
+        message: "Approval request email sent successfully with PDF attachment!",
         type: "success"
       });
 
+      // Close composer
+      setEmailComposerOpen(false);
+      setCurrentEmailDoc(null);
+
     } catch (error) {
-      console.error("Error opening email:", error);
-      setToastMessage({
-        message: "Unable to open email. Please try again.",
-        type: "error"
-      });
+      console.error("Error sending email:", error);
+      throw error; // Let EmailComposer handle the error display
     }
+  };
+
+  // ---- Close email composer ----
+  const handleCloseEmailComposer = () => {
+    setEmailComposerOpen(false);
+    setCurrentEmailDoc(null);
   };
 
   // Show nothing while checking auth
@@ -434,6 +447,21 @@ export default function ApprovalDocuments() {
           onClose={() => setToastMessage(null)}
         />
       )}
+
+      {/* Email Composer Modal */}
+      <EmailComposer
+        isOpen={emailComposerOpen}
+        onClose={handleCloseEmailComposer}
+        onSend={handleSendEmail}
+        attachment={currentEmailDoc ? {
+          id: currentEmailDoc.id,
+          fileName: currentEmailDoc.fileName,
+          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailDoc.id)
+        } : undefined}
+        defaultSubject={currentEmailDoc ? `${currentEmailDoc.fileName} - Approval Request` : ''}
+        defaultBody={currentEmailDoc ? `Hello,\n\nPlease review the following customer header document for approval.\n\nDocument: ${currentEmailDoc.fileName}\nStatus: ${STATUS_LABEL[currentEmailDoc.status]}\nUpdated: ${timeAgo(currentEmailDoc.updatedAt)}\n\nBest regards` : ''}
+        userEmail="" // TODO: Get from admin login context
+      />
     </section>
   );
 }
