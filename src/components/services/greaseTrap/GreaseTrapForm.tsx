@@ -80,24 +80,26 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">GREASE TRAP</div>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          title="Add custom field"
-        >
-          +
-        </button>
-        {onRemove && (
+        <div className="svc-h-actions">
           <button
             type="button"
-            className="svc-mini svc-mini--neg"
-            onClick={onRemove}
-            title="Remove this service"
+            className="svc-mini"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            title="Add custom field"
           >
-            −
+            +
           </button>
-        )}
+          {onRemove && (
+            <button
+              type="button"
+              className="svc-mini svc-mini--neg"
+              onClick={onRemove}
+              title="Remove this service"
+            >
+              −
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Custom fields manager */}

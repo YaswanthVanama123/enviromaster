@@ -130,62 +130,68 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("pureJanitorial");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("pureJanitorial");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ Pure Janitorial config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ Pure Janitorial document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendJanitorialConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setForm((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          baseHourlyRate: config.baseHourlyRate ?? prev.baseHourlyRate,
-          shortJobHourlyRate: config.shortJobHourlyRate ?? prev.shortJobHourlyRate,
-          minHoursPerVisit: config.minHoursPerVisit ?? prev.minHoursPerVisit,
-          weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
-          dustingPlacesPerHour: config.dustingPlacesPerHour ?? prev.dustingPlacesPerHour,
-          dustingPricePerPlace: config.dustingPricePerPlace ?? prev.dustingPricePerPlace,
-          vacuumingDefaultHours: config.vacuumingDefaultHours ?? prev.vacuumingDefaultHours,
-        }));
-
-        console.log('✅ Pure Janitorial FULL CONFIG loaded from backend:', {
-          baseHourlyRate: config.baseHourlyRate,
-          shortJobHourlyRate: config.shortJobHourlyRate,
-          minHoursPerVisit: config.minHoursPerVisit,
-          weeksPerMonth: config.weeksPerMonth,
-          dustingPlacesPerHour: config.dustingPlacesPerHour,
-          dustingPricePerPlace: config.dustingPricePerPlace,
-          vacuumingDefaultHours: config.vacuumingDefaultHours,
-          tieredPricing: config.tieredPricing,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch Pure Janitorial config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Pure Janitorial config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Pure Janitorial document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendJanitorialConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setForm((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        baseHourlyRate: config.baseHourlyRate ?? prev.baseHourlyRate,
+        shortJobHourlyRate: config.shortJobHourlyRate ?? prev.shortJobHourlyRate,
+        minHoursPerVisit: config.minHoursPerVisit ?? prev.minHoursPerVisit,
+        weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
+        dustingPlacesPerHour: config.dustingPlacesPerHour ?? prev.dustingPlacesPerHour,
+        dustingPricePerPlace: config.dustingPricePerPlace ?? prev.dustingPricePerPlace,
+        vacuumingDefaultHours: config.vacuumingDefaultHours ?? prev.vacuumingDefaultHours,
+      }));
+
+      console.log('✅ Pure Janitorial FULL CONFIG loaded from backend:', {
+        baseHourlyRate: config.baseHourlyRate,
+        shortJobHourlyRate: config.shortJobHourlyRate,
+        minHoursPerVisit: config.minHoursPerVisit,
+        weeksPerMonth: config.weeksPerMonth,
+        dustingPlacesPerHour: config.dustingPlacesPerHour,
+        dustingPricePerPlace: config.dustingPricePerPlace,
+        vacuumingDefaultHours: config.vacuumingDefaultHours,
+        tieredPricing: config.tieredPricing,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch Pure Janitorial config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -380,5 +386,11 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     form,
   ]);
 
-  return { form, onChange, calc };
+  return {
+    form,
+    onChange,
+    calc,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
+  };
 }

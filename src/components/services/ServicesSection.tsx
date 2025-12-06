@@ -125,6 +125,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
   // State for "New Service" dropdown
   const [showNewServiceDropdown, setShowNewServiceDropdown] = useState(false);
+  const [showRemoveServiceDropdown, setShowRemoveServiceDropdown] = useState(false);
 
   // Use ref to track if configs have been initialized to prevent infinite loop
   const configsInitializedRef = useRef(false);
@@ -314,7 +315,15 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
               className="svc-btn"
               onClick={() => setShowNewServiceDropdown(!showNewServiceDropdown)}
             >
-              + New Service
+              +
+            </button>
+            <button
+              type="button"
+              className="svc-btn"
+              onClick={() => setShowRemoveServiceDropdown(!showRemoveServiceDropdown)}
+              style={{ marginLeft: '8px' }}
+            >
+              −
             </button>
             {showNewServiceDropdown && (
               <div className="svc-chooser">
@@ -342,6 +351,41 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                   type="button"
                   className="svc-mini svc-mini--neg"
                   onClick={() => setShowNewServiceDropdown(false)}
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            {showRemoveServiceDropdown && (
+              <div className="svc-chooser">
+                <select
+                  className="svc-chooser-select"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleRemoveService(e.target.value);
+                      e.target.value = ""; // Reset dropdown
+                      setShowRemoveServiceDropdown(false); // Close dropdown
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select service to remove...
+                  </option>
+                  {Array.from(visibleServices).map((serviceId) => {
+                    const config = configs.find(c => c.serviceId === serviceId);
+                    return (
+                      <option key={serviceId} value={serviceId}>
+                        {config?.label || serviceId}
+                      </option>
+                    );
+                  })}
+                </select>
+                <button
+                  type="button"
+                  className="svc-mini svc-mini--neg"
+                  onClick={() => setShowRemoveServiceDropdown(false)}
                   title="Close"
                 >
                   ×
@@ -401,14 +445,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
           return (
             <div key={config.serviceId} className="svc-card-wrapper">
-              <button
-                type="button"
-                className="svc-card-remove"
-                onClick={() => handleRemoveService(config.serviceId)}
-                title="Remove service"
-              >
-                −
-              </button>
               <ServiceComponent
                 initialData={(() => {
                   // Try to find initial data by checking both the serviceId and common aliases
@@ -435,6 +471,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                   });
                   return transformedData;
                 })()}
+                onRemove={() => handleRemoveService(config.serviceId)}
               />
             </div>
           );

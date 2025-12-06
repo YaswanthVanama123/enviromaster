@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useCarpetCalc } from "./useCarpetCalc";
 import type { CarpetFormState } from "./carpetTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -18,7 +20,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  const { form, onChange, quote, calc } = useCarpetCalc(initialData);
+  const { form, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state - initialize with initialData if available
@@ -121,24 +123,39 @@ export const CarpetForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">CARPET CLEANING</div>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          title="Add custom field"
-        >
-          +
-        </button>
-        {onRemove && (
+        <div className="svc-h-actions">
           <button
             type="button"
-            className="svc-mini svc-mini--neg"
-            onClick={onRemove}
-            title="Remove this service"
+            className="svc-mini"
+            onClick={refreshConfig}
+            disabled={isLoadingConfig}
+            title="Refresh config from database"
           >
-            −
+            <FontAwesomeIcon
+              icon={isLoadingConfig ? faSpinner : faSync}
+              spin={isLoadingConfig}
+            />
           </button>
-        )}
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            title="Add custom field"
+          >
+            +
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              className="svc-mini"
+              onClick={onRemove}
+              title="Remove this service"
+            >
+              −
+            </button>
+          )}
+
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}

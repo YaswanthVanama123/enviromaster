@@ -1,5 +1,7 @@
 // src/features/services/stripWax/StripWaxForm.tsx
 import React, { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useStripWaxCalc } from "./useStripWaxCalc";
 import type { StripWaxFormState } from "./stripWaxTypes";
 import { stripWaxPricingConfig as cfg } from "./stripWaxConfig";
@@ -12,7 +14,7 @@ const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
 > = ({ initialData, onRemove }) => {
-  const { form, onChange, calc } = useStripWaxCalc(initialData);
+  const { form, onChange, calc, refreshConfig, isLoadingConfig } = useStripWaxCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state - initialize with initialData if available
@@ -84,24 +86,38 @@ export const StripWaxForm: React.FC<
       {/* Header */}
       <div className="svc-h-row">
         <div className="svc-h">STRIP &amp; WAX FLOOR</div>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          title="Add custom field"
-        >
-          +
-        </button>
-        {onRemove && (
+        <div className="svc-h-actions">
           <button
             type="button"
-            className="svc-mini svc-mini--neg"
-            onClick={onRemove}
-            title="Remove this service"
+            className="svc-mini"
+            onClick={refreshConfig}
+            disabled={isLoadingConfig}
+            title="Refresh config from database"
           >
-            −
+            <FontAwesomeIcon
+              icon={isLoadingConfig ? faSpinner : faSync}
+              spin={isLoadingConfig}
+            />
           </button>
-        )}
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            title="Add custom field"
+          >
+            +
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              className="svc-mini svc-mini--neg"
+              onClick={onRemove}
+              title="Remove this service"
+            >
+              −
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}

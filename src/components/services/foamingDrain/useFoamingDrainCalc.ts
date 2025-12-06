@@ -118,70 +118,76 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendFoamingDrainConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("foamingDrain");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("foamingDrain");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ Foaming Drain config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ Foaming Drain document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendFoamingDrainConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setState((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
-          altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
-          altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
-          volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
-          volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
-          greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
-          greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
-          greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
-          greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
-          plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
-          filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
-        }));
-
-        console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
-          standardDrainRate: config.standardDrainRate,
-          altPricing: {
-            baseCharge: config.altBaseCharge,
-            extraPerDrain: config.altExtraPerDrain,
-          },
-          volumePricing: config.volumePricing,
-          grease: config.grease,
-          green: config.green,
-          plumbing: config.plumbing,
-          installationRules: config.installationRules,
-          billingConversions: config.billingConversions,
-          contract: config.contract,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch Foaming Drain config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Foaming Drain config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Foaming Drain document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendFoamingDrainConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setState((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
+        altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
+        altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
+        volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
+        volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
+        greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
+        greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
+        greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
+        greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
+        plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
+        filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
+      }));
+
+      console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
+        standardDrainRate: config.standardDrainRate,
+        altPricing: {
+          baseCharge: config.altBaseCharge,
+          extraPerDrain: config.altExtraPerDrain,
+        },
+        volumePricing: config.volumePricing,
+        grease: config.grease,
+        green: config.green,
+        plumbing: config.plumbing,
+        installationRules: config.installationRules,
+        billingConversions: config.billingConversions,
+        contract: config.contract,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch Foaming Drain config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
@@ -604,5 +610,12 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     });
   };
 
-  return { state, quote, updateField, reset };
+  return {
+    state,
+    quote,
+    updateField,
+    reset,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
+  };
 }

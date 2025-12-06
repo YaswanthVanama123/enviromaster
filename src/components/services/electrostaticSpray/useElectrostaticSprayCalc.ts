@@ -180,6 +180,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     onChange,
     calc,
     backendConfig,
-    isLoadingConfig
+    isLoadingConfig,
+    refreshConfig: fetchPricing
   };
 }

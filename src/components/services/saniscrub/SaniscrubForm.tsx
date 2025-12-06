@@ -1,4 +1,6 @@
 import React, { useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
 import type { SaniscrubFormState } from "./saniscrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -21,7 +23,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  const { form, onChange, quote, calc } = useSaniscrubCalc(initialData);
+  const { form, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state - initialize with initialData if available
@@ -156,26 +158,41 @@ export const SaniscrubForm: React.FC<
 
   return (
     <div className="svc-card">
+      {/* Header */}
       <div className="svc-h-row">
         <div className="svc-h">SANISCRUB</div>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          title="Add custom field"
-        >
-          +
-        </button>
-        {onRemove && (
+        <div className="svc-h-actions">
           <button
             type="button"
-            className="svc-mini svc-mini--neg"
-            onClick={onRemove}
-            title="Remove this service"
+            className="svc-mini"
+            onClick={refreshConfig}
+            disabled={isLoadingConfig}
+            title="Refresh config from database"
           >
-            −
+            <FontAwesomeIcon
+              icon={isLoadingConfig ? faSpinner : faSync}
+              spin={isLoadingConfig}
+            />
           </button>
-        )}
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            title="Add custom field"
+          >
+            +
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              className="svc-mini svc-mini--neg"
+              onClick={onRemove}
+              title="Remove this service"
+            >
+              −
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}

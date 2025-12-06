@@ -98,59 +98,65 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendStripWaxConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("stripWax");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("stripWax");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ Strip Wax config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ Strip Wax document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendStripWaxConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setForm((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
-          standardFullRatePerSqFt: config.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
-          standardFullMinCharge: config.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
-          noSealantRatePerSqFt: config.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
-          noSealantMinCharge: config.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
-          wellMaintainedRatePerSqFt: config.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
-          wellMaintainedMinCharge: config.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
-          redRateMultiplier: config.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
-          greenRateMultiplier: config.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
-        }));
-
-        console.log('✅ Strip Wax FULL CONFIG loaded from backend:', {
-          weeksPerMonth: config.weeksPerMonth,
-          variants: config.variants,
-          rateCategories: config.rateCategories,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch Strip Wax config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Strip Wax config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Strip Wax document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendStripWaxConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setForm((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
+        standardFullRatePerSqFt: config.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
+        standardFullMinCharge: config.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
+        noSealantRatePerSqFt: config.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
+        noSealantMinCharge: config.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
+        wellMaintainedRatePerSqFt: config.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
+        wellMaintainedMinCharge: config.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
+        redRateMultiplier: config.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
+        greenRateMultiplier: config.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+      }));
+
+      console.log('✅ Strip Wax FULL CONFIG loaded from backend:', {
+        weeksPerMonth: config.weeksPerMonth,
+        variants: config.variants,
+        rateCategories: config.rateCategories,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch Strip Wax config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -327,5 +333,11 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
     form.greenRateMultiplier,
   ]);
 
-  return { form, onChange, calc };
+  return {
+    form,
+    onChange,
+    calc,
+    refreshConfig: fetchPricing,
+    isLoadingConfig
+  };
 }

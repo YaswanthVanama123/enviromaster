@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "../ServicesSection.css";
 import { useSanicleanCalc } from "./useSanicleanCalc";
 import { sanicleanPricingConfig as cfg } from "./sanicleanConfig";
@@ -226,34 +228,38 @@ export const SanicleanForm: React.FC<
       {/* HEADER */}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={refreshConfig}
-          disabled={isLoadingConfig}
-          title="Refresh config from database"
-          style={{ fontSize: '14px' }}
-        >
-          {isLoadingConfig ? '⟳' : '🔄'}
-        </button>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          title="Add custom field"
-        >
-          +
-        </button>
-        {onRemove && (
+        <div className="svc-h-actions">
           <button
             type="button"
-            className="svc-mini svc-mini--neg"
-            onClick={onRemove}
-            title="Remove this service"
+            className="svc-mini"
+            onClick={refreshConfig}
+            disabled={isLoadingConfig}
+            title="Refresh config from database"
           >
-            −
+            <FontAwesomeIcon
+              icon={isLoadingConfig ? faSpinner : faSync}
+              spin={isLoadingConfig}
+            />
           </button>
-        )}
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            title="Add custom field"
+          >
+            +
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              className="svc-mini svc-mini--neg"
+              onClick={onRemove}
+              title="Remove this service"
+            >
+              −
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}
@@ -334,7 +340,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* ================== FIXTURE BREAKDOWN ================== */}
-      <div className="svc-h" style={{ marginTop: 10 }}>
+      <div className="svc-h-sub" style={{ marginTop: 10 }}>
         FIXTURE BREAKDOWN
       </div>
 
@@ -467,7 +473,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* ================== SOAP & UPGRADES ================== */}
-      <div className="svc-h" style={{ marginTop: 10 }}>
+      <div className="svc-h-sub" style={{ marginTop: 10 }}>
         SOAP &amp; UPGRADES
       </div>
 
@@ -699,7 +705,7 @@ export const SanicleanForm: React.FC<
       )}
 
       {/* ================== MICROFIBER ================== */}
-      <div className="svc-h" style={{ marginTop: 10 }}>
+      <div className="svc-h-sub" style={{ marginTop: 10 }}>
         MICROFIBER MOPPING
       </div>
 
@@ -763,7 +769,7 @@ export const SanicleanForm: React.FC<
       )}
 
       {/* ================== PAPER ================== */}
-      <div className="svc-h" style={{ marginTop: 10 }}>
+      <div className="svc-h-sub" style={{ marginTop: 10 }}>
         PAPER
       </div>
 
@@ -809,7 +815,7 @@ export const SanicleanForm: React.FC<
       )}
 
       {/* ================== WHAT'S INCLUDED ================== */}
-      <div className="svc-h" style={{ marginTop: 10 }}>
+      <div className="svc-h-sub" style={{ marginTop: 10 }}>
         WHAT&apos;S INCLUDED
       </div>
 
@@ -874,7 +880,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* ================== PRICING SUMMARY ================== */}
-      <div className="svc-h" style={{ marginTop: 16 }}>
+      <div className="svc-h-sub" style={{ marginTop: 16 }}>
         PRICING SUMMARY
       </div>
 

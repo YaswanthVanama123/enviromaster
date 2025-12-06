@@ -171,70 +171,76 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendSanipodConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("sanipod");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("sanipod");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ SaniPod config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ SaniPod document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendSanipodConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setForm((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          weeklyRatePerUnit: config.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
-          altWeeklyRatePerUnit: config.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
-          extraBagPrice: config.extraBagPrice ?? prev.extraBagPrice,
-          standaloneExtraWeeklyCharge: config.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
-          installRatePerPod: config.installChargePerUnit ?? prev.installRatePerPod,
-          tripChargePerVisit: config.tripChargePerVisit ?? prev.tripChargePerVisit,
-        }));
-
-        console.log('✅ SaniPod FULL CONFIG loaded from backend:', {
-          pricing: {
-            weeklyRate: config.weeklyRatePerUnit,
-            altRate: config.altWeeklyRatePerUnit,
-            extraBag: config.extraBagPrice,
-            standaloneExtra: config.standaloneExtraWeeklyCharge,
-            installRate: config.installChargePerUnit,
-          },
-          rateCategories: config.rateCategories,
-          billingConversions: {
-            weeksPerMonth: config.weeksPerMonth,
-            weeksPerYear: config.weeksPerYear,
-          },
-          annualFrequencies: config.annualFrequencies,
-          contractLimits: {
-            min: config.minContractMonths,
-            max: config.maxContractMonths,
-          },
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch SaniPod config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ SaniPod config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ SaniPod document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendSanipodConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setForm((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        weeklyRatePerUnit: config.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
+        altWeeklyRatePerUnit: config.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
+        extraBagPrice: config.extraBagPrice ?? prev.extraBagPrice,
+        standaloneExtraWeeklyCharge: config.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
+        installRatePerPod: config.installChargePerUnit ?? prev.installRatePerPod,
+        tripChargePerVisit: config.tripChargePerVisit ?? prev.tripChargePerVisit,
+      }));
+
+      console.log('✅ SaniPod FULL CONFIG loaded from backend:', {
+        pricing: {
+          weeklyRate: config.weeklyRatePerUnit,
+          altRate: config.altWeeklyRatePerUnit,
+          extraBag: config.extraBagPrice,
+          standaloneExtra: config.standaloneExtraWeeklyCharge,
+          installRate: config.installChargePerUnit,
+        },
+        rateCategories: config.rateCategories,
+        billingConversions: {
+          weeksPerMonth: config.weeksPerMonth,
+          weeksPerYear: config.weeksPerYear,
+        },
+        annualFrequencies: config.annualFrequencies,
+        contractLimits: {
+          min: config.minContractMonths,
+          max: config.maxContractMonths,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch SaniPod config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -558,5 +564,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     form.customAnnualPrice,
   ]);
 
-  return { form, setForm, onChange, calc };
+  return {
+    form,
+    setForm,
+    onChange,
+    calc,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
+  };
 }

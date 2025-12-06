@@ -69,59 +69,65 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendCarpetConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("carpetCleaning");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("carpetCleaning");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ Carpet Cleaning config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ Carpet Cleaning document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendCarpetConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setForm((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          unitSqFt: config.unitSqFt ?? prev.unitSqFt,
-          firstUnitRate: config.firstUnitRate ?? prev.firstUnitRate,
-          additionalUnitRate: config.additionalUnitRate ?? prev.additionalUnitRate,
-          perVisitMinimum: config.perVisitMinimum ?? prev.perVisitMinimum,
-          installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
-          installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
-        }));
-
-        console.log('✅ Carpet Cleaning FULL CONFIG loaded from backend:', {
-          unitSqFt: config.unitSqFt,
-          firstUnitRate: config.firstUnitRate,
-          additionalUnitRate: config.additionalUnitRate,
-          perVisitMinimum: config.perVisitMinimum,
-          installMultipliers: config.installMultipliers,
-          frequencyMeta: config.frequencyMeta,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Carpet Cleaning config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Carpet Cleaning document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendCarpetConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setForm((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        unitSqFt: config.unitSqFt ?? prev.unitSqFt,
+        firstUnitRate: config.firstUnitRate ?? prev.firstUnitRate,
+        additionalUnitRate: config.additionalUnitRate ?? prev.additionalUnitRate,
+        perVisitMinimum: config.perVisitMinimum ?? prev.perVisitMinimum,
+        installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
+        installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+      }));
+
+      console.log('✅ Carpet Cleaning FULL CONFIG loaded from backend:', {
+        unitSqFt: config.unitSqFt,
+        firstUnitRate: config.firstUnitRate,
+        additionalUnitRate: config.additionalUnitRate,
+        perVisitMinimum: config.perVisitMinimum,
+        installMultipliers: config.installMultipliers,
+        frequencyMeta: config.frequencyMeta,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -409,5 +415,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       firstMonthTotal,
       perVisitEffective,
     },
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
   };
 }

@@ -125,65 +125,71 @@ export function useMicrofiberMoppingCalc(
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendMicrofiberConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("microfiberMopping");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("microfiberMopping");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ Microfiber Mopping config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ Microfiber Mopping document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendMicrofiberConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setForm((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
-          hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
-          extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
-          standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
-          dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
-        }));
-
-        console.log('✅ Microfiber Mopping FULL CONFIG loaded from backend:', {
-          pricing: {
-            bathroomRate: config.includedBathroomRate,
-            hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
-            extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
-            standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
-            chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
-          },
-          hugeBathroomPricing: config.hugeBathroomPricing,
-          extraAreaPricing: config.extraAreaPricing,
-          standalonePricing: config.standalonePricing,
-          rateCategories: config.rateCategories,
-          billingConversions: config.billingConversions,
-          allowedFrequencies: config.allowedFrequencies,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch Microfiber Mopping config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Microfiber Mopping config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Microfiber Mopping document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendMicrofiberConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setForm((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
+        hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
+        extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
+        standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
+        dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
+      }));
+
+      console.log('✅ Microfiber Mopping FULL CONFIG loaded from backend:', {
+        pricing: {
+          bathroomRate: config.includedBathroomRate,
+          hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
+          extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
+          standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
+          chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
+        },
+        hugeBathroomPricing: config.hugeBathroomPricing,
+        extraAreaPricing: config.extraAreaPricing,
+        standalonePricing: config.standalonePricing,
+        rateCategories: config.rateCategories,
+        billingConversions: config.billingConversions,
+        allowedFrequencies: config.allowedFrequencies,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch Microfiber Mopping config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChange = (ev: InputChangeEvent) => {
     const target = ev.target as HTMLInputElement;
@@ -483,5 +489,13 @@ export function useMicrofiberMoppingCalc(
     form,
   ]);
 
-  return { form, setForm, onChange, quote, calc };
+  return {
+    form,
+    setForm,
+    onChange,
+    quote,
+    calc,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
+  };
 }

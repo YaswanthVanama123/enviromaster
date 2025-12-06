@@ -1,6 +1,8 @@
 // src/components/services/electrostaticSpray/ElectrostaticSprayForm.tsx
 
 import React, { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useElectrostaticSprayCalc } from "./useElectrostaticSprayCalc";
 import type { ElectrostaticSprayFormState } from "./electrostaticSprayTypes";
 import { electrostaticSprayPricingConfig as cfg } from "./electrostaticSprayConfig";
@@ -14,7 +16,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   initialData,
   onRemove,
 }) => {
-  const { form, setForm, onChange, calc, isLoadingConfig } = useElectrostaticSprayCalc(initialData);
+  const { form, setForm, onChange, calc, isLoadingConfig, refreshConfig } = useElectrostaticSprayCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state - initialize with initialData if available
@@ -125,24 +127,38 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       <div className="svc-card__inner">
         <div className="svc-h-row">
           <div className="svc-h">ELECTROSTATIC SPRAY</div>
-          <button
-            type="button"
-            className="svc-mini"
-            onClick={() => setShowAddDropdown(!showAddDropdown)}
-            title="Add custom field"
-          >
-            +
-          </button>
-          {onRemove && (
+          <div className="svc-h-actions">
             <button
               type="button"
-              className="svc-mini svc-mini--neg"
-              onClick={onRemove}
-              title="Remove this service"
+              className="svc-mini"
+              onClick={refreshConfig}
+              disabled={isLoadingConfig}
+              title="Refresh config from database"
             >
-              −
+              <FontAwesomeIcon
+                icon={isLoadingConfig ? faSpinner : faSync}
+                spin={isLoadingConfig}
+              />
             </button>
-          )}
+            <button
+              type="button"
+              className="svc-mini"
+              onClick={() => setShowAddDropdown(!showAddDropdown)}
+              title="Add custom field"
+            >
+              +
+            </button>
+            {onRemove && (
+              <button
+                type="button"
+                className="svc-mini svc-mini--neg"
+                onClick={onRemove}
+                title="Remove this service"
+              >
+                −
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Loading indicator */}

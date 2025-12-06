@@ -1,5 +1,7 @@
 // src/features/services/foamingDrain/FoamingDrainForm.tsx
 import React, { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useFoamingDrainCalc } from "./useFoamingDrainCalc";
 import type {
   FoamingDrainFormState,
@@ -23,7 +25,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   initialData,
   onRemove,
 }) => {
-  const { state, quote, updateField, reset } =
+  const { state, quote, updateField, reset, refreshConfig, isLoadingConfig } =
     useFoamingDrainCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -289,24 +291,38 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       <div className="svc-card__inner">
         <div className="svc-h-row">
           <div className="svc-h">FOAMING DRAIN SERVICE</div>
-          <button
-            type="button"
-            className="svc-mini"
-            onClick={() => setShowAddDropdown(!showAddDropdown)}
-            title="Add custom field"
-          >
-            +
-          </button>
-          {onRemove && (
+          <div className="svc-h-actions">
             <button
               type="button"
-              className="svc-mini svc-mini--neg"
-              onClick={onRemove}
-              title="Remove this service"
+              className="svc-mini"
+              onClick={refreshConfig}
+              disabled={isLoadingConfig}
+              title="Refresh config from database"
             >
-              −
+              <FontAwesomeIcon
+                icon={isLoadingConfig ? faSpinner : faSync}
+                spin={isLoadingConfig}
+              />
             </button>
-          )}
+            <button
+              type="button"
+              className="svc-mini"
+              onClick={() => setShowAddDropdown(!showAddDropdown)}
+              title="Add custom field"
+            >
+              +
+            </button>
+            {onRemove && (
+              <button
+                type="button"
+                className="svc-mini svc-mini--neg"
+                onClick={onRemove}
+                title="Remove this service"
+              >
+                −
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Custom fields manager - appears at the top */}

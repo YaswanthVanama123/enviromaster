@@ -88,8 +88,8 @@
   width:100%;
   display:grid;
   grid-template-columns:repeat(2, minmax(0,1fr));
-  gap:20px 24px;
-  padding:16px 16px 18px;
+  gap:40px 32px;
+  padding:20px;
   box-sizing:border-box;
   background:transparent;
 }
@@ -105,15 +105,15 @@
 
 .svc-card{
   min-width:0;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: box-shadow 0.2s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 16px 16px 16px;
+  box-shadow: none;
+  transition: none;
 }
 .svc-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: none;
 }
 .svc-card--wide{
   grid-column:1 / -1;
@@ -122,29 +122,6 @@
 .svc-card-wrapper{
   position: relative;
   min-width: 0;
-}
-.svc-card-remove{
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  width: 22px;
-  height: 22px;
-  line-height: 20px;
-  text-align: center;
-  border: 1px solid #c00000;
-  border-radius: 50%;
-  background: #fff;
-  color: #c00000;
-  font-weight: 700;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.2s;
-}
-.svc-card-remove:hover{
-  background: #c00000;
-  color: #fff;
 }
 
 .svc-h{
@@ -157,15 +134,26 @@
   text-decoration:underline;
   text-underline-offset:1px;
 }
+
+.svc-h-sub{
+  margin:12px 0 8px;
+  font-size:13px;
+  font-weight:600;
+  color:#666;
+  font-family:Arial;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
 .svc-h-row{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:8px;
+  width:100%;
+  margin-bottom:8px;
 }
 .svc-h-actions{
   display:flex;
-  gap:6px;
+  gap:8px;
   align-items:center;
 }
 .svc-h-editable{
@@ -224,24 +212,27 @@
 }
 
 .svc-mini{
-  width:20px; 
-  height:20px; 
-  line-height:18px; 
-  text-align:center;
-  border:1px solid #666; 
-  border-radius:50%; 
-  background:#f6f6f6;
-  color:#333; 
-  font-weight:700; 
-  cursor:pointer; 
+  width:26px;
+  height:26px;
+  border:1px solid #ccc;
+  border-radius:4px;
+  background:#f8f8f8;
+  color:#333;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  margin:0;
   padding:0;
 }
-.svc-mini:hover{ 
-  background:#eee; 
+.svc-mini:hover{
+  background:#e8e8e8;
+  border-color:#999;
 }
-.svc-mini--neg{ 
-  color:#a00; 
-  border-color:#a00; 
+.svc-mini--neg{
+  /* Remove special styling - same as all other buttons */
 }
 .svc-mini--inline{ 
   margin-left:6px; 
@@ -278,7 +269,7 @@
   grid-template-columns:max-content minmax(0,1fr);
   align-items:end;
   column-gap:10px;
-  margin:6px 0;
+  margin:10px 0;
   min-width:0;
 }
 .svc-row-right{ 

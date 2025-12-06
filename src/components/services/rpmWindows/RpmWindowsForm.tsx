@@ -1,5 +1,7 @@
 // src/features/services/rpmWindows/RpmWindowsForm.tsx
 import React, { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
@@ -194,37 +196,47 @@ export const RpmWindowsForm: React.FC<
     <div className="svc-card">
       <div className="svc-h-row">
         <div className="svc-h">RPM WINDOW</div>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={refreshConfig}
-          disabled={isLoadingConfig}
-          title="Refresh config from database"
-          style={{ fontSize: '14px' }}
-        >
-          {isLoadingConfig ? '⟳' : '🔄'}
-        </button>
-        <button
-          type="button"
-          className="svc-mini"
-          onClick={() => setShowAddDropdown(!showAddDropdown)}
-          title="Add custom field"
-        >
-          +
-        </button>
-        <button type="button" className="svc-mini" onClick={addExtraCharge}>
-          +
-        </button>
-        {onRemove && (
+        <div className="svc-h-actions">
           <button
             type="button"
-            className="svc-mini svc-mini--neg"
-            onClick={onRemove}
-            title="Remove this service"
+            className="svc-mini"
+            onClick={refreshConfig}
+            disabled={isLoadingConfig}
+            title="Refresh config from database"
           >
-            −
+            <FontAwesomeIcon
+              icon={isLoadingConfig ? faSpinner : faSync}
+              spin={isLoadingConfig}
+            />
           </button>
-        )}
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={() => setShowAddDropdown(!showAddDropdown)}
+            title="Add custom field"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={addExtraCharge}
+            title="Add extra charge"
+            style={{ fontSize: '12px' }}
+          >
+            $
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              className="svc-mini svc-mini--neg"
+              onClick={onRemove}
+              title="Remove this service"
+            >
+              −
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Custom fields manager - appears at the top */}

@@ -89,67 +89,73 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendSaniscrubConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend on mount
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await serviceConfigApi.getActive("saniscrub");
+  // ✅ Fetch COMPLETE pricing configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("saniscrub");
 
-        // ✅ Check if response has error or no data
-        if (!response || response.error || !response.data) {
-          console.warn('⚠️ SaniScrub config not found in backend, using default fallback values');
-          return;
-        }
-
-        // ✅ Extract the actual document from response.data
-        const document = response.data;
-
-        if (!document.config) {
-          console.warn('⚠️ SaniScrub document has no config property');
-          return;
-        }
-
-        const config = document.config as BackendSaniscrubConfig;
-
-        // ✅ Store the ENTIRE backend config for use in calculations
-        setBackendConfig(config);
-
-        setForm((prev) => ({
-          ...prev,
-          // Update all rate fields from backend if available
-          fixtureRateMonthly: config.fixtureRates?.monthly ?? prev.fixtureRateMonthly,
-          fixtureRateBimonthly: config.fixtureRates?.bimonthly ?? prev.fixtureRateBimonthly,
-          fixtureRateQuarterly: config.fixtureRates?.quarterly ?? prev.fixtureRateQuarterly,
-          minimumMonthly: config.minimums?.monthly ?? prev.minimumMonthly,
-          minimumBimonthly: config.minimums?.bimonthly ?? prev.minimumBimonthly,
-          nonBathroomFirstUnitRate: config.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
-          nonBathroomAdditionalUnitRate: config.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
-          installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
-          installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
-          twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat ?? prev.twoTimesPerMonthDiscount,
-        }));
-
-        console.log('✅ SaniScrub FULL CONFIG loaded from backend:', {
-          fixtureRates: config.fixtureRates,
-          minimums: config.minimums,
-          nonBathroomPricing: {
-            unitSqFt: config.nonBathroomUnitSqFt,
-            firstUnitRate: config.nonBathroomFirstUnitRate,
-            additionalUnitRate: config.nonBathroomAdditionalUnitRate,
-          },
-          installMultipliers: config.installMultipliers,
-          frequencyMeta: config.frequencyMeta,
-          twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat,
-        });
-      } catch (error) {
-        console.error('❌ Failed to fetch SaniScrub config from backend:', error);
-        console.log('⚠️ Using default hardcoded values as fallback');
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ SaniScrub config not found in backend, using default fallback values');
+        return;
       }
-    };
 
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ SaniScrub document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendSaniscrubConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+
+      setForm((prev) => ({
+        ...prev,
+        // Update all rate fields from backend if available
+        fixtureRateMonthly: config.fixtureRates?.monthly ?? prev.fixtureRateMonthly,
+        fixtureRateBimonthly: config.fixtureRates?.bimonthly ?? prev.fixtureRateBimonthly,
+        fixtureRateQuarterly: config.fixtureRates?.quarterly ?? prev.fixtureRateQuarterly,
+        minimumMonthly: config.minimums?.monthly ?? prev.minimumMonthly,
+        minimumBimonthly: config.minimums?.bimonthly ?? prev.minimumBimonthly,
+        nonBathroomFirstUnitRate: config.nonBathroomFirstUnitRate ?? prev.nonBathroomFirstUnitRate,
+        nonBathroomAdditionalUnitRate: config.nonBathroomAdditionalUnitRate ?? prev.nonBathroomAdditionalUnitRate,
+        installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
+        installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+        twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat ?? prev.twoTimesPerMonthDiscount,
+      }));
+
+      console.log('✅ SaniScrub FULL CONFIG loaded from backend:', {
+        fixtureRates: config.fixtureRates,
+        minimums: config.minimums,
+        nonBathroomPricing: {
+          unitSqFt: config.nonBathroomUnitSqFt,
+          firstUnitRate: config.nonBathroomFirstUnitRate,
+          additionalUnitRate: config.nonBathroomAdditionalUnitRate,
+        },
+        installMultipliers: config.installMultipliers,
+        frequencyMeta: config.frequencyMeta,
+        twoTimesPerMonthDiscount: config.twoTimesPerMonthDiscountFlat,
+      });
+    } catch (error) {
+      console.error('❌ Failed to fetch SaniScrub config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
     fetchPricing();
-  }, []); // Run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -507,5 +513,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       firstMonthTotal,
       contractTotal,
     },
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
   };
 }
