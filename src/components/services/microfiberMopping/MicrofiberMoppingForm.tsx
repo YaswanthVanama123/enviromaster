@@ -29,16 +29,16 @@ export const MicrofiberMoppingForm: React.FC<
   const prevDataRef = useRef<string>("");
 
   // Calculate effective rates for each service type
-  const bathroomRate = form.bathroomCount > 0 && calc.bathroomTotal > 0
-    ? calc.bathroomTotal / form.bathroomCount
+  const bathroomRate = form.bathroomCount > 0 && calc.standardBathroomPrice > 0
+    ? calc.standardBathroomPrice / form.bathroomCount
     : form.includedBathroomRate;
 
-  const hugeBathroomRate = form.hugeBathroomSqFt > 0 && calc.hugeBathroomTotal > 0
-    ? calc.hugeBathroomTotal / form.hugeBathroomSqFt
+  const hugeBathroomRate = form.hugeBathroomSqFt > 0 && calc.hugeBathroomPrice > 0
+    ? calc.hugeBathroomPrice / form.hugeBathroomSqFt
     : form.hugeBathroomRatePerSqFt;
 
-  const extraAreaRate = form.extraAreaSqFt > 0 && calc.extraAreaTotal > 0
-    ? calc.extraAreaTotal / form.extraAreaSqFt
+  const extraAreaRate = form.extraAreaSqFt > 0 && calc.extraAreaPrice > 0
+    ? calc.extraAreaPrice / form.extraAreaSqFt
     : form.extraAreaRatePerUnit;
 
   useEffect(() => {
@@ -64,14 +64,14 @@ export const MicrofiberMoppingForm: React.FC<
             type: "calc" as const,
             qty: form.bathroomCount,
             rate: bathroomRate,
-            total: calc.bathroomTotal,
+            total: calc.standardBathroomPrice,
           }] : []),
           ...(form.hugeBathroomSqFt > 0 ? [{
             label: "Huge Bathrooms",
             type: "calc" as const,
             qty: form.hugeBathroomSqFt,
             rate: hugeBathroomRate,
-            total: calc.hugeBathroomTotal,
+            total: calc.hugeBathroomPrice,
             unit: "sq ft",
           }] : []),
           ...(form.extraAreaSqFt > 0 ? [{
@@ -79,7 +79,7 @@ export const MicrofiberMoppingForm: React.FC<
             type: "calc" as const,
             qty: form.extraAreaSqFt,
             rate: extraAreaRate,
-            total: calc.extraAreaTotal,
+            total: calc.extraAreaPrice,
             unit: "sq ft",
           }] : []),
           ...(form.standaloneSqFt > 0 ? [{

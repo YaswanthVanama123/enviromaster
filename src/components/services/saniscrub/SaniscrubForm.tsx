@@ -276,7 +276,7 @@ export const SaniscrubForm: React.FC<
       </div>
 
       {/* Minimum reminder row with editable minimums */}
-      <div className="svc-row svc-row-note">
+      {/* <div className="svc-row svc-row-note">
         <label></label>
         <div className="svc-row-right">
           <span className="svc-micro-note">
@@ -314,7 +314,7 @@ export const SaniscrubForm: React.FC<
             .
           </span>
         </div>
-      </div>
+      </div> */}
 
       {/* Non-bathroom SaniScrub area with editable rates */}
       <div className="svc-row">

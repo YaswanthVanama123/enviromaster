@@ -7,4 +7,8 @@ export interface GreaseTrapFormState extends BaseServiceFormState {
   sizeOfTraps: number;
   pricePerTrap?: number;
   contractMonths?: number;
+
+  // Editable pricing rates
+  perTrapRate: number;      // Rate per trap
+  perGallonRate: number;    // Rate per gallon
 }

@@ -8,7 +8,12 @@ import { annualFromPerVisit } from "../common/pricingUtils";
 import { GREASE_TRAP_PER_TRAP_RATE, GREASE_TRAP_PER_GALLON_RATE } from "./greaseTrapConfig";
 
 export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
-  const [form, setForm] = useState<GreaseTrapFormState>(initialData);
+  const [form, setForm] = useState<GreaseTrapFormState>({
+    // Set defaults for new rate fields if not provided in initialData
+    perTrapRate: GREASE_TRAP_PER_TRAP_RATE,
+    perGallonRate: GREASE_TRAP_PER_GALLON_RATE,
+    ...initialData
+  });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -29,12 +34,19 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
       if (name === "notes") {
         return { ...prev, notes: value };
       }
+      if (name === "perTrapRate") {
+        return { ...prev, perTrapRate: Number(value) || 0 };
+      }
+      if (name === "perGallonRate") {
+        return { ...prev, perGallonRate: Number(value) || 0 };
+      }
       return prev;
     });
   };
 
   const quote: ServiceQuoteResult = useMemo(() => {
-    const perVisit = (form.numberOfTraps * GREASE_TRAP_PER_TRAP_RATE) + (form.sizeOfTraps * GREASE_TRAP_PER_GALLON_RATE);
+    // Use form values instead of hardcoded constants
+    const perVisit = (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate);
     const annual = annualFromPerVisit(perVisit, form.frequency);
 
     // Calculate monthly based on frequency
@@ -59,8 +71,8 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
       monthlyTotal,
       contractTotal,
       detailsBreakdown: [
-        `Number of traps: ${form.numberOfTraps} @ $${GREASE_TRAP_PER_TRAP_RATE.toFixed(2)}`,
-        `Size of traps (gallons): ${form.sizeOfTraps} @ $${GREASE_TRAP_PER_GALLON_RATE.toFixed(2)}`,
+        `Number of traps: ${form.numberOfTraps} @ $${form.perTrapRate.toFixed(2)}`,
+        `Size of traps (gallons): ${form.sizeOfTraps} @ $${form.perGallonRate.toFixed(2)}`,
         `Frequency: ${form.frequency}`,
       ],
     };

@@ -58,7 +58,7 @@ export const CarpetForm: React.FC<
           type: "calc" as const,
           qty: form.areaSqFt,
           rate: form.firstUnitRate,
-          total: calc.perVisitTotal,
+          total: calc.perVisitCharge,
           unit: "sq ft",
         },
 
@@ -79,7 +79,7 @@ export const CarpetForm: React.FC<
           perVisit: {
             label: "Per Visit Total",
             type: "dollar" as const,
-            amount: calc.perVisitTotal,
+            amount: calc.perVisitCharge,
           },
           monthly: {
             label: "Monthly Total",
@@ -88,7 +88,7 @@ export const CarpetForm: React.FC<
           },
           ...(form.includeInstall && calc.firstMonthTotal > 0 ? {
             firstMonth: {
-              label: "First Month (Install + Service)",
+              label: "First Month",
               type: "dollar" as const,
               amount: calc.firstMonthTotal,
             },

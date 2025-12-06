@@ -39,7 +39,7 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
           label: "Grease Traps",
           type: "calc" as const,
           qty: form.numberOfTraps,
-          rate: GREASE_TRAP_PER_TRAP_RATE,
+          rate: form.perTrapRate || 0,  // Use form value instead of hardcoded constant
           total: quote.perVisitTotal,
         },
 
@@ -151,6 +151,47 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
               <option value="monthly">Monthly</option>
             </select>
           </label>
+
+          {/* Pricing Configuration Section */}
+          <div className="svc-summary">
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Rate per trap</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  name="perTrapRate"
+                  className="svc-in field-rate"
+                  value={form.perTrapRate || 0}
+                  onChange={handleChange}
+                  min={0}
+                  step={0.01}
+                  title="Rate charged per trap (editable)"
+                />
+              </div>
+            </div>
+
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Rate per gallon</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  name="perGallonRate"
+                  className="svc-in field-rate"
+                  value={form.perGallonRate || 0}
+                  onChange={handleChange}
+                  min={0}
+                  step={0.01}
+                  title="Rate charged per gallon (editable)"
+                />
+              </div>
+            </div>
+          </div>
 
           <label className="svc-label">
             Notes

@@ -88,21 +88,21 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             type: "calc" as const,
             qty: state.standardDrainCount,
             rate: stdRate,
-            total: breakdown.standardWeekly,
+            total: breakdown.weeklyStandardDrains,
           }] : []),
           ...(state.greaseTrapCount > 0 ? [{
             label: "Grease Trap Drains",
             type: "calc" as const,
             qty: state.greaseTrapCount,
             rate: greaseRate,
-            total: breakdown.greaseTrapWeekly,
+            total: breakdown.weeklyGreaseTraps,
           }] : []),
           ...(state.greenDrainCount > 0 ? [{
             label: "Green Drains",
             type: "calc" as const,
             qty: state.greenDrainCount,
             rate: greenRate,
-            total: breakdown.greenWeekly,
+            total: breakdown.weeklyGreenDrains,
           }] : []),
         ],
 
@@ -425,7 +425,18 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     }
                   }}
                 />{" "}
-                Plumbing (+$10/drain) – Drains:{" "}
+                Plumbing (+$
+                <input
+                  type="number"
+                  min={0}
+                  step={0.01}
+                  className="svc-in field-rate"
+                  style={{ width: "60px", display: "inline-block", margin: "0 2px" }}
+                  value={state.plumbingAddonRate}
+                  onChange={(e) => updateField("plumbingAddonRate", parseFloat(e.target.value) || 0)}
+                  title="Plumbing addon rate per drain (editable)"
+                />
+                /drain) – Drains:{" "}
                 {state.needsPlumbing && (
                   <input
                     type="number"
@@ -543,7 +554,18 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   )
                 }
               />{" "}
-              Grease Trap Install (min $300 if possible)
+              Grease Trap Install (min $
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                className="svc-in field-rate"
+                style={{ width: "80px", display: "inline-block", margin: "0 2px" }}
+                value={state.greaseInstallRate}
+                onChange={(e) => updateField("greaseInstallRate", parseFloat(e.target.value) || 0)}
+                title="Grease trap installation rate per trap (editable)"
+              />
+              if possible)
             </label>
           </div>
         </div>

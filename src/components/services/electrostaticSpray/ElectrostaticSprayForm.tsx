@@ -190,49 +190,103 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               value={form.pricingMethod}
               onChange={onChange}
             >
-              <option value="byRoom">By Room ($20 per room)</option>
-              <option value="bySqFt">By Square Feet ($50 per 1000 sq ft)</option>
+              <option value="byRoom">By Room (${form.ratePerRoom.toFixed(2)} per room)</option>
+              <option value="bySqFt">By Square Feet (${form.ratePerThousandSqFt.toFixed(2)} per 1000 sq ft)</option>
             </select>
           </div>
         </div>
 
-        {/* Room Count (if by room) */}
-        {form.pricingMethod === "byRoom" && (
-          <div className="svc-row">
-            <div className="svc-label">
-            <span>Room Count</span>
-            </div>
-            <div className="svc-field">
-              <input
-                type="number"
-                name="roomCount"
-                min={0}
-                className="svc-in sm"
-                value={form.roomCount}
-                onChange={onChange}
-              />
-            </div>
-          </div>
-        )}
 
-        {/* Square Feet (if by sq ft) */}
-        {form.pricingMethod === "bySqFt" && (
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Square Feet</span>
-            </div>
-            <div className="svc-field">
-              <input
-                type="number"
-                name="squareFeet"
-                min={0}
-                className="svc-in sm"
-                value={form.squareFeet}
-                onChange={onChange}
-              />
-            </div>
+        {/* Calculation Breakdown */}
+        <div className="svc-summary">
+          <div className="svc-row" style={{ marginBottom: '5px' }}>
+            {/* <div className="svc-label">
+              <span style={{ color: '#28a745', fontSize: '0.85em' }}>💡 Tip: Rate fields below are editable</span>
+            </div> */}
           </div>
-        )}
+          {form.pricingMethod === "byRoom" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Room Calculation</span>
+              </div>
+              <div className="svc-field">
+                <div className="svc-inline">
+                  <input
+                    type="number"
+                    name="roomCount"
+                    min={0}
+                    className="svc-in field-qty"
+                    value={form.roomCount}
+                    onChange={onChange}
+                    title="Number of rooms"
+                  />
+                  <span>@</span>
+                  <input
+                    type="number"
+                    name="ratePerRoom"
+                    min={0}
+                    step={0.01}
+                    className="svc-in field-rate"
+                    value={form.ratePerRoom}
+                    onChange={onChange}
+                    title="Rate per room (editable - changes calculation)"
+                    style={{ backgroundColor: '#f8f9fa', borderColor: '#28a745' }}
+                  />
+                  <span>=</span>
+                  <input
+                    readOnly
+                    className="svc-in field-qty"
+                    value={fmt(calc.serviceCharge)}
+                    title="Total service charge"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {form.pricingMethod === "bySqFt" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Square Feet Calculation</span>
+              </div>
+              <div className="svc-field">
+                <div className="svc-inline">
+                  <input
+                    type="number"
+                    name="squareFeet"
+                    min={0}
+                    className="svc-in field-qty"
+                    value={form.squareFeet}
+                    onChange={onChange}
+                    title="Total square feet"
+                  />
+                  <span>@</span>
+                  <input
+                    type="number"
+                    name="ratePerThousandSqFt"
+                    min={0}
+                    step={0.01}
+                    className="svc-in field-rate"
+                    value={form.ratePerThousandSqFt}
+                    onChange={onChange}
+                    title="Rate per 1000 sq ft (editable - changes calculation)"
+                    style={{ backgroundColor: '#f8f9fa', borderColor: '#28a745' }}
+                  />
+                  <span>=</span>
+                  <input
+                    readOnly
+                    className="svc-in field-qty"
+                    value={fmt(calc.serviceCharge)}
+                    title="Total service charge"
+                  />
+                </div>
+                {/* <div className="svc-note" style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                  Rate applies per 1000 sq ft ({(form.squareFeet / 1000).toFixed(2)} units)
+                </div> */}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Frequency */}
         <div className="svc-row">
@@ -290,6 +344,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         </div>
 
+
+
         {/* Value Proposition Info */}
         <div className="svc-row">
           <div className="svc-label">
@@ -316,6 +372,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 readOnly
                 className="svc-in sm"
                 value={fmt(calc.serviceCharge)}
+                title="Calculated service charge (based on quantity × rate)"
               />
             </div>
           </div>

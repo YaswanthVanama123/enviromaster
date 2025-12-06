@@ -147,7 +147,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       effectiveRate = form.ratePerThousandSqFt;
     }
 
-    // Trip charge (0 if combined with Sani-Clean)
+    // Trip charge (0 if combined with Sani-Clean, otherwise use editable rate)
     const tripCharge = form.isCombinedWithSaniClean ? 0 : form.tripChargePerVisit;
 
     // Per visit total

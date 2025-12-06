@@ -48,7 +48,7 @@ export const StripWaxForm: React.FC<
           type: "calc" as const,
           qty: form.floorAreaSqFt,
           rate: form.ratePerSqFt,
-          total: calc.perVisitPrice,
+          total: calc.perVisit,
           unit: "sq ft",
         },
 
@@ -56,12 +56,12 @@ export const StripWaxForm: React.FC<
           perVisit: {
             label: "Per Visit Price",
             type: "dollar" as const,
-            amount: calc.perVisitPrice,
+            amount: calc.perVisit,
           },
           annual: {
             label: "Annual Price",
             type: "dollar" as const,
-            amount: calc.annualPrice,
+            amount: calc.annual,
           },
         },
 
