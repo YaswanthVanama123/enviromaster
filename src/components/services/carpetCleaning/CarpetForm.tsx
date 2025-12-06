@@ -171,7 +171,7 @@ export const CarpetForm: React.FC<
         <label>Carpet Area</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="areaSqFt"
             value={form.areaSqFt}
@@ -182,7 +182,7 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               min={0}
               step={0.01}
@@ -194,7 +194,7 @@ export const CarpetForm: React.FC<
           </div>
           {/* <span className="svc-small">/ 500 sq ft</span> */}
           <span>=</span>
-          <div className="svc-dollar">
+          <div className="svc-dollar field-qty">
             <span>$</span>
             <input
               className="svc-in-box"
@@ -212,8 +212,8 @@ export const CarpetForm: React.FC<
             />
           </div>
           {/* <span className="svc-small">(min $</span> */}
-          <input
-            className="svc-in"
+          {/* <input
+            className="svc-in field-qty"
             type="number"
             min={0}
             step={0.01}
@@ -221,9 +221,8 @@ export const CarpetForm: React.FC<
             value={form.perVisitMinimum}
             onChange={onChange}
             title="Minimum per visit (from backend, editable)"
-            style={{ width: 70 }}
           />
-          <span>)</span>
+          <span>)</span> */}
         </div>
       </div>
 

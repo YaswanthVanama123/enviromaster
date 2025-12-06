@@ -349,7 +349,7 @@ export const SanicleanForm: React.FC<
         <label>Sinks</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="sinks"
             value={form.sinks}
@@ -358,7 +358,7 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             key={`sinks-rate-${form.pricingMode}-${form.location}`}
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
@@ -368,7 +368,7 @@ export const SanicleanForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="text"
             readOnly
             value={formatMoney(form.sinks * baseRateDisplay)}
@@ -381,7 +381,7 @@ export const SanicleanForm: React.FC<
         <label>Urinals</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="urinals"
             value={form.urinals}
@@ -390,7 +390,7 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             key={`urinals-rate-${form.pricingMode}-${form.location}`}
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
@@ -400,7 +400,7 @@ export const SanicleanForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="text"
             readOnly
             value={formatMoney(form.urinals * baseRateDisplay)}
@@ -413,7 +413,7 @@ export const SanicleanForm: React.FC<
         <label>Male Toilets</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="maleToilets"
             value={form.maleToilets}
@@ -422,7 +422,7 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             key={`maletoilets-rate-${form.pricingMode}-${form.location}`}
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
@@ -432,7 +432,7 @@ export const SanicleanForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="text"
             readOnly
             value={formatMoney(form.maleToilets * baseRateDisplay)}
@@ -445,7 +445,7 @@ export const SanicleanForm: React.FC<
         <label>Female Toilets</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="femaleToilets"
             value={form.femaleToilets}
@@ -454,7 +454,7 @@ export const SanicleanForm: React.FC<
           <span>@</span>
           <input
             key={`femaletoilets-rate-${form.pricingMode}-${form.location}`}
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name={shouldShowAllInclusiveRate ? "allInclusiveWeeklyRate" : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
@@ -464,7 +464,7 @@ export const SanicleanForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="text"
             readOnly
             value={formatMoney(form.femaleToilets * baseRateDisplay)}
@@ -497,10 +497,10 @@ export const SanicleanForm: React.FC<
       <div className="svc-row">
         <label>Luxury Upgrade</label>
         <div className="svc-row-right">
-          <input className="svc-in" type="text" readOnly value={soapDispensers} />
+          <input className="svc-in field-qty" type="text" readOnly value={soapDispensers} />
           <span>@</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name="standardToLuxuryRate"
@@ -511,7 +511,7 @@ export const SanicleanForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="text"
             readOnly
             value={formatMoney(luxuryUpgradeWeekly)}
@@ -524,7 +524,7 @@ export const SanicleanForm: React.FC<
         <label>Extra Soap</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="excessSoapGallonsPerWeek"
             value={form.excessSoapGallonsPerWeek}
@@ -532,7 +532,7 @@ export const SanicleanForm: React.FC<
           />
           <span>@</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name={form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate"}
@@ -542,7 +542,7 @@ export const SanicleanForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="text"
             readOnly
             value={formatMoney(extraSoapWeekly)}
@@ -556,7 +556,7 @@ export const SanicleanForm: React.FC<
         <div className="svc-row-right">
           {isAllInclusive ? (
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="text"
               readOnly
               value="Included (fees waived in All-Inclusive)"
@@ -564,14 +564,14 @@ export const SanicleanForm: React.FC<
           ) : (
             <>
               <input
-                className="svc-in"
+                className="svc-in field-qty"
                 type="text"
                 readOnly
                 value={dispenserCount}
               />
               <span>@</span>
               <input
-                className="svc-in"
+                className="svc-in field-qty"
                 type="number"
                 step="0.01"
                 name="warrantyFeePerDispenser"
@@ -581,7 +581,7 @@ export const SanicleanForm: React.FC<
               />
               <span>=</span>
               <input
-                className="svc-in"
+                className="svc-in field-qty"
                 type="text"
                 readOnly
                 value={formatMoney(weeklyWarrantyDisplay)}
@@ -603,14 +603,14 @@ export const SanicleanForm: React.FC<
               <label>Urinal Components (screens + mats)</label>
               <div className="svc-row-right">
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={form.urinals}
                 />
                 <span>@</span>
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={formatMoney(form.urinalScreenRate + form.urinalMatRate)}
@@ -618,7 +618,7 @@ export const SanicleanForm: React.FC<
                 />
                 <span>=</span>
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={formatMoney(form.urinals * (form.urinalScreenRate + form.urinalMatRate))}
@@ -632,14 +632,14 @@ export const SanicleanForm: React.FC<
               <label>Male Toilet Components (clips + covers)</label>
               <div className="svc-row-right">
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={form.maleToilets}
                 />
                 <span>@</span>
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={formatMoney(form.toiletClipsRate + form.seatCoverDispenserRate)}
@@ -647,7 +647,7 @@ export const SanicleanForm: React.FC<
                 />
                 <span>=</span>
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={formatMoney(form.maleToilets * (form.toiletClipsRate + form.seatCoverDispenserRate))}
@@ -661,14 +661,14 @@ export const SanicleanForm: React.FC<
               <label>Female Toilet Components (SaniPods)</label>
               <div className="svc-row-right">
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={form.femaleToilets}
                 />
                 <span>@</span>
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={formatMoney(form.sanipodServiceRate)}
@@ -676,7 +676,7 @@ export const SanicleanForm: React.FC<
                 />
                 <span>=</span>
                 <input
-                  className="svc-in"
+                  className="svc-in field-qty"
                   type="text"
                   readOnly
                   value={formatMoney(form.femaleToilets * form.sanipodServiceRate)}
@@ -714,7 +714,7 @@ export const SanicleanForm: React.FC<
           <label>Microfiber Mopping</label>
           <div className="svc-row-right">
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="text"
               readOnly
               value="Included in All-Inclusive bundle"
@@ -735,7 +735,7 @@ export const SanicleanForm: React.FC<
               <span>Include</span>
             </label>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               name="microfiberBathrooms"
               disabled={!form.addMicrofiberMopping}
@@ -744,7 +744,7 @@ export const SanicleanForm: React.FC<
             />
             <span>@</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="microfiberMoppingPerBathroom"
@@ -755,7 +755,7 @@ export const SanicleanForm: React.FC<
             />
             <span>=</span>
             <input
-              className="svc-in"
+              className="svc-i field-qty"
               type="text"
               readOnly
               value={formatMoney(

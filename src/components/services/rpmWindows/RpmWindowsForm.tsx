@@ -252,7 +252,7 @@ export const RpmWindowsForm: React.FC<
         <label>Small Windows</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             name="smallQty"
             type="number"
             value={form.smallQty}
@@ -260,7 +260,7 @@ export const RpmWindowsForm: React.FC<
           />
           <span>@</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             name="smallWindowRate"
             type="number"
             step="0.01"
@@ -270,7 +270,7 @@ export const RpmWindowsForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             name="customSmallTotal"
             type="number"
             step="0.01"
@@ -292,7 +292,7 @@ export const RpmWindowsForm: React.FC<
         <label>Medium Windows</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             name="mediumQty"
             type="number"
             value={form.mediumQty}
@@ -300,7 +300,7 @@ export const RpmWindowsForm: React.FC<
           />
           <span>@</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             name="mediumWindowRate"
             type="number"
             step="0.01"
@@ -310,7 +310,7 @@ export const RpmWindowsForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             name="customMediumTotal"
             type="number"
             step="0.01"
@@ -332,7 +332,7 @@ export const RpmWindowsForm: React.FC<
         <label>Large Windows</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             name="largeQty"
             type="number"
             value={form.largeQty}
@@ -340,7 +340,7 @@ export const RpmWindowsForm: React.FC<
           />
           <span>@</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             name="largeWindowRate"
             type="number"
             step="0.01"
@@ -350,7 +350,7 @@ export const RpmWindowsForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             name="customLargeTotal"
             type="number"
             step="0.01"

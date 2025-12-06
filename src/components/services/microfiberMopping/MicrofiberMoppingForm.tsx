@@ -332,7 +332,7 @@ export const MicrofiberMoppingForm: React.FC<
         <label>Standard Bathrooms</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="bathroomCount"
             value={form.bathroomCount}
@@ -345,7 +345,7 @@ export const MicrofiberMoppingForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="includedBathroomRate"
@@ -355,7 +355,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             type="number"
             step="0.01"
             name="customStandardBathroomTotal"
@@ -378,7 +378,7 @@ export const MicrofiberMoppingForm: React.FC<
         <label>Huge Bathroom (sq ft)</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="hugeBathroomSqFt"
             value={form.hugeBathroomSqFt}
@@ -389,7 +389,7 @@ export const MicrofiberMoppingForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="hugeBathroomRatePerSqFt"
@@ -400,7 +400,7 @@ export const MicrofiberMoppingForm: React.FC<
           {/* <span className="svc-small">per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span> */}
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             type="number"
             step="0.01"
             name="customHugeBathroomTotal"
@@ -423,7 +423,7 @@ export const MicrofiberMoppingForm: React.FC<
         <label>Extra non-bathroom(sq ft)</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="extraAreaSqFt"
             value={form.extraAreaSqFt}
@@ -434,7 +434,7 @@ export const MicrofiberMoppingForm: React.FC<
           <div className="svc-row-right">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="extraAreaRatePerUnit"
@@ -446,7 +446,7 @@ export const MicrofiberMoppingForm: React.FC<
           {/* <span className="svc-small">per {cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft</span> */}
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             type="number"
             step="0.01"
             name="customExtraAreaTotal"
@@ -472,7 +472,7 @@ export const MicrofiberMoppingForm: React.FC<
         <label>Standalone microfiber mopping (sq ft)</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="standaloneSqFt"
             value={form.standaloneSqFt}
@@ -483,7 +483,7 @@ export const MicrofiberMoppingForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="standaloneRatePerUnit"
@@ -494,7 +494,7 @@ export const MicrofiberMoppingForm: React.FC<
           {/* <span className="svc-small">per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span> */}
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             type="number"
             step="0.01"
             name="customStandaloneTotal"
@@ -573,7 +573,7 @@ export const MicrofiberMoppingForm: React.FC<
         <label>Daily mop chemical (gallons / month)</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="chemicalGallons"
             value={form.chemicalGallons}
@@ -583,7 +583,7 @@ export const MicrofiberMoppingForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="dailyChemicalPerGallon"
@@ -593,7 +593,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             type="number"
             step="0.01"
             name="customChemicalTotal"

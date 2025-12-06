@@ -266,7 +266,7 @@
 
 .svc-row{
   display:grid;
-  grid-template-columns:max-content minmax(0,1fr);
+  grid-template-columns:max-content auto;
   align-items:end;
   column-gap:10px;
   margin:10px 0;
@@ -297,13 +297,46 @@
   min-width:40px;
 }
 
+/* Semantic field width classes based on field purpose */
+
+/* Calculation and input fields */
+.calc-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
+.qty-field { width: 60px !important; min-width: 60px; box-sizing: border-box; }
+.rate-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
+
+/* Total and result fields */
+.total-field { width: 100px !important; min-width: 100px; box-sizing: border-box; }
+.per-visit-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
+.weekly-total-field { width: 90px !important; min-width: 90px; box-sizing: border-box; }
+.monthly-total-field { width: 100px !important; min-width: 100px; box-sizing: border-box; }
+.contract-total-field { width: 120px !important; min-width: 120px; box-sizing: border-box; }
+
+/* Dollar amount fields */
+.dollar-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
+.price-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
+
+/* Configuration fields */
+.config-field { width: 50px !important; min-width: 50px; box-sizing: border-box; }
+.count-field { width: 60px !important; min-width: 60px; box-sizing: border-box; }
+
+/* Special purpose fields */
+.percentage-field { width: 60px !important; min-width: 60px; box-sizing: border-box; }
+.multiplier-field { width: 50px !important; min-width: 50px; box-sizing: border-box; }
+
+/* Legacy classes - remove after migration */
+.field-qty { width: 60px !important; min-width: 60px; box-sizing: border-box; }
+.field-rate { width: 80px !important; min-width: 80px; box-sizing: border-box; }
+.field-total { width: 90px !important; min-width: 90px; box-sizing: border-box; }
+.field-config { width: 50px !important; min-width: 50px; box-sizing: border-box; }
+.field-medium { width: 70px !important; min-width: 70px; box-sizing: border-box; }
+
 .svc-in{
-  border:none; border-bottom:2px solid #000; height:22px; background:transparent; outline:none; padding:0 4px; font-size:14px; min-width:0; box-sizing:border-box;
+  border:none; border-bottom:2px solid #000; height:22px; background:transparent; outline:none; padding:0 4px; font-size:14px; min-width:60px; box-sizing:border-box; max-width:150px;
 }
 .svc-in:focus{ border-bottom-color:#c20000; }
 
 .svc-in-box, .svc-dollar input{
-  border:none; border-bottom:2px solid #000; background:transparent; outline:none; font-size:14px; height:28px; width:100%; box-sizing:border-box; min-width:0;
+  border:none; border-bottom:2px solid #000; background:transparent; outline:none; font-size:14px; height:28px; width:auto; max-width:150px; box-sizing:border-box; min-width:60px;
 }
 .svc-row-charge .svc-dollar input{ border-bottom:2px solid #c20000; }
 

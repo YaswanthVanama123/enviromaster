@@ -150,7 +150,7 @@ export const StripWaxForm: React.FC<
         <label>Floor Area</label>
         <div className="svc-row-right">
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             min={0}
             step={1}
@@ -162,7 +162,7 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in svc-in-small"
+              className="svc-in svc-in-small field-qty"
               type="number"
               min={0}
               step={0.01}

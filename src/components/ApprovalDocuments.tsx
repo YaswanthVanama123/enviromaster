@@ -6,6 +6,7 @@ import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faEye, faDownload, faEnvelope, faSave } from "@fortawesome/free-solid-svg-icons";
+import { shareViaPdf, createPdfEmailData } from "../utils/webmailService";
 import "./ApprovalDocuments.css";
 
 type FileStatus =
@@ -227,16 +228,34 @@ export default function ApprovalDocuments() {
 
   // ---- Email handler ----
   const handleEmail = (doc: Document) => {
-    const subject = encodeURIComponent(
-      `${doc.fileName || "Customer Header Document"} - Approval Request`
-    );
-    const downloadUrl = pdfApi.getPdfDownloadUrl(doc.id);
-    const body = encodeURIComponent(
-      `Hello,\n\nPlease review the following customer header document for approval.\n\nDocument: ${doc.fileName}\nStatus: ${STATUS_LABEL[doc.status]}\nUpdated: ${timeAgo(doc.updatedAt)}\n\nYou can download the PDF here:\n${downloadUrl}\n\nBest regards`
-    );
+    try {
+      const downloadUrl = pdfApi.getPdfDownloadUrl(doc.id);
 
-    // Open email client with pre-filled content
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      // Create email data using the webmail service utility
+      const emailData = createPdfEmailData({
+        fileName: doc.fileName,
+        status: STATUS_LABEL[doc.status],
+        downloadUrl: downloadUrl,
+        isApprovalRequest: true,
+        updatedAt: timeAgo(doc.updatedAt)
+      });
+
+      // Share via webmail (opens in new tab with fallback to mailto)
+      shareViaPdf(emailData);
+
+      // Show success message
+      setToastMessage({
+        message: "Opening webmail compose window...",
+        type: "success"
+      });
+
+    } catch (error) {
+      console.error("Error opening email:", error);
+      setToastMessage({
+        message: "Unable to open email. Please try again.",
+        type: "error"
+      });
+    }
   };
 
   // Show nothing while checking auth

@@ -352,7 +352,7 @@ export const JanitorialForm: React.FC<
         <label>Dusting (places)</label>
         <div className="svc-row-right">
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             min={0}
             step={1}
@@ -365,7 +365,7 @@ export const JanitorialForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in svc-in-small"
+              className="svc-in svc-in-small field-qty"
               type="number"
               min={0}
               step={0.01}
@@ -399,7 +399,7 @@ export const JanitorialForm: React.FC<
             onChange={onChange}
           />
           <span className="svc-small">
-            Extra sweeping, spot mopping, small wipe-downs, etc.
+            Extra sweeping, spot mopping, small wipe-downs.
           </span>
         </div>
       </div>

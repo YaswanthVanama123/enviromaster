@@ -359,7 +359,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         <label>SaniPods</label>
         <div className="svc-row-right">
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             min={0}
             name="podQuantity"
@@ -369,7 +369,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           />
           <span className="svc-multi">@</span>
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             step="0.01"
             name="customWeeklyPodRate"
@@ -386,7 +386,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-small">$/wk</span>
           <span className="svc-eq">=</span>
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             step="0.01"
             name="customPodServiceTotal"
@@ -413,7 +413,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         <label>Extra Bags</label>
         <div className="svc-row-right">
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             min={0}
             name="extraBagsPerWeek"
@@ -422,7 +422,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           />
           <span className="svc-multi">@</span>
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             step="0.01"
             name="extraBagPrice"
@@ -432,7 +432,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-small">{bagUnitLabel}</span>
           <span className="svc-eq">=</span>
           <input
-            className="svc-in svc-in-small"
+            className="svc-in svc-in-small field-qty"
             type="number"
             step="0.01"
             name="customExtraBagsTotal"

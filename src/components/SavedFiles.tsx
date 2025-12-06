@@ -5,6 +5,7 @@ import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import { shareViaPdf, createPdfEmailData } from "../utils/webmailService";
 import "./SavedFiles.css";
 
 type FileStatus =
@@ -290,16 +291,33 @@ export default function SavedFiles() {
 
   // ---- Email handler ----
   const handleEmail = (file: SavedFile) => {
-    const subject = encodeURIComponent(
-      `${file.fileName || "Customer Header Document"}`
-    );
-    const downloadUrl = pdfApi.getPdfDownloadUrl(file.id);
-    const body = encodeURIComponent(
-      `Hello,\n\nPlease find the attached customer header document.\n\nDocument: ${file.fileName}\nStatus: ${STATUS_LABEL[file.status]}\n\nYou can download the PDF here:\n${downloadUrl}\n\nBest regards`
-    );
+    try {
+      const downloadUrl = pdfApi.getPdfDownloadUrl(file.id);
 
-    // Open email client with pre-filled content
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      // Create email data using the webmail service utility
+      const emailData = createPdfEmailData({
+        fileName: file.fileName,
+        status: STATUS_LABEL[file.status],
+        downloadUrl: downloadUrl,
+        isApprovalRequest: false
+      });
+
+      // Share via webmail (opens in new tab with fallback to mailto)
+      shareViaPdf(emailData);
+
+      // Show success message
+      setToastMessage({
+        message: "Opening webmail compose window...",
+        type: "success"
+      });
+
+    } catch (error) {
+      console.error("Error opening email:", error);
+      setToastMessage({
+        message: "Unable to open email. Please try again.",
+        type: "error"
+      });
+    }
   };
 
   // ---- Edit handler ----

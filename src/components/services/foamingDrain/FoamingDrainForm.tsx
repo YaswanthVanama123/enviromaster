@@ -377,8 +377,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <input
                 type="number"
                 min={0}
-                className="svc-in sm"
-                style={{ width: 80 }}
+                className="svc-in field-rate"
                 value={state.filthyDrainCount}
                 onChange={handleNumberChange("filthyDrainCount")}
               />{" "}
@@ -431,8 +430,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   <input
                     type="number"
                     min={0}
-                    className="svc-in sm"
-                    style={{ width: 70 }}
+                    className="svc-in field-medium"
                     value={state.plumbingDrainCount}
                     onChange={handleNumberChange("plumbingDrainCount")}
                   />
@@ -469,8 +467,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   type="number"
                   min={0}
                   step={0.01}
-                  className="svc-in sm"
-                  style={{ width: 60 }}
+                  className="svc-in field-qty"
+                  className="svc-in field-qty"
                   value={state.altBaseCharge}
                   onChange={(e) => updateField("altBaseCharge", parseFloat(e.target.value) || 0)}
                   title="Alt base charge (from backend)"
@@ -480,8 +478,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   type="number"
                   min={0}
                   step={0.01}
-                  className="svc-in sm"
-                  style={{ width: 60 }}
+                  className="svc-in field-qty"
+                  className="svc-in field-qty"
                   value={state.altExtraPerDrain}
                   onChange={(e) => updateField("altExtraPerDrain", parseFloat(e.target.value) || 0)}
                   title="Alt per drain charge (from backend)"
@@ -564,8 +562,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <input
                   type="number"
                   min={0}
-                  className="svc-in sm"
-                  style={{ width: 60 }}
+                  className="svc-in field-qty"
                   value={stdQty}
                   onChange={handleNumberChange("standardDrainCount")}
                 />
@@ -576,8 +573,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   type="number"
                   min={0}
                   step={0.01}
-                  className="svc-in sm"
-                  style={{ width: 80 }}
+                  className="svc-in field-rate"
                   value={stdRate > 0 ? stdRate.toFixed(2) : state.standardDrainRate}
                   onChange={(e) => {
                     // Allow editing the effective rate
@@ -594,8 +590,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* TOTAL = AUTO (read-only) */}
                 <input
                   readOnly
-                  className="svc-in sm"
-                  style={{ width: 90 }}
+                  className="svc-in-box weekly-total-field"
                   value={formatAmount(stdTotal)}
                 />
               </div>
@@ -631,8 +626,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     type="number"
                     min={0}
                     max={state.standardDrainCount}
-                    className="svc-in sm"
-                    style={{ width: 60 }}
+                    className="svc-in field-qty"
+                    className="svc-in field-qty"
                     value={state.installDrainCount}
                     onChange={handleNumberChange("installDrainCount")}
                   />
@@ -642,8 +637,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     type="number"
                     min={0}
                     step={0.01}
-                    className="svc-in sm"
-                    style={{ width: 80 }}
+                    className="svc-in field-qty"
+                    
                     value={state.frequency === "weekly" ? state.volumeWeeklyRate : state.volumeBimonthlyRate}
                     onChange={(e) => updateField(
                       state.frequency === "weekly" ? "volumeWeeklyRate" : "volumeBimonthlyRate",
@@ -655,8 +650,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   {/* TOTAL weekly cost for install drains */}
                   <input
                     readOnly
-                    className="svc-in sm"
-                    style={{ width: 90 }}
+                    className="svc-in field-qty"
+                    
                     value={formatAmount(installTotal)}
                   />
                   {/* <span className="svc-note" style={{ marginLeft: 4 }}>
@@ -679,8 +674,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <input
                   type="number"
                   min={0}
-                  className="svc-in sm"
-                  style={{ width: 60 }}
+                  className="svc-in field-qty"
+                  className="svc-in field-qty"
                   value={state.greaseTrapCount}
                   onChange={handleNumberChange("greaseTrapCount")}
                 />
@@ -690,8 +685,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   type="number"
                   min={0}
                   step={0.01}
-                  className="svc-in sm"
-                  style={{ width: 80 }}
+                  className="svc-in field-qty"
+                  
                   value={state.greaseWeeklyRate}
                   onChange={(e) => updateField("greaseWeeklyRate", parseFloat(e.target.value) || 0)}
                   title="Grease trap weekly rate (from backend)"
@@ -700,8 +695,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* TOTAL */}
                 <input
                   readOnly
-                  className="svc-in sm"
-                  style={{ width: 90 }}
+                  className="svc-in field-qty"
+                  
                   value={formatAmount(greaseTotal)}
                 />
               </div>
@@ -719,8 +714,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <input
                   type="number"
                   min={0}
-                  className="svc-in sm"
-                  style={{ width: 60 }}
+                  className="svc-in field-qty"
+                  className="svc-in field-qty"
                   value={state.greenDrainCount}
                   onChange={handleNumberChange("greenDrainCount")}
                 />
@@ -730,8 +725,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   type="number"
                   min={0}
                   step={0.01}
-                  className="svc-in sm"
-                  style={{ width: 80 }}
+                  className="svc-in field-qty"
+                  
                   value={state.greenWeeklyRate}
                   onChange={(e) => updateField("greenWeeklyRate", parseFloat(e.target.value) || 0)}
                   title="Green drain weekly rate (from backend)"
@@ -740,8 +735,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* TOTAL */}
                 <input
                   readOnly
-                  className="svc-in sm"
-                  style={{ width: 90 }}
+                  className="svc-in field-qty"
+                  
                   value={formatAmount(greenTotal)}
                 />
               </div>
@@ -769,7 +764,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 readOnly
-                className="svc-in sm"
+                className="svc-in field-qty"
                 value={formatAmount(quote.weeklyService)}
               />
             </div>
@@ -783,7 +778,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                className="svc-in sm"
+                className="svc-in field-qty"
                 type="number"
                 value={tripInputValue}
                 readOnly
@@ -800,7 +795,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 readOnly
-                className="svc-in sm"
+                className="svc-in weekly-total-field"
                 value={formatAmount(quote.weeklyTotal)}
               />
             </div>
@@ -813,7 +808,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
             <div className="svc-field">
               <select
-                className="svc-in sm"
+                className="svc-in field-qty"
                 value={state.contractMonths}
                 onChange={(e) =>
                   updateField(
@@ -849,7 +844,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 readOnly
-                className="svc-in sm"
+                className="svc-in field-qty"
                 value={formatAmount(quote.firstMonthPrice)}
               />
             </div>
@@ -864,7 +859,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 readOnly
-                className="svc-in sm"
+                className="svc-in monthly-total-field"
                 value={formatAmount(quote.monthlyRecurring)}
               />
             </div>
@@ -882,7 +877,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 readOnly
-                className="svc-in sm"
+                className="svc-in contract-total-field"
                 // annualRecurring now holds the contract total, NOT annual
                 value={formatAmount(quote.annualRecurring)}
               />
@@ -898,7 +893,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 readOnly
-                className="svc-in sm"
+                className="svc-in total-field"
                 value={formatAmount(quote.installation)}
               />
             </div>

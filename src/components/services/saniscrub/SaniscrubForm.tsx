@@ -246,7 +246,7 @@ export const SaniscrubForm: React.FC<
         <label>Restroom Fixtures</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="fixtureCount"
             value={form.fixtureCount}
@@ -254,7 +254,7 @@ export const SaniscrubForm: React.FC<
           />
           <span>@</span>
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             step="0.01"
             name={fixtureRateFieldName}
@@ -263,7 +263,7 @@ export const SaniscrubForm: React.FC<
           />
           <span>=</span>
           <input
-            className="svc-in-box"
+            className="svc-in-box field-qty"
             type="text"
             readOnly
             value={
@@ -280,7 +280,7 @@ export const SaniscrubForm: React.FC<
         <label></label>
         <div className="svc-row-right">
           <span className="svc-micro-note">
-            Minimums (fixtures): Monthly = $
+            Minimum per Monthly = $
             <input
               className="svc-in svc-in-small"
               type="number"
@@ -288,7 +288,7 @@ export const SaniscrubForm: React.FC<
               name="minimumMonthly"
               value={form.minimumMonthly.toFixed(2)}
               onChange={onChange}
-              style={{ width: "60px", display: "inline" }}
+              className="field-qty" style={{ display: "inline" }}
             />
             {" · "}
             Bi-Monthly/Quarterly = $
@@ -299,17 +299,17 @@ export const SaniscrubForm: React.FC<
               name="minimumBimonthly"
               value={form.minimumBimonthly.toFixed(2)}
               onChange={onChange}
-              style={{ width: "60px", display: "inline" }}
+              className="field-qty" style={{ display: "inline" }}
             />
             . 2× / Month with SaniClean is priced as 2× Monthly − $
             <input
-              className="svc-in svc-in-small"
+              className="svc-in percentage-field"
               type="number"
               step="0.01"
               name="twoTimesPerMonthDiscount"
               value={form.twoTimesPerMonthDiscount.toFixed(2)}
               onChange={onChange}
-              style={{ width: "50px", display: "inline" }}
+              style={{ display: "inline" }}
             />
             .
           </span>
@@ -321,7 +321,7 @@ export const SaniscrubForm: React.FC<
         <label>Non-Bathroom Area</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in field-qty"
             type="number"
             name="nonBathroomSqFt"
             value={form.nonBathroomSqFt}
@@ -332,7 +332,7 @@ export const SaniscrubForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
+              className="svc-in field-qty"
               type="number"
               step="0.01"
               name="nonBathroomAdditionalUnitRate"
@@ -343,7 +343,7 @@ export const SaniscrubForm: React.FC<
           </div>
           <span className="svc-small">/ 500 sq ft</span>
           <span>=</span>
-          <div className="svc-dollar">
+          <div className="svc-dollar field-qty">
             <span>$</span>
             <input
               className="svc-in-box"
@@ -444,25 +444,25 @@ export const SaniscrubForm: React.FC<
             />
             <span>Dirty (</span>
             <input
-              className="svc-in svc-in-small"
+              className="svc-in multiplier-field"
               type="number"
               step="0.01"
               name="installMultiplierDirty"
               value={form.installMultiplierDirty.toFixed(2)}
               onChange={onChange}
-              style={{ width: "50px", display: "inline" }}
+              style={{ display: "inline" }}
             />
             <span>×)</span>
           </label>
           <span className="svc-small">or Clean (</span>
           <input
-            className="svc-in svc-in-small"
+            className="svc-in multiplier-field"
             type="number"
             step="0.01"
             name="installMultiplierClean"
             value={form.installMultiplierClean.toFixed(2)}
             onChange={onChange}
-            style={{ width: "50px", display: "inline" }}
+            style={{ display: "inline" }}
           />
           <span className="svc-small">×)</span>
         </div>
