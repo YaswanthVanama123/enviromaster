@@ -117,30 +117,43 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
 /** Per Worker rule:
  *  Workers × perWorkerRate (NO trip charge here - applied at visit level).
  *  Returns the labour cost only. Uses backend rate when available.
+ *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcPerWorker(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
   const perWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200;
-  return (state.workers || 0) * perWorkerRate;
+  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? 475;
+
+  const calculatedAmount = (state.workers || 0) * perWorkerRate;
+
+  // Apply minimum if calculated amount is below minimum
+  return Math.max(calculatedAmount, minimumVisit);
 }
 
 /** Per Hour rule:
  *  Hours × perHourRate (NO trip charge here - applied at visit level).
  *  Returns the labour cost only. Uses backend rate when available.
+ *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcPerHour(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
   const perHourRate = backendConfig?.coreRates?.perHourRate ?? 400;
-  return (state.hours || 0) * perHourRate;
+  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? 475;
+
+  const calculatedAmount = (state.hours || 0) * perHourRate;
+
+  // Apply minimum if calculated amount is below minimum
+  return Math.max(calculatedAmount, minimumVisit);
 }
 
 /** Sq-ft rule:
  *  Fixed fee + inside rate × inside sq ft + outside rate × outside sq ft.
  *  Returns the service cost only (trip applied at visit level). Uses backend rates when available.
+ *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcSquareFootage(
   state: RefreshAreaCalcState,
@@ -149,10 +162,14 @@ function calcSquareFootage(
   const fixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? state.sqFtFixedFee ?? REFRESH_SQFT_FIXED_FEE;
   const insideRate = backendConfig?.squareFootagePricing?.insideRate ?? state.insideRate ?? REFRESH_SQFT_INSIDE_RATE;
   const outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? state.outsideRate ?? REFRESH_SQFT_OUTSIDE_RATE;
+  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? 475;
 
   const insideCost = (state.insideSqFt || 0) * insideRate;
   const outsideCost = (state.outsideSqFt || 0) * outsideRate;
-  return fixedFee + insideCost + outsideCost;
+  const calculatedAmount = fixedFee + insideCost + outsideCost;
+
+  // Apply minimum if calculated amount is below minimum
+  return Math.max(calculatedAmount, minimumVisit);
 }
 
 /** Default / preset prices when no hours / sq-ft are supplied.
@@ -472,20 +489,27 @@ export function useRefreshPowerScrubCalc(
           monthlyRecurring = cost * 4.33; // 4.33 weeks per month
           break;
         case "bi-weekly":
-          monthlyRecurring = cost * 2.17; // ~2.17 visits per month
+          monthlyRecurring = cost * 2.165; // ~2.165 visits per month (26 annual ÷ 12)
           break;
         case "monthly":
           monthlyRecurring = cost; // 1 visit per month
           break;
         case "quarterly":
-          monthlyRecurring = cost * 0.33; // ~0.33 visits per month
+          monthlyRecurring = cost * 0.333; // ~0.333 visits per month (4 annual ÷ 12)
           break;
         default:
           monthlyRecurring = cost; // Default to monthly
       }
 
       monthlyTotals[area] = monthlyRecurring;
-      contractTotals[area] = monthlyRecurring * (form[area].contractMonths || 12);
+
+      // Calculate contract total - for quarterly, use visits per contract period
+      if (frequencyLabel === "quarterly") {
+        const quarterlyVisits = (form[area].contractMonths || 12) / 3;
+        contractTotals[area] = cost * quarterlyVisits;
+      } else {
+        contractTotals[area] = monthlyRecurring * (form[area].contractMonths || 12);
+      }
 
       if (isPackage && cost > 0) {
         hasPackage = true;
@@ -531,7 +555,7 @@ export function useRefreshPowerScrubCalc(
         monthlyRecurring = rounded * 4.33; // 4.33 weeks per month
         break;
       case "biweekly":
-        monthlyRecurring = rounded * 2.17; // ~2.17 visits per month
+        monthlyRecurring = rounded * 2.165; // ~2.165 visits per month (26 annual ÷ 12)
         break;
       case "monthly":
         monthlyRecurring = rounded; // 1 visit per month
@@ -540,13 +564,19 @@ export function useRefreshPowerScrubCalc(
         monthlyRecurring = rounded * 0.5; // 0.5 visits per month
         break;
       case "quarterly":
-        monthlyRecurring = rounded * 0.33; // ~0.33 visits per month
+        monthlyRecurring = rounded * 0.333; // ~0.333 visits per month (4 annual ÷ 12)
         break;
       default:
         monthlyRecurring = rounded;
     }
 
-    contractTotal = monthlyRecurring * (form.contractMonths || 12);
+    // Calculate contract total - for quarterly, use visits per contract period
+    if (form.frequency === "quarterly") {
+      const quarterlyVisits = (form.contractMonths || 12) / 3;
+      contractTotal = rounded * quarterlyVisits;
+    } else {
+      contractTotal = monthlyRecurring * (form.contractMonths || 12);
+    }
 
     const details: string[] = [];
     AREA_KEYS.forEach((area) => {
