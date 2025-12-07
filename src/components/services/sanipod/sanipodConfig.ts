@@ -55,7 +55,14 @@ export const sanipodPricingConfig: SanipodPricingConfig = {
     monthly: 12,
   },
 
-  // How many weeks we treat as a month / year for pricing rollups
+  // Frequency-specific visits per month multipliers
+  frequencyMultipliers: {
+    weekly: 4.33,    // 4.33 visits per month
+    biweekly: 2.165, // 2.165 visits per month (half of weekly)
+    monthly: 1.0,    // 1 visit per month
+  },
+
+  // How many weeks we treat as a month / year for pricing rollups (default fallback)
   weeksPerMonth: 4.33,
   weeksPerYear: 52,
 

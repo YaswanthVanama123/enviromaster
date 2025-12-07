@@ -58,6 +58,9 @@ export interface SaniscrubFormState extends BaseServiceFormState {
   // Non-bathroom SaniScrub area in sq ft (kitchen, FOH, etc.)
   nonBathroomSqFt: number;
 
+  // ✅ NEW: Non-bathroom calculation method toggle
+  useExactNonBathroomSqft: boolean; // true = exact calculation, false = direct add
+
   // Selected service frequency
   frequency: SaniscrubFrequency;
 

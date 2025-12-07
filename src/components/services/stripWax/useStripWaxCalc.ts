@@ -71,6 +71,7 @@ export interface StripWaxCalcResult {
 
 const DEFAULT_FORM_STATE: StripWaxFormState = {
   floorAreaSqFt: 0,
+  useExactFloorAreaSqft: true, // Default to exact calculation
   ratePerSqFt: cfg.variants[cfg.defaultVariant].ratePerSqFt,
   minCharge: cfg.variants[cfg.defaultVariant].minCharge,
   serviceVariant: cfg.defaultVariant,
@@ -276,9 +277,29 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
     const minCharge =
       form.minCharge > 0 ? form.minCharge : variantCfg.minCharge;
 
-    const rawPriceRed = areaSqFt * ratePerSqFt;
+    // ✅ NEW: Floor area calculation with exact vs direct pricing (like SaniScrub)
+    let rawPriceRed = 0;
 
-    const perVisitRed = Math.max(rawPriceRed, minCharge);
+    if (form.useExactFloorAreaSqft) {
+      // ✅ EXACT CALCULATION: Use 1000 sq ft blocks (like SaniScrub exact mode)
+      if (areaSqFt <= cfg.floorAreaUnit) {
+        // ≤ 1000 sq ft: Always use minimum charge (first block rate)
+        rawPriceRed = minCharge;
+      } else {
+        // > 1000 sq ft: Calculate in 1000 sq ft blocks
+        const units = Math.ceil(areaSqFt / cfg.floorAreaUnit);
+        const extraUnits = Math.max(units - 1, 0);
+        const additionalRate = ratePerSqFt * cfg.floorAreaUnit; // Rate per 1000 sq ft
+        rawPriceRed = minCharge + (extraUnits * additionalRate);
+      }
+    } else {
+      // ✅ DIRECT CALCULATION: Exact sq ft × rate (original logic)
+      rawPriceRed = areaSqFt * ratePerSqFt;
+    }
+
+    const perVisitRed = form.useExactFloorAreaSqft
+      ? rawPriceRed  // Exact mode already handles minimum
+      : Math.max(rawPriceRed, minCharge);  // Direct mode needs minimum applied
 
     const perVisit = perVisitRed * rateCfg.multiplier;
 
@@ -315,6 +336,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
   }, [
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form.floorAreaSqFt,
+    form.useExactFloorAreaSqft, // ✅ NEW: Re-calculate when checkbox changes
     form.ratePerSqFt,
     form.minCharge,
     form.serviceVariant,

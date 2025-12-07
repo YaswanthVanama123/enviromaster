@@ -376,7 +376,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={
               form.customWeeklyPodRate !== undefined
                 ? form.customWeeklyPodRate
-                : calc.effectiveRatePerPod
+                : parseFloat(calc.effectiveRatePerPod.toFixed(2))
             }
             onChange={onChange}
             onBlur={handleBlur}
@@ -393,7 +393,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={
               form.customPodServiceTotal !== undefined
                 ? form.customPodServiceTotal
-                : calc.adjustedPodServiceTotal
+                : parseFloat(calc.adjustedPodServiceTotal.toFixed(2))
             }
             onChange={onChange}
             onBlur={handleBlur}
@@ -439,7 +439,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={
               form.customExtraBagsTotal !== undefined
                 ? form.customExtraBagsTotal
-                : calc.adjustedBagsTotal
+                : parseFloat(calc.adjustedBagsTotal.toFixed(2))
             }
             onChange={onChange}
             onBlur={handleBlur}
@@ -556,7 +556,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                   value={
                     form.customInstallationFee !== undefined
                       ? form.customInstallationFee
-                      : calc.installCost
+                      : parseFloat(calc.installCost.toFixed(2))
                   }
                   onChange={onChange}
                   onBlur={handleBlur}
@@ -584,29 +584,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Contract length (2–36 months) */}
-      <div className="svc-row">
-        <label>Contract Length</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="contractMonths"
-            value={form.contractMonths}
-            onChange={onChange}
-          >
-            {Array.from({ length: cfg.maxContractMonths - cfg.minContractMonths + 1 })
-              .map((_, idx) => {
-                const m = cfg.minContractMonths + idx;
-                return (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                );
-              })}
-          </select>
-        </div>
-      </div>
-
       {/* Totals */}
       <div className="svc-row svc-row-total">
         <label>Per Visit Service</label>
@@ -616,7 +593,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="customPerVisitPrice"
-            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : calc.adjustedPerVisit}
+            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : parseFloat(calc.adjustedPerVisit.toFixed(2))}
             onChange={onChange}
             onBlur={handleBlur}
             style={{
@@ -636,7 +613,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             step="0.01"
             name="customMonthlyPrice"
-            value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : calc.adjustedMonthly}
+            value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
             onChange={onChange}
             onBlur={handleBlur}
             style={{
@@ -649,24 +626,57 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       </div>
 
       <div className="svc-row svc-row-total">
-        <label>
-          Contract Total ({form.contractMonths} Months)
-        </label>
+        <label>Monthly Recurring</label>
         <div className="svc-dollar">
           $<input
             className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="customAnnualPrice"
-            value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : calc.adjustedAnnual}
-            onChange={onChange}
-            onBlur={handleBlur}
+            type="text"
+            readOnly
+            value={calc.ongoingMonthly.toFixed(2)}
             style={{
-              backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',
+              backgroundColor: '#f5f5f5',
               border: 'none',
               width: '100px'
             }}
           />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-total">
+        <label>Contract Total</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="contractMonths"
+            value={form.contractMonths}
+            onChange={onChange}
+          >
+            {Array.from({ length: cfg.maxContractMonths - cfg.minContractMonths + 1 })
+              .map((_, idx) => {
+                const m = cfg.minContractMonths + idx;
+                return (
+                  <option key={m} value={m}>
+                    {m} months
+                  </option>
+                );
+              })}
+          </select>
+          <div className="svc-dollar">
+            $<input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="customAnnualPrice"
+              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : parseFloat(calc.adjustedAnnual.toFixed(2))}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

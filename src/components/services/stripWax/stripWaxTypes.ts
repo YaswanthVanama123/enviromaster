@@ -31,6 +31,9 @@ export interface StripWaxPricingConfig {
   minContractMonths: number;
   maxContractMonths: number;
 
+  // Floor area calculation unit (for exact vs direct calculation)
+  floorAreaUnit: number; // 1000 sq ft blocks for exact calculation
+
   defaultFrequency: StripWaxFrequencyKey;
   defaultVariant: StripWaxServiceVariant;
 
@@ -48,6 +51,7 @@ export interface StripWaxPricingConfig {
 
 export interface StripWaxFormState {
   floorAreaSqFt: number;
+  useExactFloorAreaSqft: boolean;  // true = exact calculation, false = direct pricing
   ratePerSqFt: number;
   minCharge: number;
 

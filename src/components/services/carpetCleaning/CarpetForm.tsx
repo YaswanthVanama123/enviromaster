@@ -4,7 +4,7 @@ import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useCarpetCalc } from "./useCarpetCalc";
 import type { CarpetFormState } from "./carpetTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
-import { carpetFrequencyLabels } from "./carpetConfig";
+import { carpetFrequencyLabels, getContractOptions } from "./carpetConfig";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
@@ -226,6 +226,27 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
+      {/* Exact sq ft calculation checkbox */}
+      <div className="svc-row">
+        <label>Calculation Method</label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="useExactSqft"
+              checked={form.useExactSqft}
+              onChange={onChange}
+            />
+            <span>Exact sq ft calculation</span>
+          </label>
+          <small style={{ color: "#666", fontSize: "11px", marginLeft: "10px" }}>
+            {form.useExactSqft
+              ? "(Excess × $0.25/sq ft)"
+              : "(Excess in 500 sq ft blocks × $125)"}
+          </small>
+        </div>
+      </div>
+
       {/* Frequency selection */}
       <div className="svc-row">
         <label>Frequency</label>
@@ -355,26 +376,28 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Monthly recurring charge */}
-      <div className="svc-row svc-row-charge">
-        <label>Monthly Recurring</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.monthlyTotal.toFixed(2)}
-            />
+      {/* Monthly recurring charge - only show for month-based frequencies */}
+      {!calc.isVisitBasedFrequency && (
+        <div className="svc-row svc-row-charge">
+          <label>Monthly Recurring</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.monthlyTotal.toFixed(2)}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* First month total (when installation is included) */}
+      {/* First month total / First Visit total (when installation is included) */}
       {form.includeInstall && calc.firstMonthTotal > 0 && (
         <div className="svc-row svc-row-charge">
-          <label>First Month Total</label>
+          <label>{calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total"}</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -389,7 +412,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Contract total: 2–36 months */}
+      {/* Contract total: frequency-specific months */}
       <div className="svc-row svc-row-charge">
         <label>Contract Total</label>
         <div className="svc-row-right">
@@ -399,7 +422,7 @@ export const CarpetForm: React.FC<
             value={form.contractMonths}
             onChange={onChange}
           >
-            {Array.from({ length: 35 }, (_, i) => i + 2).map((months) => (
+            {getContractOptions(form.frequency).map((months) => (
               <option key={months} value={months}>
                 {months} mo
               </option>

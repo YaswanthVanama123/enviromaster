@@ -85,7 +85,9 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
   hugeBathroomSqFt: 0,
 
   extraAreaSqFt: 0,
+  useExactExtraAreaSqft: true, // Default to exact calculation
   standaloneSqFt: 0,
+  useExactStandaloneSqft: true, // Default to exact calculation
   chemicalGallons: 0,
 
   isAllInclusive: false,
@@ -322,20 +324,44 @@ export function useMicrofiberMoppingCalc(
     const bathroomPrice = standardBathroomPrice + hugeBathroomPrice;
 
     // ----------------------------
-    // 2) Extra non-bath area - BASE CALCULATIONS
-    // Rule: $100 OR $10 per 400 sq ft, whichever is more.
+    // 2) Extra non-bath area - BASE CALCULATIONS with exact vs direct pricing (like SaniScrub)
+    // NEW: Support exact calculation vs direct calculation like SaniScrub
     // ----------------------------
     let calculatedExtraAreaPrice = 0;
 
     if (!isAllInclusive && form.extraAreaSqFt > 0) {
-      const units = Math.ceil(
-        form.extraAreaSqFt / activeConfig.extraAreaPricing.extraAreaSqFtUnit  // ✅ FROM BACKEND
-      );
-      const unitPrice = units * form.extraAreaRatePerUnit;
+      const unitSqFt = activeConfig.extraAreaPricing.extraAreaSqFtUnit; // ✅ FROM BACKEND (400)
+      const firstUnitRate = activeConfig.extraAreaPricing.singleLargeAreaRate; // ✅ FROM BACKEND ($100)
+      const additionalUnitRate = form.extraAreaRatePerUnit; // $10 per 400 sq ft
 
-      calculatedExtraAreaPrice = activeConfig.extraAreaPricing.useHigherRate  // ✅ FROM BACKEND
-        ? Math.max(unitPrice, activeConfig.extraAreaPricing.singleLargeAreaRate)  // ✅ FROM BACKEND
-        : unitPrice;
+      if (form.useExactExtraAreaSqft) {
+        // ✅ EXACT CALCULATION: Use 400 sq ft blocks (like SaniScrub exact mode)
+        if (form.extraAreaSqFt <= unitSqFt) {
+          // ≤ 400 sq ft: Always $100 flat rate (minimum)
+          calculatedExtraAreaPrice = firstUnitRate;
+        } else {
+          // > 400 sq ft: Calculate in 400 sq ft blocks
+          const units = Math.ceil(form.extraAreaSqFt / unitSqFt);
+          const extraUnits = Math.max(units - 1, 0);
+          calculatedExtraAreaPrice = firstUnitRate + (extraUnits * additionalUnitRate);
+        }
+      } else {
+        // ✅ DIRECT CALCULATION: First 400 sq ft + exact additional sq ft × rate (like SaniScrub direct mode)
+        if (form.extraAreaSqFt <= unitSqFt) {
+          // ≤ 400 sq ft: Always $100 (first unit cost)
+          calculatedExtraAreaPrice = firstUnitRate;
+        } else {
+          // > 400 sq ft: $100 (first 400) + exact additional sq ft × rate
+          const extraSqFt = form.extraAreaSqFt - unitSqFt; // sq ft over 400
+          const ratePerSqFt = additionalUnitRate / unitSqFt; // $10/400 = $0.025
+          calculatedExtraAreaPrice = firstUnitRate + (extraSqFt * ratePerSqFt);
+        }
+      }
+
+      // Apply useHigherRate rule if configured (but usually not needed with this logic)
+      if (activeConfig.extraAreaPricing.useHigherRate) {
+        calculatedExtraAreaPrice = Math.max(calculatedExtraAreaPrice, firstUnitRate);
+      }
     }
 
     // Use custom override if set
@@ -344,25 +370,41 @@ export function useMicrofiberMoppingCalc(
       : calculatedExtraAreaPrice;
 
     // ----------------------------
-    // 3) Stand-alone microfiber mopping - BASE CALCULATIONS
-    // Rule (base): $10 per 200 sq ft, $40 minimum.
-    // Trip charge is now removed from the math (always 0).
+    // 3) Stand-alone microfiber mopping - BASE CALCULATIONS with exact vs direct pricing (like SaniScrub)
+    // NEW: Support exact calculation vs direct calculation like SaniScrub
     // ----------------------------
     let calculatedStandaloneServicePrice = 0;
     let standaloneTripCharge = 0;
     let calculatedStandaloneTotal = 0;
 
     if (!isAllInclusive && form.standaloneSqFt > 0) {
-      const units = Math.ceil(
-        form.standaloneSqFt / activeConfig.standalonePricing.standaloneSqFtUnit  // ✅ FROM BACKEND
-      );
-      const servicePrice = units * form.standaloneRatePerUnit;
-      const basePrice = Math.max(
-        servicePrice,
-        activeConfig.standalonePricing.standaloneMinimum  // ✅ FROM BACKEND
-      );
+      const unitSqFt = activeConfig.standalonePricing.standaloneSqFtUnit; // ✅ FROM BACKEND (200)
+      const minimumRate = activeConfig.standalonePricing.standaloneMinimum; // ✅ FROM BACKEND ($40)
+      const additionalUnitRate = form.standaloneRatePerUnit; // $10 per 200 sq ft
 
-      calculatedStandaloneServicePrice = basePrice;
+      if (form.useExactStandaloneSqft) {
+        // ✅ EXACT CALCULATION: Use 200 sq ft blocks (like SaniScrub exact mode)
+        if (form.standaloneSqFt <= unitSqFt) {
+          // ≤ 200 sq ft: Always $40 flat rate (minimum)
+          calculatedStandaloneServicePrice = minimumRate;
+        } else {
+          // > 200 sq ft: Calculate in 200 sq ft blocks
+          const units = Math.ceil(form.standaloneSqFt / unitSqFt);
+          const extraUnits = Math.max(units - 1, 0);
+          calculatedStandaloneServicePrice = minimumRate + (extraUnits * additionalUnitRate);
+        }
+      } else {
+        // ✅ DIRECT CALCULATION: First 200 sq ft + exact additional sq ft × rate (like SaniScrub direct mode)
+        if (form.standaloneSqFt <= unitSqFt) {
+          // ≤ 200 sq ft: Always $40 (minimum cost)
+          calculatedStandaloneServicePrice = minimumRate;
+        } else {
+          // > 200 sq ft: $40 (first 200) + exact additional sq ft × rate
+          const extraSqFt = form.standaloneSqFt - unitSqFt; // sq ft over 200
+          const ratePerSqFt = additionalUnitRate / unitSqFt; // $10/200 = $0.05
+          calculatedStandaloneServicePrice = minimumRate + (extraSqFt * ratePerSqFt);
+        }
+      }
 
       // Trip charge concept removed → always 0 in calculations
       standaloneTripCharge = 0;

@@ -24,6 +24,11 @@ interface BackendSanipodConfig {
     biweekly: number;
     monthly: number;
   };
+  frequencyMultipliers: {
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+  };
   weeksPerMonth: number;
   weeksPerYear: number;
   minContractMonths: number;
@@ -45,6 +50,9 @@ export interface SanipodFormState {
   extraBagsPerWeek: number;
   /** true = recurring each visit, false = one-time only on first visit */
   extraBagsRecurring: boolean;
+
+  // Service frequency
+  frequency: SanipodFrequencyKey;
 
   // Editable pricing rates (fetched from backend or config)
   weeklyRatePerUnit: number;        // 3$/week per pod (used in 3+40 rule)
@@ -280,12 +288,23 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
         next[name as keyof SanipodFormState] = t.value;
       }
 
+      // Special handling for frequency
+      if (name === "frequency") {
+        next.frequency = t.value as SanipodFrequencyKey;
+      }
+
       return next;
     });
   };
 
   const calc: SanipodCalcResult = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    const defaultFrequencyMultipliers = {
+      weekly: 4.33,
+      biweekly: 2.165,
+      monthly: 1.0,
+    };
+
     const activeConfig = backendConfig || {
       weeklyRatePerUnit: cfg.weeklyRatePerUnit,
       altWeeklyRatePerUnit: cfg.altWeeklyRatePerUnit,
@@ -294,12 +313,18 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       standaloneExtraWeeklyCharge: cfg.standaloneExtraWeeklyCharge,
       tripChargePerVisit: cfg.tripChargePerVisit,
       rateCategories: cfg.rateCategories,
+      frequencyMultipliers: defaultFrequencyMultipliers,
       weeksPerMonth: cfg.weeksPerMonth ?? 4.33,
       weeksPerYear: cfg.weeksPerYear ?? 52,
       minContractMonths: cfg.minContractMonths ?? 2,
       maxContractMonths: cfg.maxContractMonths ?? 36,
       annualFrequencies: cfg.annualFrequencies ?? { weekly: 52, biweekly: 26, monthly: 12 },
     };
+
+    // Ensure frequencyMultipliers always exists
+    if (!activeConfig.frequencyMultipliers) {
+      activeConfig.frequencyMultipliers = defaultFrequencyMultipliers;
+    }
 
     const pods = Math.max(0, Number(form.podQuantity) || 0);
     const bags = Math.max(0, Number(form.extraBagsPerWeek) || 0);
@@ -409,7 +434,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     let firstVisitServiceCost = 0;
     if (servicePods > 0) {
       if (usingOptA) {
-        // Option A: Simple per-pod rate
+        // Option A: Simple per-pod rate for service pods only
         const perPodRate = form.altWeeklyRatePerUnit;
         firstVisitServiceCost = servicePods * perPodRate * rateCfg.multiplier;
       } else {
@@ -419,21 +444,36 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       }
     }
 
-    const firstVisit = installOnlyCost + firstVisitServiceCost + oneTimeBagsCost;
+    // ✅ PARTIAL INSTALLATION WITH PROPER BAG LOGIC:
+    // Add bags to first visit - recurring bags get rate category multiplier, one-time bags don't
+    const firstVisitBagsCost = form.extraBagsRecurring && bags > 0 ? weeklyBagsRed * rateCfg.multiplier : 0;
+
+    // First visit = Install + Service (non-installed pods only) + Bags (recurring or one-time)
+    const firstVisit = installOnlyCost + firstVisitServiceCost + firstVisitBagsCost + oneTimeBagsCost;
     const installCost = installOnlyCost;
 
     // ---------- MONTHLY & CONTRACT ----------
-    const monthlyVisits = weeksPerMonth;  // ✅ Already from backend
+    // ✅ FREQUENCY-SPECIFIC CALCULATION: Use the correct multiplier based on selected frequency
+    const selectedFrequency = form.frequency || "weekly";
+    const monthlyVisits = activeConfig.frequencyMultipliers[selectedFrequency] || activeConfig.frequencyMultipliers.weekly;
 
-    // ✅ FIXED:
-    // If there is NO special first-visit cost (no install + no one-time bags),
-    // first month should just be 4.33 * perVisit.
-    // Only when firstVisit > 0 do we do: firstVisit + (4.33 - 1) * perVisit.
-    const firstMonth =
-      firstVisit > 0
-        ? firstVisit +
-          Math.max(monthlyVisits - 1, 0) * perVisit
-        : monthlyVisits * perVisit;
+    // ✅ FIXED BIWEEKLY CALCULATION:
+    // The user's example: biweekly should use 2.165 visits per month
+    // First month = install + service for remaining pods
+    // Recurring months = full service × frequency multiplier
+
+    // ✅ PARTIAL INSTALLATION FIRST MONTH CALCULATION:
+    // This properly handles the partial installation logic you described
+    let firstMonth;
+
+    if (selectedFrequency === "monthly") {
+      // Monthly = 1 visit per month
+      firstMonth = installOnlyCost + perVisit + oneTimeBagsCost;
+    } else {
+      // Weekly/biweekly: Use partial installation logic
+      // First month = first visit (partial service + install) + remaining visits (full service)
+      firstMonth = firstVisit + Math.max(monthlyVisits - 1, 0) * perVisit;
+    }
 
     // Ongoing months (after first) – all visits are "normal".
     const ongoingMonthly = monthlyVisits * perVisit;
@@ -500,7 +540,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     }
 
     // Adjusted monthly
-    const weeksPerMonthCalc = weeksPerMonth;
+    const weeksPerMonthCalc = monthlyVisits;  // ✅ Use frequency-specific multiplier
     const oneTimeBagsCostCalc = form.extraBagsRecurring ? 0 : adjustedBagsTotal;
     const installCostCalc = form.customInstallationFee !== undefined
       ? form.customInstallationFee

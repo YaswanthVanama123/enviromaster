@@ -7,6 +7,9 @@ export const stripWaxPricingConfig: StripWaxPricingConfig = {
   minContractMonths: 2,
   maxContractMonths: 36,
 
+  // Floor area calculation unit (for exact vs direct calculation)
+  floorAreaUnit: 1000, // 1000 sq ft blocks for exact calculation
+
   defaultFrequency: "weekly",
   defaultVariant: "standardFull",
 

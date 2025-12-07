@@ -10,8 +10,6 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
-
 export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSprayFormState>> = ({
   initialData,
   onRemove,
@@ -25,6 +23,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
+  // Check if SaniClean All-Inclusive is active
+  const isSanicleanAllInclusive =
+    servicesContext?.isSanicleanAllInclusive ?? false;
+
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
@@ -32,6 +34,35 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   const serviceRate = form.pricingMethod === "byRoom"
     ? form.ratePerRoom
     : form.ratePerThousandSqFt;
+
+  // Frequency-specific UI helpers
+  const { isVisitBasedFrequency, monthsPerVisit } = calc;
+
+  // Generate frequency-specific contract month options
+  const generateContractMonths = () => {
+    const months = [];
+
+    if (form.frequency === "bimonthly") {
+      // For bi-monthly: show only even numbers (2, 4, 6, 8, ...)
+      for (let i = 2; i <= cfg.maxContractMonths; i += 2) {
+        months.push(i);
+      }
+    } else if (form.frequency === "quarterly") {
+      // For quarterly: show only multiples of 3 (3, 6, 9, 12, ...)
+      for (let i = 3; i <= cfg.maxContractMonths; i += 3) {
+        months.push(i);
+      }
+    } else {
+      // For weekly, bi-weekly, monthly: show all months
+      for (let i = cfg.minContractMonths; i <= cfg.maxContractMonths; i++) {
+        months.push(i);
+      }
+    }
+
+    return months;
+  };
+
+  const contractMonthOptions = generateContractMonths();
 
   useEffect(() => {
     if (servicesContext) {
@@ -122,6 +153,21 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
+  // Ensure valid contract months when frequency changes
+  useEffect(() => {
+    const validMonths = generateContractMonths();
+
+    if (!validMonths.includes(form.contractMonths)) {
+      // Find the closest valid month
+      const closestMonth = validMonths.find(month => month >= form.contractMonths) || validMonths[0];
+
+      setForm(prev => ({
+        ...prev,
+        contractMonths: closestMonth
+      }));
+    }
+  }, [form.frequency]); // Only run when frequency changes
+
   return (
     <div className="svc-card">
       <div className="svc-card__inner">
@@ -177,6 +223,28 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           showAddDropdown={showAddDropdown}
           onToggleAddDropdown={setShowAddDropdown}
         />
+
+        {/* Alert when included in SaniClean All-Inclusive */}
+        {isSanicleanAllInclusive && (
+          <div
+            className="svc-row"
+            style={{
+              backgroundColor: "#e8f5e9",
+              border: "2px solid #4caf50",
+              padding: "12px",
+              marginBottom: "10px",
+              borderRadius: "4px",
+            }}
+          >
+            <div style={{ fontWeight: "bold", color: "#2e7d32", fontSize: "14px" }}>
+              ✓ INCLUDED in SaniClean All-Inclusive Package
+            </div>
+            <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
+              Electrostatic Spray is already included at no additional charge. This
+              form is for reference only.
+            </div>
+          </div>
+        )}
 
         {/* Pricing Method */}
         <div className="svc-row">
@@ -236,7 +304,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     readOnly
                     className="svc-in field-qty"
-                    value={fmt(calc.serviceCharge)}
+                    value={calc.serviceCharge.toFixed(2)}
                     title="Total service charge"
                   />
                 </div>
@@ -276,7 +344,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     readOnly
                     className="svc-in field-qty"
-                    value={fmt(calc.serviceCharge)}
+                    value={calc.serviceCharge.toFixed(2)}
                     title="Total service charge"
                   />
                 </div>
@@ -371,7 +439,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <input
                 readOnly
                 className="svc-in sm"
-                value={fmt(calc.serviceCharge)}
+                value={calc.serviceCharge.toFixed(2)}
                 title="Calculated service charge (based on quantity × rate)"
               />
             </div>
@@ -388,7 +456,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <input
                   readOnly
                   className="svc-in sm"
-                  value={fmt(calc.tripCharge)}
+                  value={calc.tripCharge.toFixed(2)}
                 />
               </div>
             </div>
@@ -404,64 +472,68 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <input
                 readOnly
                 className="svc-in sm"
-                value={fmt(calc.perVisit)}
+                value={calc.perVisit.toFixed(2)}
               />
             </div>
           </div>
 
-          {/* Contract Length */}
+          {/* Monthly Recurring / Per Visit */}
           <div className="svc-row">
             <div className="svc-label">
-            <span>Contract Length (Months)</span>
+              <span>{isVisitBasedFrequency ? "Per Visit" : "Monthly Recurring"}</span>
             </div>
-            <div className="svc-field">
+            <div className="svc-field svc-dollar">
+              <span>$</span>
+              <input
+                readOnly
+                className="svc-in sm"
+                value={isVisitBasedFrequency ? calc.perVisit.toFixed(2) : calc.monthlyRecurring.toFixed(2)}
+              />
+            </div>
+          </div>
+
+          {/* Contract Total with inline dropdown */}
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Contract Total</span>
+            </div>
+            <div className="svc-field" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <select
                 name="contractMonths"
-                className="svc-in sm"
+                className="svc-in"
                 value={form.contractMonths}
                 onChange={onChange}
+                style={{
+                  borderBottom: '2px solid #000',
+                  borderTop: 'none',
+                  borderLeft: 'none',
+                  borderRight: 'none',
+                  backgroundColor: 'transparent',
+                  padding: '4px 20px 4px 4px'
+                }}
               >
-                {Array.from(
-                  { length: cfg.maxContractMonths - cfg.minContractMonths + 1 },
-                  (_, i) => {
-                    const m = cfg.minContractMonths + i;
-                    return (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    );
-                  }
-                )}
+                {contractMonthOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m} mo
+                  </option>
+                ))}
               </select>
-            </div>
-          </div>
-
-          {/* Monthly Recurring */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Monthly Recurring</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
+              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
               <input
                 readOnly
                 className="svc-in sm"
-                value={fmt(calc.monthlyRecurring)}
-              />
-            </div>
-          </div>
-
-          {/* Contract Total */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Contract Total ({form.contractMonths} months)</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                readOnly
-                className="svc-in sm"
-                value={fmt(calc.contractTotal)}
+                value={calc.contractTotal.toFixed(2)}
+                style={{
+                  borderBottom: '2px solid #ff0000',
+                  borderTop: 'none',
+                  borderLeft: 'none',
+                  borderRight: 'none',
+                  backgroundColor: 'transparent',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  padding: '4px',
+                  width: '100px'
+                }}
               />
             </div>
           </div>

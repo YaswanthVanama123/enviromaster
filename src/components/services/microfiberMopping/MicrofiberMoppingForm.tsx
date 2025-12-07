@@ -467,6 +467,27 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
+      {/* Extra non-bathroom area calculation method checkbox */}
+      <div className="svc-row">
+        <label></label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="useExactExtraAreaSqft"
+              checked={form.useExactExtraAreaSqft}
+              onChange={onChange}
+            />
+            <span>Exact SqFt Calculation</span>
+          </label>
+          <span className="svc-small">
+            {form.useExactExtraAreaSqft
+              ? `(${cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${cfg.extraAreaPricing.singleLargeAreaRate} first + $${form.extraAreaRatePerUnit.toFixed(2)} per extra)`
+              : `(Direct: $${cfg.extraAreaPricing.singleLargeAreaRate} for first ${cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${(form.extraAreaRatePerUnit / cfg.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
+          </span>
+        </div>
+      </div>
+
       {/* Standalone microfiber mopping */}
       <div className="svc-row">
         <label>Standalone microfiber mopping (sq ft)</label>
@@ -509,6 +530,27 @@ export const MicrofiberMoppingForm: React.FC<
               backgroundColor: form.customStandaloneTotal !== undefined ? '#fffacd' : 'white'
             }}
           />
+        </div>
+      </div>
+
+      {/* Standalone microfiber mopping calculation method checkbox */}
+      <div className="svc-row">
+        <label></label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="useExactStandaloneSqft"
+              checked={form.useExactStandaloneSqft}
+              onChange={onChange}
+            />
+            <span>Exact SqFt Calculation</span>
+          </label>
+          <span className="svc-small">
+            {form.useExactStandaloneSqft
+              ? `(${cfg.standalonePricing.standaloneSqFtUnit} sq ft units: $${cfg.standalonePricing.standaloneMinimum} first + $${form.standaloneRatePerUnit.toFixed(2)} per extra)`
+              : `(Direct: $${cfg.standalonePricing.standaloneMinimum} for first ${cfg.standalonePricing.standaloneSqFtUnit} sq ft + area × $${(form.standaloneRatePerUnit / cfg.standalonePricing.standaloneSqFtUnit).toFixed(4)}/sq ft)`}
+          </span>
         </div>
       </div>
 
@@ -641,8 +683,8 @@ export const MicrofiberMoppingForm: React.FC<
               name="customPerVisitPrice"
               value={
                 form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice
-                  : calc.perVisitPrice
+                  ? form.customPerVisitPrice.toFixed(2)
+                  : calc.perVisitPrice.toFixed(2)
               }
               onChange={onChange}
               onBlur={handleBlur}
@@ -681,7 +723,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
 
         <div className="svc-row">
-          <label>Estimated monthly recurring</label>
+          <label>Monthly recurring</label>
           <div className="svc-dollar">
             <span>$</span>
             <input
@@ -691,8 +733,8 @@ export const MicrofiberMoppingForm: React.FC<
               name="customMonthlyRecurring"
               value={
                 form.customMonthlyRecurring !== undefined
-                  ? form.customMonthlyRecurring
-                  : calc.monthlyRecurring
+                  ? form.customMonthlyRecurring.toFixed(2)
+                  : calc.monthlyRecurring.toFixed(2)
               }
               onChange={onChange}
               onBlur={handleBlur}
@@ -701,25 +743,6 @@ export const MicrofiberMoppingForm: React.FC<
                 border: 'none'
               }}
             />
-          </div>
-        </div>
-
-        {/* NEW: contract term dropdown (2–36 months) */}
-        <div className="svc-row">
-          <label>Contract term (months)</label>
-          <div className="svc-row-right">
-            <select
-              className="svc-in"
-              name="contractTermMonths"
-              value={form.contractTermMonths}
-              onChange={onChange}
-            >
-              {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 
@@ -735,8 +758,8 @@ export const MicrofiberMoppingForm: React.FC<
               name="customFirstMonthPrice"
               value={
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice
-                  : calc.firstMonthPrice
+                  ? form.customFirstMonthPrice.toFixed(2)
+                  : calc.firstMonthPrice.toFixed(2)
               }
               onChange={onChange}
               onBlur={handleBlur}
@@ -748,28 +771,42 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         </div>
 
-        {/* NEW: Total contract price for selected months */}
+        {/* Contract total with inline dropdown */}
         <div className="svc-row">
-          <label>Total contract value</label>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
+          <label>Contract Total</label>
+          <div className="svc-row-right">
+            <select
               className="svc-in"
-              type="number"
-              step="0.01"
-              name="customContractTotal"
-              value={
-                form.customContractTotal !== undefined
-                  ? form.customContractTotal
-                  : calc.contractTotal
-              }
+              name="contractTermMonths"
+              value={form.contractTermMonths}
               onChange={onChange}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',
-                border: 'none'
-              }}
-            />
+            >
+              {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+                <option key={m} value={m}>
+                  {m} mo
+                </option>
+              ))}
+            </select>
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customContractTotal"
+                value={
+                  form.customContractTotal !== undefined
+                    ? form.customContractTotal.toFixed(2)
+                    : calc.contractTotal.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',
+                  border: 'none'
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

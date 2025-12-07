@@ -1,6 +1,7 @@
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type CarpetFrequency =
+  | "weekly"
   | "monthly"
   | "twicePerMonth"
   | "bimonthly"
@@ -41,6 +42,9 @@ export interface CarpetFormState extends BaseServiceFormState {
 
   // Total carpet area
   areaSqFt: number;
+
+  // Pricing calculation method
+  useExactSqft: boolean;  // true = exact calculation, false = flat +$125
 
   // Selected service frequency
   frequency: CarpetFrequency;

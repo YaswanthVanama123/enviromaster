@@ -547,7 +547,7 @@ export const RpmWindowsForm: React.FC<
 
       {/* First Month Total */}
       <div className="svc-row svc-row-charge">
-        <label>First Month Total</label>
+        <label>Monthly Recurring</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -563,14 +563,14 @@ export const RpmWindowsForm: React.FC<
               title={form.isFirstTimeInstall ? "First month including installation + service" : "First month (ongoing service only)"}
             />
           </div>
-          <span className="svc-small">{form.isFirstTimeInstall ? "(Install + Service)" : "(Service Only)"}</span>
+          {/* <span className="svc-small">{form.isFirstTimeInstall ? "(Install + Service)" : "(Service Only)"}</span> */}
         </div>
       </div>
 
       {/* Monthly Recurring – HIDE for Quarterly */}
       {form.frequency !== "quarterly" && (
         <div className="svc-row svc-row-charge">
-          <label>Monthly Recurring</label>
+          <label>First Month Total</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>

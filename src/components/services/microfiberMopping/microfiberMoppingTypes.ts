@@ -166,9 +166,11 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
 
   // Extra non-bathroom floor area (add-on)
   extraAreaSqFt: number;
+  useExactExtraAreaSqft: boolean;  // true = exact calculation, false = block pricing
 
   // Stand-alone microfiber mopping area
   standaloneSqFt: number;
+  useExactStandaloneSqft: boolean;  // true = exact calculation, false = direct pricing
 
   // Chemical we sell them for self-mopping (gallons/month)
   chemicalGallons: number;

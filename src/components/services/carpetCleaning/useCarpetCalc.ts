@@ -29,6 +29,7 @@ interface BackendCarpetConfig {
 const DEFAULT_FORM: CarpetFormState = {
   serviceId: "carpetCleaning",
   areaSqFt: 0,
+  useExactSqft: true,  // Default to exact calculation
   frequency: "monthly",
   location: "insideBeltway",
   needsParking: false,
@@ -187,6 +188,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         case "tripChargeIncluded":
         case "includeInstall":
         case "isDirtyInstall":
+        case "useExactSqft":
           return {
             ...prev,
             [name]: type === "checkbox" ? !!checked : Boolean(value),
@@ -223,6 +225,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     installOneTime,
     firstMonthTotal,
     perVisitEffective,
+    frequency,
+    isVisitBasedFrequency,
+    monthsPerVisit,
+    totalVisitsForContract,
   } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
     const activeConfig = backendConfig || {
@@ -245,19 +251,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     let calculatedPerVisitCharge = 0;
 
     if (areaSqFt > 0) {
-      // ✅ CORRECTED PRICING: Per-square-foot after first 500
-      // First 500 sq ft = $250
-      // Each additional sq ft = $125/500 = $0.25/sq ft
-      // Example: 700 sq ft = $250 + (200 × $0.25) = $300
-
+      // ✅ CARPET PRICING: Two calculation methods based on useExactSqft checkbox
       if (areaSqFt <= form.unitSqFt) {  // ✅ USE FORM VALUE (from backend)
         // 500 sq ft or less: flat rate
         calculatedPerVisitBase = form.firstUnitRate;  // ✅ USE FORM VALUE
       } else {
-        // Over 500 sq ft: $250 + extra sq ft × $0.25/sq ft
+        // Over 500 sq ft: choose calculation method
         const extraSqFt = areaSqFt - form.unitSqFt;  // ✅ USE FORM VALUE
-        const ratePerSqFt = form.additionalUnitRate / form.unitSqFt; // ✅ USE FORM VALUES ($125/500 = $0.25)
-        calculatedPerVisitBase = form.firstUnitRate + (extraSqFt * ratePerSqFt);  // ✅ USE FORM VALUE
+
+        if (form.useExactSqft) {
+          // EXACT SQFT: $250 + extra sq ft × $0.25/sq ft
+          const ratePerSqFt = form.additionalUnitRate / form.unitSqFt; // ✅ USE FORM VALUES ($125/500 = $0.25)
+          calculatedPerVisitBase = form.firstUnitRate + (extraSqFt * ratePerSqFt);  // ✅ USE FORM VALUE
+        } else {
+          // BLOCK PRICING: $250 + number of 500 sq ft blocks × $125
+          const additionalBlocks = Math.ceil(extraSqFt / form.unitSqFt);
+          calculatedPerVisitBase = form.firstUnitRate + (additionalBlocks * form.additionalUnitRate);  // ✅ USE FORM VALUES
+        }
       }
 
       calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, form.perVisitMinimum);  // ✅ USE FORM VALUE
@@ -276,11 +286,13 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     const serviceActive = areaSqFt > 0;
 
     // ---------------- INSTALLATION FEE ----------------
-    // Install = 3× dirty / 1× clean of PER-VISIT charge (NOT monthly)
+    // ✅ FIXED: Install = 3× dirty / 1× clean of MINIMUM PRICE (NOT calculated price)
     // Installation is the same for any frequency type
+    // Use minimum price as base for installation fee calculation
+    const installationBasePrice = Math.max(calculatedPerVisitBase, form.perVisitMinimum);
     const calculatedInstallOneTime =
       serviceActive && form.includeInstall
-        ? calculatedPerVisitCharge *
+        ? installationBasePrice *
           (form.isDirtyInstall
             ? form.installMultiplierDirty  // ✅ USE FORM VALUE (from backend)
             : form.installMultiplierClean)  // ✅ USE FORM VALUE (from backend)
@@ -292,10 +304,17 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       : calculatedInstallOneTime;
 
     // ---------------- RECURRING MONTHLY (normal full month) ----------------
-    const calculatedMonthlyRecurring =
-      serviceActive && visitsPerMonth > 0
-        ? perVisitCharge * visitsPerMonth
-        : 0;
+    let calculatedMonthlyRecurring = 0;
+
+    if (serviceActive && visitsPerMonth > 0) {
+      calculatedMonthlyRecurring = perVisitCharge * visitsPerMonth;
+
+      // ✅ FIXED: Add frequency-specific discount logic
+      if (freq === "twicePerMonth") {
+        // 2X/Monthly: Apply -$15 discount after calculation (like SaniScrub)
+        calculatedMonthlyRecurring = Math.max(calculatedMonthlyRecurring - 15, 0);
+      }
+    }
 
     // Use custom override if set
     const monthlyRecurring = form.customMonthlyRecurring !== undefined
@@ -333,13 +352,32 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     let calculatedContractTotal = 0;
     if (contractMonths > 0) {
-      if (form.includeInstall && installOneTime > 0) {
-        // With installation: first month (special) + remaining 11 months normal
-        const remainingMonths = Math.max(contractMonths - 1, 0);
-        calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+      // ✅ FIXED: Use frequency-specific calculation logic
+      if (freq === "bimonthly" || freq === "quarterly") {
+        // For bi-monthly and quarterly: calculate based on actual visits
+        const monthsPerVisit = freq === "bimonthly" ? 2 : 3; // Every 2 months or every 3 months
+        const totalVisits = Math.floor(contractMonths / monthsPerVisit);
+
+        if (totalVisits > 0) {
+          if (form.includeInstall && installOneTime > 0) {
+            // With installation: first visit (install + service) + remaining visits (service only)
+            const remainingVisits = Math.max(totalVisits - 1, 0);
+            calculatedContractTotal = firstMonthTotal + (remainingVisits * perVisitCharge);
+          } else {
+            // No installation: just total visits × per-visit charge
+            calculatedContractTotal = totalVisits * perVisitCharge;
+          }
+        }
       } else {
-        // No installation: just contractMonths × normal monthly
-        calculatedContractTotal = contractMonths * monthlyRecurring;
+        // For monthly and 2X/monthly: use month-based calculation
+        if (form.includeInstall && installOneTime > 0) {
+          // With installation: first month (special) + remaining months normal
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+        } else {
+          // No installation: just contractMonths × normal monthly
+          calculatedContractTotal = contractMonths * monthlyRecurring;
+        }
       }
     }
 
@@ -350,6 +388,13 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     // Per-Visit Effective = normal per-visit service price (no install, no trip)
     const perVisitEffective = perVisitCharge;
+
+    // ✅ NEW: Add frequency-specific helper values for UI
+    const isVisitBasedFrequency = freq === "bimonthly" || freq === "quarterly";
+    const monthsPerVisit = freq === "bimonthly" ? 2 : freq === "quarterly" ? 3 : 1;
+    const totalVisitsForContract = isVisitBasedFrequency
+      ? Math.floor(contractMonths / monthsPerVisit)
+      : contractMonths; // For monthly/2X monthly, visits = months
 
     return {
       perVisitBase,
@@ -363,10 +408,16 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       installOneTime,
       firstMonthTotal,
       perVisitEffective,
+      // ✅ NEW: Frequency-specific UI helpers
+      frequency: freq,
+      isVisitBasedFrequency,
+      monthsPerVisit,
+      totalVisitsForContract,
     };
   }, [
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form.areaSqFt,
+    form.useExactSqft,  // ✅ NEW: Re-calculate when pricing method changes
     form.frequency,
     form.contractMonths,
     form.includeInstall,
@@ -414,6 +465,11 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       installOneTime,
       firstMonthTotal,
       perVisitEffective,
+      // ✅ NEW: Frequency-specific UI helpers
+      frequency,
+      isVisitBasedFrequency,
+      monthsPerVisit,
+      totalVisitsForContract,
     },
     refreshConfig: fetchPricing,
     isLoadingConfig,

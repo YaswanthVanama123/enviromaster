@@ -8,6 +8,7 @@ import type { MicrofiberMoppingFormState } from "../microfiberMopping/microfiber
 import type { FoamingDrainFormState } from "../foamingDrain/foamingDrainTypes";
 import type { GreaseTrapFormState } from "../greaseTrap/greaseTrapTypes";
 import type { SanipodFormState } from "../sanipod/sanipodTypes";
+import type { CarpetFormState } from "../carpetCleaning/carpetTypes";
 
 export const DEFAULT_SANICLEAN_FORM: SanicleanFormState = {
   serviceId: "saniclean",
@@ -76,9 +77,12 @@ export const DEFAULT_GREASE_TRAP_FORM: GreaseTrapFormState = {
 export const DEFAULT_SANIPOD_FORM: SanipodFormState = {
   serviceId: "sanipod",
   podQuantity: 0,
-  weeklyRatePerUnit: 4,
   extraBagsPerWeek: 0,
-  extraBagPrice: 2.5,
+  extraBagsRecurring: true,
+  frequency: "weekly",  // Default to weekly
+  weeklyRatePerUnit: 3,
+  altWeeklyRatePerUnit: 8,
+  extraBagPrice: 2.0,
   isNewInstall: false,
   location: "insideBeltway",
   needsParking: false,
@@ -86,7 +90,33 @@ export const DEFAULT_SANIPOD_FORM: SanipodFormState = {
   bundleType: "none",
   toiletClipsQty: 0,
   seatCoverDispensersQty: 0,
-  frequency: "weekly",
+  standaloneExtraWeeklyCharge: 40,
+  installRatePerPod: 25,
+  tripChargePerVisit: 0,
+  contractMonths: 12,
+  isStandalone: true,
+  tripChargeIncluded: true,
+  notes: "",
+};
+
+export const DEFAULT_CARPET_CLEANING_FORM: CarpetFormState = {
+  serviceId: "carpetCleaning",
+  areaSqFt: 1000,
+  useExactSqft: true,  // Default to exact calculation
+  frequency: "monthly",
+  location: "insideBeltway",
+  needsParking: false,
+  contractMonths: 12,
+  includeInstall: true,
+  isDirtyInstall: false,
+  // Editable pricing rates from config
+  unitSqFt: 500,
+  firstUnitRate: 250,
+  additionalUnitRate: 125,
+  perVisitMinimum: 250,
+  installMultiplierDirty: 3,
+  installMultiplierClean: 1,
+  // Default overrides (none)
   tripChargeIncluded: true,
   notes: "",
 };

@@ -82,6 +82,13 @@ export interface SanipodPricingConfig {
   /** Visits per year when viewing as weekly / biweekly / monthly. */
   annualFrequencies: SanipodAnnualFrequencyConfig;
 
+  /** Frequency-specific visits per month multipliers */
+  frequencyMultipliers: {
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+  };
+
   /** Weeks used for monthly & annual rollups. */
   weeksPerMonth: number; // now 4.33
   weeksPerYear: number;  // typically 52

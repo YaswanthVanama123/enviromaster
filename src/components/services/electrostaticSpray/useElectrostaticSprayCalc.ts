@@ -163,6 +163,10 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     // Contract total
     const contractTotal = form.customContractTotal ?? (monthlyRecurring * form.contractMonths);
 
+    // Frequency-specific UI helpers
+    const isVisitBasedFrequency = form.frequency === "bimonthly" || form.frequency === "quarterly";
+    const monthsPerVisit = form.frequency === "bimonthly" ? 2 : form.frequency === "quarterly" ? 3 : 1;
+
     return {
       serviceCharge,
       tripCharge,
@@ -171,6 +175,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       contractTotal,
       effectiveRate,
       pricingMethodUsed,
+      // Frequency-specific UI helpers
+      isVisitBasedFrequency,
+      monthsPerVisit,
     };
   }, [form]);
 

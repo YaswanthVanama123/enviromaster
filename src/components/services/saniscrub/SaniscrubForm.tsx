@@ -56,19 +56,23 @@ export const SaniscrubForm: React.FC<
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
-  // - For 2× / month → always show the FULL monthly fixture charge
-  //   (2× normal monthly − $15 when combined with SaniClean).
-  // - For other frequencies:
-  //   - If we hit a minimum → show 175 or 250.
-  //   - Else → show raw fixtures × rate (monthly).
-  const fixtureLineDisplayAmount =
-    form.fixtureCount > 0
-      ? form.frequency === "twicePerMonth"
-        ? calc.fixtureMonthly
-        : calc.fixtureMinimumApplied > 0
-        ? calc.fixtureMinimumApplied
-        : calc.fixtureRawForMinimum
-      : 0;
+  // Show the FINAL amount that gets used in calculations (after minimum applied)
+  const fixtureLineDisplayAmount = (() => {
+    if (form.fixtureCount <= 0) return 0;
+
+    // For all frequencies: show the actual final monthly fixture amount
+    // This already includes minimum logic applied correctly
+    return calc.fixtureMonthly;
+  })();
+
+  // For the Non-Bathroom Area "= ___" box:
+  // Show the FINAL amount that gets used in calculations (after minimum applied)
+  const nonBathroomLineDisplayAmount = (() => {
+    if (form.nonBathroomSqFt <= 0) return 0;
+
+    // Show the actual final amount (either raw calculation or minimum, whichever is higher)
+    return calc.nonBathroomPerVisit;
+  })();
 
   React.useEffect(() => {
     if (servicesContext) {
@@ -106,20 +110,22 @@ export const SaniscrubForm: React.FC<
             label: "Non-Bathroom Area",
             type: "calc" as const,
             qty: form.nonBathroomSqFt,
-            rate: form.nonBathroomRatePerSqFt,
-            total: calc.nonBathroomMonthly,
+            rate: form.useExactNonBathroomSqft
+              ? `${form.nonBathroomFirstUnitRate}/${calc.nonBathroomUnitSqFt}+${form.nonBathroomAdditionalUnitRate}`
+              : (form.nonBathroomAdditionalUnitRate / calc.nonBathroomUnitSqFt).toFixed(2),
+            total: nonBathroomLineDisplayAmount,
             unit: "sq ft",
           },
         } : {}),
 
         totals: {
           monthly: {
-            label: "Monthly Recurring",
+            label: calc.isVisitBasedFrequency ? "Per Visit" : "Monthly Recurring",
             type: "dollar" as const,
             amount: calc.monthlyBase,
           },
           firstMonth: {
-            label: "First Month",
+            label: calc.isVisitBasedFrequency ? "First Visit" : "First Month",
             type: "dollar" as const,
             amount: calc.firstMonthTotal,
           },
@@ -349,9 +355,30 @@ export const SaniscrubForm: React.FC<
               className="svc-in-box"
               type="text"
               readOnly
-              value={calc.nonBathroomPerVisit.toFixed(2)}
+              value={nonBathroomLineDisplayAmount.toFixed(2)}
             />
           </div>
+        </div>
+      </div>
+
+      {/* Non-Bathroom Area calculation method checkbox */}
+      <div className="svc-row">
+        <label></label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="useExactNonBathroomSqft"
+              checked={form.useExactNonBathroomSqft}
+              onChange={onChange}
+            />
+            <span>Exact SqFt Calculation</span>
+          </label>
+          <span className="svc-small">
+            {form.useExactNonBathroomSqft
+              ? `(${calc.nonBathroomUnitSqFt} sq ft units: $${form.nonBathroomFirstUnitRate} first + $${form.nonBathroomAdditionalUnitRate} per extra)`
+              : `(Direct: area × $${(form.nonBathroomAdditionalUnitRate / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)`}
+          </span>
         </div>
       </div>
 
@@ -493,9 +520,9 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* First month total = install-only first visit + (monthlyVisits − 1) × normal service */}
+      {/* First month/visit total = install-only first visit + (monthlyVisits − 1) × normal service */}
       <div className="svc-row svc-row-charge">
-        <label>First Month Total</label>
+        <label>{calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total"}</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -509,9 +536,9 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Normal recurring month (after first) */}
-      <div className="svc-row svc-row-charge">
-        <label>Monthly Recurring</label>
+      {/* Normal recurring month (after first) or per visit for bi-monthly/quarterly */}
+      {/* <div className="svc-row svc-row-charge">
+        <label>{calc.isVisitBasedFrequency ? "Per Visit" : "Monthly Recurring"}</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -523,9 +550,9 @@ export const SaniscrubForm: React.FC<
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
-      {/* Contract total – dropdown 2–36 months */}
+      {/* Contract total – dropdown with frequency-specific months */}
       <div className="svc-row svc-row-charge">
         <label>Contract Total</label>
         <div className="svc-row-right">
@@ -535,11 +562,33 @@ export const SaniscrubForm: React.FC<
             value={form.contractMonths}
             onChange={onChange}
           >
-            {Array.from({ length: 35 }, (_, i) => i + 2).map((months) => (
-              <option key={months} value={months}>
-                {months} mo
-              </option>
-            ))}
+            {(() => {
+              // ✅ FIXED: Generate frequency-specific contract month options
+              const options = [];
+
+              if (calc.frequency === "bimonthly") {
+                // Bi-monthly: Even numbers only (2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36)
+                for (let months = 2; months <= 36; months += 2) {
+                  options.push(months);
+                }
+              } else if (calc.frequency === "quarterly") {
+                // Quarterly: Quarterly values (3,6,9,12,15,18,21,24,27,30,33,36)
+                for (let months = 3; months <= 36; months += 3) {
+                  options.push(months);
+                }
+              } else {
+                // Monthly and 2X/monthly: All months (2,3,4,5...36)
+                for (let months = 2; months <= 36; months++) {
+                  options.push(months);
+                }
+              }
+
+              return options.map((months) => (
+                <option key={months} value={months}>
+                  {months} mo
+                </option>
+              ));
+            })()}
           </select>
           <div className="svc-dollar">
             <span>$</span>

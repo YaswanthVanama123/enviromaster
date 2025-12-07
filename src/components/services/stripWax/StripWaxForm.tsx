@@ -9,8 +9,6 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
-
 export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
 > = ({ initialData, onRemove }) => {
@@ -175,7 +173,28 @@ export const StripWaxForm: React.FC<
           <span className="svc-small">/sq ft</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
-            ${fmt(calc.perVisit)}
+            ${calc.perVisit.toFixed(2)}
+          </span>
+        </div>
+      </div>
+
+      {/* Floor area calculation method checkbox */}
+      <div className="svc-row">
+        <label></label>
+        <div className="svc-row-right">
+          <label className="svc-inline">
+            <input
+              type="checkbox"
+              name="useExactFloorAreaSqft"
+              checked={form.useExactFloorAreaSqft}
+              onChange={onChange}
+            />
+            <span>Exact SqFt Calculation</span>
+          </label>
+          <span className="svc-small">
+            {form.useExactFloorAreaSqft
+              ? `(${cfg.floorAreaUnit} sq ft blocks: $${form.minCharge.toFixed(2)} first block + $${(form.ratePerSqFt * cfg.floorAreaUnit).toFixed(2)} per extra block)`
+              : `(Direct: area × $${form.ratePerSqFt.toFixed(2)}/sq ft, min $${form.minCharge.toFixed(2)})`}
           </span>
         </div>
       </div>
@@ -240,15 +259,37 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Contract length (2–36 months) */}
-      <div className="svc-row">
-        <label>Contract Length (Months)</label>
-        <div className="svc-row-right">
+      {/* Totals */}
+      <div className="svc-row svc-row-total">
+        <label>Per Visit Total</label>
+        <div className="svc-dollar">
+          ${calc.perVisit.toFixed(2)}
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-total">
+        <label>First Month Total</label>
+        <div className="svc-dollar">
+          ${calc.monthly.toFixed(2)}
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-total">
+        <label>Contract Total</label>
+        <div className="svc-row-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <select
             className="svc-in"
             name="contractMonths"
             value={form.contractMonths}
             onChange={onChange}
+            style={{
+              borderBottom: '2px solid #000',
+              borderTop: 'none',
+              borderLeft: 'none',
+              borderRight: 'none',
+              backgroundColor: 'transparent',
+              padding: '4px 20px 4px 4px'
+            }}
           >
             {Array.from({
               length:
@@ -257,35 +298,29 @@ export const StripWaxForm: React.FC<
               const m = cfg.minContractMonths + idx;
               return (
                 <option key={m} value={m}>
-                  {m}
+                  {m} mo
                 </option>
               );
             })}
           </select>
-        </div>
-      </div>
-
-      {/* Totals */}
-      <div className="svc-row svc-row-total">
-        <label>Per Visit Total</label>
-        <div className="svc-dollar">
-          ${fmt(calc.perVisit)}
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-total">
-        <label>First Month Total</label>
-        <div className="svc-dollar">
-          ${fmt(calc.monthly)}
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-total">
-        <label>
-          Contract Total ({form.contractMonths} Months)
-        </label>
-        <div className="svc-dollar">
-          ${fmt(calc.annual)}
+          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
+          <input
+            className="svc-in"
+            type="text"
+            readOnly
+            value={calc.annual.toFixed(2)}
+            style={{
+              borderBottom: '2px solid #ff0000',
+              borderTop: 'none',
+              borderLeft: 'none',
+              borderRight: 'none',
+              backgroundColor: 'transparent',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              padding: '4px',
+              width: '100px'
+            }}
+          />
         </div>
       </div>
     </div>

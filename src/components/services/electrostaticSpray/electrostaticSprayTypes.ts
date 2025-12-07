@@ -93,4 +93,8 @@ export interface ElectrostaticSprayCalcResult {
   // Breakdown info
   effectiveRate: number; // Effective rate per room or per 1000 sq ft
   pricingMethodUsed: "byRoom" | "bySqFt";
+
+  // Frequency-specific UI helpers
+  isVisitBasedFrequency: boolean; // True for bi-monthly/quarterly
+  monthsPerVisit: number; // 2 for bi-monthly, 3 for quarterly, 1 for others
 }
