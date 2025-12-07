@@ -1,5 +1,5 @@
 // src/features/services/refreshPowerScrub/useRefreshPowerScrubCalc.ts
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   RefreshAreaCalcState,
   RefreshAreaKey,
@@ -20,6 +20,32 @@ import {
   REFRESH_SQFT_INSIDE_RATE,
   REFRESH_SQFT_OUTSIDE_RATE,
 } from "./refreshPowerScrubConfig";
+import { serviceConfigApi } from "../../../backendservice/api";
+
+// ✅ Backend config interface matching MongoDB JSON structure
+interface BackendRefreshPowerScrubConfig {
+  coreRates: {
+    defaultHourlyRate: number;
+    tripCharge: number;
+    minimumVisit: number;
+  };
+  areaSpecificPricing: {
+    kitchen: {
+      smallMedium: number;
+      large: number;
+    };
+    frontOfHouse: number;
+    patio: {
+      standalone: number;
+      upsell: number;
+    };
+  };
+  squareFootagePricing: {
+    fixedFee: number;
+    insideRate: number;
+    outsideRate: number;
+  };
+}
 
 const AREA_KEYS: RefreshAreaKey[] = [
   "dumpster",
@@ -32,10 +58,16 @@ const AREA_KEYS: RefreshAreaKey[] = [
 
 const DEFAULT_AREA: RefreshAreaCalcState = {
   enabled: false,
+  pricingType: "preset",
   workers: 2,
   hours: 0,
+  hourlyRate: REFRESH_DEFAULT_HOURLY, // $200/hr default
   insideSqFt: 0,
   outsideSqFt: 0,
+  insideRate: REFRESH_SQFT_INSIDE_RATE, // $0.60/sq ft default
+  outsideRate: REFRESH_SQFT_OUTSIDE_RATE, // $0.40/sq ft default
+  sqFtFixedFee: REFRESH_SQFT_FIXED_FEE, // $200 fixed fee default
+  customAmount: 0,
   kitchenSize: "smallMedium",
   patioMode: "standalone",
   frequencyLabel: "",
@@ -44,7 +76,7 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
 const DEFAULT_FORM: RefreshPowerScrubFormState = {
   // BaseServiceFormState (actual type lives elsewhere)
   serviceId: "refreshPowerScrub",
-  frequency: "one_time" as any,
+  frequency: "monthly" as any,
   tripChargeIncluded: true,
   notes: "",
 
@@ -52,6 +84,10 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   tripCharge: REFRESH_DEFAULT_TRIP,   // $75
   hourlyRate: REFRESH_DEFAULT_HOURLY, // $200/hr/worker
   minimumVisit: REFRESH_DEFAULT_MIN,  // $475 minimum
+
+  // Global frequency and contract settings
+  frequency: "monthly",
+  contractMonths: 12,
 
   // Columns (Dumpster on by default)
   dumpster: { ...DEFAULT_AREA, enabled: true },
@@ -65,33 +101,42 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
 const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "workers",
   "hours",
+  "hourlyRate",
   "insideSqFt",
   "outsideSqFt",
+  "insideRate",
+  "outsideRate",
+  "sqFtFixedFee",
+  "customAmount",
 ];
 
 /** Hourly rule:
  *  Workers × hours × hourlyRate (NO trip charge here - applied at visit level).
- *  Returns the labour cost only.
+ *  Returns the labour cost only. Uses backend rate when available.
  */
 function calcHourlyLabour(
   state: RefreshAreaCalcState,
-  hourlyRate: number
+  backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
+  const hourlyRate = backendConfig?.coreRates?.defaultHourlyRate ?? state.hourlyRate ?? REFRESH_DEFAULT_HOURLY;
   return (state.workers || 0) * (state.hours || 0) * hourlyRate;
 }
 
 /** Sq-ft rule:
- *  $200 fixed fee + $.60 / inside sq ft + $.40 / outside sq ft.
- *  Returns the service cost only (trip applied at visit level).
+ *  Fixed fee + inside rate × inside sq ft + outside rate × outside sq ft.
+ *  Returns the service cost only (trip applied at visit level). Uses backend rates when available.
  */
 function calcSquareFootage(
-  state: RefreshAreaCalcState
+  state: RefreshAreaCalcState,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const insideCost =
-    (state.insideSqFt || 0) * REFRESH_SQFT_INSIDE_RATE;
-  const outsideCost =
-    (state.outsideSqFt || 0) * REFRESH_SQFT_OUTSIDE_RATE;
-  return REFRESH_SQFT_FIXED_FEE + insideCost + outsideCost;
+  const fixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? state.sqFtFixedFee ?? REFRESH_SQFT_FIXED_FEE;
+  const insideRate = backendConfig?.squareFootagePricing?.insideRate ?? state.insideRate ?? REFRESH_SQFT_INSIDE_RATE;
+  const outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? state.outsideRate ?? REFRESH_SQFT_OUTSIDE_RATE;
+
+  const insideCost = (state.insideSqFt || 0) * insideRate;
+  const outsideCost = (state.outsideSqFt || 0) * outsideRate;
+  return fixedFee + insideCost + outsideCost;
 }
 
 /** Default / preset prices when no hours / sq-ft are supplied.
@@ -99,28 +144,78 @@ function calcSquareFootage(
  */
 function calcPresetPackage(
   area: RefreshAreaKey,
-  state: RefreshAreaCalcState
+  state: RefreshAreaCalcState,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
+  // ✅ Use backend config with fallback for missing properties only
+  // Create a merged config that uses backend values when available, defaults otherwise
+  const defaultConfig = {
+    coreRates: {
+      defaultHourlyRate: REFRESH_DEFAULT_HOURLY,
+      tripCharge: REFRESH_DEFAULT_TRIP,
+      minimumVisit: REFRESH_DEFAULT_MIN,
+    },
+    areaSpecificPricing: {
+      kitchen: {
+        smallMedium: REFRESH_KITCHEN_SMALL_MED,
+        large: REFRESH_KITCHEN_LARGE,
+      },
+      frontOfHouse: REFRESH_FOH_RATE,
+      patio: {
+        standalone: REFRESH_PATIO_STANDALONE,
+        upsell: REFRESH_PATIO_UPSELL,
+      },
+    },
+    squareFootagePricing: {
+      fixedFee: REFRESH_SQFT_FIXED_FEE,
+      insideRate: REFRESH_SQFT_INSIDE_RATE,
+      outsideRate: REFRESH_SQFT_OUTSIDE_RATE,
+    },
+  };
+
+  // Merge backend config with defaults, ensuring all required properties exist
+  const config = {
+    coreRates: {
+      ...defaultConfig.coreRates,
+      ...(backendConfig?.coreRates || {}),
+    },
+    areaSpecificPricing: {
+      kitchen: {
+        ...defaultConfig.areaSpecificPricing.kitchen,
+        ...(backendConfig?.areaSpecificPricing?.kitchen || {}),
+      },
+      frontOfHouse: backendConfig?.areaSpecificPricing?.frontOfHouse ?? defaultConfig.areaSpecificPricing.frontOfHouse,
+      patio: {
+        ...defaultConfig.areaSpecificPricing.patio,
+        ...(backendConfig?.areaSpecificPricing?.patio || {}),
+      },
+    },
+    squareFootagePricing: {
+      ...defaultConfig.squareFootagePricing,
+      ...(backendConfig?.squareFootagePricing || {}),
+    },
+  };
+
   switch (area) {
     case "dumpster":
-      // Dumpster — charge the $475 minimum visit (includes trip + minimal labour).
-      return REFRESH_DEFAULT_MIN;
+      // Dumpster — charge the minimum visit (includes trip + minimal labour).
+      return config.coreRates.minimumVisit;
 
     case "patio":
-      // Patio — standalone $875 (includes trip), upsell +$500 (labour only, trip already in FOH).
+      // Patio — standalone or upsell pricing from backend config.
       return state.patioMode === "upsell"
-        ? REFRESH_PATIO_UPSELL
-        : REFRESH_PATIO_STANDALONE;
+        ? config.areaSpecificPricing.patio.upsell
+        : config.areaSpecificPricing.patio.standalone;
 
     case "foh":
-      // Front of house — $2500 package (includes trip).
-      return REFRESH_FOH_RATE;
+      // Front of house — package price from backend config.
+      return config.areaSpecificPricing.frontOfHouse;
 
     case "boh":
-      // Back of house — $1500 small/medium, $2500 large kitchen (includes trip).
+      // Back of house — kitchen size pricing from backend config.
       return state.kitchenSize === "large"
-        ? REFRESH_KITCHEN_LARGE
-        : REFRESH_KITCHEN_SMALL_MED;
+        ? config.areaSpecificPricing.kitchen.large
+        : config.areaSpecificPricing.kitchen.smallMedium;
 
     case "walkway":
     case "other":
@@ -138,26 +233,33 @@ function calcPresetPackage(
  */
 function calcAreaCost(
   area: RefreshAreaKey,
-  form: RefreshPowerScrubFormState
+  form: RefreshPowerScrubFormState,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
 ): { cost: number; isPackage: boolean } {
   const state = form[area];
   if (!state.enabled) return { cost: 0, isPackage: false };
 
-  const hasSqFt =
-    (state.insideSqFt || 0) > 0 ||
-    (state.outsideSqFt || 0) > 0;
-  const hasHours = (state.hours || 0) > 0;
+  // Use the selected pricing type
+  switch (state.pricingType) {
+    case "preset":
+      // Preset prices are package prices (trip included)
+      return { cost: calcPresetPackage(area, state, backendConfig), isPackage: true };
 
-  // Priority: sq-ft > hourly > preset
-  if (hasSqFt) {
-    return { cost: calcSquareFootage(state), isPackage: false };
-  }
-  if (hasHours) {
-    return { cost: calcHourlyLabour(state, form.hourlyRate), isPackage: false };
-  }
+    case "hourly":
+      // Hourly pricing - labor only (trip added at visit level)
+      return { cost: calcHourlyLabour(state, backendConfig), isPackage: false };
 
-  // Preset prices are package prices (trip included)
-  return { cost: calcPresetPackage(area, state), isPackage: true };
+    case "squareFeet":
+      // Square footage pricing - service only (trip added at visit level)
+      return { cost: calcSquareFootage(state, backendConfig), isPackage: false };
+
+    case "custom":
+      // Custom amount - assume it's a package price (trip included)
+      return { cost: state.customAmount || 0, isPackage: true };
+
+    default:
+      return { cost: 0, isPackage: false };
+  }
 }
 
 export function useRefreshPowerScrubCalc(
@@ -193,6 +295,65 @@ export function useRefreshPowerScrubCalc(
 
     return base;
   });
+
+  // ✅ State to store backend config
+  const [backendConfig, setBackendConfig] = useState<BackendRefreshPowerScrubConfig | null>(null);
+
+  // ✅ Loading state for refresh button
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+
+  // ✅ Fetch configuration from backend
+  const fetchPricing = async () => {
+    setIsLoadingConfig(true);
+    try {
+      const response = await serviceConfigApi.getActive("refreshPowerScrub");
+
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Refresh Power Scrub config not found in backend, using default fallback values');
+        return;
+      }
+
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Refresh Power Scrub document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendRefreshPowerScrubConfig;
+
+      // ✅ Store the backend config
+      setBackendConfig(config);
+
+      console.log('📊 [Refresh Power Scrub] Backend Config Received:', {
+        coreRates: config.coreRates,
+        areaSpecificPricing: config.areaSpecificPricing,
+        squareFootagePricing: config.squareFootagePricing,
+      });
+
+      setForm((prev) => ({
+        ...prev,
+        // Update rates from backend if available
+        tripCharge: config.coreRates?.tripCharge ?? prev.tripCharge,
+        hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.hourlyRate,
+        minimumVisit: config.coreRates?.minimumVisit ?? prev.minimumVisit,
+      }));
+
+      console.log('✅ Refresh Power Scrub config loaded from backend:', config);
+    } catch (error) {
+      console.error('❌ Failed to fetch Refresh Power Scrub config from backend:', error);
+      console.log('⚠️ Using default hardcoded values as fallback');
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchPricing();
+  }, []); // Run once on mount
 
   /** Toggle whether a column is included */
   const toggleAreaEnabled = (area: RefreshAreaKey, enabled: boolean) => {
@@ -261,7 +422,7 @@ export function useRefreshPowerScrubCalc(
     let hasPackage = false;
 
     for (const area of AREA_KEYS) {
-      const { cost, isPackage } = calcAreaCost(area, form);
+      const { cost, isPackage } = calcAreaCost(area, form, backendConfig);
       totals[area] = cost;
       if (isPackage && cost > 0) {
         hasPackage = true;
@@ -272,7 +433,7 @@ export function useRefreshPowerScrubCalc(
       areaTotals: totals as RefreshAreaTotals,
       hasPackagePrice: hasPackage,
     };
-  }, [form]);
+  }, [form, backendConfig]);
 
   const quote: ServiceQuoteResult = useMemo(() => {
     // Sum all area costs
@@ -296,6 +457,32 @@ export function useRefreshPowerScrubCalc(
 
     const rounded = Math.round(perVisit * 100) / 100;
 
+    // Calculate monthly and contract totals based on frequency
+    let monthlyRecurring = 0;
+    let contractTotal = 0;
+
+    switch (form.frequency) {
+      case "weekly":
+        monthlyRecurring = rounded * 4.33; // 4.33 weeks per month
+        break;
+      case "biweekly":
+        monthlyRecurring = rounded * 2.17; // ~2.17 visits per month
+        break;
+      case "monthly":
+        monthlyRecurring = rounded; // 1 visit per month
+        break;
+      case "bimonthly":
+        monthlyRecurring = rounded * 0.5; // 0.5 visits per month
+        break;
+      case "quarterly":
+        monthlyRecurring = rounded * 0.33; // ~0.33 visits per month
+        break;
+      default:
+        monthlyRecurring = rounded;
+    }
+
+    contractTotal = monthlyRecurring * (form.contractMonths || 12);
+
     const details: string[] = [];
     AREA_KEYS.forEach((area) => {
       const amount = areaTotals[area];
@@ -314,11 +501,14 @@ export function useRefreshPowerScrubCalc(
         (state.outsideSqFt || 0) > 0;
       const hasHours = (state.hours || 0) > 0;
 
-      const method = hasSqFt
-        ? "sq-ft rule"
-        : hasHours
-        ? "hourly rule"
-        : "package price";
+      const method =
+        state.pricingType === "preset"
+          ? "preset package"
+          : state.pricingType === "hourly"
+          ? "hourly rate"
+          : state.pricingType === "squareFeet"
+          ? "sq-ft rule"
+          : "custom amount";
 
       details.push(
         `${prettyArea}: $${amount.toFixed(2)} (${method})`
@@ -335,19 +525,32 @@ export function useRefreshPowerScrubCalc(
       serviceId: "refreshPowerScrub",
       displayName: "Refresh Power Scrub",
       perVisitPrice: rounded,
-      annualPrice: rounded,
+      annualPrice: contractTotal,
       detailsBreakdown: details,
+      monthlyRecurring,
+      contractTotal,
     };
-  }, [areaTotals, hasPackagePrice, form.tripCharge, form.minimumVisit]);
+  }, [areaTotals, hasPackagePrice, form.tripCharge, form.minimumVisit, form.frequency, form.contractMonths, backendConfig]);
+
+  const setNotes = (notes: string) => {
+    setForm((prev) => ({
+      ...prev,
+      notes,
+    }));
+  };
 
   return {
     form,
     setTripCharge,
     setHourlyRate,
     setMinimumVisit,
+    setNotes,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
     quote,
+    refreshConfig: fetchPricing,
+    isLoadingConfig,
+    backendConfig, // ✅ Expose backend config for auto-populated rates
   };
 }

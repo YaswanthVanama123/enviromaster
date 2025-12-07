@@ -1,6 +1,7 @@
 // src/components/services/electrostaticSpray/useElectrostaticSprayCalc.ts
 
-import { useState, useMemo, ChangeEvent, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import type {
   ElectrostaticSprayFormState,
   ElectrostaticSprayCalcResult,
@@ -24,6 +25,7 @@ const DEFAULT_FORM_STATE: ElectrostaticSprayFormState = {
   pricingMethod: "byRoom",
   roomCount: 0,
   squareFeet: 0,
+  useExactCalculation: true, // Default to exact calculation
   frequency: cfg.defaultFrequency,
   location: "standard",
   isCombinedWithSaniClean: false,
@@ -142,7 +144,21 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       effectiveRate = form.ratePerRoom;
     } else {
       // By square feet
-      const units = form.squareFeet / cfg.sqFtUnit; // Convert to 1000 sq ft units
+      let calculateForSqFt = form.squareFeet;
+
+      if (!form.useExactCalculation) {
+        // Use minimum square feet tier pricing
+        // Find the minimum tier that covers the entered square feet
+        const minTier = cfg.sqFtUnit; // 1000 sq ft minimum
+        if (calculateForSqFt <= minTier) {
+          calculateForSqFt = minTier; // If 500 entered, use 1000
+        } else {
+          // Round up to next 1000 sq ft tier (1001 becomes 2000)
+          calculateForSqFt = Math.ceil(calculateForSqFt / cfg.sqFtUnit) * cfg.sqFtUnit;
+        }
+      }
+
+      const units = calculateForSqFt / cfg.sqFtUnit; // Convert to 1000 sq ft units
       serviceCharge = units * form.ratePerThousandSqFt;
       effectiveRate = form.ratePerThousandSqFt;
     }

@@ -111,6 +111,14 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           unit: form.pricingMethod === "byRoom" ? "rooms" : "sq ft",
         },
 
+        ...(form.pricingMethod === "bySqFt" && !form.useExactCalculation ? {
+          calculationMethod: {
+            label: "Calculation Method",
+            type: "text" as const,
+            value: "Minimum Tier Pricing",
+          },
+        } : {}),
+
         ...(calc.tripCharge > 0 ? {
           tripCharge: {
             label: "Trip Charge",
@@ -151,7 +159,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc, customFields]);
+  }, [form, calc, customFields]); // form already includes useExactCalculation
 
   // Ensure valid contract months when frequency changes
   useEffect(() => {
@@ -351,6 +359,30 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 {/* <div className="svc-note" style={{ marginTop: '4px', fontSize: '0.85em' }}>
                   Rate applies per 1000 sq ft ({(form.squareFeet / 1000).toFixed(2)} units)
                 </div> */}
+              </div>
+            </div>
+          )}
+
+          {/* Exact Calculation Checkbox - only show when using square feet pricing */}
+          {form.pricingMethod === "bySqFt" && (
+            <div className="svc-row">
+              <div className="svc-label" />
+              <div className="svc-field">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="useExactCalculation"
+                    checked={form.useExactCalculation}
+                    onChange={onChange}
+                  />{" "}
+                  Exact square feet calculation
+                </label>
+                <div className="svc-note" style={{ marginTop: '4px', fontSize: '0.85em', color: '#666' }}>
+                  {form.useExactCalculation
+                    ? "Calculating for exact square feet entered"
+                    : "Using minimum tier pricing (500 sq ft → 1000 sq ft minimum, 1001 sq ft → 2000 sq ft tier)"
+                  }
+                </div>
               </div>
             </div>
           )}

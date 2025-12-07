@@ -7,26 +7,26 @@ import type {
 
 export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
   geographicPricing: {
-    // Inside the Beltway: $7 / fixture, $40 minimum, trip charge removed (set to 0)
+    // Inside the Beltway: $7 / fixture, $40 minimum (no trip charges)
     insideBeltway: {
       ratePerFixture: 7,
       weeklyMinimum: 40,
-      tripCharge: 0, // trip concept removed from calculations
-      parkingFee: 0, // parking folded into 0 as well
+      tripCharge: 0, // No trip charges per user request
+      parkingFee: 0, // No parking fees per user request
     },
-    // Outside the Beltway: $6 / fixture, same $40 minimum, trip charge removed (set to 0)
+    // Outside the Beltway: $6 / fixture (no minimum, no trip charges)
     outsideBeltway: {
       ratePerFixture: 6,
-      weeklyMinimum: 40,
-      tripCharge: 0, // trip concept removed from calculations
+      weeklyMinimum: 0, // No minimum mentioned in actual rules
+      tripCharge: 0, // No trip charges per user request
     },
   },
 
-  // For 4–5 or fewer fixtures → $50 minimum
+  // For 4–5 or fewer fixtures → $50 minimum (no trip charges)
   smallFacilityMinimum: {
     fixtureThreshold: 5,
-    minimumWeeklyCharge: 40,
-    includesTripCharge: true, // historical note; trip itself is $0 now
+    minimumWeeklyCharge: 50, // $50 per actual rules (was $40)
+    includesTripCharge: true, // No trip charges anymore, but kept for config compatibility
   },
 
   // All-inclusive package:
@@ -35,12 +35,11 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
   //   - microfiber mopping
   //   - monthly SaniScrub
   //   - no warranty fee
-  //   - no trip charge (already 0 in geo)
   //   - priced at $20 / fixture / week
   allInclusivePackage: {
     weeklyRatePerFixture: 20,
     includeAllAddOns: true,
-    waiveTripCharge: true,
+    waiveTripCharge: true, // Kept for compatibility, no trip charges anyway
     waiveWarrantyFees: true,
     autoAllInclusiveMinFixtures: 10, // auto-switch to all-inclusive for 10+ fixtures
   },

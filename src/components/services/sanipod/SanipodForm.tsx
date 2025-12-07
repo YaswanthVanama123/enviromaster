@@ -605,6 +605,16 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
+      {/* First Visit Total - for debugging partial installation */}
+      <div className="svc-row svc-row-total">
+        <label>First Visit Total</label>
+        <div className="svc-dollar">
+          <span className="svc-dollar">
+            ${parseFloat(calc.firstVisit.toFixed(2))}
+          </span>
+        </div>
+      </div>
+
       <div className="svc-row svc-row-total">
         <label>First Month Total</label>
         <div className="svc-dollar">

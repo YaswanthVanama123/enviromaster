@@ -444,12 +444,13 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       }
     }
 
-    // ✅ PARTIAL INSTALLATION WITH PROPER BAG LOGIC:
-    // Add bags to first visit - recurring bags get rate category multiplier, one-time bags don't
-    const firstVisitBagsCost = form.extraBagsRecurring && bags > 0 ? weeklyBagsRed * rateCfg.multiplier : 0;
+    // ✅ FIXED BAG LOGIC FOR FIRST VISIT:
+    // Both recurring and one-time bags should be included in first visit
+    // The difference is only in subsequent visits
+    const firstVisitBagsCost = bags > 0 ? (bags * form.extraBagPrice * rateCfg.multiplier) : 0;
 
-    // First visit = Install + Service (non-installed pods only) + Bags (recurring or one-time)
-    const firstVisit = installOnlyCost + firstVisitServiceCost + firstVisitBagsCost + oneTimeBagsCost;
+    // First visit = Install + Service (non-installed pods only) + Bags (always included)
+    const firstVisit = installOnlyCost + firstVisitServiceCost + firstVisitBagsCost;
     const installCost = installOnlyCost;
 
     // ---------- MONTHLY & CONTRACT ----------
@@ -546,11 +547,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       ? form.customInstallationFee
       : installOnlyCost;
 
+    // Adjusted monthly - should use the same logic as base firstMonth calculation
     const adjustedMonthly = form.customMonthlyPrice !== undefined
       ? form.customMonthlyPrice
-      : (installCostCalc > 0 || oneTimeBagsCostCalc > 0)
-        ? installCostCalc + oneTimeBagsCostCalc + adjustedFirstVisitServiceCost + (Math.max(weeksPerMonthCalc - 1, 0) * adjustedPerVisit)
-        : weeksPerMonthCalc * adjustedPerVisit;
+      : selectedFrequency === "monthly"
+        ? installCostCalc + adjustedPerVisit + oneTimeBagsCostCalc
+        : firstVisit + Math.max(monthlyVisits - 1, 0) * adjustedPerVisit;
 
     // Adjusted annual
     const ongoingMonthlyCalc = weeksPerMonthCalc * adjustedPerVisit;

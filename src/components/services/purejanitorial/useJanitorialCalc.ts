@@ -342,8 +342,16 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     // Weekly: per visit * visits per week
     const recurringWeekly = recurringPerVisit * form.visitsPerWeek;
 
+    // ✅ FIXED INSTALLATION LOGIC: Only applies to dusting with 3x multiplier
+    // Calculate dusting cost per visit
+    const dustingCostPerVisit = dustingPlaces * form.dustingPricePerPlace;
+
+    // Installation adds 2x extra dusting cost (making total 3x for first visit only)
+    const installationFee = form.installation && dustingPlaces > 0
+      ? dustingCostPerVisit * 2  // 2x extra (normal 1x + 2x extra = 3x total)
+      : 0;
+
     // First month: monthly + installation fee (if applicable)
-    const installationFee = form.installation ? (recurringPerVisit * 0.5) : 0; // 50% of visit cost as installation
     const firstMonth = recurringMonthly + installationFee;
 
     // Contract total: monthly * contract months

@@ -54,6 +54,9 @@ export interface ElectrostaticSprayFormState {
   // Square footage pricing
   squareFeet: number;
 
+  // Exact calculation checkbox for square feet pricing
+  useExactCalculation: boolean;
+
   // Service frequency
   frequency: ElectrostaticSprayFrequency;
 

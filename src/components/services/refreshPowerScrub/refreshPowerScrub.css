@@ -11,6 +11,72 @@
   overflow-x: auto;
 }
 
+/* ===== GRID LAYOUT CLASSES (for 6-column horizontal layout) ===== */
+.rps-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 8px;
+}
+
+.rps-header-row {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+}
+
+.rps-content-row {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+}
+
+.rps-column {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.rps-column:nth-child(1) {
+  background: #f0f8ff; /* Light blue for DUMPSTER */
+}
+
+.rps-column:nth-child(2) {
+  background: #f0fff0; /* Light green for PATIO */
+}
+
+.rps-column:nth-child(3) {
+  background: #fff5ee; /* Light orange for WALKWAY */
+}
+
+.rps-column:nth-child(4) {
+  background: #f5f5dc; /* Beige for FRONT HOUSE */
+}
+
+.rps-column:nth-child(5) {
+  background: #fdf5e6; /* Old lace for BACK HOUSE */
+}
+
+.rps-column:nth-child(6) {
+  background: #f8f8ff; /* Ghost white for OTHER */
+}
+
+.rps-area-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.rps-area-header input[type="checkbox"] {
+  margin: 0;
+}
+
+/* ===== TABLE LAYOUT CLASSES (legacy - keep for compatibility) ===== */
+
 .rps {
   width: 100%;
   border-collapse: collapse;

@@ -144,6 +144,24 @@ const DEFAULT_FORM: SanicleanFormState = {
   weeklyToAnnualMultiplier: cfg.billingConversions.weekly.annualMultiplier,
   redRateMultiplier: cfg.rateTiers.redRate.multiplier,
   greenRateMultiplier: cfg.rateTiers.greenRate.multiplier,
+
+  // ✅ NEW: Independent fixture rates (no auto-population)
+  sinkRate: cfg.geographicPricing.insideBeltway.ratePerFixture,
+  urinalRate: cfg.geographicPricing.insideBeltway.ratePerFixture,
+  maleToiletRate: cfg.geographicPricing.insideBeltway.ratePerFixture,
+  femaleToiletRate: cfg.geographicPricing.insideBeltway.ratePerFixture,
+
+  // ✅ NEW: Independent facility component quantities and rates (no auto-population)
+  urinalComponentsQty: 0,
+  urinalComponentsRate: (cfg.facilityComponents.urinals.urinalScreen || 0) + (cfg.facilityComponents.urinals.urinalMat || 0),
+  maleToiletComponentsQty: 0,
+  maleToiletComponentsRate: (cfg.facilityComponents.maleToilets.toiletClips || 0) + (cfg.facilityComponents.maleToilets.seatCoverDispenser || 0),
+  femaleToiletComponentsQty: 0,
+  femaleToiletComponentsRate: cfg.facilityComponents.femaleToilets.sanipodService || 0,
+
+  // ✅ NEW: Independent warranty (no auto-population from sinks)
+  warrantyQty: 0,
+  warrantyRate: cfg.warrantyFeePerDispenser || 0,
 };
 
 function recomputeFixtureCount(state: SanicleanFormState): SanicleanFormState {
@@ -251,6 +269,20 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
           weeklyToAnnualMultiplier: config.billingConversions?.weekly?.annualMultiplier ?? prev.weeklyToAnnualMultiplier,
           redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
           greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+
+          // ✅ NEW: Initialize individual fixture rates from backend
+          sinkRate: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.sinkRate,
+          urinalRate: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.urinalRate,
+          maleToiletRate: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.maleToiletRate,
+          femaleToiletRate: config.geographicPricing?.insideBeltway?.ratePerFixture ?? prev.femaleToiletRate,
+
+          // ✅ NEW: Initialize facility component rates from backend
+          urinalComponentsRate: ((config.facilityComponents?.urinals?.urinalScreen || 0) + (config.facilityComponents?.urinals?.urinalMat || 0)) || prev.urinalComponentsRate,
+          maleToiletComponentsRate: ((config.facilityComponents?.maleToilets?.toiletClips || 0) + (config.facilityComponents?.maleToilets?.seatCoverDispenser || 0)) || prev.maleToiletComponentsRate,
+          femaleToiletComponentsRate: (config.facilityComponents?.femaleToilets?.sanipodService || 0) || prev.femaleToiletComponentsRate,
+
+          // ✅ NEW: Initialize warranty rate from backend
+          warrantyRate: config.warrantyFeePerDispenser || prev.warrantyRate,
         };
       });
 
@@ -335,7 +367,19 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         case "weeklyToMonthlyMultiplier":
         case "weeklyToAnnualMultiplier":
         case "redRateMultiplier":
-        case "greenRateMultiplier": {
+        case "greenRateMultiplier":
+        case "sinkRate":
+        case "urinalRate":
+        case "maleToiletRate":
+        case "femaleToiletRate":
+        case "urinalComponentsQty":
+        case "urinalComponentsRate":
+        case "maleToiletComponentsQty":
+        case "maleToiletComponentsRate":
+        case "femaleToiletComponentsQty":
+        case "femaleToiletComponentsRate":
+        case "warrantyQty":
+        case "warrantyRate": {
           const num = parseFloat(String(value));
           next = { ...next, [name]: Number.isFinite(num) && num >= 0 ? num : 0 };
           break;
@@ -454,7 +498,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         weeklyTotal: 0,
         monthlyTotal: 0,
         annualTotal: 0,
-        dispenserCount: 0,
+        dispenserCount: 0,  // ✅ No longer used - kept for compatibility
         soapDispensers: 0,
         airFreshDispensers: 0,
         monthlyFacilityComponents: 0,
@@ -539,21 +583,22 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
 
     const baseFixtureChargeRaw = fixtures * baseFixtureRateUsed;
 
-    const sinksChargeRaw = sinks * baseFixtureRateUsed;
-    const urinalsChargeRaw = urinals * baseFixtureRateUsed;
-    const maleToiletsChargeRaw = maleToilets * baseFixtureRateUsed;
-    const femaleToiletsChargeRaw = femaleToilets * baseFixtureRateUsed;
+    // ✅ Individual fixture charges using separate rates (no auto-population)
+    const sinksChargeRaw = sinks * form.sinkRate;
+    const urinalsChargeRaw = urinals * form.urinalRate;
+    const maleToiletsChargeRaw = maleToilets * form.maleToiletRate;
+    const femaleToiletsChargeRaw = femaleToilets * form.femaleToiletRate;
 
     let weeklyBase = 0;
     let weeklyTrip = 0;
     let smallFacilityMinApplied = false;
 
     if (method === "all_inclusive") {
-      // All-inclusive: fixtures × $20, trip waived (and trip config is 0 anyway)
+      // All-inclusive: fixtures × $20, no trip charges
       weeklyBase = baseFixtureChargeRaw;
       weeklyTrip = 0;
     } else if (method === "small_facility_minimum") {
-      // $50 minimum including trip (trip itself is 0 now)
+      // $50 minimum, no trip charges
       weeklyBase = form.smallFacilityMinimumWeekly;  // ✅ USE FORM VALUE (from backend)
 
       console.log('📊 [SaniClean Calc] Small Facility Minimum Applied:', {
@@ -563,14 +608,10 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         currentFixtures: fixtures,
       });
 
-      if (activeConfig.smallFacilityMinimum.includesTripCharge) {  // ✅ FROM BACKEND
-        weeklyTrip = 0;
-      } else {
-        weeklyTrip = tripCharge + parkingAddon;
-      }
+      weeklyTrip = 0; // No trip charges
       smallFacilityMinApplied = weeklyBase > baseFixtureChargeRaw;
     } else {
-      // Geographic per-fixture with weekly facility minimum
+      // Geographic per-fixture with weekly facility minimum, no trip charges
       const perFixtureWeekly = baseFixtureChargeRaw;
       weeklyBase = Math.max(perFixtureWeekly, weeklyMinimum);  // ✅ USE weeklyMinimum from form
 
@@ -583,7 +624,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         fixtures: fixtures,
       });
 
-      weeklyTrip = tripCharge + parkingAddon; // tripCharge is 0 now
+      weeklyTrip = 0; // No trip charges
     }
 
     const tripUnits = weeklyTrip > 0 ? 1 : 0;
@@ -598,16 +639,23 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     );
 
     if (includeFacilityComponentsAsAddOns) {
-      // ✅ USE FORM VALUES (from backend) for facility component rates
-      const monthlyUrinals = urinals * (form.urinalScreenRate + form.urinalMatRate);
-      const monthlyMale = maleToilets * (form.toiletClipsRate + form.seatCoverDispenserRate);
-      const monthlyFemale = femaleToilets * form.sanipodServiceRate;
+      // ✅ NEW: Use independent facility component quantities and rates (no auto-population)
+      // Ensure all values are numbers and default to 0 if NaN
+      const urinalQty = isNaN(form.urinalComponentsQty) ? 0 : form.urinalComponentsQty;
+      const urinalRate = isNaN(form.urinalComponentsRate) ? 0 : form.urinalComponentsRate;
+      const maleQty = isNaN(form.maleToiletComponentsQty) ? 0 : form.maleToiletComponentsQty;
+      const maleRate = isNaN(form.maleToiletComponentsRate) ? 0 : form.maleToiletComponentsRate;
+      const femaleQty = isNaN(form.femaleToiletComponentsQty) ? 0 : form.femaleToiletComponentsQty;
+      const femaleRate = isNaN(form.femaleToiletComponentsRate) ? 0 : form.femaleToiletComponentsRate;
+
+      const monthlyUrinals = urinalQty * urinalRate;
+      const monthlyMale = maleQty * maleRate;
+      const monthlyFemale = femaleQty * femaleRate;
 
       monthlyFacilityComponents = monthlyUrinals + monthlyMale + monthlyFemale;
 
-      weeklyFacilityComponents =
-        monthlyFacilityComponents /
-        form.weeklyToMonthlyMultiplier;  // ✅ USE FORM VALUE (from backend)
+      const weeklyMultiplier = isNaN(form.weeklyToMonthlyMultiplier) ? 4.33 : form.weeklyToMonthlyMultiplier;
+      weeklyFacilityComponents = monthlyFacilityComponents / weeklyMultiplier;
     }
 
     // ---------- Dispensers, warranty & soap ----------
@@ -621,7 +669,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
           )
         : 0;
 
-    const dispenserCount = soapDispensers + airFreshDispensers;
+    const dispenserCount = soapDispensers + airFreshDispensers;  // ✅ Kept for display only - no longer used in warranty calculation
 
     const luxuryUpgradeRatePerDispenser = form.standardToLuxuryRate;  // ✅ USE FORM VALUE (from backend)
 
@@ -647,15 +695,17 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     const weeklySoapUpgrade =
       weeklySoapLuxuryUpgrade + weeklySoapExtraUsage;
 
-    // Warranty (NOT in all-inclusive)
+    // ---------- Warranty (NOT in all-inclusive) - MANUAL ENTRY ----------
     let weeklyWarranty = 0;
-    const warrantyRatePerDispenser = form.warrantyFeePerDispenser;  // ✅ USE FORM VALUE (from backend)
     const warrantyApplies = !(
       method === "all_inclusive" && activeConfig.allInclusivePackage.waiveWarrantyFees  // ✅ FROM BACKEND
     );
 
-    if (warrantyApplies && dispenserCount > 0) {
-      weeklyWarranty = dispenserCount * warrantyRatePerDispenser;
+    if (warrantyApplies) {
+      // ✅ NEW: Use manual warranty quantity and rate (no auto-calculation from sinks)
+      const warrantyQty = isNaN(form.warrantyQty) ? 0 : form.warrantyQty;
+      const warrantyRate = isNaN(form.warrantyRate) ? 0 : form.warrantyRate;
+      weeklyWarranty = warrantyQty * warrantyRate;
     }
 
     // Microfiber mopping $10 / bathroom / week (NOT in all-inclusive)
@@ -690,16 +740,13 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       ? form.greenRateMultiplier
       : form.redRateMultiplier;
 
-    // IMPORTANT: we **do not subtract** paper credit from pricing.
-    // Base $20/fixture already assumes the credit – only overage is charged.
-    const weeklyRaw =
-      weeklyBase +
-      weeklyTrip +
-      weeklyFacilityComponents +
-      weeklySoapUpgrade +
-      weeklyWarranty +
-      weeklyMicrofiber +
-      weeklyPaperOverage;
+    // Weekly total calculation - only include add-ons if salesman manually enters them (> 0)
+    const weeklyRaw = weeklyBase +
+      (weeklyFacilityComponents > 0 ? weeklyFacilityComponents : 0) +
+      (weeklySoapUpgrade > 0 ? weeklySoapUpgrade : 0) +
+      (weeklyWarranty > 0 ? weeklyWarranty : 0) +
+      (weeklyMicrofiber > 0 ? weeklyMicrofiber : 0) +
+      (weeklyPaperOverage > 0 ? weeklyPaperOverage : 0);
 
     const weeklySubtotal = weeklyRaw * rateMultiplier;
 
@@ -728,7 +775,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       detailsBreakdown: [
         `Method: ${methodLabel}`,
         `Weekly base (before add-ons): $${weeklyBase.toFixed(2)}`,
-        `Weekly trip/parking: $${weeklyTrip.toFixed(2)}`,
         `Facility components (weekly eq.): $${weeklyFacilityComponents.toFixed(
           2
         )}`,
@@ -757,7 +803,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       weeklyTotal,
       monthlyTotal,
       annualTotal,
-      dispenserCount,
+      dispenserCount,  // ✅ Kept for display only - no longer used in warranty calculation
       soapDispensers,
       airFreshDispensers,
       monthlyFacilityComponents,
@@ -768,7 +814,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       tripUnits,
       tripRateUsed,
       microfiberRatePerBathroom,
-      warrantyRatePerDispenser,
+      warrantyRatePerDispenser: form.warrantyRate,  // ✅ USE NEW MANUAL WARRANTY RATE
       paperCreditRatePerFixture,
       extraSoapRatePerGallon,
       sinksChargeRaw,
@@ -833,6 +879,21 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     form.customWeeklyTotal,
     form.customMonthlyTotal,
     form.customAnnualTotal,
+    // ✅ NEW: Individual fixture rates (no auto-population)
+    form.sinkRate,
+    form.urinalRate,
+    form.maleToiletRate,
+    form.femaleToiletRate,
+    // ✅ NEW: Independent facility component quantities and rates (no auto-population)
+    form.urinalComponentsQty,
+    form.urinalComponentsRate,
+    form.maleToiletComponentsQty,
+    form.maleToiletComponentsRate,
+    form.femaleToiletComponentsQty,
+    form.femaleToiletComponentsRate,
+    // ✅ NEW: Independent warranty quantity and rate (no auto-population from sinks)
+    form.warrantyQty,
+    form.warrantyRate,
   ]);
 
   return {

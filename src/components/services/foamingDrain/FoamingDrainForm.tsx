@@ -823,37 +823,50 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Contract length dropdown: 2–36 months */}
+          {/* Combined Contract Total with months dropdown and amount */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Contract Length</span>
+              <span>Contract Total</span>
             </div>
             <div className="svc-field">
-              <select
-                className="svc-in field-qty"
-                value={state.contractMonths}
-                onChange={(e) =>
-                  updateField(
-                    "contractMonths",
-                    Number(e.target.value) as any
-                  )
-                }
-              >
-                {Array.from(
-                  {
-                    length:
-                      cfg.contract.maxMonths - cfg.contract.minMonths + 1,
-                  },
-                  (_, i) => {
-                    const m = cfg.contract.minMonths + i;
-                    return (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    );
+              <div className="svc-inline">
+                <select
+                  className="svc-in field-qty"
+                  style={{ width: '80px', marginRight: '8px' }}
+                  value={state.contractMonths}
+                  onChange={(e) =>
+                    updateField(
+                      "contractMonths",
+                      Number(e.target.value) as any
+                    )
                   }
-                )}
-              </select>
+                >
+                  {Array.from(
+                    {
+                      length:
+                        cfg.contract.maxMonths - cfg.contract.minMonths + 1,
+                    },
+                    (_, i) => {
+                      const m = cfg.contract.minMonths + i;
+                      return (
+                        <option key={m} value={m}>
+                          {m} mo
+                        </option>
+                      );
+                    }
+                  )}
+                </select>
+                <div className="svc-field svc-dollar" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <span style={{ marginRight: '4px' }}>$</span>
+                  <input
+                    readOnly
+                    className="svc-in contract-total-field"
+                    style={{ width: '120px' }}
+                    // annualRecurring now holds the contract total, NOT annual
+                    value={formatAmount(quote.annualRecurring)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -883,25 +896,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 readOnly
                 className="svc-in monthly-total-field"
                 value={formatAmount(quote.monthlyRecurring)}
-              />
-            </div>
-          </div>
-
-          {/* Total for selected months (contract total) */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>
-                Total Contract ({quote.contractMonths}{" "}
-                {quote.contractMonths === 1 ? "month" : "months"})
-              </span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                readOnly
-                className="svc-in contract-total-field"
-                // annualRecurring now holds the contract total, NOT annual
-                value={formatAmount(quote.annualRecurring)}
               />
             </div>
           </div>

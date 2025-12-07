@@ -182,6 +182,24 @@ export interface SanicleanFormState {
   redRateMultiplier: number;
   greenRateMultiplier: number;
 
+  // ========== INDEPENDENT FIXTURE RATES (no auto-population) ==========
+  sinkRate: number;
+  urinalRate: number;
+  maleToiletRate: number;
+  femaleToiletRate: number;
+
+  // ========== INDEPENDENT FACILITY COMPONENT RATES (no auto-population) ==========
+  urinalComponentsQty: number;
+  urinalComponentsRate: number;
+  maleToiletComponentsQty: number;
+  maleToiletComponentsRate: number;
+  femaleToiletComponentsQty: number;
+  femaleToiletComponentsRate: number;
+
+  // ========== INDEPENDENT WARRANTY (no auto-population from sinks) ==========
+  warrantyQty: number;
+  warrantyRate: number;
+
   // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
   customWeeklyBase?: number;
   customWeeklyTrip?: number;

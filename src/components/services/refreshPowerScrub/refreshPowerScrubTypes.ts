@@ -3,6 +3,8 @@ import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type RefreshKitchenSize = "smallMedium" | "large";
 export type RefreshPatioMode = "standalone" | "upsell";
+export type RefreshPricingType = "preset" | "hourly" | "squareFeet" | "custom";
+export type RefreshFrequency = "weekly" | "biweekly" | "monthly" | "bimonthly" | "quarterly";
 
 export type RefreshAreaKey =
   | "dumpster"
@@ -17,13 +19,23 @@ export interface RefreshAreaCalcState {
   /** Whether this column is included in the quote */
   enabled: boolean;
 
+  /** Pricing method for this column */
+  pricingType: RefreshPricingType;
+
   /** Workers × hours, used when you want to price that column hourly */
   workers: number;
   hours: number;
+  hourlyRate: number; // Custom hourly rate per service
 
   /** Square-footage, used when you want to price by sq-ft */
   insideSqFt: number;
   outsideSqFt: number;
+  insideRate: number; // Custom rate per inside sq ft
+  outsideRate: number; // Custom rate per outside sq ft
+  sqFtFixedFee: number; // Custom fixed fee for sq ft pricing
+
+  /** Custom manual amount */
+  customAmount: number;
 
   /** BOH specific */
   kitchenSize: RefreshKitchenSize;
@@ -42,6 +54,10 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
   tripCharge: number;
   hourlyRate: number;
   minimumVisit: number;
+
+  // Global frequency and contract settings
+  frequency: RefreshFrequency;
+  contractMonths: number;
 
   // Column-specific settings
   dumpster: RefreshAreaCalcState;
