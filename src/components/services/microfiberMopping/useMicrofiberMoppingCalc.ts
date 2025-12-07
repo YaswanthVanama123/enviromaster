@@ -335,24 +335,32 @@ export function useMicrofiberMoppingCalc(
       const additionalUnitRate = form.extraAreaRatePerUnit; // $10 per 400 sq ft
 
       if (form.useExactExtraAreaSqft) {
-        // ✅ EXACT CALCULATION: Use 400 sq ft blocks (like SaniScrub exact mode)
-        if (form.extraAreaSqFt <= unitSqFt) {
-          // ≤ 400 sq ft: Always $100 flat rate (minimum)
+        // ✅ EXACT CALCULATION: Calculate minimum coverage first, then additional units
+        // Minimum $100 covers how many units? $100 ÷ $10 = 10 units
+        // 10 units × 400 sqft = 4000 sqft covered by minimum
+        const minimumUnits = Math.floor(firstUnitRate / additionalUnitRate); // $100 ÷ $10 = 10 units
+        const minimumCoverageSqFt = minimumUnits * unitSqFt; // 10 × 400 = 4000 sqft
+
+        if (form.extraAreaSqFt <= minimumCoverageSqFt) {
+          // ≤ 4000 sq ft: Always $100 minimum (covers up to 4000 sqft)
           calculatedExtraAreaPrice = firstUnitRate;
         } else {
-          // > 400 sq ft: Calculate in 400 sq ft blocks
-          const units = Math.ceil(form.extraAreaSqFt / unitSqFt);
-          const extraUnits = Math.max(units - 1, 0);
-          calculatedExtraAreaPrice = firstUnitRate + (extraUnits * additionalUnitRate);
+          // > 4000 sq ft: $100 minimum + additional units beyond coverage
+          const extraSqFt = form.extraAreaSqFt - minimumCoverageSqFt; // sqft over 4000
+          const additionalUnits = Math.ceil(extraSqFt / unitSqFt); // additional 400sqft units needed
+          calculatedExtraAreaPrice = firstUnitRate + (additionalUnits * additionalUnitRate);
         }
       } else {
-        // ✅ DIRECT CALCULATION: First 400 sq ft + exact additional sq ft × rate (like SaniScrub direct mode)
-        if (form.extraAreaSqFt <= unitSqFt) {
-          // ≤ 400 sq ft: Always $100 (first unit cost)
+        // ✅ DIRECT CALCULATION: Calculate minimum coverage first, then exact additional sqft
+        const minimumUnits = Math.floor(firstUnitRate / additionalUnitRate); // $100 ÷ $10 = 10 units
+        const minimumCoverageSqFt = minimumUnits * unitSqFt; // 10 × 400 = 4000 sqft
+
+        if (form.extraAreaSqFt <= minimumCoverageSqFt) {
+          // ≤ 4000 sq ft: Always $100 minimum
           calculatedExtraAreaPrice = firstUnitRate;
         } else {
-          // > 400 sq ft: $100 (first 400) + exact additional sq ft × rate
-          const extraSqFt = form.extraAreaSqFt - unitSqFt; // sq ft over 400
+          // > 4000 sq ft: $100 minimum + exact additional sq ft × rate
+          const extraSqFt = form.extraAreaSqFt - minimumCoverageSqFt; // sq ft over 4000
           const ratePerSqFt = additionalUnitRate / unitSqFt; // $10/400 = $0.025
           calculatedExtraAreaPrice = firstUnitRate + (extraSqFt * ratePerSqFt);
         }
@@ -383,24 +391,33 @@ export function useMicrofiberMoppingCalc(
       const additionalUnitRate = form.standaloneRatePerUnit; // $10 per 200 sq ft
 
       if (form.useExactStandaloneSqft) {
-        // ✅ EXACT CALCULATION: Use 200 sq ft blocks (like SaniScrub exact mode)
-        if (form.standaloneSqFt <= unitSqFt) {
-          // ≤ 200 sq ft: Always $40 flat rate (minimum)
+        // ✅ EXACT CALCULATION: Calculate minimum coverage first, then additional units
+        // Minimum $40 covers how many units? Need to calculate based on per-unit rate
+        // If rate is $10/200sqft and minimum is $40, then $40 ÷ $10 = 4 units
+        // 4 units × 200 sqft = 800 sqft covered by minimum
+        const minimumUnits = Math.floor(minimumRate / additionalUnitRate); // e.g., $40 ÷ $10 = 4 units
+        const minimumCoverageSqFt = minimumUnits * unitSqFt; // e.g., 4 × 200 = 800 sqft
+
+        if (form.standaloneSqFt <= minimumCoverageSqFt) {
+          // ≤ 800 sq ft: Always $40 minimum (covers up to 800 sqft)
           calculatedStandaloneServicePrice = minimumRate;
         } else {
-          // > 200 sq ft: Calculate in 200 sq ft blocks
-          const units = Math.ceil(form.standaloneSqFt / unitSqFt);
-          const extraUnits = Math.max(units - 1, 0);
-          calculatedStandaloneServicePrice = minimumRate + (extraUnits * additionalUnitRate);
+          // > 800 sq ft: $40 minimum + additional units beyond coverage
+          const extraSqFt = form.standaloneSqFt - minimumCoverageSqFt; // sqft over 800
+          const additionalUnits = Math.ceil(extraSqFt / unitSqFt); // additional 200sqft units needed
+          calculatedStandaloneServicePrice = minimumRate + (additionalUnits * additionalUnitRate);
         }
       } else {
-        // ✅ DIRECT CALCULATION: First 200 sq ft + exact additional sq ft × rate (like SaniScrub direct mode)
-        if (form.standaloneSqFt <= unitSqFt) {
-          // ≤ 200 sq ft: Always $40 (minimum cost)
+        // ✅ DIRECT CALCULATION: Calculate minimum coverage first, then exact additional sqft
+        const minimumUnits = Math.floor(minimumRate / additionalUnitRate); // e.g., $40 ÷ $10 = 4 units
+        const minimumCoverageSqFt = minimumUnits * unitSqFt; // e.g., 4 × 200 = 800 sqft
+
+        if (form.standaloneSqFt <= minimumCoverageSqFt) {
+          // ≤ 800 sq ft: Always $40 minimum
           calculatedStandaloneServicePrice = minimumRate;
         } else {
-          // > 200 sq ft: $40 (first 200) + exact additional sq ft × rate
-          const extraSqFt = form.standaloneSqFt - unitSqFt; // sq ft over 200
+          // > 800 sq ft: $40 minimum + exact additional sq ft × rate
+          const extraSqFt = form.standaloneSqFt - minimumCoverageSqFt; // sq ft over 800
           const ratePerSqFt = additionalUnitRate / unitSqFt; // $10/200 = $0.05
           calculatedStandaloneServicePrice = minimumRate + (extraSqFt * ratePerSqFt);
         }
