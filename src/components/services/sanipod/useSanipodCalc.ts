@@ -468,8 +468,9 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     let firstMonth;
 
     if (selectedFrequency === "monthly") {
-      // Monthly = 1 visit per month
-      firstMonth = installOnlyCost + perVisit + oneTimeBagsCost;
+      // ✅ FIXED: Monthly = 1 visit per month, so first month should equal first visit
+      // For monthly frequency, first visit and first month should be the same
+      firstMonth = firstVisit;
     } else {
       // Weekly/biweekly: Use partial installation logic
       // First month = first visit (partial service + install) + remaining visits (full service)
@@ -548,11 +549,23 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       : installOnlyCost;
 
     // Adjusted monthly - should use the same logic as base firstMonth calculation
+    // For monthly frequency: first month = first visit (since only 1 visit per month)
+    // For other frequencies: first month = first visit + remaining visits
+    let adjustedFirstVisitTotal;
+    if (installQty > 0) {
+      // With installation: install + service for non-installed pods + bags
+      const adjustedFirstVisitBags = bags > 0 ? adjustedBagsTotal * rateCfg.multiplier : 0;
+      adjustedFirstVisitTotal = installCostCalc + adjustedFirstVisitServiceCost + adjustedFirstVisitBags;
+    } else {
+      // No installation: just normal per visit + one-time bags
+      adjustedFirstVisitTotal = adjustedPerVisit + oneTimeBagsCostCalc;
+    }
+
     const adjustedMonthly = form.customMonthlyPrice !== undefined
       ? form.customMonthlyPrice
       : selectedFrequency === "monthly"
-        ? installCostCalc + adjustedPerVisit + oneTimeBagsCostCalc
-        : firstVisit + Math.max(monthlyVisits - 1, 0) * adjustedPerVisit;
+        ? adjustedFirstVisitTotal
+        : adjustedFirstVisitTotal + Math.max(monthlyVisits - 1, 0) * adjustedPerVisit;
 
     // Adjusted annual
     const ongoingMonthlyCalc = weeksPerMonthCalc * adjustedPerVisit;
