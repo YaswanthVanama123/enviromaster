@@ -19,6 +19,14 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const formatAmount = (n: number): string => n.toFixed(2);
 
 const FREQ_OPTIONS = [
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Bi-weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "bimonthly", label: "Bi-monthly" },
+  { value: "quarterly", label: "Quarterly" },
+];
+
+const AREA_FREQ_OPTIONS = [
   "",
   "Weekly",
   "Bi-weekly",
@@ -38,7 +46,8 @@ const AREA_ORDER: RefreshAreaKey[] = [
 
 const PRICING_TYPES = [
   { value: "preset", label: "Preset Package" },
-  { value: "hourly", label: "Hourly Rate" },
+  { value: "perWorker", label: "Per Worker" },
+  { value: "perHour", label: "Per Hour" },
   { value: "squareFeet", label: "Square Feet" },
   { value: "custom", label: "Custom Amount" },
 ];
@@ -51,10 +60,14 @@ export const RefreshPowerScrubForm: React.FC<
     setTripCharge,
     setHourlyRate,
     setMinimumVisit,
+    setFrequency,
+    setContractMonths,
     setNotes,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
+    areaMonthlyTotals,
+    areaContractTotals,
     quote,
     refreshConfig,
     isLoadingConfig,
@@ -117,8 +130,12 @@ export const RefreshPowerScrubForm: React.FC<
   }, [form, areaTotals, quote, customFields]);
 
   // ✅ Helper functions to get backend rates with fallbacks
-  const getHourlyRate = (): number => {
-    return backendConfig?.coreRates?.defaultHourlyRate ?? form.hourlyRate ?? 200;
+  const getWorkerRate = (): number => {
+    return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200; // Backend per worker rate
+  };
+
+  const getHourRate = (): number => {
+    return backendConfig?.coreRates?.perHourRate ?? 400; // Backend per hour rate
   };
 
   const getInsideRate = (): number => {
@@ -201,18 +218,26 @@ export const RefreshPowerScrubForm: React.FC<
           </div>
         );
 
-      case "hourly":
+      case "perWorker":
         return (
           <div className="rps-inline">
-            <span className="rps-label">W×H</span>
+            <span className="rps-label">Workers</span>
             <input
               className="rps-line rps-num"
-              type="number"
+              type="text"
               value={area.workers}
               onChange={(e) => setAreaField(areaKey, "workers", e.target.value)}
               style={{ width: '60px' }}
             />
-            <span>×</span>
+            <span className="rps-label">@ ${getWorkerRate()}</span>
+            <span className="rps-label">= ${formatAmount((area.workers || 0) * getWorkerRate())}</span>
+          </div>
+        );
+
+      case "perHour":
+        return (
+          <div className="rps-inline">
+            <span className="rps-label">Hours</span>
             <input
               className="rps-line rps-num"
               type="number"
@@ -220,8 +245,8 @@ export const RefreshPowerScrubForm: React.FC<
               onChange={(e) => setAreaField(areaKey, "hours", e.target.value)}
               style={{ width: '60px' }}
             />
-            <span>@ ${getHourlyRate()}</span>
-            <span>= ${formatAmount((area.workers || 0) * (area.hours || 0) * getHourlyRate())}</span>
+            <span className="rps-label">@ ${getHourRate()}</span>
+            <span className="rps-label">= ${formatAmount((area.hours || 0) * getHourRate())}</span>
           </div>
         );
 
@@ -418,7 +443,7 @@ export const RefreshPowerScrubForm: React.FC<
                         onChange={(e) => setAreaField(areaKey, "frequencyLabel", e.target.value)}
                         style={{ width: '100px' }}
                       >
-                        {FREQ_OPTIONS.map((freq) => (
+                        {AREA_FREQ_OPTIONS.map((freq) => (
                           <option key={freq} value={freq}>
                             {freq || "Select..."}
                           </option>
@@ -428,6 +453,30 @@ export const RefreshPowerScrubForm: React.FC<
 
                     <div className="rps-inline" style={{ marginTop: '8px' }}>
                       <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
+                    </div>
+
+                    <div className="rps-inline" style={{ marginTop: '8px' }}>
+                      <span className="rps-label">Monthly: ${formatAmount(areaMonthlyTotals[areaKey])}</span>
+                    </div>
+
+                    <div className="rps-inline" style={{ marginTop: '8px' }}>
+                      <span className="rps-label">Contract:</span>
+                      <select
+                        className="rps-line"
+                        style={{ width: '60px', marginLeft: '4px', marginRight: '4px' }}
+                        value={form[areaKey].contractMonths}
+                        onChange={(e) => setAreaField(areaKey, "contractMonths", e.target.value)}
+                      >
+                        {Array.from({ length: 35 }, (_, i) => {
+                          const months = i + 2; // 2 to 36 months
+                          return (
+                            <option key={months} value={months}>
+                              {months} mo
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <span className="rps-label">${formatAmount(areaContractTotals[areaKey])}</span>
                     </div>
                   </>
                 )}
@@ -441,6 +490,56 @@ export const RefreshPowerScrubForm: React.FC<
       <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
         <div className="rps-inline">
           <span className="rps-label-strong">TOTAL PER VISIT: ${formatAmount(quote.perVisitPrice)}</span>
+        </div>
+      </div>
+
+      {/* Frequency Selection */}
+      <div className="rps-config-row" style={{ marginTop: '16px' }}>
+        <div className="rps-inline">
+          <span className="rps-label">Frequency:</span>
+          <select
+            className="rps-line"
+            value={form.frequency}
+            onChange={(e) => setFrequency(e.target.value)}
+            style={{ width: '120px', marginLeft: '8px' }}
+          >
+            {FREQ_OPTIONS.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Monthly Total */}
+      <div className="rps-config-row">
+        <div className="rps-inline">
+          <span className="rps-label">Monthly Total: ${formatAmount(quote.monthlyRecurring)}</span>
+        </div>
+      </div>
+
+      {/* Combined Contract Total with months dropdown and amount */}
+      <div className="rps-config-row">
+        <div className="rps-inline">
+          <span className="rps-label">Contract Total:</span>
+          <select
+            className="rps-line"
+            style={{ width: '80px', marginLeft: '8px', marginRight: '8px' }}
+            value={form.contractMonths}
+            onChange={(e) => setContractMonths(Number(e.target.value))}
+          >
+            {Array.from({ length: 35 }, (_, i) => {
+              const months = i + 2; // 2 to 36 months
+              return (
+                <option key={months} value={months}>
+                  {months} mo
+                </option>
+              );
+            })}
+          </select>
+          <span className="rps-label" style={{ marginRight: '4px' }}>$</span>
+          <span className="rps-label-strong">{formatAmount(quote.contractTotal)}</span>
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type RefreshKitchenSize = "smallMedium" | "large";
 export type RefreshPatioMode = "standalone" | "upsell";
-export type RefreshPricingType = "preset" | "hourly" | "squareFeet" | "custom";
+export type RefreshPricingType = "preset" | "perWorker" | "perHour" | "squareFeet" | "custom";
 export type RefreshFrequency = "weekly" | "biweekly" | "monthly" | "bimonthly" | "quarterly";
 
 export type RefreshAreaKey =
@@ -45,6 +45,9 @@ export interface RefreshAreaCalcState {
 
   /** Free-text label that shows up under the column (e.g. "Weekly", "Monthly") */
   frequencyLabel: string;
+
+  /** Individual area contract settings */
+  contractMonths: number;
 }
 
 // Full Refresh Power Scrub form state

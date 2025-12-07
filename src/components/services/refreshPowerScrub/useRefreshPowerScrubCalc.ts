@@ -26,6 +26,8 @@ import { serviceConfigApi } from "../../../backendservice/api";
 interface BackendRefreshPowerScrubConfig {
   coreRates: {
     defaultHourlyRate: number;
+    perWorkerRate?: number;    // Backend rate per worker
+    perHourRate?: number;      // Backend rate per hour
     tripCharge: number;
     minimumVisit: number;
   };
@@ -71,6 +73,7 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   kitchenSize: "smallMedium",
   patioMode: "standalone",
   frequencyLabel: "",
+  contractMonths: 12, // Default contract length for individual areas
 };
 
 const DEFAULT_FORM: RefreshPowerScrubFormState = {
@@ -108,18 +111,31 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "outsideRate",
   "sqFtFixedFee",
   "customAmount",
+  "contractMonths",
 ];
 
-/** Hourly rule:
- *  Workers × hours × hourlyRate (NO trip charge here - applied at visit level).
+/** Per Worker rule:
+ *  Workers × perWorkerRate (NO trip charge here - applied at visit level).
  *  Returns the labour cost only. Uses backend rate when available.
  */
-function calcHourlyLabour(
+function calcPerWorker(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const hourlyRate = backendConfig?.coreRates?.defaultHourlyRate ?? state.hourlyRate ?? REFRESH_DEFAULT_HOURLY;
-  return (state.workers || 0) * (state.hours || 0) * hourlyRate;
+  const perWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200;
+  return (state.workers || 0) * perWorkerRate;
+}
+
+/** Per Hour rule:
+ *  Hours × perHourRate (NO trip charge here - applied at visit level).
+ *  Returns the labour cost only. Uses backend rate when available.
+ */
+function calcPerHour(
+  state: RefreshAreaCalcState,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
+): number {
+  const perHourRate = backendConfig?.coreRates?.perHourRate ?? 400;
+  return (state.hours || 0) * perHourRate;
 }
 
 /** Sq-ft rule:
@@ -152,6 +168,8 @@ function calcPresetPackage(
   const defaultConfig = {
     coreRates: {
       defaultHourlyRate: REFRESH_DEFAULT_HOURLY,
+      perWorkerRate: REFRESH_DEFAULT_HOURLY, // Default to same as hourly rate
+      perHourRate: 400, // Default per hour rate
       tripCharge: REFRESH_DEFAULT_TRIP,
       minimumVisit: REFRESH_DEFAULT_MIN,
     },
@@ -245,9 +263,13 @@ function calcAreaCost(
       // Preset prices are package prices (trip included)
       return { cost: calcPresetPackage(area, state, backendConfig), isPackage: true };
 
-    case "hourly":
-      // Hourly pricing - labor only (trip added at visit level)
-      return { cost: calcHourlyLabour(state, backendConfig), isPackage: false };
+    case "perWorker":
+      // Per worker pricing - labor only (trip added at visit level)
+      return { cost: calcPerWorker(state, backendConfig), isPackage: false };
+
+    case "perHour":
+      // Per hour pricing - labor only (trip added at visit level)
+      return { cost: calcPerHour(state, backendConfig), isPackage: false };
 
     case "squareFeet":
       // Square footage pricing - service only (trip added at visit level)
@@ -416,14 +438,55 @@ export function useRefreshPowerScrubCalc(
     }));
   };
 
+  const setFrequency = (frequency: string) => {
+    setForm((prev) => ({
+      ...prev,
+      frequency: frequency as any,
+    }));
+  };
+
+  const setContractMonths = (months: number) => {
+    setForm((prev) => ({
+      ...prev,
+      contractMonths: months,
+    }));
+  };
+
   // Calculate area totals and track if any use package pricing
-  const { areaTotals, hasPackagePrice } = useMemo(() => {
+  const { areaTotals, hasPackagePrice, areaMonthlyTotals, areaContractTotals } = useMemo(() => {
     const totals: any = {};
+    const monthlyTotals: any = {};
+    const contractTotals: any = {};
     let hasPackage = false;
 
     for (const area of AREA_KEYS) {
       const { cost, isPackage } = calcAreaCost(area, form, backendConfig);
       totals[area] = cost;
+
+      // Calculate monthly total based on area's frequency label
+      let monthlyRecurring = 0;
+      const frequencyLabel = form[area].frequencyLabel?.toLowerCase();
+
+      switch (frequencyLabel) {
+        case "weekly":
+          monthlyRecurring = cost * 4.33; // 4.33 weeks per month
+          break;
+        case "bi-weekly":
+          monthlyRecurring = cost * 2.17; // ~2.17 visits per month
+          break;
+        case "monthly":
+          monthlyRecurring = cost; // 1 visit per month
+          break;
+        case "quarterly":
+          monthlyRecurring = cost * 0.33; // ~0.33 visits per month
+          break;
+        default:
+          monthlyRecurring = cost; // Default to monthly
+      }
+
+      monthlyTotals[area] = monthlyRecurring;
+      contractTotals[area] = monthlyRecurring * (form[area].contractMonths || 12);
+
       if (isPackage && cost > 0) {
         hasPackage = true;
       }
@@ -432,6 +495,8 @@ export function useRefreshPowerScrubCalc(
     return {
       areaTotals: totals as RefreshAreaTotals,
       hasPackagePrice: hasPackage,
+      areaMonthlyTotals: monthlyTotals as RefreshAreaTotals,
+      areaContractTotals: contractTotals as RefreshAreaTotals,
     };
   }, [form, backendConfig]);
 
@@ -504,8 +569,10 @@ export function useRefreshPowerScrubCalc(
       const method =
         state.pricingType === "preset"
           ? "preset package"
-          : state.pricingType === "hourly"
-          ? "hourly rate"
+          : state.pricingType === "perWorker"
+          ? "per worker"
+          : state.pricingType === "perHour"
+          ? "per hour"
           : state.pricingType === "squareFeet"
           ? "sq-ft rule"
           : "custom amount";
@@ -530,7 +597,7 @@ export function useRefreshPowerScrubCalc(
       monthlyRecurring,
       contractTotal,
     };
-  }, [areaTotals, hasPackagePrice, form.tripCharge, form.minimumVisit, form.frequency, form.contractMonths, backendConfig]);
+  }, [areaTotals, hasPackagePrice, form.tripCharge, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig]);
 
   const setNotes = (notes: string) => {
     setForm((prev) => ({
@@ -544,10 +611,14 @@ export function useRefreshPowerScrubCalc(
     setTripCharge,
     setHourlyRate,
     setMinimumVisit,
+    setFrequency,
+    setContractMonths,
     setNotes,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
+    areaMonthlyTotals,
+    areaContractTotals,
     quote,
     refreshConfig: fetchPricing,
     isLoadingConfig,

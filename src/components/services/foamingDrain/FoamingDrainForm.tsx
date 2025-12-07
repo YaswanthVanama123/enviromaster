@@ -368,7 +368,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         </div>
 
         {/* How many filthy install drains (for 3× install) */}
-        {state.facilityCondition === "filthy" && isInstallLevelUi && (
+        {/* {state.facilityCondition === "filthy" && isInstallLevelUi && (
           <div className="svc-row">
             <div className="svc-label">
               <span>Filthy Install (3×)</span>
@@ -386,7 +386,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </span>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Location / trip */}
         <div className="svc-row">

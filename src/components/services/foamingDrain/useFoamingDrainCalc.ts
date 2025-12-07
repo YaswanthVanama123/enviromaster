@@ -382,10 +382,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     // ---------- 7d) FIRST VISIT LOGIC ----------
     // Filthy facility:
-    //   FirstVisit = filthyInstall + weeklyInstallDrains + greaseInstall + greenInstall
+    //   FirstVisit = filthyInstall + weeklyInstallDrains + greaseInstall + greenInstall + weeklyPlumbing
     //
     // Normal facility:
-    //   FirstVisit = greaseInstall + greenInstall + weeklyStandardDrains + weeklyInstallDrains
+    //   FirstVisit = greaseInstall + greenInstall + weeklyStandardDrains + weeklyInstallDrains + weeklyPlumbing
     let firstVisitPrice: number;
 
     if (condition === "filthy" && filthyInstallOneTime > 0) {
@@ -393,13 +393,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         filthyInstallOneTime +
         weeklyInstallDrains +
         greaseInstallOneTime +
-        greenInstallOneTime;
+        greenInstallOneTime +
+        weeklyPlumbing; // ✅ ADDED: Include plumbing in first visit
     } else {
       firstVisitPrice =
         greaseInstallOneTime +
         greenInstallOneTime +
         weeklyStandardDrains +
-        weeklyInstallDrains;
+        weeklyInstallDrains +
+        weeklyPlumbing; // ✅ ADDED: Include plumbing in first visit
     }
 
     firstVisitPrice = round2(firstVisitPrice);
