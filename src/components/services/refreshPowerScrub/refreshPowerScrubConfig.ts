@@ -3,7 +3,7 @@
 // Core hourly / trip / minimum from the rules
 export const REFRESH_DEFAULT_HOURLY = 200; // $200 / hr / worker
 export const REFRESH_DEFAULT_TRIP = 75;    // $75 trip
-export const REFRESH_DEFAULT_MIN = 475;    // $475 minimum visit
+export const REFRESH_DEFAULT_MIN = 400;    // $475 minimum visit
 
 // Area-specific "area pricing" from rules
 export const REFRESH_KITCHEN_SMALL_MED = 1500;  // BOH small / medium kitchen

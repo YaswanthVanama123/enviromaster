@@ -455,9 +455,12 @@ export const RefreshPowerScrubForm: React.FC<
                       <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
                     </div>
 
-                    <div className="rps-inline" style={{ marginTop: '8px' }}>
-                      <span className="rps-label">Monthly: ${formatAmount(areaMonthlyTotals[areaKey])}</span>
-                    </div>
+                    {/* Monthly Total – HIDE for Quarterly areas */}
+                    {form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" && (
+                      <div className="rps-inline" style={{ marginTop: '8px' }}>
+                        <span className="rps-label">Monthly: ${formatAmount(areaMonthlyTotals[areaKey])}</span>
+                      </div>
+                    )}
 
                     <div className="rps-inline" style={{ marginTop: '8px' }}>
                       <span className="rps-label">Contract:</span>
@@ -467,14 +470,27 @@ export const RefreshPowerScrubForm: React.FC<
                         value={form[areaKey].contractMonths}
                         onChange={(e) => setAreaField(areaKey, "contractMonths", e.target.value)}
                       >
-                        {Array.from({ length: 35 }, (_, i) => {
-                          const months = i + 2; // 2 to 36 months
-                          return (
-                            <option key={months} value={months}>
-                              {months} mo
-                            </option>
-                          );
-                        })}
+                        {form[areaKey].frequencyLabel?.toLowerCase() === "quarterly" ? (
+                          // For quarterly: show multiples of 3 months only
+                          Array.from({ length: 12 }, (_, i) => {
+                            const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+                            return (
+                              <option key={months} value={months}>
+                                {months} mo
+                              </option>
+                            );
+                          })
+                        ) : (
+                          // For all other frequencies: show 2-36 months
+                          Array.from({ length: 35 }, (_, i) => {
+                            const months = i + 2; // 2 to 36 months
+                            return (
+                              <option key={months} value={months}>
+                                {months} mo
+                              </option>
+                            );
+                          })
+                        )}
                       </select>
                       <span className="rps-label">${formatAmount(areaContractTotals[areaKey])}</span>
                     </div>
@@ -512,12 +528,14 @@ export const RefreshPowerScrubForm: React.FC<
         </div>
       </div>
 
-      {/* Monthly Total */}
-      <div className="rps-config-row">
-        <div className="rps-inline">
-          <span className="rps-label">Monthly Total: ${formatAmount(quote.monthlyRecurring)}</span>
+      {/* Monthly Total – HIDE for Quarterly */}
+      {form.frequency !== "quarterly" && (
+        <div className="rps-config-row">
+          <div className="rps-inline">
+            <span className="rps-label">Monthly Total: ${formatAmount(quote.monthlyRecurring)}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Combined Contract Total with months dropdown and amount */}
       <div className="rps-config-row">
@@ -529,14 +547,27 @@ export const RefreshPowerScrubForm: React.FC<
             value={form.contractMonths}
             onChange={(e) => setContractMonths(Number(e.target.value))}
           >
-            {Array.from({ length: 35 }, (_, i) => {
-              const months = i + 2; // 2 to 36 months
-              return (
-                <option key={months} value={months}>
-                  {months} mo
-                </option>
-              );
-            })}
+            {form.frequency === "quarterly" ? (
+              // For quarterly: show multiples of 3 months (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36)
+              Array.from({ length: 12 }, (_, i) => {
+                const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+                return (
+                  <option key={months} value={months}>
+                    {months} mo
+                  </option>
+                );
+              })
+            ) : (
+              // For all other frequencies: show 2-36 months
+              Array.from({ length: 35 }, (_, i) => {
+                const months = i + 2; // 2 to 36 months
+                return (
+                  <option key={months} value={months}>
+                    {months} mo
+                  </option>
+                );
+              })
+            )}
           </select>
           <span className="rps-label" style={{ marginRight: '4px' }}>$</span>
           <span className="rps-label-strong">{formatAmount(quote.contractTotal)}</span>
