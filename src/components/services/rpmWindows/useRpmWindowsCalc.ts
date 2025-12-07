@@ -390,20 +390,20 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       activeConfig.rateCategories[form.selectedRateCategory] ??
       activeConfig.rateCategories.redRate;
 
-    const recurringPerVisitRated = recurringPerVisitBase * rateCfg.multiplier;
+    const recurringPerVisitRated = recurringPerVisitBase * (rateCfg?.multiplier ?? 1);
 
     // ✅ INSTALLATION MULTIPLIER FROM BACKEND (NOT HARDCODED!)
     // First time install = 3x, Clean = 1x (from your MongoDB config)
     const installMultiplier = form.isFirstTimeInstall
-      ? activeConfig.installMultiplierFirstTime
-      : activeConfig.installMultiplierClean;
+      ? (activeConfig.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime)
+      : (activeConfig.installMultiplierClean ?? cfg.installMultiplierClean);
 
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
         ? weeklyWindows * installMultiplier
         : 0;
 
-    const installOneTime = installOneTimeBase * rateCfg.multiplier;
+    const installOneTime = installOneTimeBase * (rateCfg?.multiplier ?? 1);
 
     // FIRST VISIT PRICE = INSTALLATION ONLY (no normal service on that visit)
     const firstVisitTotalRated = installOneTime;
@@ -422,18 +422,28 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const standardMonthlyBillRated = recurringPerVisitRated * monthlyVisits;
 
     // First month bill:
-    //  - first visit is installation only
-    //  - remaining visits in the month are normal service
+    //  - for quarterly: first visit only (installation or service)
+    //  - for other frequencies: first visit + remaining visits in the month
     const effectiveServiceVisitsFirstMonth =
-      monthlyVisits > 1 ? monthlyVisits - 1 : 0;
+      freqKey === "quarterly" ? 0 : (monthlyVisits > 1 ? monthlyVisits - 1 : 0);
 
-    const firstMonthBillRated = form.isFirstTimeInstall
-      ? firstVisitTotalRated +
-        recurringPerVisitRated * effectiveServiceVisitsFirstMonth
-      : standardMonthlyBillRated;
+    let firstMonthBillRated = 0;
+    if (form.isFirstTimeInstall) {
+      if (freqKey === "quarterly") {
+        // For quarterly install: just the installation cost
+        firstMonthBillRated = firstVisitTotalRated;
+      } else {
+        // For other frequencies: installation + remaining service visits in first month
+        firstMonthBillRated = firstVisitTotalRated +
+          recurringPerVisitRated * effectiveServiceVisitsFirstMonth;
+      }
+    } else {
+      // No installation, just standard monthly billing
+      firstMonthBillRated = standardMonthlyBillRated;
+    }
 
     // Displayed "Monthly Recurring" value
-    const monthlyBillRated = firstMonthBillRated;
+    const monthlyBillRated = standardMonthlyBillRated;
 
     // CONTRACT TOTAL for N months (2–36)
     const contractMonths = Math.max(form.contractMonths ?? 0, 0);
@@ -475,6 +485,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       installOneTime,
       firstVisitTotalRated,
       standardMonthlyBillRated,
+      firstMonthBillRated,
       monthlyBillRated,
       contractTotalRated,
     };

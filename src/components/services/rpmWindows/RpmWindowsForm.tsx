@@ -545,29 +545,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* First Month Total */}
-      <div className="svc-row svc-row-charge">
-        <label>Monthly Recurring</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              name="customFirstMonthTotal"
-              type="number"
-              step="0.01"
-              value={form.customFirstMonthTotal !== undefined ? form.customFirstMonthTotal : (form.isFirstTimeInstall ? calc.firstMonthBillRated : calc.monthlyBillRated)}
-              onChange={onChange}
-              onBlur={handleBlur}
-              style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
-              title={form.isFirstTimeInstall ? "First month including installation + service" : "First month (ongoing service only)"}
-            />
-          </div>
-          {/* <span className="svc-small">{form.isFirstTimeInstall ? "(Install + Service)" : "(Service Only)"}</span> */}
-        </div>
-      </div>
-
-      {/* Monthly Recurring – HIDE for Quarterly */}
+      {/* First Month Total – HIDE for Quarterly */}
       {form.frequency !== "quarterly" && (
         <div className="svc-row svc-row-charge">
           <label>First Month Total</label>
@@ -576,13 +554,68 @@ export const RpmWindowsForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
+                name="customFirstMonthTotal"
+                type="number"
+                step="0.01"
+                value={form.customFirstMonthTotal !== undefined
+                  ? form.customFirstMonthTotal.toFixed(2)
+                  : (form.isFirstTimeInstall ? (calc.firstMonthBillRated ?? 0).toFixed(2) : (calc.monthlyBillRated ?? 0).toFixed(2))}
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
+                title={form.isFirstTimeInstall ? "First month including installation + service" : "First month (ongoing service only)"}
+              />
+            </div>
+            {/* <span className="svc-small">{form.isFirstTimeInstall ? "(Install + Service)" : "(Service Only)"}</span> */}
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Recurring – HIDE for Quarterly */}
+      {form.frequency !== "quarterly" && (
+        <div className="svc-row svc-row-charge">
+          <label>Monthly Recurring</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
                 name="customMonthlyRecurring"
                 type="number"
                 step="0.01"
-                value={form.customMonthlyRecurring !== undefined ? form.customMonthlyRecurring : calc.monthlyBillRated}
+                value={form.customMonthlyRecurring !== undefined
+                  ? form.customMonthlyRecurring.toFixed(2)
+                  : (calc.monthlyBillRated ?? 0).toFixed(2)}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* First Visit Total – SHOW ONLY for Quarterly */}
+      {form.frequency === "quarterly" && (
+        <div className="svc-row svc-row-charge">
+          <label>First Visit Total</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                name="customFirstMonthTotal"
+                type="number"
+                step="0.01"
+                value={form.customFirstMonthTotal !== undefined
+                  ? form.customFirstMonthTotal.toFixed(2)
+                  : (form.isFirstTimeInstall
+                    ? (calc.firstVisitTotalRated ?? 0).toFixed(2)
+                    : (calc.recurringPerVisitRated ?? 0).toFixed(2))}
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
+                title={form.isFirstTimeInstall ? "First visit including installation + service" : "First visit (service only)"}
               />
             </div>
           </div>
@@ -599,11 +632,18 @@ export const RpmWindowsForm: React.FC<
             value={form.contractMonths}
             onChange={onChange}
           >
-            {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
-              <option key={m} value={m}>
-                {m} months
-              </option>
-            ))}
+            {form.frequency === "quarterly"
+              ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
+                  <option key={m} value={m}>
+                    {m} months
+                  </option>
+                ))
+              : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+                  <option key={m} value={m}>
+                    {m} months
+                  </option>
+                ))
+            }
           </select>
           <div className="svc-dollar">
             <span>$</span>
@@ -612,7 +652,7 @@ export const RpmWindowsForm: React.FC<
               name="customAnnualPrice"
               type="number"
               step="0.01"
-              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice}
+              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice.toFixed(2) : (quote.annualPrice ?? 0).toFixed(2)}
               onChange={onChange}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
