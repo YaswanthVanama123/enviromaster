@@ -45,7 +45,7 @@ export const carpetPricingConfig: CarpetPricingConfig = {
 
   // Corrected visits per year and calculation logic
   frequencyMeta: {
-    weekly: { visitsPerYear: 50 }, // ~50 service weeks per year
+    weekly: { visitsPerYear: 52 }, // 52 weeks per year = 4.33 visits per month
     monthly: { visitsPerYear: 12 }, // 1× per month
     twicePerMonth: { visitsPerYear: 24 }, // 2× per month
     bimonthly: { visitsPerYear: 6 }, // every 2 months (6 visits per year)

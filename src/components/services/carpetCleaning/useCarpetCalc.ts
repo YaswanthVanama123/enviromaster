@@ -19,6 +19,7 @@ interface BackendCarpetConfig {
     clean: number;
   };
   frequencyMeta: {
+    weekly: { visitsPerYear: number };
     monthly: { visitsPerYear: number };
     twicePerMonth: { visitsPerYear: number };
     bimonthly: { visitsPerYear: number };
@@ -231,7 +232,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     totalVisitsForContract,
   } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    const activeConfig = backendConfig || {
+    // Merge backend config with local config, ensuring all frequencies are available
+    const activeConfig = backendConfig ? {
+      unitSqFt: backendConfig.unitSqFt ?? cfg.unitSqFt,
+      firstUnitRate: backendConfig.firstUnitRate ?? cfg.firstUnitRate,
+      additionalUnitRate: backendConfig.additionalUnitRate ?? cfg.additionalUnitRate,
+      perVisitMinimum: backendConfig.perVisitMinimum ?? cfg.perVisitMinimum,
+      installMultipliers: backendConfig.installMultipliers ?? cfg.installMultipliers,
+      // ✅ CRITICAL: Merge frequencyMeta to ensure all frequencies (including weekly) are available
+      frequencyMeta: {
+        ...cfg.frequencyMeta, // Start with local config (includes weekly)
+        ...backendConfig.frequencyMeta, // Override with backend values if they exist
+      },
+    } : {
       unitSqFt: cfg.unitSqFt,
       firstUnitRate: cfg.firstUnitRate,
       additionalUnitRate: cfg.additionalUnitRate,
@@ -241,7 +254,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     };
 
     const freq = clampFrequency(form.frequency);
-    const meta = activeConfig.frequencyMeta[freq];  // ✅ FROM BACKEND
+    const meta = activeConfig.frequencyMeta[freq];  // ✅ NOW GUARANTEED to have weekly from local config
     const visitsPerYear = meta?.visitsPerYear ?? 12;
     const visitsPerMonth = visitsPerYear / 12;
 
