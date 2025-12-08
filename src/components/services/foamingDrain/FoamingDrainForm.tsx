@@ -823,52 +823,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Combined Contract Total with months dropdown and amount */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Contract Total</span>
-            </div>
-            <div className="svc-field">
-              <div className="svc-inline">
-                <select
-                  className="svc-in field-qty"
-                  style={{ width: '80px', marginRight: '8px' }}
-                  value={state.contractMonths}
-                  onChange={(e) =>
-                    updateField(
-                      "contractMonths",
-                      Number(e.target.value) as any
-                    )
-                  }
-                >
-                  {Array.from(
-                    {
-                      length:
-                        cfg.contract.maxMonths - cfg.contract.minMonths + 1,
-                    },
-                    (_, i) => {
-                      const m = cfg.contract.minMonths + i;
-                      return (
-                        <option key={m} value={m}>
-                          {m} mo
-                        </option>
-                      );
-                    }
-                  )}
-                </select>
-                <div className="svc-field svc-dollar" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  <span style={{ marginRight: '4px' }}>$</span>
-                  <input
-                    readOnly
-                    className="svc-in contract-total-field"
-                    style={{ width: '120px' }}
-                    // annualRecurring now holds the contract total, NOT annual
-                    value={formatAmount(quote.annualRecurring)}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           {/* First month total */}
           <div className="svc-row">
@@ -912,6 +867,53 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 className="svc-in total-field"
                 value={formatAmount(quote.installation)}
               />
+            </div>
+          </div>
+
+                    {/* Combined Contract Total with months dropdown and amount */}
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Contract Total</span>
+            </div>
+            <div className="svc-field">
+              <div className="svc-inline">
+                <select
+                  className="svc-in field-qty"
+                  style={{ width: '80px', marginRight: '8px' }}
+                  value={state.contractMonths}
+                  onChange={(e) =>
+                    updateField(
+                      "contractMonths",
+                      Number(e.target.value) as any
+                    )
+                  }
+                >
+                  {Array.from(
+                    {
+                      length:
+                        cfg.contract.maxMonths - cfg.contract.minMonths + 1,
+                    },
+                    (_, i) => {
+                      const m = cfg.contract.minMonths + i;
+                      return (
+                        <option key={m} value={m}>
+                          {m} mo
+                        </option>
+                      );
+                    }
+                  )}
+                </select>
+                <div className="svc-field svc-dollar" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <span style={{ marginRight: '4px' }}>$</span>
+                  <input
+                    readOnly
+                    className="svc-in contract-total-field"
+                    style={{ width: '120px' }}
+                    // annualRecurring now holds the contract total, NOT annual
+                    value={formatAmount(quote.annualRecurring)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

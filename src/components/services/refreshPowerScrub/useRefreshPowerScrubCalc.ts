@@ -78,7 +78,6 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
 
 const DEFAULT_FORM: RefreshPowerScrubFormState = {
   // BaseServiceFormState (actual type lives elsewhere)
-  serviceId: "refreshPowerScrub",
   frequency: "monthly" as any,
   tripChargeIncluded: true,
   notes: "",
@@ -88,8 +87,7 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   hourlyRate: REFRESH_DEFAULT_HOURLY, // $200/hr/worker
   minimumVisit: REFRESH_DEFAULT_MIN,  // $475 minimum
 
-  // Global frequency and contract settings
-  frequency: "monthly",
+  // Global contract settings
   contractMonths: 12,
 
   // Columns (Dumpster on by default)
@@ -375,7 +373,6 @@ export function useRefreshPowerScrubCalc(
       setForm((prev) => ({
         ...prev,
         // Update rates from backend if available
-        tripCharge: config.coreRates?.tripCharge ?? prev.tripCharge,
         hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.hourlyRate,
         minimumVisit: config.coreRates?.minimumVisit ?? prev.minimumVisit,
       }));
@@ -431,14 +428,6 @@ export function useRefreshPowerScrubCalc(
   };
 
   /** Root config helpers */
-  const setTripCharge = (raw: string) => {
-    const n = parseFloat(raw);
-    setForm((prev) => ({
-      ...prev,
-      tripCharge: Number.isFinite(n) ? n : 0,
-    }));
-  };
-
   const setHourlyRate = (raw: string) => {
     const n = parseFloat(raw);
     setForm((prev) => ({
@@ -531,18 +520,9 @@ export function useRefreshPowerScrubCalc(
       0
     );
 
-    let perVisit: number;
-
-    if (hasPackagePrice) {
-      // At least one area uses package pricing (trip already included).
-      // Just use the sum as-is.
-      perVisit = areasSubtotal;
-    } else {
-      // All areas are labour/service only (hourly or sq-ft).
-      // Add trip charge once at visit level.
-      const withTrip = form.tripCharge + areasSubtotal;
-      perVisit = Math.max(withTrip, form.minimumVisit);
-    }
+    // ✅ REMOVED TRIP CHARGE LOGIC: No trip charge added since it's handled separately
+    // Use areas subtotal as-is, only apply minimum visit if needed
+    const perVisit = Math.max(areasSubtotal, form.minimumVisit);
 
     const rounded = Math.round(perVisit * 100) / 100;
 
@@ -612,9 +592,7 @@ export function useRefreshPowerScrubCalc(
       );
     });
 
-    if (!hasPackagePrice && areasSubtotal > 0) {
-      details.push(`Trip charge: $${form.tripCharge.toFixed(2)} (one-time per visit)`);
-    }
+    // ✅ REMOVED: Trip charge is handled separately elsewhere, no longer included in details
 
     // Refresh is essentially a one-time deep clean,
     // so annual == per-visit in this model.
@@ -627,7 +605,7 @@ export function useRefreshPowerScrubCalc(
       monthlyRecurring,
       contractTotal,
     };
-  }, [areaTotals, hasPackagePrice, form.tripCharge, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig]);
+  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig]);
 
   const setNotes = (notes: string) => {
     setForm((prev) => ({
@@ -638,7 +616,6 @@ export function useRefreshPowerScrubCalc(
 
   return {
     form,
-    setTripCharge,
     setHourlyRate,
     setMinimumVisit,
     setFrequency,

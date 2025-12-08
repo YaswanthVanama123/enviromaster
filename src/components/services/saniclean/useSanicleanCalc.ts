@@ -44,6 +44,19 @@ const DEFAULT_FORM: SanicleanFormState = {
   // Warranty (per-item-charge only)
   warrantyDispensers: 0,
 
+  // Trip Charge Control (per-item-charge only)
+  addTripCharge: false, // enable trip charge
+
+  // Facility Components Enable/Disable (per-item-charge only) - Default to false
+  addUrinalComponents: false,
+  urinalScreensQty: 0,
+  urinalMatsQty: 0,
+  addMaleToiletComponents: false,
+  toiletClipsQty: 0,
+  seatCoverDispensersQty: 0,
+  addFemaleToiletComponents: false,
+  sanipodsQty: 0,
+
   // Contract Terms
   contractMonths: 12,
 
@@ -227,21 +240,28 @@ function calculatePerItemCharge(
     // Apply regional minimum
     baseService = Math.max(baseService, regionMinimum);
 
-    // Add trip charge
-    tripCharge = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
+    // Add trip charge ONLY if checkbox is enabled
+    if (form.addTripCharge) {
+      tripCharge = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
 
-    // Add parking fee if inside beltway and parking needed
-    if (isInsideBeltway && form.needsParking) {
-      tripCharge += form.insideBeltwayParkingFee;
+      // Add parking fee if inside beltway and parking needed
+      if (isInsideBeltway && form.needsParking) {
+        tripCharge += form.insideBeltwayParkingFee;
+      }
+    } else {
+      tripCharge = 0;
     }
   }
 
-  // Facility Components (monthly converted to weekly)
+  // Facility Components (monthly converted to weekly) - Only if enabled and quantities > 0
   const monthlyToWeekly = 1 / form.weeklyToMonthlyMultiplier;
 
-  const urinalComponents = form.urinals * (form.urinalScreenMonthly + form.urinalMatMonthly) * monthlyToWeekly;
-  const maleToiletComponents = form.maleToilets * (form.toiletClipsMonthly + form.seatCoverDispenserMonthly) * monthlyToWeekly;
-  const femaleToiletComponents = form.femaleToilets * form.sanipodServiceMonthly * monthlyToWeekly;
+  const urinalComponents = form.addUrinalComponents ?
+    (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) * monthlyToWeekly : 0;
+  const maleToiletComponents = form.addMaleToiletComponents ?
+    (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) * monthlyToWeekly : 0;
+  const femaleToiletComponents = form.addFemaleToiletComponents ?
+    form.sanipodsQty * form.sanipodServiceMonthly * monthlyToWeekly : 0;
   const facilityComponents = urinalComponents + maleToiletComponents + femaleToiletComponents;
 
   // Soap upgrades (only applicable if they want luxury)

@@ -43,13 +43,13 @@ export const carpetPricingConfig: CarpetPricingConfig = {
     clean: 1,
   },
 
-  // Corrected visits per year and calculation logic
+  // Frequency multipliers (same as other services)
   frequencyMeta: {
-    weekly: { visitsPerYear: 52 }, // 52 weeks per year = 4.33 visits per month
-    monthly: { visitsPerYear: 12 }, // 1× per month
-    twicePerMonth: { visitsPerYear: 24 }, // 2× per month
-    bimonthly: { visitsPerYear: 6 }, // every 2 months (6 visits per year)
-    quarterly: { visitsPerYear: 4 }, // quarterly (4 visits per year)
+    weekly: { visitsPerYear: 52, monthlyMultiplier: 4.33 }, // 4.33 visits per month (not 4.333...)
+    monthly: { visitsPerYear: 12, monthlyMultiplier: 1 }, // 1× per month
+    twicePerMonth: { visitsPerYear: 24, monthlyMultiplier: 2 }, // 2× per month
+    bimonthly: { visitsPerYear: 6, monthlyMultiplier: 0.5 }, // every 2 months (0.5 visits per month)
+    quarterly: { visitsPerYear: 4, monthlyMultiplier: 0.333 }, // quarterly (0.333 visits per month)
   },
 };
 
@@ -61,9 +61,9 @@ export const carpetPricingConfig: CarpetPricingConfig = {
 export function getContractOptions(frequency: CarpetFrequency): number[] {
   switch (frequency) {
     case "bimonthly":
-      return [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]; // Even numbers
+      return [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32 ,34, 36]; // Even numbers
     case "quarterly":
-      return [3, 6, 9, 12, 15, 18, 21, 24]; // Quarterly multiples
+      return [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36]; // Quarterly multiples
     default:
       return [1, 2, 3, 6, 12, 18, 24, 36]; // Standard months
   }
@@ -130,10 +130,10 @@ export function calculateContractTotal(
 
     default: // Weekly, Monthly, TwicePerMonth
       const visitsPerYear = carpetPricingConfig.frequencyMeta[frequency].visitsPerYear;
-      const visitsPerMonth = visitsPerYear / 12;
+      const visitsPerMonth = carpetPricingConfig.frequencyMeta[frequency].monthlyMultiplier; // Use explicit multiplier
       totalVisits = Math.round(contractMonths * visitsPerMonth);
       contractTotal = (perVisit * visitsPerMonth * contractMonths) + installFee;
-      calculation = `${perVisit} × ${visitsPerMonth.toFixed(2)} × ${contractMonths} + ${installFee} (install) = ${contractTotal}`;
+      calculation = `${perVisit} × ${visitsPerMonth} × ${contractMonths} + ${installFee} (install) = ${contractTotal}`;
       break;
   }
 

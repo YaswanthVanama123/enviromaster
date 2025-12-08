@@ -182,6 +182,19 @@ export interface SanicleanFormState {
   // Warranty (per-item-charge only)
   warrantyDispensers: number; // calculated or manually set
 
+  // Trip Charge Control (per-item-charge only)
+  addTripCharge: boolean; // enable trip charge
+
+  // Facility Components Enable/Disable (per-item-charge only)
+  addUrinalComponents: boolean; // enable urinal screens & mats
+  urinalScreensQty: number; // manually entered by salesman
+  urinalMatsQty: number; // manually entered by salesman
+  addMaleToiletComponents: boolean; // enable toilet clips & seat covers
+  toiletClipsQty: number; // manually entered by salesman
+  seatCoverDispensersQty: number; // manually entered by salesman
+  addFemaleToiletComponents: boolean; // enable SaniPods
+  sanipodsQty: number; // manually entered by salesman
+
   // Contract Terms
   contractMonths: number; // 2-36 months
 

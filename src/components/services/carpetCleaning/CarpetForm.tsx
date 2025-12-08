@@ -412,6 +412,23 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
+
+      {/* Per-Visit Effective (just the per-visit service price) */}
+      <div className="svc-row svc-row-charge">
+        <label>Per-Visit Total</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={calc.perVisitEffective.toFixed(2)}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Contract total: frequency-specific months */}
       <div className="svc-row svc-row-charge">
         <label>Contract Total</label>
@@ -435,22 +452,6 @@ export const CarpetForm: React.FC<
               type="text"
               readOnly
               value={calc.contractTotal.toFixed(2)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Per-Visit Effective (just the per-visit service price) */}
-      <div className="svc-row svc-row-charge">
-        <label>Per-Visit Total</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.perVisitEffective.toFixed(2)}
             />
           </div>
         </div>

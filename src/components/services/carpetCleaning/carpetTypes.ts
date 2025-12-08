@@ -10,6 +10,8 @@ export type CarpetFrequency =
 export interface CarpetFrequencyMeta {
   // visits per YEAR (e.g., 12 for monthly, 24 for 2×/month, etc.)
   visitsPerYear: number;
+  // visits per MONTH (e.g., 4.33 for weekly, 1 for monthly, 0.333 for quarterly)
+  monthlyMultiplier: number;
 }
 
 /**

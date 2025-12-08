@@ -43,6 +43,14 @@ export const SanicleanForm: React.FC<
 
   const isAllInclusive = form.pricingMode === "all_inclusive";
 
+  // Debug logging
+  console.log('🔍 [SaniClean Debug]', {
+    pricingMode: form.pricingMode,
+    isAllInclusive,
+    allInclusiveRate: form.allInclusiveWeeklyRatePerFixture,
+    insideBeltwayRate: form.insideBeltwayRatePerFixture
+  });
+
   const luxuryUpgradeWeekly = form.soapType === "luxury" && soapDispensers > 0
     ? soapDispensers * form.luxuryUpgradePerDispenser
     : 0;
@@ -503,181 +511,258 @@ export const SanicleanForm: React.FC<
             FACILITY COMPONENTS (Monthly Charges)
           </div>
 
-          {/* Urinal Components - Only show if urinals > 0 */}
+          {/* Urinal Components - Only show checkbox if urinals > 0 */}
           {form.urinals > 0 && (
             <>
               <div className="svc-row">
-                <label>Urinal Screens</label>
+                <label>Urinal Components</label>
                 <div className="svc-row-right">
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    value={form.urinals}
-                    readOnly
-                    title="Number of urinal screens (auto-set to match urinals)"
-                  />
-                  <span>@</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    step="0.01"
-                    value={form.urinalScreenMonthly}
-                    readOnly
-                    title="Urinal screen rate per month (from backend)"
-                  />
-                  <span>=</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="text"
-                    readOnly
-                    value={formatMoney(form.urinals * form.urinalScreenMonthly)}
-                  />
+                  <label className="svc-inline">
+                    <input
+                      type="checkbox"
+                      name="addUrinalComponents"
+                      checked={form.addUrinalComponents}
+                      onChange={onChange}
+                    />
+                    <span>Include screens & mats</span>
+                  </label>
                 </div>
               </div>
 
-              <div className="svc-row">
-                <label>Urinal Mats</label>
-                <div className="svc-row-right">
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    value={form.urinals}
-                    readOnly
-                    title="Number of urinal mats (auto-set to match urinals)"
-                  />
-                  <span>@</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    step="0.01"
-                    value={form.urinalMatMonthly}
-                    readOnly
-                    title="Urinal mat rate per month (from backend)"
-                  />
-                  <span>=</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="text"
-                    readOnly
-                    value={formatMoney(form.urinals * form.urinalMatMonthly)}
-                  />
-                </div>
-              </div>
+              {/* Show urinal component calculations only when enabled */}
+              {form.addUrinalComponents && (
+                <>
+                  <div className="svc-row" style={{ paddingLeft: '20px' }}>
+                    <label>Urinal Screens</label>
+                    <div className="svc-row-right">
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        name="urinalScreensQty"
+                        value={form.urinalScreensQty}
+                        onChange={onChange}
+                        min="0"
+                        placeholder="0"
+                        title="Number of urinal screens (manually entered by salesman)"
+                      />
+                      <span>@</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        step="0.01"
+                        value={form.urinalScreenMonthly}
+                        readOnly
+                        title="Urinal screen rate per month (from backend)"
+                      />
+                      <span>=</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="text"
+                        readOnly
+                        value={formatMoney(form.urinalScreensQty * form.urinalScreenMonthly)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="svc-row" style={{ paddingLeft: '20px' }}>
+                    <label>Urinal Mats</label>
+                    <div className="svc-row-right">
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        name="urinalMatsQty"
+                        value={form.urinalMatsQty}
+                        onChange={onChange}
+                        min="0"
+                        placeholder="0"
+                        title="Number of urinal mats (manually entered by salesman)"
+                      />
+                      <span>@</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        step="0.01"
+                        value={form.urinalMatMonthly}
+                        readOnly
+                        title="Urinal mat rate per month (from backend)"
+                      />
+                      <span>=</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="text"
+                        readOnly
+                        value={formatMoney(form.urinalMatsQty * form.urinalMatMonthly)}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
-          {/* Male Toilet Components - Only show if maleToilets > 0 */}
+          {/* Male Toilet Components - Only show checkbox if maleToilets > 0 */}
           {form.maleToilets > 0 && (
             <>
               <div className="svc-row">
-                <label>Toilet Clips</label>
+                <label>Male Toilet Components</label>
                 <div className="svc-row-right">
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    value={form.maleToilets}
-                    readOnly
-                    title="Number of toilet clips (auto-set to match male toilets)"
-                  />
-                  <span>@</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    step="0.01"
-                    value={form.toiletClipsMonthly}
-                    readOnly
-                    title="Toilet clips rate per month (from backend)"
-                  />
-                  <span>=</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="text"
-                    readOnly
-                    value={formatMoney(form.maleToilets * form.toiletClipsMonthly)}
-                  />
+                  <label className="svc-inline">
+                    <input
+                      type="checkbox"
+                      name="addMaleToiletComponents"
+                      checked={form.addMaleToiletComponents}
+                      onChange={onChange}
+                    />
+                    <span>Include clips & seat covers</span>
+                  </label>
                 </div>
               </div>
 
-              <div className="svc-row">
-                <label>Seat Cover Dispensers</label>
-                <div className="svc-row-right">
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    value={form.maleToilets}
-                    readOnly
-                    title="Number of seat cover dispensers (auto-set to match male toilets)"
-                  />
-                  <span>@</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="number"
-                    step="0.01"
-                    value={form.seatCoverDispenserMonthly}
-                    readOnly
-                    title="Seat cover dispenser rate per month (from backend)"
-                  />
-                  <span>=</span>
-                  <input
-                    className="svc-in field-qty"
-                    type="text"
-                    readOnly
-                    value={formatMoney(form.maleToilets * form.seatCoverDispenserMonthly)}
-                  />
-                </div>
-              </div>
+              {/* Show male toilet component calculations only when enabled */}
+              {form.addMaleToiletComponents && (
+                <>
+                  <div className="svc-row" style={{ paddingLeft: '20px' }}>
+                    <label>Toilet Clips</label>
+                    <div className="svc-row-right">
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        name="toiletClipsQty"
+                        value={form.toiletClipsQty}
+                        onChange={onChange}
+                        min="0"
+                        placeholder="0"
+                        title="Number of toilet clips (manually entered by salesman)"
+                      />
+                      <span>@</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        step="0.01"
+                        value={form.toiletClipsMonthly}
+                        readOnly
+                        title="Toilet clips rate per month (from backend)"
+                      />
+                      <span>=</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="text"
+                        readOnly
+                        value={formatMoney(form.toiletClipsQty * form.toiletClipsMonthly)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="svc-row" style={{ paddingLeft: '20px' }}>
+                    <label>Seat Cover Dispensers</label>
+                    <div className="svc-row-right">
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        name="seatCoverDispensersQty"
+                        value={form.seatCoverDispensersQty}
+                        onChange={onChange}
+                        min="0"
+                        placeholder="0"
+                        title="Number of seat cover dispensers (manually entered by salesman)"
+                      />
+                      <span>@</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="number"
+                        step="0.01"
+                        value={form.seatCoverDispenserMonthly}
+                        readOnly
+                        title="Seat cover dispenser rate per month (from backend)"
+                      />
+                      <span>=</span>
+                      <input
+                        className="svc-in field-qty"
+                        type="text"
+                        readOnly
+                        value={formatMoney(form.seatCoverDispensersQty * form.seatCoverDispenserMonthly)}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
-          {/* Female Toilet Components - Only show if femaleToilets > 0 */}
+          {/* Female Toilet Components - Only show checkbox if femaleToilets > 0 */}
           {form.femaleToilets > 0 && (
+            <>
+              <div className="svc-row">
+                <label>Female Toilet Components</label>
+                <div className="svc-row-right">
+                  <label className="svc-inline">
+                    <input
+                      type="checkbox"
+                      name="addFemaleToiletComponents"
+                      checked={form.addFemaleToiletComponents}
+                      onChange={onChange}
+                    />
+                    <span>Include SaniPods</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Show female toilet component calculations only when enabled */}
+              {form.addFemaleToiletComponents && (
+                <div className="svc-row" style={{ paddingLeft: '20px' }}>
+                  <label>SaniPods</label>
+                  <div className="svc-row-right">
+                    <input
+                      className="svc-in field-qty"
+                      type="number"
+                      name="sanipodsQty"
+                      value={form.sanipodsQty}
+                      onChange={onChange}
+                      min="0"
+                      placeholder="0"
+                      title="Number of SaniPods (manually entered by salesman)"
+                    />
+                    <span>@</span>
+                    <input
+                      className="svc-in field-qty"
+                      type="number"
+                      step="0.01"
+                      value={form.sanipodServiceMonthly}
+                      readOnly
+                      title="SaniPod service rate per month (from backend)"
+                    />
+                    <span>=</span>
+                    <input
+                      className="svc-in field-qty"
+                      type="text"
+                      readOnly
+                      value={formatMoney(form.sanipodsQty * form.sanipodServiceMonthly)}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Total Facility Components (weekly equivalent) - Only show if any components are enabled */}
+          {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
             <div className="svc-row">
-              <label>SaniPods</label>
+              <label>Total Facility Components (weekly equivalent)</label>
               <div className="svc-row-right">
                 <input
-                  className="svc-in field-qty"
-                  type="number"
-                  value={form.femaleToilets}
-                  readOnly
-                  title="Number of SaniPods (auto-set to match female toilets)"
-                />
-                <span>@</span>
-                <input
-                  className="svc-in field-qty"
-                  type="number"
-                  step="0.01"
-                  value={form.sanipodServiceMonthly}
-                  readOnly
-                  title="SaniPod service rate per month (from backend)"
-                />
-                <span>=</span>
-                <input
-                  className="svc-in field-qty"
+                  className="svc-in-box"
                   type="text"
                   readOnly
-                  value={formatMoney(form.femaleToilets * form.sanipodServiceMonthly)}
+                  value={formatMoney(
+                    ((form.addUrinalComponents ? (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) : 0) +
+                     (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
+                     (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0)) / form.weeklyToMonthlyMultiplier
+                  )}
+                  title="Monthly facility components ÷ 4.33 weeks/month"
                 />
               </div>
             </div>
           )}
-
-          {/* Total Facility Components (weekly equivalent) */}
-          <div className="svc-row">
-            <label>Total Facility Components (weekly equivalent)</label>
-            <div className="svc-row-right">
-              <input
-                className="svc-in-box"
-                type="text"
-                readOnly
-                value={formatMoney(
-                  (form.urinals * (form.urinalScreenMonthly + form.urinalMatMonthly) +
-                   form.maleToilets * (form.toiletClipsMonthly + form.seatCoverDispenserMonthly) +
-                   form.femaleToilets * form.sanipodServiceMonthly) / form.weeklyToMonthlyMultiplier
-                )}
-                title="Monthly facility components ÷ 4.33 weeks/month"
-              />
-            </div>
-          </div>
         </>
       )}
 
@@ -715,6 +800,24 @@ export const SanicleanForm: React.FC<
             <span className="svc-note" style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
               Suggested: {Math.ceil(form.sinks * 1.5)} dispensers (soap + air freshener)
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Trip Charge - Only for Per Item Charge and not for small facilities */}
+      {!isAllInclusive && fixtures > form.smallFacilityThreshold && (
+        <div className="svc-row">
+          <label>Trip Charge</label>
+          <div className="svc-row-right">
+            <label className="svc-inline">
+              <input
+                type="checkbox"
+                name="addTripCharge"
+                checked={form.addTripCharge}
+                onChange={onChange}
+              />
+              <span>Include trip charge (+$8)</span>
+            </label>
           </div>
         </div>
       )}

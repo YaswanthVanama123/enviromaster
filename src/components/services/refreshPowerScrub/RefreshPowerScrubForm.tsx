@@ -38,10 +38,10 @@ const AREA_FREQ_OPTIONS = [
 const AREA_ORDER: RefreshAreaKey[] = [
   "dumpster",
   "patio",
-  "walkway",
+  // "walkway",
   "foh",
   "boh",
-  "other",
+  // "other",
 ];
 
 const PRICING_TYPES = [
@@ -57,7 +57,6 @@ export const RefreshPowerScrubForm: React.FC<
 > = ({ initialData, onRemove }) => {
   const {
     form,
-    setTripCharge,
     setHourlyRate,
     setMinimumVisit,
     setFrequency,
@@ -96,7 +95,7 @@ export const RefreshPowerScrubForm: React.FC<
         rateInfo: {
           label: "Rate Information",
           type: "text" as const,
-          value: `$${form.hourlyRate}/hr | Trip: $${form.tripCharge} | Minimum: $${form.minimumVisit}`,
+          value: `$${form.hourlyRate}/hr | Minimum: $${form.minimumVisit}`,
         },
 
         areaBreakdown: AREA_ORDER
@@ -348,16 +347,6 @@ export const RefreshPowerScrubForm: React.FC<
       {/* Global rule controls */}
       <div className="rps-config-row">
         <div className="rps-inline">
-          <span className="rps-label">Trip Charge</span>
-          <span>$</span>
-          <input
-            type="number"
-            className="rps-line rps-num"
-            value={form.tripCharge}
-            onChange={(e) => setTripCharge(e.target.value)}
-          />
-        </div>
-        <div className="rps-inline">
           <span className="rps-label">Hourly Rate</span>
           <span>$</span>
           <input
@@ -503,14 +492,14 @@ export const RefreshPowerScrubForm: React.FC<
       </div>
 
       {/* Summary */}
-      <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
+      {/* <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
         <div className="rps-inline">
           <span className="rps-label-strong">TOTAL PER VISIT: ${formatAmount(quote.perVisitPrice)}</span>
         </div>
-      </div>
+      </div> */}
 
       {/* Frequency Selection */}
-      <div className="rps-config-row" style={{ marginTop: '16px' }}>
+      {/* <div className="rps-config-row" style={{ marginTop: '16px' }}>
         <div className="rps-inline">
           <span className="rps-label">Frequency:</span>
           <select
@@ -526,19 +515,19 @@ export const RefreshPowerScrubForm: React.FC<
             ))}
           </select>
         </div>
-      </div>
+      </div> */}
 
       {/* Monthly Total – HIDE for Quarterly */}
-      {form.frequency !== "quarterly" && (
+      {/* {form.frequency !== "quarterly" && (
         <div className="rps-config-row">
           <div className="rps-inline">
             <span className="rps-label">Monthly Total: ${formatAmount(quote.monthlyRecurring)}</span>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Combined Contract Total with months dropdown and amount */}
-      <div className="rps-config-row">
+      {/* <div className="rps-config-row">
         <div className="rps-inline">
           <span className="rps-label">Contract Total:</span>
           <select
@@ -572,10 +561,10 @@ export const RefreshPowerScrubForm: React.FC<
           <span className="rps-label" style={{ marginRight: '4px' }}>$</span>
           <span className="rps-label-strong">{formatAmount(quote.contractTotal)}</span>
         </div>
-      </div>
+      </div> */}
 
       {/* Notes */}
-      <div className="rps-config-row" style={{ marginTop: '16px' }}>
+      {/* <div className="rps-config-row" style={{ marginTop: '16px' }}>
         <div className="rps-inline">
           <span className="rps-label">Notes</span>
           <textarea
@@ -586,7 +575,7 @@ export const RefreshPowerScrubForm: React.FC<
             placeholder="Additional notes..."
           />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

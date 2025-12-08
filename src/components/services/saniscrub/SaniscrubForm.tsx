@@ -129,6 +129,14 @@ export const SaniscrubForm: React.FC<
             type: "dollar" as const,
             amount: calc.firstMonthTotal,
           },
+          // ✅ NEW: Add monthly recurring for monthly-based frequencies only
+          ...(form.frequency === "monthly" || form.frequency === "twicePerMonth" ? {
+            monthlyRecurring: {
+              label: "Monthly Recurring",
+              type: "dollar" as const,
+              amount: calc.monthlyTotal,
+            }
+          } : {}),
           contract: {
             label: "Contract Total",
             type: "dollar" as const,
@@ -535,6 +543,24 @@ export const SaniscrubForm: React.FC<
           </div>
         </div>
       </div>
+
+      {/* ✅ NEW: Monthly Recurring - only show for monthly-based frequencies */}
+      {(form.frequency === "monthly" || form.frequency === "twicePerMonth") && (
+        <div className="svc-row svc-row-charge">
+          <label>Monthly Recurring</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.monthlyTotal.toFixed(2)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Normal recurring month (after first) or per visit for bi-monthly/quarterly */}
       {/* <div className="svc-row svc-row-charge">

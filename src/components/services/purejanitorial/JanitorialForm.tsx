@@ -535,8 +535,26 @@ export const JanitorialForm: React.FC<
       {/* Contract total - Only show for recurring */}
       {form.serviceType === "recurring" && (
         <div className="svc-row svc-row-charge">
-          <label>Contract Total ({form.contractMonths} months)</label>
+          <label>Contract Total</label>
           <div className="svc-row-right">
+            <select
+              className="svc-in"
+              name="contractMonths"
+              value={form.contractMonths}
+              onChange={onChange}
+            >
+              {(() => {
+                const options = [];
+                for (let months = cfg.minContractMonths; months <= cfg.maxContractMonths; months++) {
+                  options.push(months);
+                }
+                return options.map((months) => (
+                  <option key={months} value={months}>
+                    {months} mo
+                  </option>
+                ));
+              })()}
+            </select>
             <div className="svc-dollar">
               <span>$</span>
               <input
@@ -546,9 +564,6 @@ export const JanitorialForm: React.FC<
                 value={fmt(calc.contractTotal)}
               />
             </div>
-            <span className="svc-small">
-              Based on 4.33 visits/month
-            </span>
           </div>
         </div>
       )}
