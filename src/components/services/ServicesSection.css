@@ -1,10 +1,12 @@
 .svc{
-  /* max-width:1120px; */
+  /* max-width:1120px; - Remove width constraint to allow full width */
   margin:18px auto 28px;
   padding:0 12px;
   font-family:Arial, Helvetica, sans-serif;
   color:#000;
   overflow-x:hidden;
+  width: 100%; /* Ensure full width usage */
+  box-sizing: border-box;
 }
 
 .svc-title{
@@ -105,17 +107,20 @@
 
 .svc-card{
   min-width:0;
+  width: 100%; /* Ensure service cards use full available width */
   background: transparent;
   border: none;
   border-radius: 0;
   padding: 0 16px 16px 16px;
   box-shadow: none;
   transition: none;
+  box-sizing: border-box;
 }
 .svc-card:hover {
   box-shadow: none;
 }
-.svc-card--wide{
+.svc-card--wide,
+.svc-card-wide{
   grid-column:1 / -1;
 }
 
@@ -414,6 +419,7 @@
 }
 @media (max-width:740px){
   .svc-grid{ grid-template-columns:1fr; }
-  .svc-card--wide{ grid-column:1; }
+  .svc-card--wide,
+  .svc-card-wide{ grid-column:1; }
   .svc-row{ grid-template-columns:1fr; row-gap:4px; }
 }

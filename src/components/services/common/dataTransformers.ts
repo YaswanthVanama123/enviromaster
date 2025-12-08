@@ -643,6 +643,8 @@ export function transformGreaseTrapData(structuredData: any): any {
 export function transformRefreshPowerScrubData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
+  console.log('🔄 [transformRefreshPowerScrubData] Processing structured data:', structuredData);
+
   const formState: any = {
     notes: structuredData.notes || "",
   };
@@ -708,6 +710,124 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     formState.customFields = extractCustomFields(structuredData);
 
     console.log('🔄 [transformRefreshPowerScrubData] Converted form state:', formState);
+    return formState;
+  }
+
+  // Handle CURRENT STORAGE FORMAT (services object structure)
+  if (structuredData.services) {
+    console.log('🔄 [transformRefreshPowerScrubData] Using CURRENT storage format (services object)');
+
+    // Extract global rate info from serviceInfo
+    if (structuredData.serviceInfo && structuredData.serviceInfo.value) {
+      const rateInfoStr = structuredData.serviceInfo.value;
+      const hourlyMatch = rateInfoStr.match(/Hourly Rate: \$(\d+)\/hr/);
+      const minMatch = rateInfoStr.match(/Minimum: \$(\d+)/);
+
+      formState.hourlyRate = hourlyMatch ? parseFloat(hourlyMatch[1]) : 200;
+      formState.minimumVisit = minMatch ? parseFloat(minMatch[1]) : 400;
+
+      console.log(`🔄 Extracted rates - hourly: ${formState.hourlyRate}, minimum: ${formState.minimumVisit}`);
+    }
+
+    // Map area naming between stored format and form format
+    const areaMapping = {
+      'dumpster': 'dumpster',
+      'patio': 'patio',
+      'frontHouse': 'foh',
+      'backHouse': 'boh',
+      'walkway': 'walkway',
+      'other': 'other'
+    };
+
+    // Initialize all areas with defaults first
+    Object.values(areaMapping).forEach(formAreaKey => {
+      formState[formAreaKey] = {
+        enabled: false,
+        pricingType: "preset",
+        workers: 2,
+        hours: 0,
+        hourlyRate: 200,
+        insideSqFt: 0,
+        outsideSqFt: 0,
+        insideRate: 0.6,
+        outsideRate: 0.4,
+        sqFtFixedFee: 200,
+        customAmount: 0,
+        kitchenSize: "smallMedium",
+        patioMode: "standalone",
+        frequencyLabel: "",
+        contractMonths: 12
+      };
+    });
+
+    // Process each service area from stored data
+    Object.entries(structuredData.services).forEach(([storedAreaKey, areaData]: [string, any]) => {
+      const formAreaKey = areaMapping[storedAreaKey as keyof typeof areaMapping];
+      if (!formAreaKey) {
+        console.warn(`🔄 Unknown area key in stored data: ${storedAreaKey}`);
+        return;
+      }
+
+      console.log(`🔄 Processing area: ${storedAreaKey} -> ${formAreaKey}`, areaData);
+
+      // Map pricing method
+      let pricingType = "preset";
+      if (areaData.pricingMethod?.value) {
+        const methodValue = areaData.pricingMethod.value.toLowerCase();
+        if (methodValue.includes("per hour")) pricingType = "perHour";
+        else if (methodValue.includes("per worker")) pricingType = "perWorker";
+        else if (methodValue.includes("square feet")) pricingType = "squareFeet";
+        else if (methodValue.includes("custom")) pricingType = "custom";
+        else if (methodValue.includes("preset")) pricingType = "preset";
+      }
+
+      // Extract specific data based on pricing method and available fields
+      const areaState: any = {
+        enabled: areaData.enabled !== false, // Enable if not explicitly false
+        pricingType: pricingType,
+        workers: 2, // Default
+        hours: 0,
+        hourlyRate: 200,
+        insideSqFt: 0,
+        outsideSqFt: 0,
+        insideRate: 0.6,
+        outsideRate: 0.4,
+        sqFtFixedFee: 200,
+        customAmount: 0,
+        kitchenSize: "smallMedium",
+        patioMode: "standalone",
+        frequencyLabel: areaData.frequency?.value || "",
+        contractMonths: areaData.contract?.quantity || 12
+      };
+
+      // Extract pricing-specific data
+      if (pricingType === "perHour" && areaData.hours) {
+        areaState.hours = areaData.hours.quantity || 0;
+      } else if (pricingType === "perWorker" && areaData.workersCalc) {
+        areaState.workers = areaData.workersCalc.quantity || 2;
+      } else if (pricingType === "squareFeet") {
+        if (areaData.fixedFee?.value) areaState.sqFtFixedFee = areaData.fixedFee.value;
+        if (areaData.insideSqft?.quantity) areaState.insideSqFt = areaData.insideSqft.quantity;
+        if (areaData.outsideSqft?.quantity) areaState.outsideSqFt = areaData.outsideSqft.quantity;
+        if (areaData.insideSqft?.priceRate) areaState.insideRate = areaData.insideSqft.priceRate;
+        if (areaData.outsideSqft?.priceRate) areaState.outsideRate = areaData.outsideSqft.priceRate;
+      } else if (pricingType === "preset") {
+        // Extract preset-specific options
+        if (storedAreaKey === 'patio' && areaData.plan?.value) {
+          areaState.patioMode = areaData.plan.value.toLowerCase().includes('upsell') ? 'upsell' : 'standalone';
+        } else if (storedAreaKey === 'backHouse' && areaData.plan?.value) {
+          areaState.kitchenSize = areaData.plan.value.toLowerCase().includes('large') ? 'large' : 'smallMedium';
+        }
+      }
+
+      formState[formAreaKey] = areaState;
+      console.log(`🔄 Mapped ${storedAreaKey} -> ${formAreaKey}:`, areaState);
+    });
+
+    // Extract custom fields
+    formState.customFields = extractCustomFields(structuredData);
+
+    console.log('🔄 [transformRefreshPowerScrubData] Final form state:', formState);
     return formState;
   }
 

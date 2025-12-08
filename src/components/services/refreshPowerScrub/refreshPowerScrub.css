@@ -2,8 +2,10 @@
 
 /* Make the Refresh card + table use the full available width */
 .refresh-rps {
-  width: 100%;
-  max-width: 100%;
+  width: 100% !important; /* Force full width */
+  max-width: 100% !important;
+  box-sizing: border-box;
+  margin: 0; /* Remove any margin constraints */
 }
 
 .rps-wrap {
