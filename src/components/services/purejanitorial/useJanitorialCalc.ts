@@ -38,7 +38,10 @@ interface BackendJanitorialConfig {
 export interface JanitorialCalcResult {
   totalHours: number;
   perVisit: number;
+  weekly: number; // ✅ Added for weekly total display
   monthly: number;
+  firstMonth: number; // ✅ Added for first month display
+  recurringMonthly: number; // ✅ Added for ongoing monthly display
   annual: number;
   firstVisit: number;
   ongoingMonthly: number;
@@ -50,6 +53,8 @@ export interface JanitorialCalcResult {
     pricingMode: string;
     basePrice: number;
     appliedMultiplier: number;
+    installationFee?: number;
+    monthlyVisits?: number;
   };
 }
 
@@ -203,17 +208,16 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       const next: JanitorialFormState = { ...prev };
 
       if (type === "checkbox") {
-        next[name as keyof JanitorialFormState] = t.checked;
+        (next as any)[name] = t.checked;
       } else if (type === "number") {
         const raw = t.value;
         const num = raw === "" ? 0 : Number(raw);
-        next[name as keyof JanitorialFormState] =
-          Number.isFinite(num) && num >= 0 ? num : 0;
+        (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
       } else {
-        next[name as keyof JanitorialFormState] = t.value;
+        (next as any)[name] = t.value;
       }
 
-      console.log(`📝 Form updated: ${name} =`, next[name as keyof JanitorialFormState]);
+      console.log(`📝 Form updated: ${name} =`, (next as any)[name]);
       return next;
     });
   };
@@ -363,7 +367,18 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       maxMonths
     );
 
-    const recurringContractTotal = recurringMonthly * contractMonths;
+    // ✅ CORRECTED: Contract total = first month + (regular monthly × remaining months)
+    const recurringContractTotal = contractMonths <= 0
+      ? 0
+      : firstMonth + Math.max(contractMonths - 1, 0) * recurringMonthly;
+
+    console.log(`✅ Contract Calculation Details:`);
+    console.log(`   - Regular Monthly: $${recurringMonthly.toFixed(2)}`);
+    console.log(`   - Installation Fee: $${installationFee.toFixed(2)}`);
+    console.log(`   - First Month: $${firstMonth.toFixed(2)} (regular + installation)`);
+    console.log(`   - Contract Months: ${contractMonths}`);
+    console.log(`   - Remaining Months: ${Math.max(contractMonths - 1, 0)}`);
+    console.log(`   - Contract Total: $${recurringContractTotal.toFixed(2)}`);
 
     console.log(`✅ Final Calculation - Per Visit: $${recurringPerVisit.toFixed(2)}, Contract Total: $${recurringContractTotal.toFixed(2)}`);
 
@@ -371,13 +386,13 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       totalHours: totalHoursBase,
       perVisit: recurringPerVisit,
       weekly: recurringWeekly,
-      monthly: recurringMonthly,
-      firstMonth: firstMonth,
-      recurringMonthly: recurringMonthly, // Same as monthly for clarity
-      annual: recurringContractTotal,
+      monthly: firstMonth, // ✅ FIRST month (includes installation if applicable)
+      firstMonth: firstMonth, // ✅ First month total (regular + installation)
+      recurringMonthly: recurringMonthly, // ✅ Ongoing monthly (just regular, no installation)
+      annual: recurringContractTotal, // ✅ CORRECTED: Uses proper first month + remaining months calculation
       firstVisit: recurringPerVisit,
-      ongoingMonthly: recurringMonthly,
-      contractTotal: recurringContractTotal,
+      ongoingMonthly: recurringMonthly, // ✅ Regular monthly recurring (no installation)
+      contractTotal: recurringContractTotal, // ✅ CORRECTED: Total contract value
       breakdown: {
         manualHours,
         vacuumingHours,

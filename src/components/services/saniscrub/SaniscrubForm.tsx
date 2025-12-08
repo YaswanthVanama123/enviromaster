@@ -46,23 +46,23 @@ export const SaniscrubForm: React.FC<
 
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {
+    // ✅ FIXED: Always show BASE rates, not frequency-adjusted rates
     if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
-      return form.fixtureRateMonthly; // ✅ Uses form value
+      return 25; // Always show base rate of $25 for monthly/2xMonth
     }
     if (form.frequency === "bimonthly") {
-      return form.fixtureRateBimonthly; // ✅ Uses form value
+      return 35; // Always show base rate of $35 for bimonthly
     }
-    return form.fixtureRateQuarterly; // ✅ Uses form value
+    return 40; // Always show base rate of $40 for quarterly
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
-  // Show the FINAL amount that gets used in calculations (after minimum applied)
+  // Show the BASE amount with minimum applied (not frequency-adjusted)
   const fixtureLineDisplayAmount = (() => {
     if (form.fixtureCount <= 0) return 0;
 
-    // For all frequencies: show the actual final monthly fixture amount
-    // This already includes minimum logic applied correctly
-    return calc.fixtureMonthly;
+    // ✅ FIXED: Use base amount with minimum applied (before frequency adjustments)
+    return calc.fixtureBaseAmount || 0;
   })();
 
   // For the Non-Bathroom Area "= ___" box:

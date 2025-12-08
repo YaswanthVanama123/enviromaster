@@ -135,7 +135,7 @@ export const JanitorialForm: React.FC<
           },
         },
 
-        notes: form.notes || "",
+        notes: form.notes || "", // Optional notes field
         customFields: customFields,
       } : null;
 

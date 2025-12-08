@@ -8,36 +8,39 @@ import {
 } from "./saniscrubConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+// ✅ Backend config interface matching the corrected MongoDB JSON structure
 interface BackendSaniscrubConfig {
-  fixtureRates: {
-    monthly: number;
-    twicePerMonth: number;
-    bimonthly: number;
-    quarterly: number;
+  bathroomPricing: {
+    monthly: { ratePerFixture: number; minimumCharge: number; };
+    twicePerMonth: { baseRatePerFixture: number; minimumCharge: number; combineWithSaniDiscount: number; };
+    bimonthly: { ratePerFixture: number; minimumCharge: number; };
+    quarterly: { ratePerFixture: number; minimumCharge: number; };
   };
-  minimums: {
-    monthly: number;
-    twicePerMonth: number;
-    bimonthly: number;
-    quarterly: number;
+  nonBathroomPricing: {
+    unitSqFt: number;
+    firstUnitRate: number;
+    additionalUnitRate: number;
   };
-  nonBathroomUnitSqFt: number;
-  nonBathroomFirstUnitRate: number;
-  nonBathroomAdditionalUnitRate: number;
-  installMultipliers: {
-    dirty: number;
-    clean: number;
+  installationPricing: {
+    multipliers: { dirty: number; clean: number; };
+    tripCharge: number; // Should be 0
+    parkingFee: number; // Should be 0
   };
-  tripChargeBase: number;
-  parkingFee: number;
+  tripCharges: {
+    standard: number; // Should be 0
+    install: number; // Should be 0
+    parkingFee: number; // Should be 0
+  };
   frequencyMeta: {
-    monthly: { visitsPerYear: number };
-    twicePerMonth: { visitsPerYear: number };
-    bimonthly: { visitsPerYear: number };
-    quarterly: { visitsPerYear: number };
+    monthly: { visitsPerYear: number; monthlyMultiplier: number; };
+    twicePerMonth: { visitsPerYear: number; monthlyMultiplier: number; discountWhenCombined: number; };
+    bimonthly: { visitsPerYear: number; monthlyMultiplier: number; };
+    quarterly: { visitsPerYear: number; monthlyMultiplier: number; };
   };
-  twoTimesPerMonthDiscountFlat: number;
+  businessRules: {
+    twicePerMonthRequiresSaniClean: boolean;
+    discountForTwicePerMonthCombo: number;
+  };
 }
 
 const DEFAULT_FORM: SaniscrubFormState = {
@@ -245,6 +248,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
   const {
     fixtureMonthly,
+    fixtureBaseAmount, // ✅ ADD: Destructure the new fixtureBaseAmount
     fixturePerVisit,
     nonBathroomPerVisit,
     nonBathroomMonthly,
@@ -310,37 +314,33 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     // ---------------- 1) RESTROOM FIXTURES ----------------
     let fixtureMonthly = 0;
     let fixturePerVisit = 0;
+    let fixtureBaseAmount = 0; // ✅ Initialize at the beginning
 
     if (fixtureCount > 0) {
+      // ✅ CORRECTED: Calculate base amount first, then apply frequency in totals only
+      const baseRate = freq === "bimonthly" ? 35 : freq === "quarterly" ? 40 : 25;
+      const rawAmount = fixtureCount * baseRate;
+      const minimumAmount = freq === "monthly" || freq === "twicePerMonth" ? 175 : 250;
+
+      // Base amount with minimum applied (this is what shows in the "= $___" box)
+      fixtureBaseAmount = Math.max(rawAmount, minimumAmount);
+
       if (freq === "monthly") {
-        // Monthly: $25/fixture or $175 minimum
-        const rawAmount = fixtureCount * 25;
-        const withMinimum = Math.max(rawAmount, 175);
-        fixtureMonthly = withMinimum;
-        fixturePerVisit = withMinimum; // 1 visit per month
+        // Monthly: Base amount is the monthly amount
+        fixtureMonthly = fixtureBaseAmount;
+        fixturePerVisit = fixtureBaseAmount;
       } else if (freq === "twicePerMonth") {
-        // 2x/month: Calculate monthly price, then subtract $15 if has SaniClean
-        const monthlyPrice = Math.max(fixtureCount * 25, 175);
-        let twiceMonthlyPrice = monthlyPrice * 2; // Base: 2x monthly
-
-        if (form.hasSaniClean) {
-          twiceMonthlyPrice = Math.max(0, twiceMonthlyPrice - 15); // -$15 discount
-        }
-
-        fixtureMonthly = twiceMonthlyPrice;
-        fixturePerVisit = (twiceMonthlyPrice * 12) / visitsPerYear; // Convert to per-visit
+        // 2x/month: Base amount, then apply 2x multiplier and discount in final totals
+        fixtureMonthly = fixtureBaseAmount; // Show base amount in display
+        fixturePerVisit = fixtureBaseAmount / 2; // Each visit is half the monthly
       } else if (freq === "bimonthly") {
-        // Bi-monthly: $35/fixture or $250 minimum PER VISIT
-        const rawPerVisit = fixtureCount * 35;
-        const perVisitWithMin = Math.max(rawPerVisit, 250);
-        fixturePerVisit = perVisitWithMin;
-        fixtureMonthly = (perVisitWithMin * visitsPerYear) / 12;
+        // Bimonthly: Base amount represents monthly value
+        fixtureMonthly = fixtureBaseAmount;
+        fixturePerVisit = fixtureBaseAmount; // Each visit (every 2 months) costs the base amount
       } else if (freq === "quarterly") {
-        // Quarterly: $40/fixture or $250 minimum PER VISIT
-        const rawPerVisit = fixtureCount * 40;
-        const perVisitWithMin = Math.max(rawPerVisit, 250);
-        fixturePerVisit = perVisitWithMin;
-        fixtureMonthly = (perVisitWithMin * visitsPerYear) / 12;
+        // Quarterly: Base amount represents monthly value
+        fixtureMonthly = fixtureBaseAmount;
+        fixturePerVisit = fixtureBaseAmount; // Each visit (quarterly) costs the base amount
       }
     }
 
@@ -366,14 +366,26 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     }
 
     // ---------------- 3) TRIP CHARGE ----------------
-    // Trip charge: $8 + parking (like SaniClean)
-    const baseTrip = 8; // $8 base trip charge
-    const parkingCharge = form.needsParking ? activeConfig.parkingFee : 0;
+    // ✅ CORRECTED: NO trip charges for SaniScrub (per updated business rules)
+    const baseTrip = 0; // No trip charge for SaniScrub
+    const parkingCharge = 0; // No parking charge for SaniScrub
     const perVisitTrip = baseTrip + parkingCharge;
     const monthlyTrip = perVisitTrip * visitsPerMonth;
 
-    // ---------------- 4) TOTALS ----------------
-    const monthlyBase = fixtureMonthly + nonBathroomMonthly;
+    // ---------------- 4) TOTALS WITH FREQUENCY ADJUSTMENTS ----------------
+    let adjustedFixtureMonthly = fixtureMonthly;
+
+    // ✅ Apply frequency adjustments to final totals only
+    if (freq === "twicePerMonth") {
+      // 2x/month: Double the monthly base, then subtract $15 if combined with SaniClean
+      adjustedFixtureMonthly = fixtureMonthly * 2;
+      if (form.hasSaniClean) {
+        adjustedFixtureMonthly = Math.max(0, adjustedFixtureMonthly - 15); // -$15 discount
+      }
+    }
+    // Note: bimonthly and quarterly rates already use their correct base rates (35/40)
+
+    const monthlyBase = adjustedFixtureMonthly + nonBathroomMonthly;
     const perVisitWithoutTrip = fixturePerVisit + nonBathroomPerVisit;
     const perVisitWithTrip = perVisitWithoutTrip + perVisitTrip;
 
@@ -382,9 +394,17 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     // Monthly recurring (service + trip)
     const monthlyRecurring = monthlyBase + monthlyTrip;
 
+    // ✅ MOVED: Calculate base per-visit cost early (needed for first month calculation)
+    const basePerVisitCost = (fixtureCount > 0 ? fixtureBaseAmount : 0) +
+                            (nonBathSqFt > 0 ? nonBathroomPerVisit : 0);
+
     // ---------------- 5) INSTALLATION ----------------
-    // Installation = 3× (dirty) or 1× (clean) of TOTAL service price (no trip charge in install base)
-    const installationBasePrice = perVisitWithoutTrip; // Service only, no trip
+    // ✅ FIXED: Installation = 3× (dirty) or 1× (clean) of FULL service price
+    // For installation, always use the base amounts, not per-visit amounts
+    const installationFixtureBase = fixtureCount > 0 ? fixtureBaseAmount : 0;
+    const installationNonBathroomBase = nonBathSqFt > 0 ? nonBathroomPerVisit : 0;
+    const installationBasePrice = installationFixtureBase + installationNonBathroomBase;
+
     const installMultiplier = form.isDirtyInstall
       ? activeConfig.installMultipliers.dirty  // 3×
       : activeConfig.installMultipliers.clean; // 1×
@@ -403,16 +423,26 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
     if (serviceActive) {
       if (freq === "monthly") {
-        // Monthly: install + 1 service visit (with trip)
-        firstMonthTotal = installOneTime + perVisitWithTrip;
+        // Monthly: install already includes service, just add trip
+        firstMonthTotal = form.includeInstall ? (installOneTime + perVisitTrip) : monthlyRecurring;
       } else if (freq === "twicePerMonth") {
-        // 2x/month: install + full monthly recurring
-        firstMonthTotal = installOneTime + monthlyRecurring;
+        // ✅ FIXED: 2x/month calculation
+        if (form.includeInstall) {
+          // With install: install + one base visit - $15 discount
+          const baseVisitCost = basePerVisitCost + perVisitTrip; // Use base amounts
+          firstMonthTotal = installOneTime + baseVisitCost;
+
+          // Apply SaniClean discount to the total month
+          if (form.hasSaniClean) {
+            firstMonthTotal = Math.max(0, firstMonthTotal - 15);
+          }
+        } else {
+          // Without install: just the normal monthly recurring (already includes discount)
+          firstMonthTotal = monthlyRecurring;
+        }
       } else {
-        // Bi-monthly/quarterly: install-only first visit + remaining visits
-        const monthlyVisits = visitsPerMonth;
-        const firstMonthNormalVisits = Math.max(monthlyVisits - 1, 0);
-        firstMonthTotal = installOneTime + (firstMonthNormalVisits * perVisitWithTrip);
+        // Bi-monthly/quarterly: install already includes full service
+        firstMonthTotal = form.includeInstall ? installOneTime : (basePerVisitCost + perVisitTrip);
       }
     }
 
@@ -421,25 +451,25 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     let contractTotal = 0;
 
     if (freq === "bimonthly" || freq === "quarterly") {
-      // Visit-based calculation
-      const monthsPerVisit = freq === "bimonthly" ? 2 : 3;
+      // ✅ FIXED: Visit-based calculation
+      const monthsPerVisit = freq === "bimonthly" ? 2 : 3; // Quarterly = every 3 months
       const totalVisits = Math.floor(contractMonths / monthsPerVisit);
 
       if (totalVisits > 0) {
         if (form.includeInstall && installOneTime > 0) {
-          // First visit = install + service + trip, remaining visits = service + trip
-          const firstVisitTotal = installOneTime + perVisitWithTrip;
+          // ✅ CORRECTED: Installation already includes first visit service
+          // Remaining visits = service + trip only
           const remainingVisits = Math.max(totalVisits - 1, 0);
-          contractTotal = firstVisitTotal + (remainingVisits * perVisitWithTrip);
+          contractTotal = installOneTime + (remainingVisits * perVisitWithTrip);
         } else {
           // No installation: all visits = service + trip
           contractTotal = totalVisits * perVisitWithTrip;
         }
       }
     } else {
-      // Month-based calculation (monthly/2x month)
+      // ✅ FIXED: Month-based calculation (monthly/2x month)
       if (form.includeInstall && installOneTime > 0) {
-        // First month (special) + remaining months (normal)
+        // First month includes install, remaining months are normal recurring
         const remainingMonths = Math.max(contractMonths - 1, 0);
         contractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
       } else {
@@ -451,7 +481,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     // UI Values
     const monthlyTotal = monthlyRecurring;
     const annualTotal = contractTotal;
-    const perVisitEffective = perVisitWithTrip;
+
+    // ✅ FIXED: Per-visit shows BASE cost (without frequency adjustments or discounts)
+    const perVisitEffective = basePerVisitCost + perVisitTrip; // Base cost + trip charges
 
     // Frequency helpers
     const isVisitBasedFrequency = freq === "bimonthly" || freq === "quarterly";
@@ -461,11 +493,12 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       : contractMonths;
 
     return {
-      fixtureMonthly,
+      fixtureMonthly, // Base amount for display (before frequency adjustments)
+      fixtureBaseAmount, // ✅ NEW: Explicit base amount with minimum applied
       fixturePerVisit,
       nonBathroomPerVisit,
       nonBathroomMonthly,
-      monthlyBase,
+      monthlyBase, // Now includes frequency adjustments
       perVisitTrip,
       monthlyTrip,
       monthlyTotal,
@@ -512,6 +545,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     quote,
     calc: {
       fixtureMonthly,
+      fixtureBaseAmount, // ✅ NEW: Base amount with minimum applied
       fixturePerVisit,
       nonBathroomPerVisit,
       nonBathroomMonthly,

@@ -76,6 +76,9 @@ export interface JanitorialFormState {
   addonTimeMinutes: number; // Add-on time in minutes for one-time service
   installation: boolean; // Installation checkbox for recurring service
 
+  // ✅ NOTES field for form compatibility
+  notes?: string; // Optional notes field
+
   // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
   baseHourlyRate: number;               // $30/hr for normal route
   shortJobHourlyRate: number;           // $50/hr for standalone

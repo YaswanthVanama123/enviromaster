@@ -6,118 +6,154 @@ import type {
 } from "./sanicleanTypes";
 
 export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
-  geographicPricing: {
-    // Inside the Beltway: $7 / fixture, $40 minimum (no trip charges)
-    insideBeltway: {
-      ratePerFixture: 7,
-      weeklyMinimum: 40,
-      tripCharge: 0, // No trip charges per user request
-      parkingFee: 0, // No parking fees per user request
-    },
-    // Outside the Beltway: $6 / fixture (no minimum, no trip charges)
-    outsideBeltway: {
-      ratePerFixture: 6,
-      weeklyMinimum: 0, // No minimum mentioned in actual rules
-      tripCharge: 0, // No trip charges per user request
-    },
-  },
-
-  // For 4–5 or fewer fixtures → $50 minimum (no trip charges)
-  smallFacilityMinimum: {
-    fixtureThreshold: 5,
-    minimumWeeklyCharge: 50, // $50 per actual rules (was $40)
-    includesTripCharge: true, // No trip charges anymore, but kept for config compatibility
-  },
-
-  // All-inclusive package:
-  //   - SaniClean
-  //   - SaniPod, urinal mats, paper & dispensers
-  //   - microfiber mopping
-  //   - monthly SaniScrub
-  //   - no warranty fee
-  //   - priced at $20 / fixture / week
+  // All-Inclusive Package ($20/fixture/week, example: 11 fixtures = $900/mo)
   allInclusivePackage: {
-    weeklyRatePerFixture: 20,
-    includeAllAddOns: true,
-    waiveTripCharge: true, // Kept for compatibility, no trip charges anyway
-    waiveWarrantyFees: true,
-    autoAllInclusiveMinFixtures: 10, // auto-switch to all-inclusive for 10+ fixtures
-  },
-
-  // Soap upgrades + extra usage
-  soapUpgrades: {
-    standardToLuxury: 5, // $5 / wk / dispenser to upgrade to luxury soap
-    excessUsageCharges: {
-      standardSoap: 13, // $13 / gal / wk beyond one fill
-      luxurySoap: 30,   // $30 / gal / wk beyond one fill
+    weeklyRatePerFixture: 20, // $20/fixture/week
+    exampleCalculation: {
+      fixtures: 11, // 11 fixtures
+      monthlyTotal: 900, // $900/month (11 × $20 × 4.33 = $954.6 ≈ $900)
     },
-  },
-
-  // Warranty on dispensers when NOT all-inclusive
-  warrantyFeePerDispenser: 1, // $1 / wk / dispenser (soap + air freshener)
-
-  // Paper credit in all-inclusive mode
-  paperCredit: {
-    creditPerFixturePerWeek: 5, // $5 / wk / fixture credit towards paper
-  },
-
-  // Monthly component pricing (when NOT all-inclusive)
-  facilityComponents: {
-    // per-urinal monthly cost: screens + mats
-    urinals: {
-      urinalScreen: 4,
-      urinalMat: 4,
+    includes: {
+      saniclean: true, // SaniClean service
+      sanipodService: true, // SaniPod service included
+      urinalMats: true, // Urinal mats included
+      paperDispensers: true, // Paper dispensers included
+      mopping: true, // Mopping included
+      monthlySaniscrub: true, // Monthly SaniScrub included
+      electrostaticSpray: true, // Free electrostatic spray
+      airFreshenerService: true, // Free air freshener service (no warranty)
+      soapService: true, // Free soap service (no warranty)
     },
-    // per-male-toilet monthly cost: clips + seat covers
-    maleToilets: {
-      toiletClips: 1.5,
-      seatCoverDispenser: 0.5,
+    waivedFees: {
+      tripCharge: true, // Trip charge waived
+      warrantyFees: true, // Warranty fees waived
     },
-    // per-female-toilet monthly cost: SaniPod service
-    femaleToilets: {
-      sanipodService: 4,
+    soapUpgrade: {
+      luxuryUpgradePerDispenser: 5, // $5/dispenser/week to upgrade to luxury
+      oneeFillIncluded: true, // One fill per week included
+      excessUsageCharges: {
+        standardSoap: 13, // $13/gallon for excess standard soap
+        luxurySoap: 30, // $30/gallon for excess luxury soap
+      },
     },
-    // sink → dispenser ratios
-    sinks: {
-      ratioSinkToSoap: 1,         // 1 soap per sink
-      ratioSinkToAirFreshener: 2, // 1 air freshener per 2 sinks
+    paperCredit: {
+      creditPerFixturePerWeek: 5, // $5/fixture/week credit for paper
+      reasonableUsageIncluded: true, // Reasonable usage included
     },
-  },
-
-  // Microfiber mopping add-on (NOT charged in all-inclusive)
-  addOnServices: {
     microfiberMopping: {
-      pricePerBathroom: 10, // $10 / bathroom / week
+      pricePerBathroom: 10, // $10/bathroom when included with Sani
+      includedWithSani: true, // Included in all-inclusive
     },
   },
 
-  // Conversions — global rule: Monthly = 4.33 × weekly, annual still 50 service weeks
+  // Per Item Charge Model
+  perItemCharge: {
+    // Regional Pricing
+    insideBeltway: {
+      ratePerFixture: 7, // $7/fixture
+      weeklyMinimum: 40, // $40 minimum
+      tripCharge: 8, // $8 trip charge
+      parkingFee: 7, // $7 additional if parking needed (careful about parking)
+    },
+    outsideBeltway: {
+      ratePerFixture: 6, // $6/fixture
+      weeklyMinimum: 0, // No minimum stated for outside beltway
+      tripCharge: 8, // $8 trip charge
+    },
+
+    // Small Facility Rule (4-5 fixtures or less = $50 minimum includes trip)
+    smallFacility: {
+      fixtureThreshold: 5, // 5 fixtures or less
+      minimumWeekly: 50, // $50 minimum
+      includesTripCharge: true, // Includes trip charge
+    },
+
+    // Component Calculations (monthly rates converted to weekly in calculations)
+    facilityComponents: {
+      // Example: 4 sinks = 4 soap + 2 air freshener = 6 dispensers = $70 total, $8/mo supplies
+      sinks: {
+        soapRatio: 1, // 1 soap dispenser per sink
+        airFreshenerRatio: 0.5, // 1 air freshener per 2 sinks
+        monthlySupplyCostPer6Dispensers: 8, // $8/month supply cost for 6 dispensers
+        totalCostPer4Sinks: 70, // $70 total monthly cost for 4 sinks (6 dispensers)
+      },
+
+      // Example: 2 urinals = 2 screens + 2 mats = $16/mo total
+      urinals: {
+        screenRatio: 1, // 1 screen per urinal
+        matRatio: 1, // 1 mat per urinal
+        monthlyCostPerUrinal: 8, // $8/month per urinal ($16 for 2)
+        components: {
+          urinalScreen: 4, // $4/month per screen
+          urinalMat: 4, // $4/month per mat
+        },
+      },
+
+      // Example: 2 male toilets = 2 clips + 2 seat covers = $4/mo total
+      maleToilets: {
+        clipRatio: 1, // 1 clip per toilet
+        seatCoverRatio: 1, // 1 seat cover dispenser per toilet
+        monthlyCostPerToilet: 2, // $2/month per toilet ($4 for 2)
+        components: {
+          toiletClips: 1, // $1/month per clip
+          seatCoverDispenser: 1, // $1/month per dispenser
+        },
+      },
+
+      // Example: 3 female toilets = 3 SaniPods = $12/mo total
+      femaleToilets: {
+        sanipodRatio: 1, // 1 SaniPod per toilet
+        monthlyCostPerToilet: 4, // $4/month per toilet ($12 for 3)
+        components: {
+          sanipodService: 4, // $4/month per SaniPod
+        },
+      },
+    },
+
+    // Basic Includes (always included in per-item charge)
+    basicIncludes: {
+      electrostaticSpray: true, // Free electrostatic spray
+      airFreshenerService: true, // Free air freshener service
+      soapService: true, // Free soap service
+    },
+
+    // Warranty Fees (additional in per-item charge model)
+    warrantyFees: {
+      perDispenserPerWeek: 1, // $1/dispenser/week warranty fee
+      appliesToSoap: true, // Applies to soap dispensers
+      appliesToAirFreshener: true, // Applies to air freshener dispensers
+    },
+  },
+
+  // Billing & Contract Conversions
   billingConversions: {
     weekly: {
-      monthlyMultiplier: 4.33, // new rule: 4.33 weeks/month
-      annualMultiplier: 50,    // 50 service weeks / year (kept for compatibility)
+      monthlyMultiplier: 4.33, // 4.33 weeks per month
+      annualMultiplier: 50, // 50 service weeks per year
     },
   },
 
+  // Rate Tiers (Red vs Green rates)
   rateTiers: {
     redRate: {
-      multiplier: 1.0,
-      commissionRate: 0.1,
+      multiplier: 1.0, // Standard rate
+      commissionRate: 0.1, // 10% commission
     },
     greenRate: {
-      multiplier: 1.0,
-      commissionRate: 0.12,
+      multiplier: 1.0, // Same as red for now
+      commissionRate: 0.12, // 12% commission
     },
   } as Record<
     SanicleanRateTier,
     { multiplier: number; commissionRate: number }
   >,
 
+  // Value Proposition
   valueProposition: [
-    "Enviro-Master’s core service since the Swisher days.",
-    "Bathroom cleanliness signals whether a location can charge premium pricing.",
-    "With SaniScrub, SaniClean reduces bacteria that can migrate to back-of-house.",
-    "Reduces time and chemicals for existing staff between weekly sanitization visits.",
+    "Enviro-Master's core service since the Swisher days. This is what built the company.",
+    "Bathroom cleanliness is viewed by consumers as a major indicator of whether they are in a luxury establishment and should be less price conscious or a barebones one where they should be very value driven. Customers can raise prices/margins based on bathroom aesthetics.",
+    "Along with SaniScrub, there is a massive reduction in bacteria, which for restaurants is going to make their way to the back of house and food.",
+    "Reduction in time and chemicals for existing staff providing daily (or more frequent) bathroom service. It saves the customer money while they get an improvement. Existing staff can use microfiber towels and mops with just water in between the weekly sanitization visits.",
   ],
 };
 

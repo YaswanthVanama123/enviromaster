@@ -11,7 +11,7 @@ export const REFRESH_KITCHEN_LARGE = 2500;      // BOH large kitchen
 
 export const REFRESH_FOH_RATE = 2500;           // Front of House
 
-export const REFRESH_PATIO_STANDALONE = 875;    // Patio by itself (2×2 hrs + trip)
+export const REFRESH_PATIO_STANDALONE = 800;    // Patio by itself (2×2 hrs + trip)
 export const REFRESH_PATIO_UPSELL = 500;        // Patio as an upsell with FOH
 
 // Square-footage pricing parameters

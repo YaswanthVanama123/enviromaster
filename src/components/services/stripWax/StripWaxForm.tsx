@@ -63,7 +63,7 @@ export const StripWaxForm: React.FC<
           },
         },
 
-        notes: form.notes || "",
+        notes: "", // No notes field in Strip Wax
         customFields: customFields,
       } : null;
 
@@ -178,23 +178,12 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Floor area calculation method checkbox */}
+      {/* Floor area calculation info */}
       <div className="svc-row">
         <label></label>
         <div className="svc-row-right">
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="useExactFloorAreaSqft"
-              checked={form.useExactFloorAreaSqft}
-              onChange={onChange}
-            />
-            <span>Exact SqFt Calculation</span>
-          </label>
           <span className="svc-small">
-            {form.useExactFloorAreaSqft
-              ? `(${cfg.floorAreaUnit} sq ft blocks: $${form.minCharge.toFixed(2)} first block + $${(form.ratePerSqFt * cfg.floorAreaUnit).toFixed(2)} per extra block)`
-              : `(Direct: area × $${form.ratePerSqFt.toFixed(2)}/sq ft, min $${form.minCharge.toFixed(2)})`}
+            (Direct: area × $${form.ratePerSqFt.toFixed(2)}/sq ft, min $${form.minCharge.toFixed(2)})
           </span>
         </div>
       </div>
