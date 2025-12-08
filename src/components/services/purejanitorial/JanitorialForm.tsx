@@ -44,7 +44,7 @@ export const JanitorialForm: React.FC<
         service: {
           label: "Service",
           type: "calc" as const,
-          qty: calc.totalHours,
+          qty: parseFloat(calc.totalHours.toFixed(2)),
           rate: form.serviceType === "recurring" ? form.baseHourlyRate : form.shortJobHourlyRate,
           total: calc.perVisit,
           unit: "hours",

@@ -77,56 +77,10 @@ export const RefreshPowerScrubForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
-  // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
-
-  useEffect(() => {
-    if (servicesContext) {
-      const isActive = AREA_ORDER.some(key => form[key]?.enabled);
-
-      const data = isActive ? {
-        serviceId: "refreshPowerScrub",
-        displayName: "Refresh Power Scrub",
-        isActive: true,
-
-        rateInfo: {
-          label: "Rate Information",
-          type: "text" as const,
-          value: `$${form.hourlyRate}/hr | Minimum: $${form.minimumVisit}`,
-        },
-
-        areaBreakdown: AREA_ORDER
-          .filter(key => form[key]?.enabled)
-          .map(key => ({
-            label: key.charAt(0).toUpperCase() + key.slice(1),
-            type: "text" as const,
-            value: `$${formatAmount(areaTotals[key])}`,
-          })),
-
-        totals: {
-          perVisit: {
-            label: "Total Per Visit",
-            type: "dollar" as const,
-            amount: quote.perVisitPrice,
-          },
-        },
-
-        notes: form.notes || "",
-        customFields: customFields,
-      } : null;
-
-      const dataStr = JSON.stringify(data);
-
-      if (dataStr !== prevDataRef.current) {
-        prevDataRef.current = dataStr;
-        servicesContext.updateService("refreshPowerScrub", data);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, areaTotals, quote, customFields]);
 
   // ✅ Helper functions to get backend rates with fallbacks
   const getWorkerRate = (): number => {
@@ -148,6 +102,158 @@ export const RefreshPowerScrubForm: React.FC<
   const getFixedFee = (): number => {
     return backendConfig?.squareFootagePricing?.fixedFee ?? 200;
   };
+
+  useEffect(() => {
+    if (servicesContext) {
+      const isActive = AREA_ORDER.some(key => form[key]?.enabled);
+
+      const data = isActive ? {
+        serviceId: "refreshPowerScrub",
+        displayName: "Refresh Power Scrub",
+        isActive: true,
+
+        // Global service information
+        serviceInfo: {
+          label: "Service Type",
+          type: "text" as const,
+          value: `Hourly Rate: $${form.hourlyRate}/hr | Minimum: $${form.minimumVisit}`,
+        },
+
+        // Services object with new structure
+        services: AREA_ORDER
+          .filter(key => form[key]?.enabled)
+          .reduce((acc, key) => {
+            const area = form[key];
+            const areaName = key === 'foh' ? 'frontHouse' : key === 'boh' ? 'backHouse' : key;
+
+            // Get pricing method display name
+            const pricingMethodNames = {
+              'perHour': 'Per Hour',
+              'perWorker': 'Per Worker',
+              'squareFeet': 'Square Feet',
+              'preset': 'Preset Package',
+              'custom': 'Custom Amount'
+            };
+
+            // Calculate monthly and contract based on frequency
+            const getFrequencyMultiplier = (freq: string) => {
+              switch (freq?.toLowerCase()) {
+                case "weekly": return 4.33;
+                case "bi-weekly": return 2.165;
+                case "monthly": return 1;
+                case "quarterly": return 0.333;
+                default: return 1;
+              }
+            };
+
+            const multiplier = getFrequencyMultiplier(area.frequencyLabel);
+            const monthlyAmount = areaTotals[key] * multiplier;
+            const contractAmount = area.frequencyLabel?.toLowerCase() === "quarterly"
+              ? areaTotals[key] * ((area.contractMonths || 12) / 3)
+              : monthlyAmount * (area.contractMonths || 12);
+
+            // Base service structure
+            const serviceData: any = {
+              enabled: true,
+              pricingMethod: {
+                value: pricingMethodNames[area.pricingType] || area.pricingType,
+                type: "text"
+              }
+            };
+
+            // Add pricing-specific fields
+            if (area.pricingType === 'perHour') {
+              serviceData.hours = {
+                quantity: area.hours || 0,
+                priceRate: getHourRate(),
+                total: (area.hours || 0) * getHourRate(),
+                type: "calc"
+              };
+            } else if (area.pricingType === 'perWorker') {
+              serviceData.workersCalc = {
+                quantity: area.workers || 0,
+                priceRate: getWorkerRate(),
+                total: (area.workers || 0) * getWorkerRate(),
+                type: "calc"
+              };
+            } else if (area.pricingType === 'squareFeet') {
+              serviceData.fixedFee = {
+                value: getFixedFee(),
+                type: "text"
+              };
+              serviceData.insideSqft = {
+                quantity: area.insideSqFt || 0,
+                priceRate: getInsideRate(),
+                total: (area.insideSqFt || 0) * getInsideRate(),
+                type: "calc"
+              };
+              serviceData.outsideSqft = {
+                quantity: area.outsideSqFt || 0,
+                priceRate: getOutsideRate(),
+                total: (area.outsideSqFt || 0) * getOutsideRate(),
+                type: "calc"
+              };
+            } else if (area.pricingType === 'preset') {
+              if (key === 'patio') {
+                serviceData.plan = {
+                  value: area.patioMode === 'upsell' ? 'Upsell' : 'Standalone',
+                  type: "text"
+                };
+              } else if (key === 'boh') {
+                serviceData.plan = {
+                  value: area.kitchenSize === 'large' ? 'Large' : 'Small/Medium',
+                  type: "text"
+                };
+              }
+            }
+
+            // Common fields for all pricing types
+            serviceData.frequency = {
+              value: area.frequencyLabel || 'TBD',
+              type: "text"
+            };
+            serviceData.total = {
+              value: areaTotals[key],
+              type: "calc"
+            };
+            serviceData.monthly = {
+              quantity: multiplier,
+              priceRate: areaTotals[key],
+              total: monthlyAmount,
+              type: "calc"
+            };
+            serviceData.contract = {
+              quantity: area.contractMonths || 12,
+              priceRate: monthlyAmount,
+              total: contractAmount,
+              type: "calc"
+            };
+
+            acc[areaName] = serviceData;
+            return acc;
+          }, {} as Record<string, any>),
+
+        totals: {
+          perVisit: {
+            label: "Total Per Visit",
+            type: "dollar" as const,
+            amount: parseFloat(quote.perVisitPrice.toFixed(2)),
+          },
+        },
+
+        notes: form.notes || "",
+        customFields: customFields,
+      } : null;
+
+      const dataStr = JSON.stringify(data);
+
+      if (dataStr !== prevDataRef.current) {
+        prevDataRef.current = dataStr;
+        servicesContext.updateService("refreshPowerScrub", data);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, areaTotals, quote, customFields]);
 
   // For each column, show the default rule price so the user
   // knows the starting point even before typing anything.

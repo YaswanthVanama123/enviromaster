@@ -348,7 +348,15 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         // With installation: install + (monthlyVisits - 1) service visits
         const monthlyVisits = visitsPerMonth;
         const firstMonthNormalVisits = monthlyVisits > 1 ? monthlyVisits - 1 : 0;
-        calculatedFirstMonthTotal = installOneTime + (firstMonthNormalVisits * perVisitCharge);
+        let firstMonthServiceCharge = firstMonthNormalVisits * perVisitCharge;
+
+        // ✅ FIXED: Apply frequency-specific discount to first month service charge (same as recurring months)
+        if (freq === "twicePerMonth" && firstMonthServiceCharge > 0) {
+          // Apply -$15 discount to the service portion (not the installation)
+          firstMonthServiceCharge = Math.max(firstMonthServiceCharge - 15, 0);
+        }
+
+        calculatedFirstMonthTotal = installOneTime + firstMonthServiceCharge;
       } else {
         // No installation: just a normal full month
         calculatedFirstMonthTotal = monthlyRecurring;

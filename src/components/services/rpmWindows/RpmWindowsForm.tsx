@@ -65,7 +65,7 @@ export const RpmWindowsForm: React.FC<
           }] : []),
         ],
         installationFee: {
-          label: "Installation Fee + First Visit",
+          label: "First Visit",
           type: "dollar" as const,
           amount: form.customInstallationFee ?? calc.installOneTime,
         },
@@ -98,7 +98,7 @@ export const RpmWindowsForm: React.FC<
         })),
         totals: {
           perVisit: {
-            label: "Total Price (Per Visit)",
+            label: "Total Price)",
             type: "dollar" as const,
             amount: form.customPerVisitPrice ?? quote.perVisitPrice,
           },

@@ -647,6 +647,73 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
+  // Handle NEW CONVERTED FORMAT (from backend edit-format endpoint)
+  if (structuredData.hourlyRate !== undefined || structuredData.minimumVisit !== undefined) {
+    console.log('🔄 [transformRefreshPowerScrubData] Using NEW converted format');
+
+    // Direct values from converted format
+    formState.hourlyRate = structuredData.hourlyRate || 200;
+    formState.minimumVisit = structuredData.minimumVisit || 400;
+    formState.frequency = structuredData.frequency || "monthly";
+    formState.contractMonths = structuredData.contractMonths || 12;
+
+    // Handle area objects directly with defaults
+    const areaKeys = ['dumpster', 'patio', 'walkway', 'foh', 'boh', 'other'];
+    for (const areaKey of areaKeys) {
+      if (structuredData[areaKey]) {
+        // Ensure all required fields are present with proper defaults
+        formState[areaKey] = {
+          enabled: false,
+          pricingType: "preset",
+          workers: 2,
+          hours: 0,
+          hourlyRate: 200,
+          insideSqFt: 0,
+          outsideSqFt: 0,
+          insideRate: 0.6,
+          outsideRate: 0.4,
+          sqFtFixedFee: 200,
+          customAmount: 0,
+          kitchenSize: "smallMedium",
+          patioMode: "standalone",
+          frequencyLabel: "",
+          contractMonths: 12,
+          // Override with actual stored values
+          ...structuredData[areaKey]
+        };
+        console.log(`🔄 [transformRefreshPowerScrubData] Mapped ${areaKey}:`, formState[areaKey]);
+      } else {
+        // Provide complete default area object
+        formState[areaKey] = {
+          enabled: false,
+          pricingType: "preset",
+          workers: 2,
+          hours: 0,
+          hourlyRate: 200,
+          insideSqFt: 0,
+          outsideSqFt: 0,
+          insideRate: 0.6,
+          outsideRate: 0.4,
+          sqFtFixedFee: 200,
+          customAmount: 0,
+          kitchenSize: "smallMedium",
+          patioMode: "standalone",
+          frequencyLabel: "",
+          contractMonths: 12
+        };
+      }
+    }
+
+    // Extract custom fields
+    formState.customFields = extractCustomFields(structuredData);
+
+    console.log('🔄 [transformRefreshPowerScrubData] Converted form state:', formState);
+    return formState;
+  }
+
+  // Handle LEGACY FORMAT (old areaBreakdown structure)
+  console.log('🔄 [transformRefreshPowerScrubData] Using LEGACY format');
+
   // Extract rate info
   if (structuredData.rateInfo && structuredData.rateInfo.value) {
     const rateInfoStr = structuredData.rateInfo.value;
