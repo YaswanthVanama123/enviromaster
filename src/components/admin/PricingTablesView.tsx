@@ -375,18 +375,20 @@ export const PricingTablesView: React.FC = () => {
     if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
     if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
 
-    // REFRESH POWER SCRUB
-    if (config.defaultHourly !== undefined) fields.push({ label: "Default Hourly Rate", value: config.defaultHourly, path: ["defaultHourly"] });
-    if (config.defaultTrip !== undefined) fields.push({ label: "Default Trip Charge", value: config.defaultTrip, path: ["defaultTrip"] });
-    if (config.defaultMinimum !== undefined) fields.push({ label: "Default Minimum", value: config.defaultMinimum, path: ["defaultMinimum"] });
-    if (config.kitchenPricing?.smallMedium !== undefined) fields.push({ label: "Kitchen - Small/Medium", value: config.kitchenPricing.smallMedium, path: ["kitchenPricing", "smallMedium"] });
-    if (config.kitchenPricing?.large !== undefined) fields.push({ label: "Kitchen - Large", value: config.kitchenPricing.large, path: ["kitchenPricing", "large"] });
-    if (config.fohRate !== undefined) fields.push({ label: "FOH Rate", value: config.fohRate, path: ["fohRate"] });
-    if (config.patioPricing?.standalone !== undefined) fields.push({ label: "Patio - Standalone", value: config.patioPricing.standalone, path: ["patioPricing", "standalone"] });
-    if (config.patioPricing?.upsell !== undefined) fields.push({ label: "Patio - Upsell", value: config.patioPricing.upsell, path: ["patioPricing", "upsell"] });
-    if (config.sqftPricing?.fixedFee !== undefined) fields.push({ label: "Sq Ft Pricing - Fixed Fee", value: config.sqftPricing.fixedFee, path: ["sqftPricing", "fixedFee"] });
-    if (config.sqftPricing?.insideRate !== undefined) fields.push({ label: "Sq Ft Pricing - Inside Rate", value: config.sqftPricing.insideRate, path: ["sqftPricing", "insideRate"] });
-    if (config.sqftPricing?.outsideRate !== undefined) fields.push({ label: "Sq Ft Pricing - Outside Rate", value: config.sqftPricing.outsideRate, path: ["sqftPricing", "outsideRate"] });
+    // REFRESH POWER SCRUB - Updated to match new backend structure
+    if (config.coreRates?.defaultHourlyRate !== undefined) fields.push({ label: "Default Hourly Rate", value: config.coreRates.defaultHourlyRate, path: ["coreRates", "defaultHourlyRate"] });
+    if (config.coreRates?.perWorkerRate !== undefined) fields.push({ label: "Per Worker Rate", value: config.coreRates.perWorkerRate, path: ["coreRates", "perWorkerRate"] });
+    if (config.coreRates?.perHourRate !== undefined) fields.push({ label: "Per Hour Rate", value: config.coreRates.perHourRate, path: ["coreRates", "perHourRate"] });
+    if (config.coreRates?.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.coreRates.tripCharge, path: ["coreRates", "tripCharge"] });
+    if (config.coreRates?.minimumVisit !== undefined) fields.push({ label: "Minimum Visit", value: config.coreRates.minimumVisit, path: ["coreRates", "minimumVisit"] });
+    if (config.areaSpecificPricing?.kitchen?.smallMedium !== undefined) fields.push({ label: "Kitchen - Small/Medium", value: config.areaSpecificPricing.kitchen.smallMedium, path: ["areaSpecificPricing", "kitchen", "smallMedium"] });
+    if (config.areaSpecificPricing?.kitchen?.large !== undefined) fields.push({ label: "Kitchen - Large", value: config.areaSpecificPricing.kitchen.large, path: ["areaSpecificPricing", "kitchen", "large"] });
+    if (config.areaSpecificPricing?.frontOfHouse !== undefined) fields.push({ label: "Front of House Rate", value: config.areaSpecificPricing.frontOfHouse, path: ["areaSpecificPricing", "frontOfHouse"] });
+    if (config.areaSpecificPricing?.patio?.standalone !== undefined) fields.push({ label: "Patio - Standalone", value: config.areaSpecificPricing.patio.standalone, path: ["areaSpecificPricing", "patio", "standalone"] });
+    if (config.areaSpecificPricing?.patio?.upsell !== undefined) fields.push({ label: "Patio - Upsell", value: config.areaSpecificPricing.patio.upsell, path: ["areaSpecificPricing", "patio", "upsell"] });
+    if (config.squareFootagePricing?.fixedFee !== undefined) fields.push({ label: "Square Footage - Fixed Fee", value: config.squareFootagePricing.fixedFee, path: ["squareFootagePricing", "fixedFee"] });
+    if (config.squareFootagePricing?.insideRate !== undefined) fields.push({ label: "Square Footage - Inside Rate", value: config.squareFootagePricing.insideRate, path: ["squareFootagePricing", "insideRate"] });
+    if (config.squareFootagePricing?.outsideRate !== undefined) fields.push({ label: "Square Footage - Outside Rate", value: config.squareFootagePricing.outsideRate, path: ["squareFootagePricing", "outsideRate"] });
 
     // ELECTROSTATIC SPRAY - Complete extraction
     if (config.defaultRatePerRoom !== undefined) fields.push({ label: "Default Rate Per Room", value: config.defaultRatePerRoom, path: ["defaultRatePerRoom"], unit: "$ per room" });

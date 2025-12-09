@@ -230,13 +230,20 @@ export default function AdminPanel() {
   };
 
   const handleViewPDF = (docId: string, fileName: string) => {
-    // Navigate to PDF viewer like in SavedFiles
+    // Navigate to PDF viewer with context-aware return path
+    const adminReturnPath = `/admin-panel/${activeTab}`;
+
     navigate("/pdf-viewer", {
       state: {
         documentId: docId,
         fileName: fileName,
+        // Add navigation context to prevent loops - use current admin tab context
+        originalReturnPath: adminReturnPath,
+        originalReturnState: null,
       },
     });
+
+    console.log("📍 Admin Panel: Navigating to PDF viewer with return path:", adminReturnPath);
   };
 
   const handleLogout = () => {

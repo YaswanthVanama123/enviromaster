@@ -82,6 +82,7 @@ type LocationState = {
   id?: string;
   returnPath?: string;
   returnState?: any;
+  fromPdfViewer?: boolean; // Added to track if coming from PDF viewer
 };
 
 // customer document we were using before (for saving when not editing an existing one)
@@ -117,12 +118,48 @@ export default function FormFilling() {
 
   // Handle back navigation
   const handleBack = () => {
+    console.log('📍 Edit Form: Handling back navigation', {
+      fromPdfViewer: locationState.fromPdfViewer,
+      returnPath: locationState.returnPath,
+      hasReturnState: !!locationState.returnState
+    });
+
+    // If we came from PDF viewer, return to PDF viewer with special flag
+    if (locationState.fromPdfViewer && locationState.returnPath && locationState.returnState) {
+      console.log('📍 Edit Form: Returning to PDF viewer with original context');
+      navigate('/pdf-viewer', {
+        state: {
+          ...locationState.returnState,
+          fromEdit: true,
+          originalReturnPath: locationState.returnPath,
+          originalReturnState: locationState.returnState,
+        }
+      });
+      return;
+    }
+
+    // If we have return path info (normal flow)
     if (locationState.returnPath && locationState.returnState) {
+      console.log('📍 Edit Form: Using return path:', locationState.returnPath);
       navigate(locationState.returnPath, { state: locationState.returnState });
-    } else if (locationState.returnPath) {
+      return;
+    }
+
+    // If we have return path but no state
+    if (locationState.returnPath) {
+      console.log('📍 Edit Form: Using return path without state:', locationState.returnPath);
       navigate(locationState.returnPath);
+      return;
+    }
+
+    // Intelligent fallback - avoid browser back to prevent loops
+    console.log('📍 Edit Form: Using intelligent fallback navigation');
+    const currentUrl = window.location.href;
+
+    if (currentUrl.includes('admin')) {
+      navigate('/admin-panel');
     } else {
-      navigate(-1); // Fallback to browser back
+      navigate('/saved-files');
     }
   };
 

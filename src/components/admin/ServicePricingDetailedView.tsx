@@ -1409,101 +1409,112 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
     // REFRESH POWER SCRUB
     if (service.serviceId === "refreshPowerScrub") {
-      // Default Rates
+      // Default Rates - using new backend structure
       categories.defaultRates = [
         {
           label: "Default Hourly Rate",
-          value: getValue(["defaultHourly"]) ?? 0,
-          path: ["defaultHourly"],
+          value: getValue(["coreRates", "defaultHourlyRate"]) ?? 0,
+          path: ["coreRates", "defaultHourlyRate"],
           unit: "$ per hour per worker",
           description: "Standard hourly rate per worker (typically $200/hr/worker)",
         },
         {
+          label: "Per Worker Rate",
+          value: getValue(["coreRates", "perWorkerRate"]) ?? 0,
+          path: ["coreRates", "perWorkerRate"],
+          unit: "$ per worker",
+          description: "Rate per worker when pricing per worker (typically $200)",
+        },
+        {
+          label: "Per Hour Rate",
+          value: getValue(["coreRates", "perHourRate"]) ?? 0,
+          path: ["coreRates", "perHourRate"],
+          unit: "$ per hour",
+          description: "Rate per hour when pricing per hour (typically $400)",
+        },
+        {
           label: "Default Trip Charge",
-          value: getValue(["defaultTrip"]) ?? 0,
-          path: ["defaultTrip"],
+          value: getValue(["coreRates", "tripCharge"]) ?? 0,
+          path: ["coreRates", "tripCharge"],
           unit: "$",
           description: "Trip charge added to hourly/sq ft pricing (typically $75)",
         },
         {
           label: "Default Minimum",
-          value: getValue(["defaultMinimum"]) ?? 0,
-          path: ["defaultMinimum"],
+          value: getValue(["coreRates", "minimumVisit"]) ?? 0,
+          path: ["coreRates", "minimumVisit"],
           unit: "$",
           description: "Minimum charge per visit regardless of service size (typically $475)",
         },
       ];
 
-      // Kitchen Pricing
-      const kitchenPricing = getValue(["kitchenPricing"]) || {};
+      // Kitchen Pricing - using new backend structure
       categories.kitchenPricing = [
         {
           label: "Small/Medium Kitchen",
-          value: kitchenPricing.smallMedium ?? 0,
-          path: ["kitchenPricing", "smallMedium"],
+          value: getValue(["areaSpecificPricing", "kitchen", "smallMedium"]) ?? 0,
+          path: ["areaSpecificPricing", "kitchen", "smallMedium"],
           unit: "$",
           description: "Package price for small/medium kitchen back of house (typically $1,500)",
         },
         {
           label: "Large Kitchen",
-          value: kitchenPricing.large ?? 0,
-          path: ["kitchenPricing", "large"],
+          value: getValue(["areaSpecificPricing", "kitchen", "large"]) ?? 0,
+          path: ["areaSpecificPricing", "kitchen", "large"],
           unit: "$",
           description: "Package price for large kitchen back of house (typically $2,500)",
         },
       ];
 
-      // Front of House Pricing
+      // Front of House Pricing - using new backend structure
       categories.fohPricing = [
         {
           label: "Front of House Rate",
-          value: getValue(["fohRate"]) ?? 0,
-          path: ["fohRate"],
+          value: getValue(["areaSpecificPricing", "frontOfHouse"]) ?? 0,
+          path: ["areaSpecificPricing", "frontOfHouse"],
           unit: "$",
           description: "Package price for front of house deep clean (typically $2,500)",
         },
       ];
 
-      // Patio Pricing
-      const patioPricing = getValue(["patioPricing"]) || {};
+      // Patio Pricing - using new backend structure
       categories.patioPricing = [
         {
           label: "Patio Standalone",
-          value: patioPricing.standalone ?? 0,
-          path: ["patioPricing", "standalone"],
+          value: getValue(["areaSpecificPricing", "patio", "standalone"]) ?? 0,
+          path: ["areaSpecificPricing", "patio", "standalone"],
           unit: "$",
-          description: "Package price for patio only service (typically $875)",
+          description: "Package price for patio only service (typically $800)",
         },
         {
           label: "Patio Upsell",
-          value: patioPricing.upsell ?? 0,
-          path: ["patioPricing", "upsell"],
+          value: getValue(["areaSpecificPricing", "patio", "upsell"]) ?? 0,
+          path: ["areaSpecificPricing", "patio", "upsell"],
           unit: "$",
           description: "Upsell price when adding patio to FOH service (typically $500)",
         },
       ];
 
-      // Square Footage Pricing
-      const sqftPricing = getValue(["sqftPricing"]) || {};
+      // Square Footage Pricing - using new backend structure
       categories.sqftPricing = [
         {
           label: "Fixed Fee",
-          value: sqftPricing.fixedFee ?? 0,
-          path: ["sqftPricing", "fixedFee"],
+          value: getValue(["squareFootagePricing", "fixedFee"]) ?? 0,
+          path: ["squareFootagePricing", "fixedFee"],
           unit: "$",
           description: "Fixed base fee for square footage pricing (typically $200)",
         },
         {
           label: "Inside Rate",
-          value: sqftPricing.insideRate ?? 0,
-          path: ["sqftPricing", "insideRate"],
+          value: getValue(["squareFootagePricing", "insideRate"]) ?? 0,
+          path: ["squareFootagePricing", "insideRate"],
           unit: "$ per sq ft",
           description: "Rate per square foot for inside areas (typically $0.60/sq ft)",
         },
         {
           label: "Outside Rate",
-          value: sqftPricing.outsideRate ?? 0,
-          path: ["sqftPricing", "outsideRate"],
+          value: getValue(["squareFootagePricing", "outsideRate"]) ?? 0,
+          path: ["squareFootagePricing", "outsideRate"],
           unit: "$ per sq ft",
           description: "Rate per square foot for outside areas (typically $0.40/sq ft)",
         },

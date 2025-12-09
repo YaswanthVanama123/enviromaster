@@ -8,12 +8,21 @@ import "./PDFViewer.css";
 type LocationState = {
   documentId?: string;
   fileName?: string;
+  fromEdit?: boolean; // Added to track if coming from edit
+  originalReturnPath?: string; // Added to track original source
+  originalReturnState?: any; // Added to track original state
 };
 
 export default function PDFViewer() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { documentId, fileName } = (location.state || {}) as LocationState;
+  const {
+    documentId,
+    fileName,
+    fromEdit = false,
+    originalReturnPath,
+    originalReturnState
+  } = (location.state || {}) as LocationState;
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,12 +61,18 @@ export default function PDFViewer() {
   }, [documentId]);
 
   const handleEdit = () => {
+    // Pass original navigation context to edit form
+    const editReturnPath = originalReturnPath || "/pdf-viewer";
+    const editReturnState = originalReturnState || { documentId, fileName };
+
     navigate(`/edit/pdf/${documentId}`, {
       state: {
         editing: true,
         id: documentId,
-        returnPath: "/pdf-viewer",
-        returnState: { documentId, fileName },
+        returnPath: editReturnPath,
+        returnState: editReturnState,
+        // Mark that we're coming from PDF viewer to avoid loops
+        fromPdfViewer: true,
       },
     });
   };
@@ -91,7 +106,52 @@ export default function PDFViewer() {
   };
 
   const handleBack = () => {
-    navigate(-1); // Go back to previous page
+    // Smart navigation logic to break loops
+
+    // If we came from edit form and have original return info, use it
+    if (fromEdit && originalReturnPath && originalReturnState) {
+      console.log('📍 PDF Viewer: Returning to original source after edit');
+      navigate(originalReturnPath, { state: originalReturnState });
+      return;
+    }
+
+    // If we came from edit form but no original info, try intelligent defaults
+    if (fromEdit) {
+      console.log('📍 PDF Viewer: Returning after edit, using intelligent fallback');
+      // Try to determine source based on current URL or default to saved files
+      if (window.location.href.includes('admin')) {
+        navigate('/admin-panel');
+      } else {
+        navigate('/saved-files');
+      }
+      return;
+    }
+
+    // If we have original return path (came from somewhere specific), use it
+    if (originalReturnPath && originalReturnState) {
+      console.log('📍 PDF Viewer: Returning to original source:', originalReturnPath);
+      navigate(originalReturnPath, { state: originalReturnState });
+      return;
+    }
+
+    // If we have original return path without state
+    if (originalReturnPath) {
+      console.log('📍 PDF Viewer: Returning to original source:', originalReturnPath);
+      navigate(originalReturnPath);
+      return;
+    }
+
+    // Intelligent fallback based on current context
+    console.log('📍 PDF Viewer: Using intelligent fallback navigation');
+    const currentUrl = window.location.href;
+
+    if (currentUrl.includes('admin')) {
+      // If accessed from admin context, go to admin panel
+      navigate('/admin-panel');
+    } else {
+      // Default to saved files for regular users
+      navigate('/saved-files');
+    }
   };
 
   if (loading) {

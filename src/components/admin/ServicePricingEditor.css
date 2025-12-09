@@ -299,9 +299,29 @@
   color: #111;
 }
 
+.spe__description {
+  width: 200px;
+  min-width: 200px;
+}
+
+.spe__description input {
+  font-size: 12px;
+}
+
 /* Form Fields */
 .spe__field-group {
   margin-bottom: 20px;
+}
+
+.spe__field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.spe__field-row .spe__field-group {
+  margin-bottom: 0;
 }
 
 .spe__label {

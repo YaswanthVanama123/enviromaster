@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi, emailApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
@@ -81,7 +81,14 @@ export default function ApprovalDocuments() {
   const [currentEmailDoc, setCurrentEmailDoc] = useState<Document | null>(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAdminAuth();
+
+  // Detect if we're in admin context
+  const isInAdminContext = location.pathname.includes("/admin-panel");
+  const returnPath = isInAdminContext ? "/admin-panel/approval-documents" : "/approval-documents";
+
+  console.log("📍 ApprovalDocuments context:", { isInAdminContext, returnPath, currentPath: location.pathname });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -178,6 +185,9 @@ export default function ApprovalDocuments() {
       state: {
         documentId: doc.id,
         fileName: doc.fileName,
+        // Add navigation context to prevent loops - use dynamic return path
+        originalReturnPath: returnPath,
+        originalReturnState: null,
       },
     });
   };

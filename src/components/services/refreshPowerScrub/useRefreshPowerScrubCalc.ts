@@ -7,20 +7,21 @@ import type {
   RefreshPowerScrubFormState,
 } from "./refreshPowerScrubTypes";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
-import {
-  REFRESH_DEFAULT_HOURLY,
-  REFRESH_DEFAULT_MIN,
-  REFRESH_DEFAULT_TRIP,
-  REFRESH_FOH_RATE,
-  REFRESH_KITCHEN_LARGE,
-  REFRESH_KITCHEN_SMALL_MED,
-  REFRESH_PATIO_STANDALONE,
-  REFRESH_PATIO_UPSELL,
-  REFRESH_SQFT_FIXED_FEE,
-  REFRESH_SQFT_INSIDE_RATE,
-  REFRESH_SQFT_OUTSIDE_RATE,
-} from "./refreshPowerScrubConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
+
+// ✅ Fallback constants (only used when backend is unavailable)
+const FALLBACK_DEFAULT_HOURLY = 200;
+const FALLBACK_DEFAULT_MIN = 475;
+const FALLBACK_DEFAULT_TRIP = 75;
+const FALLBACK_FOH_RATE = 2500;
+const FALLBACK_KITCHEN_LARGE = 2500;
+const FALLBACK_KITCHEN_SMALL_MED = 1500;
+const FALLBACK_PATIO_STANDALONE = 800;
+const FALLBACK_PATIO_UPSELL = 500;
+const FALLBACK_SQFT_FIXED_FEE = 200;
+const FALLBACK_SQFT_INSIDE_RATE = 0.6;
+const FALLBACK_SQFT_OUTSIDE_RATE = 0.4;
+const FALLBACK_PER_HOUR_RATE = 400;
 
 // ✅ Backend config interface matching MongoDB JSON structure
 interface BackendRefreshPowerScrubConfig {
@@ -47,6 +48,16 @@ interface BackendRefreshPowerScrubConfig {
     insideRate: number;
     outsideRate: number;
   };
+  billingConversions: {
+    weekly: { monthlyMultiplier: number; annualMultiplier: number; };
+    biweekly: { monthlyMultiplier: number; annualMultiplier: number; };
+    monthly: { monthlyMultiplier: number; annualMultiplier: number; };
+    bimonthly: { monthlyMultiplier: number; annualMultiplier: number; };
+    quarterly: { monthlyMultiplier: number; annualMultiplier: number; };
+  };
+  frequencyOptions?: string[];
+  areaTypes?: string[];
+  pricingTypes?: string[];
 }
 
 const AREA_KEYS: RefreshAreaKey[] = [
@@ -58,17 +69,104 @@ const AREA_KEYS: RefreshAreaKey[] = [
   "other",
 ];
 
+// ✅ Helper function to get billing multipliers from backend with fallbacks
+function getBillingMultiplier(
+  frequency: string,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
+): number {
+  const normalizedFrequency = frequency.toLowerCase().replace("-", "");
+
+  // Default multipliers as fallback
+  const defaultMultipliers: Record<string, number> = {
+    "weekly": 4.33,
+    "biweekly": 2.165,
+    "monthly": 1.0,
+    "bimonthly": 0.5,
+    "quarterly": 0.333,
+  };
+
+  // Get from backend config if available
+  if (backendConfig?.billingConversions) {
+    const conversions = backendConfig.billingConversions;
+    switch (normalizedFrequency) {
+      case "weekly":
+        return conversions.weekly?.monthlyMultiplier ?? defaultMultipliers.weekly;
+      case "biweekly":
+        return conversions.biweekly?.monthlyMultiplier ?? defaultMultipliers.biweekly;
+      case "monthly":
+        return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
+      case "bimonthly":
+        return conversions.bimonthly?.monthlyMultiplier ?? defaultMultipliers.bimonthly;
+      case "quarterly":
+        return conversions.quarterly?.monthlyMultiplier ?? defaultMultipliers.quarterly;
+    }
+  }
+
+  // Return default multiplier
+  return defaultMultipliers[normalizedFrequency] ?? 1.0;
+}
+
+// ✅ Helper function to create DEFAULT_AREA with backend fallbacks
+function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null): RefreshAreaCalcState {
+  return {
+    enabled: false,
+    pricingType: "preset",
+    workers: 2,
+    hours: 0,
+    hourlyRate: backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY,
+    insideSqFt: 0,
+    outsideSqFt: 0,
+    insideRate: backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE,
+    outsideRate: backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE,
+    sqFtFixedFee: backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE,
+    customAmount: 0,
+    kitchenSize: "smallMedium",
+    patioMode: "standalone",
+    includePatioAddon: false,
+    frequencyLabel: "",
+    contractMonths: 12,
+  };
+}
+
+// ✅ Helper function to create DEFAULT_FORM with backend fallbacks
+function createDefaultForm(backendConfig?: BackendRefreshPowerScrubConfig | null): RefreshPowerScrubFormState {
+  const defaultArea = createDefaultArea(backendConfig);
+
+  return {
+    // BaseServiceFormState
+    frequency: "monthly" as any,
+    tripChargeIncluded: true,
+    notes: "",
+
+    // Global Refresh rules from backend or fallbacks
+    tripCharge: backendConfig?.coreRates?.tripCharge ?? FALLBACK_DEFAULT_TRIP,
+    hourlyRate: backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY,
+    minimumVisit: backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN,
+
+    // Global contract settings
+    contractMonths: 12,
+
+    // Columns (Dumpster on by default)
+    dumpster: { ...defaultArea, enabled: true },
+    patio: { ...defaultArea },
+    walkway: { ...defaultArea },
+    foh: { ...defaultArea },
+    boh: { ...defaultArea },
+    other: { ...defaultArea },
+  };
+}
+
 const DEFAULT_AREA: RefreshAreaCalcState = {
   enabled: false,
   pricingType: "preset",
   workers: 2,
   hours: 0,
-  hourlyRate: REFRESH_DEFAULT_HOURLY, // $200/hr default
+  hourlyRate: FALLBACK_DEFAULT_HOURLY, // $200/hr default
   insideSqFt: 0,
   outsideSqFt: 0,
-  insideRate: REFRESH_SQFT_INSIDE_RATE, // $0.60/sq ft default
-  outsideRate: REFRESH_SQFT_OUTSIDE_RATE, // $0.40/sq ft default
-  sqFtFixedFee: REFRESH_SQFT_FIXED_FEE, // $200 fixed fee default
+  insideRate: FALLBACK_SQFT_INSIDE_RATE, // $0.60/sq ft default
+  outsideRate: FALLBACK_SQFT_OUTSIDE_RATE, // $0.40/sq ft default
+  sqFtFixedFee: FALLBACK_SQFT_FIXED_FEE, // $200 fixed fee default
   customAmount: 0,
   kitchenSize: "smallMedium",
   patioMode: "standalone",
@@ -84,9 +182,9 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   notes: "",
 
   // Global Refresh rules
-  tripCharge: REFRESH_DEFAULT_TRIP,   // $75
-  hourlyRate: REFRESH_DEFAULT_HOURLY, // $200/hr/worker
-  minimumVisit: REFRESH_DEFAULT_MIN,  // $475 minimum
+  tripCharge: FALLBACK_DEFAULT_TRIP,   // $75
+  hourlyRate: FALLBACK_DEFAULT_HOURLY, // $200/hr/worker
+  minimumVisit: FALLBACK_DEFAULT_MIN,  // $475 minimum
 
   // Global contract settings
   contractMonths: 12,
@@ -122,8 +220,8 @@ function calcPerWorker(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const perWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200;
-  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? 475;
+  const perWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
 
   const calculatedAmount = (state.workers || 0) * perWorkerRate;
 
@@ -140,8 +238,8 @@ function calcPerHour(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const perHourRate = backendConfig?.coreRates?.perHourRate ?? 400;
-  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? 475;
+  const perHourRate = backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
+  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
 
   const calculatedAmount = (state.hours || 0) * perHourRate;
 
@@ -158,10 +256,10 @@ function calcSquareFootage(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const fixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? state.sqFtFixedFee ?? REFRESH_SQFT_FIXED_FEE;
-  const insideRate = backendConfig?.squareFootagePricing?.insideRate ?? state.insideRate ?? REFRESH_SQFT_INSIDE_RATE;
-  const outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? state.outsideRate ?? REFRESH_SQFT_OUTSIDE_RATE;
-  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? 475;
+  const fixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? state.sqFtFixedFee ?? FALLBACK_SQFT_FIXED_FEE;
+  const insideRate = backendConfig?.squareFootagePricing?.insideRate ?? state.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
+  const outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? state.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
+  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
 
   const insideCost = (state.insideSqFt || 0) * insideRate;
   const outsideCost = (state.outsideSqFt || 0) * outsideRate;
@@ -183,27 +281,27 @@ function calcPresetPackage(
   // Create a merged config that uses backend values when available, defaults otherwise
   const defaultConfig = {
     coreRates: {
-      defaultHourlyRate: REFRESH_DEFAULT_HOURLY,
-      perWorkerRate: REFRESH_DEFAULT_HOURLY, // Default to same as hourly rate
-      perHourRate: 400, // Default per hour rate
-      tripCharge: REFRESH_DEFAULT_TRIP,
-      minimumVisit: REFRESH_DEFAULT_MIN,
+      defaultHourlyRate: FALLBACK_DEFAULT_HOURLY,
+      perWorkerRate: FALLBACK_DEFAULT_HOURLY, // Default to same as hourly rate
+      perHourRate: FALLBACK_PER_HOUR_RATE, // Default per hour rate
+      tripCharge: FALLBACK_DEFAULT_TRIP,
+      minimumVisit: FALLBACK_DEFAULT_MIN,
     },
     areaSpecificPricing: {
       kitchen: {
-        smallMedium: REFRESH_KITCHEN_SMALL_MED,
-        large: REFRESH_KITCHEN_LARGE,
+        smallMedium: FALLBACK_KITCHEN_SMALL_MED,
+        large: FALLBACK_KITCHEN_LARGE,
       },
-      frontOfHouse: REFRESH_FOH_RATE,
+      frontOfHouse: FALLBACK_FOH_RATE,
       patio: {
-        standalone: REFRESH_PATIO_STANDALONE,
-        upsell: REFRESH_PATIO_UPSELL,
+        standalone: FALLBACK_PATIO_STANDALONE,
+        upsell: FALLBACK_PATIO_UPSELL,
       },
     },
     squareFootagePricing: {
-      fixedFee: REFRESH_SQFT_FIXED_FEE,
-      insideRate: REFRESH_SQFT_INSIDE_RATE,
-      outsideRate: REFRESH_SQFT_OUTSIDE_RATE,
+      fixedFee: FALLBACK_SQFT_FIXED_FEE,
+      insideRate: FALLBACK_SQFT_INSIDE_RATE,
+      outsideRate: FALLBACK_SQFT_OUTSIDE_RATE,
     },
   };
 
@@ -372,14 +470,75 @@ export function useRefreshPowerScrubCalc(
         coreRates: config.coreRates,
         areaSpecificPricing: config.areaSpecificPricing,
         squareFootagePricing: config.squareFootagePricing,
+        billingConversions: config.billingConversions,
       });
 
-      setForm((prev) => ({
-        ...prev,
-        // Update rates from backend if available
-        hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.hourlyRate,
-        minimumVisit: config.coreRates?.minimumVisit ?? prev.minimumVisit,
-      }));
+      // ✅ Update entire form state with backend values
+      setForm((prev) => {
+        const updatedDefaultArea = createDefaultArea(config);
+        const backendForm = createDefaultForm(config);
+
+        // Merge with existing form state, preserving user inputs but updating defaults
+        return {
+          ...backendForm,
+          ...prev, // Keep any user-modified values
+
+          // Update rates from backend
+          tripCharge: config.coreRates?.tripCharge ?? prev.tripCharge,
+          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.hourlyRate,
+          minimumVisit: config.coreRates?.minimumVisit ?? prev.minimumVisit,
+
+          // Update area defaults while preserving enabled states and user inputs
+          dumpster: {
+            ...updatedDefaultArea,
+            ...prev.dumpster,
+            hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.dumpster.hourlyRate,
+            insideRate: config.squareFootagePricing?.insideRate ?? prev.dumpster.insideRate,
+            outsideRate: config.squareFootagePricing?.outsideRate ?? prev.dumpster.outsideRate,
+            sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.dumpster.sqFtFixedFee,
+          },
+          patio: {
+            ...updatedDefaultArea,
+            ...prev.patio,
+            hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.patio.hourlyRate,
+            insideRate: config.squareFootagePricing?.insideRate ?? prev.patio.insideRate,
+            outsideRate: config.squareFootagePricing?.outsideRate ?? prev.patio.outsideRate,
+            sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.patio.sqFtFixedFee,
+          },
+          walkway: {
+            ...updatedDefaultArea,
+            ...prev.walkway,
+            hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.walkway.hourlyRate,
+            insideRate: config.squareFootagePricing?.insideRate ?? prev.walkway.insideRate,
+            outsideRate: config.squareFootagePricing?.outsideRate ?? prev.walkway.outsideRate,
+            sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.walkway.sqFtFixedFee,
+          },
+          foh: {
+            ...updatedDefaultArea,
+            ...prev.foh,
+            hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.foh.hourlyRate,
+            insideRate: config.squareFootagePricing?.insideRate ?? prev.foh.insideRate,
+            outsideRate: config.squareFootagePricing?.outsideRate ?? prev.foh.outsideRate,
+            sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.foh.sqFtFixedFee,
+          },
+          boh: {
+            ...updatedDefaultArea,
+            ...prev.boh,
+            hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.boh.hourlyRate,
+            insideRate: config.squareFootagePricing?.insideRate ?? prev.boh.insideRate,
+            outsideRate: config.squareFootagePricing?.outsideRate ?? prev.boh.outsideRate,
+            sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.boh.sqFtFixedFee,
+          },
+          other: {
+            ...updatedDefaultArea,
+            ...prev.other,
+            hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.other.hourlyRate,
+            insideRate: config.squareFootagePricing?.insideRate ?? prev.other.insideRate,
+            outsideRate: config.squareFootagePricing?.outsideRate ?? prev.other.outsideRate,
+            sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.other.sqFtFixedFee,
+          },
+        };
+      });
 
       console.log('✅ Refresh Power Scrub config loaded from backend:', config);
     } catch (error) {
@@ -477,21 +636,12 @@ export function useRefreshPowerScrubCalc(
       let monthlyRecurring = 0;
       const frequencyLabel = form[area].frequencyLabel?.toLowerCase();
 
-      switch (frequencyLabel) {
-        case "weekly":
-          monthlyRecurring = cost * 4.33; // 4.33 weeks per month
-          break;
-        case "bi-weekly":
-          monthlyRecurring = cost * 2.165; // ~2.165 visits per month (26 annual ÷ 12)
-          break;
-        case "monthly":
-          monthlyRecurring = cost; // 1 visit per month
-          break;
-        case "quarterly":
-          monthlyRecurring = cost * 0.333; // ~0.333 visits per month (4 annual ÷ 12)
-          break;
-        default:
-          monthlyRecurring = cost; // Default to monthly
+      // ✅ Use backend billing multipliers with fallbacks
+      if (frequencyLabel) {
+        const multiplier = getBillingMultiplier(frequencyLabel, backendConfig);
+        monthlyRecurring = cost * multiplier;
+      } else {
+        monthlyRecurring = cost; // Default to monthly
       }
 
       monthlyTotals[area] = monthlyRecurring;
@@ -534,25 +684,9 @@ export function useRefreshPowerScrubCalc(
     let monthlyRecurring = 0;
     let contractTotal = 0;
 
-    switch (form.frequency) {
-      case "weekly":
-        monthlyRecurring = rounded * 4.33; // 4.33 weeks per month
-        break;
-      case "biweekly":
-        monthlyRecurring = rounded * 2.165; // ~2.165 visits per month (26 annual ÷ 12)
-        break;
-      case "monthly":
-        monthlyRecurring = rounded; // 1 visit per month
-        break;
-      case "bimonthly":
-        monthlyRecurring = rounded * 0.5; // 0.5 visits per month
-        break;
-      case "quarterly":
-        monthlyRecurring = rounded * 0.333; // ~0.333 visits per month (4 annual ÷ 12)
-        break;
-      default:
-        monthlyRecurring = rounded;
-    }
+    // ✅ Use backend billing multipliers with fallbacks
+    const frequencyMultiplier = getBillingMultiplier(form.frequency, backendConfig);
+    monthlyRecurring = rounded * frequencyMultiplier;
 
     // Calculate contract total - for quarterly, use visits per contract period
     if (form.frequency === "quarterly") {

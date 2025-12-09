@@ -19,6 +19,7 @@ type TabKey =
   | "multipliers"
   | "components"
   | "addons"
+  | "refreshPowerScrub"
   | "advanced";
 
 interface Tab {
@@ -89,7 +90,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     ];
 
     // Add frequency tab for services with frequency-based pricing
-    if (["saniscrub", "microfiberMopping", "rpmWindows", "carpetCleaning", "stripWax", "foamingDrain", "sanipod", "electrostaticSpray"].includes(serviceId)) {
+    if (["saniscrub", "microfiberMopping", "rpmWindows", "carpetCleaning", "stripWax", "foamingDrain", "sanipod", "electrostaticSpray", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "frequencies", label: "Frequencies", icon: "📅" });
     }
 
@@ -109,7 +110,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     }
 
     // Add multipliers tab for services with install/frequency multipliers
-    if (["saniscrub", "rpmWindows", "carpetCleaning", "pureJanitorial"].includes(serviceId)) {
+    if (["saniscrub", "rpmWindows", "carpetCleaning", "pureJanitorial", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "multipliers", label: "Multipliers", icon: "✖️" });
     }
 
@@ -121,6 +122,11 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     // Add addons tab
     if (["saniclean", "microfiberMopping", "electrostaticSpray"].includes(serviceId)) {
       allTabs.push({ key: "addons", label: "Add-Ons", icon: "➕" });
+    }
+
+    // Add Refresh Power Scrub specific tab
+    if (serviceId === "refreshPowerScrub") {
+      allTabs.push({ key: "refreshPowerScrub", label: "Core Rates & Areas", icon: "🏭" });
     }
 
     allTabs.push({ key: "advanced", label: "Advanced", icon: "⚙️" });
@@ -229,6 +235,14 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
         {activeTab === "addons" && (
           <AddonsTab
             serviceId={config.serviceId}
+            editedConfig={editedConfig}
+            updateConfig={updateConfig}
+            getConfigValue={getConfigValue}
+          />
+        )}
+
+        {activeTab === "refreshPowerScrub" && (
+          <RefreshPowerScrubTab
             editedConfig={editedConfig}
             updateConfig={updateConfig}
             getConfigValue={getConfigValue}
@@ -692,6 +706,85 @@ const FrequenciesTab: React.FC<{
               step="0.01"
               min="0"
             />
+          </div>
+        </div>
+      );
+    }
+
+    if (serviceId === "refreshPowerScrub") {
+      const billingConversions = getConfigValue(["billingConversions"]) || {};
+      const frequencies = ["weekly", "biweekly", "monthly", "bimonthly", "quarterly"];
+
+      return (
+        <div className="spe__table-container">
+          <table className="spe__table">
+            <thead>
+              <tr>
+                <th>Frequency</th>
+                <th>Monthly Multiplier</th>
+                <th>Annual Multiplier</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {frequencies.map((freq) => (
+                <tr key={freq}>
+                  <td className="spe__freq-label">
+                    {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="spe__input"
+                      value={billingConversions[freq]?.monthlyMultiplier || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "monthlyMultiplier"],
+                          Number(e.target.value)
+                        )
+                      }
+                      step="0.001"
+                      min="0"
+                      placeholder={freq === "weekly" ? "4.33" : freq === "biweekly" ? "2.165" : freq === "monthly" ? "1.0" : freq === "bimonthly" ? "0.5" : "0.333"}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="spe__input"
+                      value={billingConversions[freq]?.annualMultiplier || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "annualMultiplier"],
+                          Number(e.target.value)
+                        )
+                      }
+                      step="0.01"
+                      min="0"
+                      placeholder={freq === "weekly" ? "52" : freq === "biweekly" ? "26" : freq === "monthly" ? "12" : freq === "bimonthly" ? "6" : "4"}
+                    />
+                  </td>
+                  <td className="spe__description">
+                    <input
+                      type="text"
+                      className="spe__input"
+                      value={billingConversions[freq]?.description || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "description"],
+                          e.target.value
+                        )
+                      }
+                      placeholder={`${freq} frequency description`}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="spe__note" style={{ marginTop: "16px" }}>
+            💡 Tip: Monthly multipliers convert per-visit costs to monthly costs. Annual multipliers convert to yearly costs. For example, weekly service has a 4.33 monthly multiplier (4.33 weeks per month average).
           </div>
         </div>
       );
@@ -1211,6 +1304,105 @@ const MultipliersTab: React.FC<{
     );
   }
 
+  if (serviceId === "refreshPowerScrub") {
+    const billingConversions = getConfigValue(["billingConversions"]) || {};
+    const frequencies = ["weekly", "biweekly", "monthly", "bimonthly", "quarterly"];
+
+    return (
+      <div className="spe__tab-content">
+        <h3 className="spe__section-title">Billing Conversion Multipliers</h3>
+
+        <div className="spe__table-container">
+          <table className="spe__table">
+            <thead>
+              <tr>
+                <th>Frequency</th>
+                <th>Monthly Multiplier</th>
+                <th>Annual Multiplier</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {frequencies.map((freq) => (
+                <tr key={freq}>
+                  <td className="spe__freq-label">
+                    {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="spe__input"
+                      value={billingConversions[freq]?.monthlyMultiplier || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "monthlyMultiplier"],
+                          Number(e.target.value)
+                        )
+                      }
+                      step="0.001"
+                      min="0"
+                      placeholder={
+                        freq === "weekly" ? "4.33" :
+                        freq === "biweekly" ? "2.165" :
+                        freq === "monthly" ? "1.0" :
+                        freq === "bimonthly" ? "0.5" : "0.333"
+                      }
+                    />
+                    <div className="spe__hint">
+                      {freq === "weekly" ? "4.33 weeks/month" :
+                       freq === "biweekly" ? "26 visits ÷ 12 months" :
+                       freq === "monthly" ? "1 visit/month" :
+                       freq === "bimonthly" ? "0.5 visits/month" : "4 visits ÷ 12 months"}
+                    </div>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="spe__input"
+                      value={billingConversions[freq]?.annualMultiplier || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "annualMultiplier"],
+                          Number(e.target.value)
+                        )
+                      }
+                      step="0.01"
+                      min="0"
+                      placeholder={
+                        freq === "weekly" ? "52" :
+                        freq === "biweekly" ? "26" :
+                        freq === "monthly" ? "12" :
+                        freq === "bimonthly" ? "6" : "4"
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      className="spe__input"
+                      value={billingConversions[freq]?.description || ""}
+                      onChange={(e) =>
+                        updateConfig(
+                          ["billingConversions", freq, "description"],
+                          e.target.value
+                        )
+                      }
+                      placeholder={`${freq} billing conversion`}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="spe__note" style={{ marginTop: "16px" }}>
+            💡 These multipliers convert per-visit costs to monthly and annual billing amounts. They are used throughout the Refresh Power Scrub calculation engine.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="spe__tab-content">
       <h3 className="spe__section-title">Multipliers</h3>
@@ -1698,6 +1890,261 @@ const AddonsTab: React.FC<{
     <div className="spe__tab-content">
       <h3 className="spe__section-title">Add-On Services</h3>
       <div className="spe__empty">No add-on configuration for this service</div>
+    </div>
+  );
+};
+
+// Refresh Power Scrub Tab - Core Rates & Area-Specific Pricing
+const RefreshPowerScrubTab: React.FC<{
+  editedConfig: Record<string, any>;
+  updateConfig: (path: string[], value: any) => void;
+  getConfigValue: (path: string[]) => any;
+}> = ({ editedConfig, updateConfig, getConfigValue }) => {
+  const coreRates = getConfigValue(["coreRates"]) || {};
+  const areaSpecificPricing = getConfigValue(["areaSpecificPricing"]) || {};
+  const squareFootagePricing = getConfigValue(["squareFootagePricing"]) || {};
+
+  return (
+    <div className="spe__tab-content">
+      <h3 className="spe__section-title">Core Rates & Area-Specific Pricing</h3>
+
+      {/* Core Rates Section */}
+      <div className="spe__geo-section">
+        <h4 className="spe__subsection-title">Core Rates</h4>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Default Hourly Rate</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={coreRates.defaultHourlyRate || ""}
+            onChange={(e) =>
+              updateConfig(["coreRates", "defaultHourlyRate"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="200"
+          />
+          <div className="spe__hint">Base rate per hour per worker ($200)</div>
+        </div>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Per Worker Rate</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={coreRates.perWorkerRate || ""}
+            onChange={(e) =>
+              updateConfig(["coreRates", "perWorkerRate"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="200"
+          />
+          <div className="spe__hint">Rate per worker when pricing per worker ($200)</div>
+        </div>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Per Hour Rate</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={coreRates.perHourRate || ""}
+            onChange={(e) =>
+              updateConfig(["coreRates", "perHourRate"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="400"
+          />
+          <div className="spe__hint">Rate per hour when pricing per hour ($400)</div>
+        </div>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Trip Charge</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={coreRates.tripCharge || ""}
+            onChange={(e) =>
+              updateConfig(["coreRates", "tripCharge"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="75"
+          />
+          <div className="spe__hint">Trip charge per visit ($75)</div>
+        </div>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Minimum Visit</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={coreRates.minimumVisit || ""}
+            onChange={(e) =>
+              updateConfig(["coreRates", "minimumVisit"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="475"
+          />
+          <div className="spe__hint">Minimum charge per visit ($475)</div>
+        </div>
+      </div>
+
+      {/* Area-Specific Pricing Section */}
+      <div className="spe__geo-section">
+        <h4 className="spe__subsection-title">Area-Specific Pricing</h4>
+
+        <div className="spe__field-row">
+          <div className="spe__field-group">
+            <label className="spe__label">Kitchen - Small/Medium</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={areaSpecificPricing.kitchen?.smallMedium || ""}
+              onChange={(e) =>
+                updateConfig(["areaSpecificPricing", "kitchen", "smallMedium"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+              placeholder="1500"
+            />
+            <div className="spe__hint">Small/medium kitchen package ($1,500)</div>
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Kitchen - Large</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={areaSpecificPricing.kitchen?.large || ""}
+              onChange={(e) =>
+                updateConfig(["areaSpecificPricing", "kitchen", "large"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+              placeholder="2500"
+            />
+            <div className="spe__hint">Large kitchen package ($2,500)</div>
+          </div>
+        </div>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Front of House Rate</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={areaSpecificPricing.frontOfHouse || ""}
+            onChange={(e) =>
+              updateConfig(["areaSpecificPricing", "frontOfHouse"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="2500"
+          />
+          <div className="spe__hint">Front of house package rate ($2,500)</div>
+        </div>
+
+        <div className="spe__field-row">
+          <div className="spe__field-group">
+            <label className="spe__label">Patio - Standalone</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={areaSpecificPricing.patio?.standalone || ""}
+              onChange={(e) =>
+                updateConfig(["areaSpecificPricing", "patio", "standalone"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+              placeholder="800"
+            />
+            <div className="spe__hint">Standalone patio service ($800)</div>
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Patio - Upsell/Add-on</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={areaSpecificPricing.patio?.upsell || ""}
+              onChange={(e) =>
+                updateConfig(["areaSpecificPricing", "patio", "upsell"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+              placeholder="500"
+            />
+            <div className="spe__hint">Patio add-on service ($500)</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Square Footage Pricing Section */}
+      <div className="spe__geo-section">
+        <h4 className="spe__subsection-title">Square Footage Pricing</h4>
+
+        <div className="spe__field-group">
+          <label className="spe__label">Fixed Fee</label>
+          <input
+            type="number"
+            className="spe__input"
+            value={squareFootagePricing.fixedFee || ""}
+            onChange={(e) =>
+              updateConfig(["squareFootagePricing", "fixedFee"], Number(e.target.value))
+            }
+            step="0.01"
+            min="0"
+            placeholder="200"
+          />
+          <div className="spe__hint">Base fixed fee for square footage pricing ($200)</div>
+        </div>
+
+        <div className="spe__field-row">
+          <div className="spe__field-group">
+            <label className="spe__label">Inside Rate (per sq ft)</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={squareFootagePricing.insideRate || ""}
+              onChange={(e) =>
+                updateConfig(["squareFootagePricing", "insideRate"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+              placeholder="0.6"
+            />
+            <div className="spe__hint">Rate per square foot inside ($0.60/sq ft)</div>
+          </div>
+
+          <div className="spe__field-group">
+            <label className="spe__label">Outside Rate (per sq ft)</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={squareFootagePricing.outsideRate || ""}
+              onChange={(e) =>
+                updateConfig(["squareFootagePricing", "outsideRate"], Number(e.target.value))
+              }
+              step="0.01"
+              min="0"
+              placeholder="0.4"
+            />
+            <div className="spe__hint">Rate per square foot outside ($0.40/sq ft)</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="spe__note" style={{ marginTop: "24px" }}>
+        💡 <strong>Refresh Power Scrub Pricing Rules:</strong>
+        <br />• <strong>Trip Charge:</strong> ${coreRates.tripCharge || 75} per visit
+        <br />• <strong>Hourly Rate:</strong> ${coreRates.defaultHourlyRate || 200}/hour/worker
+        <br />• <strong>Minimum:</strong> ${coreRates.minimumVisit || 475} per visit
+        <br />• <strong>Areas:</strong> Dumpster, Patio, Walkway, Front of House, Back of House, Other
+        <br />• <strong>Pricing Types:</strong> Preset packages, Per worker, Per hour, Square footage, Custom
+      </div>
     </div>
   );
 };

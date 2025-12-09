@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
@@ -110,6 +110,13 @@ export default function SavedFiles() {
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFile | null>(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detect if we're in admin context
+  const isInAdminContext = location.pathname.includes("/admin-panel");
+  const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
+
+  console.log("📍 SavedFiles context:", { isInAdminContext, returnPath, currentPath: location.pathname });
 
   // ---- Fetch from backend on mount ----
   useEffect(() => {
@@ -241,6 +248,9 @@ export default function SavedFiles() {
       state: {
         documentId: file.id,
         fileName: file.fileName,
+        // Add navigation context to prevent loops - use dynamic return path
+        originalReturnPath: returnPath,
+        originalReturnState: null,
       },
     });
   };
@@ -340,7 +350,7 @@ export default function SavedFiles() {
       state: {
         editing: true,
         id: file.id,
-        returnPath: "/saved-pdfs",
+        returnPath: returnPath, // Use dynamic return path
         returnState: null,
       },
     });
