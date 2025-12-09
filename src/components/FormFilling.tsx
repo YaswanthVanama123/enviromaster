@@ -394,10 +394,10 @@ export default function FormFilling() {
       if (documentId) {
         // Update existing document with PDF recompilation
         await pdfApi.updateAndRecompileCustomerHeader(documentId, payloadToSend);
-        console.log("Document saved and PDF compiled");
+        console.log("✅ [SAVE SUCCESS] Document saved and PDF compiled successfully");
         setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
 
-        // Redirect to saved files after a short delay to show the success message
+        // ✅ NEW: Only redirect on successful save (Zoho worked)
         setTimeout(() => {
           navigate("/saved-pdfs");
         }, 1500);
@@ -406,17 +406,44 @@ export default function FormFilling() {
         const result = await pdfApi.createCustomerHeader(payloadToSend);
         const newId = result.headers["x-customerheaderdoc-id"] || result.data._id || result.data.id;
         setDocumentId(newId);
-        console.log("Document created and PDF compiled:", newId);
+        console.log("✅ [SAVE SUCCESS] Document created and PDF compiled successfully:", newId);
         setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
 
-        // Redirect to saved files after a short delay to show the success message
+        // ✅ NEW: Only redirect on successful save (Zoho worked)
         setTimeout(() => {
           navigate("/saved-pdfs");
         }, 1500);
       }
-    } catch (err) {
-      console.error("Error saving document:", err);
-      setToastMessage({ message: "Failed to save document. Please try again.", type: "error" });
+    } catch (err: any) {
+      console.error("❌ [SAVE ERROR] Error saving document:", err);
+
+      // ✅ NEW: Handle Zoho upload failures specifically
+      if (err.response?.status === 422 && err.response?.data?.error === "zoho_upload_failed") {
+        console.log("⚠️ [ZOHO FAILURE] Zoho upload failed - keeping user in form");
+        const errorData = err.response.data;
+
+        // Update document ID if it was created (but Zoho failed)
+        if (errorData._id && !documentId) {
+          setDocumentId(errorData._id);
+          console.log("📝 [DRAFT SAVED] Document ID saved:", errorData._id);
+        }
+
+        // Show detailed error message about Zoho failure
+        setToastMessage({
+          message: errorData.message || "Document saved as draft due to file upload issues. Please try again or contact support.",
+          type: "error"
+        });
+
+        // ✅ IMPORTANT: Do NOT redirect - keep user in current form
+        console.log("🔄 [STAY IN FORM] User remains in form to retry or make changes");
+
+      } else {
+        // Handle other errors normally
+        setToastMessage({
+          message: err.response?.data?.message || "Failed to save document. Please try again.",
+          type: "error"
+        });
+      }
     } finally {
       setIsSaving(false);
     }

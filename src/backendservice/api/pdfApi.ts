@@ -42,6 +42,73 @@ export interface FormPayload {
   agreement: any;
 }
 
+// New interfaces for saved-files API
+export interface SavedFileListItem {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+  fileSize: number;
+  pdfStoredAt: string | null;
+  hasPdf: boolean;
+  zohoInfo: {
+    biginDealId: string | null;
+    biginFileId: string | null;
+    crmDealId: string | null;
+    crmFileId: string | null;
+  };
+}
+
+export interface SavedFilesListResponse {
+  success: boolean;
+  total: number;
+  page: number;
+  limit: number;
+  files: SavedFileListItem[];
+  _metadata: {
+    queryType: 'lightweight';
+    fieldsIncluded: string[];
+    fieldsExcluded: string[];
+  };
+}
+
+export interface SavedFileDetails {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+  payload: FormPayload;
+  pdfMeta: {
+    sizeBytes: number;
+    contentType: string | null;
+    storedAt: string | null;
+    externalUrl: string | null;
+  };
+  zoho: {
+    bigin: { dealId: string | null; fileId: string | null; url: string | null };
+    crm: { dealId: string | null; fileId: string | null; url: string | null };
+  };
+  hasPdf: boolean;
+  isEditable: boolean;
+}
+
+export interface SavedFileDetailsResponse {
+  success: boolean;
+  file: SavedFileDetails;
+  _metadata: {
+    queryType: 'full_details';
+    fieldsIncluded: string[];
+    fieldsExcluded: string[];
+    payloadSize: number;
+  };
+}
+
 /**
  * PDF API Service
  * Handles all PDF-related operations: customer headers, admin templates, downloads
@@ -170,5 +237,45 @@ export const pdfApi = {
    */
   getPdfDownloadUrl(documentId: string): string {
     return `${API_BASE_URL}/api/pdf/viewer/download/${documentId}`;
+  },
+
+  // ---- NEW SAVED-FILES API (Lazy Loading) ----
+
+  /**
+   * Get saved files list with pagination (lightweight - only high-level data)
+   * @param page Page number (default: 1)
+   * @param limit Items per page (default: 20, max: 100)
+   * @param filters Optional filters like status, search
+   */
+  async getSavedFilesList(
+    page = 1,
+    limit = 20,
+    filters: { status?: string; search?: string } = {}
+  ): Promise<SavedFilesListResponse> {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('limit', limit.toString());
+
+    if (filters.status) {
+      params.set('status', filters.status);
+    }
+    if (filters.search) {
+      params.set('search', filters.search);
+    }
+
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files?${params}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
+   * Get full file details by ID (on-demand - includes complete payload)
+   */
+  async getSavedFileDetails(id: string): Promise<SavedFileDetailsResponse> {
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files/${id}/details`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 };

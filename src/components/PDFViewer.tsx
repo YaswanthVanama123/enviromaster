@@ -27,6 +27,7 @@ export default function PDFViewer() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<any>(null); // ✅ NEW: Store detailed error info
   const [downloading, setDownloading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
@@ -40,12 +41,29 @@ export default function PDFViewer() {
     const fetchPDF = async () => {
       try {
         setLoading(true);
+        console.log(`📄 [PDF-VIEWER] Fetching PDF for document: ${documentId}`);
+
         const blob = await pdfApi.downloadPdf(documentId);
         const url = window.URL.createObjectURL(blob);
         setPdfUrl(url);
-      } catch (err) {
-        console.error("Error fetching PDF:", err);
-        setError("Unable to load PDF. Please try again.");
+
+        console.log(`✅ [PDF-VIEWER] PDF loaded successfully`);
+      } catch (err: any) {
+        console.error("❌ [PDF-VIEWER] Error fetching PDF:", err);
+
+        // ✅ NEW: Extract detailed error information from API response
+        if (err.response?.data) {
+          const errorData = err.response.data;
+          setErrorDetails(errorData);
+
+          if (errorData.error === "no_pdf") {
+            setError(`PDF Not Available: ${errorData.detail}`);
+          } else {
+            setError(errorData.detail || "Unable to load PDF. Please try again.");
+          }
+        } else {
+          setError("Unable to load PDF. Please check your connection and try again.");
+        }
       } finally {
         setLoading(false);
       }
@@ -169,11 +187,49 @@ export default function PDFViewer() {
     return (
       <div className="pdf-viewer">
         <div className="pdf-viewer__error">
-          <h2>⚠️ Error</h2>
-          <p>{error || "Unable to load PDF"}</p>
-          <button onClick={handleBack} className="pdf-viewer__btn pdf-viewer__btn--primary">
-            Back to Saved Files
-          </button>
+          <h2>⚠️ PDF Viewing Error</h2>
+          <p className="error-message">{error || "Unable to load PDF"}</p>
+
+          {/* ✅ NEW: Show detailed suggestions if available */}
+          {errorDetails?.suggestions && (
+            <div className="error-suggestions">
+              <h3>💡 Suggested Solutions:</h3>
+              <ul>
+                {errorDetails.suggestions.map((suggestion: string, index: number) => (
+                  <li key={index}>{suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* ✅ NEW: Show document info if available */}
+          {errorDetails?.documentInfo && (
+            <div className="document-info">
+              <h3>📄 Document Information:</h3>
+              <ul>
+                <li><strong>Title:</strong> {errorDetails.documentInfo.title}</li>
+                <li><strong>Status:</strong> {errorDetails.documentInfo.status}</li>
+                <li><strong>Created:</strong> {new Date(errorDetails.documentInfo.createdAt).toLocaleString()}</li>
+              </ul>
+            </div>
+          )}
+
+          <div className="error-actions">
+            <button onClick={handleBack} className="pdf-viewer__btn pdf-viewer__btn--secondary">
+              ← Back to Files
+            </button>
+
+            {/* ✅ NEW: Show Edit button if document exists but PDF failed */}
+            {errorDetails?.error === "no_pdf" && documentId && (
+              <button
+                onClick={handleEdit}
+                className="pdf-viewer__btn pdf-viewer__btn--primary"
+                title="Try regenerating the PDF by editing and saving again"
+              >
+                ✏️ Edit & Regenerate PDF
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

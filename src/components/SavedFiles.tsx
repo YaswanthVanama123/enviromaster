@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
+import type { SavedFileListItem, SavedFileDetails } from "../backendservice/api/pdfApi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -14,37 +15,6 @@ type FileStatus =
   | "pending_approval"
   | "approved_salesman"
   | "approved_admin";
-
-type SavedFile = {
-  id: string;
-  fileName: string;
-  updatedAt: string;
-  status: FileStatus;
-
-  createdAt?: string;
-  headerTitle?: string;
-  zoho?: {
-    bigin: {
-      dealId: string | null;
-      fileId: string | null;
-      url: string | null;
-    };
-    crm: {
-      dealId: string | null;
-      fileId: string | null;
-      url: string | null;
-    };
-  };
-};
-
-type BackendItem = {
-  id: string;
-  headerTitle: string;
-  status: FileStatus;
-  createdAt: string;
-  updatedAt: string;
-  zoho: SavedFile["zoho"];
-};
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -66,38 +36,21 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   approved_admin: "Approved by Admin",
 };
 
-// Helper function to extract customer name from payload
-function extractCustomerNameFromPayload(payload: any): string | null {
-  if (!payload) return null;
-
-  // Try customerName field first
-  if (payload.customerName && payload.customerName.trim()) {
-    return payload.customerName.trim();
-  }
-
-  // Fallback: search in headerRows for CUSTOMER NAME field
-  const headerRows = payload.headerRows || [];
-  for (const row of headerRows) {
-    // Check left side
-    if (row.labelLeft && row.labelLeft.toUpperCase().includes("CUSTOMER NAME")) {
-      const name = row.valueLeft?.trim();
-      if (name) return name;
-    }
-    // Check right side
-    if (row.labelRight && row.labelRight.toUpperCase().includes("CUSTOMER NAME")) {
-      const name = row.valueRight?.trim();
-      if (name) return name;
-    }
-  }
-
-  return null;
-}
-
 export default function SavedFiles() {
-  const [files, setFiles] = useState<SavedFile[]>([]);
+  // ✅ NEW: Use lightweight list data structure
+  const [files, setFiles] = useState<SavedFileListItem[]>([]);
+
+  // ✅ NEW: Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [filesPerPage] = useState(20);
+
+  // Search and sorting (client-side for current page)
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "status">("date");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc"); // desc = newest first
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  // Selection and loading states
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +60,7 @@ export default function SavedFiles() {
 
   // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
-  const [currentEmailFile, setCurrentEmailFile] = useState<SavedFile | null>(null);
+  const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -118,40 +71,57 @@ export default function SavedFiles() {
 
   console.log("📍 SavedFiles context:", { isInAdminContext, returnPath, currentPath: location.pathname });
 
-  // ---- Fetch from backend on mount ----
+  // ✅ NEW: Fetch files using lightweight API with pagination
+  const fetchFiles = async (page = 1, search = "") => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log(`📄 [SAVED-FILES] Fetching page ${page} with search: "${search}"`);
+
+      const response = await pdfApi.getSavedFilesList(page, filesPerPage, {
+        search: search.trim() || undefined
+      });
+
+      console.log(`📄 [SAVED-FILES] Loaded ${response.files.length} files (lightweight) from ${response.total} total`);
+
+      setFiles(response.files);
+      setTotalFiles(response.total);
+      setCurrentPage(page);
+
+      // Clear selection when changing pages/search
+      setSelected({});
+    } catch (err) {
+      console.error("Error fetching saved files:", err);
+      setError("Unable to load files. Please try again.");
+      setFiles([]);
+      setTotalFiles(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
-    const fetchFiles = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await pdfApi.getCustomerHeaders();
-        const items = data.items || [];
-
-        const mapped: SavedFile[] = items.map((item: any) => ({
-          id: item._id || item.id,
-          fileName: extractCustomerNameFromPayload(item.payload) || item.payload?.headerTitle || "Untitled",
-          updatedAt: item.updatedAt,
-          status: item.status ?? "saved", // Default to "saved" instead of "draft"
-          createdAt: item.createdAt,
-          headerTitle: item.payload?.headerTitle,
-          zoho: item.zoho,
-        }));
-
-        setFiles(mapped);
-      } catch (err) {
-        console.error("Error fetching saved files:", err);
-        setError("Unable to load files. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFiles();
+    fetchFiles(1, query);
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let out = files.filter((f) => f.fileName.toLowerCase().includes(q));
+  // Handle search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (currentPage === 1) {
+        fetchFiles(1, query);
+      } else {
+        // Reset to page 1 when searching
+        fetchFiles(1, query);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  // ✅ CLIENT-SIDE SORTING: Sort current page results only
+  const sorted = useMemo(() => {
+    let out = [...files];
 
     // Sort by selected criteria
     out = out.sort((a, b) => {
@@ -163,24 +133,24 @@ export default function SavedFiles() {
         return sortDir === "desc" ? order : -order;
       } else {
         // Sort by status
-        const order = STATUS_LABEL[a.status].localeCompare(
-          STATUS_LABEL[b.status]
+        const order = STATUS_LABEL[a.status as FileStatus].localeCompare(
+          STATUS_LABEL[b.status as FileStatus]
         );
         return sortDir === "asc" ? order : -order;
       }
     });
 
     return out;
-  }, [files, query, sortBy, sortDir]);
+  }, [files, sortBy, sortDir]);
 
-  const allSelected =
-    filtered.length > 0 && filtered.every((f) => selected[f.id]);
+  // Selection helpers
+  const allSelected = sorted.length > 0 && sorted.every((f) => selected[f.id]);
   const anySelected = Object.values(selected).some(Boolean);
 
   function toggleSelectAll() {
     const next = { ...selected };
     const to = !allSelected;
-    filtered.forEach((f) => (next[f.id] = to));
+    sorted.forEach((f) => (next[f.id] = to));
     setSelected(next);
   }
 
@@ -188,6 +158,7 @@ export default function SavedFiles() {
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
+  // ✅ Status change with immediate UI update
   function changeStatus(id: string, next: FileStatus) {
     // Update UI immediately
     setFiles((prev) =>
@@ -198,6 +169,7 @@ export default function SavedFiles() {
     saveStatusToBackend(id, next);
   }
 
+  // ✅ Send for approval (batch operation)
   async function sendForApproval() {
     const ids = Object.entries(selected)
       .filter(([, v]) => v)
@@ -242,21 +214,35 @@ export default function SavedFiles() {
     }
   }
 
-  // ---- View handler (eye icon) ----
-  const handleView = (file: SavedFile) => {
-    navigate("/pdf-viewer", {
-      state: {
-        documentId: file.id,
-        fileName: file.fileName,
-        // Add navigation context to prevent loops - use dynamic return path
-        originalReturnPath: returnPath,
-        originalReturnState: null,
-      },
-    });
+  // ✅ NEW: View handler - Loads full details only when needed
+  const handleView = async (file: SavedFileListItem) => {
+    try {
+      console.log(`👁️ [VIEW] Loading full details for file: ${file.id}`);
+
+      // First try to get full details to ensure it exists and is accessible
+      const response = await pdfApi.getSavedFileDetails(file.id);
+
+      console.log(`👁️ [VIEW] Loaded ${response._metadata.payloadSize} bytes of payload data`);
+
+      navigate("/pdf-viewer", {
+        state: {
+          documentId: file.id,
+          fileName: file.title,
+          originalReturnPath: returnPath,
+          originalReturnState: null,
+        },
+      });
+    } catch (err) {
+      console.error("Error loading file details for view:", err);
+      setToastMessage({
+        message: "Unable to load this document. Please try again.",
+        type: "error"
+      });
+    }
   };
 
-  // ---- Download handler ----
-  const handleDownload = async (file: SavedFile) => {
+  // ✅ Download handler (no changes needed - uses existing endpoint)
+  const handleDownload = async (file: SavedFileListItem) => {
     try {
       setDownloadingId(file.id);
 
@@ -265,9 +251,7 @@ export default function SavedFiles() {
 
       const a = document.createElement("a");
       a.href = url;
-      const safeName =
-        (file.fileName || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") +
-        ".pdf";
+      const safeName = (file.title || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") + ".pdf";
       a.download = safeName;
       document.body.appendChild(a);
       a.click();
@@ -282,7 +266,7 @@ export default function SavedFiles() {
     }
   };
 
-  // ---- Save status handler ----
+  // ✅ Save status handler
   const saveStatusToBackend = async (id: string, status: FileStatus) => {
     try {
       setSavingStatusId(id);
@@ -298,18 +282,13 @@ export default function SavedFiles() {
     }
   };
 
-  const handleSaveStatus = async (file: SavedFile) => {
-    // This function is now just for the save button (if needed)
-    await saveStatusToBackend(file.id, file.status);
-  };
-
-  // ---- Email handler ----
-  const handleEmail = (file: SavedFile) => {
+  // ✅ Email handler
+  const handleEmail = (file: SavedFileListItem) => {
     setCurrentEmailFile(file);
     setEmailComposerOpen(true);
   };
 
-  // ---- Send email handler ----
+  // ✅ Send email handler
   const handleSendEmail = async (emailData: EmailData) => {
     if (!currentEmailFile) return;
 
@@ -320,7 +299,7 @@ export default function SavedFiles() {
         subject: emailData.subject,
         body: emailData.body,
         documentId: currentEmailFile.id,
-        fileName: currentEmailFile.fileName
+        fileName: currentEmailFile.title
       });
 
       setToastMessage({
@@ -338,22 +317,60 @@ export default function SavedFiles() {
     }
   };
 
-  // ---- Close email composer ----
+  // ✅ Close email composer
   const handleCloseEmailComposer = () => {
     setEmailComposerOpen(false);
     setCurrentEmailFile(null);
   };
 
-  // ---- Edit handler ----
-  const handleEdit = (file: SavedFile) => {
-    navigate(`/edit/pdf/${file.id}`, {
-      state: {
-        editing: true,
-        id: file.id,
-        returnPath: returnPath, // Use dynamic return path
-        returnState: null,
-      },
-    });
+  // ✅ NEW: Edit handler - Loads full details only when needed
+  const handleEdit = async (file: SavedFileListItem) => {
+    try {
+      console.log(`✏️ [EDIT] Loading full details for file: ${file.id}`);
+
+      // Load full details to ensure all form data is available
+      const response = await pdfApi.getSavedFileDetails(file.id);
+
+      console.log(`✏️ [EDIT] Loaded ${response._metadata.payloadSize} bytes of payload data for editing`);
+
+      navigate(`/edit/pdf/${file.id}`, {
+        state: {
+          editing: true,
+          id: file.id,
+          returnPath: returnPath,
+          returnState: null,
+        },
+      });
+    } catch (err) {
+      console.error("Error loading file details for edit:", err);
+      setToastMessage({
+        message: "Unable to load this document for editing. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
+  // ✅ NEW: Pagination helpers
+  const totalPages = Math.ceil(totalFiles / filesPerPage);
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
+  const handlePrevPage = () => {
+    if (canGoPrev) {
+      fetchFiles(currentPage - 1, query);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (canGoNext) {
+      fetchFiles(currentPage + 1, query);
+    }
+  };
+
+  const handlePageClick = (page: number) => {
+    if (page !== currentPage && page >= 1 && page <= totalPages) {
+      fetchFiles(page, query);
+    }
   };
 
   return (
@@ -364,7 +381,7 @@ export default function SavedFiles() {
         <div className="sf__search">
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Search files..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -441,7 +458,7 @@ export default function SavedFiles() {
             )}
 
             {!loading &&
-              filtered.map((f) => (
+              sorted.map((f) => (
                 <tr key={f.id}>
                   <td>
                     <input
@@ -453,7 +470,12 @@ export default function SavedFiles() {
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <FontAwesomeIcon icon={faFileAlt} style={{ color: '#2563eb', fontSize: '18px' }} />
-                      <span>{f.fileName}</span>
+                      <span>{f.title}</span>
+                      {f.hasPdf && (
+                        <span style={{ fontSize: '12px', color: '#10b981', marginLeft: '4px' }}>
+                          📎
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td>{timeAgo(f.updatedAt)}</td>
@@ -496,6 +518,7 @@ export default function SavedFiles() {
                         title="View"
                         type="button"
                         onClick={() => handleView(f)}
+                        disabled={!f.hasPdf}
                       >
                         <FontAwesomeIcon icon={faEye} />
                       </button>
@@ -504,7 +527,7 @@ export default function SavedFiles() {
                         title="Download"
                         type="button"
                         onClick={() => handleDownload(f)}
-                        disabled={downloadingId === f.id}
+                        disabled={downloadingId === f.id || !f.hasPdf}
                       >
                         {downloadingId === f.id ? "⏳" : <FontAwesomeIcon icon={faDownload} />}
                       </button>
@@ -513,6 +536,7 @@ export default function SavedFiles() {
                         title="Share via Email"
                         type="button"
                         onClick={() => handleEmail(f)}
+                        disabled={!f.hasPdf}
                       >
                         <FontAwesomeIcon icon={faEnvelope} />
                       </button>
@@ -529,10 +553,10 @@ export default function SavedFiles() {
                 </tr>
               ))}
 
-            {!loading && !error && filtered.length === 0 && (
+            {!loading && !error && sorted.length === 0 && (
               <tr>
                 <td colSpan={5} className="empty">
-                  No files found.
+                  {query ? `No files found matching "${query}"` : "No files found."}
                 </td>
               </tr>
             )}
@@ -548,14 +572,59 @@ export default function SavedFiles() {
         </table>
       </div>
 
+      {/* ✅ NEW: Enhanced Pagination with page info */}
       <div className="sf__pager">
-        <button type="button" className="sf__link" disabled>
-          Previous
-        </button>
-        <span className="sf__page">1</span>
-        <button type="button" className="sf__link" disabled>
-          Next
-        </button>
+        <div className="sf__page-info">
+          Showing {Math.min((currentPage - 1) * filesPerPage + 1, totalFiles)}-{Math.min(currentPage * filesPerPage, totalFiles)} of {totalFiles} files
+        </div>
+
+        <div className="sf__page-controls">
+          <button
+            type="button"
+            className="sf__link"
+            disabled={!canGoPrev || loading}
+            onClick={handlePrevPage}
+          >
+            Previous
+          </button>
+
+          {/* Page numbers */}
+          <div className="sf__page-numbers">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else {
+                // Show pages around current page
+                const start = Math.max(1, currentPage - 2);
+                const end = Math.min(totalPages, start + 4);
+                pageNum = start + i;
+                if (pageNum > end) return null;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={`sf__page ${currentPage === pageNum ? 'sf__page--active' : ''}`}
+                  onClick={() => handlePageClick(pageNum)}
+                  disabled={loading}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="sf__link"
+            disabled={!canGoNext || loading}
+            onClick={handleNextPage}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {toastMessage && (
@@ -573,11 +642,11 @@ export default function SavedFiles() {
         onSend={handleSendEmail}
         attachment={currentEmailFile ? {
           id: currentEmailFile.id,
-          fileName: currentEmailFile.fileName,
+          fileName: currentEmailFile.title,
           downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
         } : undefined}
-        defaultSubject={currentEmailFile ? `${currentEmailFile.fileName} - ${STATUS_LABEL[currentEmailFile.status]}` : ''}
-        defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.fileName}\nStatus: ${STATUS_LABEL[currentEmailFile.status]}\n\nBest regards` : ''}
+        defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
+        defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}
         userEmail="" // TODO: Get from user login context
       />
     </section>
