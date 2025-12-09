@@ -42,6 +42,8 @@ export interface RefreshAreaCalcState {
 
   /** Patio specific */
   patioMode: RefreshPatioMode;
+  /** NEW: Whether to include the $500 patio add-on */
+  includePatioAddon: boolean;
 
   /** Free-text label that shows up under the column (e.g. "Weekly", "Monthly") */
   frequencyLabel: string;

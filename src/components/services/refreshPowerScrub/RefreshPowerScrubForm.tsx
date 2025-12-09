@@ -195,10 +195,17 @@ export const RefreshPowerScrubForm: React.FC<
               };
             } else if (area.pricingType === 'preset') {
               if (key === 'patio') {
+                console.log(`🔄 [Patio SAVE DEBUG] Patio area state:`, JSON.stringify(area, null, 2));
                 serviceData.plan = {
                   value: area.patioMode === 'upsell' ? 'Upsell' : 'Standalone',
                   type: "text"
                 };
+                // ✅ NEW: Save the patio add-on selection
+                serviceData.includePatioAddon = {
+                  value: area.includePatioAddon || false,
+                  type: "boolean"
+                };
+                console.log(`🔄 [Patio SAVE DEBUG] Saving includePatioAddon:`, serviceData.includePatioAddon);
               } else if (key === 'boh') {
                 serviceData.plan = {
                   value: area.kitchenSize === 'large' ? 'Large' : 'Small/Medium',
@@ -244,6 +251,8 @@ export const RefreshPowerScrubForm: React.FC<
         notes: form.notes || "",
         customFields: customFields,
       } : null;
+
+      console.log(`🔄 [SAVE CONTEXT DEBUG] Final services context data:`, JSON.stringify(data, null, 2));
 
       const dataStr = JSON.stringify(data);
 
@@ -294,15 +303,34 @@ export const RefreshPowerScrubForm: React.FC<
         return (
           <div className="rps-inline">
             {areaKey === "patio" && (
-              <select
-                className="rps-line"
-                value={area.patioMode}
-                onChange={(e) => setAreaField(areaKey, "patioMode", e.target.value)}
-                style={{ width: '160px' }}
-              >
-                <option value="standalone">Standalone (${REFRESH_PATIO_STANDALONE})</option>
-                <option value="upsell">Upsell (+${REFRESH_PATIO_UPSELL})</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{
+                  padding: '8px',
+                  backgroundColor: '#f0f8ff',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc'
+                }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                    Patio Service: ${REFRESH_PATIO_STANDALONE} (Base)
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={area.includePatioAddon}
+                      onChange={(e) => setAreaField(areaKey, "includePatioAddon", e.target.checked)}
+                    />
+                    <span>Add-on Service: +${REFRESH_PATIO_UPSELL}</span>
+                  </label>
+                  <div style={{
+                    marginTop: '6px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: '#0066cc'
+                  }}>
+                    Total: ${REFRESH_PATIO_STANDALONE + (area.includePatioAddon ? REFRESH_PATIO_UPSELL : 0)}
+                  </div>
+                </div>
+              </div>
             )}
             {areaKey === "boh" && (
               <select

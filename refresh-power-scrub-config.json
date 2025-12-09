@@ -1,0 +1,206 @@
+{
+  "serviceId": "refreshPowerScrub",
+  "version": "v2.0",
+  "label": "Refresh Power Scrub",
+  "description": "Commercial kitchen deep cleaning with multiple area pricing",
+  "config": {
+    "coreRates": {
+      "defaultHourlyRate": 200,
+      "perWorkerRate": 200,
+      "perHourRate": 400,
+      "tripCharge": 75,
+      "minimumVisit": 475
+    },
+    "areaSpecificPricing": {
+      "kitchen": {
+        "smallMedium": 1500,
+        "large": 2500
+      },
+      "frontOfHouse": 2500,
+      "patio": {
+        "standalone": 800,
+        "upsell": 500
+      }
+    },
+    "squareFootagePricing": {
+      "fixedFee": 200,
+      "insideRate": 0.6,
+      "outsideRate": 0.4
+    },
+    "billingConversions": {
+      "weekly": {
+        "monthlyMultiplier": 4.33,
+        "annualMultiplier": 52,
+        "description": "4.33 weeks per month, 52 weeks per year"
+      },
+      "biweekly": {
+        "monthlyMultiplier": 2.165,
+        "annualMultiplier": 26,
+        "description": "2.165 visits per month (26 annual ÷ 12)"
+      },
+      "monthly": {
+        "monthlyMultiplier": 1.0,
+        "annualMultiplier": 12,
+        "description": "1 visit per month, 12 visits per year"
+      },
+      "bimonthly": {
+        "monthlyMultiplier": 0.5,
+        "annualMultiplier": 6,
+        "description": "0.5 visits per month, 6 visits per year"
+      },
+      "quarterly": {
+        "monthlyMultiplier": 0.333,
+        "annualMultiplier": 4,
+        "description": "0.333 visits per month (4 annual ÷ 12), 4 visits per year"
+      }
+    },
+    "frequencyOptions": [
+      "weekly",
+      "biweekly",
+      "monthly",
+      "bimonthly",
+      "quarterly"
+    ],
+    "areaTypes": [
+      "dumpster",
+      "patio",
+      "walkway",
+      "foh",
+      "boh",
+      "other"
+    ],
+    "pricingTypes": [
+      "preset",
+      "perWorker",
+      "perHour",
+      "squareFeet",
+      "custom"
+    ]
+  },
+  "defaultFormState": {
+    "serviceId": "refreshPowerScrub",
+    "frequency": "monthly",
+    "tripChargeIncluded": true,
+    "notes": "",
+    "tripCharge": 75,
+    "hourlyRate": 200,
+    "minimumVisit": 475,
+    "contractMonths": 12,
+    "dumpster": {
+      "enabled": true,
+      "pricingType": "preset",
+      "workers": 2,
+      "hours": 0,
+      "hourlyRate": 200,
+      "insideSqFt": 0,
+      "outsideSqFt": 0,
+      "insideRate": 0.6,
+      "outsideRate": 0.4,
+      "sqFtFixedFee": 200,
+      "customAmount": 0,
+      "kitchenSize": "smallMedium",
+      "patioMode": "standalone",
+      "includePatioAddon": false,
+      "frequencyLabel": "",
+      "contractMonths": 12
+    },
+    "patio": {
+      "enabled": false,
+      "pricingType": "preset",
+      "workers": 2,
+      "hours": 0,
+      "hourlyRate": 200,
+      "insideSqFt": 0,
+      "outsideSqFt": 0,
+      "insideRate": 0.6,
+      "outsideRate": 0.4,
+      "sqFtFixedFee": 200,
+      "customAmount": 0,
+      "kitchenSize": "smallMedium",
+      "patioMode": "standalone",
+      "includePatioAddon": false,
+      "frequencyLabel": "",
+      "contractMonths": 12
+    },
+    "walkway": {
+      "enabled": false,
+      "pricingType": "preset",
+      "workers": 2,
+      "hours": 0,
+      "hourlyRate": 200,
+      "insideSqFt": 0,
+      "outsideSqFt": 0,
+      "insideRate": 0.6,
+      "outsideRate": 0.4,
+      "sqFtFixedFee": 200,
+      "customAmount": 0,
+      "kitchenSize": "smallMedium",
+      "patioMode": "standalone",
+      "includePatioAddon": false,
+      "frequencyLabel": "",
+      "contractMonths": 12
+    },
+    "foh": {
+      "enabled": false,
+      "pricingType": "preset",
+      "workers": 2,
+      "hours": 0,
+      "hourlyRate": 200,
+      "insideSqFt": 0,
+      "outsideSqFt": 0,
+      "insideRate": 0.6,
+      "outsideRate": 0.4,
+      "sqFtFixedFee": 200,
+      "customAmount": 0,
+      "kitchenSize": "smallMedium",
+      "patioMode": "standalone",
+      "includePatioAddon": false,
+      "frequencyLabel": "",
+      "contractMonths": 12
+    },
+    "boh": {
+      "enabled": false,
+      "pricingType": "preset",
+      "workers": 2,
+      "hours": 0,
+      "hourlyRate": 200,
+      "insideSqFt": 0,
+      "outsideSqFt": 0,
+      "insideRate": 0.6,
+      "outsideRate": 0.4,
+      "sqFtFixedFee": 200,
+      "customAmount": 0,
+      "kitchenSize": "smallMedium",
+      "patioMode": "standalone",
+      "includePatioAddon": false,
+      "frequencyLabel": "",
+      "contractMonths": 12
+    },
+    "other": {
+      "enabled": false,
+      "pricingType": "preset",
+      "workers": 2,
+      "hours": 0,
+      "hourlyRate": 200,
+      "insideSqFt": 0,
+      "outsideSqFt": 0,
+      "insideRate": 0.6,
+      "outsideRate": 0.4,
+      "sqFtFixedFee": 200,
+      "customAmount": 0,
+      "kitchenSize": "smallMedium",
+      "patioMode": "standalone",
+      "includePatioAddon": false,
+      "frequencyLabel": "",
+      "contractMonths": 12
+    }
+  },
+  "isActive": true,
+  "adminByDisplay": true,
+  "tags": [
+    "kitchen",
+    "deep-cleaning",
+    "power-wash",
+    "commercial"
+  ]
+}

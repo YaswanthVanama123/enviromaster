@@ -678,11 +678,26 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
           customAmount: 0,
           kitchenSize: "smallMedium",
           patioMode: "standalone",
+          includePatioAddon: false, // Default to no add-on
           frequencyLabel: "",
           contractMonths: 12,
           // Override with actual stored values
           ...structuredData[areaKey]
         };
+
+        // ✅ SPECIAL HANDLING: Infer patio add-on from patioMode if includePatioAddon is missing
+        if (areaKey === 'patio' && structuredData[areaKey].includePatioAddon === undefined) {
+          // If patioMode is "upsell" but includePatioAddon is missing,
+          // this likely means the add-on was selected but got lost in backend conversion
+          const patioMode = structuredData[areaKey].patioMode;
+          console.log(`🔄 [Patio FIX] includePatioAddon missing, patioMode: ${patioMode}`);
+
+          // ✅ INFER from patioMode: "upsell" means add-on was likely selected
+          const inferredAddon = patioMode === 'upsell';
+          formState[areaKey].includePatioAddon = inferredAddon;
+          console.log(`🔄 [Patio FIX] Inferred includePatioAddon: ${inferredAddon} (from patioMode: ${patioMode})`);
+        }
+
         console.log(`🔄 [transformRefreshPowerScrubData] Mapped ${areaKey}:`, formState[areaKey]);
       } else {
         // Provide complete default area object
@@ -700,6 +715,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
           customAmount: 0,
           kitchenSize: "smallMedium",
           patioMode: "standalone",
+          includePatioAddon: false, // Default to no add-on
           frequencyLabel: "",
           contractMonths: 12
         };
@@ -796,6 +812,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
         customAmount: 0,
         kitchenSize: "smallMedium",
         patioMode: "standalone",
+        includePatioAddon: false, // Default to no add-on
         frequencyLabel: areaData.frequency?.value || "",
         contractMonths: areaData.contract?.quantity || 12
       };
@@ -813,8 +830,27 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
         if (areaData.outsideSqft?.priceRate) areaState.outsideRate = areaData.outsideSqft.priceRate;
       } else if (pricingType === "preset") {
         // Extract preset-specific options
-        if (storedAreaKey === 'patio' && areaData.plan?.value) {
-          areaState.patioMode = areaData.plan.value.toLowerCase().includes('upsell') ? 'upsell' : 'standalone';
+        if (storedAreaKey === 'patio') {
+          // For patio, check for add-on selection
+          // This could be stored in various ways, so check multiple possible fields
+          if (areaData.includePatioAddon !== undefined) {
+            if (typeof areaData.includePatioAddon === 'object' && areaData.includePatioAddon.value !== undefined) {
+              // Handle new format: { value: boolean, type: "boolean" }
+              areaState.includePatioAddon = areaData.includePatioAddon.value;
+            } else {
+              // Handle direct boolean value
+              areaState.includePatioAddon = areaData.includePatioAddon;
+            }
+          } else if (areaData.patioAddon !== undefined) {
+            areaState.includePatioAddon = areaData.patioAddon;
+          }
+
+          if (areaData.plan?.value) {
+            areaState.patioMode = areaData.plan.value.toLowerCase().includes('upsell') ? 'upsell' : 'standalone';
+          }
+
+          console.log(`🔄 [Patio DEBUG] Raw areaData:`, JSON.stringify(areaData, null, 2));
+          console.log(`🔄 [Patio] Final mapped state - includePatioAddon: ${areaState.includePatioAddon}, patioMode: ${areaState.patioMode}`);
         } else if (storedAreaKey === 'backHouse' && areaData.plan?.value) {
           areaState.kitchenSize = areaData.plan.value.toLowerCase().includes('large') ? 'large' : 'smallMedium';
         }

@@ -72,6 +72,7 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   customAmount: 0,
   kitchenSize: "smallMedium",
   patioMode: "standalone",
+  includePatioAddon: false, // Default to no add-on
   frequencyLabel: "",
   contractMonths: 12, // Default contract length for individual areas
 };
@@ -235,10 +236,13 @@ function calcPresetPackage(
       return config.coreRates.minimumVisit;
 
     case "patio":
-      // Patio — standalone or upsell pricing from backend config.
-      return state.patioMode === "upsell"
-        ? config.areaSpecificPricing.patio.upsell
-        : config.areaSpecificPricing.patio.standalone;
+      // Patio — Always start with base $800 service + optional $500 add-on
+      const basePatioPrice = config.areaSpecificPricing.patio.standalone; // $800
+
+      // Add the $500 add-on if selected
+      const addonPrice = state.includePatioAddon ? config.areaSpecificPricing.patio.upsell : 0; // $500 if selected
+
+      return basePatioPrice + addonPrice; // $800 base + $500 addon = $1300 total
 
     case "foh":
       // Front of house — package price from backend config.
