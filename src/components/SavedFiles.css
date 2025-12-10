@@ -344,6 +344,42 @@
   .sf__page { width: 32px; height: 32px; font-size: 13px; }
   .sf__link { padding: 6px 10px; font-size: 13px; }
 }
+
+/* ---------- Zoho Upload Button Styling ---------- */
+.zoho-upload-btn {
+  position: relative;
+}
+
+.zoho-upload-btn:hover {
+  background: #fef3c7 !important; /* Light yellow background on hover */
+  border-color: #f59e0b !important; /* Orange border */
+  color: #d97706 !important; /* Dark orange icon */
+  transform: translateY(-1px);
+}
+
+.zoho-upload-btn svg {
+  color: #f59e0b; /* Orange icon color */
+}
+
+.zoho-upload-btn:hover svg {
+  color: #d97706; /* Darker orange on hover */
+}
+
+.zoho-upload-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoho-upload-btn:disabled:hover {
+  background: #fff !important;
+  border-color: #ddd !important;
+  transform: none !important;
+}
+
+.zoho-upload-btn:disabled svg {
+  color: #9ca3af !important;
+}
+
 @media (max-width: 480px) {
   .sf__hero { font-size: 16px; padding: 12px; }
   .sf__btn { height: 34px; padding: 0 12px; }

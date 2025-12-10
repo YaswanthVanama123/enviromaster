@@ -1,0 +1,467 @@
+/* src/components/ZohoUpload.css */
+
+.zoho-upload {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoho-upload__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.zoho-upload__modal {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Modal Header */
+.zoho-upload__modal-header {
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid #e6e6e6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.zoho-upload__modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.zoho-upload__close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.zoho-upload__close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Modal Body */
+.zoho-upload__modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Modal Footer */
+.zoho-upload__modal-footer {
+  padding: 16px 24px 24px 24px;
+  border-top: 1px solid #e6e6e6;
+}
+
+/* Step Content */
+.zoho-upload__step {
+  min-height: 200px;
+}
+
+.zoho-upload__header {
+  margin-bottom: 24px;
+}
+
+.zoho-upload__header h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoho-upload__header h3 svg {
+  color: #c00000;
+}
+
+.zoho-upload__header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Loading State */
+.zoho-upload__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.zoho-upload__loading svg {
+  color: #c00000;
+  margin-bottom: 16px;
+}
+
+.zoho-upload__loading p {
+  margin: 0 0 8px 0;
+  font-weight: 500;
+  color: #374151;
+}
+
+.zoho-upload__loading small {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Form Elements */
+.zoho-upload__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.zoho-upload__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zoho-upload__label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoho-upload__label svg {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.zoho-upload__input,
+.zoho-upload__textarea,
+.zoho-upload__select {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.zoho-upload__input:focus,
+.zoho-upload__textarea:focus,
+.zoho-upload__select:focus {
+  outline: none;
+  border-color: #c00000;
+  box-shadow: 0 0 0 3px rgba(192, 0, 0, 0.1);
+}
+
+.zoho-upload__textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.zoho-upload__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.zoho-upload__col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Search */
+.zoho-upload__search {
+  position: relative;
+}
+
+.zoho-upload__search .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.zoho-upload__search-input {
+  padding-left: 38px;
+}
+
+/* Companies List */
+.zoho-upload__companies {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.zoho-upload__company {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.zoho-upload__company:last-child {
+  border-bottom: none;
+}
+
+.zoho-upload__company:hover {
+  background: #f3f4f6;
+}
+
+.zoho-upload__company.selected {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.zoho-upload__company .company-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.zoho-upload__company .company-info {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.zoho-upload__no-results {
+  padding: 20px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Create Company Form */
+.zoho-upload__create-company {
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.zoho-upload__create-company h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Existing Info Display */
+.zoho-upload__existing-info {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.zoho-upload__existing-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.zoho-upload__existing-info .info-row:last-child {
+  margin-bottom: 0;
+}
+
+.zoho-upload__existing-info strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Result States */
+.zoho-upload__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.zoho-upload__result svg {
+  margin-bottom: 16px;
+}
+
+.zoho-upload__result--success svg {
+  color: #10b981;
+}
+
+.zoho-upload__result--error svg {
+  color: #ef4444;
+}
+
+.zoho-upload__result h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.zoho-upload__result--success h3 {
+  color: #065f46;
+}
+
+.zoho-upload__result--error h3 {
+  color: #991b1b;
+}
+
+.zoho-upload__result p {
+  margin: 0 0 20px 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Buttons */
+.zoho-upload__btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.zoho-upload__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.zoho-upload__btn--primary {
+  background: #c00000;
+  color: white;
+  border-color: #c00000;
+}
+
+.zoho-upload__btn--primary:hover:not(:disabled) {
+  background: #a00000;
+  border-color: #a00000;
+}
+
+.zoho-upload__btn--secondary {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.zoho-upload__btn--secondary:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.zoho-upload__button-group {
+  display: flex;
+  gap: 12px;
+}
+
+.zoho-upload__button-group .zoho-upload__btn {
+  flex: 1;
+}
+
+/* Actions */
+.zoho-upload__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.zoho-upload__actions .zoho-upload__btn {
+  min-width: 120px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .zoho-upload__modal {
+    width: 95%;
+    margin: 20px;
+    max-height: 85vh;
+  }
+
+  .zoho-upload__modal-header,
+  .zoho-upload__modal-body,
+  .zoho-upload__modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .zoho-upload__row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .zoho-upload__button-group {
+    flex-direction: column;
+  }
+
+  .zoho-upload__actions {
+    flex-direction: column-reverse;
+  }
+
+  .zoho-upload__actions .zoho-upload__btn {
+    width: 100%;
+  }
+
+  .zoho-upload__companies {
+    max-height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .zoho-upload__modal {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .zoho-upload__modal-header h2 {
+    font-size: 18px;
+  }
+
+  .zoho-upload__result {
+    padding: 30px 16px;
+  }
+}

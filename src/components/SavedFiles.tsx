@@ -5,8 +5,9 @@ import type { SavedFileListItem, SavedFileDetails } from "../backendservice/api/
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt, faUpload } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
+import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
 
 type FileStatus =
@@ -61,6 +62,10 @@ export default function SavedFiles() {
   // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
+
+  // Zoho upload state
+  const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
+  const [currentZohoFile, setCurrentZohoFile] = useState<SavedFileListItem | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -286,6 +291,35 @@ export default function SavedFiles() {
   const handleEmail = (file: SavedFileListItem) => {
     setCurrentEmailFile(file);
     setEmailComposerOpen(true);
+  };
+
+  // ✅ Zoho upload handler
+  const handleZohoUpload = (file: SavedFileListItem) => {
+    // Only allow upload for files that have PDFs
+    if (!file.hasPdf) {
+      setToastMessage({
+        message: "This document doesn't have a PDF to upload. Please generate the PDF first.",
+        type: "error"
+      });
+      return;
+    }
+
+    setCurrentZohoFile(file);
+    setZohoUploadOpen(true);
+  };
+
+  // ✅ Zoho upload success handler
+  const handleZohoUploadSuccess = () => {
+    setZohoUploadOpen(false);
+    setCurrentZohoFile(null);
+
+    // Refresh the files list to show updated Zoho status
+    fetchFiles(currentPage, query);
+
+    setToastMessage({
+      message: "Successfully uploaded to Zoho Bigin!",
+      type: "success"
+    });
   };
 
   // ✅ Send email handler
@@ -541,6 +575,15 @@ export default function SavedFiles() {
                         <FontAwesomeIcon icon={faEnvelope} />
                       </button>
                       <button
+                        className="iconbtn zoho-upload-btn"
+                        title="Upload to Zoho Bigin"
+                        type="button"
+                        onClick={() => handleZohoUpload(f)}
+                        disabled={!f.hasPdf}
+                      >
+                        <FontAwesomeIcon icon={faUpload} />
+                      </button>
+                      <button
                         className="iconbtn"
                         title="Status Auto-Saves"
                         type="button"
@@ -649,6 +692,19 @@ export default function SavedFiles() {
         defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}
         userEmail="" // TODO: Get from user login context
       />
+
+      {/* Zoho Upload Modal */}
+      {zohoUploadOpen && currentZohoFile && (
+        <ZohoUpload
+          agreementId={currentZohoFile.id}
+          agreementTitle={currentZohoFile.title}
+          onClose={() => {
+            setZohoUploadOpen(false);
+            setCurrentZohoFile(null);
+          }}
+          onSuccess={handleZohoUploadSuccess}
+        />
+      )}
     </section>
   );
 }
