@@ -7,6 +7,13 @@ import type { Product } from "../../backendservice/types/productCatalog.types";
 import { Toast } from "./Toast";
 import { ServicePricingDetailedView } from "./ServicePricingDetailedView";
 
+// Utility function to truncate text
+const truncateText = (text: string | undefined, maxLength: number): string => {
+  if (!text) return "—";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
+
 export const PricingTablesView: React.FC = () => {
   const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
   const { catalog, loading: catalogLoading, error: catalogError, updateCatalog } = useActiveProductCatalog();
@@ -608,6 +615,7 @@ export const PricingTablesView: React.FC = () => {
                     <th style={styles.th}>UOM</th>
                     <th style={styles.th}>Warranty Price</th>
                     <th style={styles.th}>Billing Period</th>
+                    <th style={styles.th}>Description</th>
                     <th style={styles.th}>Actions</th>
                   </tr>
                 </thead>
@@ -652,6 +660,11 @@ export const PricingTablesView: React.FC = () => {
                           )}
                         </td>
                         <td style={styles.td}>{product.warrantyPricePerUnit?.billingPeriod || "—"}</td>
+                        <td style={styles.td}>
+                          <span title={product.description || "No description"}>
+                            {truncateText(product.description, 50)}
+                          </span>
+                        </td>
                         <td style={styles.td}>
                           {isEditingBase || isEditingWarranty ? (
                             <div style={styles.actionButtons}>

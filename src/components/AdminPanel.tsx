@@ -154,10 +154,9 @@ export default function AdminPanel() {
           updatedAt: item.updatedAt,
         }));
 
-        // Sort by most recent (updatedAt) and take top 10
+        // Sort by most recent (updatedAt) - show all documents
         const sortedRecent = mapped
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-          .slice(0, 10);
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
         setDocuments(sortedRecent);
       } catch (err) {

@@ -21,6 +21,8 @@ export type EnvProduct = {
   quantityPerCase?: number;
   quantityPerCaseLabel?: string;
   warrantyPricePerUnit?: MoneyAmount; // weekly warranty rates for dispensers, etc.
+  frequency?: string;         // frequency field for service frequency
+  description?: string;       // product description
   displayByAdmin?: boolean;   // if true => show by default in the table
 };
 

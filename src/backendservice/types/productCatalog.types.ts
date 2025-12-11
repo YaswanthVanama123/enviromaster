@@ -25,6 +25,8 @@ export interface Product {
   suggestedCustomerRollPrice?: number;
   quantityPerCase?: number;
   quantityPerCaseLabel?: string;
+  frequency?: string;
+  description?: string;
   displayByAdmin?: boolean;
 }
 

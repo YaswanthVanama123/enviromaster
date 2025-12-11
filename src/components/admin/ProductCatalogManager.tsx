@@ -6,6 +6,20 @@ import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { Product, ProductFamily } from "../../backendservice/types/productCatalog.types";
 import { Toast } from "./Toast";
 
+// Utility function to truncate text
+const truncateText = (text: string | undefined, maxLength: number): string => {
+  if (!text) return "—";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
+
+// Utility function to validate and sanitize product key
+const validateProductKey = (key: string): string => {
+  // Remove spaces, slashes, and other invalid characters
+  // Allow only letters, numbers, hyphens, and underscores
+  return key.replace(/[^a-zA-Z0-9\-_]/g, '').toLowerCase();
+};
+
 interface ProductCatalogManagerProps {
   modalType?: string;
   itemId?: string;
@@ -39,6 +53,8 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     kind: "",
     basePrice: { amount: 0, currency: "USD", uom: "" },
     warrantyPricePerUnit: { amount: 0, currency: "USD", billingPeriod: "monthly" },
+    frequency: "",
+    description: "",
     displayByAdmin: true,
   });
 
@@ -276,7 +292,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
             Version: {catalog.version} | Last Updated: {catalog.lastUpdated}
           </p>
         </div>
-        {catalog.isActive && <span style={styles.activeBadge}>Active Catalog</span>}
+        {/* {catalog.isActive && <span style={styles.activeBadge}>Active Catalog</span>} */}
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
@@ -339,6 +355,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                   <th style={styles.th}>UOM</th>
                   <th style={styles.th}>Warranty</th>
                   <th style={styles.th}>Display</th>
+                  <th style={styles.th}>Description</th>
                   <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
@@ -367,6 +384,11 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                       ) : (
                         <span style={styles.inactiveTag}>No</span>
                       )}
+                    </td>
+                    <td style={styles.td}>
+                      <span title={product.description || "No description"}>
+                        {truncateText(product.description, 50)}
+                      </span>
                     </td>
                     <td style={styles.td}>
                       <button
@@ -492,6 +514,13 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                       )}
                     </span>
                   </div>
+
+                  <div style={styles.detailItem}>
+                    <span style={styles.detailLabel}>Description:</span>
+                    <span style={styles.detailValue}>
+                      {editingProduct.description || "No description available"}
+                    </span>
+                  </div>
                 </div>
 
                 <div style={styles.modalActions}>
@@ -607,6 +636,17 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                       <span>Display in Admin Panel</span>
                     </label>
                   </div>
+
+                  <div style={styles.formGroup}>
+                    <label style={styles.formLabel}>Description</label>
+                    <textarea
+                      value={editingProduct.description || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                      style={{...styles.formInput, minHeight: "100px", resize: "vertical"}}
+                      placeholder="Enter product description..."
+                      rows={4}
+                    />
+                  </div>
                 </div>
 
                 <div style={styles.modalActions}>
@@ -649,10 +689,13 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                 <input
                   type="text"
                   value={newProduct.key}
-                  onChange={(e) => setNewProduct({ ...newProduct, key: e.target.value })}
+                  onChange={(e) => setNewProduct({ ...newProduct, key: validateProductKey(e.target.value) })}
                   style={styles.formInput}
                   placeholder="e.g., soap-standard-1000ml"
                 />
+                <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  Only letters, numbers, hyphens, and underscores allowed. Automatically converted to lowercase.
+                </small>
               </div>
 
               <div style={styles.formGroup}>
@@ -745,6 +788,17 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                   />
                   <span>Display in Admin Panel</span>
                 </label>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Description</label>
+                <textarea
+                  value={newProduct.description || ""}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                  style={{...styles.formInput, minHeight: "100px", resize: "vertical"}}
+                  placeholder="Enter product description..."
+                  rows={4}
+                />
               </div>
             </div>
 
