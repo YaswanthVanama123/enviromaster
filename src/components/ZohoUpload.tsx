@@ -79,6 +79,14 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           zohoApi.getPipelineOptions()
         ]);
 
+        if (!companiesResult.success) {
+          throw new Error(companiesResult.error || 'Failed to load companies');
+        }
+
+        if (!pipelineResult.success) {
+          throw new Error(pipelineResult.error || 'Failed to load pipeline options');
+        }
+
         setCompanies(companiesResult.companies || []);
         setPipelineOptions(pipelineResult);
 
@@ -93,7 +101,14 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       }
     } catch (err) {
       console.error('Failed to initialize upload:', err);
-      setError('Failed to load upload options. Please try again.');
+
+      // ✅ NEW: Show helpful error for OAuth issues
+      if (err.message?.includes('authorization') || err.message?.includes('auth')) {
+        setError('Zoho integration not set up. Please contact your administrator to configure Zoho Bigin access.');
+      } else {
+        setError('Failed to load upload options. Please try again.');
+      }
+
       setStep('error');
     } finally {
       setLoading(false);
