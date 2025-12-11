@@ -73,22 +73,15 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setUploadStatus(statusResult);
 
       if (statusResult.isFirstTime) {
-        // Load companies and pipeline options for first-time upload
-        const [companiesResult, pipelineResult] = await Promise.all([
-          zohoApi.getCompanies(1),
-          zohoApi.getPipelineOptions()
-        ]);
+        // Load companies for first-time upload
+        const companiesResult = await zohoApi.getCompanies(1);
 
         if (!companiesResult.success) {
           throw new Error(companiesResult.error || 'Failed to load companies');
         }
 
-        if (!pipelineResult.success) {
-          throw new Error(pipelineResult.error || 'Failed to load pipeline options');
-        }
-
         setCompanies(companiesResult.companies || []);
-        setPipelineOptions(pipelineResult);
+        // ✅ FIX: Don't load pipeline options here - wait for company selection
 
         // Generate default deal name
         const defaultDealName = generateDealName(statusResult.agreement?.headerTitle || agreementTitle);
@@ -114,6 +107,43 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setLoading(false);
     }
   };
+
+  // ✅ NEW: Load pipeline options when company is selected
+  useEffect(() => {
+    const loadPipelineOptions = async () => {
+      if (!selectedCompany) {
+        // Clear pipeline options when no company selected
+        setPipelineOptions({ success: false, pipelines: [], stages: [] });
+        return;
+      }
+
+      try {
+        console.log(`🔍 Loading pipeline options for company: ${selectedCompany.name} (${selectedCompany.id})`);
+        const pipelineResult = await zohoApi.getCompanyPipelineOptions(selectedCompany.id);
+
+        if (pipelineResult.success) {
+          setPipelineOptions(pipelineResult);
+          console.log(`✅ Loaded pipeline options:`, pipelineResult.pipelines?.length || 0, 'pipelines');
+
+          // Set default values from the loaded options
+          if (pipelineResult.pipelines?.length > 0) {
+            setPipelineName(pipelineResult.pipelines[0].value);
+          }
+          if (pipelineResult.stages?.length > 0) {
+            setStage(pipelineResult.stages[0].value);
+          }
+        } else {
+          console.error('Failed to load pipeline options:', pipelineResult.error);
+          // Keep existing fallback values
+        }
+      } catch (error) {
+        console.error('Error loading pipeline options:', error);
+        // Keep existing fallback values
+      }
+    };
+
+    loadPipelineOptions();
+  }, [selectedCompany]); // Trigger when company selection changes
 
   const generateDealName = (title: string) => {
     const cleanTitle = title?.trim() || 'Service Proposal';

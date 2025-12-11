@@ -127,6 +127,33 @@ export interface UpdateUploadRequest {
   noteText: string;
 }
 
+export interface ZohoDeal {
+  id: string;
+  name: string;
+  stage: string;
+  amount: number;
+  closingDate: string | null;
+  createdAt: string | null;
+  modifiedAt: string | null;
+  description?: string;
+  pipelineName?: string;
+  contactName?: string | null;
+}
+
+export interface ZohoDealsResponse {
+  success: boolean;
+  companyId: string;
+  deals: ZohoDeal[];
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    hasMore: boolean;
+  };
+  message: string;
+  error?: string;
+}
+
 export const zohoApi = {
   /**
    * Check if agreement is first-time upload or existing
@@ -182,7 +209,44 @@ export const zohoApi = {
   },
 
   /**
-   * Get pipeline and stage options
+   * Get deals for a specific company
+   */
+  async getCompanyDeals(
+    companyId: string,
+    page = 1,
+    perPage = 20
+  ): Promise<ZohoDealsResponse> {
+    const params = new URLSearchParams();
+    params.set("page", page.toString());
+    params.set("per_page", perPage.toString());
+
+    const res = await axios.get(
+      `${API_BASE_URL}/api/zoho-upload/companies/${companyId}/deals?${params}`,
+      {
+        headers: { Accept: "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Get pipeline and stage options for a specific company
+   */
+  async getCompanyPipelineOptions(companyId: string): Promise<ZohoPipelineOptions & {
+    companyId: string;
+    message?: string;
+  }> {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/zoho-upload/companies/${companyId}/pipeline-options`,
+      {
+        headers: { Accept: "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Get pipeline and stage options (general)
    */
   async getPipelineOptions(): Promise<ZohoPipelineOptions> {
     const res = await axios.get(
