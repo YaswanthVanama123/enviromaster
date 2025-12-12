@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
-import type { SavedFileListItem, SavedFileDetails } from "../backendservice/api/pdfApi";
+import type { SavedFileListItem, SavedFileDetails, SavedFileGroup } from "../backendservice/api/pdfApi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt, faUpload } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt,
+  faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
+  faPlus, faCheckSquare, faSquare
+} from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
@@ -38,21 +42,25 @@ const STATUS_LABEL: Record<FileStatus, string> = {
 };
 
 export default function SavedFiles() {
-  // ✅ NEW: Use lightweight list data structure
-  const [files, setFiles] = useState<SavedFileListItem[]>([]);
+  // ✅ NEW: Use grouped data structure instead of flat files list
+  const [groups, setGroups] = useState<SavedFileGroup[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  // ✅ NEW: Pagination state
+  // ✅ NEW: Pagination state for groups
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalGroups, setTotalGroups] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
+  const [groupsPerPage] = useState(20);
   const [filesPerPage] = useState(20);
 
-  // Search and sorting (client-side for current page)
+  // Search and sorting
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "status">("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  // Selection and loading states
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  // Selection states - now per group and per file
+  const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -76,29 +84,32 @@ export default function SavedFiles() {
 
   console.log("📍 SavedFiles context:", { isInAdminContext, returnPath, currentPath: location.pathname });
 
-  // ✅ NEW: Fetch files using lightweight API with pagination
-  const fetchFiles = async (page = 1, search = "") => {
+  // ✅ NEW: Fetch grouped files using the grouped API
+  const fetchGroups = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`📄 [SAVED-FILES] Fetching page ${page} with search: "${search}"`);
+      console.log(`📁 [SAVED-FILES-GROUPED] Fetching page ${page} with search: "${search}"`);
 
-      const response = await pdfApi.getSavedFilesList(page, filesPerPage, {
+      const response = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
         search: search.trim() || undefined
       });
 
-      console.log(`📄 [SAVED-FILES] Loaded ${response.files.length} files (lightweight) from ${response.total} total`);
+      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${response.groups.length} groups with ${response.total} total files`);
 
-      setFiles(response.files);
+      setGroups(response.groups);
+      setTotalGroups(response.totalGroups);
       setTotalFiles(response.total);
       setCurrentPage(page);
 
       // Clear selection when changing pages/search
-      setSelected({});
+      setSelectedGroups({});
+      setSelectedFiles({});
     } catch (err) {
-      console.error("Error fetching saved files:", err);
+      console.error("Error fetching grouped saved files:", err);
       setError("Unable to load files. Please try again.");
-      setFiles([]);
+      setGroups([]);
+      setTotalGroups(0);
       setTotalFiles(0);
     } finally {
       setLoading(false);
@@ -107,70 +118,103 @@ export default function SavedFiles() {
 
   // Initial load
   useEffect(() => {
-    fetchFiles(1, query);
+    fetchGroups(1, query);
   }, []);
 
   // Handle search with debouncing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (currentPage === 1) {
-        fetchFiles(1, query);
+        fetchGroups(1, query);
       } else {
         // Reset to page 1 when searching
-        fetchFiles(1, query);
+        fetchGroups(1, query);
       }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
   }, [query]);
 
-  // ✅ CLIENT-SIDE SORTING: Sort current page results only
-  const sorted = useMemo(() => {
-    let out = [...files];
+  // ✅ CLIENT-SIDE SORTING: Sort current page groups
+  const sortedGroups = useMemo(() => {
+    let out = [...groups];
 
     // Sort by selected criteria
     out = out.sort((a, b) => {
       if (sortBy === "date") {
-        // Sort by updatedAt date
-        const dateA = new Date(a.updatedAt).getTime();
-        const dateB = new Date(b.updatedAt).getTime();
+        // Sort by latest update date
+        const dateA = new Date(a.latestUpdate).getTime();
+        const dateB = new Date(b.latestUpdate).getTime();
         const order = dateB - dateA; // Default: newest first
         return sortDir === "desc" ? order : -order;
       } else {
-        // Sort by status
-        const order = STATUS_LABEL[a.status as FileStatus].localeCompare(
-          STATUS_LABEL[b.status as FileStatus]
-        );
+        // Sort by most common status in group
+        const statusA = a.statuses[0] || '';
+        const statusB = b.statuses[0] || '';
+        const order = statusA.localeCompare(statusB);
         return sortDir === "asc" ? order : -order;
       }
     });
 
     return out;
-  }, [files, sortBy, sortDir]);
+  }, [groups, sortBy, sortDir]);
 
-  // Selection helpers
-  const allSelected = sorted.length > 0 && sorted.every((f) => selected[f.id]);
-  const anySelected = Object.values(selected).some(Boolean);
+  // ✅ Flatten groups to get all files for compatibility with existing table structure
+  const sorted = useMemo(() => {
+    const allFiles: SavedFileListItem[] = [];
+    sortedGroups.forEach(group => allFiles.push(...group.files));
+    return allFiles;
+  }, [sortedGroups]);
+
+  // ✅ Selection helpers for backward compatibility
+  const selected = useMemo(() => {
+    const result: Record<string, boolean> = {};
+    sorted.forEach(file => {
+      result[file.id] = selectedFiles[file.id] || false;
+    });
+    return result;
+  }, [sorted, selectedFiles]);
+
+  const allSelected = useMemo(() => {
+    return sorted.length > 0 && sorted.every(f => selected[f.id]);
+  }, [sorted, selected]);
+
+  const anySelected = useMemo(() => {
+    return Object.values(selected).some(Boolean);
+  }, [selected]);
+
+  // ✅ NEW: Group expansion handlers
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupId)) {
+        newSet.delete(groupId);
+      } else {
+        newSet.add(groupId);
+      }
+      return newSet;
+    });
+  };
+
+  // ✅ NEW: Selection helpers for groups and files
+  const isGroupExpanded = (groupId: string) => expandedGroups.has(groupId);
+  const isGroupSelected = (groupId: string) => selectedGroups[groupId] || false;
+  const isFileSelected = (fileId: string) => selectedFiles[fileId] || false;
 
   function toggleSelectAll() {
-    const next = { ...selected };
+    const next = { ...selectedFiles };
     const to = !allSelected;
     sorted.forEach((f) => (next[f.id] = to));
-    setSelected(next);
+    setSelectedFiles(next);
   }
 
   function toggleRow(id: string) {
-    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
+    setSelectedFiles((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
   // ✅ Status change with immediate UI update
   function changeStatus(id: string, next: FileStatus) {
-    // Update UI immediately
-    setFiles((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, status: next } : it))
-    );
-
-    // Save to backend automatically
+    // Save to backend and refresh data
     saveStatusToBackend(id, next);
   }
 
@@ -192,22 +236,16 @@ export default function SavedFiles() {
 
       await Promise.all(updatePromises);
 
-      // Update local state - change status for all selected documents
-      setFiles(prevFiles =>
-        prevFiles.map(file =>
-          ids.includes(file.id)
-            ? { ...file, status: "pending_approval" }
-            : file
-        )
-      );
-
-      // Clear selection
-      setSelected({});
+      // Clear selection and refresh data
+      setSelectedFiles({});
 
       setToastMessage({
         message: `Successfully sent ${ids.length} document${ids.length > 1 ? 's' : ''} for approval!`,
         type: "success"
       });
+
+      // Refresh data from server
+      fetchGroups(currentPage, query);
     } catch (err) {
       console.error("Error sending for approval:", err);
       setToastMessage({
@@ -279,6 +317,9 @@ export default function SavedFiles() {
       await pdfApi.updateDocumentStatus(id, status);
       console.log("Status updated successfully");
       setToastMessage({ message: "Status updated successfully!", type: "success" });
+
+      // Refresh data to show updated status
+      fetchGroups(currentPage, query);
     } catch (err) {
       console.error("Error updating status:", err);
       setToastMessage({ message: "Unable to update status. Please try again.", type: "error" });
@@ -314,7 +355,7 @@ export default function SavedFiles() {
     setCurrentZohoFile(null);
 
     // Refresh the files list to show updated Zoho status
-    fetchFiles(currentPage, query);
+    fetchGroups(currentPage, query);
 
     setToastMessage({
       message: "Successfully uploaded to Zoho Bigin!",
@@ -391,19 +432,19 @@ export default function SavedFiles() {
 
   const handlePrevPage = () => {
     if (canGoPrev) {
-      fetchFiles(currentPage - 1, query);
+      fetchGroups(currentPage - 1, query);
     }
   };
 
   const handleNextPage = () => {
     if (canGoNext) {
-      fetchFiles(currentPage + 1, query);
+      fetchGroups(currentPage + 1, query);
     }
   };
 
   const handlePageClick = (page: number) => {
     if (page !== currentPage && page >= 1 && page <= totalPages) {
-      fetchFiles(page, query);
+      fetchGroups(page, query);
     }
   };
 

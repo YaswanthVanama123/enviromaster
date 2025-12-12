@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
-import SavedFiles from "./SavedFiles";
+import SavedFilesAgreements from "./SavedFilesAgreements"; // ✅ UPDATED: Use new folder-like component
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
@@ -737,7 +737,7 @@ export default function AdminPanel() {
 
         {activeTab === "saved-pdfs" && (
           <div className="tab-content-full">
-            <SavedFiles />
+            <SavedFilesAgreements />
           </div>
         )}
 

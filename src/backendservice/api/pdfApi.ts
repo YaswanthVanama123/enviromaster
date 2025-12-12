@@ -45,6 +45,8 @@ export interface FormPayload {
 // New interfaces for saved-files API
 export interface SavedFileListItem {
   id: string;
+  fileName: string;                     // ✅ NEW: Actual file name
+  fileType: 'main_pdf' | 'attached_pdf'; // ✅ NEW: Distinguish main vs attached
   title: string;
   status: string;
   createdAt: string;
@@ -54,6 +56,7 @@ export interface SavedFileListItem {
   fileSize: number;
   pdfStoredAt: string | null;
   hasPdf: boolean;
+  description?: string;                 // ✅ NEW: For attached files
   zohoInfo: {
     biginDealId: string | null;
     biginFileId: string | null;
@@ -70,6 +73,64 @@ export interface SavedFilesListResponse {
   files: SavedFileListItem[];
   _metadata: {
     queryType: 'lightweight';
+    fieldsIncluded: string[];
+    fieldsExcluded: string[];
+  };
+}
+
+// Grouped files interfaces (folder-like structure) - CORRECTED for single document approach
+export interface SavedFileGroup {
+  id: string;                    // Agreement document ID
+  agreementTitle: string;        // Agreement title
+  fileCount: number;             // Main PDF + attached files count
+  latestUpdate: string;          // Latest update to agreement or attached files
+  statuses: string[];            // Main agreement status
+  hasUploads: boolean;           // Any files uploaded to Zoho
+  files: SavedFileListItem[];    // Main PDF + all attached files
+}
+
+// ✅ NEW: Interface for adding files to agreement
+export interface AddFileToAgreementRequest {
+  files: {
+    fileId?: string;
+    fileName: string;
+    fileSize: number;
+    contentType?: string;
+    description?: string;
+    pdfBuffer?: number[];  // ✅ NEW: Array of bytes from frontend
+    externalUrl?: string;
+    zoho?: {
+      bigin?: { dealId?: string; fileId?: string; url?: string };
+      crm?: { dealId?: string; fileId?: string; url?: string };
+    };
+  }[];
+}
+
+export interface AddFileToAgreementResponse {
+  success: boolean;
+  message: string;
+  agreement: {
+    id: string;
+    title: string;
+    attachedFilesCount: number;
+  };
+  addedFiles: {
+    id: string;
+    fileName: string;
+    fileSize: number;
+  }[];
+}
+
+export interface SavedFilesGroupedResponse {
+  success: boolean;
+  total: number;
+  totalGroups: number;
+  page: number;
+  limit: number;
+  groups: SavedFileGroup[];
+  _metadata: {
+    queryType: string;
+    groupBy: string;
     fieldsIncluded: string[];
     fieldsExcluded: string[];
   };
@@ -233,6 +294,19 @@ export const pdfApi = {
   },
 
   /**
+   * ✅ NEW: Download attached file from ManualUploadDocument collection
+   */
+  async downloadAttachedFile(fileId: string): Promise<Blob> {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/pdf/attached-files/${fileId}/download`,
+      {
+        responseType: "blob",
+      }
+    );
+    return res.data;
+  },
+
+  /**
    * Get PDF download URL
    */
   getPdfDownloadUrl(documentId: string): string {
@@ -270,12 +344,57 @@ export const pdfApi = {
   },
 
   /**
+   * Get saved files grouped by agreement (folder-like structure)
+   * @param page Page number (default: 1)
+   * @param limit Groups per page (default: 20, max: 100)
+   * @param filters Optional filters like status, search
+   */
+  async getSavedFilesGrouped(
+    page = 1,
+    limit = 20,
+    filters: { status?: string; search?: string } = {}
+  ): Promise<SavedFilesGroupedResponse> {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('limit', limit.toString());
+
+    if (filters.status) {
+      params.set('status', filters.status);
+    }
+    if (filters.search) {
+      params.set('search', filters.search);
+    }
+
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files/grouped?${params}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
    * Get full file details by ID (on-demand - includes complete payload)
    */
   async getSavedFileDetails(id: string): Promise<SavedFileDetailsResponse> {
     const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files/${id}/details`, {
       headers: { Accept: "application/json" },
     });
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Add files to existing agreement's attachedFiles array
+   */
+  async addFilesToAgreement(
+    agreementId: string,
+    request: AddFileToAgreementRequest
+  ): Promise<AddFileToAgreementResponse> {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/pdf/saved-files/${agreementId}/add-files`,
+      request,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
     return res.data;
   },
 };
