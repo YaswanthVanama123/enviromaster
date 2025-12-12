@@ -125,6 +125,7 @@ export interface FirstTimeUploadRequest {
 
 export interface UpdateUploadRequest {
   noteText: string;
+  dealId?: string; // ✅ NEW: Optional dealId for bulk uploads
 }
 
 export interface ZohoDeal {
@@ -307,6 +308,23 @@ export const zohoApi = {
     const res = await axios.post(
       `${API_BASE_URL}/api/zoho-upload/${agreementId}/update`,
       updateData,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * Upload attached file to existing Zoho deal
+   */
+  async uploadAttachedFile(
+    fileId: string,
+    dealData: { dealId: string; noteText: string; dealName: string }
+  ): Promise<ZohoUploadResult> {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/zoho-upload/attached-file/${fileId}/add-to-deal`,
+      dealData,
       {
         headers: { "Content-Type": "application/json" },
       }

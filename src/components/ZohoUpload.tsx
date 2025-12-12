@@ -72,9 +72,51 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setLoading(true);
       setError(null);
 
-      // ✅ BULK UPLOAD MODE: Skip status check, go directly to company selection
+      // ✅ BULK UPLOAD MODE: Check folder-level mapping status
       if (bulkFiles && bulkFiles.length > 0) {
-        // Load companies for bulk upload (same UI as single upload)
+        console.log(`🔍 [BULK] Checking folder mapping status for ${bulkFiles.length} files`);
+
+        // ✅ FIX: Check multiple files to determine folder mapping state
+        let existingMappingFound = false;
+        let folderMapping = null;
+        let checkedFiles = 0;
+        const maxFilesToCheck = Math.min(3, bulkFiles.length); // Check up to 3 files for efficiency
+
+        for (const file of bulkFiles.slice(0, maxFilesToCheck)) {
+          try {
+            const statusResult = await zohoApi.getUploadStatus(file.id);
+            checkedFiles++;
+
+            console.log(`🔍 [BULK] File ${file.fileName} status:`, {
+              isFirstTime: statusResult.isFirstTime,
+              hasMapping: !!statusResult.mapping
+            });
+
+            if (!statusResult.isFirstTime && statusResult.mapping) {
+              existingMappingFound = true;
+              folderMapping = statusResult.mapping;
+              console.log(`♻️ [BULK] Found existing mapping in folder:`, folderMapping);
+              break; // Found a mapping, no need to check more files
+            }
+          } catch (err) {
+            console.warn(`⚠️ [BULK] Could not check status for ${file.fileName}:`, err);
+            // Continue checking other files even if one fails
+          }
+        }
+
+        if (existingMappingFound && folderMapping) {
+          // ✅ EXISTING MAPPING: Go to update mode for folder
+          console.log(`♻️ [BULK] Using existing folder mapping - Update mode for ${bulkFiles.length} files`);
+          setUploadStatus({ isFirstTime: false, mapping: folderMapping });
+
+          // Set default notes for bulk update
+          setNoteText(`Bulk update - Adding ${bulkFiles.length} documents:\n${bulkFiles.map(f => `• ${f.fileName}`).join('\n')}`);
+          setStep('update');
+          return;
+        }
+
+        // ✅ NEW FOLDER: Load companies for first-time bulk upload
+        console.log(`🆕 [BULK] New folder - Loading companies for ${bulkFiles.length} files`);
         const companiesResult = await zohoApi.getCompanies(1);
 
         if (!companiesResult.success) {
@@ -88,6 +130,9 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           ? bulkFiles[0].title
           : `Bulk Upload - ${bulkFiles.length} Documents`;
         setDealName(defaultDealName);
+
+        // Set default notes for bulk first-time upload
+        setNoteText(`Bulk upload of ${bulkFiles.length} documents to Zoho Bigin:\n${bulkFiles.map(f => `• ${f.fileName}`).join('\n')}`);
 
         setStep('first-time');
         return;
@@ -247,43 +292,93 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     try {
       setStep('uploading');
 
-      // ✅ BULK UPLOAD MODE: Process multiple files
+      // ✅ BULK UPLOAD MODE: Create ONE deal and add all files to it
       if (bulkFiles && bulkFiles.length > 0) {
+        console.log(`🆕 [BULK-FIRST-TIME] Creating single deal for ${bulkFiles.length} files`);
+        let dealId: string | null = null;
         let successCount = 0;
         let failCount = 0;
 
-        for (const file of bulkFiles) {
+        for (const [index, file] of bulkFiles.entries()) {
           try {
-            const result = await zohoApi.firstTimeUpload(file.id, {
-              companyId: selectedCompany.id,
-              companyName: selectedCompany.name,
-              dealName: `${dealName.trim()} - ${file.fileName}`,
-              pipelineName,
-              stage,
-              noteText: `${noteText.trim()}\n\nDocument: ${file.fileName}`
-            });
+            console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${bulkFiles.length}: ${file.fileName}`);
 
-            if (result.success) {
-              successCount++;
+            if (index === 0) {
+              // ✅ First file: Create the deal
+              const result = await zohoApi.firstTimeUpload(file.id, {
+                companyId: selectedCompany.id,
+                companyName: selectedCompany.name,
+                dealName: dealName.trim(), // ✅ FIX: Use same deal name for all files
+                pipelineName,
+                stage,
+                noteText: `${noteText.trim()}\n\nBulk upload of ${bulkFiles.length} documents:\n${bulkFiles.map(f => `• ${f.fileName}`).join('\n')}`
+              });
+
+              if (result.success) {
+                successCount++;
+                dealId = result.data?.deal?.id; // ✅ FIX: Extract dealId from correct response structure
+                console.log(`✅ [BULK-FIRST-TIME] Deal created with ID: ${dealId}`);
+
+                // ✅ SAFETY CHECK: Ensure dealId was properly extracted
+                if (!dealId) {
+                  failCount++;
+                  console.error(`❌ [BULK-FIRST-TIME] Could not extract dealId from response:`, result.data);
+                  break; // Stop processing if we can't get dealId
+                }
+              } else {
+                failCount++;
+                console.error(`❌ [BULK-FIRST-TIME] Failed to create deal with ${file.fileName}:`, result.error);
+              }
             } else {
-              failCount++;
-              console.error(`Failed to upload ${file.fileName}:`, result.error);
+              // ✅ Subsequent files: Add to existing deal (handle main agreements vs attached files)
+
+              // ✅ SAFETY CHECK: Ensure we have a dealId from the first upload
+              if (!dealId) {
+                failCount++;
+                console.error(`❌ [BULK-FIRST-TIME] No dealId available for file: ${file.fileName}`);
+                continue; // Skip this file and continue with others
+              }
+
+              let result;
+
+              if (file.fileType === 'main_pdf') {
+                // Main agreement file - use updateUpload with dealId
+                result = await zohoApi.updateUpload(file.id, {
+                  noteText: `Added to bulk upload deal\n\nDocument: ${file.fileName}`,
+                  dealId: dealId // Pass the dealId from first file's upload
+                });
+              } else {
+                // Attached file - use special attached file endpoint
+                result = await zohoApi.uploadAttachedFile(file.id, {
+                  dealId: dealId, // Use same deal as main agreement
+                  noteText: `Added to bulk upload deal\n\nAttached document: ${file.fileName}`,
+                  dealName: dealName.trim()
+                });
+              }
+
+              if (result.success) {
+                successCount++;
+                console.log(`✅ [BULK-FIRST-TIME] Added file to deal: ${file.fileName} (${file.fileType})`);
+              } else {
+                failCount++;
+                console.error(`❌ [BULK-FIRST-TIME] Failed to add ${file.fileName} to deal:`, result.error);
+              }
             }
           } catch (err) {
             failCount++;
-            console.error(`Error uploading ${file.fileName}:`, err);
+            console.error(`💥 [BULK-FIRST-TIME] Error processing ${file.fileName}:`, err);
           }
         }
 
         if (successCount > 0) {
           setStep('success');
           const message = failCount > 0
-            ? `Uploaded ${successCount} files successfully, ${failCount} failed`
-            : `Successfully uploaded all ${successCount} files to Zoho Bigin!`;
+            ? `Created deal and added ${successCount} files, ${failCount} failed`
+            : `Successfully created deal with all ${successCount} files!`;
           setToastMessage({ message, type: successCount === bulkFiles.length ? 'success' : 'warning' });
           onSuccess();
         } else {
-          setError('All uploads failed. Please check your connection and try again.');
+          setError('Failed to create deal and upload files. Please check your connection and try again.');
           setStep('error');
         }
         return;
@@ -322,6 +417,69 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
     try {
       setStep('uploading');
+
+      // ✅ BULK UPDATE MODE: Process multiple files for existing folder
+      if (bulkFiles && bulkFiles.length > 0) {
+        console.log(`♻️ [BULK-UPDATE] Processing ${bulkFiles.length} files for existing folder`);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const file of bulkFiles) {
+          try {
+            console.log(`📤 [BULK-UPDATE] Uploading file: ${file.fileName} (${file.id}) - Type: ${file.fileType || 'unknown'}`);
+
+            let result;
+
+            if (file.fileType === 'main_pdf') {
+              // Main agreement file - use standard updateUpload
+              result = await zohoApi.updateUpload(file.id, {
+                noteText: `${noteText.trim()}\n\nDocument: ${file.fileName}`
+              });
+            } else {
+              // Attached file - need to get existing mapping to find dealId
+              const statusResult = await zohoApi.getUploadStatus(bulkFiles.find(f => f.fileType === 'main_pdf')?.id || bulkFiles[0].id);
+              const dealId = statusResult.mapping?.zohoDeal?.id;
+
+              if (!dealId) {
+                throw new Error('Could not find existing deal ID for attached file upload');
+              }
+
+              result = await zohoApi.uploadAttachedFile(file.id, {
+                dealId: dealId,
+                noteText: `${noteText.trim()}\n\nAttached document: ${file.fileName}`,
+                dealName: statusResult.mapping?.dealName || 'Unknown Deal'
+              });
+            }
+
+            if (result.success) {
+              successCount++;
+              console.log(`✅ [BULK-UPDATE] Success: ${file.fileName} (${file.fileType})`);
+            } else {
+              failCount++;
+              console.error(`❌ [BULK-UPDATE] Failed: ${file.fileName}:`, result.error);
+            }
+          } catch (err) {
+            failCount++;
+            console.error(`💥 [BULK-UPDATE] Error uploading ${file.fileName}:`, err);
+          }
+        }
+
+        if (successCount > 0) {
+          setStep('success');
+          const message = failCount > 0
+            ? `Added ${successCount} files to existing deal, ${failCount} failed`
+            : `Successfully added all ${successCount} files to existing deal!`;
+          setToastMessage({ message, type: successCount === bulkFiles.length ? 'success' : 'warning' });
+          onSuccess();
+        } else {
+          setError('All file additions failed. Please check your connection and try again.');
+          setStep('error');
+        }
+        return;
+      }
+
+      // ✅ SINGLE UPDATE MODE: Original logic
+      console.log(`♻️ [SINGLE-UPDATE] Processing single file: ${agreementId}`);
       const result = await zohoApi.updateUpload(agreementId, {
         noteText: noteText.trim()
       });

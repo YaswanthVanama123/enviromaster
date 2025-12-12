@@ -298,8 +298,9 @@ export default function SavedFilesAgreements() {
       setCurrentZohoFile(filesWithPdf[0]);
       setZohoUploadOpen(true);
     } else {
-      // For multiple files, use bulk upload modal
-      setSelectedFilesForBulkUpload(filesWithPdf);
+      // ✅ FIXED: For multiple files, use original file IDs but handle them properly in backend
+      console.log(`🔍 [FOLDER-UPLOAD] Uploading ${filesWithPdf.length} files from agreement folder`);
+      setSelectedFilesForBulkUpload(filesWithPdf); // Use original file structure
       setBulkZohoUploadOpen(true);
     }
   };
