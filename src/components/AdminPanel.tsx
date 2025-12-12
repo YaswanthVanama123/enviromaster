@@ -228,14 +228,30 @@ export default function AdminPanel() {
     }
   };
 
-  const handleViewPDF = (docId: string, fileName: string) => {
+  const handleViewPDF = (docId: string, fileName: string, docType?: string) => {
     // Navigate to PDF viewer with context-aware return path
     const adminReturnPath = `/admin-panel/${activeTab}`;
+
+    // ✅ SMART DOCUMENT TYPE DETECTION: For admin panel, try to determine document type
+    // If docType is provided, use it; otherwise rely on PDFViewer auto-detection
+    let documentType: 'agreement' | 'manual-upload' | 'attached-file' | undefined = undefined;
+
+    if (docType === 'agreement' || docType === 'main_pdf') {
+      documentType = 'agreement';
+    } else if (docType === 'manual-upload') {
+      documentType = 'manual-upload';
+    } else if (docType === 'attached-file' || docType === 'attached_pdf') {
+      documentType = 'attached-file';
+    }
+    // If no type specified, PDFViewer will auto-detect by trying different APIs
+
+    console.log(`📄 [ADMIN-VIEW] Viewing document ${docId} (detected type: ${documentType || 'auto-detect'})`);
 
     navigate("/pdf-viewer", {
       state: {
         documentId: docId,
         fileName: fileName,
+        documentType: documentType, // ✅ NEW: Include document type when available
         // Add navigation context to prevent loops - use current admin tab context
         originalReturnPath: adminReturnPath,
         originalReturnState: null,

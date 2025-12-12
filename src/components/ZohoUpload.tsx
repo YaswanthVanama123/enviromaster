@@ -10,7 +10,8 @@ import {
   faCheckCircle,
   faExclamationTriangle,
   faHistory,
-  faSearch
+  faSearch,
+  faFileAlt
 } from "@fortawesome/free-solid-svg-icons";
 import { zohoApi } from "../backendservice/api";
 import type { ZohoCompany, ZohoUploadStatus, ZohoPipelineOptions } from "../backendservice/api";
@@ -23,6 +24,8 @@ interface ZohoUploadProps {
   agreementTitle: string;
   onClose: () => void;
   onSuccess: () => void;
+  // ✅ NEW: Optional bulk upload support using existing UI
+  bulkFiles?: Array<{ id: string; fileName: string; title: string }>;
 }
 
 type UploadStep = 'loading' | 'first-time' | 'update' | 'uploading' | 'success' | 'error';
@@ -31,7 +34,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   agreementId,
   agreementTitle,
   onClose,
-  onSuccess
+  onSuccess,
+  bulkFiles  // ✅ NEW: Optional bulk files array
 }) => {
   // State management
   const [step, setStep] = useState<UploadStep>('loading');
@@ -61,13 +65,35 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   // Initialize component
   useEffect(() => {
     initializeUpload();
-  }, [agreementId]);
+  }, [agreementId, bulkFiles]);  // ✅ Also watch bulkFiles changes
 
   const initializeUpload = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // ✅ BULK UPLOAD MODE: Skip status check, go directly to company selection
+      if (bulkFiles && bulkFiles.length > 0) {
+        // Load companies for bulk upload (same UI as single upload)
+        const companiesResult = await zohoApi.getCompanies(1);
+
+        if (!companiesResult.success) {
+          throw new Error(companiesResult.error || 'Failed to load companies');
+        }
+
+        setCompanies(companiesResult.companies || []);
+
+        // Set default deal name for bulk upload
+        const defaultDealName = bulkFiles.length === 1
+          ? bulkFiles[0].title
+          : `Bulk Upload - ${bulkFiles.length} Documents`;
+        setDealName(defaultDealName);
+
+        setStep('first-time');
+        return;
+      }
+
+      // ✅ SINGLE UPLOAD MODE: Original logic
       // Check upload status
       const statusResult = await zohoApi.getUploadStatus(agreementId);
       setUploadStatus(statusResult);
@@ -220,6 +246,50 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
     try {
       setStep('uploading');
+
+      // ✅ BULK UPLOAD MODE: Process multiple files
+      if (bulkFiles && bulkFiles.length > 0) {
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const file of bulkFiles) {
+          try {
+            const result = await zohoApi.firstTimeUpload(file.id, {
+              companyId: selectedCompany.id,
+              companyName: selectedCompany.name,
+              dealName: `${dealName.trim()} - ${file.fileName}`,
+              pipelineName,
+              stage,
+              noteText: `${noteText.trim()}\n\nDocument: ${file.fileName}`
+            });
+
+            if (result.success) {
+              successCount++;
+            } else {
+              failCount++;
+              console.error(`Failed to upload ${file.fileName}:`, result.error);
+            }
+          } catch (err) {
+            failCount++;
+            console.error(`Error uploading ${file.fileName}:`, err);
+          }
+        }
+
+        if (successCount > 0) {
+          setStep('success');
+          const message = failCount > 0
+            ? `Uploaded ${successCount} files successfully, ${failCount} failed`
+            : `Successfully uploaded all ${successCount} files to Zoho Bigin!`;
+          setToastMessage({ message, type: successCount === bulkFiles.length ? 'success' : 'warning' });
+          onSuccess();
+        } else {
+          setError('All uploads failed. Please check your connection and try again.');
+          setStep('error');
+        }
+        return;
+      }
+
+      // ✅ SINGLE UPLOAD MODE: Original logic
       const result = await zohoApi.firstTimeUpload(agreementId, {
         companyId: selectedCompany.id,
         companyName: selectedCompany.name,
@@ -285,10 +355,36 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       <div className="zoho-upload__header">
         <h3>
           <FontAwesomeIcon icon={faUpload} />
-          First-time Upload to Zoho Bigin
+          {bulkFiles && bulkFiles.length > 0
+            ? `Upload ${bulkFiles.length} Files to Zoho Bigin`
+            : 'First-time Upload to Zoho Bigin'
+          }
         </h3>
-        <p>This agreement hasn't been uploaded to Zoho yet. Let's set it up!</p>
+        <p>
+          {bulkFiles && bulkFiles.length > 0
+            ? `Upload ${bulkFiles.length} documents to your Zoho Bigin CRM.`
+            : "This agreement hasn't been uploaded to Zoho yet. Let's set it up!"
+          }
+        </p>
       </div>
+
+      {/* ✅ NEW: Show files list for bulk uploads using existing UI styles */}
+      {bulkFiles && bulkFiles.length > 0 && (
+        <div className="zoho-upload__section">
+          <label className="zoho-upload__label">
+            <FontAwesomeIcon icon={faFileAlt} />
+            Documents to Upload
+          </label>
+          <div className="zoho-upload__files-preview">
+            {bulkFiles.map((file, index) => (
+              <div key={file.id} className="zoho-upload__file-preview">
+                <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
+                <span className="file-name">{file.fileName}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="zoho-upload__form">
         {/* Company Selection */}

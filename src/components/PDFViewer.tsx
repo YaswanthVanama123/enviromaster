@@ -3,11 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
+import { manualUploadApi } from "../backendservice/api/manualUploadApi";
 import "./PDFViewer.css";
+
+type DocumentType = 'agreement' | 'manual-upload' | 'attached-file';
 
 type LocationState = {
   documentId?: string;
   fileName?: string;
+  documentType?: DocumentType; // ✅ NEW: Specify document type for correct API selection
   fromEdit?: boolean; // Added to track if coming from edit
   originalReturnPath?: string; // Added to track original source
   originalReturnState?: any; // Added to track original state
@@ -19,6 +23,7 @@ export default function PDFViewer() {
   const {
     documentId,
     fileName,
+    documentType, // ✅ NEW: Get document type from navigation state
     fromEdit = false,
     originalReturnPath,
     originalReturnState
@@ -41,13 +46,72 @@ export default function PDFViewer() {
     const fetchPDF = async () => {
       try {
         setLoading(true);
-        console.log(`📄 [PDF-VIEWER] Fetching PDF for document: ${documentId}`);
+        console.log(`📄 [PDF-VIEWER] Fetching PDF for document: ${documentId}, type: ${documentType || 'auto-detect'}`);
 
-        const blob = await pdfApi.downloadPdf(documentId);
+        // 🎯 SMART API SELECTION: Use correct endpoint based on document type
+        let blob: Blob;
+        let detectedType = documentType;
+
+        if (documentType === 'manual-upload') {
+          // Use manual upload API
+          console.log(`📁 [PDF-VIEWER] Using manual upload API for document ${documentId}`);
+          blob = await manualUploadApi.downloadFile(documentId);
+          detectedType = 'manual-upload';
+        } else if (documentType === 'attached-file') {
+          // Use attached file API
+          console.log(`📎 [PDF-VIEWER] Using attached file API for document ${documentId}`);
+          blob = await pdfApi.downloadAttachedFile(documentId);
+          detectedType = 'attached-file';
+        } else if (documentType === 'agreement') {
+          // Use agreement API
+          console.log(`📋 [PDF-VIEWER] Using agreement API for document ${documentId}`);
+          blob = await pdfApi.downloadPdf(documentId);
+          detectedType = 'agreement';
+        } else {
+          // 🔍 AUTO-DETECTION: Try different APIs until one works
+          console.log(`🔍 [PDF-VIEWER] Auto-detecting document type for ${documentId}`);
+
+          try {
+            // Try agreement API first (most common)
+            console.log(`🔍 [PDF-VIEWER] Trying agreement API...`);
+            blob = await pdfApi.downloadPdf(documentId);
+            detectedType = 'agreement';
+            console.log(`✅ [PDF-VIEWER] Auto-detected as agreement document`);
+          } catch (agreementErr: any) {
+            if (agreementErr.response?.status === 404) {
+              try {
+                // Try manual upload API
+                console.log(`🔍 [PDF-VIEWER] Trying manual upload API...`);
+                blob = await manualUploadApi.downloadFile(documentId);
+                detectedType = 'manual-upload';
+                console.log(`✅ [PDF-VIEWER] Auto-detected as manual upload document`);
+              } catch (manualErr: any) {
+                if (manualErr.response?.status === 404) {
+                  try {
+                    // Try attached file API
+                    console.log(`🔍 [PDF-VIEWER] Trying attached file API...`);
+                    blob = await pdfApi.downloadAttachedFile(documentId);
+                    detectedType = 'attached-file';
+                    console.log(`✅ [PDF-VIEWER] Auto-detected as attached file document`);
+                  } catch (attachedErr: any) {
+                    // All APIs failed, throw the original agreement error
+                    console.error(`❌ [PDF-VIEWER] All APIs failed for document ${documentId}`);
+                    throw agreementErr;
+                  }
+                } else {
+                  throw manualErr;
+                }
+              }
+            } else {
+              throw agreementErr;
+            }
+          }
+        }
+
         const url = window.URL.createObjectURL(blob);
         setPdfUrl(url);
 
-        console.log(`✅ [PDF-VIEWER] PDF loaded successfully`);
+        console.log(`✅ [PDF-VIEWER] PDF loaded successfully (type: ${detectedType})`);
       } catch (err: any) {
         console.error("❌ [PDF-VIEWER] Error fetching PDF:", err);
 

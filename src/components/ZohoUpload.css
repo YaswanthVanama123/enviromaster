@@ -465,3 +465,73 @@
     padding: 30px 16px;
   }
 }
+
+/* ✅ NEW: Enhanced Bulk Upload Styles */
+.zoho-upload__files-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.zoho-upload__files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.zoho-upload__file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.zoho-upload__file-item svg {
+  color: #2563eb;
+  font-size: 14px;
+}
+
+/* ✅ NEW: Files preview for bulk upload */
+.zoho-upload__files-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.zoho-upload__file-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.zoho-upload__file-preview:last-child {
+  margin-bottom: 0;
+}
+
+.zoho-upload__file-preview .file-icon {
+  color: #2563eb;
+  font-size: 14px;
+}
+
+.zoho-upload__file-preview .file-name {
+  font-weight: 500;
+}

@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare
+  faPlus, faCheckSquare, faSquare, faCloudUploadAlt
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
@@ -217,10 +217,17 @@ export default function SavedFilesAgreements() {
       if (file.fileType === 'main_pdf') {
         await pdfApi.getSavedFileDetails(file.id);
       }
+
+      // ✅ SMART NAVIGATION: Include document type for correct API selection
+      const documentType = file.fileType === 'main_pdf' ? 'agreement' : 'attached-file';
+
+      console.log(`📄 [VIEW] Navigating to PDF viewer: ${file.id} (type: ${documentType})`);
+
       navigate("/pdf-viewer", {
         state: {
           documentId: file.id,
           fileName: file.title,
+          documentType: documentType, // ✅ NEW: Specify document type for correct API
           originalReturnPath: returnPath,
         },
       });
@@ -272,6 +279,29 @@ export default function SavedFilesAgreements() {
     }
     setCurrentZohoFile(file);
     setZohoUploadOpen(true);
+  };
+
+  // ✅ NEW: Handle Zoho upload for entire agreement (folder-level upload)
+  const handleAgreementZohoUpload = (agreement: SavedFileGroup) => {
+    const filesWithPdf = agreement.files.filter(file => file.hasPdf);
+
+    if (filesWithPdf.length === 0) {
+      setToastMessage({
+        message: "This agreement has no PDFs to upload. Please generate PDFs first.",
+        type: "error"
+      });
+      return;
+    }
+
+    // For single file agreements, use the single file upload modal
+    if (filesWithPdf.length === 1) {
+      setCurrentZohoFile(filesWithPdf[0]);
+      setZohoUploadOpen(true);
+    } else {
+      // For multiple files, use bulk upload modal
+      setSelectedFilesForBulkUpload(filesWithPdf);
+      setBulkZohoUploadOpen(true);
+    }
   };
 
   const handleEdit = async (file: SavedFileListItem) => {
@@ -539,30 +569,60 @@ export default function SavedFilesAgreements() {
                   </div>
                 </div>
 
-                {/* ✅ CORRECTED: Add file button */}
-                <button
-                  style={{
-                    background: '#f3f4f6',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    padding: '6px 8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '12px',
-                    color: '#374151',
-                    fontWeight: '500'
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddFileToAgreement(agreement);
-                  }}
-                  title="Add file to this agreement"
-                >
-                  <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
-                  Add
-                </button>
+                {/* ✅ CORRECTED: Add file button and Zoho upload button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Zoho Bigin Upload Button */}
+                  <button
+                    style={{
+                      background: '#f97316',
+                      border: '1px solid #ea580c',
+                      borderRadius: '6px',
+                      padding: '6px 8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      color: '#fff',
+                      fontWeight: '500',
+                      opacity: agreement.files.filter(f => f.hasPdf).length > 0 ? 1 : 0.5
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAgreementZohoUpload(agreement);
+                    }}
+                    disabled={agreement.files.filter(f => f.hasPdf).length === 0}
+                    title={`Upload ${agreement.files.filter(f => f.hasPdf).length} PDFs to Zoho Bigin`}
+                  >
+                    <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
+                    Zoho
+                  </button>
+
+                  {/* Add File Button */}
+                  <button
+                    style={{
+                      background: '#f3f4f6',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      padding: '6px 8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      color: '#374151',
+                      fontWeight: '500'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddFileToAgreement(agreement);
+                    }}
+                    title="Add file to this agreement"
+                  >
+                    <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
+                    Add
+                  </button>
+                </div>
               </div>
 
               {isAgreementExpanded(agreement.id) && (
@@ -759,124 +819,31 @@ export default function SavedFilesAgreements() {
         />
       )}
 
-      {/* Bulk Zoho Upload Modal */}
+      {/* Bulk Zoho Upload Modal - Using Enhanced Existing ZohoUpload Component */}
       {bulkZohoUploadOpen && selectedFilesForBulkUpload.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '24px',
-            maxWidth: '500px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflow: 'auto'
-          }}>
-            <h3 style={{
-              margin: '0 0 16px',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#374151'
-            }}>
-              Upload {selectedFilesForBulkUpload.length} Files to Zoho Bigin
-            </h3>
-
-            <div style={{
-              background: '#f9fafb',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '20px'
-            }}>
-              <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
-                Selected files:
-              </div>
-              {selectedFilesForBulkUpload.map((file) => (
-                <div key={file.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '4px 0',
-                  fontSize: '13px'
-                }}>
-                  <FontAwesomeIcon icon={faFileAlt} style={{ color: '#2563eb' }} />
-                  <span>{file.fileName}</span>
-                  <span style={{ color: '#10b981' }}>📎</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end'
-            }}>
-              <button
-                type="button"
-                style={{
-                  background: '#f3f4f6',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
-                onClick={() => {
-                  setBulkZohoUploadOpen(false);
-                  setSelectedFilesForBulkUpload([]);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                style={{
-                  background: '#f59e0b',
-                  border: '1px solid #f59e0b',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#fff'
-                }}
-                onClick={async () => {
-                  try {
-                    setBulkZohoUploadOpen(false);
-                    setSelectedFilesForBulkUpload([]);
-                    clearAllSelections();
-
-                    setToastMessage({
-                      message: `Successfully uploaded ${selectedFilesForBulkUpload.length} files to Zoho Bigin!`,
-                      type: "success"
-                    });
-
-                    await fetchAgreements(currentPage, query);
-                  } catch (error) {
-                    setToastMessage({
-                      message: "Failed to upload files to Zoho. Please try again.",
-                      type: "error"
-                    });
-                  }
-                }}
-              >
-                <FontAwesomeIcon icon={faUpload} style={{ marginRight: '6px' }} />
-                Upload All
-              </button>
-            </div>
-          </div>
-        </div>
+        <ZohoUpload
+          agreementId={selectedFilesForBulkUpload[0]?.id || ''} // Use first file ID as primary
+          agreementTitle={`Bulk Upload - ${selectedFilesForBulkUpload.length} Documents`}
+          bulkFiles={selectedFilesForBulkUpload.map(file => ({
+            id: file.id,
+            fileName: file.fileName,
+            title: file.title
+          }))}
+          onClose={() => {
+            setBulkZohoUploadOpen(false);
+            setSelectedFilesForBulkUpload([]);
+          }}
+          onSuccess={() => {
+            setBulkZohoUploadOpen(false);
+            setSelectedFilesForBulkUpload([]);
+            clearAllSelections();
+            fetchAgreements(currentPage, query);
+            setToastMessage({
+              message: `Successfully uploaded ${selectedFilesForBulkUpload.length} files to Zoho Bigin!`,
+              type: "success"
+            });
+          }}
+        />
       )}
 
       {/* ✅ NEW: File Upload Modal */}
