@@ -1,11 +1,13 @@
 // src/components/services/ServicesContext.tsx
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
+import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 
 /**
  * Cross-service integration context.
  * Allows services and products to know about each other's state.
  * NOW ALSO: Stores complete service data for form saving
+ * UPDATED: Includes backend pricing data to replace static fallbacks
  */
 
 export interface ServicesState {
@@ -29,6 +31,10 @@ interface ServicesContextValue {
   updateSaniclean: (update: Partial<ServicesState["saniclean"]>) => void;
   updateService: (serviceName: keyof ServicesState, data: any) => void;
 
+  // Backend pricing data - replaces static fallbacks for inactive services
+  backendPricingData: ServiceConfig[];
+  getBackendPricingForService: (serviceId: string) => ServiceConfig | null;
+
   // Helper computed values
   isSanicleanAllInclusive: boolean;
   sanicleanPaperCreditPerWeek: number; // $5 per fixture per week
@@ -38,8 +44,12 @@ const ServicesContext = createContext<ServicesContextValue | undefined>(
   undefined
 );
 
-export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
+export const ServicesProvider: React.FC<{
+  children: React.ReactNode;
+  backendPricingData?: ServiceConfig[]
+}> = ({
   children,
+  backendPricingData = [],
 }) => {
   const [servicesState, setServicesState] = useState<ServicesState>({});
 
@@ -67,6 +77,11 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  // Helper function to get backend pricing for a specific service
+  const getBackendPricingForService = useCallback((serviceId: string): ServiceConfig | null => {
+    return backendPricingData.find(config => config.serviceId === serviceId) || null;
+  }, [backendPricingData]);
+
   const value = useMemo<ServicesContextValue>(() => {
     // Computed: Is SaniClean in all-inclusive mode?
     // Access the structured data format
@@ -88,10 +103,12 @@ export const ServicesProvider: React.FC<{ children: React.ReactNode }> = ({
       servicesState,
       updateSaniclean,
       updateService,
+      backendPricingData,
+      getBackendPricingForService,
       isSanicleanAllInclusive,
       sanicleanPaperCreditPerWeek,
     };
-  }, [servicesState, updateSaniclean, updateService]); // ✅ Keep dependencies - callbacks are stable
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService]); // ✅ Keep dependencies - callbacks are stable
 
   return (
     <ServicesContext.Provider value={value}>

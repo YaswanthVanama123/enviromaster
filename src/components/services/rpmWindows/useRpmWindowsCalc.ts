@@ -9,6 +9,7 @@ import type {
 } from "./rpmWindowsTypes";
 import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendRpmConfig {
@@ -80,6 +81,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
   // ✅ Store base weekly rates (from backend) separately
   const [baseWeeklyRates, setBaseWeeklyRates] = useState({
     small: cfg.smallWindowRate,
@@ -106,8 +110,30 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
       // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ RPM Windows config not found in backend, using default fallback values');
+        console.warn('⚠️ RPM Windows config not found in active services, trying fallback pricing...');
         console.warn('⚠️ [RPM Windows] Error:', response?.error);
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("rpmWindows");
+          if (fallbackConfig?.config) {
+            console.log('✅ [RPM Windows] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendRpmConfig;
+            setBackendConfig(config);
+
+            setBaseWeeklyRates({
+              small: config.smallWindowRate ?? baseWeeklyRates.small,
+              medium: config.mediumWindowRate ?? baseWeeklyRates.medium,
+              large: config.largeWindowRate ?? baseWeeklyRates.large,
+              trip: config.tripCharge ?? baseWeeklyRates.trip,
+            });
+
+            console.log('✅ RPM Windows FALLBACK CONFIG loaded from context:', config);
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -178,7 +204,26 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         statusText: error.response?.statusText,
         data: error.response?.data,
       });
-      console.log('⚠️ Using default hardcoded values as fallback');
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("rpmWindows");
+        if (fallbackConfig?.config) {
+          console.log('✅ [RPM Windows] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendRpmConfig;
+          setBackendConfig(config);
+
+          setBaseWeeklyRates({
+            small: config.smallWindowRate ?? baseWeeklyRates.small,
+            medium: config.mediumWindowRate ?? baseWeeklyRates.medium,
+            large: config.largeWindowRate ?? baseWeeklyRates.large,
+            trip: config.tripCharge ?? baseWeeklyRates.trip,
+          });
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
@@ -188,6 +233,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   useEffect(() => {
     fetchPricing();
   }, []); // Run once on mount
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   // ✅ Update rate fields when frequency changes (apply frequency multiplier)
   useEffect(() => {

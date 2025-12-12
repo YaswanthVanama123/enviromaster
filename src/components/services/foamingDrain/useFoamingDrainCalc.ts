@@ -10,6 +10,7 @@ import type {
   FoamingDrainBreakdown,
 } from "./foamingDrainTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendFoamingDrainConfig {
@@ -120,6 +121,28 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   const [backendConfig, setBackendConfig] = useState<BackendFoamingDrainConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // Helper function to update state with config data
+  const updateStateWithConfig = (config: BackendFoamingDrainConfig) => {
+    setState((prev) => ({
+      ...prev,
+      // Update all rate fields from backend if available
+      standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
+      altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
+      altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
+      volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
+      volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
+      greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
+      greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
+      greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
+      greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
+      plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
+      filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
+    }));
+  };
+
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
@@ -128,7 +151,37 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ Foaming Drain config not found in backend, using default fallback values');
+        console.warn('⚠️ Foaming Drain config not found in active services, trying fallback pricing...');
+        console.warn('⚠️ [Foaming Drain] Error:', response?.error);
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("foamingDrain");
+          if (fallbackConfig?.config) {
+            console.log('✅ [Foaming Drain] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendFoamingDrainConfig;
+            setBackendConfig(config);
+            updateStateWithConfig(config);
+
+            console.log('✅ Foaming Drain FALLBACK CONFIG loaded from context:', {
+              standardDrainRate: config.standardDrainRate,
+              altPricing: {
+                baseCharge: config.altBaseCharge,
+                extraPerDrain: config.altExtraPerDrain,
+              },
+              volumePricing: config.volumePricing,
+              grease: config.grease,
+              green: config.green,
+              plumbing: config.plumbing,
+              installationRules: config.installationRules,
+              billingConversions: config.billingConversions,
+              contract: config.contract,
+            });
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -144,22 +197,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-
-      setState((prev) => ({
-        ...prev,
-        // Update all rate fields from backend if available
-        standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
-        altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
-        altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
-        volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
-        volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
-        greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
-        greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
-        greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
-        greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
-        plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
-        filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
-      }));
+      updateStateWithConfig(config);
 
       console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
         standardDrainRate: config.standardDrainRate,
@@ -177,7 +215,26 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       });
     } catch (error) {
       console.error('❌ Failed to fetch Foaming Drain config from backend:', error);
-      console.log('⚠️ Using default hardcoded values as fallback');
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("foamingDrain");
+        if (fallbackConfig?.config) {
+          console.log('✅ [Foaming Drain] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendFoamingDrainConfig;
+          setBackendConfig(config);
+          updateStateWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
@@ -188,6 +245,13 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========

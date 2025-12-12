@@ -8,6 +8,7 @@ import type {
   SanipodServiceRuleKey,
 } from "./sanipodTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendSanipodConfig {
@@ -181,6 +182,23 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
   const [backendConfig, setBackendConfig] = useState<BackendSanipodConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // Helper function to update form with config data
+  const updateFormWithConfig = (config: BackendSanipodConfig) => {
+    setForm((prev) => ({
+      ...prev,
+      // Update all rate fields from backend if available
+      weeklyRatePerUnit: config.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
+      altWeeklyRatePerUnit: config.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
+      extraBagPrice: config.extraBagPrice ?? prev.extraBagPrice,
+      standaloneExtraWeeklyCharge: config.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
+      installRatePerPod: config.installChargePerUnit ?? prev.installRatePerPod,
+      tripChargePerVisit: config.tripChargePerVisit ?? prev.tripChargePerVisit,
+    }));
+  };
+
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
@@ -189,7 +207,42 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
       // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ SaniPod config not found in backend, using default fallback values');
+        console.warn('⚠️ SaniPod config not found in active services, trying fallback pricing...');
+        console.warn('⚠️ [SaniPod] Error:', response?.error);
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("sanipod");
+          if (fallbackConfig?.config) {
+            console.log('✅ [SaniPod] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendSanipodConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config);
+
+            console.log('✅ SaniPod FALLBACK CONFIG loaded from context:', {
+              pricing: {
+                weeklyRate: config.weeklyRatePerUnit,
+                altRate: config.altWeeklyRatePerUnit,
+                extraBag: config.extraBagPrice,
+                standaloneExtra: config.standaloneExtraWeeklyCharge,
+                installRate: config.installChargePerUnit,
+              },
+              rateCategories: config.rateCategories,
+              billingConversions: {
+                weeksPerMonth: config.weeksPerMonth,
+                weeksPerYear: config.weeksPerYear,
+              },
+              annualFrequencies: config.annualFrequencies,
+              contractLimits: {
+                min: config.minContractMonths,
+                max: config.maxContractMonths,
+              },
+            });
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -205,17 +258,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-
-      setForm((prev) => ({
-        ...prev,
-        // Update all rate fields from backend if available
-        weeklyRatePerUnit: config.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
-        altWeeklyRatePerUnit: config.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
-        extraBagPrice: config.extraBagPrice ?? prev.extraBagPrice,
-        standaloneExtraWeeklyCharge: config.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
-        installRatePerPod: config.installChargePerUnit ?? prev.installRatePerPod,
-        tripChargePerVisit: config.tripChargePerVisit ?? prev.tripChargePerVisit,
-      }));
+      updateFormWithConfig(config);
 
       console.log('✅ SaniPod FULL CONFIG loaded from backend:', {
         pricing: {
@@ -238,7 +281,26 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       });
     } catch (error) {
       console.error('❌ Failed to fetch SaniPod config from backend:', error);
-      console.log('⚠️ Using default hardcoded values as fallback');
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("sanipod");
+        if (fallbackConfig?.config) {
+          console.log('✅ [SaniPod] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendSanipodConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
@@ -249,6 +311,13 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>

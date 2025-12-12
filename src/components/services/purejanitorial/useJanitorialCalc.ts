@@ -9,6 +9,7 @@ import type {
   JanitorialFormState,
 } from "./janitorialTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // ✅ Backend tiered pricing structure
 interface TieredPricingTier {
@@ -137,15 +138,59 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // Helper function to update form with config data
+  const updateFormWithConfig = (config: BackendJanitorialConfig) => {
+    setForm((prev) => ({
+      ...prev,
+      // Update all rate fields from backend if available
+      baseHourlyRate: config.baseHourlyRate ?? prev.baseHourlyRate,
+      shortJobHourlyRate: config.shortJobHourlyRate ?? prev.shortJobHourlyRate,
+      minHoursPerVisit: config.minHoursPerVisit ?? prev.minHoursPerVisit,
+      weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
+      dustingPlacesPerHour: config.dustingPlacesPerHour ?? prev.dustingPlacesPerHour,
+      dustingPricePerPlace: config.dustingPricePerPlace ?? prev.dustingPricePerPlace,
+      vacuumingDefaultHours: config.vacuumingDefaultHours ?? prev.vacuumingDefaultHours,
+    }));
+  };
+
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
     try {
+      // First try to get active service config
       const response = await serviceConfigApi.getActive("pureJanitorial");
 
       // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ Pure Janitorial config not found in backend, using default fallback values');
+        console.warn('⚠️ Pure Janitorial config not found in active services, trying fallback pricing...');
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("pureJanitorial");
+          if (fallbackConfig?.config) {
+            console.log('✅ [Pure Janitorial] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendJanitorialConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config);
+
+            console.log('✅ Pure Janitorial FALLBACK CONFIG loaded from context:', {
+              baseHourlyRate: config.baseHourlyRate,
+              shortJobHourlyRate: config.shortJobHourlyRate,
+              minHoursPerVisit: config.minHoursPerVisit,
+              weeksPerMonth: config.weeksPerMonth,
+              dustingPlacesPerHour: config.dustingPlacesPerHour,
+              dustingPricePerPlace: config.dustingPricePerPlace,
+              vacuumingDefaultHours: config.vacuumingDefaultHours,
+              tieredPricing: config.tieredPricing,
+            });
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -161,20 +206,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
+      updateFormWithConfig(config);
 
-      setForm((prev) => ({
-        ...prev,
-        // Update all rate fields from backend if available
-        baseHourlyRate: config.baseHourlyRate ?? prev.baseHourlyRate,
-        shortJobHourlyRate: config.shortJobHourlyRate ?? prev.shortJobHourlyRate,
-        minHoursPerVisit: config.minHoursPerVisit ?? prev.minHoursPerVisit,
-        weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
-        dustingPlacesPerHour: config.dustingPlacesPerHour ?? prev.dustingPlacesPerHour,
-        dustingPricePerPlace: config.dustingPricePerPlace ?? prev.dustingPricePerPlace,
-        vacuumingDefaultHours: config.vacuumingDefaultHours ?? prev.vacuumingDefaultHours,
-      }));
-
-      console.log('✅ Pure Janitorial FULL CONFIG loaded from backend:', {
+      console.log('✅ Pure Janitorial ACTIVE CONFIG loaded from backend:', {
         baseHourlyRate: config.baseHourlyRate,
         shortJobHourlyRate: config.shortJobHourlyRate,
         minHoursPerVisit: config.minHoursPerVisit,
@@ -186,7 +220,20 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       });
     } catch (error) {
       console.error('❌ Failed to fetch Pure Janitorial config from backend:', error);
-      console.log('⚠️ Using default hardcoded values as fallback');
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("pureJanitorial");
+        if (fallbackConfig?.config) {
+          console.log('✅ [Pure Janitorial] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendJanitorialConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
@@ -197,6 +244,13 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>

@@ -8,6 +8,7 @@ import type {
 } from "./electrostaticSprayTypes";
 import { electrostaticSprayPricingConfig as cfg } from "./electrostaticSprayConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // Backend config interface matching MongoDB JSON structure
 interface BackendElectrostaticSprayConfig {
@@ -45,6 +46,37 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   const [backendConfig, setBackendConfig] = useState<BackendElectrostaticSprayConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // Helper function to update form with config data
+  const updateFormWithConfig = (config: BackendElectrostaticSprayConfig) => {
+    setForm((prev) => {
+      // Only update if not already set by initialData
+      const updates: Partial<ElectrostaticSprayFormState> = {};
+
+      if (config.defaultRatePerRoom != null && !initialData?.ratePerRoom) {
+        updates.ratePerRoom = config.defaultRatePerRoom;
+      }
+
+      if (config.defaultRatePerSqFt != null && !initialData?.ratePerThousandSqFt) {
+        // Convert per sq ft to per 1000 sq ft
+        updates.ratePerThousandSqFt = config.defaultRatePerSqFt * 1000;
+      }
+
+      if (config.defaultTripCharge != null && !initialData?.tripChargePerVisit) {
+        updates.tripChargePerVisit = config.defaultTripCharge;
+      }
+
+      console.log('📊 [ElectrostaticSpray] Updating Form State:', updates);
+
+      return {
+        ...prev,
+        ...updates,
+      };
+    });
+  };
+
   // Fetch pricing config from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
@@ -53,7 +85,28 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
       // Check if response has error or no data
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ ElectrostaticSpray config not found in backend, using default fallback values');
+        console.warn('⚠️ ElectrostaticSpray config not found in active services, trying fallback pricing...');
+        console.warn('⚠️ [ElectrostaticSpray] Error:', response?.error);
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("electrostaticSpray");
+          if (fallbackConfig?.config) {
+            console.log('✅ [ElectrostaticSpray] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config);
+
+            console.log('✅ ElectrostaticSpray FALLBACK CONFIG loaded from context:', {
+              ratePerRoom: config.defaultRatePerRoom,
+              ratePerSqFt: config.defaultRatePerSqFt,
+              tripCharge: config.defaultTripCharge,
+            });
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -69,39 +122,29 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
       // Store the backend config
       setBackendConfig(config);
-
-      console.log('📊 [ElectrostaticSpray] Backend Config Received:', {
-        ratePerRoom: config.defaultRatePerRoom,
-        ratePerSqFt: config.defaultRatePerSqFt,
-        tripCharge: config.defaultTripCharge,
-      });
-
-      setForm((prev) => {
-        // Only update if not already set by initialData
-        const updates: Partial<ElectrostaticSprayFormState> = {};
-
-        if (config.defaultRatePerRoom != null && !initialData?.ratePerRoom) {
-          updates.ratePerRoom = config.defaultRatePerRoom;
-        }
-
-        if (config.defaultRatePerSqFt != null && !initialData?.ratePerThousandSqFt) {
-          // Convert per sq ft to per 1000 sq ft
-          updates.ratePerThousandSqFt = config.defaultRatePerSqFt * 1000;
-        }
-
-        if (config.defaultTripCharge != null && !initialData?.tripChargePerVisit) {
-          updates.tripChargePerVisit = config.defaultTripCharge;
-        }
-
-        console.log('📊 [ElectrostaticSpray] Updating Form State:', updates);
-
-        return {
-          ...prev,
-          ...updates,
-        };
-      });
+      updateFormWithConfig(config);
     } catch (error) {
       console.error('❌ Failed to fetch ElectrostaticSpray config from backend:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("electrostaticSpray");
+        if (fallbackConfig?.config) {
+          console.log('✅ [ElectrostaticSpray] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
@@ -112,6 +155,13 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, type } = e.target;

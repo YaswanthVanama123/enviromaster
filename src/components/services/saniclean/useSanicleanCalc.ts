@@ -9,6 +9,7 @@ import type {
 } from "./sanicleanTypes";
 import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // Backend config interface matching MongoDB structure
 interface BackendSanicleanConfig extends SanicleanPricingConfig {}
@@ -361,14 +362,32 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   const [backendConfig, setBackendConfig] = useState<BackendSanicleanConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
   // Fetch configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
     try {
+      // First try to get active service config
       const response = await serviceConfigApi.getActive("saniclean");
 
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ SaniClean config not found in backend, using default values');
+        console.warn('⚠️ SaniClean config not found in active services, trying fallback pricing...');
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("saniclean");
+          if (fallbackConfig?.config) {
+            console.log('✅ [SaniClean] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendSanicleanConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config);
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -381,60 +400,84 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       const config = document.config as BackendSanicleanConfig;
       setBackendConfig(config);
 
-      console.log('📊 [SaniClean] Backend Config Received:', config);
-
-      // Update form with backend rates
-      setForm((prev) => ({
-        ...prev,
-        // All-Inclusive rates
-        allInclusiveWeeklyRatePerFixture: config.allInclusivePackage?.weeklyRatePerFixture ?? prev.allInclusiveWeeklyRatePerFixture,
-        luxuryUpgradePerDispenser: config.allInclusivePackage?.soapUpgrade?.luxuryUpgradePerDispenser ?? prev.luxuryUpgradePerDispenser,
-        excessStandardSoapRate: config.allInclusivePackage?.soapUpgrade?.excessUsageCharges?.standardSoap ?? prev.excessStandardSoapRate,
-        excessLuxurySoapRate: config.allInclusivePackage?.soapUpgrade?.excessUsageCharges?.luxurySoap ?? prev.excessLuxurySoapRate,
-        paperCreditPerFixture: config.allInclusivePackage?.paperCredit?.creditPerFixturePerWeek ?? prev.paperCreditPerFixture,
-        microfiberMoppingPerBathroom: config.allInclusivePackage?.microfiberMopping?.pricePerBathroom ?? prev.microfiberMoppingPerBathroom,
-
-        // Per-Item rates
-        insideBeltwayRatePerFixture: config.perItemCharge?.insideBeltway?.ratePerFixture ?? prev.insideBeltwayRatePerFixture,
-        insideBeltwayMinimum: config.perItemCharge?.insideBeltway?.weeklyMinimum ?? prev.insideBeltwayMinimum,
-        insideBeltwayTripCharge: config.perItemCharge?.insideBeltway?.tripCharge ?? prev.insideBeltwayTripCharge,
-        insideBeltwayParkingFee: config.perItemCharge?.insideBeltway?.parkingFee ?? prev.insideBeltwayParkingFee,
-        outsideBeltwayRatePerFixture: config.perItemCharge?.outsideBeltway?.ratePerFixture ?? prev.outsideBeltwayRatePerFixture,
-        outsideBeltwayTripCharge: config.perItemCharge?.outsideBeltway?.tripCharge ?? prev.outsideBeltwayTripCharge,
-
-        // Small facility
-        smallFacilityThreshold: config.perItemCharge?.smallFacility?.fixtureThreshold ?? prev.smallFacilityThreshold,
-        smallFacilityMinimum: config.perItemCharge?.smallFacility?.minimumWeekly ?? prev.smallFacilityMinimum,
-
-        // Components
-        urinalScreenMonthly: config.perItemCharge?.facilityComponents?.urinals?.components?.urinalScreen ?? prev.urinalScreenMonthly,
-        urinalMatMonthly: config.perItemCharge?.facilityComponents?.urinals?.components?.urinalMat ?? prev.urinalMatMonthly,
-        toiletClipsMonthly: config.perItemCharge?.facilityComponents?.maleToilets?.components?.toiletClips ?? prev.toiletClipsMonthly,
-        seatCoverDispenserMonthly: config.perItemCharge?.facilityComponents?.maleToilets?.components?.seatCoverDispenser ?? prev.seatCoverDispenserMonthly,
-        sanipodServiceMonthly: config.perItemCharge?.facilityComponents?.femaleToilets?.components?.sanipodService ?? prev.sanipodServiceMonthly,
-
-        // Warranty
-        warrantyFeePerDispenserPerWeek: config.perItemCharge?.warrantyFees?.perDispenserPerWeek ?? prev.warrantyFeePerDispenserPerWeek,
-
-        // Billing
-        weeklyToMonthlyMultiplier: config.billingConversions?.weekly?.monthlyMultiplier ?? prev.weeklyToMonthlyMultiplier,
-
-        // Rate tiers
-        redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
-        greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
-      }));
+      console.log('📊 [SaniClean] Active backend config received:', config);
+      updateFormWithConfig(config);
 
     } catch (error) {
       console.error('❌ Failed to fetch SaniClean config from backend:', error);
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("saniclean");
+        if (fallbackConfig?.config) {
+          console.log('✅ [SaniClean] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendSanicleanConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
+  };
+
+  // Helper function to update form with config data
+  const updateFormWithConfig = (config: BackendSanicleanConfig) => {
+    setForm((prev) => ({
+      ...prev,
+      // All-Inclusive rates
+      allInclusiveWeeklyRatePerFixture: config.allInclusivePackage?.weeklyRatePerFixture ?? prev.allInclusiveWeeklyRatePerFixture,
+      luxuryUpgradePerDispenser: config.allInclusivePackage?.soapUpgrade?.luxuryUpgradePerDispenser ?? prev.luxuryUpgradePerDispenser,
+      excessStandardSoapRate: config.allInclusivePackage?.soapUpgrade?.excessUsageCharges?.standardSoap ?? prev.excessStandardSoapRate,
+      excessLuxurySoapRate: config.allInclusivePackage?.soapUpgrade?.excessUsageCharges?.luxurySoap ?? prev.excessLuxurySoapRate,
+      paperCreditPerFixture: config.allInclusivePackage?.paperCredit?.creditPerFixturePerWeek ?? prev.paperCreditPerFixture,
+      microfiberMoppingPerBathroom: config.allInclusivePackage?.microfiberMopping?.pricePerBathroom ?? prev.microfiberMoppingPerBathroom,
+
+      // Per-Item rates
+      insideBeltwayRatePerFixture: config.perItemCharge?.insideBeltway?.ratePerFixture ?? prev.insideBeltwayRatePerFixture,
+      insideBeltwayMinimum: config.perItemCharge?.insideBeltway?.weeklyMinimum ?? prev.insideBeltwayMinimum,
+      insideBeltwayTripCharge: config.perItemCharge?.insideBeltway?.tripCharge ?? prev.insideBeltwayTripCharge,
+      insideBeltwayParkingFee: config.perItemCharge?.insideBeltway?.parkingFee ?? prev.insideBeltwayParkingFee,
+      outsideBeltwayRatePerFixture: config.perItemCharge?.outsideBeltway?.ratePerFixture ?? prev.outsideBeltwayRatePerFixture,
+      outsideBeltwayTripCharge: config.perItemCharge?.outsideBeltway?.tripCharge ?? prev.outsideBeltwayTripCharge,
+
+      // Small facility
+      smallFacilityThreshold: config.perItemCharge?.smallFacility?.fixtureThreshold ?? prev.smallFacilityThreshold,
+      smallFacilityMinimum: config.perItemCharge?.smallFacility?.minimumWeekly ?? prev.smallFacilityMinimum,
+
+      // Components
+      urinalScreenMonthly: config.perItemCharge?.facilityComponents?.urinals?.components?.urinalScreen ?? prev.urinalScreenMonthly,
+      urinalMatMonthly: config.perItemCharge?.facilityComponents?.urinals?.components?.urinalMat ?? prev.urinalMatMonthly,
+      toiletClipsMonthly: config.perItemCharge?.facilityComponents?.maleToilets?.components?.toiletClips ?? prev.toiletClipsMonthly,
+      seatCoverDispenserMonthly: config.perItemCharge?.facilityComponents?.maleToilets?.components?.seatCoverDispenser ?? prev.seatCoverDispenserMonthly,
+      sanipodServiceMonthly: config.perItemCharge?.facilityComponents?.femaleToilets?.components?.sanipodService ?? prev.sanipodServiceMonthly,
+
+      // Warranty
+      warrantyFeePerDispenserPerWeek: config.perItemCharge?.warrantyFees?.perDispenserPerWeek ?? prev.warrantyFeePerDispenserPerWeek,
+
+      // Billing
+      weeklyToMonthlyMultiplier: config.billingConversions?.weekly?.monthlyMultiplier ?? prev.weeklyToMonthlyMultiplier,
+
+      // Rate tiers
+      redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
+      greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+    }));
   };
 
   // Fetch on mount
   useEffect(() => {
     fetchPricing();
   }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   // Calculate quote based on pricing mode
   const quote: SanicleanQuoteResult = useMemo(() => {

@@ -1,6 +1,8 @@
 // src/components/services/janitorial/useJanitorialCalc.ts
 import { useState, useEffect, useMemo, ChangeEvent } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
+import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 import type {
   JanitorialFormState,
   JanitorialQuoteResult,
@@ -75,24 +77,6 @@ const DEFAULT_FORM: JanitorialFormState = {
   paidParkingTripCharge: cfg.tripCharges.paidParking,
 };
 
-// Simulated service config API call (replace with actual API)
-const serviceConfigApi = {
-  async getActive(serviceId: string): Promise<{ error: null, data: { config: BackendJanitorialConfig } } | { error: string }> {
-    try {
-      // Replace with actual API call
-      const response = await fetch(`/api/service-config/active/${serviceId}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const data = await response.json();
-      return { error: null, data };
-    } catch (error) {
-      console.warn('Using default config fallback:', error);
-      return { error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-  }
-};
-
 // Main hook
 export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
   // State
@@ -101,48 +85,148 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     ...initial
   }));
 
+  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // Fetch pricing from backend on mount
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // Helper function to update form with config data
+  const updateFormWithConfig = (config: BackendJanitorialConfig) => {
+    setForm((prev) => ({
+      ...prev,
+      // Update all rate fields from backend if available
+      recurringServiceRate: config.baseRates?.recurringService ?? prev.recurringServiceRate,
+      oneTimeServiceRate: config.baseRates?.oneTimeService ?? prev.oneTimeServiceRate,
+      vacuumingRatePerHour: config.additionalServices?.vacuuming?.ratePerHour ?? prev.vacuumingRatePerHour,
+      dustingRatePerHour: config.additionalServices?.dusting?.ratePerHour ?? prev.dustingRatePerHour,
+      perVisitMinimum: config.minimums?.perVisit ?? prev.perVisitMinimum,
+      recurringContractMinimum: config.minimums?.recurringContract ?? prev.recurringContractMinimum,
+      standardTripCharge: config.tripCharges?.standard ?? prev.standardTripCharge,
+      beltwayTripCharge: config.tripCharges?.insideBeltway ?? prev.beltwayTripCharge,
+      paidParkingTripCharge: config.tripCharges?.paidParking ?? prev.paidParkingTripCharge,
+    }));
+  };
+
+  // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
     try {
       const response = await serviceConfigApi.getActive("janitorial");
-      if ('error' in response || !response.data) {
-        console.warn('Using default fallback values');
+
+      // ✅ Check if response has error or no data
+      if (!response || response.error || !response.data) {
+        console.warn('⚠️ Janitorial config not found in active services, trying fallback pricing...');
+        console.warn('⚠️ [Janitorial] Error:', response?.error);
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("janitorial");
+          if (fallbackConfig?.config) {
+            console.log('✅ [Janitorial] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendJanitorialConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config);
+
+            console.log('✅ Janitorial FALLBACK CONFIG loaded from context:', {
+              baseRates: config.baseRates,
+              additionalServices: config.additionalServices,
+              minimums: config.minimums,
+              tripCharges: config.tripCharges,
+              frequencyMultipliers: config.frequencyMultipliers,
+            });
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
-      const config = response.data.config as BackendJanitorialConfig;
+      // ✅ Extract the actual document from response.data
+      const document = response.data;
+
+      if (!document.config) {
+        console.warn('⚠️ Janitorial document has no config property');
+        return;
+      }
+
+      const config = document.config as BackendJanitorialConfig;
+
+      // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
+      updateFormWithConfig(config);
 
-      // Update form with backend values
-      setForm((prev) => ({
-        ...prev,
-        recurringServiceRate: config.baseRates?.recurringService ?? prev.recurringServiceRate,
-        oneTimeServiceRate: config.baseRates?.oneTimeService ?? prev.oneTimeServiceRate,
-        vacuumingRatePerHour: config.additionalServices?.vacuuming?.ratePerHour ?? prev.vacuumingRatePerHour,
-        dustingRatePerHour: config.additionalServices?.dusting?.ratePerHour ?? prev.dustingRatePerHour,
-
-        dailyMultiplier: config.frequencyMultipliers?.daily ?? prev.dailyMultiplier,
-        weeklyMultiplier: config.frequencyMultipliers?.weekly ?? prev.weeklyMultiplier,
-        biweeklyMultiplier: config.frequencyMultipliers?.biweekly ?? prev.biweeklyMultiplier,
-        monthlyMultiplier: config.frequencyMultipliers?.monthly ?? prev.monthlyMultiplier,
-        oneTimeMultiplier: config.frequencyMultipliers?.oneTime ?? prev.oneTimeMultiplier,
-
-        perVisitMinimum: config.minimums?.perVisit ?? prev.perVisitMinimum,
-        recurringContractMinimum: config.minimums?.recurringContract ?? prev.recurringContractMinimum,
-
-        standardTripCharge: config.tripCharges?.standard ?? prev.standardTripCharge,
-        beltwayTripCharge: config.tripCharges?.insideBeltway ?? prev.beltwayTripCharge,
-        paidParkingTripCharge: config.tripCharges?.paidParking ?? prev.paidParkingTripCharge,
-      }));
+      console.log('✅ Janitorial FULL CONFIG loaded from backend:', {
+        baseRates: config.baseRates,
+        additionalServices: config.additionalServices,
+        minimums: config.minimums,
+        tripCharges: config.tripCharges,
+        frequencyMultipliers: config.frequencyMultipliers,
+      });
     } catch (error) {
-      console.error('Failed to fetch config:', error);
+      console.error('❌ Failed to fetch Janitorial config from backend:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("janitorial");
+        if (fallbackConfig?.config) {
+          console.log('✅ [Janitorial] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendJanitorialConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
+  };
+
+  // ✅ Fetch pricing configuration on mount
+  useEffect(() => {
+    fetchPricing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // Form handlers
+  const updateField = <K extends keyof JanitorialFormState>(
+    field: K,
+    value: JanitorialFormState[K]
+  ) => {
+    setForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, type } = e.target;
+    const target: any = e.target;
+
+    const value = type === 'checkbox'
+      ? target.checked
+      : type === 'number'
+        ? parseFloat(target.value) || 0
+        : target.value;
+
+    updateField(name as keyof JanitorialFormState, value);
   };
 
   // Fetch on mount
@@ -150,208 +234,106 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     fetchPricing();
   }, []);
 
-  // onChange handler for form inputs
-  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    const checked = 'checked' in e.target ? e.target.checked : false;
+  // Core calculation logic
+  const calc = useMemo(() => {
+    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    const activeConfig = backendConfig || {
+      baseRates: cfg.baseRates,
+      additionalServices: cfg.additionalServices,
+      frequencyMultipliers: cfg.frequencyMultipliers,
+      billingConversions: cfg.billingConversions,
+      minimums: cfg.minimums,
+      tripCharges: cfg.tripCharges,
+    };
 
-    setForm((prev) => {
-      let next: JanitorialFormState = { ...prev };
-
-      switch (name) {
-        case "needsParking":
-          next = { ...next, [name]: type === "checkbox" ? checked : !!value };
-          break;
-
-        case "baseHours":
-        case "vacuumingHours":
-        case "dustingHours":
-        case "contractMonths":
-        case "parkingCost":
-        case "recurringServiceRate":
-        case "oneTimeServiceRate":
-        case "vacuumingRatePerHour":
-        case "dustingRatePerHour":
-        case "perVisitMinimum":
-        case "recurringContractMinimum":
-        case "standardTripCharge":
-        case "beltwayTripCharge":
-        case "paidParkingTripCharge":
-        case "dailyMultiplier":
-        case "weeklyMultiplier":
-        case "biweeklyMultiplier":
-        case "monthlyMultiplier":
-        case "oneTimeMultiplier": {
-          const num = value === "" ? 0 : Number(value);
-          next = { ...next, [name]: Number.isFinite(num) ? num : 0 };
-          break;
-        }
-
-        case "serviceType":
-        case "frequency":
-        case "location":
-          next = { ...next, [name]: value as any };
-          break;
-
-        default:
-          next = { ...next, [name]: value };
-          break;
-      }
-
-      return next;
-    });
-  };
-
-  // Calculate pricing (memoized for performance)
-  const { quote, calc } = useMemo(() => {
-    const appliedRules: string[] = [];
-
-    // Use backend config if loaded, otherwise use form values (which came from config)
-
-    // 1. Base service cost
-    const baseRate = form.serviceType === "recurringService"
+    // Base service cost calculation
+    const baseServiceRate = form.serviceType === "recurringService"
       ? form.recurringServiceRate
       : form.oneTimeServiceRate;
-    const baseServiceCost = form.baseHours * baseRate;
-    appliedRules.push(`Base: ${form.baseHours} hrs @ $${baseRate}/hr = $${baseServiceCost.toFixed(2)}`);
+    const baseServiceCost = form.baseHours * baseServiceRate;
 
-    // 2. Additional services
+    // Additional services
     const vacuumingCost = form.vacuumingHours * form.vacuumingRatePerHour;
     const dustingCost = form.dustingHours * form.dustingRatePerHour;
 
-    if (vacuumingCost > 0) {
-      appliedRules.push(`Vacuuming: ${form.vacuumingHours} hrs @ $${form.vacuumingRatePerHour}/hr = $${vacuumingCost.toFixed(2)}`);
-    }
-    if (dustingCost > 0) {
-      appliedRules.push(`Dusting: ${form.dustingHours} hrs @ $${form.dustingRatePerHour}/hr = $${dustingCost.toFixed(2)}`);
+    // Trip charge based on location
+    let tripCharge = 0;
+    if (form.location === "insideBeltway") {
+      tripCharge = form.beltwayTripCharge;
+    } else {
+      tripCharge = form.standardTripCharge;
     }
 
-    // 3. Subtotal
-    const subtotal = baseServiceCost + vacuumingCost + dustingCost;
+    // Add parking cost if needed
+    if (form.needsParking) {
+      tripCharge += form.parkingCost || form.paidParkingTripCharge;
+    }
 
-    // 4. Apply frequency multiplier
-    const frequencyMultiplier = (() => {
+    // Per visit total
+    const perVisit = Math.max(
+      baseServiceCost + vacuumingCost + dustingCost + tripCharge,
+      form.perVisitMinimum
+    );
+
+    // Frequency multiplier from backend config or form
+    let frequencyMultiplier = 1;
+    if (activeConfig.frequencyMultipliers && form.frequency in activeConfig.frequencyMultipliers) {
+      frequencyMultiplier = activeConfig.frequencyMultipliers[form.frequency];
+    } else {
+      // Fallback to form values
       switch (form.frequency) {
-        case "daily": return form.dailyMultiplier;
-        case "weekly": return form.weeklyMultiplier;
-        case "biweekly": return form.biweeklyMultiplier;
-        case "monthly": return form.monthlyMultiplier;
-        case "oneTime": return form.oneTimeMultiplier;
-        default: return 1.0;
+        case "daily": frequencyMultiplier = form.dailyMultiplier; break;
+        case "weekly": frequencyMultiplier = form.weeklyMultiplier; break;
+        case "biweekly": frequencyMultiplier = form.biweeklyMultiplier; break;
+        case "monthly": frequencyMultiplier = form.monthlyMultiplier; break;
+        case "oneTime": frequencyMultiplier = form.oneTimeMultiplier; break;
+        default: frequencyMultiplier = 1;
       }
-    })();
-
-    const adjustedSubtotal = subtotal * frequencyMultiplier;
-    if (frequencyMultiplier !== 1.0) {
-      appliedRules.push(`${form.frequency} multiplier: ×${frequencyMultiplier} = $${adjustedSubtotal.toFixed(2)}`);
     }
 
-    // 5. Trip charge
-    const tripCharge = (() => {
-      if (form.location === "paidParking") {
-        const total = form.paidParkingTripCharge + form.parkingCost;
-        if (form.parkingCost > 0) {
-          appliedRules.push(`Trip: $${form.paidParkingTripCharge} + $${form.parkingCost} parking = $${total.toFixed(2)}`);
-        }
-        return total;
-      }
-      if (form.location === "insideBeltway") {
-        appliedRules.push(`Trip: Inside Beltway = $${form.beltwayTripCharge}`);
-        return form.beltwayTripCharge;
-      }
-      appliedRules.push(`Trip: Standard = $${form.standardTripCharge}`);
-      return form.standardTripCharge;
-    })();
+    // Monthly and contract calculations
+    const monthlyTotal = perVisit * frequencyMultiplier;
+    const contractTotal = Math.max(
+      monthlyTotal * form.contractMonths,
+      form.recurringContractMinimum
+    );
 
-    // 6. Per visit total
-    let perVisitTotal = adjustedSubtotal + tripCharge;
-
-    // 7. Apply minimums
-    if (perVisitTotal < form.perVisitMinimum) {
-      appliedRules.push(`Minimum per visit: $${form.perVisitMinimum}`);
-      perVisitTotal = form.perVisitMinimum;
-    }
-
-    // 8. Calculate periodic totals
-    const visitsPerYear = (() => {
-      switch (form.frequency) {
-        case "daily": return 250; // business days
-        case "weekly": return 50;
-        case "biweekly": return 25;
-        case "monthly": return 12;
-        case "oneTime": return 1;
-        default: return 50;
-      }
-    })();
-
-    const monthlyTotal = (perVisitTotal * visitsPerYear) / 12;
-    const annualTotal = perVisitTotal * visitsPerYear;
-    const contractTotal = monthlyTotal * form.contractMonths;
-
-    // 9. Apply contract minimum
-    if (form.serviceType === "recurringService" && contractTotal < form.recurringContractMinimum) {
-      appliedRules.push(`Contract minimum: $${form.recurringContractMinimum} (${form.contractMonths} months)`);
-    }
-
-    const calc: JanitorialCalcDetails = {
+    return {
       baseServiceCost,
       vacuumingCost,
       dustingCost,
-      subtotal,
-      frequencyMultiplier,
-      adjustedSubtotal,
       tripCharge,
-      perVisitTotal,
+      perVisit,
       monthlyTotal,
-      annualTotal,
-      contractTotal: Math.max(contractTotal, form.recurringContractMinimum),
-      appliedRules,
+      contractTotal,
+      frequencyMultiplier,
     };
+  }, [backendConfig, form]); // ✅ CRITICAL: Re-calculate when backend config loads!
 
-    const quote: JanitorialQuoteResult = {
-      perVisitPrice: perVisitTotal,
-      monthlyPrice: monthlyTotal,
-      annualPrice: annualTotal,
-      contractTotal: calc.contractTotal,
-      detailsBreakdown: appliedRules,
-    };
+  // Create quote result
+  const quote: JanitorialQuoteResult = {
+    serviceId: "janitorial",
+    displayName: "Janitorial Services",
+    perVisitPrice: calc.perVisit,
+    monthlyTotal: calc.monthlyTotal,
+    contractTotal: calc.contractTotal,
+    detailsBreakdown: [
+      `Base service: ${form.baseHours} hrs @ $${(form.serviceType === "recurringService" ? form.recurringServiceRate : form.oneTimeServiceRate).toFixed(2)}/hr`,
+      `Vacuuming: ${form.vacuumingHours} hrs @ $${form.vacuumingRatePerHour.toFixed(2)}/hr`,
+      `Dusting: ${form.dustingHours} hrs @ $${form.dustingRatePerHour.toFixed(2)}/hr`,
+      `Frequency: ${form.frequency}`,
+    ],
+  };
 
-    return { quote, calc };
-  }, [
-    // ALL form fields that affect calculation
-    form.serviceType,
-    form.frequency,
-    form.location,
-    form.contractMonths,
-    form.baseHours,
-    form.vacuumingHours,
-    form.dustingHours,
-    form.needsParking,
-    form.parkingCost,
-    form.recurringServiceRate,
-    form.oneTimeServiceRate,
-    form.vacuumingRatePerHour,
-    form.dustingRatePerHour,
-    form.dailyMultiplier,
-    form.weeklyMultiplier,
-    form.biweeklyMultiplier,
-    form.monthlyMultiplier,
-    form.oneTimeMultiplier,
-    form.perVisitMinimum,
-    form.recurringContractMinimum,
-    form.standardTripCharge,
-    form.beltwayTripCharge,
-    form.paidParkingTripCharge,
-  ]);
-
-  // Return everything
   return {
     form,
     setForm,
+    updateField,
     onChange,
-    quote,
     calc,
-    refreshConfig: fetchPricing,
+    quote,
+    backendConfig,
     isLoadingConfig,
+    refreshConfig: fetchPricing,
   };
 }

@@ -14,6 +14,7 @@ import ConfirmationModal from "./ConfirmationModal";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
+import { useAllServicePricing } from "../backendservice/hooks";
 
 type HeaderRow = {
   labelLeft: string;
@@ -103,6 +104,9 @@ export default function FormFilling() {
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
+
+  // Fetch all service pricing data for context provider
+  const { pricingData } = useAllServicePricing();
 
   // Detect if we're in edit mode based on URL path
   const isInEditMode = location.pathname.startsWith('/edit/pdf');
@@ -196,8 +200,57 @@ export default function FormFilling() {
           productsStructure: fromBackend.products ? Object.keys(fromBackend.products) : []
         });
 
+        // Helper function to generate title from customer name
+        const generateTitleFromCustomerName = (headerRows: HeaderRow[]): string => {
+          console.log("🔍 [TITLE DEBUG] Searching for customer name in headerRows:", headerRows);
+
+          // Extract customer name from headerRows
+          for (const row of headerRows) {
+            console.log("🔍 [TITLE DEBUG] Checking row:", { labelLeft: row.labelLeft, valueLeft: row.valueLeft, labelRight: row.labelRight, valueRight: row.valueRight });
+
+            // Check left side for various customer name patterns
+            if (row.labelLeft) {
+              const leftLabel = row.labelLeft.toUpperCase();
+              if (leftLabel.includes("CUSTOMER NAME") || leftLabel.includes("CUSTOMER") || leftLabel.includes("CLIENT NAME") || leftLabel.includes("COMPANY NAME")) {
+                const customerName = row.valueLeft?.trim();
+                if (customerName && customerName.length > 0) {
+                  console.log("✅ [TITLE DEBUG] Found customer name on left side:", customerName);
+                  return customerName;
+                }
+              }
+            }
+
+            // Check right side for various customer name patterns
+            if (row.labelRight) {
+              const rightLabel = row.labelRight.toUpperCase();
+              if (rightLabel.includes("CUSTOMER NAME") || rightLabel.includes("CUSTOMER") || rightLabel.includes("CLIENT NAME") || rightLabel.includes("COMPANY NAME")) {
+                const customerName = row.valueRight?.trim();
+                if (customerName && customerName.length > 0) {
+                  console.log("✅ [TITLE DEBUG] Found customer name on right side:", customerName);
+                  return customerName;
+                }
+              }
+            }
+          }
+
+          console.log("⚠️ [TITLE DEBUG] No customer name found in headerRows, using fallback");
+          // Fallback to default if no customer name found
+          return "Customer Update Addendum";
+        };
+
+        // Always try to generate title from customer name first, fallback to backend title
+        const dynamicTitle = generateTitleFromCustomerName(fromBackend.headerRows || []);
+        const shouldUseBackendTitle = dynamicTitle === "Customer Update Addendum" && fromBackend.headerTitle && fromBackend.headerTitle !== "Customer Update Addendum";
+
+        console.log("🎯 [TITLE DEBUG] Title selection logic:", {
+          fromBackendTitle: fromBackend.headerTitle,
+          dynamicTitle: dynamicTitle,
+          shouldUseBackendTitle: shouldUseBackendTitle,
+          finalTitle: shouldUseBackendTitle ? fromBackend.headerTitle : dynamicTitle
+        });
+
         const cleanPayload: FormPayload = {
-          headerTitle: fromBackend.headerTitle ?? "Customer Update Addendum",
+          headerTitle: shouldUseBackendTitle ? fromBackend.headerTitle : dynamicTitle,
           headerRows: fromBackend.headerRows ?? [],
           products: fromBackend.products ?? {
             headers: [],
@@ -304,11 +357,21 @@ export default function FormFilling() {
       stripwax: null,
     };
 
-    // Extract customer name from headerRows
+    // Extract customer name from headerRows for both filename and title
     const customerName = extractCustomerName(payload?.headerRows || []);
 
+    // 🔧 DRAFT TITLE FIX: Use customer name as title when available, fallback to current title
+    const titleForSave = customerName !== "Unnamed_Customer" ? customerName : (payload?.headerTitle || "Customer Update Addendum");
+
+    console.log("💾 [SAVE DEBUG] Title selection for save:", {
+      extractedCustomerName: customerName,
+      currentPayloadTitle: payload?.headerTitle,
+      finalTitleForSave: titleForSave,
+      isUsingCustomerName: customerName !== "Unnamed_Customer"
+    });
+
     return {
-      headerTitle: payload?.headerTitle || "",
+      headerTitle: titleForSave,
       headerRows: payload?.headerRows || [],
       products: {
         ...productsForBackend,
@@ -381,7 +444,7 @@ export default function FormFilling() {
 
     const payloadToSend = {
       ...collectFormData(), // Collect current data from all child components
-      status: "pending_approval",
+      status: "saved",
     };
 
     // Log the complete payload being sent to backend
@@ -671,7 +734,7 @@ export default function FormFilling() {
   });
 
   return (
-    <ServicesProvider>
+    <ServicesProvider backendPricingData={pricingData}>
       <div className={`center-align ${isInEditMode ? 'edit-mode-container' : ''}`}>
         {isInEditMode && (
           <div className="edit-mode-header">

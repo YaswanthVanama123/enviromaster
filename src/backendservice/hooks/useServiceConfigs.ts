@@ -103,3 +103,49 @@ export function useActiveServiceConfig(serviceId?: string) {
     refetch: fetchActiveConfig,
   };
 }
+
+/**
+ * Hook to fetch all service pricing data (both active and inactive).
+ * This replaces static fallback values for inactive services with real backend data.
+ */
+export function useAllServicePricing() {
+  const [pricingData, setPricingData] = useState<ServiceConfig[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAllPricing = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await serviceConfigApi.getAllPricing();
+
+      if (response.error) {
+        setError(response.error);
+      } else if (response.data) {
+        setPricingData(response.data);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch pricing data");
+    }
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchAllPricing();
+  }, [fetchAllPricing]);
+
+  // Helper function to get pricing config for a specific service
+  const getPricingForService = useCallback((serviceId: string): ServiceConfig | null => {
+    return pricingData.find(config => config.serviceId === serviceId) || null;
+  }, [pricingData]);
+
+  return {
+    pricingData,
+    loading,
+    error,
+    refetch: fetchAllPricing,
+    getPricingForService,
+  };
+}

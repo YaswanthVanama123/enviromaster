@@ -9,6 +9,7 @@ import type {
 } from "./microfiberMoppingTypes";
 import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
+import { useServicesContextOptional } from "../ServicesContext";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendMicrofiberConfig {
@@ -129,6 +130,22 @@ export function useMicrofiberMoppingCalc(
   const [backendConfig, setBackendConfig] = useState<BackendMicrofiberConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // Helper function to update form with config data
+  const updateFormWithConfig = (config: BackendMicrofiberConfig) => {
+    setForm((prev) => ({
+      ...prev,
+      // Update all rate fields from backend if available
+      includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
+      hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
+      extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
+      standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
+      dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
+    }));
+  };
+
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
@@ -137,7 +154,38 @@ export function useMicrofiberMoppingCalc(
 
       // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
-        console.warn('⚠️ Microfiber Mopping config not found in backend, using default fallback values');
+        console.warn('⚠️ Microfiber Mopping config not found in active services, trying fallback pricing...');
+        console.warn('⚠️ [Microfiber Mopping] Error:', response?.error);
+
+        // FALLBACK: Use context's backend pricing data for inactive services
+        if (servicesContext?.getBackendPricingForService) {
+          const fallbackConfig = servicesContext.getBackendPricingForService("microfiberMopping");
+          if (fallbackConfig?.config) {
+            console.log('✅ [Microfiber Mopping] Using backend pricing data from context for inactive service');
+            const config = fallbackConfig.config as BackendMicrofiberConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config);
+
+            console.log('✅ Microfiber Mopping FALLBACK CONFIG loaded from context:', {
+              pricing: {
+                bathroomRate: config.includedBathroomRate,
+                hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
+                extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
+                standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
+                chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
+              },
+              hugeBathroomPricing: config.hugeBathroomPricing,
+              extraAreaPricing: config.extraAreaPricing,
+              standalonePricing: config.standalonePricing,
+              rateCategories: config.rateCategories,
+              billingConversions: config.billingConversions,
+              allowedFrequencies: config.allowedFrequencies,
+            });
+            return;
+          }
+        }
+
+        console.warn('⚠️ No backend pricing available, using static fallback values');
         return;
       }
 
@@ -153,16 +201,7 @@ export function useMicrofiberMoppingCalc(
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-
-      setForm((prev) => ({
-        ...prev,
-        // Update all rate fields from backend if available
-        includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
-        hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
-        extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
-        standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
-        dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
-      }));
+      updateFormWithConfig(config);
 
       console.log('✅ Microfiber Mopping FULL CONFIG loaded from backend:', {
         pricing: {
@@ -181,7 +220,26 @@ export function useMicrofiberMoppingCalc(
       });
     } catch (error) {
       console.error('❌ Failed to fetch Microfiber Mopping config from backend:', error);
-      console.log('⚠️ Using default hardcoded values as fallback');
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      });
+
+      // FALLBACK: Use context's backend pricing data
+      if (servicesContext?.getBackendPricingForService) {
+        const fallbackConfig = servicesContext.getBackendPricingForService("microfiberMopping");
+        if (fallbackConfig?.config) {
+          console.log('✅ [Microfiber Mopping] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendMicrofiberConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
+          return;
+        }
+      }
+
+      console.warn('⚠️ No backend pricing available after error, using static fallback values');
     } finally {
       setIsLoadingConfig(false);
     }
@@ -192,6 +250,13 @@ export function useMicrofiberMoppingCalc(
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Also fetch when services context becomes available
+  useEffect(() => {
+    if (servicesContext?.backendPricingData && !backendConfig) {
+      fetchPricing();
+    }
+  }, [servicesContext?.backendPricingData, backendConfig]);
 
   const onChange = (ev: InputChangeEvent) => {
     const target = ev.target as HTMLInputElement;

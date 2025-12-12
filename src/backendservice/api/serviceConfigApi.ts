@@ -48,6 +48,25 @@ export const serviceConfigApi = {
   },
 
   /**
+   * Get all service pricing data (both active and inactive)
+   * This provides complete pricing information for all services,
+   * allowing inactive services to use real backend data instead of static fallbacks
+   */
+  async getAllPricing() {
+    const endpoint = "/api/service-configs/pricing";
+    console.log(`🌐 [API] GET ${endpoint} (fetching all service pricing data)`);
+
+    try {
+      const result = await apiClient.get<ServiceConfig[]>(endpoint);
+      console.log(`✅ [API] Response from ${endpoint}: ${result.length} services with pricing data`);
+      return result;
+    } catch (error) {
+      console.error(`❌ [API] Error fetching ${endpoint}:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Get service config by ID
    */
   async getById(id: string) {
