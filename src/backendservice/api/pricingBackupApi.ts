@@ -71,6 +71,13 @@ export const pricingBackupApi = {
       success: boolean;
       created?: boolean;
       skipped?: boolean;
+      replaced?: boolean;
+      requiresConfirmation?: boolean;
+      existingBackup?: {
+        changeDayId: string;
+        createdAt: string;
+        changeDescription?: string;
+      };
       backup?: {
         id: string;
         changeDayId: string;
@@ -209,8 +216,15 @@ export const backupUtils = {
   getDaysAgo(changeDay: string): number {
     const backupDate = new Date(changeDay + 'T00:00:00');
     const today = new Date();
+
+    // Set both dates to start of day to compare only dates, not times
+    backupDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
     const diffTime = today.getTime() - backupDate.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    return Math.max(0, diffDays); // Ensure it's never negative
   },
 
   /**

@@ -9,6 +9,8 @@ import { BackupStatisticsView } from './BackupStatisticsView';
 import { BackupHealthView } from './BackupHealthView';
 import { CreateBackupModal } from './CreateBackupModal';
 import { RestoreBackupModal } from './RestoreBackupModal';
+import { TextConfirmationModal } from './TextConfirmationModal';
+import ConfirmationModal from '../ConfirmationModal';
 
 type ToastMessage = {
   message: string;
@@ -61,6 +63,42 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   const [toastMessage, setToastMessage] = useState<ToastMessage | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    details?: string;
+    type: 'danger' | 'warning' | 'info' | 'success';
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    textConfirmation: {
+      required: boolean;
+      placeholder: string;
+      expectedText?: string;
+      label: string;
+      description?: string;
+    };
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'warning',
+    onConfirm: () => {},
+    textConfirmation: {
+      required: false,
+      placeholder: '',
+      label: ''
+    }
+  });
+
+  // Pending backup creation data
+  const [pendingBackupCreation, setPendingBackupCreation] = useState<{
+    description?: string;
+    existingBackup?: any;
+  } | null>(null);
+
   // Sync view with URL
   useEffect(() => {
     const pathSegments = location.pathname.split('/');
@@ -92,21 +130,47 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   };
 
   // Handle backup actions
-  const handleCreateBackup = async (description?: string) => {
+  const handleCreateBackup = async (description?: string, forceReplace?: boolean) => {
     setActionLoading(true);
     clearErrors();
 
     try {
-      const result = await createBackup({ changeDescription: description });
+      const result = await createBackup({
+        changeDescription: description,
+        forceReplace
+      });
 
       if (result.success) {
         setToastMessage({
           message: result.data?.created
-            ? 'Backup created successfully!'
+            ? (result.data?.replaced ? 'Manual backup replaced successfully!' : 'Manual backup created successfully!')
             : 'Backup skipped (already exists for today)',
           type: result.data?.created ? 'success' : 'info'
         });
         setShowCreateModal(false);
+        setPendingBackupCreation(null);
+      } else if (result.requiresConfirmation) {
+        // Store pending backup data and show text confirmation modal
+        const existingBackup = result.existingBackup;
+        setPendingBackupCreation({ description, existingBackup });
+
+        setConfirmationModal({
+          isOpen: true,
+          title: 'Replace Manual Backup',
+          message: 'A manual backup already exists for today. This action will permanently replace the existing backup.',
+          details: `Existing backup created: ${new Date(existingBackup?.createdAt || '').toLocaleString()}\nDescription: ${existingBackup?.changeDescription || 'No description'}`,
+          type: 'warning',
+          confirmText: 'Replace Backup',
+          cancelText: 'Keep Existing',
+          onConfirm: () => handleConfirmBackupReplace(),
+          textConfirmation: {
+            required: true,
+            placeholder: 'Type REPLACE to confirm',
+            expectedText: 'REPLACE',
+            label: 'Type REPLACE to confirm backup replacement',
+            description: 'This action cannot be undone. The previous manual backup will be permanently deleted.'
+          }
+        });
       } else {
         setToastMessage({
           message: result.error || 'Failed to create backup',
@@ -120,6 +184,15 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
       });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleConfirmBackupReplace = async () => {
+    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+
+    if (pendingBackupCreation) {
+      // Retry with forceReplace = true
+      await handleCreateBackup(pendingBackupCreation.description, true);
     }
   };
 
@@ -161,6 +234,24 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   const handleDeleteBackups = async (changeDayIds: string[]) => {
     if (changeDayIds.length === 0) return;
 
+    // Show deletion confirmation modal
+    const backupText = changeDayIds.length === 1 ? 'backup' : 'backups';
+    const backupList = changeDayIds.join(', ');
+
+    setConfirmationModal({
+      isOpen: true,
+      title: `Delete ${changeDayIds.length} ${backupText.charAt(0).toUpperCase() + backupText.slice(1)}`,
+      message: `Are you sure you want to delete ${changeDayIds.length} ${backupText}? This action cannot be undone.`,
+      details: `Selected ${backupText}:\n${backupList}`,
+      type: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => handleConfirmDelete(changeDayIds)
+    });
+  };
+
+  const handleConfirmDelete = async (changeDayIds: string[]) => {
+    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
     setActionLoading(true);
     clearErrors();
 
@@ -223,6 +314,19 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     setShowRestoreModal(false);
     setRestoreCandidate(null);
     navigate(parentPath, { replace: true });
+  };
+
+  const closeConfirmationModal = () => {
+    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+    setPendingBackupCreation(null);
+
+    // If canceling backup creation, show info message
+    if (pendingBackupCreation) {
+      setToastMessage({
+        message: 'Manual backup creation cancelled',
+        type: 'info'
+      });
+    }
   };
 
   // Styles
@@ -487,6 +591,34 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
           loading={actionLoading}
         />
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        title={confirmationModal.title}
+        message={confirmationModal.message}
+        details={confirmationModal.details}
+        type={confirmationModal.type}
+        confirmText={confirmationModal.confirmText}
+        cancelText={confirmationModal.cancelText}
+        onConfirm={confirmationModal.onConfirm}
+        onCancel={closeConfirmationModal}
+        loading={actionLoading}
+      />
+      {/* {confirmationModal.isOpen && (
+  <TextConfirmationModal
+    isOpen={confirmationModal.isOpen}
+    title={confirmationModal.title}
+    message={confirmationModal.message}
+    details={confirmationModal.details}
+    type={confirmationModal.type}
+    confirmText={confirmationModal.confirmText}
+    cancelText={confirmationModal.cancelText}
+    onConfirm={confirmationModal.onConfirm}
+    onCancel={closeConfirmationModal}
+    textConfirmation={confirmationModal.textConfirmation}
+  />
+)} */}
 
       {/* Toast Notifications */}
       {toastMessage && (

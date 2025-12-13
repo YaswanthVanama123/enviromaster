@@ -28,6 +28,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
   useImperativeHandle(ref, () => ({
     getData: () => {
       if (!servicesContext) {
+        console.warn('⚠️ [ServicesDataCollector] ServicesContext not available, returning empty data');
         // Fallback if context not available
         return {
           saniclean: null,
@@ -49,10 +50,26 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
       // Read from context - return null if service data is not present
       const state = servicesContext.servicesState;
 
+      // ✅ DEBUG: Log active services to verify all data is collected regardless of tab
+      const activeServices = Object.entries(state).filter(([key, data]) =>
+        data && typeof data === 'object' && data.isActive
+      ).map(([key]) => key);
+
+      console.log('📊 [ServicesDataCollector] Collecting data for all services from context:', {
+        allServicesInState: Object.keys(state),
+        activeServices,
+        stateSnapshot: Object.fromEntries(
+          Object.entries(state).map(([key, data]) => [
+            key,
+            data && typeof data === 'object' && data.isActive ? 'ACTIVE' : 'INACTIVE'
+          ])
+        )
+      });
+
       // Get custom services data (includes customServices array and visibleServices list)
       const customServicesData = state.customServices;
 
-      return {
+      const result = {
         saniclean: state.saniclean || null,
         foamingDrain: state.foamingDrain || null,
         saniscrub: state.saniscrub || null,
@@ -67,6 +84,15 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         electrostaticSpray: state.electrostaticSpray || null,
         customServices: customServicesData?.customServices || [],
       };
+
+      console.log('✅ [ServicesDataCollector] Final collected data:', {
+        services: Object.entries(result).filter(([key, data]) =>
+          data && key !== 'customServices'
+        ).map(([key]) => key),
+        customServicesCount: result.customServices.length
+      });
+
+      return result;
     }
   }), [servicesContext]);
 

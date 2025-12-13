@@ -529,12 +529,22 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
                         View Details
                       </button>
                       <button
-                        style={{ ...styles.actionButton, ...styles.restoreButton }}
+                        style={{
+                          ...styles.actionButton,
+                          ...styles.restoreButton,
+                          ...(backup.restorationInfo?.hasBeenRestored ? {
+                            backgroundColor: '#f59e0b',
+                            borderColor: '#d97706'
+                          } : {})
+                        }}
                         onClick={() => onRestoreClick(backup)}
-                        disabled={backup.restorationInfo?.hasBeenRestored}
-                        title={backup.restorationInfo?.hasBeenRestored ? 'Already restored' : 'Restore this backup'}
+                        title={
+                          backup.restorationInfo?.hasBeenRestored
+                            ? `Previously restored on ${new Date(backup.restorationInfo.lastRestoredAt).toLocaleDateString()}. Click to restore again.`
+                            : 'Restore this backup'
+                        }
                       >
-                        Restore
+                        {backup.restorationInfo?.hasBeenRestored ? 'Restore Again' : 'Restore'}
                       </button>
                     </div>
                   </td>

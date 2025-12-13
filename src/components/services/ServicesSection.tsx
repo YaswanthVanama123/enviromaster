@@ -275,18 +275,22 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return false;
   });
 
-  // Apply tab filter if a specific tab is selected
-  const tabFilteredServices = currentTab
-    ? activeVisibleServices.filter(config => config.serviceId === currentTab)
-    : activeVisibleServices;
-
-  // Separate RefreshPowerScrub from grid services
-  const gridServices = tabFilteredServices.filter(
+  // ✅ FIXED: Always render all services, use CSS to hide/show based on tab
+  // This prevents unmounting/remounting which was causing data loss
+  const gridServices = activeVisibleServices.filter(
     (config) => config.serviceId !== "refreshPowerScrub"
   );
-  const refreshPowerScrubVisible = tabFilteredServices.some(
+  const refreshPowerScrubVisible = activeVisibleServices.some(
     (c) => c.serviceId === "refreshPowerScrub"
   );
+
+  // Helper function to determine if a service should be visible based on current tab
+  const isServiceVisible = (serviceId: string) => {
+    // If no tab is selected (All Services), show all
+    if (!currentTab) return true;
+    // If specific tab is selected, only show that service
+    return serviceId === currentTab;
+  };
 
   // Debug logging
   console.log('Active Visible Services:', activeVisibleServices.map(c => ({ id: c.serviceId, label: c.label, isActive: c.isActive })));
@@ -420,13 +424,23 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       )}
 
       <div className="svc-grid">
+        {/* ✅ FIXED: Always render ALL services, use CSS display to show/hide based on tab */}
         {gridServices.map((config) => {
           const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
           if (!ServiceComponent) {
             // Service component not found - log warning and show placeholder
             console.warn(`Service component not found for serviceId: "${config.serviceId}". Available services:`, Object.keys(SERVICE_COMPONENTS));
             return (
-              <div key={config.serviceId} className="svc-card" style={{ padding: '20px', background: '#fff3cd', border: '1px solid #ffc107' }}>
+              <div
+                key={config.serviceId}
+                className="svc-card"
+                style={{
+                  padding: '20px',
+                  background: '#fff3cd',
+                  border: '1px solid #ffc107',
+                  display: isServiceVisible(config.serviceId) ? 'block' : 'none'
+                }}
+              >
                 <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>⚠️ Service Not Available</div>
                 <div>Service ID: {config.serviceId}</div>
                 <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
@@ -444,9 +458,14 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
           }
 
           return (
-            <div key={config.serviceId} className="svc-card-wrapper">
+            <div
+              key={config.serviceId}
+              className="svc-card-wrapper"
+              style={{ display: isServiceVisible(config.serviceId) ? 'block' : 'none' }}
+            >
               <ServiceComponent
                 initialData={(() => {
+                  // ✅ SIMPLIFIED: Since components don't remount anymore, use original logic
                   // Try to find initial data by checking both the serviceId and common aliases
                   let rawData = initialServices?.[config.serviceId as keyof typeof initialServices];
 
@@ -465,10 +484,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
                   // Transform structured data back to form state
                   const transformedData = transformServiceData(config.serviceId, rawData);
-                  console.log(`🔄 [ServicesSection] Transformed ${config.serviceId} data:`, {
-                    raw: rawData,
-                    transformed: transformedData
-                  });
                   return transformedData;
                 })()}
                 onRemove={() => handleRemoveService(config.serviceId)}
@@ -477,34 +492,37 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
           );
         })}
 
-        {/* Render custom services - only show if no tab filter or if "All Services" is selected */}
-        {!currentTab && customServices.map((service) => (
-          <CustomService
+        {/* ✅ FIXED: Custom services - only show in "All Services" mode */}
+        {customServices.map((service) => (
+          <div
             key={service.id}
-            service={service}
-            onUpdate={handleUpdateCustomService}
-            onRemove={() => handleRemoveCustomService(service.id)}
-          />
+            style={{ display: !currentTab ? 'block' : 'none' }}
+          >
+            <CustomService
+              service={service}
+              onUpdate={handleUpdateCustomService}
+              onRemove={() => handleRemoveCustomService(service.id)}
+            />
+          </div>
         ))}
       </div>
 
-      {/* RefreshPowerScrub is special - render outside grid for full width */}
+      {/* ✅ FIXED: RefreshPowerScrub - always render if visible, use CSS to show/hide based on tab */}
       {refreshPowerScrubVisible && (
-        <RefreshPowerScrubForm
+        <div style={{ display: isServiceVisible('refreshPowerScrub') ? 'block' : 'none' }}>
+          <RefreshPowerScrubForm
           initialData={(() => {
+            // ✅ SIMPLIFIED: Since components don't remount anymore, use original logic
             const rawData = initialServices?.refreshPowerScrub;
             if (!rawData) return undefined;
 
             // Transform structured data back to form state
             const transformedData = transformServiceData("refreshPowerScrub", rawData);
-            console.log('🔄 [ServicesSection] Transformed refreshPowerScrub data:', {
-              raw: rawData,
-              transformed: transformedData
-            });
             return transformedData;
           })()}
           onRemove={() => handleRemoveService("refreshPowerScrub")}
         />
+        </div>
       )}
     </section>
   );

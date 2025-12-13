@@ -199,6 +199,13 @@ export default function FormFilling() {
     const useCustomerDoc = (editing || isInEditMode) && !!agreementId;
 
     const fetchHeaders = async () => {
+      console.log('🔄 [FETCH HEADERS] Loading document data (should only happen on document change, NOT tab switches):', {
+        useCustomerDoc,
+        agreementId,
+        urlId,
+        editing: locationState.editing
+      });
+
       setLoading(true);
       try {
         let json;
@@ -307,9 +314,10 @@ export default function FormFilling() {
     };
 
     fetchHeaders();
-  }, [location, urlId]);
+  }, [urlId, locationState.editing, locationState.id]); // ✅ FIXED: Only reload when document ID changes, not on tab switches
 
   const handleHeaderRowsChange = (rows: HeaderRow[]) => {
+    console.log('📝 [HEADER CHANGE] Customer header data updated:', rows);
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
   };
 

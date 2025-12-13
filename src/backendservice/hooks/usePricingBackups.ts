@@ -146,6 +146,14 @@ export function usePricingBackups(autoFetch: boolean = true): UsePricingBackupsR
         // Refresh backups list after creation
         await fetchBackups();
         return { success: true, data: response.data.data };
+      } else if (response.status === 409 && response.data?.requiresConfirmation) {
+        // Handle confirmation needed (409 status)
+        return {
+          success: false,
+          requiresConfirmation: true,
+          existingBackup: response.data.existingBackup,
+          error: response.data.message || 'Manual backup already exists for today'
+        };
       } else {
         return { success: false, error: 'Failed to create backup' };
       }

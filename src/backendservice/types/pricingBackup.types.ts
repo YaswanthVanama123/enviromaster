@@ -118,6 +118,7 @@ export interface BackupSnapshot {
 
 export interface CreateBackupPayload {
   changeDescription?: string;
+  forceReplace?: boolean;
 }
 
 export interface RestoreBackupPayload {
