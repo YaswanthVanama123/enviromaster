@@ -1,4 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import {
+  faSortUp,
+  faSortDown,
+  faSort
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { backupUtils } from '../../backendservice/api/pricingBackupApi';
 import type { PricingBackup } from '../../backendservice/types/pricingBackup.types';
 import { BackupDetailsModal } from './BackupDetailsModal';
@@ -375,7 +381,11 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
                   <div style={styles.sortableHeader}>
                     Change Day
                     <span style={styles.sortIcon}>
-                      {sortConfig.key === 'changeDay' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+                      {sortConfig.key === 'changeDay' ? (
+                        sortConfig.direction === 'asc' ? <FontAwesomeIcon icon={faSortUp} /> : <FontAwesomeIcon icon={faSortDown} />
+                      ) : (
+                        <FontAwesomeIcon icon={faSort} />
+                      )}
                     </span>
                   </div>
                 </th>
@@ -384,7 +394,11 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
                   <div style={styles.sortableHeader}>
                     Days Ago
                     <span style={styles.sortIcon}>
-                      {sortConfig.key === 'daysAgo' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+                      {sortConfig.key === 'daysAgo' ? (
+                        sortConfig.direction === 'asc' ? <FontAwesomeIcon icon={faSortUp} /> : <FontAwesomeIcon icon={faSortDown} />
+                      ) : (
+                        <FontAwesomeIcon icon={faSort} />
+                      )}
                     </span>
                   </div>
                 </th>
@@ -393,7 +407,11 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
                   <div style={styles.sortableHeader}>
                     Trigger
                     <span style={styles.sortIcon}>
-                      {sortConfig.key === 'backupTrigger' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+                      {sortConfig.key === 'backupTrigger' ? (
+                        sortConfig.direction === 'asc' ? <FontAwesomeIcon icon={faSortUp} /> : <FontAwesomeIcon icon={faSortDown} />
+                      ) : (
+                        <FontAwesomeIcon icon={faSort} />
+                      )}
                     </span>
                   </div>
                 </th>
@@ -404,7 +422,11 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
                   <div style={styles.sortableHeader}>
                     Size
                     <span style={styles.sortIcon}>
-                      {sortConfig.key === 'size' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+                      {sortConfig.key === 'size' ? (
+                        sortConfig.direction === 'asc' ? <FontAwesomeIcon icon={faSortUp} /> : <FontAwesomeIcon icon={faSortDown} />
+                      ) : (
+                        <FontAwesomeIcon icon={faSort} />
+                      )}
                     </span>
                   </div>
                 </th>

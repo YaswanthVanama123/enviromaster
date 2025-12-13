@@ -1,4 +1,16 @@
 import React from 'react';
+import {
+  faCheckCircle,
+  faExclamationTriangle,
+  faTimesCircle,
+  faQuestionCircle,
+  faDatabase,
+  faClipboard,
+  faChartLine,
+  faCheck,
+  faTimes
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { backupUtils } from '../../backendservice/api/pricingBackupApi';
 import type { BackupSystemHealth } from '../../backendservice/types/pricingBackup.types';
 
@@ -266,13 +278,13 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
   const getHealthIcon = () => {
     switch (health.status) {
       case 'healthy':
-        return '✅';
+        return <FontAwesomeIcon icon={faCheckCircle} />;
       case 'warning':
-        return '⚠️';
+        return <FontAwesomeIcon icon={faExclamationTriangle} />;
       case 'unhealthy':
-        return '❌';
+        return <FontAwesomeIcon icon={faTimesCircle} />;
       default:
-        return '❓';
+        return <FontAwesomeIcon icon={faQuestionCircle} />;
     }
   };
 
@@ -292,7 +304,7 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
           ...(isGood ? styles.statusPass : styles.statusFail)
         }}
       >
-        {isGood ? '✓ Pass' : '✗ Fail'}
+        {isGood ? <><FontAwesomeIcon icon={faCheck} /> Pass</> : <><FontAwesomeIcon icon={faTimes} /> Fail</>}
       </span>
     );
   };
@@ -312,7 +324,7 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
         {/* Database Connectivity */}
         <div style={styles.card}>
           <h3 style={styles.cardTitle}>
-            🔗 Database Connectivity
+            <FontAwesomeIcon icon={faDatabase} /> Database Connectivity
           </h3>
 
           <div style={styles.checkItem}>
@@ -331,7 +343,7 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
         {/* Retention Policy Compliance */}
         <div style={styles.card}>
           <h3 style={styles.cardTitle}>
-            📋 Retention Policy
+            <FontAwesomeIcon icon={faClipboard} /> Retention Policy
           </h3>
 
           <div style={styles.checkItem}>
@@ -364,7 +376,7 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
         {/* Backup Activity */}
         <div style={styles.card}>
           <h3 style={styles.cardTitle}>
-            📈 Backup Activity
+            <FontAwesomeIcon icon={faChartLine} /> Backup Activity
           </h3>
 
           <div style={styles.checkItem}>
@@ -402,13 +414,13 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
       {health.warnings.length > 0 && (
         <div style={styles.warningsContainer}>
           <h3 style={styles.cardTitle}>
-            ⚠️ System Warnings
+            <FontAwesomeIcon icon={faExclamationTriangle} /> System Warnings
           </h3>
           <div style={styles.card}>
             <div style={styles.warningsList}>
               {health.warnings.map((warning, index) => (
                 <div key={index} style={styles.warningItem}>
-                  <div style={styles.warningIcon}>⚠️</div>
+                  <div style={styles.warningIcon}><FontAwesomeIcon icon={faExclamationTriangle} /></div>
                   <div style={styles.warningText}>{warning}</div>
                 </div>
               ))}

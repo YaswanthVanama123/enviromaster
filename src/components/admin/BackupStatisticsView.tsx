@@ -1,4 +1,12 @@
 import React, { useMemo } from 'react';
+import {
+  faBox,
+  faHdd,
+  faChartBar,
+  faHeartbeat,
+  faExclamationTriangle
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { backupUtils } from '../../backendservice/api/pricingBackupApi';
 import type { BackupStatistics } from '../../backendservice/types/pricingBackup.types';
 
@@ -296,7 +304,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h3 style={styles.cardTitle}>Total Backups</h3>
-            <div style={styles.cardIcon}>📦</div>
+            <div style={styles.cardIcon}><FontAwesomeIcon icon={faBox} /></div>
           </div>
           <div style={styles.statValue}>{processedStats?.totalBackups || 0}</div>
           <div style={styles.statLabel}>Across {processedStats?.uniqueChangeDays || 0} change days</div>
@@ -319,7 +327,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h3 style={styles.cardTitle}>Storage Efficiency</h3>
-            <div style={styles.cardIcon}>💾</div>
+            <div style={styles.cardIcon}><FontAwesomeIcon icon={faHdd} /></div>
           </div>
           <div style={styles.statValue}>{processedStats?.avgSavingsPercent || 0}%</div>
           <div style={styles.statLabel}>Average compression savings</div>
@@ -340,7 +348,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h3 style={styles.cardTitle}>Storage Usage</h3>
-            <div style={styles.cardIcon}>📊</div>
+            <div style={styles.cardIcon}><FontAwesomeIcon icon={faChartBar} /></div>
           </div>
           <div style={styles.statValue}>
             {backupUtils.formatFileSize(processedStats?.sizeStatistics?.totalCompressedSize || 0)}
@@ -358,7 +366,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h3 style={styles.cardTitle}>System Health</h3>
-            <div style={styles.cardIcon}>❤️</div>
+            <div style={styles.cardIcon}><FontAwesomeIcon icon={faHeartbeat} /></div>
           </div>
           <div>
             <span
@@ -379,7 +387,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
             <div style={styles.warningsList}>
               {processedStats.systemHealth?.warnings?.map((warning, index) => (
                 <div key={index} style={styles.warningItem}>
-                  <div style={styles.warningIcon}>⚠</div>
+                  <div style={styles.warningIcon}><FontAwesomeIcon icon={faExclamationTriangle} /></div>
                   <div style={styles.warningText}>{warning}</div>
                 </div>
               )) || []}

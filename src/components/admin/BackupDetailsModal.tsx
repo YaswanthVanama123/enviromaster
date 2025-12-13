@@ -1,4 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import {
+  faMoneyBill,
+  faBox,
+  faCog,
+  faChartBar,
+  faCheckCircle,
+  faExclamationTriangle,
+  faClipboard,
+  faFile,
+  faDatabase,
+  faWrench,
+  faSync,
+  faFolder,
+  faHdd,
+  faEdit,
+  faRocket,
+  faChartLine,
+  faArchive,
+  faFileAlt,
+  faSearch,
+  faCaretRight,
+  faTags,
+  faInfo,
+  faWarning
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { backupUtils } from '../../backendservice/api/pricingBackupApi';
 import { usePricingBackupDetails } from '../../backendservice/hooks/usePricingBackups';
 import type { PricingBackup } from '../../backendservice/types/pricingBackup.types';
@@ -456,7 +482,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
         <div style={styles.infoCard}>
           <div style={styles.infoLabel}>Status</div>
           <div style={styles.infoValue}>
-            {displayBackup.restorationInfo?.hasBeenRestored ? '🔄 Restored' : '✅ Available'}
+            {displayBackup.restorationInfo?.hasBeenRestored ? <><FontAwesomeIcon icon={faSync} /> Restored</> : <><FontAwesomeIcon icon={faCheckCircle} /> Available</>}
           </div>
           <div style={styles.infoSubvalue}>
             {displayBackup.restorationInfo?.hasBeenRestored && displayBackup.restorationInfo?.lastRestoredAt ?
@@ -469,7 +495,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
 
       {/* Document Counts */}
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>📊 Document Summary</h3>
+        <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faChartBar} /> Document Summary</h3>
         <div style={styles.infoGrid}>
           <div style={styles.infoCard}>
             <div style={styles.infoLabel}>PriceFix Records</div>
@@ -492,7 +518,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
       {/* Change Context */}
       {displayBackup.changeContext && (
         <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>📝 Change Information</h3>
+          <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faEdit} /> Change Information</h3>
           <div style={styles.dataTypeCard}>
             <table style={styles.metadataTable}>
               <tbody>
@@ -520,7 +546,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
 
       {/* Storage Efficiency */}
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>💾 Storage Efficiency</h3>
+        <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faHdd} /> Storage Efficiency</h3>
         <div style={styles.dataTypeCard}>
           <table style={styles.metadataTable}>
             <tbody>
@@ -591,7 +617,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
     return (
       <div>
         <div style={styles.warningBox}>
-          <span>⚠️</span>
+          <FontAwesomeIcon icon={faExclamationTriangle} />
           <span style={styles.warningText}>
             Click on items below to expand and view detailed business data. This shows the complete backup contents.
           </span>
@@ -602,7 +628,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
           <div style={styles.dataTypeCard}>
             <div style={styles.dataTypeHeader}>
               <h4 style={styles.dataTypeTitle}>
-                💰 Pricing Overview Summary
+                <FontAwesomeIcon icon={faMoneyBill} /> Pricing Overview Summary
               </h4>
             </div>
 
@@ -623,13 +649,13 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                         padding: '16px'
                       }}>
                         <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', color: '#374151' }}>
-                          📦 Product Catalog Pricing:
+                          <FontAwesomeIcon icon={faBox} /> Product Catalog Pricing:
                         </div>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: pricedProducts.length > 0 ? '#166534' : '#92400e' }}>
                           {pricedProducts.length > 0 ? (
-                            `✅ ${pricedProducts.length} of ${totalProducts} products have prices set`
+                            <><FontAwesomeIcon icon={faCheckCircle} /> {pricedProducts.length} of {totalProducts} products have prices set</>
                           ) : (
-                            `⚠️ No product prices configured (${totalProducts} products without pricing)`
+                            <><FontAwesomeIcon icon={faExclamationTriangle} /> No product prices configured ({totalProducts} products without pricing)</>
                           )}
                         </div>
                         {pricedProducts.length > 0 && (
@@ -678,7 +704,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                 padding: '16px'
               }}>
                 <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '8px', color: '#374151' }}>
-                  🔧 Service Pricing Configuration:
+                  <FontAwesomeIcon icon={faWrench} /> Service Pricing Configuration:
                 </div>
                 <div style={{
                   fontSize: '18px',
@@ -720,11 +746,11 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                     const pricingFixCount = snapshot.dataTypes?.priceFix?.count || 0;
                     const totalServices = snapshot.dataTypes?.serviceConfigs?.count || 0;
 
-                    if (servicesWithAnyPricing.length > 0 || pricingFixCount > 0) {
+                    if (servicesWithAnyPricing.length > 0 || pricingFixCount > 0) { 
                       return (
                         <div>
                           <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#166534', marginBottom: '8px' }}>
-                            ✅ {servicesWithAnyPricing.length} services have pricing configured{pricingFixCount > 0 ? ` + ${pricingFixCount} PriceFix services` : ''}
+                            <FontAwesomeIcon icon={faCheckCircle} /> {servicesWithAnyPricing.length} services have pricing configured{pricingFixCount > 0 ? ` + ${pricingFixCount} PriceFix services` : ''}
                           </div>
                           <div style={{ fontSize: '14px', color: '#374151' }}>
                             <strong>Service Pricing Details:</strong>
@@ -744,7 +770,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                     } else {
                       return (
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#92400e' }}>
-                          ⚠️ No service pricing configured - {totalServices} services may not be billable
+                          <FontAwesomeIcon icon={faExclamationTriangle} /> No service pricing configured - {totalServices} services may not be billable
                         </div>
                       );
                     }
@@ -761,7 +787,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             <div style={styles.dataTypeCard}>
               <div style={styles.dataTypeHeader}>
                 <h4 style={styles.dataTypeTitle}>
-                  📦 Product Catalog Hierarchy
+                  <FontAwesomeIcon icon={faBox} /> Product Catalog Hierarchy
                 </h4>
                 <span style={styles.dataTypeCount}>
                   {snapshot.dataTypes.productCatalog.totalCount} catalogs
@@ -785,7 +811,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                       }}>
                         ▶
                       </span>
-                      <strong>📋 {snapshot.dataTypes.productCatalog.active.version}</strong>
+                      <strong><FontAwesomeIcon icon={faClipboard} /> {snapshot.dataTypes.productCatalog.active.version}</strong>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
                         <span style={{...styles.badge, backgroundColor: '#dbeafe', color: '#1e40af'}}>
                           {snapshot.dataTypes.productCatalog.active.families?.length || 0} Families
@@ -804,7 +830,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                               fontSize: '12px',
                               fontWeight: '500'
                             }}>
-                              💰 {pricedProducts.length}/{totalProducts} Products Priced
+                              <FontAwesomeIcon icon={faMoneyBill} /> {pricedProducts.length}/{totalProducts} Products Priced
                             </span>
                           ) : (
                             <span style={{
@@ -815,7 +841,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                               fontSize: '12px',
                               fontWeight: '500'
                             }}>
-                              ⚠️ No Prices Set
+                              <FontAwesomeIcon icon={faExclamationTriangle} /> No Prices Set
                             </span>
                           );
                         })()}
@@ -847,7 +873,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                 }}>
                                   ▶
                                 </span>
-                                <strong>📁 {family.familyName || family.name || `Family ${familyIndex + 1}`}</strong>
+                                <strong><FontAwesomeIcon icon={faFolder} /> {family.familyName || family.name || `Family ${familyIndex + 1}`}</strong>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
                                   <span style={{...styles.badge, backgroundColor: '#fef3c7', color: '#92400e'}}>
                                     {family.products?.length || 0} Products
@@ -861,7 +887,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                       fontSize: '12px',
                                       fontWeight: '500'
                                     }}>
-                                      💰 Priced Items: {family.products.filter(p => p.basePrice?.amount).length}
+                                      <FontAwesomeIcon icon={faMoneyBill} /> Priced Items: {family.products.filter(p => p.basePrice?.amount).length}
                                     </span>
                                   )}
                                 </div>
@@ -893,7 +919,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                             ▶
                                           </span>
                                           <div style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'space-between' }}>
-                                            <strong>📦 {product.name || product.productName || `Product ${productIndex + 1}`}</strong>
+                                            <strong><FontAwesomeIcon icon={faBox} /> {product.name || product.productName || `Product ${productIndex + 1}`}</strong>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                               {product.basePrice?.amount ? (
                                                 <span style={{
@@ -903,7 +929,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                                   backgroundColor: '#166534',
                                                   color: 'white'
                                                 }}>
-                                                  💰 ${product.basePrice.amount}/{product.basePrice.uom || 'unit'}
+                                                  <FontAwesomeIcon icon={faMoneyBill} /> ${product.basePrice.amount}/{product.basePrice.uom || 'unit'}
                                                 </span>
                                               ) : (
                                                 <span style={{
@@ -935,7 +961,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                                 fontSize: '20px',
                                                 fontWeight: 'bold'
                                               }}>
-                                                💰 PRICE: ${product.basePrice.amount} {product.basePrice.currency || 'USD'}
+                                                <FontAwesomeIcon icon={faMoneyBill} /> PRICE: ${product.basePrice.amount} {product.basePrice.currency || 'USD'}
                                                 <div style={{ fontSize: '14px', opacity: 0.9, marginTop: '4px' }}>
                                                   Per {product.basePrice.uom || 'unit'}
                                                 </div>
@@ -952,7 +978,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                                 fontWeight: 'bold',
                                                 border: '2px dashed #f59e0b'
                                               }}>
-                                                ⚠️ NO PRICE CONFIGURED FOR THIS PRODUCT
+                                                <FontAwesomeIcon icon={faExclamationTriangle} /> NO PRICE CONFIGURED FOR THIS PRODUCT
                                               </div>
                                             )}
 
@@ -1025,7 +1051,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             <div style={styles.dataTypeCard}>
               <div style={styles.dataTypeHeader}>
                 <h4 style={styles.dataTypeTitle}>
-                  ⚙️ Service Configuration Hierarchy
+                  <FontAwesomeIcon icon={faCog} /> Service Configuration Hierarchy
                 </h4>
                 <span style={styles.dataTypeCount}>
                   {snapshot.dataTypes.serviceConfigs.count} services
@@ -1056,7 +1082,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                           <strong style={config.isActive ? styles.serviceStatusActive : styles.serviceStatusInactive}>
-                            🔧 {config.serviceId}
+                            <FontAwesomeIcon icon={faWrench} /> {config.serviceId}
                           </strong>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
                             <span style={{
@@ -1084,7 +1110,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                     fontSize: '12px',
                                     fontWeight: '500'
                                   }}>
-                                    💰 {hasServicePricing ? `${servicePricing.length} Rate${servicePricing.length !== 1 ? 's' : ''}` : ''}{hasServicePricing && hasStandardPricing ? ' + ' : ''}{hasStandardPricing ? `${Object.keys(config.pricing).length} Tier${Object.keys(config.pricing).length !== 1 ? 's' : ''}` : ''}
+                                    <FontAwesomeIcon icon={faMoneyBill} /> {hasServicePricing ? `${servicePricing.length} Rate${servicePricing.length !== 1 ? 's' : ''}` : ''}{hasServicePricing && hasStandardPricing ? ' + ' : ''}{hasStandardPricing ? `${Object.keys(config.pricing).length} Tier${Object.keys(config.pricing).length !== 1 ? 's' : ''}` : ''}
                                   </span>
                                 );
                               }
@@ -1135,7 +1161,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                   }}>
                                     ▶
                                   </span>
-                                  <strong>⚙️ Configuration Settings</strong>
+                                  <strong><FontAwesomeIcon icon={faCog} /> Configuration Settings</strong>
                                   <span style={{...styles.badge, backgroundColor: '#e0e7ff', color: '#3730a3', marginLeft: '12px'}}>
                                     {Object.keys(config.settings).length} Settings
                                   </span>
@@ -1183,7 +1209,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                     }}>
                                       ▶
                                     </span>
-                                    <strong>💰 Service Pricing Details</strong>
+                                    <strong><FontAwesomeIcon icon={faMoneyBill} /> Service Pricing Details</strong>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
                                       {hasServicePricing && (
                                         <span style={{...styles.badge, backgroundColor: '#dcfce7', color: '#166534'}}>
@@ -1213,7 +1239,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                               alignItems: 'center',
                                               gap: '8px'
                                             }}>
-                                              🏷️ Current Service Rates
+                                              <FontAwesomeIcon icon={faTags} /> Current Service Rates
                                             </h4>
                                             {(() => {
                                               // Group pricing by category for better organization
@@ -1269,7 +1295,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                                         textAlign: 'right',
                                                         marginLeft: '16px'
                                                       }}>
-                                                        💰 ${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
+                                                        <FontAwesomeIcon icon={faMoneyBill} /> ${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
                                                       </div>
                                                     </div>
                                                   ))}
@@ -1291,7 +1317,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                               alignItems: 'center',
                                               gap: '8px'
                                             }}>
-                                              📋 Pricing Tiers
+                                              <FontAwesomeIcon icon={faClipboard} /> Pricing Tiers
                                             </h4>
                                             {Object.entries(config.pricing).map(([tierKey, tierData]) => (
                                               <div key={tierKey} style={{
@@ -1322,7 +1348,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                                   fontSize: '20px',
                                                   fontWeight: 'bold'
                                                 }}>
-                                                  💰 ${tierData?.basePrice?.amount || tierData?.price || 'N/A'}
+                                                  <FontAwesomeIcon icon={faMoneyBill} /> ${tierData?.basePrice?.amount || tierData?.price || 'N/A'}
                                                   {tierData?.basePrice?.currency && tierData.basePrice.currency !== 'USD' && (
                                                     <span style={{ fontSize: '14px', marginLeft: '4px' }}>
                                                       {tierData.basePrice.currency}
@@ -1345,7 +1371,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                             color: '#92400e',
                                             fontWeight: 'bold'
                                           }}>
-                                            ⚠️ No pricing information configured for this service
+                                            <FontAwesomeIcon icon={faExclamationTriangle} /> No pricing information configured for this service
                                           </div>
                                         )}
                                       </div>
@@ -1375,7 +1401,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             <div style={styles.dataTypeCard}>
               <div style={styles.dataTypeHeader}>
                 <h4 style={styles.dataTypeTitle}>
-                  💰 Service Pricing Information
+                  <FontAwesomeIcon icon={faMoneyBill} /> Service Pricing Information
                 </h4>
                 <span style={styles.dataTypeCount}>
                   {snapshot.dataTypes.priceFix.count} pricing records
@@ -1398,7 +1424,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                       }}>
                         ▶
                       </span>
-                      <strong>💰 {pricing.serviceId || 'Unknown Service'}</strong>
+                      <strong><FontAwesomeIcon icon={faMoneyBill} /> {pricing.serviceId || 'Unknown Service'}</strong>
                       {pricing.pricing && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
                           <span style={{...styles.badge, backgroundColor: '#dcfce7', color: '#166534'}}>
@@ -1417,7 +1443,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                 fontSize: '12px',
                                 fontWeight: '500'
                               }}>
-                                💰 Prices Configured
+                                <FontAwesomeIcon icon={faMoneyBill} /> Prices Configured
                               </span>
                             ) : (
                               <span style={{
@@ -1428,7 +1454,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                 fontSize: '12px',
                                 fontWeight: '500'
                               }}>
-                                ⚠️ No Prices Set
+                                <FontAwesomeIcon icon={faExclamationTriangle} /> No Prices Set
                               </span>
                             );
                           })()}
@@ -1474,7 +1500,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                   fontSize: '28px',
                                   fontWeight: 'bold'
                                 }}>
-                                  💰 ${tierData?.basePrice?.amount || tierData?.price || 'N/A'}
+                                  <FontAwesomeIcon icon={faMoneyBill} /> ${tierData?.basePrice?.amount || tierData?.price || 'N/A'}
                                   {tierData?.basePrice?.currency && tierData.basePrice.currency !== 'USD' && (
                                     <div style={{ fontSize: '14px', marginTop: '4px' }}>
                                       {tierData.basePrice.currency}
@@ -1500,7 +1526,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
   const renderMetadata = () => (
     <div>
       <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>🔧 Technical Metadata</h3>
+        <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faWrench} /> Technical Metadata</h3>
         <div style={styles.dataTypeCard}>
           <table style={styles.metadataTable}>
             <tbody>
@@ -1555,13 +1581,13 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
 
       {displayBackup.restorationInfo?.hasBeenRestored && (
         <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>🔄 Restoration History</h3>
+          <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faSync} /> Restoration History</h3>
           <div style={styles.dataTypeCard}>
             <table style={styles.metadataTable}>
               <tbody>
                 <tr style={styles.metadataRow}>
                   <td style={styles.metadataLabel}>Restoration Status</td>
-                  <td style={styles.metadataValue}>✅ Previously Restored</td>
+                  <td style={styles.metadataValue}><FontAwesomeIcon icon={faCheckCircle} /> Previously Restored</td>
                 </tr>
                 <tr style={styles.metadataRow}>
                   <td style={styles.metadataLabel}>Last Restored Date</td>
@@ -1609,7 +1635,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             }}
             onClick={() => setActiveTab('overview')}
           >
-            📋 Overview
+            <FontAwesomeIcon icon={faClipboard} /> Overview
           </button>
           <button
             style={{
@@ -1618,7 +1644,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             }}
             onClick={() => setActiveTab('content')}
           >
-            📄 Content Preview
+            <FontAwesomeIcon icon={faFile} /> Content Preview
           </button>
           <button
             style={{
@@ -1627,7 +1653,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             }}
             onClick={() => setActiveTab('metadata')}
           >
-            🔧 Technical Info
+            <FontAwesomeIcon icon={faWrench} /> Technical Info
           </button>
         </div>
 
