@@ -350,66 +350,75 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         let successCount = 0;
         let failCount = 0;
 
+        // ✅ FIX: Create ONE note with all file information
+        const bulkNoteText = `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${selectedBulkFiles.map(f => `• ${f.fileName}`).join('\n')}`;
+
         for (const [index, file] of selectedBulkFiles.entries()) {
           try {
             console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${selectedBulkFiles.length}: ${file.fileName}`);
 
             if (index === 0) {
-              // ✅ First file: Create the deal
+              // ✅ First file: Create the deal with the comprehensive note
               const result = await zohoApi.firstTimeUpload(file.id, {
                 companyId: selectedCompany.id,
                 companyName: selectedCompany.name,
-                dealName: dealName.trim(), // ✅ FIX: Use same deal name for all files
+                dealName: dealName.trim(),
                 pipelineName,
                 stage,
-                noteText: `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${selectedBulkFiles.map(f => `• ${f.fileName}`).join('\n')}`
+                noteText: bulkNoteText  // ✅ Use comprehensive note text
               });
 
               if (result.success) {
                 successCount++;
-                dealId = result.data?.deal?.id; // ✅ FIX: Extract dealId from correct response structure
+                dealId = result.data?.deal?.id;
                 console.log(`✅ [BULK-FIRST-TIME] Deal created with ID: ${dealId}`);
 
-                // ✅ SAFETY CHECK: Ensure dealId was properly extracted
                 if (!dealId) {
                   failCount++;
                   console.error(`❌ [BULK-FIRST-TIME] Could not extract dealId from response:`, result.data);
-                  break; // Stop processing if we can't get dealId
+                  break;
                 }
               } else {
                 failCount++;
                 console.error(`❌ [BULK-FIRST-TIME] Failed to create deal with ${file.fileName}:`, result.error);
+                break;
               }
             } else {
-              // ✅ Subsequent files: Add to existing deal (handle main agreements vs attached files)
-
-              // ✅ SAFETY CHECK: Ensure we have a dealId from the first upload
+              // ✅ Subsequent files: Upload to existing deal WITHOUT creating individual notes
               if (!dealId) {
                 failCount++;
                 console.error(`❌ [BULK-FIRST-TIME] No dealId available for file: ${file.fileName}`);
-                continue; // Skip this file and continue with others
+                continue;
               }
 
               let result;
 
-              if (file.fileType === 'main_pdf') {
-                // Main agreement file - use updateUpload with dealId
+              // ✅ Upload file to deal without creating note (files will show in Files tab)
+              const isMainPdf = file.fileType === 'main_pdf' ||
+                              file.fileName.toLowerCase().includes('main agreement') ||
+                              file.fileName.toLowerCase().includes('agreement.pdf') ||
+                              (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
+
+              if (isMainPdf) {
+                // Main agreement file - upload without note
                 result = await zohoApi.updateUpload(file.id, {
-                  noteText: `Added to bulk upload deal\n\nDocument: ${file.fileName}`,
-                  dealId: dealId // Pass the dealId from first file's upload
+                  noteText: `Additional file in bulk upload: ${file.fileName}`,  // ✅ Minimal note, file shows in Files tab
+                  dealId: dealId,
+                  skipNoteCreation: true  // ✅ Skip individual note creation
                 });
               } else {
-                // Attached file - use special attached file endpoint
+                // Attached file - upload to Files tab without individual note
                 result = await zohoApi.uploadAttachedFile(file.id, {
-                  dealId: dealId, // Use same deal as main agreement
-                  noteText: `Added to bulk upload deal\n\nAttached document: ${file.fileName}`,
-                  dealName: dealName.trim()
+                  dealId: dealId,
+                  noteText: `Additional file in bulk upload: ${file.fileName}`,  // ✅ Minimal note, file shows in Files tab
+                  dealName: dealName.trim(),
+                  skipNoteCreation: true  // ✅ Skip individual note creation
                 });
               }
 
               if (result.success) {
                 successCount++;
-                console.log(`✅ [BULK-FIRST-TIME] Added file to deal: ${file.fileName} (${file.fileType})`);
+                console.log(`✅ [BULK-FIRST-TIME] Added file to deal: ${file.fileName}`);
               } else {
                 failCount++;
                 console.error(`❌ [BULK-FIRST-TIME] Failed to add ${file.fileName} to deal:`, result.error);
@@ -486,6 +495,10 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         console.log(`♻️ [BULK-UPDATE] Processing ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total) for existing folder`);
         let successCount = 0;
         let failCount = 0;
+        let isFirstFileUpload = true;
+
+        // ✅ Prepare comprehensive note text for first file upload
+        const bulkUpdateNoteText = `${noteText.trim()}\n\nUpdate with ${selectedBulkFiles.length} selected documents:\n${selectedBulkFiles.map(f => `• ${f.fileName}`).join('\n')}`;
 
         for (const file of selectedBulkFiles) {
           try {
@@ -500,10 +513,11 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                             (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
 
             if (isMainPdf) {
-              // Main agreement file - use standard updateUpload
+              // Main agreement file - use standard updateUpload with comprehensive note on first file
               console.log(`📝 [BULK-UPDATE] Processing as main agreement file: ${file.fileName}`);
               result = await zohoApi.updateUpload(file.id, {
-                noteText: `${noteText.trim()}\n\nDocument: ${file.fileName}`
+                noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
+                skipNoteCreation: !isFirstFileUpload  // ✅ Skip note creation for subsequent files
               });
             } else {
               // Attached file - use existing mapping dealId that we already have from uploadStatus
@@ -516,14 +530,16 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
               result = await zohoApi.uploadAttachedFile(file.id, {
                 dealId: dealId,
-                noteText: `${noteText.trim()}\n\nAttached document: ${file.fileName}`,
-                dealName: uploadStatus?.mapping?.dealName || 'Unknown Deal'
+                noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
+                dealName: uploadStatus?.mapping?.dealName || 'Unknown Deal',
+                skipNoteCreation: !isFirstFileUpload  // ✅ Skip note creation for subsequent files
               });
             }
 
             if (result.success) {
               successCount++;
-              console.log(`✅ [BULK-UPDATE] Success: ${file.fileName} (${file.fileType})`);
+              console.log(`✅ [BULK-UPDATE] Success: ${file.fileName}`);
+              isFirstFileUpload = false; // Only first file gets comprehensive note
             } else {
               failCount++;
               console.error(`❌ [BULK-UPDATE] Failed: ${file.fileName}:`, result.error);

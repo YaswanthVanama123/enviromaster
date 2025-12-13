@@ -126,6 +126,7 @@ export interface FirstTimeUploadRequest {
 export interface UpdateUploadRequest {
   noteText: string;
   dealId?: string; // ✅ NEW: Optional dealId for bulk uploads
+  skipNoteCreation?: boolean; // ✅ NEW: Skip note creation for bulk uploads
 }
 
 export interface ZohoDeal {
@@ -320,7 +321,7 @@ export const zohoApi = {
    */
   async uploadAttachedFile(
     fileId: string,
-    dealData: { dealId: string; noteText: string; dealName: string }
+    dealData: { dealId: string; noteText: string; dealName: string; skipNoteCreation?: boolean }
   ): Promise<ZohoUploadResult> {
     const res = await axios.post(
       `${API_BASE_URL}/api/zoho-upload/attached-file/${fileId}/add-to-deal`,
