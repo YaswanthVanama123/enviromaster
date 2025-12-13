@@ -67,8 +67,9 @@ export function transformRpmWindowsData(structuredData: any): any {
     });
   }
 
-  // Extract installation fee
-  if (structuredData.installationFee) {
+  // ✅ FIXED: Only set custom installation fee if it was actually overridden
+  // Don't set custom fields for normal calculated values
+  if (structuredData.installationFee?.amount != null && structuredData.installationFee?.isCustom === true) {
     formState.customInstallationFee = structuredData.installationFee.amount;
   }
 
@@ -103,17 +104,21 @@ export function transformRpmWindowsData(structuredData: any): any {
     }));
   }
 
-  // Extract totals (custom overrides)
+  // ✅ FIXED: Don't automatically set custom override fields for calculated totals
+  // Only set them if they were explicitly marked as custom overrides
   if (structuredData.totals) {
-    if (structuredData.totals.perVisit) {
+    // Only set custom fields if they were actually overridden by the user
+    if (structuredData.totals.perVisit?.isCustom === true) {
       formState.customPerVisitPrice = structuredData.totals.perVisit.amount;
     }
-    if (structuredData.totals.monthlyRecurring) {
+    if (structuredData.totals.monthlyRecurring?.isCustom === true) {
       formState.customMonthlyRecurring = structuredData.totals.monthlyRecurring.amount;
     }
     if (structuredData.totals.annual) {
       formState.contractMonths = structuredData.totals.annual.months || 12;
-      formState.customAnnualPrice = structuredData.totals.annual.amount;
+      if (structuredData.totals.annual?.isCustom === true) {
+        formState.customAnnualPrice = structuredData.totals.annual.amount;
+      }
     }
   }
 
@@ -267,34 +272,37 @@ export function transformCarpetCleanData(structuredData: any): any {
       }
     }
 
-    // Extract custom installation fee if set
-    if (structuredData.installation.total != null) {
+    // ✅ FIXED: Only set custom installation fee if it was actually overridden
+    // Don't set custom fields for normal calculated values - this was causing
+    // override fields to be set in edit mode, preventing calculations from updating the UI
+    if (structuredData.installation?.total != null && structuredData.installation?.isCustom === true) {
       formState.customInstallationFee = structuredData.installation.total;
     }
   }
 
-  // Extract totals
+  // ✅ FIXED: Don't automatically set custom override fields for calculated totals
+  // Only set them if they were explicitly marked as custom overrides
+  // This prevents the yellow background "override active" state in edit mode
   if (structuredData.totals) {
-    // Per visit
-    if (structuredData.totals.perVisit) {
-      formState.customPerVisitPrice = structuredData.totals.perVisit.amount;
-    }
-
-    // Monthly
-    if (structuredData.totals.monthly) {
-      formState.customMonthlyRecurring = structuredData.totals.monthly.amount;
-    }
-
-    // First month (with installation)
-    if (structuredData.totals.firstMonth) {
-      formState.customFirstMonthPrice = structuredData.totals.firstMonth.amount;
-    }
-
-    // Contract
+    // Contract months (always safe to set)
     if (structuredData.totals.contract) {
       formState.contractMonths = structuredData.totals.contract.months || 12;
-      formState.customContractTotal = structuredData.totals.contract.amount;
+
+      // Only set custom contract total if it was actually overridden
+      if (structuredData.totals.contract.isCustom === true) {
+        formState.customContractTotal = structuredData.totals.contract.amount;
+      }
     }
+
+    // ✅ REMOVED: Don't set custom override fields for calculated values
+    // The following lines were causing the yellow background bug in carpet cleaning:
+    // - formState.customPerVisitPrice = structuredData.totals.perVisit.amount;
+    // - formState.customMonthlyRecurring = structuredData.totals.monthly.amount;
+    // - formState.customFirstMonthPrice = structuredData.totals.firstMonth.amount;
+    // - formState.customContractTotal = structuredData.totals.contract.amount;
+
+    // These should ONLY be set if the user explicitly overrode the calculated values
+    // in the original form, which would be indicated by an isCustom flag
   }
 
   // Extract custom fields

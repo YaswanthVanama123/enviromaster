@@ -186,6 +186,25 @@ export const pdfApi = {
   },
 
   /**
+   * ✅ NEW: Get lightweight customer headers summary (no heavy payload data)
+   * Returns only essential fields: _id, status, updatedAt, headerTitle
+   * Use this for list views to avoid loading heavy form data upfront
+   */
+  async getCustomerHeadersSummary(): Promise<{
+    items: Array<{
+      _id: string;
+      status: string;
+      updatedAt: string;
+      headerTitle?: string; // extracted from payload.headerTitle
+    }>;
+  }> {
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/customer-headers?fields=_id,status,updatedAt,payload.headerTitle`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
    * Get a specific customer header by ID
    */
   async getCustomerHeaderById(id: string): Promise<{ payload: FormPayload }> {

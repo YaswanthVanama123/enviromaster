@@ -103,18 +103,19 @@ export default function ApprovalDocuments() {
       setLoading(true);
       setError(null);
       try {
-        const data = await pdfApi.getCustomerHeaders();
+        // ✅ OPTIMIZED: Use lightweight summary API for approval document list
+        const data = await pdfApi.getCustomerHeadersSummary();
         const items = data.items || [];
 
         // Map and filter for pending_approval status only
         const mapped: Document[] = items
           .map((item: any) => ({
             id: item._id || item.id,
-            fileName: item.payload?.headerTitle ?? "Untitled",
+            fileName: item.headerTitle ?? "Untitled", // ✅ Uses summary API headerTitle
             updatedAt: item.updatedAt,
             status: item.status ?? "draft",
             createdAt: item.createdAt,
-            headerTitle: item.payload?.headerTitle,
+            headerTitle: item.headerTitle, // ✅ Uses summary API headerTitle
             zoho: item.zoho,
           }))
           .filter((doc: Document) => doc.status === "pending_approval");

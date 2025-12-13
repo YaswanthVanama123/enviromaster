@@ -192,9 +192,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       switch (name as keyof CarpetFormState) {
         case "areaSqFt": {
           const num = parseFloat(String(value));
+          const newValue = Number.isFinite(num) && num > 0 ? num : 0;
           return {
             ...prev,
-            areaSqFt: Number.isFinite(num) && num > 0 ? num : 0,
+            areaSqFt: newValue,
           };
         }
 
@@ -490,19 +491,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
   }, [
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form.areaSqFt,
-    form.useExactSqft,  // ✅ NEW: Re-calculate when pricing method changes
+    form.useExactSqft,  // ✅ Re-calculate when pricing method changes
     form.frequency,
     form.contractMonths,
     form.includeInstall,
     form.isDirtyInstall,
-    // ✅ NEW: Editable rate fields (from backend)
-    form.unitSqFt,
-    form.firstUnitRate,
-    form.additionalUnitRate,
-    form.perVisitMinimum,
-    form.installMultiplierDirty,
-    form.installMultiplierClean,
-    // ✅ NEW: Custom override fields
+    // ✅ FIXED: Only watch custom override fields (user can edit these)
     form.customPerVisitPrice,
     form.customMonthlyRecurring,
     form.customFirstMonthPrice,
@@ -511,13 +505,15 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
   ]);
 
   const quote: ServiceQuoteResult = useMemo(
-    () => ({
-      serviceId: form.serviceId,
-      perVisit: perVisitEffective,
-      monthly: monthlyTotal,
-      // re-using `annual` as "contract total" like we did on SaniScrub
-      annual: contractTotal,
-    }),
+    () => {
+      const result = {
+        serviceId: form.serviceId,
+        perVisit: perVisitEffective,
+        monthly: monthlyTotal,
+        annual: contractTotal,
+      };
+      return result;
+    },
     [form.serviceId, perVisitEffective, monthlyTotal, contractTotal]
   );
 

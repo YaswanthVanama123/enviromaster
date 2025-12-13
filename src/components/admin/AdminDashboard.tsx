@@ -6,9 +6,10 @@ import { useAdminAuth } from "../../backendservice/hooks";
 import { PricingTablesView } from "./PricingTablesView";
 import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
-import { MdAttachMoney, MdSettings, MdInventory } from "react-icons/md";
+import { PricingBackupManager } from "./PricingBackupManager";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup } from "react-icons/md";
 
-type TabType = "pricing" | "services" | "products";
+type TabType = "pricing" | "services" | "products" | "backup";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -47,23 +48,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/products') || path.includes('/products/'))) {
         return "products";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/backup') || path.includes('/backup/'))) {
+        return "backup";
+      }
 
       // Then use currentSubtab as fallback
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
-    // Check if URL is /pricing-tables/services or /pricing-tables/products
+    // Check if URL is /pricing-tables/services or /pricing-tables/products or /pricing-tables/backup
     if (path.includes('/pricing-tables/services')) {
       return "services";
     }
     if (path.includes('/pricing-tables/products')) {
       return "products";
     }
+    if (path.includes('/pricing-tables/backup')) {
+      return "backup";
+    }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -146,6 +153,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <MdInventory size={20} style={{ marginRight: "8px" }} /> Product Catalog
         </button>
+        <button
+          style={{
+            ...styles.navButton,
+            ...(activeTab === "backup" ? styles.navButtonActive : {}),
+          }}
+          onClick={() => handleTabChange("backup")}
+        >
+          <MdBackup size={20} style={{ marginRight: "8px" }} /> Backup Management
+        </button>
       </div>
 
       <div style={styles.content}>
@@ -164,6 +180,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             itemId={currentItemId}
             isEmbedded={isEmbedded}
             parentPath={parentPath}
+          />
+        )}
+        {activeTab === "backup" && (
+          <PricingBackupManager
+            isEmbedded={isEmbedded}
+            parentPath={parentPath ? `${parentPath}/backup` : '/pricing-tables/backup'}
           />
         )}
       </div>

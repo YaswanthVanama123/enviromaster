@@ -77,48 +77,49 @@ export default function SavedFilesGrouped() {
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
   // Fetch grouped files
-  // ✅ FIXED: Fetch groups AND draft-only agreements
+  // ✅ OPTIMIZED: Use lightweight data loading with on-demand detailed fetching
   const fetchGroups = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
       console.log(`📁 [SAVED-FILES-GROUPED] Fetching page ${page} with search: "${search}"`);
 
-      // 1. Fetch grouped files (agreements with PDFs)
+      // 1. Fetch grouped files (agreements with PDFs) - already optimized
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
         search: search.trim() || undefined
       });
 
       console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${groupedResponse.groups.length} groups with PDFs`);
 
-      // 2. ✅ NEW: Also fetch all customer headers to find draft-only agreements
-      const headersResponse = await pdfApi.getCustomerHeaders();
+      // 2. ✅ OPTIMIZED: Use lightweight summary API instead of full customer headers
+      // This avoids loading heavy payload data for all agreements upfront
+      const headersSummaryResponse = await pdfApi.getCustomerHeadersSummary();
 
       // Find draft agreements that don't appear in the grouped response (no PDFs)
       const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
-      const draftOnlyHeaders = headersResponse.items.filter(header =>
+      const draftOnlyHeaders = headersSummaryResponse.items.filter(header =>
         !groupedIds.has(header._id) &&
         header.status === 'draft' &&
         // Apply search filter if provided
         (!search.trim() ||
-         (header.payload?.headerTitle &&
-          header.payload.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
+         (header.headerTitle &&
+          header.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
       );
 
-      // 3. ✅ NEW: Convert draft headers to SavedFileGroup format
+      // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
       const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
         id: header._id,
-        agreementTitle: header.payload?.headerTitle || `Agreement ${header._id}`,
+        agreementTitle: header.headerTitle || `Agreement ${header._id}`,
         fileCount: 0, // No PDFs yet
         latestUpdate: header.updatedAt,
         statuses: [header.status],
         hasUploads: false,
-        files: [] // No files yet - this is the key issue we're fixing
+        files: [] // No files yet - detailed data loaded on-demand
       }));
 
-      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements`);
+      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements using lightweight API`);
 
-      // 4. ✅ NEW: Merge grouped files with draft-only agreements
+      // 4. ✅ OPTIMIZED: Merge grouped files with lightweight draft-only agreements
       const allGroups = [...groupedResponse.groups, ...draftGroups];
 
       setGroups(allGroups);
@@ -232,9 +233,11 @@ export default function SavedFilesGrouped() {
 
   const isGroupExpanded = (groupId: string) => expandedGroups.has(groupId);
 
-  // File action handlers (simplified)
+  // ✅ OPTIMIZED: File action handlers with on-demand detailed data fetching
   const handleView = async (file: SavedFileListItem) => {
     try {
+      // ✅ On-demand: Fetch detailed file data only when viewing
+      console.log(`👁️ [VIEW] Loading detailed data for file: ${file.id}`);
       await pdfApi.getSavedFileDetails(file.id);
       navigate("/pdf-viewer", {
         state: {
@@ -287,7 +290,8 @@ export default function SavedFilesGrouped() {
 
   const handleEdit = async (file: SavedFileListItem, groupId: string) => {
     try {
-      // ✅ FIXED: Use group ID (agreement ID) instead of file ID
+      // ✅ OPTIMIZED: Fetch detailed file data only when editing
+      console.log(`✏️ [EDIT] Loading detailed data for file: ${file.id}, agreement: ${groupId}`);
       await pdfApi.getSavedFileDetails(file.id);
       navigate(`/edit/pdf/${groupId}`, {
         state: {
@@ -304,10 +308,14 @@ export default function SavedFilesGrouped() {
     }
   };
 
-  // ✅ NEW: Edit Agreement handler for draft-only agreements
+  // ✅ OPTIMIZED: Edit Agreement handler for draft-only agreements with on-demand loading
   const handleEditAgreement = async (group: SavedFileGroup) => {
     try {
-      console.log(`📝 [EDIT AGREEMENT] Editing draft agreement: ${group.id}`);
+      console.log(`📝 [EDIT AGREEMENT] Loading detailed data for draft agreement: ${group.id}`);
+
+      // ✅ On-demand: Fetch detailed customer header data only when editing
+      // This loads the full form payload that was excluded from the lightweight initial load
+      await pdfApi.getCustomerHeaderForEdit(group.id);
 
       navigate(`/edit/pdf/${group.id}`, {
         state: {

@@ -49,7 +49,8 @@ export default function Home() {
     const fetchDocuments = async () => {
       setLoading(true);
       try {
-        const data = await pdfApi.getCustomerHeaders();
+        // ✅ OPTIMIZED: Use lightweight summary API for dashboard counts and stats
+        const data = await pdfApi.getCustomerHeadersSummary();
         const items = data.items || [];
         console.log("📊 Fetched Documents:", items);
         console.log("📊 Total Documents Count:", items.length);

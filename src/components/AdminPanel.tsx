@@ -139,12 +139,13 @@ export default function AdminPanel() {
     const fetchDocuments = async () => {
       setLoading(true);
       try {
-        const data = await pdfApi.getCustomerHeaders();
+        // ✅ OPTIMIZED: Use lightweight summary API for dashboard display
+        const data = await pdfApi.getCustomerHeadersSummary();
         const items = data.items || [];
 
         const mapped: Document[] = items.map((item: any) => ({
           id: item._id || item.id,
-          name: item.payload?.headerTitle || "Untitled",
+          name: item.headerTitle || "Untitled", // ✅ Uses summary API headerTitle
           uploadedOn: new Date(item.updatedAt).toLocaleDateString("en-US", {
             month: "long",
             year: "numeric",

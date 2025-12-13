@@ -101,8 +101,9 @@ export default function SavedFilesAgreements() {
 
       console.log(`📁 [AGREEMENTS] Loaded ${groupedResponse.groups.length} agreements with PDFs`);
 
-      // 2. ✅ NEW: Also fetch all customer headers to find draft-only agreements
-      const headersResponse = await pdfApi.getCustomerHeaders();
+      // 2. ✅ OPTIMIZED: Use lightweight summary API instead of full customer headers
+      // This avoids loading heavy payload data for all agreements upfront
+      const headersResponse = await pdfApi.getCustomerHeadersSummary();
 
       // Find draft agreements that don't appear in the grouped response (no PDFs)
       const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
@@ -111,14 +112,14 @@ export default function SavedFilesAgreements() {
         header.status === 'draft' &&
         // Apply search filter if provided
         (!search.trim() ||
-         (header.payload?.headerTitle &&
-          header.payload.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
+         (header.headerTitle &&
+          header.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
       );
 
-      // 3. ✅ NEW: Convert draft headers to SavedFileGroup format
+      // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
       const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
         id: header._id,
-        agreementTitle: header.payload?.headerTitle || `Agreement ${header._id}`,
+        agreementTitle: header.headerTitle || `Agreement ${header._id}`,
         fileCount: 0, // No PDFs yet
         latestUpdate: header.updatedAt,
         statuses: [header.status],
