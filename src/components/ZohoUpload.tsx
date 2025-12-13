@@ -62,10 +62,54 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     address: ''
   });
 
+  // ✅ NEW: File selection state for checkbox functionality
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+
   // Initialize component
   useEffect(() => {
     initializeUpload();
   }, [agreementId, bulkFiles]);  // ✅ Also watch bulkFiles changes
+
+  // ✅ NEW: Initialize selected files when bulkFiles changes
+  useEffect(() => {
+    if (bulkFiles && bulkFiles.length > 0) {
+      // Default: select all files initially
+      const allFileIds = new Set(bulkFiles.map(file => file.id));
+      setSelectedFiles(allFileIds);
+    } else {
+      // Single file mode: always selected
+      setSelectedFiles(new Set([agreementId]));
+    }
+  }, [bulkFiles, agreementId]);
+
+  // ✅ NEW: Helper functions for file selection
+  const toggleFileSelection = (fileId: string) => {
+    setSelectedFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fileId)) {
+        newSet.delete(fileId);
+      } else {
+        newSet.add(fileId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllFiles = () => {
+    if (bulkFiles && bulkFiles.length > 0) {
+      setSelectedFiles(new Set(bulkFiles.map(file => file.id)));
+    }
+  };
+
+  const deselectAllFiles = () => {
+    setSelectedFiles(new Set());
+  };
+
+  // ✅ NEW: Get only selected files for upload
+  const getSelectedBulkFiles = () => {
+    if (!bulkFiles) return null;
+    return bulkFiles.filter(file => selectedFiles.has(file.id));
+  };
 
   const initializeUpload = async () => {
     try {
@@ -292,16 +336,23 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     try {
       setStep('uploading');
 
-      // ✅ BULK UPLOAD MODE: Create ONE deal and add all files to it
+      // ✅ BULK UPLOAD MODE: Create ONE deal and add only selected files to it
       if (bulkFiles && bulkFiles.length > 0) {
-        console.log(`🆕 [BULK-FIRST-TIME] Creating single deal for ${bulkFiles.length} files`);
+        const selectedBulkFiles = getSelectedBulkFiles();
+
+        if (!selectedBulkFiles || selectedBulkFiles.length === 0) {
+          setToastMessage({ message: 'Please select at least one file to upload', type: 'error' });
+          return;
+        }
+
+        console.log(`🆕 [BULK-FIRST-TIME] Creating single deal for ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total)`);
         let dealId: string | null = null;
         let successCount = 0;
         let failCount = 0;
 
-        for (const [index, file] of bulkFiles.entries()) {
+        for (const [index, file] of selectedBulkFiles.entries()) {
           try {
-            console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${bulkFiles.length}: ${file.fileName}`);
+            console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${selectedBulkFiles.length}: ${file.fileName}`);
 
             if (index === 0) {
               // ✅ First file: Create the deal
@@ -311,7 +362,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 dealName: dealName.trim(), // ✅ FIX: Use same deal name for all files
                 pipelineName,
                 stage,
-                noteText: `${noteText.trim()}\n\nBulk upload of ${bulkFiles.length} documents:\n${bulkFiles.map(f => `• ${f.fileName}`).join('\n')}`
+                noteText: `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${selectedBulkFiles.map(f => `• ${f.fileName}`).join('\n')}`
               });
 
               if (result.success) {
@@ -374,17 +425,22 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           setStep('success');
           const message = failCount > 0
             ? `Created deal and added ${successCount} files, ${failCount} failed`
-            : `Successfully created deal with all ${successCount} files!`;
-          setToastMessage({ message, type: successCount === bulkFiles.length ? 'success' : 'warning' });
+            : `Successfully created deal with all ${successCount} selected files!`;
+          setToastMessage({ message, type: successCount === selectedBulkFiles.length ? 'success' : 'warning' });
           onSuccess();
         } else {
-          setError('Failed to create deal and upload files. Please check your connection and try again.');
+          setError('Failed to create deal and upload selected files. Please check your connection and try again.');
           setStep('error');
         }
         return;
       }
 
-      // ✅ SINGLE UPLOAD MODE: Original logic
+      // ✅ SINGLE UPLOAD MODE: Check if file is selected
+      if (!selectedFiles.has(agreementId)) {
+        setToastMessage({ message: 'Please select the file to upload', type: 'error' });
+        return;
+      }
+
       const result = await zohoApi.firstTimeUpload(agreementId, {
         companyId: selectedCompany.id,
         companyName: selectedCompany.name,
@@ -418,36 +474,50 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     try {
       setStep('uploading');
 
-      // ✅ BULK UPDATE MODE: Process multiple files for existing folder
+      // ✅ BULK UPDATE MODE: Process only selected files for existing folder
       if (bulkFiles && bulkFiles.length > 0) {
-        console.log(`♻️ [BULK-UPDATE] Processing ${bulkFiles.length} files for existing folder`);
+        const selectedBulkFiles = getSelectedBulkFiles();
+
+        if (!selectedBulkFiles || selectedBulkFiles.length === 0) {
+          setToastMessage({ message: 'Please select at least one file to upload', type: 'error' });
+          return;
+        }
+
+        console.log(`♻️ [BULK-UPDATE] Processing ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total) for existing folder`);
         let successCount = 0;
         let failCount = 0;
 
-        for (const file of bulkFiles) {
+        for (const file of selectedBulkFiles) {
           try {
             console.log(`📤 [BULK-UPDATE] Uploading file: ${file.fileName} (${file.id}) - Type: ${file.fileType || 'unknown'}`);
 
             let result;
 
-            if (file.fileType === 'main_pdf') {
+            // ✅ FIX: Better file type detection for proper routing
+            const isMainPdf = file.fileType === 'main_pdf' ||
+                            file.fileName.toLowerCase().includes('main agreement') ||
+                            file.fileName.toLowerCase().includes('agreement.pdf') ||
+                            (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
+
+            if (isMainPdf) {
               // Main agreement file - use standard updateUpload
+              console.log(`📝 [BULK-UPDATE] Processing as main agreement file: ${file.fileName}`);
               result = await zohoApi.updateUpload(file.id, {
                 noteText: `${noteText.trim()}\n\nDocument: ${file.fileName}`
               });
             } else {
-              // Attached file - need to get existing mapping to find dealId
-              const statusResult = await zohoApi.getUploadStatus(bulkFiles.find(f => f.fileType === 'main_pdf')?.id || bulkFiles[0].id);
-              const dealId = statusResult.mapping?.zohoDeal?.id;
+              // Attached file - use existing mapping dealId that we already have from uploadStatus
+              console.log(`📎 [BULK-UPDATE] Processing as attached file: ${file.fileName}`);
+              const dealId = uploadStatus?.mapping?.dealId;
 
               if (!dealId) {
-                throw new Error('Could not find existing deal ID for attached file upload');
+                throw new Error('Could not find existing deal ID - mapping information missing');
               }
 
               result = await zohoApi.uploadAttachedFile(file.id, {
                 dealId: dealId,
                 noteText: `${noteText.trim()}\n\nAttached document: ${file.fileName}`,
-                dealName: statusResult.mapping?.dealName || 'Unknown Deal'
+                dealName: uploadStatus?.mapping?.dealName || 'Unknown Deal'
               });
             }
 
@@ -468,18 +538,23 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           setStep('success');
           const message = failCount > 0
             ? `Added ${successCount} files to existing deal, ${failCount} failed`
-            : `Successfully added all ${successCount} files to existing deal!`;
-          setToastMessage({ message, type: successCount === bulkFiles.length ? 'success' : 'warning' });
+            : `Successfully added all ${successCount} selected files to existing deal!`;
+          setToastMessage({ message, type: successCount === selectedBulkFiles.length ? 'success' : 'warning' });
           onSuccess();
         } else {
-          setError('All file additions failed. Please check your connection and try again.');
+          setError('All selected file additions failed. Please check your connection and try again.');
           setStep('error');
         }
         return;
       }
 
-      // ✅ SINGLE UPDATE MODE: Original logic
-      console.log(`♻️ [SINGLE-UPDATE] Processing single file: ${agreementId}`);
+      // ✅ SINGLE UPDATE MODE: Check if file is selected
+      if (!selectedFiles.has(agreementId)) {
+        setToastMessage({ message: 'Please select the file to upload', type: 'error' });
+        return;
+      }
+
+      console.log(`📝 [SINGLE-UPDATE] Processing single file: ${agreementId}`);
       const result = await zohoApi.updateUpload(agreementId, {
         noteText: noteText.trim()
       });
@@ -526,23 +601,80 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         </p>
       </div>
 
-      {/* ✅ NEW: Show files list for bulk uploads using existing UI styles */}
-      {bulkFiles && bulkFiles.length > 0 && (
-        <div className="zoho-upload__section">
-          <label className="zoho-upload__label">
-            <FontAwesomeIcon icon={faFileAlt} />
-            Documents to Upload
-          </label>
-          <div className="zoho-upload__files-preview">
-            {bulkFiles.map((file, index) => (
-              <div key={file.id} className="zoho-upload__file-preview">
-                <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
-                <span className="file-name">{file.fileName}</span>
-              </div>
-            ))}
+      {/* ✅ UPDATED: Show file selection for BOTH single and bulk uploads */}
+      <div className="zoho-upload__section">
+        <label className="zoho-upload__label">
+          <FontAwesomeIcon icon={faFileAlt} />
+          {bulkFiles && bulkFiles.length > 0
+            ? `Select Documents to Upload (${selectedFiles.size} of ${bulkFiles.length} selected)`
+            : `Document to Upload (${selectedFiles.has(agreementId) ? '1 selected' : '0 selected'})`
+          }
+        </label>
+
+        {/* Selection controls - only show for bulk uploads */}
+        {bulkFiles && bulkFiles.length > 1 && (
+          <div className="zoho-upload__selection-controls" style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="zoho-upload__btn zoho-upload__btn--secondary"
+              onClick={selectAllFiles}
+              style={{ padding: '5px 10px', fontSize: '12px' }}
+            >
+              Select All
+            </button>
+            <button
+              type="button"
+              className="zoho-upload__btn zoho-upload__btn--secondary"
+              onClick={deselectAllFiles}
+              style={{ padding: '5px 10px', fontSize: '12px' }}
+            >
+              Deselect All
+            </button>
           </div>
+        )}
+
+        <div className="zoho-upload__files-preview">
+          {/* Show bulk files if available */}
+          {bulkFiles && bulkFiles.length > 0 ? (
+            bulkFiles.map((file, index) => (
+              <div key={file.id} className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedFiles.has(file.id)}
+                  onChange={() => toggleFileSelection(file.id)}
+                  style={{ marginRight: '8px' }}
+                />
+                <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
+                <span className="file-name" style={{ flex: 1 }}>{file.fileName}</span>
+                <span style={{ fontSize: '12px', color: '#666' }}>
+                  {file.fileType === 'main_pdf' ? '(Main)' : '(Attachment)'}
+                </span>
+              </div>
+            ))
+          ) : (
+            /* Show single file selection */
+            <div className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
+              <input
+                type="checkbox"
+                checked={selectedFiles.has(agreementId)}
+                onChange={() => toggleFileSelection(agreementId)}
+                style={{ marginRight: '8px' }}
+              />
+              <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
+              <span className="file-name" style={{ flex: 1 }}>{agreementTitle}</span>
+              <span style={{ fontSize: '12px', color: '#666' }}>
+                (PDF Document)
+              </span>
+            </div>
+          )}
         </div>
-      )}
+
+        {selectedFiles.size === 0 && (
+          <div style={{ color: '#f44336', fontSize: '14px', marginTop: '8px' }}>
+            ⚠️ Please select at least one file to upload to Zoho.
+          </div>
+        )}
+      </div>
 
       <div className="zoho-upload__form">
         {/* Company Selection */}
@@ -728,6 +860,81 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         <p>This agreement has been uploaded before. Adding version {uploadStatus?.mapping?.nextVersion}.</p>
       </div>
 
+      {/* ✅ NEW: Show file selection for update uploads too */}
+      <div className="zoho-upload__section">
+        <label className="zoho-upload__label">
+          <FontAwesomeIcon icon={faFileAlt} />
+          {bulkFiles && bulkFiles.length > 0
+            ? `Select Documents to Upload (${selectedFiles.size} of ${bulkFiles.length} selected)`
+            : `Document to Upload (${selectedFiles.has(agreementId) ? '1 selected' : '0 selected'})`
+          }
+        </label>
+
+        {/* Selection controls - only show for bulk uploads */}
+        {bulkFiles && bulkFiles.length > 1 && (
+          <div className="zoho-upload__selection-controls" style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="zoho-upload__btn zoho-upload__btn--secondary"
+              onClick={selectAllFiles}
+              style={{ padding: '5px 10px', fontSize: '12px' }}
+            >
+              Select All
+            </button>
+            <button
+              type="button"
+              className="zoho-upload__btn zoho-upload__btn--secondary"
+              onClick={deselectAllFiles}
+              style={{ padding: '5px 10px', fontSize: '12px' }}
+            >
+              Deselect All
+            </button>
+          </div>
+        )}
+
+        <div className="zoho-upload__files-preview">
+          {/* Show bulk files if available */}
+          {bulkFiles && bulkFiles.length > 0 ? (
+            bulkFiles.map((file, index) => (
+              <div key={file.id} className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={selectedFiles.has(file.id)}
+                  onChange={() => toggleFileSelection(file.id)}
+                  style={{ marginRight: '8px' }}
+                />
+                <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
+                <span className="file-name" style={{ flex: 1 }}>{file.fileName}</span>
+                <span style={{ fontSize: '12px', color: '#666' }}>
+                  {file.fileType === 'main_pdf' ? '(Main)' : '(Attachment)'}
+                </span>
+              </div>
+            ))
+          ) : (
+            /* Show single file selection */
+            <div className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
+              <input
+                type="checkbox"
+                checked={selectedFiles.has(agreementId)}
+                onChange={() => toggleFileSelection(agreementId)}
+                style={{ marginRight: '8px' }}
+              />
+              <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
+              <span className="file-name" style={{ flex: 1 }}>{agreementTitle}</span>
+              <span style={{ fontSize: '12px', color: '#666' }}>
+                (Updated PDF Document)
+              </span>
+            </div>
+          )}
+        </div>
+
+        {selectedFiles.size === 0 && (
+          <div style={{ color: '#f44336', fontSize: '14px', marginTop: '8px' }}>
+            ⚠️ Please select at least one file to upload to Zoho.
+          </div>
+        )}
+      </div>
+
       {uploadStatus?.mapping && (
         <div className="zoho-upload__existing-info">
           <div className="info-row">
@@ -838,10 +1045,21 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           <button
             className="zoho-upload__btn zoho-upload__btn--primary"
             onClick={handleFirstTimeUpload}
-            disabled={!selectedCompany || !dealName.trim() || !noteText.trim() || showCreateCompany}
+            disabled={
+              !selectedCompany ||
+              !dealName.trim() ||
+              !noteText.trim() ||
+              showCreateCompany ||
+              selectedFiles.size === 0
+            }
           >
             <FontAwesomeIcon icon={faUpload} />
-            Upload to Zoho
+            {bulkFiles && bulkFiles.length > 0
+              ? `Upload ${selectedFiles.size} Selected Files to Zoho`
+              : selectedFiles.has(agreementId)
+                ? 'Upload Selected File to Zoho'
+                : 'Upload to Zoho (No File Selected)'
+            }
           </button>
         </div>
       );
@@ -859,10 +1077,18 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           <button
             className="zoho-upload__btn zoho-upload__btn--primary"
             onClick={handleUpdateUpload}
-            disabled={!noteText.trim()}
+            disabled={
+              !noteText.trim() ||
+              selectedFiles.size === 0
+            }
           >
             <FontAwesomeIcon icon={faUpload} />
-            Upload Version {uploadStatus?.mapping?.nextVersion}
+            {bulkFiles && bulkFiles.length > 0
+              ? `Upload ${selectedFiles.size} Selected Files (Version ${uploadStatus?.mapping?.nextVersion})`
+              : selectedFiles.has(agreementId)
+                ? `Upload Selected File (Version ${uploadStatus?.mapping?.nextVersion})`
+                : `Upload Version ${uploadStatus?.mapping?.nextVersion} (No File Selected)`
+            }
           </button>
         </div>
       );
