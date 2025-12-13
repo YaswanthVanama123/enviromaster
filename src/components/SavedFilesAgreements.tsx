@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
+import { versionApi } from "../backendservice/api/versionApi";
 import type {
   SavedFileListItem,
   SavedFileGroup,
@@ -86,22 +87,53 @@ export default function SavedFilesAgreements() {
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // ✅ CORRECTED: Fetch agreements (each is one MongoDB document with attachedFiles)
+  // ✅ FIXED: Fetch agreements AND draft-only agreements
   const fetchAgreements = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
       console.log(`📁 [AGREEMENTS] Fetching page ${page} with search: "${search}"`);
 
-      const response = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
+      // 1. Fetch grouped files (agreements with PDFs)
+      const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
         search: search.trim() || undefined
       });
 
-      console.log(`📁 [AGREEMENTS] Loaded ${response.groups.length} agreements with ${response.total} total files`);
+      console.log(`📁 [AGREEMENTS] Loaded ${groupedResponse.groups.length} agreements with PDFs`);
 
-      setAgreements(response.groups);
-      setTotalAgreements(response.totalGroups);
-      setTotalFiles(response.total);
+      // 2. ✅ NEW: Also fetch all customer headers to find draft-only agreements
+      const headersResponse = await pdfApi.getCustomerHeaders();
+
+      // Find draft agreements that don't appear in the grouped response (no PDFs)
+      const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
+      const draftOnlyHeaders = headersResponse.items.filter(header =>
+        !groupedIds.has(header._id) &&
+        header.status === 'draft' &&
+        // Apply search filter if provided
+        (!search.trim() ||
+         (header.payload?.headerTitle &&
+          header.payload.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
+      );
+
+      // 3. ✅ NEW: Convert draft headers to SavedFileGroup format
+      const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
+        id: header._id,
+        agreementTitle: header.payload?.headerTitle || `Agreement ${header._id}`,
+        fileCount: 0, // No PDFs yet
+        latestUpdate: header.updatedAt,
+        statuses: [header.status],
+        hasUploads: false,
+        files: [] // No files yet - this is the key issue we're fixing
+      }));
+
+      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements`);
+
+      // 4. ✅ NEW: Merge grouped files with draft-only agreements
+      const allAgreements = [...groupedResponse.groups, ...draftGroups];
+
+      setAgreements(allAgreements);
+      setTotalAgreements(groupedResponse.totalGroups + draftGroups.length);
+      setTotalFiles(groupedResponse.total);
       setCurrentPage(page);
     } catch (err) {
       console.error("Error fetching agreements:", err);
@@ -219,7 +251,14 @@ export default function SavedFilesAgreements() {
       }
 
       // ✅ SMART NAVIGATION: Include document type for correct API selection
-      const documentType = file.fileType === 'main_pdf' ? 'agreement' : 'attached-file';
+      let documentType: string;
+      if (file.fileType === 'main_pdf') {
+        documentType = 'agreement';
+      } else if (file.fileType === 'version_pdf') {
+        documentType = 'version'; // ✅ NEW: Handle version PDFs
+      } else {
+        documentType = 'attached-file';
+      }
 
       console.log(`📄 [VIEW] Navigating to PDF viewer: ${file.id} (type: ${documentType})`);
 
@@ -227,7 +266,7 @@ export default function SavedFilesAgreements() {
         state: {
           documentId: file.id,
           fileName: file.title,
-          documentType: documentType, // ✅ NEW: Specify document type for correct API
+          documentType: documentType, // ✅ Updated: Specify document type for correct API
           originalReturnPath: returnPath,
         },
       });
@@ -246,6 +285,9 @@ export default function SavedFilesAgreements() {
       // ✅ Use different download methods based on file type
       if (file.fileType === 'main_pdf') {
         blob = await pdfApi.downloadPdf(file.id);
+      } else if (file.fileType === 'version_pdf') {
+        // ✅ NEW: Download version PDFs using version API
+        blob = await versionApi.downloadVersion(file.id);
       } else {
         blob = await pdfApi.downloadAttachedFile(file.id);
       }
@@ -307,26 +349,78 @@ export default function SavedFilesAgreements() {
 
   const handleEdit = async (file: SavedFileListItem) => {
     try {
-      // Only main PDF files can be edited
-      if (file.fileType !== 'main_pdf') {
+      // ✅ UPDATED: Only allow editing the most recent version PDF, not main agreements
+      if (file.fileType !== 'version_pdf') {
         setToastMessage({
-          message: "Only main agreement documents can be edited.",
+          message: "Only the most recent version can be edited.",
           type: "error"
         });
         return;
       }
 
-      await pdfApi.getSavedFileDetails(file.id);
-      navigate(`/edit/pdf/${file.id}`, {
+      // For version PDFs, check if it's the most recent version
+      // Find the agreement this version belongs to
+      const agreement = agreements.find(agreement =>
+        agreement.files.some(f => f.id === file.id)
+      );
+
+      if (!agreement) {
+        setToastMessage({
+          message: "Cannot find agreement for this version.",
+          type: "error"
+        });
+        return;
+      }
+
+      // Get all version PDFs for this agreement and find the highest version number
+      const versionFiles = agreement.files
+        .filter(f => f.fileType === 'version_pdf')
+        .map(f => ({ ...f, versionNumber: (f as any).versionNumber || 0 }))
+        .sort((a, b) => b.versionNumber - a.versionNumber);
+
+      const isLatestVersion = versionFiles.length > 0 && versionFiles[0].id === file.id;
+
+      if (!isLatestVersion) {
+        setToastMessage({
+          message: "Only the most recent version can be edited. Edit the latest version to make changes.",
+          type: "error"
+        });
+        return;
+      }
+
+      console.log(`📝 [EDIT VERSION] Editing agreement: ${agreement.id} (was viewing version: ${file.id})`);
+
+      // ✅ FIXED: Navigate using agreement ID, not version ID
+      navigate(`/edit/pdf/${agreement.id}`, {
         state: {
           editing: true,
-          id: file.id,
+          id: agreement.id, // ✅ Use agreement ID, not version ID
           returnPath: returnPath,
         },
       });
     } catch (err) {
       setToastMessage({
         message: "Unable to load this document for editing. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
+  // ✅ NEW: Edit Agreement handler for draft-only agreements
+  const handleEditAgreement = async (agreement: SavedFileGroup) => {
+    try {
+      console.log(`📝 [EDIT AGREEMENT] Editing draft agreement: ${agreement.id}`);
+
+      navigate(`/edit/pdf/${agreement.id}`, {
+        state: {
+          editing: true,
+          id: agreement.id,
+          returnPath: returnPath,
+        },
+      });
+    } catch (err) {
+      setToastMessage({
+        message: "Unable to load this agreement for editing. Please try again.",
         type: "error"
       });
     }
@@ -623,6 +717,33 @@ export default function SavedFilesAgreements() {
                     <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
                     Add
                   </button>
+
+                  {/* ✅ NEW: Edit Agreement button for draft-only agreements */}
+                  {agreement.fileCount === 0 && (
+                    <button
+                      style={{
+                        background: '#3b82f6',
+                        border: '1px solid #2563eb',
+                        borderRadius: '6px',
+                        padding: '6px 8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        color: '#fff',
+                        fontWeight: '500'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditAgreement(agreement);
+                      }}
+                      title="Edit this draft agreement"
+                    >
+                      <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '10px' }} />
+                      Edit Agreement
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -661,7 +782,11 @@ export default function SavedFilesAgreements() {
                         <FontAwesomeIcon
                           icon={faFileAlt}
                           style={{
-                            color: file.fileType === 'main_pdf' ? '#2563eb' : '#10b981',
+                            color: file.fileType === 'main_pdf'
+                              ? '#2563eb'
+                              : file.fileType === 'version_pdf'
+                              ? '#7c3aed'  // Purple for version PDFs
+                              : '#10b981',
                             fontSize: '16px'
                           }}
                         />
@@ -683,11 +808,23 @@ export default function SavedFilesAgreements() {
                           fontSize: '12px',
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: file.fileType === 'main_pdf' ? '#e0f2fe' : '#f0fdf4',
-                          color: file.fileType === 'main_pdf' ? '#0e7490' : '#166534',
+                          background: file.fileType === 'main_pdf'
+                            ? '#e0f2fe'
+                            : file.fileType === 'version_pdf'
+                            ? '#f3e8ff'  // Light purple for version PDFs
+                            : '#f0fdf4',
+                          color: file.fileType === 'main_pdf'
+                            ? '#0e7490'
+                            : file.fileType === 'version_pdf'
+                            ? '#7c2d12'  // Dark purple for version PDFs
+                            : '#166534',
                           fontWeight: '600'
                         }}>
-                          {file.fileType === 'main_pdf' ? 'Main Agreement' : 'Attached'}
+                          {file.fileType === 'main_pdf'
+                            ? 'Main Agreement'
+                            : file.fileType === 'version_pdf'
+                            ? `Version ${(file as any).versionNumber || ''}`  // Show version number
+                            : 'Attached'}
                         </span>
                         {file.description && (
                           <span style={{
@@ -702,10 +839,18 @@ export default function SavedFilesAgreements() {
 
                       {/* File actions */}
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        {file.fileType === 'main_pdf' && (
+                        {/* ✅ UPDATED: Only show edit button for the most recent version PDF, not main agreements */}
+                        {file.fileType === 'version_pdf' && (() => {
+                          // Check if this is the most recent version for edit button visibility
+                          const versionFiles = agreement.files
+                            .filter(f => f.fileType === 'version_pdf')
+                            .map(f => ({ ...f, versionNumber: (f as any).versionNumber || 0 }))
+                            .sort((a, b) => b.versionNumber - a.versionNumber);
+                          return versionFiles.length > 0 && versionFiles[0].id === file.id;
+                        })() && (
                           <button
                             className="iconbtn"
-                            title="Edit"
+                            title="Edit Latest Version"
                             onClick={() => handleEdit(file)}
                           >
                             <FontAwesomeIcon icon={faPencilAlt} />

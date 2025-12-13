@@ -11,9 +11,12 @@ import ServicesDataCollector from "./services/ServicesDataCollector";
 import type{ ServicesDataHandle } from "./services/ServicesDataCollector";
 import { ServicesProvider } from "./services/ServicesContext";
 import ConfirmationModal from "./ConfirmationModal";
+import { VersionDialog } from "./VersionDialog";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
+import { versionApi } from "../backendservice/api/versionApi";
+import type { VersionStatus } from "../backendservice/api/versionApi";
 import { useAllServicePricing } from "../backendservice/hooks";
 
 type HeaderRow = {
@@ -105,6 +108,11 @@ export default function FormFilling() {
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
 
+  // ✅ NEW: Version dialog state for PDF versioning
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
+  const [isCheckingVersions, setIsCheckingVersions] = useState(false);
+
   // Fetch all service pricing data for context provider
   const { pricingData } = useAllServicePricing();
 
@@ -171,27 +179,50 @@ export default function FormFilling() {
     // Extract editing and id from location.state inside useEffect to ensure fresh values
     const { editing = false, id } = locationState;
 
-    // Use URL param if available, otherwise use location state id
-    const finalId = urlId || id;
+    console.log("🔍 [FORMFILLING DEBUG] Location state values:", {
+      editing,
+      id,
+      locationState,
+      urlId
+    });
 
-    // Update documentId when location changes
-    setDocumentId(finalId || null);
+    // ✅ FIXED: Always use agreement ID directly - no version mapping needed
+    const agreementId = urlId || id;
+
+    // Set documentId to agreement ID (form data always lives in the agreement)
+    setDocumentId(agreementId || null);
+    console.log("🔍 [DOCUMENT ID] Set to agreement ID:", agreementId);
+
     setIsEditMode(editing || isInEditMode); // Set edit mode state based on URL or state
 
     // ---- PICK API FOR INITIAL DATA ----
-    const useCustomerDoc = (editing || isInEditMode) && !!finalId;
+    const useCustomerDoc = (editing || isInEditMode) && !!agreementId;
 
     const fetchHeaders = async () => {
       setLoading(true);
       try {
-        const json = useCustomerDoc
-          ? await pdfApi.getCustomerHeaderForEdit(finalId!) // ← FIXED: Use edit-format endpoint
-          : await pdfApi.getAdminHeaderById(ADMIN_TEMPLATE_ID);
+        let json;
+
+        if (useCustomerDoc) {
+          // ✅ FIXED: Always load agreement document for editing
+          console.log("🔍 [ENDPOINT DEBUG] Loading agreement document for editing:", {
+            useCustomerDoc,
+            agreementId,
+            note: "Always load main agreement - versions are just PDF snapshots"
+          });
+
+          console.log("📝 [AGREEMENT EDIT] Loading agreement for editing:", agreementId);
+          json = await pdfApi.getCustomerHeaderForEdit(agreementId!);
+        } else {
+          // New document - use admin template
+          json = await pdfApi.getAdminHeaderById(ADMIN_TEMPLATE_ID);
+        }
 
         const fromBackend = json.payload ?? json;
 
         console.log("📋 [FormFilling] Loaded from backend:", {
           isEditMode: useCustomerDoc,
+          agreementId,
           endpoint: useCustomerDoc ? 'edit-format' : 'admin-template',
           hasServices: !!fromBackend.services,
           services: fromBackend.services,
@@ -238,19 +269,19 @@ export default function FormFilling() {
           return "Customer Update Addendum";
         };
 
-        // Always try to generate title from customer name first, fallback to backend title
+        // ✅ FIXED: Simplified title logic - always use agreement title
         const dynamicTitle = generateTitleFromCustomerName(fromBackend.headerRows || []);
         const shouldUseBackendTitle = dynamicTitle === "Customer Update Addendum" && fromBackend.headerTitle && fromBackend.headerTitle !== "Customer Update Addendum";
+        const finalTitle = shouldUseBackendTitle ? fromBackend.headerTitle : dynamicTitle;
 
         console.log("🎯 [TITLE DEBUG] Title selection logic:", {
           fromBackendTitle: fromBackend.headerTitle,
           dynamicTitle: dynamicTitle,
-          shouldUseBackendTitle: shouldUseBackendTitle,
-          finalTitle: shouldUseBackendTitle ? fromBackend.headerTitle : dynamicTitle
+          finalTitle: finalTitle
         });
 
         const cleanPayload: FormPayload = {
-          headerTitle: shouldUseBackendTitle ? fromBackend.headerTitle : dynamicTitle,
+          headerTitle: finalTitle,
           headerRows: fromBackend.headerRows ?? [],
           products: fromBackend.products ?? {
             headers: [],
@@ -414,15 +445,16 @@ export default function FormFilling() {
     };
 
     try {
+      // ✅ SIMPLIFIED: documentId is always the agreement ID now
       if (documentId) {
-        // Update existing draft
+        // Update existing agreement
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
-        console.log("Draft updated successfully");
+        console.log("Draft updated successfully for agreement:", documentId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
       } else {
         // Create new draft
         const result = await pdfApi.createCustomerHeader(payloadToSend);
-        const newId = result.headers["x-customerheaderdoc-id"] || result.data._id || result.data.id;
+        const newId = result.data?._id || result.data?.id || result.headers["x-customerheaderdoc-id"];
         setDocumentId(newId);
         console.log("Draft created successfully with ID:", newId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
@@ -435,13 +467,104 @@ export default function FormFilling() {
     }
   };
 
-  // Save handler: Save with PDF compilation and Zoho
+  // Save handler: Save with PDF compilation (simplified version logic)
   const handleSave = async () => {
     if (!payload) return;
 
     setIsSaving(true);
     setShowSaveModal(false);
 
+    // ✅ FIXED: Handle new documents separately
+    if (!documentId) {
+      console.log("💾 [SAVE] New document - delegating to handleNormalSave");
+      await handleNormalSave();
+      return;
+    }
+
+    console.log("💾 [SAVE] Starting save process for agreement:", documentId);
+
+    try {
+      // 1. ✅ FIXED: Always update the main agreement data first
+      const payloadToSend = {
+        ...collectFormData(),
+        status: "saved",
+      };
+
+      // Update the agreement data (no PDF generation yet)
+      await pdfApi.updateCustomerHeader(documentId, payloadToSend);
+      console.log("✅ [SAVE] Agreement data updated successfully");
+
+      // 2. ✅ NEW: Check version status for PDF generation
+      setIsCheckingVersions(true);
+      const status = await versionApi.checkVersionStatus(documentId);
+      setVersionStatus(status);
+      setIsCheckingVersions(false);
+
+      // Show version dialog to ask user: Replace current PDF or create new PDF
+      if (status.isFirstTime) {
+        // First time - auto-create v1
+        console.log("🎯 [FIRST TIME] Auto-creating v1");
+        await handleCreateFirstVersion();
+      } else {
+        // Subsequent saves - show dialog
+        console.log("📋 [SUBSEQUENT] Showing version dialog for user choice");
+        // ✅ FIXED: Reset saving state before showing dialog
+        setIsSaving(false);
+        setShowVersionDialog(true);
+      }
+
+    } catch (err: any) {
+      console.error("❌ [SAVE ERROR] Failed to save agreement:", err);
+      setToastMessage({
+        message: err.response?.data?.message || "Failed to save agreement. Please try again.",
+        type: "error"
+      });
+      setIsSaving(false);
+      setIsCheckingVersions(false);
+    }
+  };
+
+  // ✅ FIXED: Auto-create first version (v1) - simplified
+  const handleCreateFirstVersion = async () => {
+    if (!documentId) return;
+
+    try {
+      setIsSaving(true);
+
+      // ✅ FIXED: Agreement data was already updated in handleSave, just create PDF
+      console.log("📝 [FIRST VERSION] Creating v1 PDF for agreement:", documentId);
+
+      // Create v1 (first version PDF)
+      const result = await versionApi.createVersion(documentId, {
+        changeNotes: "Initial version",
+        replaceRecent: false,
+        isFirstTime: true
+      });
+
+      console.log("✅ [FIRST VERSION SUCCESS] v1 created successfully:", result);
+      setToastMessage({
+        message: "First version (v1) created successfully!",
+        type: "success"
+      });
+
+      // Redirect to saved PDFs
+      setTimeout(() => {
+        navigate("/saved-pdfs");
+      }, 1500);
+
+    } catch (err: any) {
+      console.error("❌ [FIRST VERSION ERROR] Failed to create v1:", err);
+      setToastMessage({
+        message: err.response?.data?.message || "Failed to create first version. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Normal save handler (for new documents - also creates v1 in new system)
+  const handleNormalSave = async () => {
     const payloadToSend = {
       ...collectFormData(), // Collect current data from all child components
       status: "saved",
@@ -450,29 +573,50 @@ export default function FormFilling() {
     // Log the complete payload being sent to backend
     console.log("📤 [FormFilling] COMPLETE PAYLOAD BEING SENT TO BACKEND:");
     console.log(JSON.stringify(payloadToSend, null, 2));
-    console.log("📤 [FormFilling] SERVICES DATA:");
-    console.log(JSON.stringify(payloadToSend.services, null, 2));
 
     try {
       if (documentId) {
-        // Update existing document with PDF recompilation
-        await pdfApi.updateAndRecompileCustomerHeader(documentId, payloadToSend);
-        console.log("✅ [SAVE SUCCESS] Document saved and PDF compiled successfully");
-        setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
-
-        // ✅ NEW: Only redirect on successful save (Zoho worked)
-        setTimeout(() => {
-          navigate("/saved-pdfs");
-        }, 1500);
+        // ✅ UPDATED: For existing documents, don't use updateAndRecompileCustomerHeader
+        // Instead, let the version system handle PDF creation
+        console.log("⚠️ [SAVE] Existing document should use version system, not normal save");
+        await handleSave(); // Redirect to version system
+        return;
       } else {
-        // Create new document with PDF compilation
+        // ✅ NEW: Backend now returns JSON (not PDF binary) since PDF creation happens in version system
         const result = await pdfApi.createCustomerHeader(payloadToSend);
-        const newId = result.headers["x-customerheaderdoc-id"] || result.data._id || result.data.id;
-        setDocumentId(newId);
-        console.log("✅ [SAVE SUCCESS] Document created and PDF compiled successfully:", newId);
-        setToastMessage({ message: "Form saved and PDF generated successfully!", type: "success" });
 
-        // ✅ NEW: Only redirect on successful save (Zoho worked)
+        console.log("🔍 [NEW DOCUMENT] Full createCustomerHeader response:", result);
+
+        // ✅ FIXED: Backend now returns JSON with ID in response body
+        const newId = result.data?._id ||
+                     result.data?.id ||
+                     result.headers["x-customerheaderdoc-id"] ||
+                     result.headers["X-CustomerHeaderDoc-Id"];
+
+        console.log("🔍 [NEW DOCUMENT] Extracted ID:", newId);
+        console.log("🔍 [NEW DOCUMENT] Response data:", result.data);
+
+        if (!newId) {
+          console.error("❌ [NEW DOCUMENT] Failed to extract document ID from response");
+          throw new Error("Failed to get document ID from server response.");
+        }
+
+        setDocumentId(newId);
+
+        console.log("✅ [NEW DOCUMENT] Agreement created successfully:", newId);
+        console.log("🎯 [NEW DOCUMENT] Now auto-creating v1...");
+
+        // Auto-create v1 for new document
+        const versionResult = await versionApi.createVersion(newId, {
+          changeNotes: "Initial version",
+          replaceRecent: false,
+          isFirstTime: true
+        });
+
+        console.log("✅ [NEW DOCUMENT] v1 created successfully:", versionResult);
+        setToastMessage({ message: "Agreement created and first version (v1) generated successfully!", type: "success" });
+
+        // Redirect to saved PDFs
         setTimeout(() => {
           navigate("/saved-pdfs");
         }, 1500);
@@ -480,33 +624,52 @@ export default function FormFilling() {
     } catch (err: any) {
       console.error("❌ [SAVE ERROR] Error saving document:", err);
 
-      // ✅ NEW: Handle Zoho upload failures specifically
-      if (err.response?.status === 422 && err.response?.data?.error === "zoho_upload_failed") {
-        console.log("⚠️ [ZOHO FAILURE] Zoho upload failed - keeping user in form");
-        const errorData = err.response.data;
+      // Handle other errors normally
+      setToastMessage({
+        message: err.response?.data?.message || "Failed to save document. Please try again.",
+        type: "error"
+      });
+    }
+  };
 
-        // Update document ID if it was created (but Zoho failed)
-        if (errorData._id && !documentId) {
-          setDocumentId(errorData._id);
-          console.log("📝 [DRAFT SAVED] Document ID saved:", errorData._id);
-        }
+  // Version dialog handlers
+  const handleCreateVersion = async (replaceRecent: boolean, changeNotes: string) => {
+    if (!documentId) return;
 
-        // Show detailed error message about Zoho failure
-        setToastMessage({
-          message: errorData.message || "Document saved as draft due to file upload issues. Please try again or contact support.",
-          type: "error"
-        });
+    try {
+      setIsSaving(true);
 
-        // ✅ IMPORTANT: Do NOT redirect - keep user in current form
-        console.log("🔄 [STAY IN FORM] User remains in form to retry or make changes");
+      console.log("📝 [VERSION CREATE] Creating PDF version for agreement:", documentId);
 
-      } else {
-        // Handle other errors normally
-        setToastMessage({
-          message: err.response?.data?.message || "Failed to save document. Please try again.",
-          type: "error"
-        });
-      }
+      // ✅ FIXED: Agreement data was already updated in handleSave, just create PDF version
+      const result = await versionApi.createVersion(documentId, {
+        changeNotes,
+        replaceRecent, // Replace current version or create new version
+        isFirstTime: false
+      });
+
+      console.log("✅ [VERSION SUCCESS] Version created successfully:", result);
+      setToastMessage({
+        message: replaceRecent
+          ? `Current version replaced successfully!`
+          : `Version ${result.version?.versionNumber} created successfully!`,
+        type: "success"
+      });
+
+      setShowVersionDialog(false);
+      setVersionStatus(null);
+
+      // Redirect to saved PDFs
+      setTimeout(() => {
+        navigate("/saved-pdfs");
+      }, 1500);
+
+    } catch (err: any) {
+      console.error("❌ [VERSION ERROR] Failed to create version:", err);
+      setToastMessage({
+        message: err.response?.data?.message || "Failed to create version. Please try again.",
+        type: "error"
+      });
     } finally {
       setIsSaving(false);
     }
@@ -824,6 +987,18 @@ export default function FormFilling() {
           cancelText="Cancel"
           onConfirm={handleSave}
           onCancel={() => setShowSaveModal(false)}
+        />
+
+        <VersionDialog
+          isOpen={showVersionDialog}
+          versionStatus={versionStatus}
+          onClose={() => {
+            setShowVersionDialog(false);
+            setVersionStatus(null);
+            setIsSaving(false);
+          }}
+          onCreateVersion={handleCreateVersion}
+          loading={isSaving}
         />
 
         {toastMessage && (

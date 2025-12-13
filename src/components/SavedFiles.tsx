@@ -84,22 +84,53 @@ export default function SavedFiles() {
 
   console.log("📍 SavedFiles context:", { isInAdminContext, returnPath, currentPath: location.pathname });
 
-  // ✅ NEW: Fetch grouped files using the grouped API
+  // ✅ FIXED: Fetch grouped files AND draft-only agreements
   const fetchGroups = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
       console.log(`📁 [SAVED-FILES-GROUPED] Fetching page ${page} with search: "${search}"`);
 
-      const response = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
+      // 1. Fetch grouped files (agreements with PDFs)
+      const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
         search: search.trim() || undefined
       });
 
-      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${response.groups.length} groups with ${response.total} total files`);
+      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${groupedResponse.groups.length} groups with PDFs`);
 
-      setGroups(response.groups);
-      setTotalGroups(response.totalGroups);
-      setTotalFiles(response.total);
+      // 2. ✅ NEW: Also fetch all customer headers to find draft-only agreements
+      const headersResponse = await pdfApi.getCustomerHeaders();
+
+      // Find draft agreements that don't appear in the grouped response (no PDFs)
+      const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
+      const draftOnlyHeaders = headersResponse.items.filter(header =>
+        !groupedIds.has(header._id) &&
+        header.status === 'draft' &&
+        // Apply search filter if provided
+        (!search.trim() ||
+         (header.payload?.headerTitle &&
+          header.payload.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
+      );
+
+      // 3. ✅ NEW: Convert draft headers to SavedFileGroup format
+      const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
+        id: header._id,
+        agreementTitle: header.payload?.headerTitle || `Agreement ${header._id}`,
+        fileCount: 0, // No PDFs yet
+        latestUpdate: header.updatedAt,
+        statuses: [header.status],
+        hasUploads: false,
+        files: [] // No files yet - this is the key issue we're fixing
+      }));
+
+      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements`);
+
+      // 4. ✅ NEW: Merge grouped files with draft-only agreements
+      const allGroups = [...groupedResponse.groups, ...draftGroups];
+
+      setGroups(allGroups);
+      setTotalGroups(groupedResponse.totalGroups + draftGroups.length);
+      setTotalFiles(groupedResponse.total);
       setCurrentPage(page);
 
       // Clear selection when changing pages/search
@@ -159,10 +190,40 @@ export default function SavedFiles() {
     return out;
   }, [groups, sortBy, sortDir]);
 
-  // ✅ Flatten groups to get all files for compatibility with existing table structure
+  // ✅ FIXED: Flatten groups to get all files + create pseudo-files for draft-only agreements
   const sorted = useMemo(() => {
     const allFiles: SavedFileListItem[] = [];
-    sortedGroups.forEach(group => allFiles.push(...group.files));
+
+    sortedGroups.forEach(group => {
+      if (group.files.length > 0) {
+        // Regular group with files
+        allFiles.push(...group.files);
+      } else {
+        // ✅ NEW: Draft-only agreement with no files - create a pseudo-file for the table
+        const pseudoFile: SavedFileListItem = {
+          id: group.id, // Use agreement ID as file ID for editing
+          fileName: `${group.agreementTitle}.pdf`,
+          fileType: 'main_pdf' as const,
+          title: group.agreementTitle,
+          status: group.statuses[0] || 'draft',
+          createdAt: group.latestUpdate,
+          updatedAt: group.latestUpdate,
+          createdBy: null,
+          updatedBy: null,
+          fileSize: 0,
+          pdfStoredAt: null,
+          hasPdf: false, // No PDF generated yet
+          zohoInfo: {
+            biginDealId: null,
+            biginFileId: null,
+            crmDealId: null,
+            crmFileId: null,
+          }
+        };
+        allFiles.push(pseudoFile);
+      }
+    });
+
     return allFiles;
   }, [sortedGroups]);
 
@@ -398,20 +459,50 @@ export default function SavedFiles() {
     setCurrentEmailFile(null);
   };
 
-  // ✅ NEW: Edit handler - Loads full details only when needed
+  // ✅ FIXED: Edit handler - Handles both regular files and draft-only agreements
   const handleEdit = async (file: SavedFileListItem) => {
     try {
       console.log(`✏️ [EDIT] Loading full details for file: ${file.id}`);
 
-      // Load full details to ensure all form data is available
-      const response = await pdfApi.getSavedFileDetails(file.id);
+      // ✅ FIXED: Handle both regular files and draft-only pseudo-files
+      let parentGroup: SavedFileGroup | undefined;
+      let agreementId: string;
 
-      console.log(`✏️ [EDIT] Loaded ${response._metadata.payloadSize} bytes of payload data for editing`);
+      if (!file.hasPdf && file.fileType === 'main_pdf') {
+        // This is a draft-only pseudo-file - the file ID is the agreement ID
+        parentGroup = groups.find(group => group.id === file.id);
+        agreementId = file.id;
+        console.log(`✏️ [EDIT] Draft-only agreement: ${agreementId}`);
+      } else {
+        // Regular file - find the group that contains this file
+        parentGroup = groups.find(group =>
+          group.files.some(f => f.id === file.id)
+        );
+        agreementId = parentGroup?.id || file.id;
+        console.log(`✏️ [EDIT] Regular file, agreement: ${agreementId}`);
+      }
 
-      navigate(`/edit/pdf/${file.id}`, {
+      if (!parentGroup) {
+        setToastMessage({
+          message: "Cannot find agreement for this file.",
+          type: "error"
+        });
+        return;
+      }
+
+      // Load full details to ensure all form data is available (for regular files)
+      if (file.hasPdf) {
+        const response = await pdfApi.getSavedFileDetails(file.id);
+        console.log(`✏️ [EDIT] Loaded ${response._metadata.payloadSize} bytes of payload data for editing`);
+      }
+
+      console.log(`✏️ [EDIT] Editing agreement: ${agreementId} (was viewing file: ${file.id})`);
+
+      // ✅ FIXED: Navigate using agreement ID, not file ID
+      navigate(`/edit/pdf/${agreementId}`, {
         state: {
           editing: true,
-          id: file.id,
+          id: agreementId, // ✅ Use agreement ID, not file ID
           returnPath: returnPath,
           returnState: null,
         },

@@ -77,21 +77,53 @@ export default function SavedFilesGrouped() {
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
   // Fetch grouped files
+  // ✅ FIXED: Fetch groups AND draft-only agreements
   const fetchGroups = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
       console.log(`📁 [SAVED-FILES-GROUPED] Fetching page ${page} with search: "${search}"`);
 
-      const response = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
+      // 1. Fetch grouped files (agreements with PDFs)
+      const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
         search: search.trim() || undefined
       });
 
-      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${response.groups.length} groups with ${response.total} total files`);
+      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${groupedResponse.groups.length} groups with PDFs`);
 
-      setGroups(response.groups);
-      setTotalGroups(response.totalGroups);
-      setTotalFiles(response.total);
+      // 2. ✅ NEW: Also fetch all customer headers to find draft-only agreements
+      const headersResponse = await pdfApi.getCustomerHeaders();
+
+      // Find draft agreements that don't appear in the grouped response (no PDFs)
+      const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
+      const draftOnlyHeaders = headersResponse.items.filter(header =>
+        !groupedIds.has(header._id) &&
+        header.status === 'draft' &&
+        // Apply search filter if provided
+        (!search.trim() ||
+         (header.payload?.headerTitle &&
+          header.payload.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
+      );
+
+      // 3. ✅ NEW: Convert draft headers to SavedFileGroup format
+      const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
+        id: header._id,
+        agreementTitle: header.payload?.headerTitle || `Agreement ${header._id}`,
+        fileCount: 0, // No PDFs yet
+        latestUpdate: header.updatedAt,
+        statuses: [header.status],
+        hasUploads: false,
+        files: [] // No files yet - this is the key issue we're fixing
+      }));
+
+      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements`);
+
+      // 4. ✅ NEW: Merge grouped files with draft-only agreements
+      const allGroups = [...groupedResponse.groups, ...draftGroups];
+
+      setGroups(allGroups);
+      setTotalGroups(groupedResponse.totalGroups + draftGroups.length);
+      setTotalFiles(groupedResponse.total);
       setCurrentPage(page);
     } catch (err) {
       console.error("Error fetching grouped saved files:", err);
@@ -253,19 +285,40 @@ export default function SavedFilesGrouped() {
     setZohoUploadOpen(true);
   };
 
-  const handleEdit = async (file: SavedFileListItem) => {
+  const handleEdit = async (file: SavedFileListItem, groupId: string) => {
     try {
+      // ✅ FIXED: Use group ID (agreement ID) instead of file ID
       await pdfApi.getSavedFileDetails(file.id);
-      navigate(`/edit/pdf/${file.id}`, {
+      navigate(`/edit/pdf/${groupId}`, {
         state: {
           editing: true,
-          id: file.id,
+          id: groupId, // ✅ Use agreement ID, not file ID
           returnPath: returnPath,
         },
       });
     } catch (err) {
       setToastMessage({
         message: "Unable to load this document for editing. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
+  // ✅ NEW: Edit Agreement handler for draft-only agreements
+  const handleEditAgreement = async (group: SavedFileGroup) => {
+    try {
+      console.log(`📝 [EDIT AGREEMENT] Editing draft agreement: ${group.id}`);
+
+      navigate(`/edit/pdf/${group.id}`, {
+        state: {
+          editing: true,
+          id: group.id,
+          returnPath: returnPath,
+        },
+      });
+    } catch (err) {
+      setToastMessage({
+        message: "Unable to load this agreement for editing. Please try again.",
         type: "error"
       });
     }
@@ -467,6 +520,34 @@ export default function SavedFilesGrouped() {
                   <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
                   Add
                 </button>
+
+                {/* ✅ NEW: Edit Agreement button for draft-only agreements */}
+                {group.fileCount === 0 && (
+                  <button
+                    style={{
+                      background: '#3b82f6',
+                      border: '1px solid #2563eb',
+                      borderRadius: '6px',
+                      padding: '6px 8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      color: '#fff',
+                      fontWeight: '500',
+                      marginLeft: '8px'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditAgreement(group);
+                    }}
+                    title="Edit this draft agreement"
+                  >
+                    <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '10px' }} />
+                    Edit Agreement
+                  </button>
+                )}
               </div>
 
               {isGroupExpanded(group.id) && (
@@ -536,7 +617,7 @@ export default function SavedFilesGrouped() {
                         <button
                           className="iconbtn"
                           title="Edit"
-                          onClick={() => handleEdit(file)}
+                          onClick={() => handleEdit(file, group.id)}
                         >
                           <FontAwesomeIcon icon={faPencilAlt} />
                         </button>

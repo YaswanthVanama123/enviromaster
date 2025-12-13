@@ -1,0 +1,369 @@
+/* src/components/VersionDialog.css */
+.version-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.version-dialog__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.version-dialog__modal {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+.version-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.version-dialog__header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.version-dialog__close {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.version-dialog__close:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.version-dialog__close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.version-dialog__body {
+  padding: 0 24px 24px;
+}
+
+/* Status Section */
+.version-dialog__status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.version-dialog__status svg {
+  color: #3b82f6;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.version-dialog__status-content p {
+  margin: 0 0 8px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.version-dialog__status-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Actions Section */
+.version-dialog__actions h3 {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.version-dialog__action-option {
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.version-dialog__action-option:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.version-dialog__action-option.selected {
+  border-color: #3b82f6;
+  background: #dbeafe;
+}
+
+.version-dialog__action-option.recommended {
+  border-color: #10b981;
+}
+
+.version-dialog__action-option.recommended.selected {
+  background: #d1fae5;
+  border-color: #10b981;
+}
+
+.version-dialog__action-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.version-dialog__action-header svg {
+  color: #6b7280;
+}
+
+.version-dialog__action-option.selected .version-dialog__action-header svg {
+  color: #3b82f6;
+}
+
+.version-dialog__action-option.recommended .version-dialog__action-header svg {
+  color: #10b981;
+}
+
+.version-dialog__action-title {
+  font-weight: 600;
+  color: #1f2937;
+  flex: 1;
+}
+
+.version-dialog__recommended-badge {
+  background: #10b981;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.version-dialog__action-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+  padding-left: 24px;
+}
+
+/* Advanced Options */
+.version-dialog__advanced {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.version-dialog__toggle-advanced {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 4px 0;
+  margin-bottom: 12px;
+}
+
+.version-dialog__toggle-advanced:hover {
+  color: #2563eb;
+}
+
+/* Notes Section */
+.version-dialog__notes {
+  margin: 24px 0;
+}
+
+.version-dialog__notes-label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.version-dialog__notes-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.version-dialog__notes-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.version-dialog__notes-textarea:disabled {
+  background: #f9fafb;
+  cursor: not-allowed;
+}
+
+/* History Section */
+.version-dialog__history {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.version-dialog__history h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.version-dialog__version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.version-dialog__version-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.version-number {
+  font-weight: 600;
+  color: #3b82f6;
+  min-width: 30px;
+}
+
+.version-date {
+  color: #6b7280;
+  flex: 1;
+}
+
+.version-size {
+  color: #9ca3af;
+  min-width: 40px;
+  text-align: right;
+}
+
+.version-more {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Footer */
+.version-dialog__footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 24px 24px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 24px;
+}
+
+.version-dialog__btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  font-size: 0.875rem;
+}
+
+.version-dialog__btn--secondary {
+  background: #f9fafb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.version-dialog__btn--secondary:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.version-dialog__btn--primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.version-dialog__btn--primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.version-dialog__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .version-dialog {
+    padding: 16px;
+  }
+
+  .version-dialog__modal {
+    max-width: none;
+  }
+
+  .version-dialog__header {
+    padding: 16px 16px 0;
+  }
+
+  .version-dialog__body {
+    padding: 0 16px 16px;
+  }
+
+  .version-dialog__footer {
+    padding: 12px 16px 16px;
+    flex-direction: column-reverse;
+  }
+
+  .version-dialog__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
