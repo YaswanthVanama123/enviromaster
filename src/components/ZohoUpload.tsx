@@ -111,6 +111,23 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     return bulkFiles.filter(file => selectedFiles.has(file.id));
   };
 
+  // ✅ NEW: Calculate actual Zoho file names (with version numbers)
+  const calculateZohoFileName = (file: any, dealName: string, version: number = 1) => {
+    const isMainPdf = file.fileType === 'main_pdf' ||
+                      file.fileName.toLowerCase().includes('main agreement') ||
+                      file.fileName.toLowerCase().includes('agreement.pdf') ||
+                      (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
+
+    if (isMainPdf) {
+      // Main agreement files get versioned names
+      return `${dealName.replace(/[^a-zA-Z0-9-_]/g, '_')}_v${version}.pdf`;
+    } else {
+      // Attached files get _attached suffix
+      const cleanFileName = file.fileName.replace(/[^a-zA-Z0-9\-_.]/g, '_');
+      return `${cleanFileName.replace('.pdf', '')}_attached.pdf`;
+    }
+  };
+
   const initializeUpload = async () => {
     try {
       setLoading(true);
@@ -153,8 +170,12 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           console.log(`♻️ [BULK] Using existing folder mapping - Update mode for ${bulkFiles.length} files`);
           setUploadStatus({ isFirstTime: false, mapping: folderMapping });
 
-          // Set default notes for bulk update
-          setNoteText(`Bulk update - Adding ${bulkFiles.length} documents:\n${bulkFiles.map(f => `• ${f.fileName}`).join('\n')}`);
+          // Set default notes for bulk update using actual Zoho file names
+          const nextVersion = folderMapping.nextVersion || 2;
+          const actualFileNames = bulkFiles.map(file =>
+            calculateZohoFileName(file, folderMapping.dealName || 'Deal', nextVersion)
+          );
+          setNoteText(`Bulk update - Adding ${bulkFiles.length} documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
           setStep('update');
           return;
         }
@@ -175,8 +196,11 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           : `Bulk Upload - ${bulkFiles.length} Documents`;
         setDealName(defaultDealName);
 
-        // Set default notes for bulk first-time upload
-        setNoteText(`Bulk upload of ${bulkFiles.length} documents to Zoho Bigin:\n${bulkFiles.map(f => `• ${f.fileName}`).join('\n')}`);
+        // Set default notes for bulk first-time upload using actual Zoho file names
+        const actualFileNames = bulkFiles.map(file =>
+          calculateZohoFileName(file, defaultDealName, 1)
+        );
+        setNoteText(`Bulk upload of ${bulkFiles.length} documents to Zoho Bigin:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
 
         setStep('first-time');
         return;
@@ -350,8 +374,11 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         let successCount = 0;
         let failCount = 0;
 
-        // ✅ FIX: Create ONE note with all file information
-        const bulkNoteText = `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${selectedBulkFiles.map(f => `• ${f.fileName}`).join('\n')}`;
+        // ✅ FIX: Create ONE note with all file information using actual Zoho file names
+        const actualFileNames = selectedBulkFiles.map(file =>
+          calculateZohoFileName(file, dealName.trim(), 1)
+        );
+        const bulkNoteText = `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
 
         for (const [index, file] of selectedBulkFiles.entries()) {
           try {
@@ -497,8 +524,12 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         let failCount = 0;
         let isFirstFileUpload = true;
 
-        // ✅ Prepare comprehensive note text for first file upload
-        const bulkUpdateNoteText = `${noteText.trim()}\n\nUpdate with ${selectedBulkFiles.length} selected documents:\n${selectedBulkFiles.map(f => `• ${f.fileName}`).join('\n')}`;
+        // ✅ Prepare comprehensive note text for first file upload using actual Zoho file names
+        const nextVersion = uploadStatus?.mapping?.nextVersion || 2;
+        const actualFileNames = selectedBulkFiles.map(file =>
+          calculateZohoFileName(file, uploadStatus?.mapping?.dealName || 'Deal', nextVersion)
+        );
+        const bulkUpdateNoteText = `${noteText.trim()}\n\nUpdate with ${selectedBulkFiles.length} selected documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
 
         for (const file of selectedBulkFiles) {
           try {
