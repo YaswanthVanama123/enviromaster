@@ -594,6 +594,12 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
             // ✅ FIXED: Use strategy to determine correct upload method
             const strategy = getFileUploadStrategy(file);
             console.log(`📤 [BULK-UPDATE] Processing file: ${file.fileName} (${strategy.description})`);
+            console.log(`🔍 [BULK-UPDATE] File details:`, {
+              id: file.id,
+              fileName: file.fileName,
+              fileType: file.fileType,
+              strategy: strategy
+            });
 
             let result;
 
