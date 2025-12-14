@@ -38,6 +38,10 @@ interface BackendMicrofiberConfig {
     waterOnlyBetweenServices: boolean;
   };
   billingConversions: {
+    oneTime: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
     weekly: {
       annualMultiplier: number;
       monthlyMultiplier: number;
@@ -46,7 +50,27 @@ interface BackendMicrofiberConfig {
       annualMultiplier: number;
       monthlyMultiplier: number;
     };
+    twicePerMonth: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
     monthly: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+    bimonthly: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+    quarterly: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+    biannual: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+    annual: {
       annualMultiplier: number;
       monthlyMultiplier: number;
     };
@@ -71,6 +95,15 @@ type InputChangeEvent =
   | ChangeEvent<HTMLInputElement>
   | ChangeEvent<HTMLSelectElement>;
 
+// ✅ Helper function to map frequency strings to valid MicrofiberFrequencyKey
+function mapFrequency(v: string): MicrofiberFrequencyKey {
+  if (v === "oneTime" || v === "weekly" || v === "biweekly" || v === "twicePerMonth" ||
+      v === "monthly" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
+    return v;
+  }
+  return "weekly";
+}
+
 // ✅ Helper function to convert frequencyMetadata to billingConversions format
 function convertFrequencyMetadataToBillingConversions(config: any): BackendMicrofiberConfig {
   // If the config already has billingConversions, return as-is
@@ -85,6 +118,10 @@ function convertFrequencyMetadataToBillingConversions(config: any): BackendMicro
     return {
       ...config,
       billingConversions: {
+        oneTime: {
+          annualMultiplier: 1,
+          monthlyMultiplier: 0, // oneTime has no monthly billing
+        },
         weekly: {
           annualMultiplier: 52,
           monthlyMultiplier: freqMeta.weekly?.monthlyRecurringMultiplier ?? 4.33,
@@ -93,9 +130,29 @@ function convertFrequencyMetadataToBillingConversions(config: any): BackendMicro
           annualMultiplier: 26,
           monthlyMultiplier: freqMeta.biweekly?.monthlyRecurringMultiplier ?? 2.165,
         },
+        twicePerMonth: {
+          annualMultiplier: 24,
+          monthlyMultiplier: 2, // 2 visits per month
+        },
         monthly: {
           annualMultiplier: 12,
           monthlyMultiplier: 1, // monthly always 1 visit per month
+        },
+        bimonthly: {
+          annualMultiplier: 6,
+          monthlyMultiplier: 0.5, // every 2 months = 0.5 per month
+        },
+        quarterly: {
+          annualMultiplier: 4,
+          monthlyMultiplier: 0, // no monthly for quarterly
+        },
+        biannual: {
+          annualMultiplier: 2,
+          monthlyMultiplier: 0, // no monthly for biannual
+        },
+        annual: {
+          annualMultiplier: 1,
+          monthlyMultiplier: 0, // no monthly for annual
         },
         actualWeeksPerYear: 52,
         actualWeeksPerMonth: 4.33, // 52/12
@@ -374,12 +431,10 @@ export function useMicrofiberMoppingCalc(
       allowedFrequencies: cfg.allowedFrequencies,
     };
 
-    const freq: MicrofiberFrequencyKey = form.frequency ?? activeConfig.defaultFrequency;
+    const freq: MicrofiberFrequencyKey = mapFrequency(form.frequency ?? activeConfig.defaultFrequency);
 
     // ✅ BILLING CONVERSION FROM BACKEND (NOT HARDCODED!)
-    let conv = activeConfig.billingConversions.weekly;
-    if (freq === "biweekly") conv = activeConfig.billingConversions.biweekly;
-    else if (freq === "monthly") conv = activeConfig.billingConversions.monthly;
+    const conv = activeConfig.billingConversions[freq] || activeConfig.billingConversions.weekly;
 
     const { actualWeeksPerYear, actualWeeksPerMonth } = activeConfig.billingConversions;
     const isAllInclusive = !!form.isAllInclusive;
@@ -564,8 +619,13 @@ export function useMicrofiberMoppingCalc(
 
     // ----------------------------
     // 6) Monthly (4.33 weeks logic) and contract - BASE CALCULATIONS
+    // ✅ Support all 9 frequencies with visit-based logic
     // ----------------------------
-    const monthlyVisits = conv.monthlyMultiplier; // 4.33, ~2.17 or 1
+    // Determine if frequency is visit-based (not monthly billing)
+    const isVisitBasedFrequency = freq === "oneTime" || freq === "quarterly" ||
+      freq === "biannual" || freq === "annual" || freq === "bimonthly";
+
+    const monthlyVisits = conv.monthlyMultiplier; // e.g., 4.33 for weekly, 0 for quarterly
     const calculatedMonthlyService = perVisitPrice * monthlyVisits;
     const calculatedMonthlyRecurring = calculatedMonthlyService + chemicalSupplyMonthly;
 
@@ -580,10 +640,16 @@ export function useMicrofiberMoppingCalc(
     const installFee = 0;
     const firstVisitPrice = installFee; // install-only, but 0 in this service
 
-    // First month = (monthlyVisits) × normal service price + chemical
-    const calculatedFirstMonthService = Math.max(monthlyVisits, 0) * perVisitPrice;
-    const calculatedFirstMonthPrice =
-      firstVisitPrice + calculatedFirstMonthService + chemicalSupplyMonthly;
+    // First month calculation varies by frequency type
+    let calculatedFirstMonthPrice = 0;
+    if (isVisitBasedFrequency) {
+      // For oneTime, quarterly, biannual, annual, bimonthly: just the first visit (service only, no install)
+      calculatedFirstMonthPrice = perVisitPrice;
+    } else {
+      // For weekly, biweekly, twicePerMonth, monthly: (monthlyVisits) × normal service price + chemical
+      const calculatedFirstMonthService = Math.max(monthlyVisits, 0) * perVisitPrice;
+      calculatedFirstMonthPrice = firstVisitPrice + calculatedFirstMonthService + chemicalSupplyMonthly;
+    }
 
     // Use custom override if set
     const firstMonthPrice = form.customFirstMonthPrice !== undefined
@@ -595,9 +661,23 @@ export function useMicrofiberMoppingCalc(
     if (contractMonths < 2) contractMonths = 2;
     if (contractMonths > 36) contractMonths = 36;
 
-    const remainingMonths = Math.max(contractMonths - 1, 0);
-    const calculatedContractTotal =
-      firstMonthPrice + remainingMonths * monthlyRecurring;
+    // Contract total calculation
+    let calculatedContractTotal = 0;
+    if (freq === "oneTime") {
+      // ✅ For oneTime: just the first visit (no recurring billing)
+      calculatedContractTotal = firstMonthPrice;
+    } else if (isVisitBasedFrequency) {
+      // ✅ For quarterly, biannual, annual, bimonthly: use annual multipliers
+      const visitsPerYear = conv.annualMultiplier ?? 1;
+      const totalVisits = (contractMonths / 12) * visitsPerYear;
+
+      // All visits are service visits (no install in microfiber)
+      calculatedContractTotal = totalVisits * perVisitPrice + (contractMonths * (chemicalSupplyMonthly / monthlyVisits || 0));
+    } else {
+      // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
+      const remainingMonths = Math.max(contractMonths - 1, 0);
+      calculatedContractTotal = firstMonthPrice + remainingMonths * monthlyRecurring;
+    }
 
     // Use custom override if set
     const contractTotal = form.customContractTotal !== undefined

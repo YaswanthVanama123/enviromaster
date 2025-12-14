@@ -1,7 +1,7 @@
 // src/features/services/microfiberMopping/microfiberMoppingTypes.ts
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
-export type MicrofiberFrequencyKey = "weekly" | "biweekly" | "monthly";
+export type MicrofiberFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
 /**
  * Static config for the Microfiber Mopping pricing engine.
@@ -78,6 +78,10 @@ export interface MicrofiberMoppingPricingConfig {
 
   // Frequency conversions (key: actualWeeksPerMonth = 4.33)
   billingConversions: {
+    oneTime: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
     weekly: {
       annualMultiplier: number;
       monthlyMultiplier: number; // visits per month (4.33)
@@ -86,9 +90,29 @@ export interface MicrofiberMoppingPricingConfig {
       annualMultiplier: number;
       monthlyMultiplier: number; // visits per month (~2.17)
     };
+    twicePerMonth: {
+      annualMultiplier: number;
+      monthlyMultiplier: number; // visits per month (2)
+    };
     monthly: {
       annualMultiplier: number;
       monthlyMultiplier: number; // visits per month (1)
+    };
+    bimonthly: {
+      annualMultiplier: number;
+      monthlyMultiplier: number; // visits per month (0.5)
+    };
+    quarterly: {
+      annualMultiplier: number;
+      monthlyMultiplier: number; // visits per month (0.333)
+    };
+    biannual: {
+      annualMultiplier: number;
+      monthlyMultiplier: number; // visits per month (0.167)
+    };
+    annual: {
+      annualMultiplier: number;
+      monthlyMultiplier: number; // visits per month (0.083)
     };
     actualWeeksPerYear: number;
     actualWeeksPerMonth: number; // 4.33

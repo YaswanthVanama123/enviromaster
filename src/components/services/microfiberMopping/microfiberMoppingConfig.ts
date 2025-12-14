@@ -91,6 +91,10 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
   // Frequency conversions
   // KEY CHANGE: Monthly = 4.33 weeks everywhere.
   billingConversions: {
+    oneTime: {
+      annualMultiplier: 1,
+      monthlyMultiplier: 0, // oneTime has no monthly billing
+    },
     weekly: {
       annualMultiplier: 52,
       monthlyMultiplier: 52 / 12, // 4.33 visits / month
@@ -99,9 +103,29 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
       annualMultiplier: 26,
       monthlyMultiplier: 26 / 12, // ~2.17 visits / month
     },
+    twicePerMonth: {
+      annualMultiplier: 24,
+      monthlyMultiplier: 2, // 2 visits / month
+    },
     monthly: {
       annualMultiplier: 12,
       monthlyMultiplier: 1, // 1 visit / month
+    },
+    bimonthly: {
+      annualMultiplier: 6,
+      monthlyMultiplier: 0.5, // 0.5 visits / month (every 2 months)
+    },
+    quarterly: {
+      annualMultiplier: 4,
+      monthlyMultiplier: 0.333, // 0.333 visits / month (every 3 months)
+    },
+    biannual: {
+      annualMultiplier: 2,
+      monthlyMultiplier: 0.167, // 0.167 visits / month (every 6 months)
+    },
+    annual: {
+      annualMultiplier: 1,
+      monthlyMultiplier: 0.083, // 0.083 visits / month (once per year)
     },
     actualWeeksPerYear: 52,
     actualWeeksPerMonth: 52 / 12, // 4.33 weeks / month

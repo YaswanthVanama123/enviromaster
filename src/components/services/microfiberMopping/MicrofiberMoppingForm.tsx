@@ -51,6 +51,7 @@ export const MicrofiberMoppingForm: React.FC<
         isActive: true,
 
         frequency: {
+          isDisplay: true,
           label: "Frequency",
           type: "text" as const,
           value: typeof form.frequency === 'string'
@@ -60,6 +61,7 @@ export const MicrofiberMoppingForm: React.FC<
 
         serviceBreakdown: [
           ...(form.bathroomCount > 0 ? [{
+            isDisplay: true,
             label: "Bathrooms",
             type: "calc" as const,
             qty: form.bathroomCount,
@@ -67,6 +69,7 @@ export const MicrofiberMoppingForm: React.FC<
             total: calc.standardBathroomPrice,
           }] : []),
           ...(form.hugeBathroomSqFt > 0 ? [{
+            isDisplay: true,
             label: "Huge Bathrooms",
             type: "calc" as const,
             qty: form.hugeBathroomSqFt,
@@ -75,6 +78,7 @@ export const MicrofiberMoppingForm: React.FC<
             unit: "sq ft",
           }] : []),
           ...(form.extraAreaSqFt > 0 ? [{
+            isDisplay: true,
             label: "Extra Area",
             type: "calc" as const,
             qty: form.extraAreaSqFt,
@@ -83,6 +87,7 @@ export const MicrofiberMoppingForm: React.FC<
             unit: "sq ft",
           }] : []),
           ...(form.standaloneSqFt > 0 ? [{
+            isDisplay: true,
             label: "Standalone Service",
             type: "calc" as const,
             qty: form.standaloneSqFt,
@@ -91,6 +96,7 @@ export const MicrofiberMoppingForm: React.FC<
             unit: "sq ft",
           }] : []),
           ...(form.chemicalGallons > 0 ? [{
+            isDisplay: true,
             label: "Chemical Supply",
             type: "calc" as const,
             qty: form.chemicalGallons,
@@ -102,16 +108,19 @@ export const MicrofiberMoppingForm: React.FC<
 
         totals: {
           perVisit: {
+            isDisplay: true,
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisitPrice,
           },
           monthly: {
+            isDisplay: true,
             label: "Monthly Total",
             type: "dollar" as const,
             amount: calc.monthlyRecurring,
           },
           contract: {
+            isDisplay: true,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -663,15 +672,22 @@ export const MicrofiberMoppingForm: React.FC<
             value={form.frequency}
             onChange={onChange}
           >
+            <option value="oneTime">One Time</option>
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi-weekly</option>
+            <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="bimonthly">Every 2 Months</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="biannual">Bi-Annual</option>
+            <option value="annual">Annual</option>
           </select>
         </div>
       </div>
 
       {/* Summary block */}
       <div className="svc-summary">
+        {/* Per-visit service total - always shown */}
         <div className="svc-row">
           <label>Per-visit service total</label>
           <div className="svc-dollar">
@@ -696,119 +712,196 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         </div>
 
-        <div className="svc-row">
-          <label>Approx. weekly service (no chem)</label>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.weeklyServiceTotal.toFixed(2)}
-            />
-          </div>
-        </div>
+        {/* Weekly approximations - shown for month-based frequencies */}
+        {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
+         form.frequency !== "biannual" && form.frequency !== "annual" &&
+         form.frequency !== "bimonthly" && (
+          <>
+            <div className="svc-row">
+              <label>Approx. weekly service (no chem)</label>
+              <div className="svc-dollar">
+                <span>$</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={calc.weeklyServiceTotal.toFixed(2)}
+                />
+              </div>
+            </div>
 
-        <div className="svc-row">
-          <label>Approx. weekly total (service + chem)</label>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.weeklyTotalWithChemicals.toFixed(2)}
-            />
-          </div>
-        </div>
+            {/* <div className="svc-row">
+              <label>Approx. weekly total (service + chem)</label>
+              <div className="svc-dollar">
+                <span>$</span>
+                <input
+                  className="svc-in"
+                  type="text"
+                  readOnly
+                  value={calc.weeklyTotalWithChemicals.toFixed(2)}
+                />
+              </div>
+            </div> */}
+          </>
+        )}
 
-        <div className="svc-row">
-          <label>Monthly recurring</label>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-              step="0.01"
-              name="customMonthlyRecurring"
-              value={
-                form.customMonthlyRecurring !== undefined
-                  ? form.customMonthlyRecurring.toFixed(2)
-                  : calc.monthlyRecurring.toFixed(2)
-              }
-              onChange={onChange}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
-                border: 'none'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* NEW: First month total using 4.33 → 3.33 rule for weekly */}
-        <div className="svc-row">
-          <label>First month total</label>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-              step="0.01"
-              name="customFirstMonthPrice"
-              value={
-                form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2)
-                  : calc.firstMonthPrice.toFixed(2)
-              }
-              onChange={onChange}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
-                border: 'none'
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Contract total with inline dropdown */}
-        <div className="svc-row">
-          <label>Contract Total</label>
-          <div className="svc-row-right">
-            <select
-              className="svc-in"
-              name="contractTermMonths"
-              value={form.contractTermMonths}
-              onChange={onChange}
-            >
-              {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
-                <option key={m} value={m}>
-                  {m} mo
-                </option>
-              ))}
-            </select>
+        {/* Monthly Recurring – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+        {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
+         form.frequency !== "biannual" && form.frequency !== "annual" &&
+         form.frequency !== "bimonthly" && (
+          <div className="svc-row">
+            <label>Monthly recurring</label>
             <div className="svc-dollar">
               <span>$</span>
               <input
                 className="svc-in"
                 type="number"
                 step="0.01"
-                name="customContractTotal"
+                name="customMonthlyRecurring"
                 value={
-                  form.customContractTotal !== undefined
-                    ? form.customContractTotal.toFixed(2)
-                    : calc.contractTotal.toFixed(2)
+                  form.customMonthlyRecurring !== undefined
+                    ? form.customMonthlyRecurring.toFixed(2)
+                    : calc.monthlyRecurring.toFixed(2)
                 }
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{
-                  backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',
+                  backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
                   border: 'none'
                 }}
               />
             </div>
           </div>
-        </div>
+        )}
+
+        {/* First month total – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+        {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
+         form.frequency !== "biannual" && form.frequency !== "annual" &&
+         form.frequency !== "bimonthly" && (
+          <div className="svc-row">
+            <label>First month total</label>
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customFirstMonthPrice"
+                value={
+                  form.customFirstMonthPrice !== undefined
+                    ? form.customFirstMonthPrice.toFixed(2)
+                    : calc.firstMonthPrice.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                  border: 'none'
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* First Visit Total – SHOW ONLY for oneTime, quarterly, biannual, annual, bimonthly */}
+        {(form.frequency === "oneTime" || form.frequency === "quarterly" ||
+          form.frequency === "biannual" || form.frequency === "annual" ||
+          form.frequency === "bimonthly") && (
+          <div className="svc-row">
+            <label>{form.frequency === "oneTime" ? "Total Price" : "First Visit Total"}</label>
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customFirstMonthPrice"
+                value={
+                  form.customFirstMonthPrice !== undefined
+                    ? form.customFirstMonthPrice.toFixed(2)
+                    : calc.firstMonthPrice.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                  border: 'none'
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Contract total with inline dropdown – HIDE for oneTime */}
+        {form.frequency !== "oneTime" && (
+          <div className="svc-row">
+            <label>Contract Total</label>
+            <div className="svc-row-right">
+              <select
+                className="svc-in"
+                name="contractTermMonths"
+                value={form.contractTermMonths}
+                onChange={onChange}
+              >
+                {/* Quarterly: multiples of 3 */}
+                {form.frequency === "quarterly"
+                  ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
+                      <option key={m} value={m}>
+                        {m} months
+                      </option>
+                    ))
+                  /* Bimonthly: even numbers */
+                  : form.frequency === "bimonthly"
+                  ? [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36].map((m) => (
+                      <option key={m} value={m}>
+                        {m} months
+                      </option>
+                    ))
+                  /* Biannual: multiples of 6 */
+                  : form.frequency === "biannual"
+                  ? [6, 12, 18, 24, 30, 36].map((m) => (
+                      <option key={m} value={m}>
+                        {m} months
+                      </option>
+                    ))
+                  /* Annual: multiples of 12 */
+                  : form.frequency === "annual"
+                  ? [12, 24, 36].map((m) => (
+                      <option key={m} value={m}>
+                        {m} months
+                      </option>
+                    ))
+                  /* All other frequencies: 2-36 months */
+                  : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+                      <option key={m} value={m}>
+                        {m} months
+                      </option>
+                    ))
+                }
+              </select>
+              <div className="svc-dollar">
+                <span>$</span>
+                <input
+                  className="svc-in"
+                  type="number"
+                  step="0.01"
+                  name="customContractTotal"
+                  value={
+                    form.customContractTotal !== undefined
+                      ? form.customContractTotal.toFixed(2)
+                      : calc.contractTotal.toFixed(2)
+                  }
+                  onChange={onChange}
+                  onBlur={handleBlur}
+                  style={{
+                    backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',
+                    border: 'none'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
