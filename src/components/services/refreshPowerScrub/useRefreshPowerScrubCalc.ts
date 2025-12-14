@@ -86,7 +86,7 @@ function getBillingMultiplier(
     "onetime": 0,
     "weekly": 4.33,
     "biweekly": 2.165,
-    "twicepermonth": 2.0,
+    "twicepermonth": 1.0,  // ✅ FIXED: Same monthly price as monthly, just visit 2× per month
     "monthly": 1.0,
     "bimonthly": 0.5,
     "quarterly": 0.333,
@@ -105,7 +105,8 @@ function getBillingMultiplier(
       case "biweekly":
         return conversions.biweekly?.monthlyMultiplier ?? defaultMultipliers.biweekly;
       case "twicepermonth":
-        return conversions.twicePerMonth?.monthlyMultiplier ?? defaultMultipliers.twicepermonth;
+        // ✅ ALWAYS use 1.0 for twicePerMonth (same as monthly, just visit 2× per month)
+        return 1.0;
       case "monthly":
         return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
       case "bimonthly":

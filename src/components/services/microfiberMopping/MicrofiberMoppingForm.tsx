@@ -755,7 +755,7 @@ export const MicrofiberMoppingForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 step="0.01"
                 name="customMonthlyRecurring"
                 value={

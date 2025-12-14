@@ -116,6 +116,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
             setBackendConfig(config);
             updateFormWithConfig(config);
 
+            // ✅ FIXED: Clear all custom overrides when refresh button clicked
+            setForm(prev => ({
+              ...prev,
+              customFirstUnitRate: undefined,
+              customAdditionalUnitRate: undefined,
+              customPerVisitMinimum: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+              customInstallationFee: undefined,
+            }));
+
             console.log('✅ Carpet Cleaning FALLBACK CONFIG loaded from context:', {
               baseSqFtUnit: config.baseSqFtUnit,
               basePrice: config.basePrice,
@@ -146,6 +159,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       setBackendConfig(config);
       updateFormWithConfig(config);
 
+      // ✅ FIXED: Clear all custom overrides when refresh button clicked
+      setForm(prev => ({
+        ...prev,
+        customFirstUnitRate: undefined,
+        customAdditionalUnitRate: undefined,
+        customPerVisitMinimum: undefined,
+        customPerVisitPrice: undefined,
+        customMonthlyRecurring: undefined,
+        customFirstMonthPrice: undefined,
+        customContractTotal: undefined,
+        customInstallationFee: undefined,
+      }));
+
       console.log('✅ Carpet Cleaning ACTIVE CONFIG loaded from backend:', {
         baseSqFtUnit: config.baseSqFtUnit,
         basePrice: config.basePrice,
@@ -165,6 +191,20 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           const config = fallbackConfig.config as BackendCarpetConfig;
           setBackendConfig(config);
           updateFormWithConfig(config);
+
+          // ✅ FIXED: Clear all custom overrides when refresh button clicked
+          setForm(prev => ({
+            ...prev,
+            customFirstUnitRate: undefined,
+            customAdditionalUnitRate: undefined,
+            customPerVisitMinimum: undefined,
+            customPerVisitPrice: undefined,
+            customMonthlyRecurring: undefined,
+            customFirstMonthPrice: undefined,
+            customContractTotal: undefined,
+            customInstallationFee: undefined,
+          }));
+
           return;
         }
       }
@@ -314,13 +354,17 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       frequencyMeta: cfg.frequencyMeta,
     };
 
-    // ✅ Apply user overrides to base config
+    // ✅ Apply user overrides to base config (including installation multipliers)
     const activeConfig = {
       unitSqFt: baseConfig.unitSqFt,
-      firstUnitRate: form.customFirstUnitRate ?? baseConfig.firstUnitRate,
-      additionalUnitRate: form.customAdditionalUnitRate ?? baseConfig.additionalUnitRate,
-      perVisitMinimum: form.customPerVisitMinimum ?? baseConfig.perVisitMinimum,
-      installMultipliers: baseConfig.installMultipliers,
+      firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate ?? baseConfig.firstUnitRate,
+      additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate ?? baseConfig.additionalUnitRate,
+      perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum ?? baseConfig.perVisitMinimum,
+      installMultipliers: {
+        // ✅ FIXED: Use editable multipliers from form (from backend)
+        dirty: form.installMultiplierDirty ?? baseConfig.installMultipliers.dirty,
+        clean: form.installMultiplierClean ?? baseConfig.installMultipliers.clean,
+      },
       frequencyMeta: baseConfig.frequencyMeta,
     };
 
@@ -423,19 +467,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     if (serviceActive) {
       if (freq === "oneTime") {
-        // One-time service with or without installation
-        calculatedFirstMonthTotal = form.includeInstall && installOneTime > 0
-          ? installOneTime + perVisitCharge
-          : perVisitCharge;
+        // ✅ FIXED: One-time service with installation: first visit is ONLY installation, no service charge
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime;
+        } else {
+          calculatedFirstMonthTotal = perVisitCharge;
+        }
       } else if (isVisitBasedFrequency) {
-        // Visit-based frequencies: first visit includes installation if enabled
-        calculatedFirstMonthTotal = form.includeInstall && installOneTime > 0
-          ? installOneTime + perVisitCharge
-          : perVisitCharge;
+        // ✅ FIXED: Visit-based frequencies: first visit is ONLY installation if enabled
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime;
+        } else {
+          calculatedFirstMonthTotal = perVisitCharge;
+        }
       } else {
         // Month-based frequencies: first month includes installation if enabled
         if (form.includeInstall && installOneTime > 0) {
-          // ✅ FIXED: Use firstMonthExtraMultiplier from backend for first month with installation
+          // ✅ Use firstMonthExtraMultiplier from backend for first month with installation
           // Weekly: 3.33, Biweekly: might have different value
           let firstMonthMultiplier = monthlyVisits; // default to normal multiplier
 
@@ -532,6 +580,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     form.contractMonths,
     form.includeInstall,
     form.isDirtyInstall,
+    // ✅ FIXED: Watch editable rate fields from backend
+    form.firstUnitRate,
+    form.additionalUnitRate,
+    form.perVisitMinimum,
+    form.installMultiplierDirty,
+    form.installMultiplierClean,
     // ✅ FIXED: Watch custom override fields for rates
     form.customFirstUnitRate,
     form.customAdditionalUnitRate,
