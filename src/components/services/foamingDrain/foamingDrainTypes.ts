@@ -1,7 +1,16 @@
 // src/features/services/foamingDrain/foamingDrainTypes.ts
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 
-export type FoamingDrainFrequency = "weekly" | "bimonthly";
+export type FoamingDrainFrequency =
+  | "oneTime"
+  | "weekly"
+  | "biweekly"
+  | "twicePerMonth"
+  | "monthly"
+  | "bimonthly"
+  | "quarterly"
+  | "biannual"
+  | "annual";
 export type FoamingDrainLocation = "beltway" | "standard";
 export type FoamingDrainCondition = "normal" | "filthy";
 
