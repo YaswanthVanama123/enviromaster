@@ -11,33 +11,58 @@ import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure from API
 interface BackendMicrofiberConfig {
-  includedBathroomRate: number;
-  hugeBathroomPricing: {
+  // OLD format (for backward compatibility)
+  includedBathroomRate?: number;
+  hugeBathroomPricing?: {
     enabled: boolean;
     ratePerSqFt: number;
     sqFtUnit: number;
     description: string;
   };
-  extraAreaPricing: {
+  extraAreaPricing?: {
     singleLargeAreaRate: number;
     extraAreaSqFtUnit: number;
     extraAreaRatePerUnit: number;
     useHigherRate: boolean;
   };
-  standalonePricing: {
+  standalonePricing?: {
     standaloneSqFtUnit: number;
     standaloneRatePerUnit: number;
     standaloneMinimum: number;
     includeTripCharge: boolean;
   };
-  chemicalProducts: {
+  chemicalProducts?: {
     dailyChemicalPerGallon: number;
     customerSelfMopping: boolean;
     waterOnlyBetweenServices: boolean;
   };
-  billingConversions: {
+  // NEW format (from actual backend API)
+  bathroomMoppingPricing?: {
+    flatPricePerBathroom: number;
+    hugeBathroomSqFtUnit: number;
+    hugeBathroomRate: number;
+  };
+  nonBathroomAddonAreas?: {
+    flatPriceSingleLargeArea: number;
+    sqFtUnit: number;
+    ratePerSqFtUnit: number;
+    useHigherRate: boolean;
+  };
+  standaloneMoppingPricing?: {
+    sqFtUnit: number;
+    ratePerSqFtUnit: number;
+    minimumPrice: number;
+    includeTripCharge: boolean;
+  };
+  tripCharges?: {
+    standard: number;
+    beltway: number;
+  };
+  minimumChargePerVisit?: number;
+  frequencyMetadata?: any; // Will be converted to billingConversions
+  billingConversions?: {
     oneTime: {
       annualMultiplier: number;
       monthlyMultiplier: number;
@@ -77,7 +102,7 @@ interface BackendMicrofiberConfig {
     actualWeeksPerYear: number;
     actualWeeksPerMonth: number;
   };
-  rateCategories: {
+  rateCategories?: {
     redRate: {
       multiplier: number;
       commissionRate: string;
@@ -87,8 +112,8 @@ interface BackendMicrofiberConfig {
       commissionRate: string;
     };
   };
-  defaultFrequency: string;
-  allowedFrequencies: string[];
+  defaultFrequency?: string;
+  allowedFrequencies?: string[];
 }
 
 type InputChangeEvent =
@@ -231,12 +256,30 @@ export function useMicrofiberMoppingCalc(
   const updateFormWithConfig = (config: BackendMicrofiberConfig) => {
     setForm((prev) => ({
       ...prev,
-      // Update all rate fields from backend if available
-      includedBathroomRate: config.includedBathroomRate ?? prev.includedBathroomRate,
-      hugeBathroomRatePerSqFt: config.hugeBathroomPricing?.ratePerSqFt ?? prev.hugeBathroomRatePerSqFt,
-      extraAreaRatePerUnit: config.extraAreaPricing?.extraAreaRatePerUnit ?? prev.extraAreaRatePerUnit,
-      standaloneRatePerUnit: config.standalonePricing?.standaloneRatePerUnit ?? prev.standaloneRatePerUnit,
-      dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ?? prev.dailyChemicalPerGallon,
+      // ✅ Map backend API fields to form state (supports both old and new format)
+      // Bathroom rate: NEW format bathroomMoppingPricing.flatPricePerBathroom OR OLD format includedBathroomRate
+      includedBathroomRate: config.bathroomMoppingPricing?.flatPricePerBathroom ??
+                            config.includedBathroomRate ??
+                            prev.includedBathroomRate,
+
+      // Huge bathroom rate: NEW format bathroomMoppingPricing.hugeBathroomRate OR OLD format hugeBathroomPricing.ratePerSqFt
+      hugeBathroomRatePerSqFt: config.bathroomMoppingPricing?.hugeBathroomRate ??
+                                config.hugeBathroomPricing?.ratePerSqFt ??
+                                prev.hugeBathroomRatePerSqFt,
+
+      // Extra area rate: NEW format nonBathroomAddonAreas.ratePerSqFtUnit OR OLD format extraAreaPricing.extraAreaRatePerUnit
+      extraAreaRatePerUnit: config.nonBathroomAddonAreas?.ratePerSqFtUnit ??
+                            config.extraAreaPricing?.extraAreaRatePerUnit ??
+                            prev.extraAreaRatePerUnit,
+
+      // Standalone rate: NEW format standaloneMoppingPricing.ratePerSqFtUnit OR OLD format standalonePricing.standaloneRatePerUnit
+      standaloneRatePerUnit: config.standaloneMoppingPricing?.ratePerSqFtUnit ??
+                             config.standalonePricing?.standaloneRatePerUnit ??
+                             prev.standaloneRatePerUnit,
+
+      // Chemical rate: OLD format only (not in new API response yet)
+      dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ??
+                               prev.dailyChemicalPerGallon,
     }));
   };
 
@@ -419,15 +462,68 @@ export function useMicrofiberMoppingCalc(
 
   const { calc, quote } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Use property-level fallbacks to handle incomplete backend configs
+    // Map NEW backend format to OLD format structure that calculations expect
     const activeConfig = {
-      includedBathroomRate: backendConfig?.includedBathroomRate ?? cfg.includedBathroomRate,
-      hugeBathroomPricing: backendConfig?.hugeBathroomPricing ?? cfg.hugeBathroomPricing,
-      extraAreaPricing: backendConfig?.extraAreaPricing ?? cfg.extraAreaPricing,
-      standalonePricing: backendConfig?.standalonePricing ?? cfg.standalonePricing,
+      // Included bathroom rate: NEW bathroomMoppingPricing.flatPricePerBathroom OR OLD includedBathroomRate
+      includedBathroomRate: backendConfig?.bathroomMoppingPricing?.flatPricePerBathroom ??
+                            backendConfig?.includedBathroomRate ??
+                            cfg.includedBathroomRate,
+
+      // Huge bathroom pricing: NEW bathroomMoppingPricing OR OLD hugeBathroomPricing
+      hugeBathroomPricing: {
+        enabled: true, // Always enabled if backend config exists
+        ratePerSqFt: backendConfig?.bathroomMoppingPricing?.hugeBathroomRate ??
+                     backendConfig?.hugeBathroomPricing?.ratePerSqFt ??
+                     cfg.hugeBathroomPricing.ratePerSqFt,
+        sqFtUnit: backendConfig?.bathroomMoppingPricing?.hugeBathroomSqFtUnit ??
+                  backendConfig?.hugeBathroomPricing?.sqFtUnit ??
+                  cfg.hugeBathroomPricing.sqFtUnit,
+        description: backendConfig?.hugeBathroomPricing?.description ?? cfg.hugeBathroomPricing.description,
+      },
+
+      // Extra area pricing: NEW nonBathroomAddonAreas OR OLD extraAreaPricing
+      extraAreaPricing: {
+        singleLargeAreaRate: backendConfig?.nonBathroomAddonAreas?.flatPriceSingleLargeArea ??
+                             backendConfig?.extraAreaPricing?.singleLargeAreaRate ??
+                             cfg.extraAreaPricing.singleLargeAreaRate,
+        extraAreaSqFtUnit: backendConfig?.nonBathroomAddonAreas?.sqFtUnit ??
+                           backendConfig?.extraAreaPricing?.extraAreaSqFtUnit ??
+                           cfg.extraAreaPricing.extraAreaSqFtUnit,
+        extraAreaRatePerUnit: backendConfig?.nonBathroomAddonAreas?.ratePerSqFtUnit ??
+                              backendConfig?.extraAreaPricing?.extraAreaRatePerUnit ??
+                              cfg.extraAreaPricing.extraAreaRatePerUnit,
+        useHigherRate: backendConfig?.nonBathroomAddonAreas?.useHigherRate ??
+                       backendConfig?.extraAreaPricing?.useHigherRate ??
+                       cfg.extraAreaPricing.useHigherRate,
+      },
+
+      // Standalone pricing: NEW standaloneMoppingPricing OR OLD standalonePricing
+      standalonePricing: {
+        standaloneSqFtUnit: backendConfig?.standaloneMoppingPricing?.sqFtUnit ??
+                            backendConfig?.standalonePricing?.standaloneSqFtUnit ??
+                            cfg.standalonePricing.standaloneSqFtUnit,
+        standaloneRatePerUnit: backendConfig?.standaloneMoppingPricing?.ratePerSqFtUnit ??
+                               backendConfig?.standalonePricing?.standaloneRatePerUnit ??
+                               cfg.standalonePricing.standaloneRatePerUnit,
+        standaloneMinimum: backendConfig?.standaloneMoppingPricing?.minimumPrice ??
+                           backendConfig?.minimumChargePerVisit ??
+                           backendConfig?.standalonePricing?.standaloneMinimum ??
+                           cfg.standalonePricing.standaloneMinimum,
+        includeTripCharge: backendConfig?.standaloneMoppingPricing?.includeTripCharge ??
+                           backendConfig?.standalonePricing?.includeTripCharge ??
+                           cfg.standalonePricing.includeTripCharge,
+      },
+
+      // Chemical products: OLD format only
       chemicalProducts: backendConfig?.chemicalProducts ?? cfg.chemicalProducts,
+
+      // Billing conversions: use existing billingConversions (already converted from frequencyMetadata)
       billingConversions: backendConfig?.billingConversions ?? cfg.billingConversions,
+
+      // Rate categories
       rateCategories: backendConfig?.rateCategories ?? cfg.rateCategories,
+
+      // Frequency settings
       defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
       allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
     };

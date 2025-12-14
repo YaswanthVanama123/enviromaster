@@ -435,7 +435,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       } else {
         // Month-based frequencies: first month includes installation if enabled
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime + monthlyRecurring;
+          // ✅ FIXED: Use firstMonthExtraMultiplier from backend for first month with installation
+          // Weekly: 3.33, Biweekly: might have different value
+          let firstMonthMultiplier = monthlyVisits; // default to normal multiplier
+
+          if (backendConfig?.frequencyMetadata) {
+            if (freq === "weekly" && backendConfig.frequencyMetadata.weekly?.firstMonthExtraMultiplier) {
+              firstMonthMultiplier = backendConfig.frequencyMetadata.weekly.firstMonthExtraMultiplier;
+            } else if (freq === "biweekly" && backendConfig.frequencyMetadata.biweekly?.firstMonthExtraMultiplier) {
+              firstMonthMultiplier = backendConfig.frequencyMetadata.biweekly.firstMonthExtraMultiplier;
+            }
+          }
+
+          calculatedFirstMonthTotal = installOneTime + (perVisitCharge * firstMonthMultiplier);
         } else {
           calculatedFirstMonthTotal = monthlyRecurring;
         }

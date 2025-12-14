@@ -620,7 +620,7 @@ export const MicrofiberMoppingForm: React.FC<
       </div> */}
 
       {/* Daily mop chemical */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Daily mop chemical (gallons / month)</label>
         <div className="svc-row-right">
           <input
@@ -660,7 +660,7 @@ export const MicrofiberMoppingForm: React.FC<
             }}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Frequency */}
       <div className="svc-row">
@@ -717,7 +717,7 @@ export const MicrofiberMoppingForm: React.FC<
          form.frequency !== "biannual" && form.frequency !== "annual" &&
          form.frequency !== "bimonthly" && (
           <>
-            <div className="svc-row">
+            {/* <div className="svc-row">
               <label>Approx. weekly service (no chem)</label>
               <div className="svc-dollar">
                 <span>$</span>
@@ -728,7 +728,7 @@ export const MicrofiberMoppingForm: React.FC<
                   value={calc.weeklyServiceTotal.toFixed(2)}
                 />
               </div>
-            </div>
+            </div> */}
 
             {/* <div className="svc-row">
               <label>Approx. weekly total (service + chem)</label>

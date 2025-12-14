@@ -41,7 +41,24 @@ export const SanicleanForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (value === '' || value === null) {
-      updateForm({ [name]: undefined });
+      // List of custom override fields
+      const customFields = [
+        'customBaseService',
+        'customTripCharge',
+        'customFacilityComponents',
+        'customSoapUpgrade',
+        'customExcessSoap',
+        'customMicrofiberMopping',
+        'customWarrantyFees',
+        'customPaperOverage',
+        'customWeeklyTotal',
+        'customMonthlyTotal',
+        'customContractTotal'
+      ];
+
+      if (customFields.includes(name)) {
+        updateForm({ [name]: undefined });
+      }
     }
   };
 
@@ -76,8 +93,16 @@ export const SanicleanForm: React.FC<
 
     let processedValue: any = value;
 
-    // ✅ Handle custom override fields for totals
+    // ✅ Handle custom override fields for individual components and totals
     if (
+      name === "customBaseService" ||
+      name === "customTripCharge" ||
+      name === "customFacilityComponents" ||
+      name === "customSoapUpgrade" ||
+      name === "customExcessSoap" ||
+      name === "customMicrofiberMopping" ||
+      name === "customWarrantyFees" ||
+      name === "customPaperOverage" ||
       name === "customWeeklyTotal" ||
       name === "customMonthlyTotal" ||
       name === "customContractTotal"
@@ -342,10 +367,12 @@ export const SanicleanForm: React.FC<
             className="svc-in field-qty"
             type="number"
             step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
+                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
-            readOnly
-            title="Rate per sink (auto-calculated based on pricing mode)"
+            onChange={onChange}
+            title="Rate per sink - editable"
           />
           <span>=</span>
           <input
@@ -375,10 +402,12 @@ export const SanicleanForm: React.FC<
             className="svc-in field-qty"
             type="number"
             step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
+                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
-            readOnly
-            title="Rate per urinal (auto-calculated based on pricing mode)"
+            onChange={onChange}
+            title="Rate per urinal - editable"
           />
           <span>=</span>
           <input
@@ -408,10 +437,12 @@ export const SanicleanForm: React.FC<
             className="svc-in field-qty"
             type="number"
             step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
+                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
-            readOnly
-            title="Rate per male toilet (auto-calculated based on pricing mode)"
+            onChange={onChange}
+            title="Rate per male toilet - editable"
           />
           <span>=</span>
           <input
@@ -441,10 +472,12 @@ export const SanicleanForm: React.FC<
             className="svc-in field-qty"
             type="number"
             step="0.01"
+            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
+                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
-            readOnly
-            title="Rate per female toilet (auto-calculated based on pricing mode)"
+            onChange={onChange}
+            title="Rate per female toilet - editable"
           />
           <span>=</span>
           <input
@@ -489,9 +522,10 @@ export const SanicleanForm: React.FC<
             className="svc-in field-qty"
             type="number"
             step="0.01"
+            name="luxuryUpgradePerDispenser"
             value={form.soapType === "luxury" ? form.luxuryUpgradePerDispenser : 0}
-            readOnly
-            title="Luxury soap upgrade rate per dispenser per week (from backend)"
+            onChange={onChange}
+            title="Luxury soap upgrade rate per dispenser per week - editable"
           />
           <span>=</span>
           <input
@@ -520,9 +554,10 @@ export const SanicleanForm: React.FC<
               className="svc-in field-qty"
               type="number"
               step="0.01"
+              name={form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate"}
               value={extraSoapRatePerGallon}
-              readOnly
-              title={`Excess ${form.soapType} soap rate per gallon (from backend)`}
+              onChange={onChange}
+              title={`Excess ${form.soapType} soap rate per gallon - editable`}
             />
             <span>=</span>
             <input
@@ -581,9 +616,10 @@ export const SanicleanForm: React.FC<
                         className="svc-in field-qty"
                         type="number"
                         step="0.01"
+                        name="urinalScreenMonthly"
                         value={form.urinalScreenMonthly}
-                        readOnly
-                        title="Urinal screen rate per month (from backend)"
+                        onChange={onChange}
+                        title="Urinal screen rate per month - editable"
                       />
                       <span>=</span>
                       <input
@@ -613,9 +649,10 @@ export const SanicleanForm: React.FC<
                         className="svc-in field-qty"
                         type="number"
                         step="0.01"
+                        name="urinalMatMonthly"
                         value={form.urinalMatMonthly}
-                        readOnly
-                        title="Urinal mat rate per month (from backend)"
+                        onChange={onChange}
+                        title="Urinal mat rate per month - editable"
                       />
                       <span>=</span>
                       <input
@@ -670,9 +707,10 @@ export const SanicleanForm: React.FC<
                         className="svc-in field-qty"
                         type="number"
                         step="0.01"
+                        name="toiletClipsMonthly"
                         value={form.toiletClipsMonthly}
-                        readOnly
-                        title="Toilet clips rate per month (from backend)"
+                        onChange={onChange}
+                        title="Toilet clips rate per month - editable"
                       />
                       <span>=</span>
                       <input
@@ -702,9 +740,10 @@ export const SanicleanForm: React.FC<
                         className="svc-in field-qty"
                         type="number"
                         step="0.01"
+                        name="seatCoverDispenserMonthly"
                         value={form.seatCoverDispenserMonthly}
-                        readOnly
-                        title="Seat cover dispenser rate per month (from backend)"
+                        onChange={onChange}
+                        title="Seat cover dispenser rate per month - editable"
                       />
                       <span>=</span>
                       <input
@@ -758,9 +797,10 @@ export const SanicleanForm: React.FC<
                       className="svc-in field-qty"
                       type="number"
                       step="0.01"
+                      name="sanipodServiceMonthly"
                       value={form.sanipodServiceMonthly}
-                      readOnly
-                      title="SaniPod service rate per month (from backend)"
+                      onChange={onChange}
+                      title="SaniPod service rate per month - editable"
                     />
                     <span>=</span>
                     <input
@@ -817,9 +857,10 @@ export const SanicleanForm: React.FC<
               className="svc-in field-qty"
               type="number"
               step="0.01"
+              name="warrantyFeePerDispenserPerWeek"
               value={form.warrantyFeePerDispenserPerWeek}
-              readOnly
-              title="Warranty rate per dispenser per week"
+              onChange={onChange}
+              title="Warranty rate per dispenser per week - editable"
             />
             <span>=</span>
             <input
@@ -896,9 +937,10 @@ export const SanicleanForm: React.FC<
               className="svc-in field-qty"
               type="number"
               step="0.01"
+              name="microfiberMoppingPerBathroom"
               value={form.addMicrofiberMopping ? form.microfiberMoppingPerBathroom : 0}
-              readOnly
-              title="Microfiber mopping rate per bathroom per week (from backend)"
+              onChange={onChange}
+              title="Microfiber mopping rate per bathroom per week - editable"
             />
             <span>=</span>
             <input
@@ -1014,13 +1056,273 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
+      {/* PRICE BREAKDOWN - Individual editable components */}
+      <div className="svc-h-sub" style={{ marginTop: 16 }}>
+        PRICE BREAKDOWN
+      </div>
+
+      {/* Base Service */}
+      <div className="svc-row">
+        <label>Base Service</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="number"
+              step="0.01"
+              name="customBaseService"
+              value={
+                form.customBaseService !== undefined
+                  ? form.customBaseService.toFixed(2)
+                  : quote.breakdown.baseService.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customBaseService !== undefined ? '#fffacd' : 'white',
+                width: '100px'
+              }}
+              title="Base service charge - editable"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Trip Charge */}
+      {form.pricingMode === "per_item_charge" && (
+        <div className="svc-row">
+          <label>Trip Charge</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customTripCharge"
+                value={
+                  form.customTripCharge !== undefined
+                    ? form.customTripCharge.toFixed(2)
+                    : quote.breakdown.tripCharge.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customTripCharge !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Trip charge - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Facility Components */}
+      {form.pricingMode === "per_item_charge" && quote.breakdown.facilityComponents > 0 && (
+        <div className="svc-row">
+          <label>Facility Components</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customFacilityComponents"
+                value={
+                  form.customFacilityComponents !== undefined
+                    ? form.customFacilityComponents.toFixed(2)
+                    : quote.breakdown.facilityComponents.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customFacilityComponents !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Facility components (urinals, toilets, sanipods) - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Soap Upgrade */}
+      {quote.breakdown.soapUpgrade > 0 && (
+        <div className="svc-row">
+          <label>Soap Upgrade</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customSoapUpgrade"
+                value={
+                  form.customSoapUpgrade !== undefined
+                    ? form.customSoapUpgrade.toFixed(2)
+                    : quote.breakdown.soapUpgrade.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customSoapUpgrade !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Soap upgrade (luxury) - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Excess Soap */}
+      {quote.breakdown.excessSoap > 0 && (
+        <div className="svc-row">
+          <label>Excess Soap</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customExcessSoap"
+                value={
+                  form.customExcessSoap !== undefined
+                    ? form.customExcessSoap.toFixed(2)
+                    : quote.breakdown.excessSoap.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customExcessSoap !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Excess soap charges - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Microfiber Mopping */}
+      {quote.breakdown.microfiberMopping > 0 && (
+        <div className="svc-row">
+          <label>Microfiber Mopping</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customMicrofiberMopping"
+                value={
+                  form.customMicrofiberMopping !== undefined
+                    ? form.customMicrofiberMopping.toFixed(2)
+                    : quote.breakdown.microfiberMopping.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customMicrofiberMopping !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Microfiber mopping - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Warranty Fees */}
+      {form.pricingMode === "per_item_charge" && quote.breakdown.warrantyFees > 0 && (
+        <div className="svc-row">
+          <label>Warranty Fees</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customWarrantyFees"
+                value={
+                  form.customWarrantyFees !== undefined
+                    ? form.customWarrantyFees.toFixed(2)
+                    : quote.breakdown.warrantyFees.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customWarrantyFees !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Warranty fees - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Paper Overage */}
+      {form.pricingMode === "all_inclusive" && quote.breakdown.paperOverage > 0 && (
+        <div className="svc-row">
+          <label>Paper Overage</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                step="0.01"
+                name="customPaperOverage"
+                value={
+                  form.customPaperOverage !== undefined
+                    ? form.customPaperOverage.toFixed(2)
+                    : quote.breakdown.paperOverage.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customPaperOverage !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title="Paper overage - editable"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRICING SUMMARY */}
+      <div className="svc-h-sub" style={{ marginTop: 16 }}>
+        PRICING SUMMARY
+      </div>
+
+      <div className="svc-row">
+        <label>Chosen Method</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in-box"
+            type="text"
+            readOnly
+            value={form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge"}
+          />
+        </div>
+      </div>
+
       <div className="svc-row">
         <label>Weekly Total (Service + All Add-Ons)</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in-box"
+              className="svc-in"
               type="number"
               step="0.01"
               name="customWeeklyTotal"
@@ -1033,7 +1335,6 @@ export const SanicleanForm: React.FC<
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customWeeklyTotal !== undefined ? '#fffacd' : 'white',
-                border: 'none',
                 width: '100px'
               }}
               title="Weekly total - editable"
@@ -1048,7 +1349,7 @@ export const SanicleanForm: React.FC<
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in-box"
+              className="svc-in"
               type="number"
               step="0.01"
               name="customMonthlyTotal"
@@ -1061,7 +1362,6 @@ export const SanicleanForm: React.FC<
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
-                border: 'none',
                 width: '100px'
               }}
               title="Monthly total - editable"

@@ -244,7 +244,18 @@ export interface SanicleanFormState {
   redRateMultiplier: number; // 1.0
   greenRateMultiplier: number; // 1.0 (or whatever backend sets)
 
-  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  // ========== CUSTOM OVERRIDES (user can manually set individual components & totals) ==========
+  // Individual component overrides
+  customBaseService?: number;
+  customTripCharge?: number;
+  customFacilityComponents?: number;
+  customSoapUpgrade?: number;
+  customExcessSoap?: number;
+  customMicrofiberMopping?: number;
+  customWarrantyFees?: number;
+  customPaperOverage?: number;
+
+  // Total overrides
   customWeeklyTotal?: number;
   customMonthlyTotal?: number;
   customContractTotal?: number;

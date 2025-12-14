@@ -163,6 +163,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             setBackendConfig(config);
             updateStateWithConfig(config);
 
+            // ✅ Clear all custom overrides when refreshing config
+            setState(prev => ({
+              ...prev,
+              customWeeklyService: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+            }));
+
             console.log('✅ Foaming Drain FALLBACK CONFIG loaded from context:', {
               standardDrainRate: config.standardDrainRate,
               altPricing: {
@@ -199,6 +208,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       setBackendConfig(config);
       updateStateWithConfig(config);
 
+      // ✅ Clear all custom overrides when refreshing config
+      setState(prev => ({
+        ...prev,
+        customWeeklyService: undefined,
+        customMonthlyRecurring: undefined,
+        customFirstMonthPrice: undefined,
+        customContractTotal: undefined,
+      }));
+
       console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
         standardDrainRate: config.standardDrainRate,
         altPricing: {
@@ -230,6 +248,16 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           const config = fallbackConfig.config as BackendFoamingDrainConfig;
           setBackendConfig(config);
           updateStateWithConfig(config);
+
+          // ✅ Clear all custom overrides when refreshing config
+          setState(prev => ({
+            ...prev,
+            customWeeklyService: undefined,
+            customMonthlyRecurring: undefined,
+            customFirstMonthPrice: undefined,
+            customContractTotal: undefined,
+          }));
+
           return;
         }
       }
@@ -507,12 +535,16 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     };
 
     const frequencyMultiplier = getFrequencyMultiplier(frequency);
-    let normalMonth = weeklyService * frequencyMultiplier;
+
+    // ✅ Apply custom override to per-visit price FIRST, before calculating monthly/contract
+    const effectiveWeeklyService = state.customWeeklyService ?? weeklyService;
+
+    let normalMonth = effectiveWeeklyService * frequencyMultiplier;
     let firstMonthPrice = 0;
 
     // First month includes installation if present
     if (installation > 0) {
-      firstMonthPrice = firstVisitPrice + weeklyService * Math.max(0, frequencyMultiplier - 1);
+      firstMonthPrice = firstVisitPrice + effectiveWeeklyService * Math.max(0, frequencyMultiplier - 1);
     } else {
       firstMonthPrice = normalMonth;
     }
@@ -527,15 +559,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     if (freqLower === "quarterly") {
       // Quarterly: visits = months / 3
       const quarterlyVisits = contractMonths / 3;
-      contractTotalRaw = firstVisitPrice + weeklyService * (quarterlyVisits - 1);
+      contractTotalRaw = firstVisitPrice + effectiveWeeklyService * (quarterlyVisits - 1);
     } else if (freqLower === "biannual") {
       // Bi-annual: visits = months / 6
       const biannualVisits = contractMonths / 6;
-      contractTotalRaw = firstVisitPrice + weeklyService * (biannualVisits - 1);
+      contractTotalRaw = firstVisitPrice + effectiveWeeklyService * (biannualVisits - 1);
     } else if (freqLower === "annual") {
       // Annual: visits = months / 12
       const annualVisits = contractMonths / 12;
-      contractTotalRaw = firstVisitPrice + weeklyService * (annualVisits - 1);
+      contractTotalRaw = firstVisitPrice + effectiveWeeklyService * (annualVisits - 1);
     } else {
       // All other frequencies: FirstMonth + (Months − 1) × NormalMonth
       contractTotalRaw = firstMonthPrice + (contractMonths - 1) * normalMonth;
@@ -546,8 +578,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     // For compatibility with ServiceQuoteResult:
     // - monthlyRecurring  → Normal recurring month (NormalMonth)
     // - annualRecurring   → TOTAL CONTRACT for contractMonths
-    const monthlyRecurring = normalMonth;
-    const annualRecurring = contractTotal;
+    const calculatedMonthlyRecurring = normalMonth;
+    const calculatedContractTotal = contractTotal;
 
     // ---------- 9) Breakdown ----------
     const breakdown: FoamingDrainBreakdown = {
@@ -581,11 +613,13 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       isAllInclusive: state.isAllInclusive,
       chargeGreaseTrapInstall: state.chargeGreaseTrapInstall,
 
-      // ✅ Apply custom overrides if set
-      weeklyService: state.customWeeklyService ?? weeklyService,
-      weeklyTotal: state.customWeeklyService ?? weeklyTotal,
-      monthlyRecurring: state.customMonthlyRecurring ?? monthlyRecurring,   // normal month
-      annualRecurring: state.customContractTotal ?? annualRecurring,    // contract total
+      // ✅ Apply custom overrides in cascade:
+      // 1. Per-visit can be customized
+      // 2. Monthly/Contract are calculated from custom per-visit (if set), but can be further overridden
+      weeklyService: effectiveWeeklyService,
+      weeklyTotal: effectiveWeeklyService,
+      monthlyRecurring: state.customMonthlyRecurring ?? calculatedMonthlyRecurring,
+      annualRecurring: state.customContractTotal ?? calculatedContractTotal,
       installation,
       tripCharge,
 
