@@ -419,16 +419,17 @@ export function useMicrofiberMoppingCalc(
 
   const { calc, quote } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    const activeConfig = backendConfig || {
-      includedBathroomRate: cfg.includedBathroomRate,
-      hugeBathroomPricing: cfg.hugeBathroomPricing,
-      extraAreaPricing: cfg.extraAreaPricing,
-      standalonePricing: cfg.standalonePricing,
-      chemicalProducts: cfg.chemicalProducts,
-      billingConversions: cfg.billingConversions,
-      rateCategories: cfg.rateCategories,
-      defaultFrequency: cfg.defaultFrequency,
-      allowedFrequencies: cfg.allowedFrequencies,
+    // Use property-level fallbacks to handle incomplete backend configs
+    const activeConfig = {
+      includedBathroomRate: backendConfig?.includedBathroomRate ?? cfg.includedBathroomRate,
+      hugeBathroomPricing: backendConfig?.hugeBathroomPricing ?? cfg.hugeBathroomPricing,
+      extraAreaPricing: backendConfig?.extraAreaPricing ?? cfg.extraAreaPricing,
+      standalonePricing: backendConfig?.standalonePricing ?? cfg.standalonePricing,
+      chemicalProducts: backendConfig?.chemicalProducts ?? cfg.chemicalProducts,
+      billingConversions: backendConfig?.billingConversions ?? cfg.billingConversions,
+      rateCategories: backendConfig?.rateCategories ?? cfg.rateCategories,
+      defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
+      allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
     };
 
     const freq: MicrofiberFrequencyKey = mapFrequency(form.frequency ?? activeConfig.defaultFrequency);

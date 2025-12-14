@@ -19,20 +19,28 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const formatAmount = (n: number): string => n.toFixed(2);
 
 const FREQ_OPTIONS = [
+  { value: "oneTime", label: "One Time" },
   { value: "weekly", label: "Weekly" },
   { value: "biweekly", label: "Bi-weekly" },
+  { value: "twicePerMonth", label: "2× / Month" },
   { value: "monthly", label: "Monthly" },
   { value: "bimonthly", label: "Bi-monthly" },
   { value: "quarterly", label: "Quarterly" },
+  { value: "biannual", label: "Bi-annual" },
+  { value: "annual", label: "Annual" },
 ];
 
 const AREA_FREQ_OPTIONS = [
   "",
+  "One Time",
   "Weekly",
   "Bi-weekly",
+  "2× / Month",
   "Monthly",
+  "Bi-monthly",
   "Quarterly",
-  "One-time",
+  "Bi-annual",
+  "Annual",
 ];
 
 const AREA_ORDER: RefreshAreaKey[] = [
@@ -150,19 +158,42 @@ export const RefreshPowerScrubForm: React.FC<
             // Calculate monthly and contract based on frequency
             const getFrequencyMultiplier = (freq: string) => {
               switch (freq?.toLowerCase()) {
+                case "one time": return 0;
                 case "weekly": return 4.33;
                 case "bi-weekly": return 2.165;
+                case "2× / month": return 2.0;
                 case "monthly": return 1;
+                case "bi-monthly": return 0.5;
                 case "quarterly": return 0.333;
+                case "bi-annual": return 0.167;
+                case "annual": return 0.083;
                 default: return 1;
               }
             };
 
             const multiplier = getFrequencyMultiplier(area.frequencyLabel);
             const monthlyAmount = areaTotals[key] * multiplier;
-            const contractAmount = area.frequencyLabel?.toLowerCase() === "quarterly"
-              ? areaTotals[key] * ((area.contractMonths || 12) / 3)
-              : monthlyAmount * (area.contractMonths || 12);
+
+            // Calculate contract amount based on frequency type
+            let contractAmount: number;
+            const freqLower = area.frequencyLabel?.toLowerCase();
+
+            if (freqLower === "quarterly") {
+              // Quarterly: visits = months / 3
+              const quarterlyVisits = (area.contractMonths || 12) / 3;
+              contractAmount = areaTotals[key] * quarterlyVisits;
+            } else if (freqLower === "bi-annual") {
+              // Bi-annual: visits = months / 6
+              const biannualVisits = (area.contractMonths || 12) / 6;
+              contractAmount = areaTotals[key] * biannualVisits;
+            } else if (freqLower === "annual") {
+              // Annual: visits = months / 12
+              const annualVisits = (area.contractMonths || 12) / 12;
+              contractAmount = areaTotals[key] * annualVisits;
+            } else {
+              // All other frequencies: monthly amount × months
+              contractAmount = monthlyAmount * (area.contractMonths || 12);
+            }
 
             // Base service structure
             const serviceData: any = {
@@ -604,8 +635,10 @@ export const RefreshPowerScrubForm: React.FC<
                       <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
                     </div>
 
-                    {/* Monthly Total – HIDE for Quarterly areas */}
-                    {form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" && (
+                    {/* Monthly Total – HIDE for visit-based frequencies (Quarterly, Bi-annual, Annual) */}
+                    {form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" &&
+                     form[areaKey].frequencyLabel?.toLowerCase() !== "bi-annual" &&
+                     form[areaKey].frequencyLabel?.toLowerCase() !== "annual" && (
                       <div className="rps-inline" style={{ marginTop: '8px' }}>
                         <span className="rps-label">Monthly: ${formatAmount(areaMonthlyTotals[areaKey])}</span>
                       </div>
@@ -623,6 +656,26 @@ export const RefreshPowerScrubForm: React.FC<
                           // For quarterly: show multiples of 3 months only
                           Array.from({ length: 12 }, (_, i) => {
                             const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+                            return (
+                              <option key={months} value={months}>
+                                {months} mo
+                              </option>
+                            );
+                          })
+                        ) : form[areaKey].frequencyLabel?.toLowerCase() === "bi-annual" ? (
+                          // For bi-annual: show multiples of 6 months only
+                          Array.from({ length: 6 }, (_, i) => {
+                            const months = (i + 1) * 6; // 6, 12, 18, 24, 30, 36
+                            return (
+                              <option key={months} value={months}>
+                                {months} mo
+                              </option>
+                            );
+                          })
+                        ) : form[areaKey].frequencyLabel?.toLowerCase() === "annual" ? (
+                          // For annual: show multiples of 12 months only
+                          Array.from({ length: 3 }, (_, i) => {
+                            const months = (i + 1) * 12; // 12, 24, 36
                             return (
                               <option key={months} value={months}>
                                 {months} mo

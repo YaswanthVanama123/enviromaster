@@ -4,7 +4,16 @@ import type { BaseServiceFormState } from "../common/serviceTypes";
 export type RefreshKitchenSize = "smallMedium" | "large";
 export type RefreshPatioMode = "standalone" | "upsell";
 export type RefreshPricingType = "preset" | "perWorker" | "perHour" | "squareFeet" | "custom";
-export type RefreshFrequency = "weekly" | "biweekly" | "monthly" | "bimonthly" | "quarterly";
+export type RefreshFrequency =
+  | "oneTime"
+  | "weekly"
+  | "biweekly"
+  | "twicePerMonth"
+  | "monthly"
+  | "bimonthly"
+  | "quarterly"
+  | "biannual"
+  | "annual";
 
 export type RefreshAreaKey =
   | "dumpster"

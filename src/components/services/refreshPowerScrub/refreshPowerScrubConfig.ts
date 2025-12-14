@@ -1,4 +1,5 @@
 // src/features/services/refreshPowerScrub/refreshPowerScrubConfig.ts
+import type { RefreshFrequency } from "./refreshPowerScrubTypes";
 
 // Core hourly / trip / minimum from the rules
 export const REFRESH_DEFAULT_HOURLY = 200; // $200 / hr / worker
@@ -20,3 +21,29 @@ export const REFRESH_PATIO_UPSELL = 500;        // Patio as an upsell with FOH
 export const REFRESH_SQFT_FIXED_FEE = 200;
 export const REFRESH_SQFT_INSIDE_RATE = 0.6;    // $0.60 / sq ft (inside)
 export const REFRESH_SQFT_OUTSIDE_RATE = 0.4;   // $0.40 / sq ft (outside)
+
+// ✅ Frequency labels for all 9 frequencies
+export const refreshFrequencyLabels: Record<RefreshFrequency, string> = {
+  oneTime: "One Time",
+  weekly: "Weekly",
+  biweekly: "Bi-Weekly",
+  twicePerMonth: "2× / Month",
+  monthly: "Monthly",
+  bimonthly: "Every 2 Months",
+  quarterly: "Quarterly",
+  biannual: "Bi-Annual",
+  annual: "Annual",
+};
+
+// ✅ Frequency list for dropdown
+export const refreshFrequencyList: RefreshFrequency[] = [
+  "oneTime",
+  "weekly",
+  "biweekly",
+  "twicePerMonth",
+  "monthly",
+  "bimonthly",
+  "quarterly",
+  "biannual",
+  "annual",
+];

@@ -33,13 +33,26 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
   const [selectedAction, setSelectedAction] = useState<'create_version' | 'replace_recent'>('create_version'); // ✅ REMOVED: replace_main
   const [changeNotes, setChangeNotes] = useState("");
 
+  // ✅ FIXED: Define functions before useEffect to avoid TDZ error
+  const getRecommendedAction = React.useCallback(() => {
+    // ✅ UPDATED: Only version-based recommendations
+    if (versionStatus?.isFirstTime) return 'create_version';
+    // No more "suggest_replace" for main PDF - only for recent versions
+    return 'create_version';
+  }, [versionStatus]);
+
+  const resetToRecommended = React.useCallback(() => {
+    setSelectedAction(getRecommendedAction());
+    setChangeNotes("");
+  }, [getRecommendedAction]);
+
   // ✅ MOVED: All hooks must come before any conditional returns
   // Auto-set recommended action on first render
   React.useEffect(() => {
     if (versionStatus) {
       resetToRecommended();
     }
-  }, [versionStatus]);
+  }, [versionStatus, resetToRecommended]);
 
   // ✅ MOVED: Early return comes AFTER all hooks
   if (!isOpen || !versionStatus) return null;
@@ -52,18 +65,6 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
     } catch (error) {
       console.error('Version action failed:', error);
     }
-  };
-
-  const getRecommendedAction = () => {
-    // ✅ UPDATED: Only version-based recommendations
-    if (versionStatus.isFirstTime) return 'create_version';
-    // No more "suggest_replace" for main PDF - only for recent versions
-    return 'create_version';
-  };
-
-  const resetToRecommended = () => {
-    setSelectedAction(getRecommendedAction());
-    setChangeNotes("");
   };
 
   const renderActionOption = (

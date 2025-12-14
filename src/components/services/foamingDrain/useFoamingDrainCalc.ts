@@ -255,20 +255,21 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    const activeConfig = backendConfig || {
-      standardDrainRate: cfg.standardDrainRate,
-      altBaseCharge: cfg.altBaseCharge,
-      altExtraPerDrain: cfg.altExtraPerDrain,
-      volumePricing: cfg.volumePricing,
-      grease: cfg.grease,
-      green: cfg.green,
-      plumbing: cfg.plumbing,
-      installationRules: cfg.installationRules,
-      tripCharges: cfg.tripCharges,
-      billingConversions: cfg.billingConversions,
-      contract: cfg.contract,
-      defaultFrequency: cfg.defaultFrequency,
-      allowedFrequencies: cfg.allowedFrequencies,
+    // Use property-level fallbacks to handle incomplete backend configs
+    const activeConfig = {
+      standardDrainRate: backendConfig?.standardDrainRate ?? cfg.standardDrainRate,
+      altBaseCharge: backendConfig?.altBaseCharge ?? cfg.altBaseCharge,
+      altExtraPerDrain: backendConfig?.altExtraPerDrain ?? cfg.altExtraPerDrain,
+      volumePricing: backendConfig?.volumePricing ?? cfg.volumePricing,
+      grease: backendConfig?.grease ?? cfg.grease,
+      green: backendConfig?.green ?? cfg.green,
+      plumbing: backendConfig?.plumbing ?? cfg.plumbing,
+      installationRules: backendConfig?.installationRules ?? cfg.installationRules,
+      tripCharges: backendConfig?.tripCharges ?? cfg.tripCharges,
+      billingConversions: backendConfig?.billingConversions ?? cfg.billingConversions,
+      contract: backendConfig?.contract ?? cfg.contract,
+      defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
+      allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
     };
 
     // ---------- 1) Normalize inputs ----------

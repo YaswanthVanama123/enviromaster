@@ -50,11 +50,15 @@ interface BackendRefreshPowerScrubConfig {
     outsideRate: number;
   };
   billingConversions: {
+    oneTime: { monthlyMultiplier: number; annualMultiplier: number; };
     weekly: { monthlyMultiplier: number; annualMultiplier: number; };
     biweekly: { monthlyMultiplier: number; annualMultiplier: number; };
+    twicePerMonth: { monthlyMultiplier: number; annualMultiplier: number; };
     monthly: { monthlyMultiplier: number; annualMultiplier: number; };
     bimonthly: { monthlyMultiplier: number; annualMultiplier: number; };
     quarterly: { monthlyMultiplier: number; annualMultiplier: number; };
+    biannual: { monthlyMultiplier: number; annualMultiplier: number; };
+    annual: { monthlyMultiplier: number; annualMultiplier: number; };
   };
   frequencyOptions?: string[];
   areaTypes?: string[];
@@ -75,31 +79,43 @@ function getBillingMultiplier(
   frequency: string,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const normalizedFrequency = frequency.toLowerCase().replace("-", "");
+  const normalizedFrequency = frequency.toLowerCase().replace("-", "").replace(/\s+/g, "");
 
   // Default multipliers as fallback
   const defaultMultipliers: Record<string, number> = {
+    "onetime": 0,
     "weekly": 4.33,
     "biweekly": 2.165,
+    "twicepermonth": 2.0,
     "monthly": 1.0,
     "bimonthly": 0.5,
     "quarterly": 0.333,
+    "biannual": 0.167,
+    "annual": 0.083,
   };
 
   // Get from backend config if available
   if (backendConfig?.billingConversions) {
     const conversions = backendConfig.billingConversions;
     switch (normalizedFrequency) {
+      case "onetime":
+        return conversions.oneTime?.monthlyMultiplier ?? defaultMultipliers.onetime;
       case "weekly":
         return conversions.weekly?.monthlyMultiplier ?? defaultMultipliers.weekly;
       case "biweekly":
         return conversions.biweekly?.monthlyMultiplier ?? defaultMultipliers.biweekly;
+      case "twicepermonth":
+        return conversions.twicePerMonth?.monthlyMultiplier ?? defaultMultipliers.twicepermonth;
       case "monthly":
         return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
       case "bimonthly":
         return conversions.bimonthly?.monthlyMultiplier ?? defaultMultipliers.bimonthly;
       case "quarterly":
         return conversions.quarterly?.monthlyMultiplier ?? defaultMultipliers.quarterly;
+      case "biannual":
+        return conversions.biannual?.monthlyMultiplier ?? defaultMultipliers.biannual;
+      case "annual":
+        return conversions.annual?.monthlyMultiplier ?? defaultMultipliers.annual;
     }
   }
 
@@ -695,10 +711,17 @@ export function useRefreshPowerScrubCalc(
 
       monthlyTotals[area] = monthlyRecurring;
 
-      // Calculate contract total - for quarterly, use visits per contract period
+      // Calculate contract total - handle special frequencies
+      // Note: frequencyLabel already declared above, reusing it here
       if (frequencyLabel === "quarterly") {
         const quarterlyVisits = (form[area].contractMonths || 12) / 3;
         contractTotals[area] = cost * quarterlyVisits;
+      } else if (frequencyLabel === "bi-annual") {
+        const biannualVisits = (form[area].contractMonths || 12) / 6;
+        contractTotals[area] = cost * biannualVisits;
+      } else if (frequencyLabel === "annual") {
+        const annualVisits = (form[area].contractMonths || 12) / 12;
+        contractTotals[area] = cost * annualVisits;
       } else {
         contractTotals[area] = monthlyRecurring * (form[area].contractMonths || 12);
       }
@@ -740,10 +763,16 @@ export function useRefreshPowerScrubCalc(
     const frequencyMultiplier = getBillingMultiplier(form.frequency, backendConfig);
     monthlyRecurring = rounded * frequencyMultiplier;
 
-    // Calculate contract total - for quarterly, use visits per contract period
+    // Calculate contract total - handle special frequencies
     if (form.frequency === "quarterly") {
       const quarterlyVisits = (form.contractMonths || 12) / 3;
       contractTotal = rounded * quarterlyVisits;
+    } else if (form.frequency === "biannual") {
+      const biannualVisits = (form.contractMonths || 12) / 6;
+      contractTotal = rounded * biannualVisits;
+    } else if (form.frequency === "annual") {
+      const annualVisits = (form.contractMonths || 12) / 12;
+      contractTotal = rounded * annualVisits;
     } else {
       contractTotal = monthlyRecurring * (form.contractMonths || 12);
     }
