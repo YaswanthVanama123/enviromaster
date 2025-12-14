@@ -426,24 +426,40 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         );
         const bulkNoteText = `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
 
+        // ✅ FIXED: Check if we have any version PDFs in selected files
+        const hasVersionPdf = selectedBulkFiles.some(file => {
+          const strategy = getFileUploadStrategy(file);
+          return strategy.type === 'agreement';
+        });
+
+        console.log(`🔍 [BULK-FIRST-TIME] Analysis: ${selectedBulkFiles.length} files, hasVersionPdf: ${hasVersionPdf}`);
+
         for (const [index, file] of selectedBulkFiles.entries()) {
           try {
-            console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${selectedBulkFiles.length}: ${file.fileName}`);
+            const strategy = getFileUploadStrategy(file);
+            console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${selectedBulkFiles.length}: ${file.fileName} (${strategy.description})`);
+            console.log(`🔍 [BULK-FIRST-TIME] File details:`, {
+              id: file.id,
+              fileName: file.fileName,
+              fileType: file.fileType,
+              strategy: strategy
+            });
 
             if (index === 0) {
-              // ✅ First file: Create the deal with the comprehensive note
-              // ✅ FIX: Use main agreementId, not file.id (file.id is version/attachment ID, not CustomerHeaderDoc ID)
+              // ✅ FIXED: Create deal, but only upload agreement PDF if no version PDF is selected
+              console.log(`📝 [BULK-FIRST-TIME] Creating deal ${hasVersionPdf ? 'without auto PDF upload' : 'with agreement PDF'}`);
+
               const result = await zohoApi.firstTimeUpload(agreementId, {
                 companyId: selectedCompany.id,
                 companyName: selectedCompany.name,
                 dealName: dealName.trim(),
                 pipelineName,
                 stage,
-                noteText: bulkNoteText  // ✅ Use comprehensive note text
+                noteText: bulkNoteText,
+                skipFileUpload: hasVersionPdf  // ✅ Skip auto PDF upload if we have version PDFs to process
               });
 
               if (result.success) {
-                successCount++;
                 dealId = result.data?.deal?.id;
                 console.log(`✅ [BULK-FIRST-TIME] Deal created with ID: ${dealId}`);
 
@@ -452,9 +468,49 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                   console.error(`❌ [BULK-FIRST-TIME] Could not extract dealId from response:`, result.data);
                   break;
                 }
+
+                // ✅ FIXED: Process first file using strategy
+                if (strategy.type === 'attached') {
+                  console.log(`📎 [BULK-FIRST-TIME] Adding first file as attached: ${file.fileName}`);
+
+                  const attachedResult = await zohoApi.uploadAttachedFile(file.id, {
+                    dealId: dealId,
+                    noteText: `Bulk upload attached file: ${file.fileName}`,
+                    dealName: dealName.trim(),
+                    skipNoteCreation: true  // Skip note creation since we already created comprehensive note
+                  });
+
+                  if (attachedResult.success) {
+                    successCount++;
+                    console.log(`✅ [BULK-FIRST-TIME] Added attached file to deal: ${file.fileName}`);
+                  } else {
+                    failCount++;
+                    console.error(`❌ [BULK-FIRST-TIME] Failed to add attached file ${file.fileName}:`, attachedResult.error);
+                  }
+                } else if (strategy.type === 'agreement') {
+                  console.log(`📝 [BULK-FIRST-TIME] Adding first file as version PDF: ${file.fileName}`);
+
+                  const versionResult = await zohoApi.updateUpload(agreementId, {
+                    noteText: `First file in bulk upload: ${file.fileName}`,
+                    dealId: dealId,
+                    skipNoteCreation: true  // Skip note creation since we already created comprehensive note
+                  });
+
+                  if (versionResult.success) {
+                    successCount++;
+                    console.log(`✅ [BULK-FIRST-TIME] Added version PDF to deal: ${file.fileName}`);
+                  } else {
+                    failCount++;
+                    console.error(`❌ [BULK-FIRST-TIME] Failed to add version PDF ${file.fileName}:`, versionResult.error);
+                  }
+                } else {
+                  // This was the auto-uploaded agreement PDF during deal creation
+                  successCount++;
+                  console.log(`✅ [BULK-FIRST-TIME] Agreement PDF auto-uploaded during deal creation`);
+                }
               } else {
                 failCount++;
-                console.error(`❌ [BULK-FIRST-TIME] Failed to create deal with ${file.fileName}:`, result.error);
+                console.error(`❌ [BULK-FIRST-TIME] Failed to create deal:`, result.error);
                 break;
               }
             } else {
