@@ -318,25 +318,30 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     if (areaSqFt > 0) {
       // ✅ CARPET PRICING: Two calculation methods based on useExactSqft checkbox
-      if (areaSqFt <= form.unitSqFt) {  // ✅ USE FORM VALUE (from backend)
-        // 500 sq ft or less: flat rate
-        calculatedPerVisitBase = form.firstUnitRate;  // ✅ USE FORM VALUE
+      // IMPORTANT: $250 minimum covers first 1000 sq ft (not 500!)
+      // Additional 500 sq ft blocks = $125 each
+
+      const minimumCoverage = 1000; // $250 covers first 1000 sq ft
+
+      if (areaSqFt <= minimumCoverage) {
+        // 1000 sq ft or less: minimum price
+        calculatedPerVisitBase = form.perVisitMinimum; // $250 minimum
       } else {
-        // Over 500 sq ft: choose calculation method
-        const extraSqFt = areaSqFt - form.unitSqFt;  // ✅ USE FORM VALUE
+        // Over 1000 sq ft: choose calculation method
+        const extraSqFt = areaSqFt - minimumCoverage; // Excess beyond 1000 sq ft
 
         if (form.useExactSqft) {
           // EXACT SQFT: $250 + extra sq ft × $0.25/sq ft
-          const ratePerSqFt = form.additionalUnitRate / form.unitSqFt; // ✅ USE FORM VALUES ($125/500 = $0.25)
-          calculatedPerVisitBase = form.firstUnitRate + (extraSqFt * ratePerSqFt);  // ✅ USE FORM VALUE
+          const ratePerSqFt = form.additionalUnitRate / form.unitSqFt; // $125/500 = $0.25
+          calculatedPerVisitBase = form.perVisitMinimum + (extraSqFt * ratePerSqFt);
         } else {
           // BLOCK PRICING: $250 + number of 500 sq ft blocks × $125
           const additionalBlocks = Math.ceil(extraSqFt / form.unitSqFt);
-          calculatedPerVisitBase = form.firstUnitRate + (additionalBlocks * form.additionalUnitRate);  // ✅ USE FORM VALUES
+          calculatedPerVisitBase = form.perVisitMinimum + (additionalBlocks * form.additionalUnitRate);
         }
       }
 
-      calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, form.perVisitMinimum);  // ✅ USE FORM VALUE
+      calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, form.perVisitMinimum);
     }
 
     // Use custom override if set, otherwise use calculated

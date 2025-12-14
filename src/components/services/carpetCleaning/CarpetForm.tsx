@@ -10,7 +10,8 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 /**
  * Carpet Cleaning form – same UI style as SaniScrub:
- *  - Block pricing: 250 (first 500 sq ft) + 125 per extra 500
+ *  - Block pricing: $250 minimum covers first 1000 sq ft, then $125 per additional 500 sq ft
+ *  - Exact pricing: $250 minimum for first 1000 sq ft, then $0.25 per sq ft
  *  - Per-visit minimum $250
  *  - No trip charge in math (field shows $0.00)
  *  - Installation fee options (1× clean / 3× dirty)
@@ -241,8 +242,8 @@ export const CarpetForm: React.FC<
           </label>
           <small style={{ color: "#666", fontSize: "11px", marginLeft: "10px" }}>
             {form.useExactSqft
-              ? "(Excess × $0.25/sq ft)"
-              : "(Excess in 500 sq ft blocks × $125)"}
+              ? "(First 1000 sq ft: $250, then $0.25/sq ft)"
+              : "(First 1000 sq ft: $250, then $125 per 500 sq ft block)"}
           </small>
         </div>
       </div>
