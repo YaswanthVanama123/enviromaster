@@ -131,6 +131,39 @@ export const PricingTablesView: React.FC = () => {
   const extractServicePricing = (config: any, serviceId: string) => {
     const fields: Array<{ label: string; value: number; path: string[]; unit?: string }> = [];
 
+    // ✅ ENHANCED: Initialize common nested objects with defaults if they don't exist
+    // This ensures that frequency metadata fields show up even if the objects are undefined
+    const ensureNestedDefaults = (config: any) => {
+      if (!config.frequencyMetadata) {
+        config.frequencyMetadata = {};
+      }
+      if (!config.frequencyMetadata.weekly) {
+        config.frequencyMetadata.weekly = { monthlyRecurringMultiplier: 0, firstMonthExtraMultiplier: 0 };
+      }
+      if (!config.frequencyMetadata.biweekly) {
+        config.frequencyMetadata.biweekly = { monthlyRecurringMultiplier: 0, firstMonthExtraMultiplier: 0 };
+      }
+      if (!config.frequencyMetadata.monthly) {
+        config.frequencyMetadata.monthly = { cycleMonths: 0 };
+      }
+      if (!config.frequencyMetadata.bimonthly) {
+        config.frequencyMetadata.bimonthly = { cycleMonths: 0 };
+      }
+      if (!config.frequencyMetadata.quarterly) {
+        config.frequencyMetadata.quarterly = { cycleMonths: 0 };
+      }
+      if (!config.frequencyMetadata.biannual) {
+        config.frequencyMetadata.biannual = { cycleMonths: 0 };
+      }
+      if (!config.frequencyMetadata.annual) {
+        config.frequencyMetadata.annual = { cycleMonths: 0 };
+      }
+      return config;
+    };
+
+    // Apply defaults to config
+    config = ensureNestedDefaults(config);
+
     // SANICLEAN - ACTUAL DATABASE STRUCTURE
     if (serviceId === "saniclean") {
     // Standard A La Carte Pricing - Inside Beltway
@@ -757,7 +790,11 @@ export const PricingTablesView: React.FC = () => {
     const newConfig = JSON.parse(JSON.stringify(detailedViewService.config));
     let current: any = newConfig;
 
+    // ✅ FIXED: Create nested objects if they don't exist
     for (let i = 0; i < path.length - 1; i++) {
+      if (!current[path[i]]) {
+        current[path[i]] = {};
+      }
       current = current[path[i]];
     }
 

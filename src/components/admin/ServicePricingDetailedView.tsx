@@ -21,19 +21,19 @@ type TabKey =
   // Foaming Drain
   | "standardRates" | "volumePricing" | "greaseTrap" | "greenDrain" | "addonsMultipliers" | "tripCharges" | "billingConversions" | "contractTerms"
   // Microfiber Mopping
-  | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing" | "moppingMetadata"
+  | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing" | "moppingMetadata" | "contractTerms"
   // Pure Janitorial
   | "baseRates" | "shortJobPricing" | "serviceMultipliers" | "monthlyConversions" | "contractSettings" | "dustingVacuuming" | "rateTiers" | "smoothBreakdown"
   // SaniClean
-  | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers" | "includedItems" | "monthlyAddOns" | "microfiberMoppingAddon"
+  | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers" | "includedItems" | "monthlyAddOns" | "microfiberMoppingAddon" | "contractTerms"
   // SaniPod
   | "podRates" | "extraBags" | "installation" | "standaloneService" | "frequencySettings" | "sanipodBillingConversions" | "sanipodContractTerms" | "sanipodRateTiers"
   // SaniScrub
-  | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees"
+  | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees" | "contractTerms"
   // Strip & Wax
   | "standardFull" | "noSealant" | "wellMaintained" | "stripWaxContractTerms" | "stripWaxBillingConversions" | "stripWaxRateTiers"
   // Refresh Power Scrub
-  | "defaultRates" | "kitchenPricing" | "fohPricing" | "patioPricing" | "sqftPricing" | "scrubFrequencyConversions";
+  | "defaultRates" | "kitchenPricing" | "fohPricing" | "patioPricing" | "sqftPricing" | "scrubFrequencyConversions" | "contractTerms";
 
 interface PricingField {
   label: string;
@@ -87,9 +87,42 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
   const config = service.config;
 
+  // ✅ ENHANCED: Initialize common nested objects with defaults if they don't exist
+  // This ensures that frequency metadata fields show up even if the objects are undefined
+  const ensureNestedDefaults = (config: any) => {
+    if (!config.frequencyMetadata) {
+      config.frequencyMetadata = {};
+    }
+    if (!config.frequencyMetadata.weekly) {
+      config.frequencyMetadata.weekly = { monthlyRecurringMultiplier: 0, firstMonthExtraMultiplier: 0 };
+    }
+    if (!config.frequencyMetadata.biweekly) {
+      config.frequencyMetadata.biweekly = { monthlyRecurringMultiplier: 0, firstMonthExtraMultiplier: 0 };
+    }
+    if (!config.frequencyMetadata.monthly) {
+      config.frequencyMetadata.monthly = { cycleMonths: 0 };
+    }
+    if (!config.frequencyMetadata.bimonthly) {
+      config.frequencyMetadata.bimonthly = { cycleMonths: 0 };
+    }
+    if (!config.frequencyMetadata.quarterly) {
+      config.frequencyMetadata.quarterly = { cycleMonths: 0 };
+    }
+    if (!config.frequencyMetadata.biannual) {
+      config.frequencyMetadata.biannual = { cycleMonths: 0 };
+    }
+    if (!config.frequencyMetadata.annual) {
+      config.frequencyMetadata.annual = { cycleMonths: 0 };
+    }
+    return config;
+  };
+
+  // Apply defaults to config before processing
+  const configWithDefaults = ensureNestedDefaults({...config});
+
   // Helper to get nested value
-  const getValue = (path: string[]): any => {
-    let current: any = config;
+  const getValue = (path: string[], configSource?: any): any => {
+    let current: any = configSource || configWithDefaults; // ✅ Use configWithDefaults by default
     for (const key of path) {
       if (current === undefined || current === null) return undefined;
       current = current[key];
@@ -99,6 +132,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
   // Organize fields by category for RPM Windows
   const getFieldsByCategory = () => {
+
     const categories: Record<TabKey, PricingField[]> = {
       // RPM Windows
       windowRates: [],
@@ -822,6 +856,13 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Multiply biweekly rate to get monthly billing (typically 2.165)",
         },
         {
+          label: "Biweekly - First Month Extra Multiplier",
+          value: freqMeta.biweekly?.firstMonthExtraMultiplier ?? 0,
+          path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"],
+          unit: "×",
+          description: "Additional multiplier for first month (typically 1.165)",
+        },
+        {
           label: "Bimonthly - Cycle Months",
           value: freqMeta.bimonthly?.cycleMonths ?? 0,
           path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
@@ -1051,6 +1092,24 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Billing cycle in months (typically 12)",
         },
       ];
+
+      // Contract Terms
+      categories.contractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (typically 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (typically 36 months)",
+        },
+      ];
     }
 
     // PURE JANITORIAL - ACTUAL DATABASE STRUCTURE
@@ -1223,13 +1282,20 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
       // Smooth Breakdown Pricing Table
       const smoothBreakdown = getValue(["smoothBreakdownPricingTable"]) || [];
-      categories.smoothBreakdown = smoothBreakdown.map((row: any, index: number) => ({
-        label: row.description || `Tier ${index + 1}`,
-        value: row.price || row.ratePerHour || 0,
-        path: ["smoothBreakdownPricingTable", index.toString(), row.price !== undefined ? "price" : "ratePerHour"],
-        unit: row.upToMinutes !== undefined ? `up to ${row.upToMinutes} min` : (row.upToHours !== undefined ? `up to ${row.upToHours} hrs` : ""),
-        description: `${row.description || ""} - ${row.addonOnly ? "Add-on only" : "Standalone"}: $${row.standalonePrice || 0}`,
-      }));
+      console.log("🔍 [DEBUG] Pure Janitorial smoothBreakdown data:", smoothBreakdown);
+      categories.smoothBreakdown = smoothBreakdown.map((row: any, index: number) => {
+        console.log(`🔍 [DEBUG] Row ${index}:`, row);
+        console.log(`🔍 [DEBUG] standalonePrice:`, row.standalonePrice);
+        const description = `${row.description || ""} - ${row.addonOnly ? "Add-on only" : "Standalone"}${row.standalonePrice ? ` (Standalone: $${row.standalonePrice})` : ""}`;
+        console.log(`🔍 [DEBUG] Final description:`, description);
+        return {
+          label: row.description || `Tier ${index + 1}`,
+          value: row.price || row.ratePerHour || 0,
+          path: ["smoothBreakdownPricingTable", index.toString(), row.price !== undefined ? "price" : "ratePerHour"],
+          unit: row.upToMinutes !== undefined ? `up to ${row.upToMinutes} min` : (row.upToHours !== undefined ? `up to ${row.upToHours} hrs` : ""),
+          description: description,
+        };
+      });
     }
 
     // SANICLEAN - ACTUAL DATABASE STRUCTURE
@@ -1409,10 +1475,75 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
+        {
+          label: "Monthly - Cycle Months",
+          value: freqMetadata.monthly?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "monthly", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 1)",
+        },
+        {
+          label: "Bimonthly - Cycle Months",
+          value: freqMetadata.bimonthly?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 2)",
+        },
+        {
+          label: "Quarterly - Cycle Months",
+          value: freqMetadata.quarterly?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 3)",
+        },
+        {
+          label: "Biannual - Cycle Months",
+          value: freqMetadata.biannual?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "biannual", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 6)",
+        },
+        {
+          label: "Annual - Cycle Months",
+          value: freqMetadata.annual?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "annual", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 12)",
+        },
       ];
 
-      // NOTE: SaniClean does NOT have rateTiers in the database, removing that category
-      categories.sanicleanRateTiers = [];
+      // Rate Tiers
+      const rateCategories = getValue(["rateCategories"]) || {};
+      categories.sanicleanRateTiers = [
+        {
+          label: "Red Rate Multiplier",
+          value: rateCategories.redRate?.multiplier ?? 0,
+          path: ["rateCategories", "redRate", "multiplier"],
+          unit: "×",
+          description: "Standard rate multiplier (typically 1.0)",
+        },
+        {
+          label: "Red Rate Commission",
+          value: parseFloat(rateCategories.redRate?.commissionRate?.replace('%', '') || '0'),
+          path: ["rateCategories", "redRate", "commissionRate"],
+          unit: "%",
+          description: "Commission rate for Red Rate tier (typically 20%)",
+        },
+        {
+          label: "Green Rate Multiplier",
+          value: rateCategories.greenRate?.multiplier ?? 0,
+          path: ["rateCategories", "greenRate", "multiplier"],
+          unit: "×",
+          description: "Premium rate multiplier (typically 1.3 = 30% higher)",
+        },
+        {
+          label: "Green Rate Commission",
+          value: parseFloat(rateCategories.greenRate?.commissionRate?.replace('%', '') || '0'),
+          path: ["rateCategories", "greenRate", "commissionRate"],
+          unit: "%",
+          description: "Commission rate for Green Rate tier (typically 25%)",
+        },
+      ];
 
       // Included Items
       const includedItemsData = getValue(["includedItems"]) || {};
@@ -1496,6 +1627,24 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           path: ["microfiberMoppingIncludedWithSaniClean", "hugeBathroomRate"],
           unit: "$ per unit",
           description: "Additional rate per unit for bathrooms exceeding standard size (typically $10)",
+        },
+      ];
+
+      // Contract Terms
+      categories.contractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (typically 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (typically 36 months)",
         },
       ];
     }
@@ -1827,11 +1976,25 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Weekly to monthly conversion (typically 4.33)",
         },
         {
+          label: "Weekly - First Month Extra Multiplier",
+          value: freqMeta.weekly?.firstMonthExtraMultiplier ?? 0,
+          path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"],
+          unit: "×",
+          description: "Additional multiplier for first month (typically 3.33)",
+        },
+        {
           label: "Biweekly - Monthly Recurring Multiplier",
           value: freqMeta.biweekly?.monthlyRecurringMultiplier ?? 0,
           path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"],
           unit: "×",
           description: "Biweekly to monthly conversion (typically 2.165)",
+        },
+        {
+          label: "Biweekly - First Month Extra Multiplier",
+          value: freqMeta.biweekly?.firstMonthExtraMultiplier ?? 0,
+          path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"],
+          unit: "×",
+          description: "Additional multiplier for first month (typically 1.165)",
         },
         {
           label: "Monthly - Cycle Months",
@@ -1879,6 +2042,24 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           path: ["parkingFeeAddOn"],
           unit: "$",
           description: "Additional parking fee (typically $0)",
+        },
+      ];
+
+      // Contract Terms
+      categories.contractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (typically 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (typically 36 months)",
         },
       ];
     }
@@ -2242,6 +2423,24 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Billing cycle in months (typically 12)",
         },
       ];
+
+      // Contract Terms
+      categories.contractTerms = [
+        {
+          label: "Minimum Contract Months",
+          value: getValue(["minContractMonths"]) ?? 0,
+          path: ["minContractMonths"],
+          unit: "months",
+          description: "Minimum contract duration required (typically 2 months)",
+        },
+        {
+          label: "Maximum Contract Months",
+          value: getValue(["maxContractMonths"]) ?? 0,
+          path: ["maxContractMonths"],
+          unit: "months",
+          description: "Maximum contract duration allowed (typically 36 months)",
+        },
+      ];
     }
 
     return categories;
@@ -2325,6 +2524,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "extraAreas", label: "Extra Areas", icon: "🏛️" },
         { key: "standalonePricing", label: "Standalone Service", icon: "⭐" },
         { key: "moppingMetadata", label: "Billing Conversions", icon: "🔄" },
+        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2354,6 +2554,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "microfiberMoppingAddon", label: "Microfiber Mopping", icon: "🧹" },
         { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: "🔄" },
         { key: "sanicleanRateTiers", label: "Rate Tiers", icon: "💰" },
+        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2377,6 +2578,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "saniscrubInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
         { key: "serviceFrequencies", label: "Service Frequencies", icon: "📅" },
         { key: "discountsAndFees", label: "Discounts & Fees", icon: "🎟️" },
+        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2399,6 +2601,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "patioPricing", label: "Patio Pricing", icon: "🌿" },
         { key: "sqftPricing", label: "Square Footage", icon: "📐" },
         { key: "scrubFrequencyConversions", label: "Billing Conversions", icon: "🔄" },
+        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
