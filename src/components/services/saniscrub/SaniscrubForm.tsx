@@ -330,7 +330,48 @@ export const SaniscrubForm: React.FC<
         </div>
       </div> */}
 
-      {/* Non-bathroom SaniScrub area with editable rates */}
+      {/* Non-bathroom SaniScrub pricing configuration */}
+      <div className="svc-row">
+        <label>First 500 sq ft Rate</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in field-qty"
+              type="number"
+              min={0}
+              step={0.01}
+              name="nonBathroomFirstUnitRate"
+              value={form.nonBathroomFirstUnitRate || 0}
+              onChange={onChange}
+              title="Rate for first 500 sq ft (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">/ 500 sq ft (${((form.nonBathroomFirstUnitRate || 250) / 500).toFixed(2)}/sq ft)</span>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Additional Rate</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in field-qty"
+              type="number"
+              min={0}
+              step={0.01}
+              name="nonBathroomAdditionalUnitRate"
+              value={form.nonBathroomAdditionalUnitRate || 0}
+              onChange={onChange}
+              title="Rate per additional 500 sq ft block (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">/ 500 sq ft (${((form.nonBathroomAdditionalUnitRate || 125) / 500).toFixed(2)}/sq ft)</span>
+        </div>
+      </div>
+
+      {/* Non-bathroom SaniScrub area calculation */}
       <div className="svc-row">
         <label>Non-Bathroom Area</label>
         <div className="svc-row-right">
@@ -343,19 +384,7 @@ export const SaniscrubForm: React.FC<
           />
           <span className="svc-small">sq ft</span>
           <span>@</span>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in field-qty"
-              type="number"
-              step="0.01"
-              name="nonBathroomAdditionalUnitRate"
-              value={form.nonBathroomAdditionalUnitRate.toFixed(2)}
-              onChange={onChange}
-              title="Rate per 500 sq ft after first 500 (from backend)"
-            />
-          </div>
-          <span className="svc-small">/ 500 sq ft</span>
+          <span className="svc-small">calculated rate</span>
           <span>=</span>
           <div className="svc-dollar field-qty">
             <span>$</span>
@@ -364,14 +393,15 @@ export const SaniscrubForm: React.FC<
               type="text"
               readOnly
               value={nonBathroomLineDisplayAmount.toFixed(2)}
+              title="Calculated non-bathroom area total per visit"
             />
           </div>
         </div>
       </div>
 
-      {/* Non-Bathroom Area calculation method checkbox */}
+      {/* Exact sq ft calculation checkbox for non-bathroom */}
       <div className="svc-row">
-        <label></label>
+        <label>Calculation Method</label>
         <div className="svc-row-right">
           <label className="svc-inline">
             <input
@@ -384,8 +414,8 @@ export const SaniscrubForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactNonBathroomSqft
-              ? `(${calc.nonBathroomUnitSqFt} sq ft units: $${form.nonBathroomFirstUnitRate} first + $${form.nonBathroomAdditionalUnitRate} per extra)`
-              : `(Direct: area × $${(form.nonBathroomAdditionalUnitRate / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)`}
+              ? `(Exact: $${form.nonBathroomFirstUnitRate} + extra sq ft × $${((form.nonBathroomAdditionalUnitRate || 125) / 500).toFixed(2)}/sq ft)`
+              : `(Block: $${form.nonBathroomFirstUnitRate} + blocks × $${form.nonBathroomAdditionalUnitRate})`}
           </span>
         </div>
       </div>
