@@ -1,11 +1,15 @@
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type CarpetFrequency =
+  | "oneTime"
   | "weekly"
-  | "monthly"
+  | "biweekly"
   | "twicePerMonth"
+  | "monthly"
   | "bimonthly"
-  | "quarterly";
+  | "quarterly"
+  | "biannual"
+  | "annual";
 
 export interface CarpetFrequencyMeta {
   // visits per YEAR (e.g., 12 for monthly, 24 for 2×/month, etc.)
@@ -32,6 +36,17 @@ export interface CarpetPricingConfig {
     dirty: number;  // 3× multiplier for dirty install
     clean: number;  // 1× multiplier for clean install
   };
+
+  // Billing conversions for all 9 frequencies
+  billingConversions: {
+    [key in CarpetFrequency]: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+  };
+
+  minContractMonths: number;
+  maxContractMonths: number;
 
   frequencyMeta: Record<CarpetFrequency, CarpetFrequencyMeta>;
 }

@@ -5,22 +5,30 @@ import type {
 
 /**
  * Allowed frequency values in UI order.
- * Added weekly for carpet cleaning.
+ * All 9 frequency types.
  */
 export const carpetFrequencyList: CarpetFrequency[] = [
+  "oneTime",
   "weekly",
-  "monthly",
+  "biweekly",
   "twicePerMonth",
+  "monthly",
   "bimonthly",
   "quarterly",
+  "biannual",
+  "annual",
 ];
 
 export const carpetFrequencyLabels: Record<CarpetFrequency, string> = {
+  oneTime: "One Time",
   weekly: "Weekly",
-  monthly: "Monthly",
+  biweekly: "Bi-Weekly",
   twicePerMonth: "2× / Month",
+  monthly: "Monthly",
   bimonthly: "Every 2 Months",
   quarterly: "Quarterly",
+  biannual: "Bi-Annual",
+  annual: "Annual",
 };
 
 /**
@@ -42,6 +50,23 @@ export const carpetPricingConfig: CarpetPricingConfig = {
     dirty: 3,
     clean: 1,
   },
+
+  // Billing conversions for all 9 frequency types
+  billingConversions: {
+    oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },
+    weekly: { annualMultiplier: 52, monthlyMultiplier: 4.33 },
+    biweekly: { annualMultiplier: 26, monthlyMultiplier: 2.165 },
+    twicePerMonth: { annualMultiplier: 24, monthlyMultiplier: 2 },
+    monthly: { annualMultiplier: 12, monthlyMultiplier: 1 },
+    bimonthly: { annualMultiplier: 6, monthlyMultiplier: 0.5 },
+    quarterly: { annualMultiplier: 4, monthlyMultiplier: 0.333 },
+    biannual: { annualMultiplier: 2, monthlyMultiplier: 0.167 },
+    annual: { annualMultiplier: 1, monthlyMultiplier: 0.083 },
+  },
+
+  // Contract term limits
+  minContractMonths: 2,
+  maxContractMonths: 36,
 
   // Frequency multipliers (same as other services)
   frequencyMeta: {

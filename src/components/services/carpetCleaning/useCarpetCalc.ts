@@ -325,9 +325,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     };
 
     const freq = clampFrequency(form.frequency);
-    const meta = activeConfig.frequencyMeta[freq];  // ✅ NOW GUARANTEED to have weekly from local config
-    const visitsPerYear = meta?.visitsPerYear ?? 12;
+
+    // ✅ Get billing conversion for current frequency
+    const conv = cfg.billingConversions[freq];
+    const monthlyVisits = conv.monthlyMultiplier;
+    const visitsPerYear = conv.annualMultiplier;
     const visitsPerMonth = visitsPerYear / 12;
+
+    // ✅ Detect visit-based frequencies (oneTime, quarterly, biannual, annual, bimonthly)
+    const isVisitBasedFrequency = freq === "oneTime" ||
+                                   freq === "quarterly" ||
+                                   freq === "biannual" ||
+                                   freq === "annual" ||
+                                   freq === "bimonthly";
 
     const areaSqFt = form.areaSqFt ?? 0;
 
@@ -390,13 +400,16 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     // ---------------- RECURRING MONTHLY (normal full month) ----------------
     let calculatedMonthlyRecurring = 0;
 
-    if (serviceActive && visitsPerMonth > 0) {
-      calculatedMonthlyRecurring = perVisitCharge * visitsPerMonth;
-
-      // ✅ FIXED: Add frequency-specific discount logic
-      if (freq === "twicePerMonth") {
-        // 2X/Monthly: Apply -$15 discount after calculation (like SaniScrub)
-        calculatedMonthlyRecurring = Math.max(calculatedMonthlyRecurring - 15, 0);
+    if (serviceActive) {
+      if (freq === "oneTime") {
+        // One-time service: just the per-visit price
+        calculatedMonthlyRecurring = perVisitCharge;
+      } else if (isVisitBasedFrequency) {
+        // Visit-based frequencies: monthly price = per-visit × monthly multiplier
+        calculatedMonthlyRecurring = monthlyVisits * perVisitCharge;
+      } else if (monthlyVisits > 0) {
+        // Month-based frequencies: monthly price = per-visit × monthly multiplier
+        calculatedMonthlyRecurring = perVisitCharge * monthlyVisits;
       }
     }
 
@@ -406,31 +419,26 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       : calculatedMonthlyRecurring;
 
     // ---------------- FIRST VISIT & FIRST MONTH ----------------
-    // WITH INSTALLATION:
-    //   - First visit = installation only (no normal service)
-    //   - First month = install-only first visit + (monthlyVisits − 1) × normal service price
-    // WITHOUT INSTALLATION:
-    //   - First month = normal full month (same as monthlyRecurring)
-
     let calculatedFirstMonthTotal = 0;
 
     if (serviceActive) {
-      if (form.includeInstall && installOneTime > 0) {
-        // With installation: install + (monthlyVisits - 1) service visits
-        const monthlyVisits = visitsPerMonth;
-        const firstMonthNormalVisits = monthlyVisits > 1 ? monthlyVisits - 1 : 0;
-        let firstMonthServiceCharge = firstMonthNormalVisits * perVisitCharge;
-
-        // ✅ FIXED: Apply frequency-specific discount to first month service charge (same as recurring months)
-        if (freq === "twicePerMonth" && firstMonthServiceCharge > 0) {
-          // Apply -$15 discount to the service portion (not the installation)
-          firstMonthServiceCharge = Math.max(firstMonthServiceCharge - 15, 0);
-        }
-
-        calculatedFirstMonthTotal = installOneTime + firstMonthServiceCharge;
+      if (freq === "oneTime") {
+        // One-time service with or without installation
+        calculatedFirstMonthTotal = form.includeInstall && installOneTime > 0
+          ? installOneTime + perVisitCharge
+          : perVisitCharge;
+      } else if (isVisitBasedFrequency) {
+        // Visit-based frequencies: first visit includes installation if enabled
+        calculatedFirstMonthTotal = form.includeInstall && installOneTime > 0
+          ? installOneTime + perVisitCharge
+          : perVisitCharge;
       } else {
-        // No installation: just a normal full month
-        calculatedFirstMonthTotal = monthlyRecurring;
+        // Month-based frequencies: first month includes installation if enabled
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime + monthlyRecurring;
+        } else {
+          calculatedFirstMonthTotal = monthlyRecurring;
+        }
       }
     }
 
@@ -443,31 +451,36 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     const contractMonths = clampContractMonths(form.contractMonths);
 
     let calculatedContractTotal = 0;
-    if (contractMonths > 0) {
-      // ✅ FIXED: Use frequency-specific calculation logic
-      if (freq === "bimonthly" || freq === "quarterly") {
-        // For bi-monthly and quarterly: calculate based on actual visits
-        const monthsPerVisit = freq === "bimonthly" ? 2 : 3; // Every 2 months or every 3 months
-        const totalVisits = Math.floor(contractMonths / monthsPerVisit);
+    let monthsPerVisit = 1;
+    let totalVisitsForContract = 0;
 
-        if (totalVisits > 0) {
-          if (form.includeInstall && installOneTime > 0) {
-            // With installation: first visit (install + service) + remaining visits (service only)
-            const remainingVisits = Math.max(totalVisits - 1, 0);
-            calculatedContractTotal = firstMonthTotal + (remainingVisits * perVisitCharge);
-          } else {
-            // No installation: just total visits × per-visit charge
-            calculatedContractTotal = totalVisits * perVisitCharge;
-          }
+    if (contractMonths > 0 && serviceActive) {
+      if (freq === "oneTime") {
+        // One-time service: just the first visit total
+        calculatedContractTotal = firstMonthTotal;
+        totalVisitsForContract = 1;
+      } else if (isVisitBasedFrequency) {
+        // Visit-based frequencies: calculate based on visits per year
+        const totalVisits = Math.round((contractMonths / 12) * visitsPerYear);
+        totalVisitsForContract = totalVisits;
+
+        if (form.includeInstall && installOneTime > 0 && totalVisits > 0) {
+          // With installation: first visit includes install, remaining visits are just service
+          calculatedContractTotal = installOneTime + (totalVisits * perVisitCharge);
+        } else {
+          // No installation: just total visits × per-visit charge
+          calculatedContractTotal = totalVisits * perVisitCharge;
         }
       } else {
-        // For monthly and 2X/monthly: use month-based calculation
+        // Month-based frequencies: use monthly multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
+
         if (form.includeInstall && installOneTime > 0) {
-          // With installation: first month (special) + remaining months normal
+          // With installation: first month includes install + first month service, then remaining months
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
-          // No installation: just contractMonths × normal monthly
+          // No installation: just contractMonths × monthly recurring
           calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       }
@@ -480,13 +493,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     // Per-Visit Effective = normal per-visit service price (no install, no trip)
     const perVisitEffective = perVisitCharge;
-
-    // ✅ NEW: Add frequency-specific helper values for UI
-    const isVisitBasedFrequency = freq === "bimonthly" || freq === "quarterly";
-    const monthsPerVisit = freq === "bimonthly" ? 2 : freq === "quarterly" ? 3 : 1;
-    const totalVisitsForContract = isVisitBasedFrequency
-      ? Math.floor(contractMonths / monthsPerVisit)
-      : contractMonths; // For monthly/2X monthly, visits = months
 
     return {
       perVisitBase,
