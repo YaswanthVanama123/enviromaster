@@ -1037,8 +1037,64 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         <h3>
           <FontAwesomeIcon icon={faHistory} />
           Upload Updated Version
+          {bulkFiles && bulkFiles.length > 1 && (
+            <span style={{
+              fontSize: '14px',
+              fontWeight: 'normal',
+              color: '#059669',
+              marginLeft: '8px'
+            }}>
+              (Bulk - {selectedFiles.size} files)
+            </span>
+          )}
         </h3>
         <p>This agreement has been uploaded before. Adding version {uploadStatus?.mapping?.nextVersion}.</p>
+
+        {/* ✅ NEW: Show existing deal context prominently */}
+        {uploadStatus?.mapping && (
+          <div style={{
+            background: '#f0f9ff',
+            border: '1px solid #bae6fd',
+            borderRadius: '8px',
+            padding: '12px',
+            margin: '12px 0',
+            fontSize: '14px'
+          }}>
+            <div style={{
+              fontWeight: '600',
+              color: '#0369a1',
+              marginBottom: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <FontAwesomeIcon icon={faBuilding} style={{ fontSize: '12px' }} />
+              {bulkFiles && bulkFiles.length > 1 ? 'Adding to Existing Deal (Bulk Upload)' : 'Uploading to Existing Deal'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 12px', fontSize: '13px' }}>
+              <span style={{ fontWeight: '500', color: '#6b7280' }}>Company:</span>
+              <span style={{ color: '#374151' }}>{uploadStatus.mapping.companyName}</span>
+
+              <span style={{ fontWeight: '500', color: '#6b7280' }}>Deal:</span>
+              <span style={{ color: '#374151' }}>{uploadStatus.mapping.dealName}</span>
+
+              <span style={{ fontWeight: '500', color: '#6b7280' }}>Current Version:</span>
+              <span style={{ color: '#374151' }}>v{uploadStatus.mapping.currentVersion}</span>
+
+              <span style={{ fontWeight: '500', color: '#6b7280' }}>Last Updated:</span>
+              <span style={{ color: '#374151' }}>{new Date(uploadStatus.mapping.lastUploadedAt).toLocaleDateString()}</span>
+
+              {bulkFiles && bulkFiles.length > 1 && (
+                <>
+                  <span style={{ fontWeight: '500', color: '#6b7280' }}>Upload Mode:</span>
+                  <span style={{ color: '#059669', fontWeight: '500' }}>
+                    Bulk Update ({selectedFiles.size} of {bulkFiles.length} selected)
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ✅ NEW: Show file selection for update uploads too */}
@@ -1118,23 +1174,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           </div>
         )}
       </div>
-
-      {uploadStatus?.mapping && (
-        <div className="zoho-upload__existing-info">
-          <div className="info-row">
-            <strong>Company:</strong> {uploadStatus.mapping.companyName}
-          </div>
-          <div className="info-row">
-            <strong>Deal:</strong> {uploadStatus.mapping.dealName}
-          </div>
-          <div className="info-row">
-            <strong>Current Version:</strong> {uploadStatus.mapping.currentVersion}
-          </div>
-          <div className="info-row">
-            <strong>Last Updated:</strong> {new Date(uploadStatus.mapping.lastUploadedAt).toLocaleDateString()}
-          </div>
-        </div>
-      )}
 
       <div className="zoho-upload__form">
         <div className="zoho-upload__section">
