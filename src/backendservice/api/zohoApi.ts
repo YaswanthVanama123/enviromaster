@@ -121,6 +121,7 @@ export interface FirstTimeUploadRequest {
   pipelineName?: string;
   stage?: string;
   noteText: string;
+  skipFileUpload?: boolean;  // ✅ NEW: Allow skipping PDF upload for bulk uploads
 }
 
 export interface UpdateUploadRequest {
