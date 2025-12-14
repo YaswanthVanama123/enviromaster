@@ -1,7 +1,7 @@
 // src/features/services/rpmWindows/rpmWindowsTypes.ts
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
-export type RpmFrequencyKey = "weekly" | "biweekly" | "monthly" | "quarterly";
+export type RpmFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
 export type RpmRateCategory = "redRate" | "greenRate";
 
 export interface RpmWindowPricingConfig {
@@ -15,18 +15,28 @@ export interface RpmWindowPricingConfig {
   installMultiplierClean: number;
 
   frequencyMultipliers: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
     quarterly: number;
+    biannual: number;
+    annual: number;
     quarterlyFirstTime: number;
   };
 
   annualFrequencies: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
     quarterly: number;
+    biannual: number;
+    annual: number;
   };
 
   monthlyConversions: {

@@ -26,23 +26,38 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
   installMultiplierClean: 1,
 
   frequencyMultipliers: {
+    oneTime: 1.0,
     weekly: 1.0,
     biweekly: 1.25,
+    twicePerMonth: 1.2,
     monthly: 1.25,
+    bimonthly: 1.5,
     quarterly: 2.0,
+    biannual: 2.5,
+    annual: 3.0,
     quarterlyFirstTime: 3.0,
   },
 
-  // Use “weeks” based logic:
+  // Use "weeks" based logic:
+  // oneTime = 1 visit total
   // weekly  = 52 visits/year
   // biweekly = 26 visits/year
+  // twicePerMonth = 24 visits/year
   // monthly = 12 visits/year
+  // bimonthly = 6 visits/year
   // quarterly = 4 visits/year
+  // biannual = 2 visits/year
+  // annual = 1 visit/year
   annualFrequencies: {
+    oneTime: 1,
     weekly: 52,
     biweekly: 26,
+    twicePerMonth: 24,
     monthly: 12,
+    bimonthly: 6,
     quarterly: 4,
+    biannual: 2,
+    annual: 1,
   },
 
   // Normalize to 4.33-week months

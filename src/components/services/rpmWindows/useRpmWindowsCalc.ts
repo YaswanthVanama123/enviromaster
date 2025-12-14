@@ -20,17 +20,27 @@ interface BackendRpmConfig {
   installMultiplierFirstTime: number;
   installMultiplierClean: number;
   frequencyMultipliers: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
     quarterly: number;
+    biannual: number;
+    annual: number;
     quarterlyFirstTime: number;
   };
   annualFrequencies: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
     quarterly: number;
+    biannual: number;
+    annual: number;
   };
   monthlyConversions: {
     weekly: number;
@@ -68,7 +78,10 @@ const DEFAULT_FORM: RpmWindowsFormState = {
 };
 
 function mapFrequency(v: string): RpmFrequencyKey {
-  if (v === "weekly" || v === "biweekly" || v === "monthly" || v === "quarterly") return v;
+  if (v === "oneTime" || v === "weekly" || v === "biweekly" || v === "twicePerMonth" ||
+      v === "monthly" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
+    return v;
+  }
   return "weekly";
 }
 
@@ -465,24 +478,31 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     let monthlyVisits = 0;
     const weeksPerMonth = activeConfig.monthlyConversions.actualWeeksPerMonth ?? 4.33;
 
-    if (freqKey === "weekly") monthlyVisits = weeksPerMonth;
+    if (freqKey === "oneTime") monthlyVisits = 0; // oneTime has no monthly billing
+    else if (freqKey === "weekly") monthlyVisits = weeksPerMonth;
     else if (freqKey === "biweekly") monthlyVisits = weeksPerMonth / 2;
+    else if (freqKey === "twicePerMonth") monthlyVisits = 2;
     else if (freqKey === "monthly") monthlyVisits = 1;
+    else if (freqKey === "bimonthly") monthlyVisits = 0.5; // every 2 months = 0.5 per month
     else if (freqKey === "quarterly") monthlyVisits = 0; // no monthly for quarterly
+    else if (freqKey === "biannual") monthlyVisits = 0; // no monthly for biannual
+    else if (freqKey === "annual") monthlyVisits = 0; // no monthly for annual
 
     // Standard ongoing monthly bill (after the first month)
     const standardMonthlyBillRated = recurringPerVisitRated * monthlyVisits;
 
     // First month bill:
-    //  - for quarterly: first visit only (installation or service)
+    //  - for oneTime: just the first visit (installation or service)
+    //  - for quarterly/biannual/annual: first visit only (installation or service)
     //  - for other frequencies: first visit + remaining visits in the month
+    const isVisitBasedFrequency = freqKey === "oneTime" || freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly";
     const effectiveServiceVisitsFirstMonth =
-      freqKey === "quarterly" ? 0 : (monthlyVisits > 1 ? monthlyVisits - 1 : 0);
+      isVisitBasedFrequency ? 0 : (monthlyVisits > 1 ? monthlyVisits - 1 : 0);
 
     let firstMonthBillRated = 0;
     if (form.isFirstTimeInstall) {
-      if (freqKey === "quarterly") {
-        // For quarterly install: just the installation cost
+      if (isVisitBasedFrequency) {
+        // For visit-based frequencies install: just the installation cost
         firstMonthBillRated = firstVisitTotalRated;
       } else {
         // For other frequencies: installation + remaining service visits in first month
@@ -490,7 +510,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           recurringPerVisitRated * effectiveServiceVisitsFirstMonth;
       }
     } else {
-      // No installation, just standard monthly billing
+      // No installation, just standard monthly billing (or 0 for visit-based)
       firstMonthBillRated = standardMonthlyBillRated;
     }
 
@@ -502,22 +522,25 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     let contractTotalRated = 0;
     if (contractMonths > 0) {
-      if (freqKey === "quarterly") {
-        // ✅ For quarterly: use annual frequencies FROM BACKEND
-        // Uses annualFrequencies.quarterly: 4 from your MongoDB config
-        const visitsPerYear = activeConfig.annualFrequencies?.quarterly ?? 4;
-        const totalQuarterlyVisits = (contractMonths / 12) * visitsPerYear;
+      if (freqKey === "oneTime") {
+        // ✅ For oneTime: just the first visit (installation or service)
+        contractTotalRated = firstMonthBillRated;
+      } else if (freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly") {
+        // ✅ For visit-based frequencies: use annual frequencies FROM BACKEND
+        // Uses annualFrequencies.quarterly: 4, bimonthly: 6, biannual: 2, annual: 1 from your MongoDB config
+        const visitsPerYear = activeConfig.annualFrequencies?.[freqKey] ?? 1;
+        const totalVisits = (contractMonths / 12) * visitsPerYear;
 
         if (form.isFirstTimeInstall) {
           // First visit is install only, remaining visits are service
-          const serviceVisits = Math.max(totalQuarterlyVisits - 1, 0);
+          const serviceVisits = Math.max(totalVisits - 1, 0);
           contractTotalRated = installOneTime + (serviceVisits * recurringPerVisitRated);
         } else {
           // No install, all visits are service
-          contractTotalRated = totalQuarterlyVisits * recurringPerVisitRated;
+          contractTotalRated = totalVisits * recurringPerVisitRated;
         }
       } else {
-        // For weekly, biweekly, monthly: use monthly-based calculation
+        // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
         if (form.isFirstTimeInstall) {
           const remainingMonths = Math.max(contractMonths - 1, 0);
           contractTotalRated =

@@ -43,6 +43,7 @@ export const RpmWindowsForm: React.FC<
         isActive: true,
         windows: [
           ...(form.smallQty > 0 ? [{
+            isDisplay: true,
             label: "Small Windows",
             type: "calc" as const,
             qty: form.smallQty,
@@ -50,6 +51,7 @@ export const RpmWindowsForm: React.FC<
             total: form.customSmallTotal ?? (form.smallQty * calc.effSmall),
           }] : []),
           ...(form.mediumQty > 0 ? [{
+            isDisplay: true,
             label: "Medium Windows",
             type: "calc" as const,
             qty: form.mediumQty,
@@ -57,6 +59,7 @@ export const RpmWindowsForm: React.FC<
             total: form.customMediumTotal ?? (form.mediumQty * calc.effMedium),
           }] : []),
           ...(form.largeQty > 0 ? [{
+            isDisplay: true,
             label: "Large Windows",
             type: "calc" as const,
             qty: form.largeQty,
@@ -65,16 +68,19 @@ export const RpmWindowsForm: React.FC<
           }] : []),
         ],
         installationFee: {
+          isDisplay: true,
           label: "First Visit",
           type: "dollar" as const,
           amount: form.customInstallationFee ?? calc.installOneTime,
         },
         installType: {
+          isDisplay: true,
           label: "Install Type",
           type: "text" as const,
           value: form.isFirstTimeInstall ? "First Time (Install)" : "Ongoing / Clean",
         },
         serviceFrequency: {
+          isDisplay: true,
           label: "Service Frequency",
           type: "text" as const,
           value: typeof form.frequency === 'string'
@@ -82,37 +88,44 @@ export const RpmWindowsForm: React.FC<
             : String(form.frequency || ''),
         },
         mirrorCleaning: {
+          isDisplay: true,
           label: "Mirror Cleaning",
           type: "text" as const,
           value: form.includeMirrors ? "Include (same chemicals)" : "Not included",
         },
         rateCategory: {
+          isDisplay: true,
           label: "Rate Category",
           type: "text" as const,
           value: form.selectedRateCategory === "redRate" ? "Red Rate" : "Green Rate",
         },
         extraCharges: form.extraCharges.map(charge => ({
+          isDisplay: true,
           label: charge.description || "Extra Charge",
           type: "dollar" as const,
           amount: charge.amount,
         })),
         totals: {
           perVisit: {
+            isDisplay: true,
             label: "Total Price)",
             type: "dollar" as const,
             amount: form.customPerVisitPrice ?? quote.perVisitPrice,
           },
           firstMonth: {
+            isDisplay: true,
             label: "First Month Total",
             type: "dollar" as const,
             amount: form.customFirstMonthTotal ?? calc.firstMonthBillRated,
           },
           monthlyRecurring: {
+            isDisplay: true,
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: form.customMonthlyRecurring ?? calc.monthlyBillRated,
           },
           annual: {
+            isDisplay: true,
             label: "Annual Price",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -485,10 +498,15 @@ export const RpmWindowsForm: React.FC<
             value={form.frequency}
             onChange={onChange}
           >
+            <option value="oneTime">One Time</option>
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi-Weekly</option>
+            <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="bimonthly">Every 2 Months</option>
             <option value="quarterly">Quarterly</option>
+            <option value="biannual">Bi-Annual</option>
+            <option value="annual">Annual</option>
           </select>
         </div>
       </div>
@@ -545,8 +563,8 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* First Month Total – HIDE for Quarterly */}
-      {form.frequency !== "quarterly" && (
+      {/* First Month Total – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+      {form.frequency !== "oneTime" && form.frequency !== "quarterly" && form.frequency !== "biannual" && form.frequency !== "annual" && form.frequency !== "bimonthly" && (
         <div className="svc-row svc-row-charge">
           <label>First Month Total</label>
           <div className="svc-row-right">
@@ -571,8 +589,8 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring – HIDE for Quarterly */}
-      {form.frequency !== "quarterly" && (
+      {/* Monthly Recurring – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+      {form.frequency !== "oneTime" && form.frequency !== "quarterly" && form.frequency !== "biannual" && form.frequency !== "annual" && form.frequency !== "bimonthly" && (
         <div className="svc-row svc-row-charge">
           <label>Monthly Recurring</label>
           <div className="svc-row-right">
@@ -595,10 +613,10 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* First Visit Total – SHOW ONLY for Quarterly */}
-      {form.frequency === "quarterly" && (
+      {/* First Visit Total – SHOW ONLY for oneTime, quarterly, biannual, annual, bimonthly */}
+      {(form.frequency === "oneTime" || form.frequency === "quarterly" || form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly") && (
         <div className="svc-row svc-row-charge">
-          <label>First Visit Total</label>
+          <label>{form.frequency === "oneTime" ? "Total Price" : "First Visit Total"}</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -622,44 +640,69 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Annual Price (now: total for selected months) */}
-      <div className="svc-row svc-row-charge">
-        <label>Contract Total</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="contractMonths"
-            value={form.contractMonths}
-            onChange={onChange}
-          >
-            {form.frequency === "quarterly"
-              ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
-                  <option key={m} value={m}>
-                    {m} months
-                  </option>
-                ))
-              : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
-                  <option key={m} value={m}>
-                    {m} months
-                  </option>
-                ))
-            }
-          </select>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
+      {/* Annual Price (now: total for selected months) – HIDE for oneTime */}
+      {form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-charge">
+          <label>Contract Total</label>
+          <div className="svc-row-right">
+            <select
               className="svc-in"
-              name="customAnnualPrice"
-              type="number"
-              step="0.01"
-              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice.toFixed(2) : (quote.annualPrice ?? 0).toFixed(2)}
+              name="contractMonths"
+              value={form.contractMonths}
               onChange={onChange}
-              onBlur={handleBlur}
-              style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
-            />
+            >
+              {/* Quarterly: multiples of 3 */}
+              {form.frequency === "quarterly"
+                ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
+                    <option key={m} value={m}>
+                      {m} months
+                    </option>
+                  ))
+                /* Bimonthly: even numbers */
+                : form.frequency === "bimonthly"
+                ? [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36].map((m) => (
+                    <option key={m} value={m}>
+                      {m} months
+                    </option>
+                  ))
+                /* Biannual: multiples of 6 */
+                : form.frequency === "biannual"
+                ? [6, 12, 18, 24, 30, 36].map((m) => (
+                    <option key={m} value={m}>
+                      {m} months
+                    </option>
+                  ))
+                /* Annual: multiples of 12 */
+                : form.frequency === "annual"
+                ? [12, 24, 36].map((m) => (
+                    <option key={m} value={m}>
+                      {m} months
+                    </option>
+                  ))
+                /* All other frequencies: 2-36 months */
+                : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+                    <option key={m} value={m}>
+                      {m} months
+                    </option>
+                  ))
+              }
+            </select>
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                name="customAnnualPrice"
+                type="number"
+                step="0.01"
+                value={form.customAnnualPrice !== undefined ? form.customAnnualPrice.toFixed(2) : (quote.annualPrice ?? 0).toFixed(2)}
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
