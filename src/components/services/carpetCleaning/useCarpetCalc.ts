@@ -9,23 +9,28 @@ import {
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendCarpetConfig {
-  unitSqFt: number;
-  firstUnitRate: number;
-  additionalUnitRate: number;
-  perVisitMinimum: number;
-  installMultipliers: {
-    dirty: number;
-    clean: number;
+  baseSqFtUnit: number;
+  basePrice: number;
+  additionalSqFtUnit: number;
+  additionalUnitPrice: number;
+  minimumChargePerVisit: number;
+  installationMultipliers: {
+    dirtyInstallMultiplier: number;
+    cleanInstallMultiplier: number;
   };
-  frequencyMeta: {
-    weekly: { visitsPerYear: number };
-    monthly: { visitsPerYear: number };
-    twicePerMonth: { visitsPerYear: number };
-    bimonthly: { visitsPerYear: number };
-    quarterly: { visitsPerYear: number };
+  frequencyMetadata: {
+    weekly?: { monthlyRecurringMultiplier: number; firstMonthExtraMultiplier: number };
+    biweekly?: { monthlyRecurringMultiplier: number; firstMonthExtraMultiplier: number };
+    monthly?: { cycleMonths: number };
+    bimonthly?: { cycleMonths: number };
+    quarterly?: { cycleMonths: number };
+    biannual?: { cycleMonths: number };
+    annual?: { cycleMonths: number };
   };
+  minContractMonths: number;
+  maxContractMonths: number;
 }
 
 const DEFAULT_FORM: CarpetFormState = {
@@ -81,13 +86,13 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
   const updateFormWithConfig = (config: BackendCarpetConfig) => {
     setForm((prev) => ({
       ...prev,
-      // Update all rate fields from backend if available
-      unitSqFt: config.unitSqFt ?? prev.unitSqFt,
-      firstUnitRate: config.firstUnitRate ?? prev.firstUnitRate,
-      additionalUnitRate: config.additionalUnitRate ?? prev.additionalUnitRate,
-      perVisitMinimum: config.perVisitMinimum ?? prev.perVisitMinimum,
-      installMultiplierDirty: config.installMultipliers?.dirty ?? prev.installMultiplierDirty,
-      installMultiplierClean: config.installMultipliers?.clean ?? prev.installMultiplierClean,
+      // ✅ Map backend config properties to form properties
+      unitSqFt: config.baseSqFtUnit ?? prev.unitSqFt,
+      firstUnitRate: config.basePrice ?? prev.firstUnitRate,
+      additionalUnitRate: config.additionalUnitPrice ?? prev.additionalUnitRate,
+      perVisitMinimum: config.minimumChargePerVisit ?? prev.perVisitMinimum,
+      installMultiplierDirty: config.installationMultipliers?.dirtyInstallMultiplier ?? prev.installMultiplierDirty,
+      installMultiplierClean: config.installationMultipliers?.cleanInstallMultiplier ?? prev.installMultiplierClean,
     }));
   };
 
@@ -112,12 +117,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
             updateFormWithConfig(config);
 
             console.log('✅ Carpet Cleaning FALLBACK CONFIG loaded from context:', {
-              unitSqFt: config.unitSqFt,
-              firstUnitRate: config.firstUnitRate,
-              additionalUnitRate: config.additionalUnitRate,
-              perVisitMinimum: config.perVisitMinimum,
-              installMultipliers: config.installMultipliers,
-              frequencyMeta: config.frequencyMeta,
+              baseSqFtUnit: config.baseSqFtUnit,
+              basePrice: config.basePrice,
+              additionalUnitPrice: config.additionalUnitPrice,
+              minimumChargePerVisit: config.minimumChargePerVisit,
+              installationMultipliers: config.installationMultipliers,
+              frequencyMetadata: config.frequencyMetadata,
             });
             return;
           }
@@ -142,12 +147,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       updateFormWithConfig(config);
 
       console.log('✅ Carpet Cleaning ACTIVE CONFIG loaded from backend:', {
-        unitSqFt: config.unitSqFt,
-        firstUnitRate: config.firstUnitRate,
-        additionalUnitRate: config.additionalUnitRate,
-        perVisitMinimum: config.perVisitMinimum,
-        installMultipliers: config.installMultipliers,
-        frequencyMeta: config.frequencyMeta,
+        baseSqFtUnit: config.baseSqFtUnit,
+        basePrice: config.basePrice,
+        additionalUnitPrice: config.additionalUnitPrice,
+        minimumChargePerVisit: config.minimumChargePerVisit,
+        installationMultipliers: config.installationMultipliers,
+        frequencyMetadata: config.frequencyMetadata,
       });
     } catch (error) {
       console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
@@ -213,7 +218,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           };
         }
 
-        // ✅ NEW: Handle custom override fields
+        // ✅ NEW: Handle custom override fields for rates
+        case "customFirstUnitRate":
+        case "customAdditionalUnitRate":
+        case "customPerVisitMinimum":
         case "customPerVisitPrice":
         case "customMonthlyRecurring":
         case "customFirstMonthPrice":
@@ -285,18 +293,18 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     totalVisitsForContract,
   } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Merge backend config with local config, ensuring all frequencies are available
-    const activeConfig = backendConfig ? {
-      unitSqFt: backendConfig.unitSqFt ?? cfg.unitSqFt,
-      firstUnitRate: backendConfig.firstUnitRate ?? cfg.firstUnitRate,
-      additionalUnitRate: backendConfig.additionalUnitRate ?? cfg.additionalUnitRate,
-      perVisitMinimum: backendConfig.perVisitMinimum ?? cfg.perVisitMinimum,
-      installMultipliers: backendConfig.installMultipliers ?? cfg.installMultipliers,
-      // ✅ CRITICAL: Merge frequencyMeta to ensure all frequencies (including weekly) are available
-      frequencyMeta: {
-        ...cfg.frequencyMeta, // Start with local config (includes weekly)
-        ...backendConfig.frequencyMeta, // Override with backend values if they exist
+    // Map backend config to our expected format, ensuring all frequencies are available
+    const baseConfig = backendConfig ? {
+      unitSqFt: backendConfig.baseSqFtUnit ?? cfg.unitSqFt,
+      firstUnitRate: backendConfig.basePrice ?? cfg.firstUnitRate,
+      additionalUnitRate: backendConfig.additionalUnitPrice ?? cfg.additionalUnitRate,
+      perVisitMinimum: backendConfig.minimumChargePerVisit ?? cfg.perVisitMinimum,
+      installMultipliers: {
+        dirty: backendConfig.installationMultipliers?.dirtyInstallMultiplier ?? cfg.installMultipliers.dirty,
+        clean: backendConfig.installationMultipliers?.cleanInstallMultiplier ?? cfg.installMultipliers.clean,
       },
+      // ✅ CRITICAL: Use local config for frequencyMeta since backend has different structure
+      frequencyMeta: cfg.frequencyMeta,
     } : {
       unitSqFt: cfg.unitSqFt,
       firstUnitRate: cfg.firstUnitRate,
@@ -304,6 +312,16 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       perVisitMinimum: cfg.perVisitMinimum,
       installMultipliers: cfg.installMultipliers,
       frequencyMeta: cfg.frequencyMeta,
+    };
+
+    // ✅ Apply user overrides to base config
+    const activeConfig = {
+      unitSqFt: baseConfig.unitSqFt,
+      firstUnitRate: form.customFirstUnitRate ?? baseConfig.firstUnitRate,
+      additionalUnitRate: form.customAdditionalUnitRate ?? baseConfig.additionalUnitRate,
+      perVisitMinimum: form.customPerVisitMinimum ?? baseConfig.perVisitMinimum,
+      installMultipliers: baseConfig.installMultipliers,
+      frequencyMeta: baseConfig.frequencyMeta,
     };
 
     const freq = clampFrequency(form.frequency);
@@ -318,30 +336,25 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     if (areaSqFt > 0) {
       // ✅ CARPET PRICING: Two calculation methods based on useExactSqft checkbox
-      // IMPORTANT: $250 minimum covers first 1000 sq ft (not 500!)
-      // Additional 500 sq ft blocks = $125 each
-
-      const minimumCoverage = 1000; // $250 covers first 1000 sq ft
-
-      if (areaSqFt <= minimumCoverage) {
-        // 1000 sq ft or less: minimum price
-        calculatedPerVisitBase = form.perVisitMinimum; // $250 minimum
+      if (areaSqFt <= activeConfig.unitSqFt) {
+        // 500 sq ft or less: flat rate
+        calculatedPerVisitBase = activeConfig.firstUnitRate;
       } else {
-        // Over 1000 sq ft: choose calculation method
-        const extraSqFt = areaSqFt - minimumCoverage; // Excess beyond 1000 sq ft
+        // Over 500 sq ft: choose calculation method
+        const extraSqFt = areaSqFt - activeConfig.unitSqFt;
 
         if (form.useExactSqft) {
-          // EXACT SQFT: $250 + extra sq ft × $0.25/sq ft
-          const ratePerSqFt = form.additionalUnitRate / form.unitSqFt; // $125/500 = $0.25
-          calculatedPerVisitBase = form.perVisitMinimum + (extraSqFt * ratePerSqFt);
+          // EXACT SQFT: extra sq ft × rate per sq ft
+          const ratePerSqFt = activeConfig.additionalUnitRate / activeConfig.unitSqFt;
+          calculatedPerVisitBase = activeConfig.firstUnitRate + (extraSqFt * ratePerSqFt);
         } else {
-          // BLOCK PRICING: $250 + number of 500 sq ft blocks × $125
-          const additionalBlocks = Math.ceil(extraSqFt / form.unitSqFt);
-          calculatedPerVisitBase = form.perVisitMinimum + (additionalBlocks * form.additionalUnitRate);
+          // BLOCK PRICING: number of additional 500 sq ft blocks × rate
+          const additionalBlocks = Math.ceil(extraSqFt / activeConfig.unitSqFt);
+          calculatedPerVisitBase = activeConfig.firstUnitRate + (additionalBlocks * activeConfig.additionalUnitRate);
         }
       }
 
-      calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, form.perVisitMinimum);
+      calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum);
     }
 
     // Use custom override if set, otherwise use calculated
@@ -360,13 +373,13 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     // ✅ FIXED: Install = 3× dirty / 1× clean of MINIMUM PRICE (NOT calculated price)
     // Installation is the same for any frequency type
     // Use minimum price as base for installation fee calculation
-    const installationBasePrice = Math.max(calculatedPerVisitBase, form.perVisitMinimum);
+    const installationBasePrice = Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum);
     const calculatedInstallOneTime =
       serviceActive && form.includeInstall
         ? installationBasePrice *
           (form.isDirtyInstall
-            ? form.installMultiplierDirty  // ✅ USE FORM VALUE (from backend)
-            : form.installMultiplierClean)  // ✅ USE FORM VALUE (from backend)
+            ? activeConfig.installMultipliers.dirty
+            : activeConfig.installMultipliers.clean)
         : 0;
 
     // Use custom override if set, otherwise use calculated
@@ -501,7 +514,11 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     form.contractMonths,
     form.includeInstall,
     form.isDirtyInstall,
-    // ✅ FIXED: Only watch custom override fields (user can edit these)
+    // ✅ FIXED: Watch custom override fields for rates
+    form.customFirstUnitRate,
+    form.customAdditionalUnitRate,
+    form.customPerVisitMinimum,
+    // ✅ FIXED: Watch custom override fields for totals
     form.customPerVisitPrice,
     form.customMonthlyRecurring,
     form.customFirstMonthPrice,

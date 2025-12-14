@@ -10,7 +10,7 @@ import { BackupHealthView } from './BackupHealthView';
 import { CreateBackupModal } from './CreateBackupModal';
 import { RestoreBackupModal } from './RestoreBackupModal';
 import { TextConfirmationModal } from './TextConfirmationModal';
-import ConfirmationModal from '../ConfirmationModal';
+import { ConfirmationModal } from './ConfirmationModal';
 
 type ToastMessage = {
   message: string;

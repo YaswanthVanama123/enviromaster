@@ -10,8 +10,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 /**
  * Carpet Cleaning form – same UI style as SaniScrub:
- *  - Block pricing: $250 minimum covers first 1000 sq ft, then $125 per additional 500 sq ft
- *  - Exact pricing: $250 minimum for first 1000 sq ft, then $0.25 per sq ft
+ *  - Block pricing: 250 (first 500 sq ft) + 125 per extra 500
  *  - Per-visit minimum $250
  *  - No trip charge in math (field shows $0.00)
  *  - Installation fee options (1× clean / 3× dirty)
@@ -23,6 +22,58 @@ export const CarpetForm: React.FC<
 > = ({ initialData, onQuoteChange, onRemove }) => {
   const { form, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Handler for clearing override values when they match calculated values
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = parseFloat(value);
+
+    if (isNaN(numValue)) return;
+
+    // Clear override if it matches the base backend value
+    switch (name) {
+      case 'customFirstUnitRate':
+        if (Math.abs(numValue - (form.firstUnitRate || 250)) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customAdditionalUnitRate':
+        if (Math.abs(numValue - (form.additionalUnitRate || 125)) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customPerVisitMinimum':
+        if (Math.abs(numValue - (form.perVisitMinimum || 250)) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customPerVisitPrice':
+        if (Math.abs(numValue - calc.perVisitCharge) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customMonthlyRecurring':
+        if (Math.abs(numValue - calc.monthlyTotal) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customFirstMonthPrice':
+        if (Math.abs(numValue - calc.firstMonthTotal) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customContractTotal':
+        if (Math.abs(numValue - calc.contractTotal) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+      case 'customInstallationFee':
+        if (Math.abs(numValue - calc.installOneTime) < 0.01) {
+          onChange({ target: { name, value: '' } } as any);
+        }
+        break;
+    }
+  };
 
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
@@ -167,7 +218,74 @@ export const CarpetForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Carpet area row – ____ @ ____ = ____ */}
+      {/* Pricing Configuration Rates */}
+      <div className="svc-row">
+        <label>First 500 sq ft Rate</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in field-qty"
+              type="number"
+              min={0}
+              step={0.01}
+              name="customFirstUnitRate"
+              value={form.customFirstUnitRate !== undefined ? form.customFirstUnitRate : (form.firstUnitRate || 0)}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customFirstUnitRate !== undefined ? '#fffacd' : 'white' }}
+              title="Rate for first 500 sq ft (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">/ 500 sq ft (${(((form.customFirstUnitRate ?? form.firstUnitRate) || 250) / 500).toFixed(2)}/sq ft)</span>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Additional Rate</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in field-qty"
+              type="number"
+              min={0}
+              step={0.01}
+              name="customAdditionalUnitRate"
+              value={form.customAdditionalUnitRate !== undefined ? form.customAdditionalUnitRate : (form.additionalUnitRate || 0)}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customAdditionalUnitRate !== undefined ? '#fffacd' : 'white' }}
+              title="Rate per additional 500 sq ft block (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">/ 500 sq ft (${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / 500).toFixed(2)}/sq ft)</span>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Minimum Charge</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in field-qty"
+              type="number"
+              min={0}
+              step={0.01}
+              name="customPerVisitMinimum"
+              value={form.customPerVisitMinimum !== undefined ? form.customPerVisitMinimum : (form.perVisitMinimum || 0)}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customPerVisitMinimum !== undefined ? '#fffacd' : 'white' }}
+              title="Minimum charge per visit (from backend, editable)"
+            />
+          </div>
+          <span className="svc-small">/ visit</span>
+        </div>
+      </div>
+
+      {/* Carpet area row – ____ @ calculated rate = ____ */}
       <div className="svc-row">
         <label>Carpet Area</label>
         <div className="svc-row-right">
@@ -180,20 +298,7 @@ export const CarpetForm: React.FC<
           />
           <span className="svc-small">sq ft</span>
           <span>@</span>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in field-qty"
-              type="number"
-              min={0}
-              step={0.01}
-              name="firstUnitRate"
-              value={form.firstUnitRate}
-              onChange={onChange}
-              title="Rate per 500 sq ft (from backend, editable)"
-            />
-          </div>
-          {/* <span className="svc-small">/ 500 sq ft</span> */}
+          <span className="svc-small">calculated rate</span>
           <span>=</span>
           <div className="svc-dollar field-qty">
             <span>$</span>
@@ -208,22 +313,11 @@ export const CarpetForm: React.FC<
                   : calc.perVisitCharge
               }
               onChange={onChange}
+              onBlur={handleBlur}
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
               title="Per visit total (editable)"
             />
           </div>
-          {/* <span className="svc-small">(min $</span> */}
-          {/* <input
-            className="svc-in field-qty"
-            type="number"
-            min={0}
-            step={0.01}
-            name="perVisitMinimum"
-            value={form.perVisitMinimum}
-            onChange={onChange}
-            title="Minimum per visit (from backend, editable)"
-          />
-          <span>)</span> */}
         </div>
       </div>
 
@@ -242,8 +336,8 @@ export const CarpetForm: React.FC<
           </label>
           <small style={{ color: "#666", fontSize: "11px", marginLeft: "10px" }}>
             {form.useExactSqft
-              ? "(First 1000 sq ft: $250, then $0.25/sq ft)"
-              : "(First 1000 sq ft: $250, then $125 per 500 sq ft block)"}
+              ? "(Excess × $0.25/sq ft)"
+              : "(Excess in 500 sq ft blocks × $125)"}
           </small>
         </div>
       </div>
@@ -368,9 +462,18 @@ export const CarpetForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={calc.installOneTime.toFixed(2)}
+                type="number"
+                step="0.01"
+                name="customInstallationFee"
+                value={
+                  form.customInstallationFee !== undefined
+                    ? form.customInstallationFee.toFixed(2)
+                    : calc.installOneTime.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
+                title="Installation fee total (editable)"
               />
             </div>
           </div>
@@ -386,9 +489,18 @@ export const CarpetForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={calc.monthlyTotal.toFixed(2)}
+                type="number"
+                step="0.01"
+                name="customMonthlyRecurring"
+                value={
+                  form.customMonthlyRecurring !== undefined
+                    ? form.customMonthlyRecurring.toFixed(2)
+                    : calc.monthlyTotal.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
+                title="Monthly recurring total (editable)"
               />
             </div>
           </div>
@@ -404,9 +516,18 @@ export const CarpetForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={calc.firstMonthTotal.toFixed(2)}
+                type="number"
+                step="0.01"
+                name="customFirstMonthPrice"
+                value={
+                  form.customFirstMonthPrice !== undefined
+                    ? form.customFirstMonthPrice.toFixed(2)
+                    : calc.firstMonthTotal.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white' }}
+                title="First month/visit total (editable)"
               />
             </div>
           </div>
@@ -450,9 +571,18 @@ export const CarpetForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.contractTotal.toFixed(2)}
+              type="number"
+              step="0.01"
+              name="customContractTotal"
+              value={
+                form.customContractTotal !== undefined
+                  ? form.customContractTotal.toFixed(2)
+                  : calc.contractTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white' }}
+              title="Contract total (editable)"
             />
           </div>
         </div>

@@ -70,7 +70,10 @@ export interface CarpetFormState extends BaseServiceFormState {
   installMultiplierDirty: number;  // 3× for dirty install
   installMultiplierClean: number;  // 1× for clean install
 
-  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  // ========== CUSTOM OVERRIDES (user can manually set rates and totals) ==========
+  customFirstUnitRate?: number;        // Override for first 500 sq ft rate
+  customAdditionalUnitRate?: number;   // Override for additional rate
+  customPerVisitMinimum?: number;      // Override for minimum charge
   customPerVisitPrice?: number;
   customMonthlyRecurring?: number;
   customFirstMonthPrice?: number;
