@@ -260,7 +260,20 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const activeFreqMult = backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers;
 
     const freqKey = mapFrequency(form.frequency);
-    const freqMult = activeFreqMult[freqKey] || 1;
+
+    // ✅ NEW: Apply special pricing rules for certain frequencies
+    let effectiveFreqKey = freqKey;
+
+    // 2×/Month and Bi-Monthly use Monthly pricing
+    if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+      effectiveFreqKey = "monthly";
+    }
+    // Bi-Annual and Annual use Quarterly pricing
+    else if (freqKey === "biannual" || freqKey === "annual") {
+      effectiveFreqKey = "quarterly";
+    }
+
+    const freqMult = activeFreqMult[effectiveFreqKey] || 1;
 
     // Apply frequency multiplier to base weekly rates
     setForm((prev) => ({
@@ -332,8 +345,17 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
           // Calculate base weekly rate from current frequency-adjusted value
           const freqKey = mapFrequency(prev.frequency);
+
+          // ✅ Apply same special pricing rules as useEffect and useMemo
+          let effectiveFreqKey = freqKey;
+          if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+            effectiveFreqKey = "monthly";
+          } else if (freqKey === "biannual" || freqKey === "annual") {
+            effectiveFreqKey = "quarterly";
+          }
+
           const activeFreqMult = backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers;
-          const freqMult = activeFreqMult[freqKey] || 1;
+          const freqMult = activeFreqMult[effectiveFreqKey] || 1;
           const weeklyBase = displayVal / freqMult;
 
           // Update base weekly rates
@@ -411,9 +433,23 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     const freqKey = mapFrequency(form.frequency);
 
-    // ✅ FREQUENCY MULTIPLIER FROM BACKEND (NOT HARDCODED!)
+    // ✅ NEW: Apply special pricing rules for certain frequencies (same as useEffect)
+    let effectiveFreqKey = freqKey;
+
+    // 2×/Month and Bi-Monthly use Monthly pricing
+    if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+      effectiveFreqKey = "monthly";
+    }
+    // Bi-Annual and Annual use Quarterly pricing
+    else if (freqKey === "biannual" || freqKey === "annual") {
+      effectiveFreqKey = "quarterly";
+    }
+
+    // ✅ FREQUENCY MULTIPLIER FROM BACKEND (using effective frequency for pricing)
     // When you select bi-weekly, this will be 1.25 FROM YOUR MONGODB CONFIG
-    const freqMult = activeConfig.frequencyMultipliers[freqKey] || 1;
+    // When you select twicePerMonth/bimonthly, this will use monthly multiplier
+    // When you select biannual/annual, this will use quarterly multiplier
+    const freqMult = activeConfig.frequencyMultipliers[effectiveFreqKey] || 1;
 
     // ✅ USE FREQUENCY-ADJUSTED RATES FROM FORM (already multiplied by useEffect)
     const weeklySmall = baseWeeklyRates.small;
