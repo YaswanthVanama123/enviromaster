@@ -132,6 +132,15 @@ export default function SavedFilesAgreements() {
       // 4. ✅ NEW: Merge grouped files with draft-only agreements
       const allAgreements = [...groupedResponse.groups, ...draftGroups];
 
+      // ✅ DEBUG: Log first few agreements and their files to check fileType
+      console.log(`🔍 [FETCH-DEBUG] Sample agreements with fileType data:`);
+      allAgreements.slice(0, 2).forEach((agreement, agIndex) => {
+        console.log(`   Agreement ${agIndex + 1}: ${agreement.agreementTitle} (${agreement.files.length} files)`);
+        agreement.files.slice(0, 3).forEach((file, fileIndex) => {
+          console.log(`     File ${fileIndex + 1}: ${file.fileName} (Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
+        });
+      });
+
       setAgreements(allAgreements);
       setTotalAgreements(groupedResponse.totalGroups + draftGroups.length);
       setTotalFiles(groupedResponse.total);
@@ -169,7 +178,17 @@ export default function SavedFilesAgreements() {
   const selectedFileObjects = useMemo(() => {
     const allFiles: SavedFileListItem[] = [];
     agreements.forEach(agreement => allFiles.push(...agreement.files));
-    return allFiles.filter(file => selectedFiles[file.id]);
+    const filteredFiles = allFiles.filter(file => selectedFiles[file.id]);
+
+    // ✅ DEBUG: Log selected file objects to check fileType preservation
+    if (filteredFiles.length > 0) {
+      console.log(`🔍 [SELECTED-FILES-DEBUG] Found ${filteredFiles.length} selected files:`);
+      filteredFiles.forEach((file, index) => {
+        console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
+      });
+    }
+
+    return filteredFiles;
   }, [agreements, selectedFiles]);
 
   const hasSelectedFiles = selectedFileIds.length > 0;
@@ -218,6 +237,13 @@ export default function SavedFilesAgreements() {
   // Bulk Zoho upload handler
   const handleBulkZohoUpload = () => {
     const filesWithPdf = selectedFileObjects.filter(file => file.hasPdf);
+
+    // ✅ DEBUG: Log the selected files to check fileType preservation
+    console.log(`🔍 [BULK-UPLOAD-DEBUG] Selected ${filesWithPdf.length} files with PDF:`);
+    filesWithPdf.forEach((file, index) => {
+      console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
+    });
+
     if (filesWithPdf.length === 0) {
       setToastMessage({
         message: "Please select files with PDFs to upload to Zoho.",
@@ -974,7 +1000,8 @@ export default function SavedFilesAgreements() {
           bulkFiles={selectedFilesForBulkUpload.map(file => ({
             id: file.id,
             fileName: file.fileName,
-            title: file.title
+            title: file.title,
+            fileType: file.fileType  // ✅ FIX: Include fileType for proper routing
           }))}
           onClose={() => {
             setBulkZohoUploadOpen(false);

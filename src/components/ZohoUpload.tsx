@@ -25,7 +25,7 @@ interface ZohoUploadProps {
   onClose: () => void;
   onSuccess: () => void;
   // ✅ NEW: Optional bulk upload support using existing UI
-  bulkFiles?: Array<{ id: string; fileName: string; title: string }>;
+  bulkFiles?: Array<{ id: string; fileName: string; title: string; fileType?: string }>;
 }
 
 type UploadStep = 'loading' | 'first-time' | 'update' | 'uploading' | 'success' | 'error';
@@ -73,6 +73,12 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   // ✅ NEW: Initialize selected files when bulkFiles changes
   useEffect(() => {
     if (bulkFiles && bulkFiles.length > 0) {
+      // ✅ DEBUG: Log bulk files to check fileType
+      console.log(`🔍 [BULK-FILES-DEBUG] Received ${bulkFiles.length} bulk files:`);
+      bulkFiles.forEach((file, index) => {
+        console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'})`);
+      });
+
       // Default: select all files initially
       const allFileIds = new Set(bulkFiles.map(file => file.id));
       setSelectedFiles(allFileIds);
