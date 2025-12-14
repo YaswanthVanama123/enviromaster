@@ -1,6 +1,6 @@
 // src/components/services/electrostaticSpray/electrostaticSprayTypes.ts
 
-export type ElectrostaticSprayFrequency = "weekly" | "biweekly" | "monthly" | "bimonthly" | "quarterly";
+export type ElectrostaticSprayFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
 export interface ElectrostaticSprayPricingConfig {
   // Room-based pricing
@@ -19,11 +19,15 @@ export interface ElectrostaticSprayPricingConfig {
 
   // Frequency conversions
   billingConversions: {
+    oneTime: { monthlyMultiplier: number; annualMultiplier: number };
     weekly: { monthlyMultiplier: number; annualMultiplier: number };
     biweekly: { monthlyMultiplier: number; annualMultiplier: number };
+    twicePerMonth: { monthlyMultiplier: number; annualMultiplier: number };
     monthly: { monthlyMultiplier: number; annualMultiplier: number };
     bimonthly: { monthlyMultiplier: number; annualMultiplier: number };
     quarterly: { monthlyMultiplier: number; annualMultiplier: number };
+    biannual: { monthlyMultiplier: number; annualMultiplier: number };
+    annual: { monthlyMultiplier: number; annualMultiplier: number };
     actualWeeksPerMonth: number;
   };
 
@@ -78,9 +82,11 @@ export interface ElectrostaticSprayFormState {
   tripChargePerVisit: number;
 
   // Custom overrides
+  customServiceCharge?: number;
   customPerVisitPrice?: number;
   customMonthlyRecurring?: number;
   customContractTotal?: number;
+  customFirstMonthTotal?: number;
 }
 
 export interface ElectrostaticSprayCalcResult {

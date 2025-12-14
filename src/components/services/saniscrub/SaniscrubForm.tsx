@@ -23,8 +23,16 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  const { form, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData);
+  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData);
   const servicesContext = useServicesContextOptional();
+
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      setForm((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
 
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
@@ -84,12 +92,14 @@ export const SaniscrubForm: React.FC<
         isActive: true,
 
         frequency: {
+          isDisplay: true,
           label: "Frequency",
           type: "text" as const,
           value: saniscrubFrequencyLabels[form.frequency] || form.frequency,
         },
 
         location: {
+          isDisplay: true,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
@@ -97,6 +107,7 @@ export const SaniscrubForm: React.FC<
 
         ...(form.fixtureCount > 0 ? {
           restroomFixtures: {
+            isDisplay: true,
             label: "Restroom Fixtures",
             type: "calc" as const,
             qty: form.fixtureCount,
@@ -107,6 +118,7 @@ export const SaniscrubForm: React.FC<
 
         ...(form.nonBathroomSqFt > 0 ? {
           nonBathroomArea: {
+            isDisplay: true,
             label: "Non-Bathroom Area",
             type: "calc" as const,
             qty: form.nonBathroomSqFt,
@@ -119,25 +131,29 @@ export const SaniscrubForm: React.FC<
         } : {}),
 
         totals: {
-          monthly: {
-            label: calc.isVisitBasedFrequency ? "Per Visit" : "Monthly Recurring",
+          perVisit: {
+            isDisplay: true,
+            label: "Per Visit Total",
             type: "dollar" as const,
-            amount: calc.monthlyBase,
+            amount: calc.perVisitEffective,
           },
-          firstMonth: {
-            label: calc.isVisitBasedFrequency ? "First Visit" : "First Month",
+          monthly: {
+            isDisplay: form.frequency !== "oneTime",
+            label: form.frequency === "oneTime" ? "Total Price" :
+                   calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
             type: "dollar" as const,
             amount: calc.firstMonthTotal,
           },
-          // ✅ NEW: Add monthly recurring for monthly-based frequencies only
-          ...(form.frequency === "monthly" || form.frequency === "twicePerMonth" ? {
-            monthlyRecurring: {
+          ...(form.frequency !== "oneTime" && !calc.isVisitBasedFrequency ? {
+            recurring: {
+              isDisplay: true,
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: calc.monthlyTotal,
             }
           } : {}),
           contract: {
+            isDisplay: form.frequency !== "oneTime",
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -609,54 +625,85 @@ export const SaniscrubForm: React.FC<
       </div> */}
 
       {/* Contract total – dropdown with frequency-specific months */}
-      <div className="svc-row svc-row-charge">
-        <label>Contract Total</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="contractMonths"
-            value={form.contractMonths}
-            onChange={onChange}
-          >
-            {(() => {
-              // ✅ FIXED: Generate frequency-specific contract month options
-              const options = [];
-
-              if (calc.frequency === "bimonthly") {
-                // Bi-monthly: Even numbers only (2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36)
-                for (let months = 2; months <= 36; months += 2) {
-                  options.push(months);
-                }
-              } else if (calc.frequency === "quarterly") {
-                // Quarterly: Quarterly values (3,6,9,12,15,18,21,24,27,30,33,36)
-                for (let months = 3; months <= 36; months += 3) {
-                  options.push(months);
-                }
-              } else {
-                // Monthly and 2X/monthly: All months (2,3,4,5...36)
-                for (let months = 2; months <= 36; months++) {
-                  options.push(months);
-                }
-              }
-
-              return options.map((months) => (
-                <option key={months} value={months}>
-                  {months} mo
-                </option>
-              ));
-            })()}
-          </select>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
+      {form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-charge">
+          <label>Contract Total</label>
+          <div className="svc-row-right">
+            <select
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.annualTotal.toFixed(2)}
-            />
+              name="contractMonths"
+              value={form.contractMonths}
+              onChange={onChange}
+            >
+              {(() => {
+                // ✅ FIXED: Generate frequency-specific contract month options
+                const options = [];
+
+                if (calc.frequency === "bimonthly") {
+                  // Bi-monthly: Even numbers only (2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36)
+                  for (let months = 2; months <= 36; months += 2) {
+                    options.push(months);
+                  }
+                } else if (calc.frequency === "quarterly") {
+                  // Quarterly: Quarterly values (3,6,9,12,15,18,21,24,27,30,33,36)
+                  for (let months = 3; months <= 36; months += 3) {
+                    options.push(months);
+                  }
+                } else if (calc.frequency === "biannual") {
+                  // Bi-annual: Multiples of 6 (6,12,18,24,30,36)
+                  for (let months = 6; months <= 36; months += 6) {
+                    options.push(months);
+                  }
+                } else if (calc.frequency === "annual") {
+                  // Annual: Multiples of 12 (12,24,36)
+                  for (let months = 12; months <= 36; months += 12) {
+                    options.push(months);
+                  }
+                } else {
+                  // Monthly, weekly, biweekly, 2X/monthly: All months (2,3,4,5...36)
+                  for (let months = 2; months <= 36; months++) {
+                    options.push(months);
+                  }
+                }
+
+                return options.map((months) => (
+                  <option key={months} value={months}>
+                    {months} mo
+                  </option>
+                ));
+              })()}
+            </select>
+            <div className="svc-dollar">
+              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
+              <input
+                type="number"
+                step="0.01"
+                name="customContractTotal"
+                className="svc-in"
+                value={
+                  form.customContractTotal !== undefined
+                    ? form.customContractTotal.toFixed(2)
+                    : calc.annualTotal.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  borderBottom: '2px solid #ff0000',
+                  borderTop: 'none',
+                  borderLeft: 'none',
+                  borderRight: 'none',
+                  backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  padding: '4px',
+                  width: '100px'
+                }}
+                title="Contract total - editable"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Per-Visit Effective (no install, no trip) */}
       <div className="svc-row svc-row-charge">

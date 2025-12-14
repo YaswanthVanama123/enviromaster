@@ -37,6 +37,14 @@ export const SanicleanForm: React.FC<
 
   const prevDataRef = useRef<string>("");
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      updateForm({ [name]: undefined });
+    }
+  };
+
   // Calculate derived values
   const fixtures = form.sinks + form.urinals + form.maleToilets + form.femaleToilets;
   const soapDispensers = form.sinks; // 1 soap dispenser per sink
@@ -68,6 +76,19 @@ export const SanicleanForm: React.FC<
 
     let processedValue: any = value;
 
+    // ✅ Handle custom override fields for totals
+    if (
+      name === "customWeeklyTotal" ||
+      name === "customMonthlyTotal" ||
+      name === "customContractTotal"
+    ) {
+      const numVal = value === '' ? undefined : parseFloat(value);
+      if (numVal === undefined || !isNaN(numVal)) {
+        updateForm({ [name]: numVal });
+      }
+      return;
+    }
+
     if (type === "checkbox") {
       processedValue = checked;
     } else if (type === "number") {
@@ -88,12 +109,14 @@ export const SanicleanForm: React.FC<
         isActive: true,
 
         pricingMode: {
+          isDisplay: true,
           label: "Pricing Mode",
           type: "text" as const,
           value: form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge",
         },
 
         location: {
+          isDisplay: true,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
@@ -101,6 +124,7 @@ export const SanicleanForm: React.FC<
 
         fixtureBreakdown: [
           ...(form.sinks > 0 ? [{
+            isDisplay: true,
             label: "Sinks",
             type: "calc" as const,
             qty: form.sinks,
@@ -108,6 +132,7 @@ export const SanicleanForm: React.FC<
             total: form.sinks * form.insideBeltwayRatePerFixture,
           }] : []),
           ...(form.urinals > 0 ? [{
+            isDisplay: true,
             label: "Urinals",
             type: "calc" as const,
             qty: form.urinals,
@@ -115,6 +140,7 @@ export const SanicleanForm: React.FC<
             total: form.urinals * form.insideBeltwayRatePerFixture,
           }] : []),
           ...(form.maleToilets > 0 ? [{
+            isDisplay: true,
             label: "Male Toilets",
             type: "calc" as const,
             qty: form.maleToilets,
@@ -122,6 +148,7 @@ export const SanicleanForm: React.FC<
             total: form.maleToilets * form.insideBeltwayRatePerFixture,
           }] : []),
           ...(form.femaleToilets > 0 ? [{
+            isDisplay: true,
             label: "Female Toilets",
             type: "calc" as const,
             qty: form.femaleToilets,
@@ -131,6 +158,7 @@ export const SanicleanForm: React.FC<
         ],
 
         soapType: {
+          isDisplay: true,
           label: "Soap Type",
           type: "text" as const,
           value: form.soapType === "luxury" ? "Luxury" : "Standard",
@@ -138,16 +166,19 @@ export const SanicleanForm: React.FC<
 
         totals: {
           weekly: {
+            isDisplay: true,
             label: "Weekly Total",
             type: "dollar" as const,
             amount: quote.weeklyTotal,
           },
           monthly: {
+            isDisplay: true,
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: quote.monthlyTotal,
           },
           contract: {
+            isDisplay: true,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -986,24 +1017,56 @@ export const SanicleanForm: React.FC<
       <div className="svc-row">
         <label>Weekly Total (Service + All Add-Ons)</label>
         <div className="svc-row-right">
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={formatMoney(quote.weeklyTotal)}
-          />
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in-box"
+              type="number"
+              step="0.01"
+              name="customWeeklyTotal"
+              value={
+                form.customWeeklyTotal !== undefined
+                  ? form.customWeeklyTotal.toFixed(2)
+                  : quote.weeklyTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customWeeklyTotal !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="Weekly total - editable"
+            />
+          </div>
         </div>
       </div>
 
       <div className="svc-row">
         <label>Monthly Recurring</label>
         <div className="svc-row-right">
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={formatMoney(quote.monthlyTotal)}
-          />
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in-box"
+              type="number"
+              step="0.01"
+              name="customMonthlyTotal"
+              value={
+                form.customMonthlyTotal !== undefined
+                  ? form.customMonthlyTotal.toFixed(2)
+                  : quote.monthlyTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="Monthly total - editable"
+            />
+          </div>
         </div>
       </div>
 
@@ -1032,21 +1095,29 @@ export const SanicleanForm: React.FC<
           </select>
           <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
           <input
+            type="number"
+            step="0.01"
+            name="customContractTotal"
             className="svc-in"
-            type="text"
-            readOnly
-            value={contractTotal.toFixed(2)}
+            value={
+              form.customContractTotal !== undefined
+                ? form.customContractTotal.toFixed(2)
+                : contractTotal.toFixed(2)
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
             style={{
               borderBottom: '2px solid #ff0000',
               borderTop: 'none',
               borderLeft: 'none',
               borderRight: 'none',
-              backgroundColor: 'transparent',
+              backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
               fontSize: '16px',
               fontWeight: 'bold',
               padding: '4px',
               width: '100px'
             }}
+            title="Contract total - editable"
           />
         </div>
       </div>

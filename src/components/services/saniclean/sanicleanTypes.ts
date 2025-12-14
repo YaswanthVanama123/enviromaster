@@ -243,6 +243,11 @@ export interface SanicleanFormState {
   // Rate Tiers
   redRateMultiplier: number; // 1.0
   greenRateMultiplier: number; // 1.0 (or whatever backend sets)
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customWeeklyTotal?: number;
+  customMonthlyTotal?: number;
+  customContractTotal?: number;
 }
 
 // Result of SaniClean calculations

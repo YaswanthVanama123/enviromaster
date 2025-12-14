@@ -19,11 +19,15 @@ export const electrostaticSprayPricingConfig: ElectrostaticSprayPricingConfig = 
 
   // Frequency conversions
   billingConversions: {
+    oneTime: { monthlyMultiplier: 0, annualMultiplier: 1 },
     weekly: { monthlyMultiplier: 4.33, annualMultiplier: 52 },
     biweekly: { monthlyMultiplier: 2.165, annualMultiplier: 26 },
+    twicePerMonth: { monthlyMultiplier: 2, annualMultiplier: 24 },
     monthly: { monthlyMultiplier: 1, annualMultiplier: 12 },
     bimonthly: { monthlyMultiplier: 0.5, annualMultiplier: 6 },
-    quarterly: { monthlyMultiplier: 0.333, annualMultiplier: 4 },
+    quarterly: { monthlyMultiplier: 0, annualMultiplier: 4 },
+    biannual: { monthlyMultiplier: 0, annualMultiplier: 2 },
+    annual: { monthlyMultiplier: 0, annualMultiplier: 1 },
     actualWeeksPerMonth: 4.33,
   },
 
@@ -39,5 +43,5 @@ export const electrostaticSprayPricingConfig: ElectrostaticSprayPricingConfig = 
   },
 
   defaultFrequency: "weekly",
-  allowedFrequencies: ["weekly", "biweekly", "monthly", "bimonthly", "quarterly"],
+  allowedFrequencies: ["oneTime", "weekly", "biweekly", "twicePerMonth", "monthly", "bimonthly", "quarterly", "biannual", "annual"],
 };

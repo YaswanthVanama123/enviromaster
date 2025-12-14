@@ -2,7 +2,7 @@
 
 // ------------ Basic keys ------------
 
-export type SanipodFrequencyKey = "weekly" | "biweekly" | "monthly";
+export type SanipodFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
 export type SanipodRateCategory = "redRate" | "greenRate";
 
 /**
@@ -24,9 +24,15 @@ export interface SanipodRateCategoryConfig {
 // ------------ Frequency helpers ------------
 
 export interface SanipodAnnualFrequencyConfig {
+  oneTime: number;
   weekly: number;
   biweekly: number;
+  twicePerMonth: number;
   monthly: number;
+  bimonthly: number;
+  quarterly: number;
+  biannual: number;
+  annual: number;
 }
 
 // ------------ Pricing config (FINAL RULES) ------------
@@ -84,9 +90,15 @@ export interface SanipodPricingConfig {
 
   /** Frequency-specific visits per month multipliers */
   frequencyMultipliers: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
+    quarterly: number;
+    biannual: number;
+    annual: number;
   };
 
   /** Weeks used for monthly & annual rollups. */

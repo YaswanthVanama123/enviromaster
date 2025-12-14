@@ -32,6 +32,49 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     ? calc.monthlyTotal / form.podQuantity
     : calc.effectiveRatePerPod || 0;
 
+  // Determine if frequency is visit-based (not monthly billing)
+  const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
+    form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
+
+  // Generate frequency-specific contract month options
+  const generateContractMonths = () => {
+    const months = [];
+
+    if (form.frequency === "oneTime") {
+      // For oneTime: no contract (handled separately in UI)
+      return [];
+    } else if (form.frequency === "bimonthly") {
+      // For bi-monthly: show only even numbers (2, 4, 6, 8, ...)
+      for (let i = 2; i <= cfg.maxContractMonths; i += 2) {
+        months.push(i);
+      }
+    } else if (form.frequency === "quarterly") {
+      // For quarterly: show only multiples of 3 (3, 6, 9, 12, ...)
+      for (let i = 3; i <= cfg.maxContractMonths; i += 3) {
+        months.push(i);
+      }
+    } else if (form.frequency === "biannual") {
+      // For biannual: show only multiples of 6 (6, 12, 18, 24, 30, 36)
+      for (let i = 6; i <= cfg.maxContractMonths; i += 6) {
+        months.push(i);
+      }
+    } else if (form.frequency === "annual") {
+      // For annual: show only multiples of 12 (12, 24, 36)
+      for (let i = 12; i <= cfg.maxContractMonths; i += 12) {
+        months.push(i);
+      }
+    } else {
+      // For weekly, bi-weekly, twicePerMonth, monthly: show all months
+      for (let i = cfg.minContractMonths; i <= cfg.maxContractMonths; i++) {
+        months.push(i);
+      }
+    }
+
+    return months;
+  };
+
+  const contractMonthOptions = generateContractMonths();
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
@@ -42,6 +85,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         isActive: true,
 
         service: {
+          isDisplay: true,
           label: "SaniPods",
           type: "calc" as const,
           qty: form.podQuantity,
@@ -52,6 +96,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         // Extra bags (if any)
         ...(form.extraBagsPerWeek > 0 ? {
           extraBags: {
+            isDisplay: true,
             label: form.extraBagsRecurring ? "Extra Bags (Weekly)" : "Extra Bags (One-time)",
             type: "calc" as const,
             qty: form.extraBagsPerWeek,
@@ -64,6 +109,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         // Installation (if new install)
         ...(form.isNewInstall && form.installQuantity > 0 ? {
           installation: {
+            isDisplay: true,
             label: "Installation",
             type: "calc" as const,
             qty: form.installQuantity,
@@ -74,16 +120,19 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
         totals: {
           perVisit: {
+            isDisplay: true,
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
           },
           monthly: {
+            isDisplay: true,
             label: "Monthly Total",
             type: "dollar" as const,
             amount: calc.monthly,
           },
           contract: {
+            isDisplay: true,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -321,9 +370,15 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             value={form.frequency}
             onChange={onChange}
           >
+            <option value="oneTime">One Time</option>
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi-Weekly</option>
+            <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="bimonthly">Every 2 Months</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="biannual">Bi-Annual</option>
+            <option value="annual">Annual</option>
           </select>
         </div>
       </div>
@@ -606,89 +661,142 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       </div>
 
       {/* First Visit Total - for debugging partial installation */}
-      <div className="svc-row svc-row-total">
-        <label>First Visit Total</label>
-        <div className="svc-dollar">
-          <span className="svc-dollar">
-            ${parseFloat(calc.firstVisit.toFixed(2))}
-          </span>
+      {!isVisitBasedFrequency && (
+        <div className="svc-row svc-row-total">
+          <label>First Visit Total</label>
+          <div className="svc-dollar">
+            <span className="svc-dollar">
+              ${parseFloat(calc.firstVisit.toFixed(2))}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="svc-row svc-row-total">
-        <label>First Month Total</label>
-        <div className="svc-dollar">
-          $<input
-            className="svc-in svc-in-small"
-            type="number"
-            step="0.01"
-            name="customMonthlyPrice"
-            value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
-            onChange={onChange}
-            onBlur={handleBlur}
-            style={{
-              backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
-              border: 'none',
-              width: '100px'
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-total">
-        <label>Monthly Recurring</label>
-        <div className="svc-dollar">
-          $<input
-            className="svc-in svc-in-small"
-            type="text"
-            readOnly
-            value={calc.ongoingMonthly.toFixed(2)}
-            style={{
-              backgroundColor: '#f5f5f5',
-              border: 'none',
-              width: '100px'
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-total">
-        <label>Contract Total</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="contractMonths"
-            value={form.contractMonths}
-            onChange={onChange}
-          >
-            {Array.from({ length: cfg.maxContractMonths - cfg.minContractMonths + 1 })
-              .map((_, idx) => {
-                const m = cfg.minContractMonths + idx;
-                return (
-                  <option key={m} value={m}>
-                    {m} months
-                  </option>
-                );
-              })}
-          </select>
+      {/* First Month Total - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+      {!isVisitBasedFrequency && (
+        <div className="svc-row svc-row-total">
+          <label>First Month Total</label>
           <div className="svc-dollar">
             $<input
               className="svc-in svc-in-small"
               type="number"
               step="0.01"
-              name="customAnnualPrice"
-              value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : parseFloat(calc.adjustedAnnual.toFixed(2))}
+              name="customMonthlyPrice"
+              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
               onChange={onChange}
               onBlur={handleBlur}
               style={{
-                backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',
+                backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
                 border: 'none',
                 width: '100px'
               }}
             />
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Total Price - Show ONLY for oneTime */}
+      {form.frequency === "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>Total Price</label>
+          <div className="svc-dollar">
+            $<input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="customMonthlyPrice"
+              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* First Visit Total for visit-based (not oneTime) */}
+      {isVisitBasedFrequency && form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>First Visit Total</label>
+          <div className="svc-dollar">
+            $<input
+              className="svc-in svc-in-small"
+              type="number"
+              step="0.01"
+              name="customMonthlyPrice"
+              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Recurring - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+      {!isVisitBasedFrequency && (
+        <div className="svc-row svc-row-total">
+          <label>Monthly Recurring</label>
+          <div className="svc-dollar">
+            $<input
+              className="svc-in svc-in-small"
+              type="text"
+              readOnly
+              value={calc.ongoingMonthly.toFixed(2)}
+              style={{
+                backgroundColor: '#f5f5f5',
+                border: 'none',
+                width: '100px'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Contract Total - Hide for oneTime */}
+      {form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>Contract Total</label>
+          <div className="svc-row-right">
+            <select
+              className="svc-in"
+              name="contractMonths"
+              value={form.contractMonths}
+              onChange={onChange}
+            >
+              {contractMonthOptions.map((m) => (
+                <option key={m} value={m}>
+                  {m} months
+                </option>
+              ))}
+            </select>
+            <div className="svc-dollar">
+              $<input
+                className="svc-in svc-in-small"
+                type="number"
+                step="0.01"
+                name="customAnnualPrice"
+                value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : parseFloat(calc.adjustedAnnual.toFixed(2))}
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',
+                  border: 'none',
+                  width: '100px'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

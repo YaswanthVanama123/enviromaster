@@ -725,7 +725,10 @@ export function useRefreshPowerScrubCalc(
 
     // ✅ REMOVED TRIP CHARGE LOGIC: No trip charge added since it's handled separately
     // Use areas subtotal as-is, only apply minimum visit if needed
-    const perVisit = Math.max(areasSubtotal, form.minimumVisit);
+    const calculatedPerVisit = Math.max(areasSubtotal, form.minimumVisit);
+
+    // ✅ Apply custom override if set
+    const perVisit = form.customPerVisitTotal ?? calculatedPerVisit;
 
     const rounded = Math.round(perVisit * 100) / 100;
 
@@ -792,12 +795,19 @@ export function useRefreshPowerScrubCalc(
       monthlyRecurring,
       contractTotal,
     };
-  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig]);
+  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, form.customPerVisitTotal, areaMonthlyTotals, areaContractTotals, backendConfig]);
 
   const setNotes = (notes: string) => {
     setForm((prev) => ({
       ...prev,
       notes,
+    }));
+  };
+
+  const setCustomPerVisitTotal = (value: number | undefined) => {
+    setForm((prev) => ({
+      ...prev,
+      customPerVisitTotal: value,
     }));
   };
 
@@ -808,6 +818,7 @@ export function useRefreshPowerScrubCalc(
     setFrequency,
     setContractMonths,
     setNotes,
+    setCustomPerVisitTotal,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,

@@ -30,6 +30,14 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      setForm((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
   // Calculate effective rate for payload
   const serviceRate = form.pricingMethod === "byRoom"
     ? form.ratePerRoom
@@ -42,7 +50,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   const generateContractMonths = () => {
     const months = [];
 
-    if (form.frequency === "bimonthly") {
+    if (form.frequency === "oneTime") {
+      // For oneTime: no contract (handled separately in UI)
+      return [];
+    } else if (form.frequency === "bimonthly") {
       // For bi-monthly: show only even numbers (2, 4, 6, 8, ...)
       for (let i = 2; i <= cfg.maxContractMonths; i += 2) {
         months.push(i);
@@ -52,8 +63,18 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       for (let i = 3; i <= cfg.maxContractMonths; i += 3) {
         months.push(i);
       }
+    } else if (form.frequency === "biannual") {
+      // For biannual: show only multiples of 6 (6, 12, 18, 24, 30, 36)
+      for (let i = 6; i <= cfg.maxContractMonths; i += 6) {
+        months.push(i);
+      }
+    } else if (form.frequency === "annual") {
+      // For annual: show only multiples of 12 (12, 24, 36)
+      for (let i = 12; i <= cfg.maxContractMonths; i += 12) {
+        months.push(i);
+      }
     } else {
-      // For weekly, bi-weekly, monthly: show all months
+      // For weekly, bi-weekly, twicePerMonth, monthly: show all months
       for (let i = cfg.minContractMonths; i <= cfg.maxContractMonths; i++) {
         months.push(i);
       }
@@ -74,12 +95,14 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         isActive: true,
 
         pricingMethod: {
+          isDisplay: true,
           label: "Pricing Method",
           type: "text" as const,
           value: form.pricingMethod === "byRoom" ? "By Room" : "By Square Feet",
         },
 
         frequency: {
+          isDisplay: true,
           label: "Frequency",
           type: "text" as const,
           value: typeof form.frequency === 'string'
@@ -88,6 +111,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         },
 
         location: {
+          isDisplay: true,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" :
@@ -96,6 +120,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         ...(form.isCombinedWithSaniClean ? {
           combinedService: {
+            isDisplay: true,
             label: "Combined with",
             type: "text" as const,
             value: "Sani-Clean",
@@ -103,6 +128,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         } : {}),
 
         service: {
+          isDisplay: true,
           label: form.pricingMethod === "byRoom" ? "Rooms" : "Square Feet",
           type: "calc" as const,
           qty: form.pricingMethod === "byRoom" ? form.roomCount : form.squareFeet,
@@ -113,6 +139,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         ...(form.pricingMethod === "bySqFt" && !form.useExactCalculation ? {
           calculationMethod: {
+            isDisplay: true,
             label: "Calculation Method",
             type: "text" as const,
             value: "Minimum Tier Pricing",
@@ -121,6 +148,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         ...(calc.tripCharge > 0 ? {
           tripCharge: {
+            isDisplay: true,
             label: "Trip Charge",
             type: "dollar" as const,
             amount: calc.tripCharge,
@@ -129,16 +157,19 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         totals: {
           perVisit: {
+            isDisplay: true,
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
           },
           monthly: {
+            isDisplay: true,
             label: "Monthly Total",
             type: "dollar" as const,
             amount: calc.monthlyRecurring,
           },
           contract: {
+            isDisplay: true,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -175,6 +206,30 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       }));
     }
   }, [form.frequency]); // Only run when frequency changes
+
+  // Clear custom overrides when base inputs change
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customServiceCharge: undefined,
+      customPerVisitPrice: undefined,
+      customMonthlyRecurring: undefined,
+      customContractTotal: undefined,
+      customFirstMonthTotal: undefined,
+    }));
+  }, [
+    form.roomCount,
+    form.squareFeet,
+    form.ratePerRoom,
+    form.ratePerThousandSqFt,
+    form.tripChargePerVisit,
+    form.pricingMethod,
+    form.useExactCalculation,
+    form.frequency,
+    form.contractMonths,
+    form.isCombinedWithSaniClean,
+    form.location,
+  ]);
 
   return (
     <div className="svc-card">
@@ -400,11 +455,15 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               value={form.frequency}
               onChange={onChange}
             >
+              <option value="oneTime">One Time</option>
               <option value="weekly">Weekly</option>
               <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
+              <option value="twicePerMonth">2× / Month</option>
               <option value="monthly">Monthly</option>
               <option value="bimonthly">Bi-Monthly (every 2 months)</option>
               <option value="quarterly">Quarterly</option>
+              <option value="biannual">Bi-Annual</option>
+              <option value="annual">Annual</option>
             </select>
           </div>
         </div>
@@ -469,10 +528,21 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                readOnly
+                type="number"
+                step="0.01"
+                name="customServiceCharge"
                 className="svc-in sm"
-                value={calc.serviceCharge.toFixed(2)}
-                title="Calculated service charge (based on quantity × rate)"
+                value={
+                  form.customServiceCharge !== undefined
+                    ? form.customServiceCharge.toFixed(2)
+                    : calc.serviceCharge.toFixed(2)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customServiceCharge !== undefined ? '#fffacd' : 'white'
+                }}
+                title="Calculated service charge (based on quantity × rate) - editable"
               />
             </div>
           </div>
@@ -502,73 +572,168 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                readOnly
+                type="number"
+                step="0.01"
+                name="customPerVisitPrice"
                 className="svc-in sm"
-                value={calc.perVisit.toFixed(2)}
-              />
-            </div>
-          </div>
-
-          {/* Monthly Recurring / Per Visit */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>{isVisitBasedFrequency ? "Per Visit" : "Monthly Recurring"}</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                readOnly
-                className="svc-in sm"
-                value={isVisitBasedFrequency ? calc.perVisit.toFixed(2) : calc.monthlyRecurring.toFixed(2)}
-              />
-            </div>
-          </div>
-
-          {/* Contract Total with inline dropdown */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Contract Total</span>
-            </div>
-            <div className="svc-field" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <select
-                name="contractMonths"
-                className="svc-in"
-                value={form.contractMonths}
+                value={
+                  form.customPerVisitPrice !== undefined
+                    ? form.customPerVisitPrice.toFixed(2)
+                    : calc.perVisit.toFixed(2)
+                }
                 onChange={onChange}
+                onBlur={handleBlur}
                 style={{
-                  borderBottom: '2px solid #000',
-                  borderTop: 'none',
-                  borderLeft: 'none',
-                  borderRight: 'none',
-                  backgroundColor: 'transparent',
-                  padding: '4px 20px 4px 4px'
+                  backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white'
                 }}
-              >
-                {contractMonthOptions.map((m) => (
-                  <option key={m} value={m}>
-                    {m} mo
-                  </option>
-                ))}
-              </select>
-              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
-              <input
-                readOnly
-                className="svc-in sm"
-                value={calc.contractTotal.toFixed(2)}
-                style={{
-                  borderBottom: '2px solid #ff0000',
-                  borderTop: 'none',
-                  borderLeft: 'none',
-                  borderRight: 'none',
-                  backgroundColor: 'transparent',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  padding: '4px',
-                  width: '100px'
-                }}
+                title="Per visit total (service + trip) - editable"
               />
             </div>
           </div>
+
+          {/* Monthly Recurring / Per Visit - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+          {!isVisitBasedFrequency && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Monthly Recurring</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="customMonthlyRecurring"
+                  className="svc-in sm"
+                  value={
+                    form.customMonthlyRecurring !== undefined
+                      ? form.customMonthlyRecurring.toFixed(2)
+                      : calc.monthlyRecurring.toFixed(2)
+                  }
+                  onChange={onChange}
+                  onBlur={handleBlur}
+                  style={{
+                    backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white'
+                  }}
+                  title="Monthly recurring charge - editable"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* First Visit Total - Show ONLY for visit-based frequencies (not oneTime) */}
+          {isVisitBasedFrequency && form.frequency !== "oneTime" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>First Visit Total</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="customFirstMonthTotal"
+                  className="svc-in sm"
+                  value={
+                    form.customFirstMonthTotal !== undefined
+                      ? form.customFirstMonthTotal.toFixed(2)
+                      : calc.perVisit.toFixed(2)
+                  }
+                  onChange={onChange}
+                  onBlur={handleBlur}
+                  style={{
+                    backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white'
+                  }}
+                  title="First visit total - editable"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Total Price - Show ONLY for oneTime */}
+          {form.frequency === "oneTime" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Total Price</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="customFirstMonthTotal"
+                  className="svc-in sm"
+                  value={
+                    form.customFirstMonthTotal !== undefined
+                      ? form.customFirstMonthTotal.toFixed(2)
+                      : calc.perVisit.toFixed(2)
+                  }
+                  onChange={onChange}
+                  onBlur={handleBlur}
+                  style={{
+                    backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white'
+                  }}
+                  title="Total price for one-time service - editable"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Contract Total with inline dropdown - Hide for oneTime */}
+          {form.frequency !== "oneTime" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Contract Total</span>
+              </div>
+              <div className="svc-field" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <select
+                  name="contractMonths"
+                  className="svc-in"
+                  value={form.contractMonths}
+                  onChange={onChange}
+                  style={{
+                    borderBottom: '2px solid #000',
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    backgroundColor: 'transparent',
+                    padding: '4px 20px 4px 4px'
+                  }}
+                >
+                  {contractMonthOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m} months
+                    </option>
+                  ))}
+                </select>
+                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="customContractTotal"
+                  className="svc-in sm"
+                  value={
+                    form.customContractTotal !== undefined
+                      ? form.customContractTotal.toFixed(2)
+                      : calc.contractTotal.toFixed(2)
+                  }
+                  onChange={onChange}
+                  onBlur={handleBlur}
+                  style={{
+                    borderBottom: '2px solid #ff0000',
+                    borderTop: 'none',
+                    borderLeft: 'none',
+                    borderRight: 'none',
+                    backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    padding: '4px',
+                    width: '100px'
+                  }}
+                  title="Contract total - editable"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="svc-row">

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useCarpetCalc } from "./useCarpetCalc";
@@ -20,7 +21,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  const { form, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData);
+  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Handler for clearing override values when they match calculated values
@@ -94,18 +95,21 @@ export const CarpetForm: React.FC<
         isActive: true,
 
         frequency: {
+          isDisplay: true,
           label: "Frequency",
           type: "text" as const,
           value: carpetFrequencyLabels[form.frequency] || form.frequency,
         },
 
         location: {
+          isDisplay: true,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
         },
 
         service: {
+          isDisplay: true,
           label: "Carpet Area",
           type: "calc" as const,
           qty: form.areaSqFt,
@@ -117,6 +121,7 @@ export const CarpetForm: React.FC<
         // Installation data
         ...(form.includeInstall ? {
           installation: {
+            isDisplay: true,
             label: form.isDirtyInstall ? "Installation (Dirty - 3×)" : "Installation (Clean - 1×)",
             type: "calc" as const,
             qty: 1,
@@ -129,23 +134,28 @@ export const CarpetForm: React.FC<
 
         totals: {
           perVisit: {
+            isDisplay: true,
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisitCharge,
           },
           monthly: {
-            label: "Monthly Total",
+            isDisplay: form.frequency !== "oneTime",
+            label: form.frequency === "oneTime" ? "Total Price" :
+                   calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
             type: "dollar" as const,
-            amount: calc.monthlyTotal,
+            amount: form.frequency === "oneTime" ? calc.perVisitCharge : calc.firstMonthTotal,
           },
-          ...(form.includeInstall && calc.firstMonthTotal > 0 ? {
-            firstMonth: {
-              label: "First Month",
+          ...(form.frequency !== "oneTime" && !calc.isVisitBasedFrequency ? {
+            recurring: {
+              isDisplay: true,
+              label: "Monthly Recurring",
               type: "dollar" as const,
-              amount: calc.firstMonthTotal,
+              amount: calc.monthlyTotal,
             },
           } : {}),
           contract: {
+            isDisplay: form.frequency !== "oneTime",
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -170,6 +180,28 @@ export const CarpetForm: React.FC<
   React.useEffect(() => {
     if (onQuoteChange) onQuoteChange(quote);
   }, [onQuoteChange, quote]);
+
+  // Clear custom overrides when base inputs change
+  useEffect(() => {
+    setForm((prev: any) => ({
+      ...prev,
+      customPerVisitPrice: undefined,
+      customMonthlyRecurring: undefined,
+      customFirstMonthPrice: undefined,
+      customContractTotal: undefined,
+    }));
+  }, [
+    form.areaSqFt,
+    form.useExactSqft,
+    form.frequency,
+    form.contractMonths,
+    form.includeInstall,
+    form.isDirtyInstall,
+    form.customFirstUnitRate,
+    form.customAdditionalUnitRate,
+    form.customPerVisitMinimum,
+    setForm,
+  ]);
 
   return (
     <div className="svc-card">
@@ -480,100 +512,175 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Monthly recurring charge - only show for month-based frequencies */}
-      {!calc.isVisitBasedFrequency && (
-        <div className="svc-row svc-row-charge">
-          <label>Monthly Recurring</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="number"
-                step="0.01"
-                name="customMonthlyRecurring"
-                value={
-                  form.customMonthlyRecurring !== undefined
-                    ? form.customMonthlyRecurring.toFixed(2)
-                    : calc.monthlyTotal.toFixed(2)
-                }
-                onChange={onChange}
-                onBlur={handleBlur}
-                style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
-                title="Monthly recurring total (editable)"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* First month total / First Visit total (when installation is included) */}
-      {form.includeInstall && calc.firstMonthTotal > 0 && (
-        <div className="svc-row svc-row-charge">
-          <label>{calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total"}</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="number"
-                step="0.01"
-                name="customFirstMonthPrice"
-                value={
-                  form.customFirstMonthPrice !== undefined
-                    ? form.customFirstMonthPrice.toFixed(2)
-                    : calc.firstMonthTotal.toFixed(2)
-                }
-                onChange={onChange}
-                onBlur={handleBlur}
-                style={{ backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white' }}
-                title="First month/visit total (editable)"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* Per-Visit Effective (just the per-visit service price) */}
-      <div className="svc-row svc-row-charge">
-        <label>Per-Visit Total</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.perVisitEffective.toFixed(2)}
-            />
-          </div>
+      {/* Per-Visit Total - Always show */}
+      <div className="svc-row svc-row-total">
+        <label>Per Visit Total</label>
+        <div className="svc-dollar">
+          $<input
+            type="number"
+            step="0.01"
+            name="customPerVisitPrice"
+            className="svc-in svc-in-small"
+            value={
+              form.customPerVisitPrice !== undefined
+                ? form.customPerVisitPrice.toFixed(2)
+                : calc.perVisitCharge.toFixed(2)
+            }
+            onChange={onChange}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
+              border: 'none',
+              width: '100px'
+            }}
+            title="Per visit total - editable"
+          />
         </div>
       </div>
 
-      {/* Contract total: frequency-specific months */}
-      <div className="svc-row svc-row-charge">
-        <label>Contract Total</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="contractMonths"
-            value={form.contractMonths}
-            onChange={onChange}
-          >
-            {getContractOptions(form.frequency).map((months) => (
-              <option key={months} value={months}>
-                {months} mo
-              </option>
-            ))}
-          </select>
+      {/* Total Price - Show ONLY for oneTime */}
+      {form.frequency === "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>Total Price</label>
           <div className="svc-dollar">
-            <span>$</span>
-            <input
+            $<input
+              type="number"
+              step="0.01"
+              name="customFirstMonthPrice"
+              className="svc-in svc-in-small"
+              value={
+                form.customFirstMonthPrice !== undefined
+                  ? form.customFirstMonthPrice.toFixed(2)
+                  : calc.firstMonthTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="Total price for one-time service - editable"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* First Visit Total - Show for visit-based (not oneTime) */}
+      {calc.isVisitBasedFrequency && form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>First Visit Total</label>
+          <div className="svc-dollar">
+            $<input
+              type="number"
+              step="0.01"
+              name="customFirstMonthPrice"
+              className="svc-in svc-in-small"
+              value={
+                form.customFirstMonthPrice !== undefined
+                  ? form.customFirstMonthPrice.toFixed(2)
+                  : calc.firstMonthTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="First visit total - editable"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* First Month Total - Hide for oneTime and visit-based */}
+      {!calc.isVisitBasedFrequency && form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>First Month Total</label>
+          <div className="svc-dollar">
+            $<input
+              type="number"
+              step="0.01"
+              name="customFirstMonthPrice"
+              className="svc-in svc-in-small"
+              value={
+                form.customFirstMonthPrice !== undefined
+                  ? form.customFirstMonthPrice.toFixed(2)
+                  : calc.firstMonthTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="First month total - editable"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Recurring - Hide for oneTime and visit-based */}
+      {!calc.isVisitBasedFrequency && form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>Monthly Recurring</label>
+          <div className="svc-dollar">
+            $<input
+              type="number"
+              step="0.01"
+              name="customMonthlyRecurring"
+              className="svc-in svc-in-small"
+              value={
+                form.customMonthlyRecurring !== undefined
+                  ? form.customMonthlyRecurring.toFixed(2)
+                  : calc.monthlyTotal.toFixed(2)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="Monthly recurring - editable"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Contract Total - Hide for oneTime */}
+      {form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>Contract Total</label>
+          <div className="svc-row-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <select
               className="svc-in"
+              name="contractMonths"
+              value={form.contractMonths}
+              onChange={onChange}
+              style={{
+                borderBottom: '2px solid #000',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                backgroundColor: 'transparent',
+                padding: '4px 20px 4px 4px'
+              }}
+            >
+              {getContractOptions(form.frequency).map((m) => (
+                <option key={m} value={m}>
+                  {m} months
+                </option>
+              ))}
+            </select>
+            <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
+            <input
               type="number"
               step="0.01"
               name="customContractTotal"
+              className="svc-in"
               value={
                 form.customContractTotal !== undefined
                   ? form.customContractTotal.toFixed(2)
@@ -581,12 +688,22 @@ export const CarpetForm: React.FC<
               }
               onChange={onChange}
               onBlur={handleBlur}
-              style={{ backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white' }}
-              title="Contract total (editable)"
+              style={{
+                borderBottom: '2px solid #ff0000',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                padding: '4px',
+                width: '100px'
+              }}
+              title="Contract total - editable"
             />
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

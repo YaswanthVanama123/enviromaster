@@ -1,10 +1,15 @@
 // src/features/services/janitorial/janitorialTypes.ts
 
 export type JanitorialFrequencyKey =
+  | "oneTime"
   | "weekly"
   | "biweekly"
+  | "twicePerMonth"
   | "monthly"
-  | "quarterly";
+  | "bimonthly"
+  | "quarterly"
+  | "biannual"
+  | "annual";
 
 export type JanitorialRateCategory = "redRate" | "greenRate";
 export type SchedulingMode = "normalRoute" | "standalone";
@@ -55,6 +60,14 @@ export interface JanitorialPricingConfig {
 
   /** Vacuuming: default hours. */
   vacuumingDefaultHours: number;
+
+  // Billing conversions for all 9 frequency types
+  billingConversions: {
+    [key in JanitorialFrequencyKey]: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+  };
 
   rateCategories: {
     redRate: JanitorialRateCategoryConfig;

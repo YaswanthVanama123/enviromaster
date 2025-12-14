@@ -1,19 +1,26 @@
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type SaniscrubFrequency =
-  | "monthly"
+  | "oneTime"
+  | "weekly"
+  | "biweekly"
   | "twicePerMonth"
+  | "monthly"
   | "bimonthly"
-  | "quarterly";
+  | "quarterly"
+  | "biannual"
+  | "annual";
 
 export interface SaniscrubFrequencyMeta {
   // visits per YEAR (e.g. 52 for weekly → 4.33 visits/month)
   visitsPerYear: number;
+  // visits per MONTH (e.g., 4.33 for weekly, 1 for monthly, 0.333 for quarterly)
+  monthlyMultiplier: number;
 }
 
 /**
  * Static pricing config for SaniScrub.
- * All amounts here are MONTHLY amounts, except the non-bathroom “per visit”
+ * All amounts here are MONTHLY amounts, except the non-bathroom "per visit"
  * block pricing (250 + 125/extra 500 sq ft).
  */
 export interface SaniscrubPricingConfig {
@@ -37,6 +44,18 @@ export interface SaniscrubPricingConfig {
   // Trip charge base/parking (kept only for UI – calculations ignore these now)
   tripChargeBase: number;
   parkingFee: number;
+
+  // Billing conversions for all 9 frequency types
+  billingConversions: {
+    [key in SaniscrubFrequency]: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+  };
+
+  // Contract term limits
+  minContractMonths: number;
+  maxContractMonths: number;
 
   // Visits per year per frequency
   frequencyMeta: Record<SaniscrubFrequency, SaniscrubFrequencyMeta>;
@@ -92,4 +111,10 @@ export interface SaniscrubFormState extends BaseServiceFormState {
 
   // Custom installation override (user can manually set installation cost)
   customInstallationFee?: number;
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customPerVisitPrice?: number;
+  customMonthlyRecurring?: number;
+  customFirstMonthPrice?: number;
+  customContractTotal?: number;
 }

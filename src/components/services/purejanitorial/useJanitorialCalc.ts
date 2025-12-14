@@ -261,6 +261,21 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     setForm((prev) => {
       const next: JanitorialFormState = { ...prev };
 
+      // ✅ NEW: Handle custom override fields for totals
+      if (
+        name === "customPerVisit" ||
+        name === "customFirstVisit" ||
+        name === "customMonthly" ||
+        name === "customOngoingMonthly" ||
+        name === "customContractTotal"
+      ) {
+        const numVal = t.value === '' ? undefined : parseFloat(t.value);
+        if (numVal === undefined || !isNaN(numVal)) {
+          (next as any)[name] = numVal;
+        }
+        return next;
+      }
+
       if (type === "checkbox") {
         (next as any)[name] = t.checked;
       } else if (type === "number") {
@@ -436,17 +451,24 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
 
     console.log(`✅ Final Calculation - Per Visit: $${recurringPerVisit.toFixed(2)}, Contract Total: $${recurringContractTotal.toFixed(2)}`);
 
+    // ✅ NEW: Apply custom overrides if set
+    const finalPerVisit = form.customPerVisit ?? recurringPerVisit;
+    const finalWeekly = recurringWeekly; // No custom override for weekly yet
+    const finalFirstMonth = form.customMonthly ?? firstMonth;
+    const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly;
+    const finalContractTotal = form.customContractTotal ?? recurringContractTotal;
+
     return {
       totalHours: totalHoursBase,
-      perVisit: recurringPerVisit,
-      weekly: recurringWeekly,
-      monthly: firstMonth, // ✅ FIRST month (includes installation if applicable)
-      firstMonth: firstMonth, // ✅ First month total (regular + installation)
-      recurringMonthly: recurringMonthly, // ✅ Ongoing monthly (just regular, no installation)
-      annual: recurringContractTotal, // ✅ CORRECTED: Uses proper first month + remaining months calculation
-      firstVisit: recurringPerVisit,
-      ongoingMonthly: recurringMonthly, // ✅ Regular monthly recurring (no installation)
-      contractTotal: recurringContractTotal, // ✅ CORRECTED: Total contract value
+      perVisit: finalPerVisit,
+      weekly: finalWeekly,
+      monthly: finalFirstMonth, // ✅ FIRST month (includes installation if applicable)
+      firstMonth: finalFirstMonth, // ✅ First month total (regular + installation)
+      recurringMonthly: finalRecurringMonthly, // ✅ Ongoing monthly (just regular, no installation)
+      annual: finalContractTotal, // ✅ CORRECTED: Uses proper first month + remaining months calculation
+      firstVisit: finalPerVisit,
+      ongoingMonthly: finalRecurringMonthly, // ✅ Regular monthly recurring (no installation)
+      contractTotal: finalContractTotal, // ✅ CORRECTED: Total contract value
       breakdown: {
         manualHours,
         vacuumingHours,
@@ -465,6 +487,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
 
   return {
     form,
+    setForm,
     onChange,
     calc,
     refreshConfig: fetchPricing,

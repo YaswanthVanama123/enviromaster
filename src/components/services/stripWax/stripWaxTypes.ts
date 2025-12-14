@@ -1,6 +1,6 @@
 // src/features/services/stripWax/stripWaxTypes.ts
 
-export type StripWaxFrequencyKey = "weekly" | "biweekly" | "monthly";
+export type StripWaxFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
 export type StripWaxRateCategory = "redRate" | "greenRate";
 
 export type StripWaxServiceVariant =
@@ -28,11 +28,19 @@ export interface StripWaxVariantConfig {
  */
 export interface StripWaxPricingConfig {
   weeksPerMonth: number;
+  weeksPerYear: number;
   minContractMonths: number;
   maxContractMonths: number;
 
   defaultFrequency: StripWaxFrequencyKey;
   defaultVariant: StripWaxServiceVariant;
+
+  billingConversions: {
+    [key in StripWaxFrequencyKey]: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
+    };
+  };
 
   variants: {
     standardFull: StripWaxVariantConfig;
