@@ -407,15 +407,24 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     if (nonBathSqFt > 0) {
       // Rule: $250 for up to 500 sq ft, then +$125 for each additional 500 sq ft block
       // Example: 3000 sq ft = 6 units = $250 + 5×$125 = $875
+      // ✅ FIXED: Use form values (from backend) instead of hardcoded values
 
-      if (nonBathSqFt <= 500) {
-        // Up to 500 sq ft: flat $250
-        nonBathroomPerVisit = 250;
+      if (nonBathSqFt <= activeConfig.nonBathroomUnitSqFt) {
+        // Up to 500 sq ft: use backend first unit rate
+        nonBathroomPerVisit = form.nonBathroomFirstUnitRate;
       } else {
-        // Over 500 sq ft: $250 + additional 500 sq ft blocks × $125
-        const totalBlocks = Math.ceil(nonBathSqFt / 500);
-        const additionalBlocks = totalBlocks - 1; // First block is included in $250
-        nonBathroomPerVisit = 250 + (additionalBlocks * 125);
+        // Over 500 sq ft: choose calculation method
+        const extraSqFt = nonBathSqFt - activeConfig.nonBathroomUnitSqFt;
+
+        if (form.useExactNonBathroomSqft) {
+          // EXACT SQFT: extra sq ft × rate per sq ft
+          const ratePerSqFt = form.nonBathroomAdditionalUnitRate / activeConfig.nonBathroomUnitSqFt;
+          nonBathroomPerVisit = form.nonBathroomFirstUnitRate + (extraSqFt * ratePerSqFt);
+        } else {
+          // BLOCK PRICING: number of additional 500 sq ft blocks × rate
+          const additionalBlocks = Math.ceil(extraSqFt / activeConfig.nonBathroomUnitSqFt);
+          nonBathroomPerVisit = form.nonBathroomFirstUnitRate + (additionalBlocks * form.nonBathroomAdditionalUnitRate);
+        }
       }
 
       nonBathroomMonthly = (nonBathroomPerVisit * visitsPerYear) / 12;
@@ -575,6 +584,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form.fixtureCount,
     form.nonBathroomSqFt,
+    form.useExactNonBathroomSqft,  // ✅ Re-calculate when calculation method changes
     form.frequency,
     form.hasSaniClean,
     form.needsParking,
@@ -582,6 +592,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     form.isDirtyInstall,
     form.contractMonths,
     form.customInstallationFee,
+    // ✅ NEW: Watch form pricing rates (editable from UI)
+    form.nonBathroomFirstUnitRate,
+    form.nonBathroomAdditionalUnitRate,
   ]);
 
   const quote: ServiceQuoteResult = useMemo(
