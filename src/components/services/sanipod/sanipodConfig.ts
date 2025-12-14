@@ -46,20 +46,32 @@ export const sanipodPricingConfig: SanipodPricingConfig = {
   tripChargePerVisit: 0.0,
 
   defaultFrequency: "weekly",
-  allowedFrequencies: ["weekly", "biweekly", "monthly"],
+  allowedFrequencies: ["oneTime", "weekly", "biweekly", "twicePerMonth", "monthly", "bimonthly", "quarterly", "biannual", "annual"],
 
   // Kept for compatibility, but we now care mainly about 4.33 weeks/month
   annualFrequencies: {
+    oneTime: 1,
     weekly: 52,
     biweekly: 26,
+    twicePerMonth: 24,
     monthly: 12,
+    bimonthly: 6,
+    quarterly: 4,
+    biannual: 2,
+    annual: 1,
   },
 
   // Frequency-specific visits per month multipliers
   frequencyMultipliers: {
+    oneTime: 0,      // No monthly billing for oneTime
     weekly: 4.33,    // 4.33 visits per month
     biweekly: 2.165, // 2.165 visits per month (half of weekly)
+    twicePerMonth: 2, // 2 visits per month
     monthly: 1.0,    // 1 visit per month
+    bimonthly: 0.5,  // 0.5 visits per month (every 2 months)
+    quarterly: 0,    // No monthly for quarterly
+    biannual: 0,     // No monthly for biannual
+    annual: 0,       // No monthly for annual
   },
 
   // How many weeks we treat as a month / year for pricing rollups (default fallback)

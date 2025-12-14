@@ -12,29 +12,49 @@ import { useServicesContextOptional } from "../ServicesContext";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendSanipodConfig {
-  weeklyRatePerUnit: number;
-  altWeeklyRatePerUnit: number;
-  extraBagPrice: number;
-  installChargePerUnit: number;
-  standaloneExtraWeeklyCharge: number;
-  tripChargePerVisit: number;
-  defaultFrequency: string;
-  allowedFrequencies: string[];
-  annualFrequencies: {
+  // Flat structure (what we use internally)
+  weeklyRatePerUnit?: number;
+  altWeeklyRatePerUnit?: number;
+  extraBagPrice?: number;
+  installChargePerUnit?: number;
+  standaloneExtraWeeklyCharge?: number;
+  tripChargePerVisit?: number;
+  defaultFrequency?: string;
+  allowedFrequencies?: string[];
+  annualFrequencies?: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
+    quarterly: number;
+    biannual: number;
+    annual: number;
   };
-  frequencyMultipliers: {
+  frequencyMultipliers?: {
+    oneTime: number;
     weekly: number;
     biweekly: number;
+    twicePerMonth: number;
     monthly: number;
+    bimonthly: number;
+    quarterly: number;
+    biannual: number;
+    annual: number;
   };
-  weeksPerMonth: number;
-  weeksPerYear: number;
-  minContractMonths: number;
-  maxContractMonths: number;
-  rateCategories: {
+  frequencyMetadata?: {
+    [key: string]: {
+      monthlyRecurringMultiplier?: number;
+      firstMonthExtraMultiplier?: number;
+      cycleMonths?: number;
+    };
+  };
+  weeksPerMonth?: number;
+  weeksPerYear?: number;
+  minContractMonths?: number;
+  maxContractMonths?: number;
+  rateCategories?: {
     redRate: {
       multiplier: number;
       commissionRate: string;
@@ -44,6 +64,132 @@ interface BackendSanipodConfig {
       commissionRate: string;
     };
   };
+
+  // Nested structure (what backend actually sends)
+  corePricingIncludedWithSaniClean?: {
+    weeklyPricePerUnit: number;
+    installPricePerUnit: number;
+    includedWeeklyRefills: number;
+  };
+  extraBagPricing?: {
+    pricePerBag: number;
+    refillPackQuantity: number | null;
+  };
+  standalonePricingWithoutSaniClean?: {
+    pricePerUnitPerWeek: number;
+    alternatePricePerUnitPerWeek: number;
+    weeklyMinimumPrice: number;
+    useCheapestOption: boolean;
+  };
+  tripChargesStandaloneOnly?: {
+    standard: number;
+    beltway: number;
+  };
+}
+
+/**
+ * Normalize backend config to ensure it has all required properties
+ * If backend uses nested structure, extract values to flat structure
+ */
+function normalizeBackendConfig(config: BackendSanipodConfig): BackendSanipodConfig {
+  // Extract pricing values from nested structure if they exist
+  const weeklyRatePerUnit =
+    config.weeklyRatePerUnit ??
+    config.corePricingIncludedWithSaniClean?.weeklyPricePerUnit ??
+    config.standalonePricingWithoutSaniClean?.alternatePricePerUnitPerWeek ??
+    cfg.weeklyRatePerUnit;
+
+  const altWeeklyRatePerUnit =
+    config.altWeeklyRatePerUnit ??
+    config.standalonePricingWithoutSaniClean?.pricePerUnitPerWeek ??
+    cfg.altWeeklyRatePerUnit;
+
+  const extraBagPrice =
+    config.extraBagPrice ??
+    config.extraBagPricing?.pricePerBag ??
+    cfg.extraBagPrice;
+
+  const installChargePerUnit =
+    config.installChargePerUnit ??
+    config.corePricingIncludedWithSaniClean?.installPricePerUnit ??
+    cfg.installChargePerUnit;
+
+  const standaloneExtraWeeklyCharge =
+    config.standaloneExtraWeeklyCharge ??
+    config.standalonePricingWithoutSaniClean?.weeklyMinimumPrice ??
+    cfg.standaloneExtraWeeklyCharge;
+
+  const tripChargePerVisit =
+    config.tripChargePerVisit ??
+    config.tripChargesStandaloneOnly?.standard ??
+    cfg.tripChargePerVisit;
+
+  // Build normalized config with all required fields
+  const normalized: BackendSanipodConfig = {
+    // Pricing fields - extracted from nested structure
+    weeklyRatePerUnit,
+    altWeeklyRatePerUnit,
+    extraBagPrice,
+    installChargePerUnit,
+    standaloneExtraWeeklyCharge,
+    tripChargePerVisit,
+
+    // Frequency config
+    defaultFrequency: config.defaultFrequency ?? cfg.defaultFrequency,
+    allowedFrequencies: config.allowedFrequencies ?? cfg.allowedFrequencies,
+
+    // Billing conversions
+    weeksPerMonth: config.weeksPerMonth ?? cfg.weeksPerMonth,
+    weeksPerYear: config.weeksPerYear ?? cfg.weeksPerYear,
+
+    // Contract limits
+    minContractMonths: config.minContractMonths ?? cfg.minContractMonths,
+    maxContractMonths: config.maxContractMonths ?? cfg.maxContractMonths,
+
+    // Rate categories
+    rateCategories: config.rateCategories ?? cfg.rateCategories,
+
+    // Frequency data - use backend or fallback to static
+    annualFrequencies: config.annualFrequencies ?? {
+      oneTime: 1,
+      weekly: 52,
+      biweekly: 26,
+      twicePerMonth: 24,
+      monthly: 12,
+      bimonthly: 6,
+      quarterly: 4,
+      biannual: 2,
+      annual: 1,
+    },
+    frequencyMultipliers: config.frequencyMultipliers ?? {
+      oneTime: 0,
+      weekly: 4.33,
+      biweekly: 2.165,
+      twicePerMonth: 2,
+      monthly: 1.0,
+      bimonthly: 0.5,
+      quarterly: 0,
+      biannual: 0,
+      annual: 0,
+    },
+
+    // Keep frequencyMetadata if it exists
+    frequencyMetadata: config.frequencyMetadata,
+  };
+
+  // If backend has frequencyMetadata, extract multipliers from it
+  if (config.frequencyMetadata && normalized.frequencyMultipliers) {
+    Object.keys(config.frequencyMetadata).forEach((freq) => {
+      const meta = config.frequencyMetadata![freq];
+
+      // Update frequencyMultipliers if monthlyRecurringMultiplier exists
+      if (meta.monthlyRecurringMultiplier !== undefined) {
+        (normalized.frequencyMultipliers as any)[freq] = meta.monthlyRecurringMultiplier;
+      }
+    });
+  }
+
+  return normalized;
 }
 
 export interface SanipodFormState {
@@ -216,26 +362,30 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
           if (fallbackConfig?.config) {
             console.log('✅ [SaniPod] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendSanipodConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config);
+
+            // ✅ Normalize fallback config
+            const normalizedConfig = normalizeBackendConfig(config);
+
+            setBackendConfig(normalizedConfig);
+            updateFormWithConfig(normalizedConfig);
 
             console.log('✅ SaniPod FALLBACK CONFIG loaded from context:', {
               pricing: {
-                weeklyRate: config.weeklyRatePerUnit,
-                altRate: config.altWeeklyRatePerUnit,
-                extraBag: config.extraBagPrice,
-                standaloneExtra: config.standaloneExtraWeeklyCharge,
-                installRate: config.installChargePerUnit,
+                weeklyRate: normalizedConfig.weeklyRatePerUnit,
+                altRate: normalizedConfig.altWeeklyRatePerUnit,
+                extraBag: normalizedConfig.extraBagPrice,
+                standaloneExtra: normalizedConfig.standaloneExtraWeeklyCharge,
+                installRate: normalizedConfig.installChargePerUnit,
               },
-              rateCategories: config.rateCategories,
+              rateCategories: normalizedConfig.rateCategories,
               billingConversions: {
-                weeksPerMonth: config.weeksPerMonth,
-                weeksPerYear: config.weeksPerYear,
+                weeksPerMonth: normalizedConfig.weeksPerMonth,
+                weeksPerYear: normalizedConfig.weeksPerYear,
               },
-              annualFrequencies: config.annualFrequencies,
+              annualFrequencies: normalizedConfig.annualFrequencies,
               contractLimits: {
-                min: config.minContractMonths,
-                max: config.maxContractMonths,
+                min: normalizedConfig.minContractMonths,
+                max: normalizedConfig.maxContractMonths,
               },
             });
             return;
@@ -256,27 +406,30 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
       const config = document.config as BackendSanipodConfig;
 
+      // ✅ Normalize config to ensure all required properties exist
+      const normalizedConfig = normalizeBackendConfig(config);
+
       // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(config);
+      setBackendConfig(normalizedConfig);
+      updateFormWithConfig(normalizedConfig);
 
       console.log('✅ SaniPod FULL CONFIG loaded from backend:', {
         pricing: {
-          weeklyRate: config.weeklyRatePerUnit,
-          altRate: config.altWeeklyRatePerUnit,
-          extraBag: config.extraBagPrice,
-          standaloneExtra: config.standaloneExtraWeeklyCharge,
-          installRate: config.installChargePerUnit,
+          weeklyRate: normalizedConfig.weeklyRatePerUnit,
+          altRate: normalizedConfig.altWeeklyRatePerUnit,
+          extraBag: normalizedConfig.extraBagPrice,
+          standaloneExtra: normalizedConfig.standaloneExtraWeeklyCharge,
+          installRate: normalizedConfig.installChargePerUnit,
         },
-        rateCategories: config.rateCategories,
+        rateCategories: normalizedConfig.rateCategories,
         billingConversions: {
-          weeksPerMonth: config.weeksPerMonth,
-          weeksPerYear: config.weeksPerYear,
+          weeksPerMonth: normalizedConfig.weeksPerMonth,
+          weeksPerYear: normalizedConfig.weeksPerYear,
         },
-        annualFrequencies: config.annualFrequencies,
+        annualFrequencies: normalizedConfig.annualFrequencies,
         contractLimits: {
-          min: config.minContractMonths,
-          max: config.maxContractMonths,
+          min: normalizedConfig.minContractMonths,
+          max: normalizedConfig.maxContractMonths,
         },
       });
     } catch (error) {
@@ -294,8 +447,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
         if (fallbackConfig?.config) {
           console.log('✅ [SaniPod] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendSanipodConfig;
-          setBackendConfig(config);
-          updateFormWithConfig(config);
+
+          // ✅ Normalize fallback config
+          const normalizedConfig = normalizeBackendConfig(config);
+
+          setBackendConfig(normalizedConfig);
+          updateFormWithConfig(normalizedConfig);
           return;
         }
       }
@@ -369,31 +526,45 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
   const calc: SanipodCalcResult = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
     const defaultFrequencyMultipliers = {
+      oneTime: 0,
       weekly: 4.33,
       biweekly: 2.165,
+      twicePerMonth: 2,
       monthly: 1.0,
+      bimonthly: 0.5,
+      quarterly: 0,
+      biannual: 0,
+      annual: 0,
     };
 
-    const activeConfig = backendConfig || {
-      weeklyRatePerUnit: cfg.weeklyRatePerUnit,
-      altWeeklyRatePerUnit: cfg.altWeeklyRatePerUnit,
-      extraBagPrice: cfg.extraBagPrice,
-      installChargePerUnit: cfg.installChargePerUnit,
-      standaloneExtraWeeklyCharge: cfg.standaloneExtraWeeklyCharge,
-      tripChargePerVisit: cfg.tripChargePerVisit,
-      rateCategories: cfg.rateCategories,
-      frequencyMultipliers: defaultFrequencyMultipliers,
-      weeksPerMonth: cfg.weeksPerMonth ?? 4.33,
-      weeksPerYear: cfg.weeksPerYear ?? 52,
-      minContractMonths: cfg.minContractMonths ?? 2,
-      maxContractMonths: cfg.maxContractMonths ?? 36,
-      annualFrequencies: cfg.annualFrequencies ?? { weekly: 52, biweekly: 26, monthly: 12 },
+    const defaultAnnualFrequencies = {
+      oneTime: 1,
+      weekly: 52,
+      biweekly: 26,
+      twicePerMonth: 24,
+      monthly: 12,
+      bimonthly: 6,
+      quarterly: 4,
+      biannual: 2,
+      annual: 1,
     };
 
-    // Ensure frequencyMultipliers always exists
-    if (!activeConfig.frequencyMultipliers) {
-      activeConfig.frequencyMultipliers = defaultFrequencyMultipliers;
-    }
+    // ✅ Build activeConfig with guaranteed properties
+    const activeConfig = {
+      weeklyRatePerUnit: backendConfig?.weeklyRatePerUnit ?? cfg.weeklyRatePerUnit,
+      altWeeklyRatePerUnit: backendConfig?.altWeeklyRatePerUnit ?? cfg.altWeeklyRatePerUnit,
+      extraBagPrice: backendConfig?.extraBagPrice ?? cfg.extraBagPrice,
+      installChargePerUnit: backendConfig?.installChargePerUnit ?? cfg.installChargePerUnit,
+      standaloneExtraWeeklyCharge: backendConfig?.standaloneExtraWeeklyCharge ?? cfg.standaloneExtraWeeklyCharge,
+      tripChargePerVisit: backendConfig?.tripChargePerVisit ?? cfg.tripChargePerVisit,
+      rateCategories: backendConfig?.rateCategories ?? cfg.rateCategories,
+      frequencyMultipliers: backendConfig?.frequencyMultipliers ?? defaultFrequencyMultipliers,
+      weeksPerMonth: backendConfig?.weeksPerMonth ?? cfg.weeksPerMonth ?? 4.33,
+      weeksPerYear: backendConfig?.weeksPerYear ?? cfg.weeksPerYear ?? 52,
+      minContractMonths: backendConfig?.minContractMonths ?? cfg.minContractMonths ?? 2,
+      maxContractMonths: backendConfig?.maxContractMonths ?? cfg.maxContractMonths ?? 36,
+      annualFrequencies: backendConfig?.annualFrequencies ?? cfg.annualFrequencies ?? defaultAnnualFrequencies,
+    };
 
     const pods = Math.max(0, Number(form.podQuantity) || 0);
     const bags = Math.max(0, Number(form.extraBagsPerWeek) || 0);
@@ -525,23 +696,26 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     // ---------- MONTHLY & CONTRACT ----------
     // ✅ FREQUENCY-SPECIFIC CALCULATION: Use the correct multiplier based on selected frequency
     const selectedFrequency = form.frequency || "weekly";
-    const monthlyVisits = activeConfig.frequencyMultipliers[selectedFrequency] || activeConfig.frequencyMultipliers.weekly;
+    const monthlyVisits = activeConfig.frequencyMultipliers[selectedFrequency];
 
-    // ✅ FIXED BIWEEKLY CALCULATION:
-    // The user's example: biweekly should use 2.165 visits per month
-    // First month = install + service for remaining pods
-    // Recurring months = full service × frequency multiplier
+    // ✅ DETERMINE IF FREQUENCY IS VISIT-BASED (not monthly billing)
+    const isVisitBasedFrequency = selectedFrequency === "oneTime" || selectedFrequency === "quarterly" ||
+      selectedFrequency === "biannual" || selectedFrequency === "annual" || selectedFrequency === "bimonthly";
 
     // ✅ PARTIAL INSTALLATION FIRST MONTH CALCULATION:
-    // This properly handles the partial installation logic you described
     let firstMonth;
 
-    if (selectedFrequency === "monthly") {
-      // ✅ FIXED: Monthly = 1 visit per month, so first month should equal first visit
-      // For monthly frequency, first visit and first month should be the same
+    if (selectedFrequency === "oneTime") {
+      // ✅ For oneTime: just the first visit (install + service for non-installed pods + bags)
+      firstMonth = firstVisit;
+    } else if (isVisitBasedFrequency) {
+      // ✅ For quarterly, biannual, annual, bimonthly: just the first visit
+      firstMonth = firstVisit;
+    } else if (selectedFrequency === "monthly") {
+      // ✅ For monthly: first visit (since only 1 visit per month)
       firstMonth = firstVisit;
     } else {
-      // Weekly/biweekly: Use partial installation logic
+      // Weekly/biweekly/twicePerMonth: Use partial installation logic
       // First month = first visit (partial service + install) + remaining visits (full service)
       firstMonth = firstVisit + Math.max(monthlyVisits - 1, 0) * perVisit;
     }
@@ -558,11 +732,33 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       maxMonths
     );
 
-    const contractTotal =
-      contractMonths <= 0
-        ? 0
-        : firstMonth +
-          Math.max(contractMonths - 1, 0) * ongoingMonthly;
+    // ✅ CONTRACT TOTAL CALCULATION - handle visit-based frequencies differently
+    let contractTotal: number;
+    if (selectedFrequency === "oneTime") {
+      // For oneTime: just the first visit price
+      contractTotal = firstVisit;
+    } else if (isVisitBasedFrequency) {
+      // For quarterly, biannual, annual, bimonthly: use annual multipliers
+      const visitsPerYear = activeConfig.annualFrequencies[selectedFrequency];
+      const totalVisits = (contractMonths / 12) * visitsPerYear;
+
+      // All visits are normal service (after first visit which is install if applicable)
+      if (form.isNewInstall && installQty > 0) {
+        // First visit is install, remaining visits are service
+        const serviceVisits = Math.max(totalVisits - 1, 0);
+        contractTotal = firstVisit + (serviceVisits * perVisit);
+      } else {
+        // No install, all visits are service
+        contractTotal = totalVisits * perVisit;
+      }
+    } else {
+      // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
+      if (contractMonths <= 0) {
+        contractTotal = 0;
+      } else {
+        contractTotal = firstMonth + Math.max(contractMonths - 1, 0) * ongoingMonthly;
+      }
+    }
 
     // ========== ADJUSTED CALCULATIONS BASED ON CUSTOM OVERRIDES ==========
     // Note: pods and bags already declared above
@@ -618,7 +814,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       : installOnlyCost;
 
     // Adjusted monthly - should use the same logic as base firstMonth calculation
-    // For monthly frequency: first month = first visit (since only 1 visit per month)
+    // For visit-based frequencies: first month = first visit (since only 1 visit per period)
     // For other frequencies: first month = first visit + remaining visits
     let adjustedFirstVisitTotal;
     if (installQty > 0) {
@@ -632,17 +828,40 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
 
     const adjustedMonthly = form.customMonthlyPrice !== undefined
       ? form.customMonthlyPrice
-      : selectedFrequency === "monthly"
+      : selectedFrequency === "oneTime" || isVisitBasedFrequency || selectedFrequency === "monthly"
         ? adjustedFirstVisitTotal
         : adjustedFirstVisitTotal + Math.max(monthlyVisits - 1, 0) * adjustedPerVisit;
 
-    // Adjusted annual
+    // Adjusted annual/contract total
     const ongoingMonthlyCalc = weeksPerMonthCalc * adjustedPerVisit;
-    const adjustedAnnual = form.customAnnualPrice !== undefined
-      ? form.customAnnualPrice
-      : contractMonths <= 0
-        ? 0
-        : adjustedMonthly + Math.max(contractMonths - 1, 0) * ongoingMonthlyCalc;
+
+    let adjustedAnnual: number;
+    if (form.customAnnualPrice !== undefined) {
+      adjustedAnnual = form.customAnnualPrice;
+    } else if (selectedFrequency === "oneTime") {
+      // For oneTime: just the first visit
+      adjustedAnnual = adjustedFirstVisitTotal;
+    } else if (isVisitBasedFrequency) {
+      // For quarterly, biannual, annual, bimonthly: use annual multipliers
+      const visitsPerYear = activeConfig.annualFrequencies[selectedFrequency];
+      const totalVisits = (contractMonths / 12) * visitsPerYear;
+
+      if (form.isNewInstall && installQty > 0) {
+        // First visit is install, remaining visits are service
+        const serviceVisits = Math.max(totalVisits - 1, 0);
+        adjustedAnnual = adjustedFirstVisitTotal + (serviceVisits * adjustedPerVisit);
+      } else {
+        // No install, all visits are service
+        adjustedAnnual = totalVisits * adjustedPerVisit;
+      }
+    } else {
+      // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
+      if (contractMonths <= 0) {
+        adjustedAnnual = 0;
+      } else {
+        adjustedAnnual = adjustedMonthly + Math.max(contractMonths - 1, 0) * ongoingMonthlyCalc;
+      }
+    }
 
     return {
       perVisit,
