@@ -829,7 +829,7 @@ export default function SavedFiles() {
       {/* Zoho Upload Modal */}
       {zohoUploadOpen && currentZohoFile && (
         <ZohoUpload
-          agreementId={currentZohoFile.id}
+          agreementId={currentZohoFile.agreementId || currentZohoFile.id}
           agreementTitle={currentZohoFile.title}
           onClose={() => {
             setZohoUploadOpen(false);

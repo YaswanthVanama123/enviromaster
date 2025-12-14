@@ -948,7 +948,7 @@ export default function SavedFilesAgreements() {
       {/* Zoho Upload Modal */}
       {zohoUploadOpen && currentZohoFile && (
         <ZohoUpload
-          agreementId={currentZohoFile.id}
+          agreementId={currentZohoFile.agreementId || currentZohoFile.id}
           agreementTitle={currentZohoFile.title}
           onClose={() => {
             setZohoUploadOpen(false);
@@ -969,7 +969,7 @@ export default function SavedFilesAgreements() {
       {/* Bulk Zoho Upload Modal - Using Enhanced Existing ZohoUpload Component */}
       {bulkZohoUploadOpen && selectedFilesForBulkUpload.length > 0 && (
         <ZohoUpload
-          agreementId={selectedFilesForBulkUpload[0]?.id || ''} // Use first file ID as primary
+          agreementId={selectedFilesForBulkUpload[0]?.agreementId || selectedFilesForBulkUpload[0]?.id || ''} // Use agreement ID for Zoho upload
           agreementTitle={`Bulk Upload - ${selectedFilesForBulkUpload.length} Documents`}
           bulkFiles={selectedFilesForBulkUpload.map(file => ({
             id: file.id,

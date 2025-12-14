@@ -111,18 +111,57 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     return bulkFiles.filter(file => selectedFiles.has(file.id));
   };
 
-  // ✅ NEW: Calculate actual Zoho file names (with version numbers)
-  const calculateZohoFileName = (file: any, dealName: string, version: number = 1) => {
-    const isMainPdf = file.fileType === 'main_pdf' ||
-                      file.fileName.toLowerCase().includes('main agreement') ||
-                      file.fileName.toLowerCase().includes('agreement.pdf') ||
-                      (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
+  // ✅ FIXED: Proper file type detection for correct API routing
+  const getFileUploadStrategy = (file: any) => {
+    // Version PDFs and main agreement files use the main agreement API
+    if (file.fileType === 'main_pdf' || file.fileType === 'version_pdf') {
+      return {
+        type: 'agreement',
+        route: 'updateUpload',
+        useAgreementId: true,
+        description: file.fileType === 'version_pdf' ? 'Version PDF' : 'Main Agreement'
+      };
+    }
 
-    if (isMainPdf) {
-      // Main agreement files get versioned names
+    // Manual uploads (attached files) use the attached file API
+    if (file.fileType === 'attached_pdf') {
+      return {
+        type: 'attached',
+        route: 'uploadAttachedFile',
+        useAgreementId: false,
+        description: 'Manual Upload'
+      };
+    }
+
+    // Fallback: filename-based detection for files without clear type
+    const fileName = file.fileName?.toLowerCase() || '';
+    if (fileName.includes('agreement') || fileName.includes('main')) {
+      return {
+        type: 'agreement',
+        route: 'updateUpload',
+        useAgreementId: true,
+        description: 'Agreement (by filename)'
+      };
+    }
+
+    // Default to agreement route for unknown types
+    return {
+      type: 'agreement',
+      route: 'updateUpload',
+      useAgreementId: true,
+      description: 'Unknown (default to agreement)'
+    };
+  };
+
+  // ✅ Calculate actual Zoho file names (with version numbers)
+  const calculateZohoFileName = (file: any, dealName: string, version: number = 1) => {
+    const strategy = getFileUploadStrategy(file);
+
+    if (strategy.type === 'agreement') {
+      // Agreement files (main PDF, version PDF) get versioned names
       return `${dealName.replace(/[^a-zA-Z0-9-_]/g, '_')}_v${version}.pdf`;
     } else {
-      // Attached files get _attached suffix
+      // Manual uploads get _attached suffix
       const cleanFileName = file.fileName.replace(/[^a-zA-Z0-9\-_.]/g, '_');
       return `${cleanFileName.replace('.pdf', '')}_attached.pdf`;
     }
@@ -145,7 +184,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
         for (const file of bulkFiles.slice(0, maxFilesToCheck)) {
           try {
-            const statusResult = await zohoApi.getUploadStatus(file.id);
+            // ✅ FIX: Use main agreementId for status check, not file.id
+            const statusResult = await zohoApi.getUploadStatus(agreementId);
             checkedFiles++;
 
             console.log(`🔍 [BULK] File ${file.fileName} status:`, {
@@ -386,7 +426,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
             if (index === 0) {
               // ✅ First file: Create the deal with the comprehensive note
-              const result = await zohoApi.firstTimeUpload(file.id, {
+              // ✅ FIX: Use main agreementId, not file.id (file.id is version/attachment ID, not CustomerHeaderDoc ID)
+              const result = await zohoApi.firstTimeUpload(agreementId, {
                 companyId: selectedCompany.id,
                 companyName: selectedCompany.name,
                 dealName: dealName.trim(),
@@ -411,35 +452,52 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 break;
               }
             } else {
-              // ✅ Subsequent files: Upload to existing deal WITHOUT creating individual notes
+              // ✅ Subsequent files: Upload to existing deal using proper strategy
               if (!dealId) {
                 failCount++;
                 console.error(`❌ [BULK-FIRST-TIME] No dealId available for file: ${file.fileName}`);
                 continue;
               }
 
+              // ✅ FIXED: Use strategy to determine correct upload method
+              const strategy = getFileUploadStrategy(file);
+              console.log(`📤 [BULK-FIRST-TIME] Processing file: ${file.fileName} (${strategy.description})`);
+              console.log(`🔍 [BULK-FIRST-TIME] File details:`, {
+                id: file.id,
+                fileName: file.fileName,
+                fileType: file.fileType,
+                strategy: strategy
+              });
+
               let result;
 
-              // ✅ Upload file to deal without creating note (files will show in Files tab)
-              const isMainPdf = file.fileType === 'main_pdf' ||
-                              file.fileName.toLowerCase().includes('main agreement') ||
-                              file.fileName.toLowerCase().includes('agreement.pdf') ||
-                              (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
+              if (strategy.type === 'agreement') {
+                // Version PDFs and main agreement files - use main agreement API
+                const targetId = strategy.useAgreementId ? agreementId : file.id;
+                console.log(`📝 [BULK-FIRST-TIME] Using agreement route for: ${file.fileName} (targetId: ${targetId})`);
 
-              if (isMainPdf) {
-                // Main agreement file - upload without note
-                result = await zohoApi.updateUpload(file.id, {
-                  noteText: `Additional file in bulk upload: ${file.fileName}`,  // ✅ Minimal note, file shows in Files tab
+                result = await zohoApi.updateUpload(targetId, {
+                  noteText: `Additional file in bulk upload: ${file.fileName}`,
                   dealId: dealId,
                   skipNoteCreation: true  // ✅ Skip individual note creation
                 });
-              } else {
-                // Attached file - upload to Files tab without individual note
+              } else if (strategy.type === 'attached') {
+                // Manual uploads - use attached file API
+                console.log(`📎 [BULK-FIRST-TIME] Using attached file route for: ${file.fileName} (fileId: ${file.id})`);
+
                 result = await zohoApi.uploadAttachedFile(file.id, {
                   dealId: dealId,
-                  noteText: `Additional file in bulk upload: ${file.fileName}`,  // ✅ Minimal note, file shows in Files tab
+                  noteText: `Additional file in bulk upload: ${file.fileName}`,
                   dealName: dealName.trim(),
                   skipNoteCreation: true  // ✅ Skip individual note creation
+                });
+              } else {
+                // Fallback - shouldn't happen with current logic
+                console.warn(`⚠️ [BULK-FIRST-TIME] Unknown strategy type for ${file.fileName}, using agreement route`);
+                result = await zohoApi.updateUpload(agreementId, {
+                  noteText: `Additional file in bulk upload: ${file.fileName}`,
+                  dealId: dealId,
+                  skipNoteCreation: true
                 });
               }
 
@@ -533,26 +591,24 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
         for (const file of selectedBulkFiles) {
           try {
-            console.log(`📤 [BULK-UPDATE] Uploading file: ${file.fileName} (${file.id}) - Type: ${file.fileType || 'unknown'}`);
+            // ✅ FIXED: Use strategy to determine correct upload method
+            const strategy = getFileUploadStrategy(file);
+            console.log(`📤 [BULK-UPDATE] Processing file: ${file.fileName} (${strategy.description})`);
 
             let result;
 
-            // ✅ FIX: Better file type detection for proper routing
-            const isMainPdf = file.fileType === 'main_pdf' ||
-                            file.fileName.toLowerCase().includes('main agreement') ||
-                            file.fileName.toLowerCase().includes('agreement.pdf') ||
-                            (!file.fileType && file.fileName.toLowerCase().includes('agreement'));
+            if (strategy.type === 'agreement') {
+              // Version PDFs and main agreement files - use main agreement API
+              const targetId = strategy.useAgreementId ? agreementId : file.id;
+              console.log(`📝 [BULK-UPDATE] Using agreement route for: ${file.fileName} (targetId: ${targetId})`);
 
-            if (isMainPdf) {
-              // Main agreement file - use standard updateUpload with comprehensive note on first file
-              console.log(`📝 [BULK-UPDATE] Processing as main agreement file: ${file.fileName}`);
-              result = await zohoApi.updateUpload(file.id, {
+              result = await zohoApi.updateUpload(targetId, {
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 skipNoteCreation: !isFirstFileUpload  // ✅ Skip note creation for subsequent files
               });
-            } else {
-              // Attached file - use existing mapping dealId that we already have from uploadStatus
-              console.log(`📎 [BULK-UPDATE] Processing as attached file: ${file.fileName}`);
+            } else if (strategy.type === 'attached') {
+              // Manual uploads - use attached file API
+              console.log(`📎 [BULK-UPDATE] Using attached file route for: ${file.fileName} (fileId: ${file.id})`);
               const dealId = uploadStatus?.mapping?.dealId;
 
               if (!dealId) {
@@ -564,6 +620,13 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 dealName: uploadStatus?.mapping?.dealName || 'Unknown Deal',
                 skipNoteCreation: !isFirstFileUpload  // ✅ Skip note creation for subsequent files
+              });
+            } else {
+              // Fallback - shouldn't happen with current logic
+              console.warn(`⚠️ [BULK-UPDATE] Unknown strategy type for ${file.fileName}, using agreement route`);
+              result = await zohoApi.updateUpload(agreementId, {
+                noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
+                skipNoteCreation: !isFirstFileUpload
               });
             }
 
@@ -694,7 +757,10 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
                 <span className="file-name" style={{ flex: 1 }}>{file.fileName}</span>
                 <span style={{ fontSize: '12px', color: '#666' }}>
-                  {file.fileType === 'main_pdf' ? '(Main)' : '(Attachment)'}
+                  {(() => {
+                    const strategy = getFileUploadStrategy(file);
+                    return `(${strategy.description})`;
+                  })()}
                 </span>
               </div>
             ))
@@ -953,7 +1019,10 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 <FontAwesomeIcon icon={faFileAlt} className="file-icon" />
                 <span className="file-name" style={{ flex: 1 }}>{file.fileName}</span>
                 <span style={{ fontSize: '12px', color: '#666' }}>
-                  {file.fileType === 'main_pdf' ? '(Main)' : '(Attachment)'}
+                  {(() => {
+                    const strategy = getFileUploadStrategy(file);
+                    return `(${strategy.description})`;
+                  })()}
                 </span>
               </div>
             ))

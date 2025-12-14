@@ -45,8 +45,9 @@ export interface FormPayload {
 // New interfaces for saved-files API
 export interface SavedFileListItem {
   id: string;
+  agreementId?: string;                 // ✅ FIX: Agreement ID (CustomerHeaderDoc._id) for Zoho upload
   fileName: string;                     // ✅ NEW: Actual file name
-  fileType: 'main_pdf' | 'attached_pdf'; // ✅ NEW: Distinguish main vs attached
+  fileType: 'main_pdf' | 'attached_pdf' | 'version_pdf'; // ✅ NEW: Distinguish main vs attached
   title: string;
   status: string;
   createdAt: string;
@@ -57,6 +58,7 @@ export interface SavedFileListItem {
   pdfStoredAt: string | null;
   hasPdf: boolean;
   description?: string;                 // ✅ NEW: For attached files
+  versionNumber?: number;               // ✅ NEW: For version files
   zohoInfo: {
     biginDealId: string | null;
     biginFileId: string | null;
