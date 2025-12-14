@@ -483,11 +483,20 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   const quote: SanicleanQuoteResult = useMemo(() => {
     const config = backendConfig || SANICLEAN_CONFIG;
 
+    let baseQuote: SanicleanQuoteResult;
     if (form.pricingMode === "all_inclusive") {
-      return calculateAllInclusive(form, config);
+      baseQuote = calculateAllInclusive(form, config);
     } else {
-      return calculatePerItemCharge(form, config);
+      baseQuote = calculatePerItemCharge(form, config);
     }
+
+    // ✅ Apply custom overrides if set
+    return {
+      ...baseQuote,
+      weeklyTotal: form.customWeeklyTotal ?? baseQuote.weeklyTotal,
+      monthlyTotal: form.customMonthlyTotal ?? baseQuote.monthlyTotal,
+      contractTotal: form.customContractTotal ?? baseQuote.contractTotal,
+    };
   }, [form, backendConfig]);
 
   // Form update helpers

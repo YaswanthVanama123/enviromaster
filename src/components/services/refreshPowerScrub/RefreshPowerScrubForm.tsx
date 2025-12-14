@@ -62,6 +62,7 @@ export const RefreshPowerScrubForm: React.FC<
     setFrequency,
     setContractMonths,
     setNotes,
+    setCustomPerVisitTotal,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
@@ -76,6 +77,16 @@ export const RefreshPowerScrubForm: React.FC<
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
+
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      if (name === 'customPerVisitTotal') {
+        setCustomPerVisitTotal(undefined);
+      }
+    }
+  };
 
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
@@ -114,6 +125,7 @@ export const RefreshPowerScrubForm: React.FC<
 
         // Global service information
         serviceInfo: {
+          isDisplay: true,
           label: "Service Type",
           type: "text" as const,
           value: `Hourly Rate: $${form.hourlyRate}/hr | Minimum: $${form.minimumVisit}`,
@@ -156,6 +168,7 @@ export const RefreshPowerScrubForm: React.FC<
             const serviceData: any = {
               enabled: true,
               pricingMethod: {
+                isDisplay: true,
                 value: pricingMethodNames[area.pricingType] || area.pricingType,
                 type: "text"
               }
@@ -164,6 +177,7 @@ export const RefreshPowerScrubForm: React.FC<
             // Add pricing-specific fields
             if (area.pricingType === 'perHour') {
               serviceData.hours = {
+                isDisplay: true,
                 quantity: area.hours || 0,
                 priceRate: getHourRate(),
                 total: (area.hours || 0) * getHourRate(),
@@ -171,6 +185,7 @@ export const RefreshPowerScrubForm: React.FC<
               };
             } else if (area.pricingType === 'perWorker') {
               serviceData.workersCalc = {
+                isDisplay: true,
                 quantity: area.workers || 0,
                 priceRate: getWorkerRate(),
                 total: (area.workers || 0) * getWorkerRate(),
@@ -178,16 +193,19 @@ export const RefreshPowerScrubForm: React.FC<
               };
             } else if (area.pricingType === 'squareFeet') {
               serviceData.fixedFee = {
+                isDisplay: true,
                 value: getFixedFee(),
                 type: "text"
               };
               serviceData.insideSqft = {
+                isDisplay: true,
                 quantity: area.insideSqFt || 0,
                 priceRate: getInsideRate(),
                 total: (area.insideSqFt || 0) * getInsideRate(),
                 type: "calc"
               };
               serviceData.outsideSqft = {
+                isDisplay: true,
                 quantity: area.outsideSqFt || 0,
                 priceRate: getOutsideRate(),
                 total: (area.outsideSqFt || 0) * getOutsideRate(),
@@ -197,17 +215,20 @@ export const RefreshPowerScrubForm: React.FC<
               if (key === 'patio') {
                 console.log(`🔄 [Patio SAVE DEBUG] Patio area state:`, JSON.stringify(area, null, 2));
                 serviceData.plan = {
+                  isDisplay: true,
                   value: area.patioMode === 'upsell' ? 'Upsell' : 'Standalone',
                   type: "text"
                 };
                 // ✅ NEW: Save the patio add-on selection
                 serviceData.includePatioAddon = {
+                  isDisplay: true,
                   value: area.includePatioAddon || false,
                   type: "boolean"
                 };
                 console.log(`🔄 [Patio SAVE DEBUG] Saving includePatioAddon:`, serviceData.includePatioAddon);
               } else if (key === 'boh') {
                 serviceData.plan = {
+                  isDisplay: true,
                   value: area.kitchenSize === 'large' ? 'Large' : 'Small/Medium',
                   type: "text"
                 };
@@ -216,20 +237,24 @@ export const RefreshPowerScrubForm: React.FC<
 
             // Common fields for all pricing types
             serviceData.frequency = {
+              isDisplay: true,
               value: area.frequencyLabel || 'TBD',
               type: "text"
             };
             serviceData.total = {
+              isDisplay: true,
               value: areaTotals[key],
               type: "calc"
             };
             serviceData.monthly = {
+              isDisplay: true,
               quantity: multiplier,
               priceRate: areaTotals[key],
               total: monthlyAmount,
               type: "calc"
             };
             serviceData.contract = {
+              isDisplay: true,
               quantity: area.contractMonths || 12,
               priceRate: monthlyAmount,
               total: contractAmount,
@@ -242,6 +267,7 @@ export const RefreshPowerScrubForm: React.FC<
 
         totals: {
           perVisit: {
+            isDisplay: true,
             label: "Total Per Visit",
             type: "dollar" as const,
             amount: parseFloat(quote.perVisitPrice.toFixed(2)),
@@ -626,11 +652,39 @@ export const RefreshPowerScrubForm: React.FC<
       </div>
 
       {/* Summary */}
-      {/* <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
+      <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
         <div className="rps-inline">
-          <span className="rps-label-strong">TOTAL PER VISIT: ${formatAmount(quote.perVisitPrice)}</span>
+          <span className="rps-label-strong">TOTAL PER VISIT:</span>
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="rps-num"
+              type="number"
+              step="0.01"
+              name="customPerVisitTotal"
+              value={
+                form.customPerVisitTotal !== undefined
+                  ? form.customPerVisitTotal.toFixed(2)
+                  : quote.perVisitPrice.toFixed(2)
+              }
+              onChange={(e) => {
+                const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                if (numVal === undefined || !isNaN(numVal)) {
+                  setCustomPerVisitTotal(numVal);
+                }
+              }}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customPerVisitTotal !== undefined ? '#fffacd' : 'white',
+                border: '1px solid #ccc',
+                width: '100px',
+                marginLeft: '8px'
+              }}
+              title="Total per visit - editable"
+            />
+          </div>
         </div>
-      </div> */}
+      </div>
 
       {/* Frequency Selection */}
       {/* <div className="rps-config-row" style={{ marginTop: '16px' }}>

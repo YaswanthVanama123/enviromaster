@@ -26,6 +26,15 @@ export const JanitorialForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      // This will be handled by the parent component's setForm if needed
+      console.log(`Clearing custom field: ${name}`);
+    }
+  };
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingPlaces ?? 0) > 0;
@@ -36,12 +45,14 @@ export const JanitorialForm: React.FC<
         isActive: true,
 
         serviceType: {
+          isDisplay: true,
           label: "Service Type",
           type: "text" as const,
           value: form.serviceType === "recurring" ? "Recurring Service" : "One-Time Service",
         },
 
         service: {
+          isDisplay: true,
           label: "Service",
           type: "calc" as const,
           qty: parseFloat(calc.totalHours.toFixed(2)),
@@ -52,6 +63,7 @@ export const JanitorialForm: React.FC<
 
         ...(form.manualHours !== undefined ? {
           otherTasks: {
+            isDisplay: true,
             label: "Other Tasks",
             type: "text" as const,
             value: `${form.manualHours} hours`,
@@ -60,6 +72,7 @@ export const JanitorialForm: React.FC<
 
         ...(form.vacuumingHours !== undefined ? {
           vacuuming: {
+            isDisplay: true,
             label: "Vacuuming",
             type: "text" as const,
             value: `${form.vacuumingHours} hours`,
@@ -68,6 +81,7 @@ export const JanitorialForm: React.FC<
 
         ...(form.dustingPlaces !== undefined ? {
           dusting: {
+            isDisplay: true,
             label: "Dusting",
             type: "text" as const,
             value: `${form.dustingPlaces} places`,
@@ -76,6 +90,7 @@ export const JanitorialForm: React.FC<
 
         ...(form.addonTimeMinutes !== undefined ? {
           addonTime: {
+            isDisplay: true,
             label: "Add-on Time",
             type: "text" as const,
             value: `${form.addonTimeMinutes} minutes`,
@@ -84,6 +99,7 @@ export const JanitorialForm: React.FC<
 
         ...(form.serviceType === "recurring" && form.installation ? {
           installation: {
+            isDisplay: true,
             label: "Installation",
             type: "text" as const,
             value: "Included",
@@ -92,6 +108,7 @@ export const JanitorialForm: React.FC<
 
         ...(form.serviceType === "recurring" ? {
           visitsPerWeek: {
+            isDisplay: true,
             label: "Visits per Week",
             type: "text" as const,
             value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
@@ -100,28 +117,33 @@ export const JanitorialForm: React.FC<
 
         totals: form.serviceType === "recurring" ? {
           perVisit: {
+            isDisplay: true,
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
           },
           weekly: {
+            isDisplay: true,
             label: "Weekly Total",
             type: "dollar" as const,
             amount: calc.weekly,
           },
           monthlyRecurring: {
+            isDisplay: true,
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: calc.recurringMonthly,
           },
           ...(form.installation ? {
             firstMonth: {
+              isDisplay: true,
               label: "First Month Total",
               type: "dollar" as const,
               amount: calc.firstMonth,
             },
           } : {}),
           contract: {
+            isDisplay: true,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
@@ -129,6 +151,7 @@ export const JanitorialForm: React.FC<
           },
         } : {
           oneTime: {
+            isDisplay: true,
             label: "One-Time Service Total",
             type: "dollar" as const,
             amount: calc.perVisit,
@@ -470,9 +493,22 @@ export const JanitorialForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={fmt(calc.perVisit)}
+              type="number"
+              step="0.01"
+              name="customPerVisit"
+              value={
+                form.customPerVisit !== undefined
+                  ? form.customPerVisit.toFixed(2)
+                  : fmt(calc.perVisit)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customPerVisit !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="Per visit total - editable"
             />
           </div>
         </div>
@@ -490,6 +526,11 @@ export const JanitorialForm: React.FC<
                 type="text"
                 readOnly
                 value={fmt(calc.weekly)}
+                style={{
+                  backgroundColor: 'white',
+                  border: 'none',
+                  width: '100px'
+                }}
               />
             </div>
           </div>
@@ -505,9 +546,22 @@ export const JanitorialForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={fmt(calc.recurringMonthly)}
+                type="number"
+                step="0.01"
+                name="customOngoingMonthly"
+                value={
+                  form.customOngoingMonthly !== undefined
+                    ? form.customOngoingMonthly.toFixed(2)
+                    : fmt(calc.recurringMonthly)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customOngoingMonthly !== undefined ? '#fffacd' : 'white',
+                  border: 'none',
+                  width: '100px'
+                }}
+                title="Monthly recurring - editable"
               />
             </div>
           </div>
@@ -523,9 +577,22 @@ export const JanitorialForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={fmt(calc.firstMonth)}
+                type="number"
+                step="0.01"
+                name="customMonthly"
+                value={
+                  form.customMonthly !== undefined
+                    ? form.customMonthly.toFixed(2)
+                    : fmt(calc.firstMonth)
+                }
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
+                  border: 'none',
+                  width: '100px'
+                }}
+                title="First month total - editable"
               />
             </div>
           </div>
@@ -542,6 +609,14 @@ export const JanitorialForm: React.FC<
               name="contractMonths"
               value={form.contractMonths}
               onChange={onChange}
+              style={{
+                borderBottom: '2px solid #000',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                backgroundColor: 'transparent',
+                padding: '4px 20px 4px 4px'
+              }}
             >
               {(() => {
                 const options = [];
@@ -555,15 +630,33 @@ export const JanitorialForm: React.FC<
                 ));
               })()}
             </select>
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="text"
-                readOnly
-                value={fmt(calc.contractTotal)}
-              />
-            </div>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', marginLeft: '10px' }}>$</span>
+            <input
+              type="number"
+              step="0.01"
+              name="customContractTotal"
+              className="svc-in"
+              value={
+                form.customContractTotal !== undefined
+                  ? form.customContractTotal.toFixed(2)
+                  : fmt(calc.contractTotal)
+              }
+              onChange={onChange}
+              onBlur={handleBlur}
+              style={{
+                borderBottom: '2px solid #ff0000',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                padding: '4px',
+                width: '100px',
+                marginLeft: '5px'
+              }}
+              title="Contract total - editable"
+            />
           </div>
         </div>
       )}

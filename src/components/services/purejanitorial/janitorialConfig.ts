@@ -1,5 +1,33 @@
 // src/features/services/janitorial/janitorialConfig.ts
-import type { JanitorialPricingConfig } from "./janitorialTypes";
+import type { JanitorialPricingConfig, JanitorialFrequencyKey } from "./janitorialTypes";
+
+/**
+ * Allowed frequency values in UI order.
+ * All 9 frequency types.
+ */
+export const janitorialFrequencyList: JanitorialFrequencyKey[] = [
+  "oneTime",
+  "weekly",
+  "biweekly",
+  "twicePerMonth",
+  "monthly",
+  "bimonthly",
+  "quarterly",
+  "biannual",
+  "annual",
+];
+
+export const janitorialFrequencyLabels: Record<JanitorialFrequencyKey, string> = {
+  oneTime: "One Time",
+  weekly: "Weekly",
+  biweekly: "Bi-Weekly",
+  twicePerMonth: "2× / Month",
+  monthly: "Monthly",
+  bimonthly: "Every 2 Months",
+  quarterly: "Quarterly",
+  biannual: "Bi-Annual",
+  annual: "Annual",
+};
 
 /**
  * Pure janitorial add-on service configuration.
@@ -34,6 +62,19 @@ export const janitorialPricingConfig: JanitorialPricingConfig = {
   dustingPlacesPerHour: 30,
   dustingPricePerPlace: 1,
   vacuumingDefaultHours: 1,
+
+  // Billing conversions for all 9 frequency types
+  billingConversions: {
+    oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },
+    weekly: { annualMultiplier: 52, monthlyMultiplier: 4.33 },
+    biweekly: { annualMultiplier: 26, monthlyMultiplier: 2.165 },
+    twicePerMonth: { annualMultiplier: 24, monthlyMultiplier: 2 },
+    monthly: { annualMultiplier: 12, monthlyMultiplier: 1 },
+    bimonthly: { annualMultiplier: 6, monthlyMultiplier: 0.5 },
+    quarterly: { annualMultiplier: 4, monthlyMultiplier: 0.333 },
+    biannual: { annualMultiplier: 2, monthlyMultiplier: 0.167 },
+    annual: { annualMultiplier: 1, monthlyMultiplier: 0.083 },
+  },
 
   rateCategories: {
     redRate: {

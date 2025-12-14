@@ -71,6 +71,9 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
   foh: RefreshAreaCalcState;
   boh: RefreshAreaCalcState;
   other: RefreshAreaCalcState;
+
+  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  customPerVisitTotal?: number;
 }
 
 // Per-column per-visit totals used by the header table

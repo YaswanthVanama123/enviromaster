@@ -260,6 +260,18 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
           return prev;
         }
 
+        // ✅ NEW: Handle custom override fields for totals
+        case "customPerVisitPrice":
+        case "customMonthlyRecurring":
+        case "customFirstMonthPrice":
+        case "customContractTotal": {
+          const numVal = value === '' ? undefined : parseFloat(value);
+          if (numVal === undefined || !isNaN(numVal)) {
+            return { ...prev, [name]: numVal };
+          }
+          return prev;
+        }
+
         case "frequency":
           return {
             ...prev,
@@ -358,9 +370,19 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     };
 
     const freq = clampFrequency(form.frequency);
-    const freqMeta = activeConfig.frequencyMeta[freq];  // ✅ NOW GUARANTEED to have all frequencies from local config
-    const visitsPerYear = freqMeta?.visitsPerYear ?? 12;
+
+    // ✅ Get billing conversion for current frequency
+    const conv = cfg.billingConversions[freq];
+    const visitsPerYear = conv.annualMultiplier;
+    const monthlyVisits = conv.monthlyMultiplier;
     const visitsPerMonth = visitsPerYear / 12;
+
+    // ✅ Detect visit-based frequencies (oneTime, quarterly, biannual, annual, bimonthly)
+    const isVisitBasedFrequency = freq === "oneTime" ||
+                                   freq === "quarterly" ||
+                                   freq === "biannual" ||
+                                   freq === "annual" ||
+                                   freq === "bimonthly";
 
     const fixtureCount = form.fixtureCount ?? 0;
     const nonBathSqFt = form.nonBathroomSqFt ?? 0;
@@ -483,79 +505,108 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       ? form.customInstallationFee
       : calculatedInstallOneTime;
 
-    // ---------------- 6) FIRST MONTH ----------------
-    let firstMonthTotal = 0;
+    // ----------------6) FIRST MONTH ----------------
+    let calculatedFirstMonthTotal = 0;
 
     if (serviceActive) {
-      if (freq === "monthly") {
+      if (freq === "oneTime") {
+        // One-time service with or without installation
+        calculatedFirstMonthTotal = form.includeInstall && installOneTime > 0
+          ? installOneTime + perVisitWithTrip
+          : perVisitWithTrip;
+      } else if (freq === "monthly") {
         // Monthly: install already includes service, just add trip
-        firstMonthTotal = form.includeInstall ? (installOneTime + perVisitTrip) : monthlyRecurring;
+        calculatedFirstMonthTotal = form.includeInstall ? (installOneTime + perVisitTrip) : monthlyRecurring;
       } else if (freq === "twicePerMonth") {
         // ✅ FIXED: 2x/month calculation
         if (form.includeInstall) {
           // With install: install + one base visit - $15 discount
           const baseVisitCost = basePerVisitCost + perVisitTrip; // Use base amounts
-          firstMonthTotal = installOneTime + baseVisitCost;
+          calculatedFirstMonthTotal = installOneTime + baseVisitCost;
 
           // Apply SaniClean discount to the total month
           if (form.hasSaniClean) {
-            firstMonthTotal = Math.max(0, firstMonthTotal - 15);
+            calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - 15);
           }
         } else {
           // Without install: just the normal monthly recurring (already includes discount)
-          firstMonthTotal = monthlyRecurring;
+          calculatedFirstMonthTotal = monthlyRecurring;
         }
       } else {
-        // Bi-monthly/quarterly: install already includes full service
-        firstMonthTotal = form.includeInstall ? installOneTime : (basePerVisitCost + perVisitTrip);
+        // Visit-based frequencies: install already includes full service
+        calculatedFirstMonthTotal = form.includeInstall ? installOneTime : (basePerVisitCost + perVisitTrip);
       }
     }
+
+    // ✅ NEW: Apply custom override if set
+    const firstMonthTotal = form.customFirstMonthPrice !== undefined
+      ? form.customFirstMonthPrice
+      : calculatedFirstMonthTotal;
 
     // ---------------- 7) CONTRACT TOTAL ----------------
     const contractMonths = clampContractMonths(form.contractMonths);
-    let contractTotal = 0;
+    let calculatedContractTotal = 0;
+    let monthsPerVisit = 1;
+    let totalVisitsForContract = 0;
 
-    if (freq === "bimonthly" || freq === "quarterly") {
-      // ✅ FIXED: Visit-based calculation
-      const monthsPerVisit = freq === "bimonthly" ? 2 : 3; // Quarterly = every 3 months
-      const totalVisits = Math.floor(contractMonths / monthsPerVisit);
+    if (serviceActive && contractMonths > 0) {
+      if (freq === "oneTime") {
+        // One-time service: just the first visit total
+        calculatedContractTotal = firstMonthTotal;
+        totalVisitsForContract = 1;
+      } else if (isVisitBasedFrequency) {
+        // Visit-based frequencies: calculate based on visits per year
+        const totalVisits = Math.round((contractMonths / 12) * visitsPerYear);
+        totalVisitsForContract = totalVisits;
+        monthsPerVisit = freq === "bimonthly" ? 2 : freq === "quarterly" ? 3 : freq === "biannual" ? 6 : freq === "annual" ? 12 : 1;
 
-      if (totalVisits > 0) {
-        if (form.includeInstall && installOneTime > 0) {
+        if (form.includeInstall && installOneTime > 0 && totalVisits > 0) {
           // ✅ CORRECTED: Installation already includes first visit service
           // Remaining visits = service + trip only
           const remainingVisits = Math.max(totalVisits - 1, 0);
-          contractTotal = installOneTime + (remainingVisits * perVisitWithTrip);
+          calculatedContractTotal = installOneTime + (remainingVisits * perVisitWithTrip);
         } else {
           // No installation: all visits = service + trip
-          contractTotal = totalVisits * perVisitWithTrip;
+          calculatedContractTotal = totalVisits * perVisitWithTrip;
         }
-      }
-    } else {
-      // ✅ FIXED: Month-based calculation (monthly/2x month)
-      if (form.includeInstall && installOneTime > 0) {
-        // First month includes install, remaining months are normal recurring
-        const remainingMonths = Math.max(contractMonths - 1, 0);
-        contractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
       } else {
-        // No installation: all months the same
-        contractTotal = contractMonths * monthlyRecurring;
+        // ✅ FIXED: Month-based calculation (monthly/2x month/weekly/biweekly)
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First month includes install, remaining months are normal recurring
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+        } else {
+          // No installation: all months the same
+          calculatedContractTotal = contractMonths * monthlyRecurring;
+        }
       }
     }
 
+    // ✅ NEW: Apply custom override if set
+    const contractTotal = form.customContractTotal !== undefined
+      ? form.customContractTotal
+      : calculatedContractTotal;
+
     // UI Values
-    const monthlyTotal = monthlyRecurring;
+    const monthlyTotal = form.customMonthlyRecurring !== undefined
+      ? form.customMonthlyRecurring
+      : monthlyRecurring;
+
     const annualTotal = contractTotal;
 
     // ✅ FIXED: Per-visit shows BASE cost (without frequency adjustments or discounts)
-    const perVisitEffective = basePerVisitCost + perVisitTrip; // Base cost + trip charges
+    const perVisitEffective = form.customPerVisitPrice !== undefined
+      ? form.customPerVisitPrice
+      : (basePerVisitCost + perVisitTrip); // Base cost + trip charges
 
     // Frequency helpers
-    const isVisitBasedFrequency = freq === "bimonthly" || freq === "quarterly";
-    const monthsPerVisit = freq === "bimonthly" ? 2 : freq === "quarterly" ? 3 : 1;
-    const totalVisitsForContract = isVisitBasedFrequency
-      ? Math.floor(contractMonths / monthsPerVisit)
-      : contractMonths;
+    const frequency = freq;
+    monthsPerVisit = freq === "bimonthly" ? 2 : freq === "quarterly" ? 3 : freq === "biannual" ? 6 : freq === "annual" ? 12 : 1;
+    totalVisitsForContract = isVisitBasedFrequency && contractMonths > 0
+      ? Math.round((contractMonths / 12) * visitsPerYear)
+      : Math.round(contractMonths * monthlyVisits);
 
     return {
       fixtureMonthly, // Base amount for display (before frequency adjustments)
@@ -574,7 +625,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       installOneTime,
       firstMonthTotal,
       contractTotal,
-      frequency: freq,
+      frequency,
       isVisitBasedFrequency,
       monthsPerVisit,
       totalVisitsForContract,
@@ -595,6 +646,11 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     // ✅ NEW: Watch form pricing rates (editable from UI)
     form.nonBathroomFirstUnitRate,
     form.nonBathroomAdditionalUnitRate,
+    // ✅ NEW: Watch custom override fields
+    form.customPerVisitPrice,
+    form.customMonthlyRecurring,
+    form.customFirstMonthPrice,
+    form.customContractTotal,
   ]);
 
   const quote: ServiceQuoteResult = useMemo(
