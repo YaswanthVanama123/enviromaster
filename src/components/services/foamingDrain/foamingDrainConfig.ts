@@ -54,21 +54,40 @@ export const FOAMING_DRAIN_CONFIG = {
     beltway: 0,
   },
 
-  // 8. Billing conversions (NEW RULES)
-  //    Weekly:
-  //      MonthlyServiceCharge = weeklyService × 4.3
-  //      FirstMonth           = FirstVisit + (MonthlyServiceCharge × 3.3)
-  //      NormalMonth          = MonthlyServiceCharge × 4.3
+  // 8. Billing conversions (NEW RULES - ALL 9 FREQUENCIES)
+  //    Weekly is the primary frequency; others use monthly multipliers
   billingConversions: {
+    oneTime: {
+      monthlyMultiplier: 0, // One-time service
+    },
     weekly: {
-      monthlyVisits: 4.3,          // used to compute MonthlyServiceCharge
-      firstMonthExtraMonths: 3.3,  // multiplier for MonthlyServiceCharge in first month
-      normalMonthFactor: 4.3,      // multiplier for MonthlyServiceCharge for normal month
+      monthlyVisits: 4.33,         // used to compute MonthlyServiceCharge
+      monthlyMultiplier: 4.33,     // standard monthly multiplier
     },
-    // Bi-monthly: about 0.5 visits per month
+    biweekly: {
+      monthlyMultiplier: 2.165,    // ~2 visits per month
+    },
+    twicePerMonth: {
+      monthlyMultiplier: 2.0,      // exactly 2 visits per month
+    },
+    monthly: {
+      monthlyMultiplier: 1.0,      // 1 visit per month
+    },
     bimonthly: {
-      monthlyMultiplier: 0.5,
+      monthlyMultiplier: 0.5,      // 1 visit every 2 months
     },
+    quarterly: {
+      monthlyMultiplier: 0.333,    // 1 visit every 3 months
+    },
+    biannual: {
+      monthlyMultiplier: 0.167,    // 1 visit every 6 months
+    },
+    annual: {
+      monthlyMultiplier: 0.083,    // 1 visit every 12 months
+    },
+    // Global settings
+    actualWeeksPerYear: 52,
+    actualWeeksPerMonth: 4.33,
   },
 
   // 9. Contract settings (used for "Annual" field = contract total)
@@ -79,7 +98,17 @@ export const FOAMING_DRAIN_CONFIG = {
   },
 
   defaultFrequency: "weekly" as const,
-  allowedFrequencies: ["weekly", "bimonthly"] as const,
+  allowedFrequencies: [
+    "oneTime",
+    "weekly",
+    "biweekly",
+    "twicePerMonth",
+    "monthly",
+    "bimonthly",
+    "quarterly",
+    "biannual",
+    "annual"
+  ] as const,
 } as const;
 
 export type FoamingDrainConfig = typeof FOAMING_DRAIN_CONFIG;

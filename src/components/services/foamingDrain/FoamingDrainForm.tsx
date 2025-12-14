@@ -38,6 +38,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  // Handler to reset custom values to undefined if left empty
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '' || value === null) {
+      if (name === 'customWeeklyService' ||
+          name === 'customMonthlyRecurring' ||
+          name === 'customFirstMonthPrice' ||
+          name === 'customContractTotal') {
+        updateField(name as keyof FoamingDrainFormState, undefined as any);
+      }
+    }
+  };
+
   const breakdown = quote.breakdown;
 
   useEffect(() => {
@@ -69,6 +82,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         isActive: true,
 
         frequency: {
+          isDisplay: true,
           label: "Frequency",
           type: "text" as const,
           value: typeof state.frequency === 'string'
@@ -77,6 +91,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         },
 
         location: {
+          isDisplay: true,
           label: "Location",
           type: "text" as const,
           value: state.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
@@ -84,6 +99,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
         drainBreakdown: [
           ...(state.standardDrainCount > 0 ? [{
+            isDisplay: true,
             label: "Standard Drains",
             type: "calc" as const,
             qty: state.standardDrainCount,
@@ -91,6 +107,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             total: breakdown.weeklyStandardDrains,
           }] : []),
           ...(state.greaseTrapCount > 0 ? [{
+            isDisplay: true,
             label: "Grease Trap Drains",
             type: "calc" as const,
             qty: state.greaseTrapCount,
@@ -98,6 +115,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             total: breakdown.weeklyGreaseTraps,
           }] : []),
           ...(state.greenDrainCount > 0 ? [{
+            isDisplay: true,
             label: "Green Drains",
             type: "calc" as const,
             qty: state.greenDrainCount,
@@ -108,6 +126,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
         ...(breakdown.tripWeekly > 0 ? {
           tripCharge: {
+            isDisplay: true,
             label: "Trip Charge",
             type: "dollar" as const,
             amount: breakdown.tripWeekly,
@@ -115,17 +134,20 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         } : {}),
 
         totals: {
-          weekly: {
-            label: "Weekly Total",
+          perVisit: {
+            isDisplay: true,
+            label: "Per Visit Total",
             type: "dollar" as const,
             amount: quote.weeklyTotal,
           },
           monthly: {
+            isDisplay: true,
             label: "Monthly Total",
             type: "dollar" as const,
             amount: quote.monthlyRecurring,
           },
           contract: {
+            isDisplay: true,
             label: "Contract Total",
             type: "dollar" as const,
             months: state.contractMonths,
@@ -334,7 +356,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         />
 
         {/* Frequency */}
-        {/* <div className="svc-row">
+        <div className="svc-row">
           <div className="svc-label">
             <span>Service Frequency</span>
           </div>
@@ -344,11 +366,18 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               value={state.frequency}
               onChange={handleFrequencyChange}
             >
+              <option value="oneTime">One Time</option>
               <option value="weekly">Weekly</option>
-              <option value="bimonthly">Bi-Monthly (every 2 months)</option>
+              <option value="biweekly">Bi-weekly</option>
+              <option value="twicePerMonth">2× / Month</option>
+              <option value="monthly">Monthly</option>
+              <option value="bimonthly">Bi-monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="biannual">Bi-annual</option>
+              <option value="annual">Annual</option>
             </select>
           </div>
-        </div> */}
+        </div>
 
         {/* Facility condition */}
         <div className="svc-row">
@@ -632,8 +661,15 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               value={state.frequency}
               onChange={handleFrequencyChange}
             >
+              <option value="oneTime">One Time</option>
               <option value="weekly">Weekly</option>
-              <option value="bimonthly">Bi-Monthly (every 2 months)</option>
+              <option value="biweekly">Bi-weekly</option>
+              <option value="twicePerMonth">2× / Month</option>
+              <option value="monthly">Monthly</option>
+              <option value="bimonthly">Bi-monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="biannual">Bi-annual</option>
+              <option value="annual">Annual</option>
             </select>
           </div>
         </div>
@@ -808,52 +844,110 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Weekly total */}
+          {/* Per Visit Total */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Weekly Total</span>
+              <span>Per Visit Total</span>
             </div>
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                readOnly
+                type="number"
+                step="0.01"
+                name="customWeeklyService"
                 className="svc-in weekly-total-field"
-                value={formatAmount(quote.weeklyTotal)}
+                value={
+                  state.customWeeklyService !== undefined
+                    ? state.customWeeklyService.toFixed(2)
+                    : formatAmount(quote.weeklyTotal)
+                }
+                onChange={(e) => {
+                  const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                  if (numVal === undefined || !isNaN(numVal)) {
+                    updateField('customWeeklyService', numVal as any);
+                  }
+                }}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: state.customWeeklyService !== undefined ? '#fffacd' : 'white',
+                }}
+                title="Per visit total - editable"
               />
             </div>
           </div>
 
 
 
-          {/* First month total */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>First Month Total</span>
+          {/* First month total - HIDE for one-time */}
+          {state.frequency !== "oneTime" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>First Month Total</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="customFirstMonthPrice"
+                  className="svc-in field-qty"
+                  value={
+                    state.customFirstMonthPrice !== undefined
+                      ? state.customFirstMonthPrice.toFixed(2)
+                      : formatAmount(quote.firstMonthPrice)
+                  }
+                  onChange={(e) => {
+                    const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                    if (numVal === undefined || !isNaN(numVal)) {
+                      updateField('customFirstMonthPrice', numVal as any);
+                    }
+                  }}
+                  onBlur={handleBlur}
+                  style={{
+                    backgroundColor: state.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                  }}
+                  title="First month total - editable"
+                />
+              </div>
             </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                readOnly
-                className="svc-in field-qty"
-                value={formatAmount(quote.firstMonthPrice)}
-              />
-            </div>
-          </div>
+          )}
 
-          {/* Normal month (recurring) */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Monthly Recurring</span>
+          {/* Normal month (recurring) - HIDE for one-time and visit-based frequencies */}
+          {state.frequency !== "oneTime" &&
+           state.frequency !== "quarterly" &&
+           state.frequency !== "biannual" &&
+           state.frequency !== "annual" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Monthly Recurring</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="customMonthlyRecurring"
+                  className="svc-in monthly-total-field"
+                  value={
+                    state.customMonthlyRecurring !== undefined
+                      ? state.customMonthlyRecurring.toFixed(2)
+                      : formatAmount(quote.monthlyRecurring)
+                  }
+                  onChange={(e) => {
+                    const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                    if (numVal === undefined || !isNaN(numVal)) {
+                      updateField('customMonthlyRecurring', numVal as any);
+                    }
+                  }}
+                  onBlur={handleBlur}
+                  style={{
+                    backgroundColor: state.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
+                  }}
+                  title="Monthly recurring - editable"
+                />
+              </div>
             </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                readOnly
-                className="svc-in monthly-total-field"
-                value={formatAmount(quote.monthlyRecurring)}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Installation total */}
           <div className="svc-row">
@@ -870,13 +964,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-                    {/* Combined Contract Total with months dropdown and amount */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Contract Total</span>
-            </div>
-            <div className="svc-field">
-              <div className="svc-inline">
+          {/* Combined Contract Total with months dropdown and amount - HIDE for one-time */}
+          {state.frequency !== "oneTime" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Contract Total</span>
+              </div>
+              <div className="svc-field">
+                <div className="svc-inline">
                 <select
                   className="svc-in field-qty"
                   style={{ width: '80px', marginRight: '8px' }}
@@ -888,34 +983,84 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     )
                   }
                 >
-                  {Array.from(
-                    {
-                      length:
-                        cfg.contract.maxMonths - cfg.contract.minMonths + 1,
-                    },
-                    (_, i) => {
-                      const m = cfg.contract.minMonths + i;
+                  {state.frequency === "quarterly" ? (
+                    // For quarterly: show multiples of 3 months only
+                    Array.from({ length: 12 }, (_, i) => {
+                      const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
                       return (
-                        <option key={m} value={m}>
-                          {m} mo
+                        <option key={months} value={months}>
+                          {months} mo
                         </option>
                       );
-                    }
+                    })
+                  ) : state.frequency === "biannual" ? (
+                    // For bi-annual: show multiples of 6 months only
+                    Array.from({ length: 6 }, (_, i) => {
+                      const months = (i + 1) * 6; // 6, 12, 18, 24, 30, 36
+                      return (
+                        <option key={months} value={months}>
+                          {months} mo
+                        </option>
+                      );
+                    })
+                  ) : state.frequency === "annual" ? (
+                    // For annual: show multiples of 12 months only
+                    Array.from({ length: 3 }, (_, i) => {
+                      const months = (i + 1) * 12; // 12, 24, 36
+                      return (
+                        <option key={months} value={months}>
+                          {months} mo
+                        </option>
+                      );
+                    })
+                  ) : (
+                    // For all other frequencies: show 2-36 months
+                    Array.from(
+                      {
+                        length:
+                          cfg.contract.maxMonths - cfg.contract.minMonths + 1,
+                      },
+                      (_, i) => {
+                        const m = cfg.contract.minMonths + i;
+                        return (
+                          <option key={m} value={m}>
+                            {m} mo
+                          </option>
+                        );
+                      }
+                    )
                   )}
                 </select>
                 <div className="svc-field svc-dollar" style={{ display: 'inline-flex', alignItems: 'center' }}>
                   <span style={{ marginRight: '4px' }}>$</span>
                   <input
-                    readOnly
+                    type="number"
+                    step="0.01"
+                    name="customContractTotal"
                     className="svc-in contract-total-field"
-                    style={{ width: '120px' }}
-                    // annualRecurring now holds the contract total, NOT annual
-                    value={formatAmount(quote.annualRecurring)}
+                    style={{
+                      width: '120px',
+                      backgroundColor: state.customContractTotal !== undefined ? '#fffacd' : 'white',
+                    }}
+                    value={
+                      state.customContractTotal !== undefined
+                        ? state.customContractTotal.toFixed(2)
+                        : formatAmount(quote.annualRecurring)
+                    }
+                    onChange={(e) => {
+                      const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                      if (numVal === undefined || !isNaN(numVal)) {
+                        updateField('customContractTotal', numVal as any);
+                      }
+                    }}
+                    onBlur={handleBlur}
+                    title="Contract total - editable"
                   />
                 </div>
               </div>
             </div>
           </div>
+          )}
 
           <div className="svc-row" style={{ marginTop: 6 }}>
             <div className="svc-label" />

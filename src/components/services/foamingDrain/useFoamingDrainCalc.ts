@@ -478,23 +478,41 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       activeConfig.contract.maxMonths   // ✅ USE BACKEND
     );
 
-    // Service is always weekly; Monthly logic ALWAYS uses the weekly rule:
-    //   NormalMonth  = weeklyService × 4.33
-    //   If installation > 0:
-    //       FirstMonth = FirstVisit + weeklyService × 3.33
-    //     else:
-    //       FirstMonth = NormalMonth
-    let normalMonth = 0;
+    // ✅ Get frequency multiplier from backend config
+    const getFrequencyMultiplier = (freq: string) => {
+      const normalized = freq.toLowerCase().replace(/\s+/g, '');
+
+      switch (normalized) {
+        case 'onetime':
+          return activeConfig.billingConversions.oneTime?.monthlyMultiplier ?? 0;
+        case 'weekly':
+          return activeConfig.billingConversions.weekly?.monthlyMultiplier ?? 4.33;
+        case 'biweekly':
+          return activeConfig.billingConversions.biweekly?.monthlyMultiplier ?? 2.165;
+        case 'twicepermonth':
+          return activeConfig.billingConversions.twicePerMonth?.monthlyMultiplier ?? 2.0;
+        case 'monthly':
+          return activeConfig.billingConversions.monthly?.monthlyMultiplier ?? 1.0;
+        case 'bimonthly':
+          return activeConfig.billingConversions.bimonthly?.monthlyMultiplier ?? 0.5;
+        case 'quarterly':
+          return activeConfig.billingConversions.quarterly?.monthlyMultiplier ?? 0.333;
+        case 'biannual':
+          return activeConfig.billingConversions.biannual?.monthlyMultiplier ?? 0.167;
+        case 'annual':
+          return activeConfig.billingConversions.annual?.monthlyMultiplier ?? 0.083;
+        default:
+          return 1.0;
+      }
+    };
+
+    const frequencyMultiplier = getFrequencyMultiplier(frequency);
+    let normalMonth = weeklyService * frequencyMultiplier;
     let firstMonthPrice = 0;
 
-    const monthlyVisits = activeConfig.billingConversions.weekly.monthlyVisits; // ✅ FROM BACKEND (4.33)
-    const extraVisitsFirstMonth = monthlyVisits - 1; // 3.33
-
-    normalMonth = weeklyService * monthlyVisits;
-
+    // First month includes installation if present
     if (installation > 0) {
-      firstMonthPrice =
-        firstVisitPrice + weeklyService * extraVisitsFirstMonth;
+      firstMonthPrice = firstVisitPrice + weeklyService * Math.max(0, frequencyMultiplier - 1);
     } else {
       firstMonthPrice = normalMonth;
     }
@@ -502,10 +520,27 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     normalMonth = round2(normalMonth);
     firstMonthPrice = round2(firstMonthPrice);
 
-    // Contract total:
-    //   TotalContract = FirstMonth + (Months − 1) × NormalMonth
-    const contractTotalRaw =
-      firstMonthPrice + (contractMonths - 1) * normalMonth;
+    // Contract total calculation - handle special frequencies
+    let contractTotalRaw = 0;
+    const freqLower = frequency.toLowerCase();
+
+    if (freqLower === "quarterly") {
+      // Quarterly: visits = months / 3
+      const quarterlyVisits = contractMonths / 3;
+      contractTotalRaw = firstVisitPrice + weeklyService * (quarterlyVisits - 1);
+    } else if (freqLower === "biannual") {
+      // Bi-annual: visits = months / 6
+      const biannualVisits = contractMonths / 6;
+      contractTotalRaw = firstVisitPrice + weeklyService * (biannualVisits - 1);
+    } else if (freqLower === "annual") {
+      // Annual: visits = months / 12
+      const annualVisits = contractMonths / 12;
+      contractTotalRaw = firstVisitPrice + weeklyService * (annualVisits - 1);
+    } else {
+      // All other frequencies: FirstMonth + (Months − 1) × NormalMonth
+      contractTotalRaw = firstMonthPrice + (contractMonths - 1) * normalMonth;
+    }
+
     const contractTotal = round2(contractTotalRaw);
 
     // For compatibility with ServiceQuoteResult:
@@ -546,15 +581,16 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       isAllInclusive: state.isAllInclusive,
       chargeGreaseTrapInstall: state.chargeGreaseTrapInstall,
 
-      weeklyService,
-      weeklyTotal,
-      monthlyRecurring,   // normal month
-      annualRecurring,    // contract total
+      // ✅ Apply custom overrides if set
+      weeklyService: state.customWeeklyService ?? weeklyService,
+      weeklyTotal: state.customWeeklyService ?? weeklyTotal,
+      monthlyRecurring: state.customMonthlyRecurring ?? monthlyRecurring,   // normal month
+      annualRecurring: state.customContractTotal ?? annualRecurring,    // contract total
       installation,
       tripCharge,
 
       firstVisitPrice,
-      firstMonthPrice,
+      firstMonthPrice: state.customFirstMonthPrice ?? firstMonthPrice,
       contractMonths,
 
       notes: state.notes || "",
@@ -594,6 +630,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.greenInstallRate,
     state.plumbingAddonRate,
     state.filthyMultiplier,
+    // ✅ Custom override fields
+    state.customWeeklyService,
+    state.customMonthlyRecurring,
+    state.customFirstMonthPrice,
+    state.customContractTotal,
   ]);
 
   const updateField = <K extends keyof FoamingDrainFormState>(
