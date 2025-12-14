@@ -128,304 +128,551 @@ export const PricingTablesView: React.FC = () => {
   };
 
   // Extract pricing fields from service config
-  const extractServicePricing = (config: any) => {
+  const extractServicePricing = (config: any, serviceId: string) => {
     const fields: Array<{ label: string; value: number; path: string[]; unit?: string }> = [];
 
-    // SANICLEAN - geographicPricing structure
-    if (config.geographicPricing?.insideBeltway) {
-      const ib = config.geographicPricing.insideBeltway;
-      if (ib.ratePerFixture !== undefined) fields.push({ label: "Inside Beltway - Rate per Fixture", value: ib.ratePerFixture, path: ["geographicPricing", "insideBeltway", "ratePerFixture"], unit: "$ per fixture" });
-      if (ib.weeklyMinimum !== undefined) fields.push({ label: "Inside Beltway - Weekly Minimum", value: ib.weeklyMinimum, path: ["geographicPricing", "insideBeltway", "weeklyMinimum"], unit: "$" });
-      if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["geographicPricing", "insideBeltway", "tripCharge"], unit: "$" });
-      if (ib.parkingFee !== undefined) fields.push({ label: "Inside Beltway - Parking Fee", value: ib.parkingFee, path: ["geographicPricing", "insideBeltway", "parkingFee"], unit: "$" });
+    // SANICLEAN - ACTUAL DATABASE STRUCTURE
+    if (serviceId === "saniclean") {
+    // Standard A La Carte Pricing - Inside Beltway
+    if (config.standardALaCartePricing?.insideBeltway) {
+      const ib = config.standardALaCartePricing.insideBeltway;
+      if (ib.pricePerFixture !== undefined) fields.push({ label: "Inside Beltway - Price Per Fixture", value: ib.pricePerFixture, path: ["standardALaCartePricing", "insideBeltway", "pricePerFixture"], unit: "$ per fixture" });
+      if (ib.minimumPrice !== undefined) fields.push({ label: "Inside Beltway - Minimum Price", value: ib.minimumPrice, path: ["standardALaCartePricing", "insideBeltway", "minimumPrice"], unit: "$" });
+      if (ib.tripCharge !== undefined) fields.push({ label: "Inside Beltway - Trip Charge", value: ib.tripCharge, path: ["standardALaCartePricing", "insideBeltway", "tripCharge"], unit: "$" });
+      if (ib.parkingFeeAddOn !== undefined) fields.push({ label: "Inside Beltway - Parking Fee Add-On", value: ib.parkingFeeAddOn, path: ["standardALaCartePricing", "insideBeltway", "parkingFeeAddOn"], unit: "$" });
     }
-    if (config.geographicPricing?.outsideBeltway) {
-      const ob = config.geographicPricing.outsideBeltway;
-      if (ob.ratePerFixture !== undefined) fields.push({ label: "Outside Beltway - Rate per Fixture", value: ob.ratePerFixture, path: ["geographicPricing", "outsideBeltway", "ratePerFixture"], unit: "$ per fixture" });
-      if (ob.weeklyMinimum !== undefined) fields.push({ label: "Outside Beltway - Weekly Minimum", value: ob.weeklyMinimum, path: ["geographicPricing", "outsideBeltway", "weeklyMinimum"], unit: "$" });
-      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["geographicPricing", "outsideBeltway", "tripCharge"], unit: "$" });
+
+    // Standard A La Carte Pricing - Outside Beltway
+    if (config.standardALaCartePricing?.outsideBeltway) {
+      const ob = config.standardALaCartePricing.outsideBeltway;
+      if (ob.pricePerFixture !== undefined) fields.push({ label: "Outside Beltway - Price Per Fixture", value: ob.pricePerFixture, path: ["standardALaCartePricing", "outsideBeltway", "pricePerFixture"], unit: "$ per fixture" });
+      if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["standardALaCartePricing", "outsideBeltway", "tripCharge"], unit: "$" });
     }
-    if (config.allInclusivePackage?.weeklyRatePerFixture !== undefined) {
-      fields.push({ label: "All-Inclusive - Weekly Rate per Fixture", value: config.allInclusivePackage.weeklyRatePerFixture, path: ["allInclusivePackage", "weeklyRatePerFixture"], unit: "$ per fixture" });
+
+    // All-Inclusive Pricing
+    if (config.allInclusivePricing) {
+      if (config.allInclusivePricing.pricePerFixture !== undefined) fields.push({ label: "All-Inclusive - Price Per Fixture", value: config.allInclusivePricing.pricePerFixture, path: ["allInclusivePricing", "pricePerFixture"], unit: "$ per fixture" });
+      if (config.allInclusivePricing.autoAllInclusiveMinFixtures !== undefined) fields.push({ label: "All-Inclusive - Auto Min Fixtures", value: config.allInclusivePricing.autoAllInclusiveMinFixtures, path: ["allInclusivePricing", "autoAllInclusiveMinFixtures"], unit: "fixtures" });
     }
-    if (config.smallFacilityMinimum?.fixtureThreshold !== undefined) {
-      fields.push({ label: "Small Facility - Fixture Threshold", value: config.smallFacilityMinimum.fixtureThreshold, path: ["smallFacilityMinimum", "fixtureThreshold"], unit: "fixtures" });
+
+    // Small Bathroom Minimums
+    if (config.smallBathroomMinimums) {
+      if (config.smallBathroomMinimums.minimumFixturesThreshold !== undefined) fields.push({ label: "Small Bathroom - Fixtures Threshold", value: config.smallBathroomMinimums.minimumFixturesThreshold, path: ["smallBathroomMinimums", "minimumFixturesThreshold"], unit: "fixtures" });
+      if (config.smallBathroomMinimums.minimumPriceUnderThreshold !== undefined) fields.push({ label: "Small Bathroom - Minimum Price", value: config.smallBathroomMinimums.minimumPriceUnderThreshold, path: ["smallBathroomMinimums", "minimumPriceUnderThreshold"], unit: "$" });
     }
-    if (config.smallFacilityMinimum?.minimumWeeklyCharge !== undefined) {
-      fields.push({ label: "Small Facility - Minimum Weekly Charge", value: config.smallFacilityMinimum.minimumWeeklyCharge, path: ["smallFacilityMinimum", "minimumWeeklyCharge"], unit: "$" });
+
+    // Warranty Fees
+    if (config.warrantyFees) {
+      if (config.warrantyFees.airFreshenerDispenserWarrantyFeePerWeek !== undefined) fields.push({ label: "Air Freshener Dispenser - Warranty Fee Per Week", value: config.warrantyFees.airFreshenerDispenserWarrantyFeePerWeek, path: ["warrantyFees", "airFreshenerDispenserWarrantyFeePerWeek"], unit: "$ per week" });
+      if (config.warrantyFees.soapDispenserWarrantyFeePerWeek !== undefined) fields.push({ label: "Soap Dispenser - Warranty Fee Per Week", value: config.warrantyFees.soapDispenserWarrantyFeePerWeek, path: ["warrantyFees", "soapDispenserWarrantyFeePerWeek"], unit: "$ per week" });
     }
-    if (config.warrantyFeePerDispenser !== undefined) fields.push({ label: "Warranty Fee per Dispenser", value: config.warrantyFeePerDispenser, path: ["warrantyFeePerDispenser"], unit: "$ per dispenser" });
-    if (config.soapUpgrades?.standardToLuxury !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury", value: config.soapUpgrades.standardToLuxury, path: ["soapUpgrades", "standardToLuxury"], unit: "$ per fixture" });
-    if (config.soapUpgrades?.excessUsageCharges?.standardSoap !== undefined) {
-      fields.push({ label: "Excess Standard Soap Charge", value: config.soapUpgrades.excessUsageCharges.standardSoap, path: ["soapUpgrades", "excessUsageCharges", "standardSoap"] });
+
+    // Soap Upgrades
+    if (config.soapUpgrades) {
+      if (config.soapUpgrades.standardToLuxuryPerDispenserPerWeek !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury Per Week", value: config.soapUpgrades.standardToLuxuryPerDispenserPerWeek, path: ["soapUpgrades", "standardToLuxuryPerDispenserPerWeek"], unit: "$ per dispenser per week" });
+      if (config.soapUpgrades.excessUsageCharges) {
+        if (config.soapUpgrades.excessUsageCharges.standardSoapPerGallon !== undefined) fields.push({ label: "Excess Standard Soap - Per Gallon", value: config.soapUpgrades.excessUsageCharges.standardSoapPerGallon, path: ["soapUpgrades", "excessUsageCharges", "standardSoapPerGallon"], unit: "$ per gallon" });
+        if (config.soapUpgrades.excessUsageCharges.luxurySoapPerGallon !== undefined) fields.push({ label: "Excess Luxury Soap - Per Gallon", value: config.soapUpgrades.excessUsageCharges.luxurySoapPerGallon, path: ["soapUpgrades", "excessUsageCharges", "luxurySoapPerGallon"], unit: "$ per gallon" });
+      }
     }
-    if (config.soapUpgrades?.excessUsageCharges?.luxurySoap !== undefined) {
-      fields.push({ label: "Excess Luxury Soap Charge", value: config.soapUpgrades.excessUsageCharges.luxurySoap, path: ["soapUpgrades", "excessUsageCharges", "luxurySoap"] });
-    }
+
+    // Paper Credit
     if (config.paperCredit?.creditPerFixturePerWeek !== undefined) {
-      fields.push({ label: "Paper Credit per Fixture per Week", value: config.paperCredit.creditPerFixturePerWeek, path: ["paperCredit", "creditPerFixturePerWeek"] });
-    }
-    if (config.billingConversions?.weekly?.monthlyMultiplier !== undefined) {
-      fields.push({ label: "Weekly to Monthly Multiplier", value: config.billingConversions.weekly.monthlyMultiplier, path: ["billingConversions", "weekly", "monthlyMultiplier"] });
-    }
-    if (config.billingConversions?.weekly?.annualMultiplier !== undefined) {
-      fields.push({ label: "Weekly to Annual Multiplier", value: config.billingConversions.weekly.annualMultiplier, path: ["billingConversions", "weekly", "annualMultiplier"] });
-    }
-    if (config.rateTiers?.redRate?.multiplier !== undefined) {
-      fields.push({ label: "Red Rate Multiplier", value: config.rateTiers.redRate.multiplier, path: ["rateTiers", "redRate", "multiplier"] });
-    }
-    if (config.rateTiers?.greenRate?.multiplier !== undefined) {
-      fields.push({ label: "Green Rate Multiplier", value: config.rateTiers.greenRate.multiplier, path: ["rateTiers", "greenRate", "multiplier"] });
+      fields.push({ label: "Paper Credit - Per Fixture Per Week", value: config.paperCredit.creditPerFixturePerWeek, path: ["paperCredit", "creditPerFixturePerWeek"], unit: "$" });
     }
 
-    // SANIPOD - Complete extraction
-    if (config.weeklyRatePerUnit !== undefined) fields.push({ label: "Weekly Rate per Unit (Option A)", value: config.weeklyRatePerUnit, path: ["weeklyRatePerUnit"] });
-    if (config.altWeeklyRatePerUnit !== undefined) fields.push({ label: "Alternate Weekly Rate per Unit (Option B)", value: config.altWeeklyRatePerUnit, path: ["altWeeklyRatePerUnit"] });
-    if (config.tripChargePerVisit !== undefined) fields.push({ label: "Trip Charge Per Visit", value: config.tripChargePerVisit, path: ["tripChargePerVisit"] });
-    if (config.extraBagPrice !== undefined) fields.push({ label: "Extra Bag Price", value: config.extraBagPrice, path: ["extraBagPrice"] });
-    if (config.installChargePerUnit !== undefined) fields.push({ label: "Install Charge Per Unit", value: config.installChargePerUnit, path: ["installChargePerUnit"] });
-    if (config.standaloneExtraWeeklyCharge !== undefined) fields.push({ label: "Standalone Extra Weekly Charge", value: config.standaloneExtraWeeklyCharge, path: ["standaloneExtraWeeklyCharge"] });
-
-    // SaniPod Frequency Settings
-    if (config.annualFrequencies) {
-      if (config.annualFrequencies.weekly !== undefined) fields.push({ label: "Annual Frequency - Weekly Visits", value: config.annualFrequencies.weekly, path: ["annualFrequencies", "weekly"] });
-      if (config.annualFrequencies.biweekly !== undefined) fields.push({ label: "Annual Frequency - Biweekly Visits", value: config.annualFrequencies.biweekly, path: ["annualFrequencies", "biweekly"] });
-      if (config.annualFrequencies.monthly !== undefined) fields.push({ label: "Annual Frequency - Monthly Visits", value: config.annualFrequencies.monthly, path: ["annualFrequencies", "monthly"] });
+    // Included Items
+    if (config.includedItems) {
+      if (config.includedItems.electrostaticSprayIncluded !== undefined) fields.push({ label: "Electrostatic Spray Included", value: config.includedItems.electrostaticSprayIncluded ? 1 : 0, path: ["includedItems", "electrostaticSprayIncluded"], unit: "boolean" });
+      if (config.includedItems.includedWeeklyRefillsDefault !== undefined) fields.push({ label: "Included Weekly Refills Default", value: config.includedItems.includedWeeklyRefillsDefault, path: ["includedItems", "includedWeeklyRefillsDefault"], unit: "refills" });
     }
 
-    // SaniPod Billing Conversions
-    if (config.weeksPerMonth !== undefined) fields.push({ label: "Weeks Per Month", value: config.weeksPerMonth, path: ["weeksPerMonth"] });
-    if (config.weeksPerYear !== undefined) fields.push({ label: "Weeks Per Year", value: config.weeksPerYear, path: ["weeksPerYear"] });
-
-    // SaniPod Contract Terms
-    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"] });
-    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"] });
-
-    // SaniPod Rate Tiers
-    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
-    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
-
-    // SANISCRUB - Complete extraction
-    if (config.fixtureRates) {
-      if (config.fixtureRates.monthly !== undefined) fields.push({ label: "Fixture Rate - Monthly", value: config.fixtureRates.monthly, path: ["fixtureRates", "monthly"] });
-      if (config.fixtureRates.twicePerMonth !== undefined) fields.push({ label: "Fixture Rate - Twice per Month", value: config.fixtureRates.twicePerMonth, path: ["fixtureRates", "twicePerMonth"] });
-      if (config.fixtureRates.bimonthly !== undefined) fields.push({ label: "Fixture Rate - Bimonthly", value: config.fixtureRates.bimonthly, path: ["fixtureRates", "bimonthly"] });
-      if (config.fixtureRates.quarterly !== undefined) fields.push({ label: "Fixture Rate - Quarterly", value: config.fixtureRates.quarterly, path: ["fixtureRates", "quarterly"] });
-    }
-    if (config.minimums) {
-      if (config.minimums.monthly !== undefined) fields.push({ label: "Minimum - Monthly", value: config.minimums.monthly, path: ["minimums", "monthly"] });
-      if (config.minimums.twicePerMonth !== undefined) fields.push({ label: "Minimum - Twice per Month", value: config.minimums.twicePerMonth, path: ["minimums", "twicePerMonth"] });
-      if (config.minimums.bimonthly !== undefined) fields.push({ label: "Minimum - Bimonthly", value: config.minimums.bimonthly, path: ["minimums", "bimonthly"] });
-      if (config.minimums.quarterly !== undefined) fields.push({ label: "Minimum - Quarterly", value: config.minimums.quarterly, path: ["minimums", "quarterly"] });
-    }
-    if (config.nonBathroomUnitSqFt !== undefined) fields.push({ label: "Non-Bathroom Unit Sq Ft", value: config.nonBathroomUnitSqFt, path: ["nonBathroomUnitSqFt"] });
-    if (config.nonBathroomFirstUnitRate !== undefined) fields.push({ label: "Non-Bathroom First Unit Rate", value: config.nonBathroomFirstUnitRate, path: ["nonBathroomFirstUnitRate"] });
-    if (config.nonBathroomAdditionalUnitRate !== undefined) fields.push({ label: "Non-Bathroom Additional Unit Rate", value: config.nonBathroomAdditionalUnitRate, path: ["nonBathroomAdditionalUnitRate"] });
-
-    // SaniScrub Install Multipliers
-    if (config.installMultipliers?.dirty !== undefined) fields.push({ label: "Install Multiplier - Dirty", value: config.installMultipliers.dirty, path: ["installMultipliers", "dirty"] });
-    if (config.installMultipliers?.clean !== undefined) fields.push({ label: "Install Multiplier - Clean", value: config.installMultipliers.clean, path: ["installMultipliers", "clean"] });
-
-    // SaniScrub Frequency Meta
-    if (config.frequencyMeta) {
-      if (config.frequencyMeta.monthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Monthly Visits/Year", value: config.frequencyMeta.monthly.visitsPerYear, path: ["frequencyMeta", "monthly", "visitsPerYear"] });
-      if (config.frequencyMeta.twicePerMonth?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Twice Per Month Visits/Year", value: config.frequencyMeta.twicePerMonth.visitsPerYear, path: ["frequencyMeta", "twicePerMonth", "visitsPerYear"] });
-      if (config.frequencyMeta.bimonthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Bimonthly Visits/Year", value: config.frequencyMeta.bimonthly.visitsPerYear, path: ["frequencyMeta", "bimonthly", "visitsPerYear"] });
-      if (config.frequencyMeta.quarterly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Quarterly Visits/Year", value: config.frequencyMeta.quarterly.visitsPerYear, path: ["frequencyMeta", "quarterly", "visitsPerYear"] });
+    // Monthly Add-On Supply Pricing
+    if (config.monthlyAddOnSupplyPricing) {
+      if (config.monthlyAddOnSupplyPricing.urinalMatMonthlyPrice !== undefined) fields.push({ label: "Urinal Mat - Monthly Price", value: config.monthlyAddOnSupplyPricing.urinalMatMonthlyPrice, path: ["monthlyAddOnSupplyPricing", "urinalMatMonthlyPrice"], unit: "$ per month" });
+      const urinalScreenPrice = config.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice;
+      if (urinalScreenPrice !== undefined) {
+        const val = urinalScreenPrice === "included" ? 0 : urinalScreenPrice;
+        fields.push({ label: "Urinal Screen - Monthly Price", value: val, path: ["monthlyAddOnSupplyPricing", "urinalScreenMonthlyPrice"], unit: urinalScreenPrice === "included" ? "included" : "$ per month" });
+      }
+      if (config.monthlyAddOnSupplyPricing.toiletClipMonthlyPrice !== undefined) fields.push({ label: "Toilet Clip - Monthly Price", value: config.monthlyAddOnSupplyPricing.toiletClipMonthlyPrice, path: ["monthlyAddOnSupplyPricing", "toiletClipMonthlyPrice"], unit: "$ per month" });
+      const seatCoverPrice = config.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice;
+      if (seatCoverPrice !== undefined) {
+        const val = seatCoverPrice === "included" ? 0 : seatCoverPrice;
+        fields.push({ label: "Toilet Seat Cover Dispenser - Monthly Price", value: val, path: ["monthlyAddOnSupplyPricing", "toiletSeatCoverDispenserMonthlyPrice"], unit: seatCoverPrice === "included" ? "included" : "$ per month" });
+      }
+      if (config.monthlyAddOnSupplyPricing.sanipodMonthlyPricePerPod !== undefined) fields.push({ label: "SaniPod - Monthly Price Per Pod", value: config.monthlyAddOnSupplyPricing.sanipodMonthlyPricePerPod, path: ["monthlyAddOnSupplyPricing", "sanipodMonthlyPricePerPod"], unit: "$ per month" });
     }
 
-    // SaniScrub Discounts & Fees
-    if (config.twoTimesPerMonthDiscountFlat !== undefined) fields.push({ label: "Twice Per Month Discount (w/ SaniClean)", value: config.twoTimesPerMonthDiscountFlat, path: ["twoTimesPerMonthDiscountFlat"] });
-    if (config.tripChargeBase !== undefined) fields.push({ label: "Trip Charge Base", value: config.tripChargeBase, path: ["tripChargeBase"] });
-    if (config.parkingFee !== undefined) fields.push({ label: "Parking Fee", value: config.parkingFee, path: ["parkingFee"] });
+    // Microfiber Mopping Included with SaniClean
+    if (config.microfiberMoppingIncludedWithSaniClean) {
+      if (config.microfiberMoppingIncludedWithSaniClean.pricePerBathroom !== undefined) fields.push({ label: "Microfiber Mopping - Price Per Bathroom", value: config.microfiberMoppingIncludedWithSaniClean.pricePerBathroom, path: ["microfiberMoppingIncludedWithSaniClean", "pricePerBathroom"], unit: "$ per bathroom" });
+      if (config.microfiberMoppingIncludedWithSaniClean.hugeBathroomSqFtUnit !== undefined) fields.push({ label: "Microfiber Mopping - Huge Bathroom Sq-ft Unit", value: config.microfiberMoppingIncludedWithSaniClean.hugeBathroomSqFtUnit, path: ["microfiberMoppingIncludedWithSaniClean", "hugeBathroomSqFtUnit"], unit: "sq ft" });
+      if (config.microfiberMoppingIncludedWithSaniClean.hugeBathroomRate !== undefined) fields.push({ label: "Microfiber Mopping - Huge Bathroom Rate", value: config.microfiberMoppingIncludedWithSaniClean.hugeBathroomRate, path: ["microfiberMoppingIncludedWithSaniClean", "hugeBathroomRate"], unit: "$ per unit" });
+    }
 
-    // FOAMING DRAIN - Complete extraction
-    if (config.standardDrainRate !== undefined) fields.push({ label: "Standard Drain Rate", value: config.standardDrainRate, path: ["standardDrainRate"] });
-    if (config.altBaseCharge !== undefined) fields.push({ label: "Alternate Base Charge", value: config.altBaseCharge, path: ["altBaseCharge"] });
-    if (config.altExtraPerDrain !== undefined) fields.push({ label: "Alternate Extra per Drain", value: config.altExtraPerDrain, path: ["altExtraPerDrain"] });
+    // Trip Charges (Non All-Inclusive Only)
+    if (config.tripChargesNonAllInclusiveOnly) {
+      if (config.tripChargesNonAllInclusiveOnly.standard !== undefined) fields.push({ label: "Trip Charge - Standard (Non All-Inclusive)", value: config.tripChargesNonAllInclusiveOnly.standard, path: ["tripChargesNonAllInclusiveOnly", "standard"], unit: "$" });
+      if (config.tripChargesNonAllInclusiveOnly.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway (Non All-Inclusive)", value: config.tripChargesNonAllInclusiveOnly.beltway, path: ["tripChargesNonAllInclusiveOnly", "beltway"], unit: "$" });
+    }
 
-    // Volume Pricing
-    if (config.volumePricing?.minimumDrains !== undefined) fields.push({ label: "Volume Pricing - Minimum Drains", value: config.volumePricing.minimumDrains, path: ["volumePricing", "minimumDrains"] });
-    if (config.volumePricing?.weekly?.ratePerDrain !== undefined) fields.push({ label: "Volume Pricing - Weekly Rate per Drain", value: config.volumePricing.weekly.ratePerDrain, path: ["volumePricing", "weekly", "ratePerDrain"] });
-    if (config.volumePricing?.bimonthly?.ratePerDrain !== undefined) fields.push({ label: "Volume Pricing - Bimonthly Rate per Drain", value: config.volumePricing.bimonthly.ratePerDrain, path: ["volumePricing", "bimonthly", "ratePerDrain"] });
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End SaniClean
 
-    // Grease Trap
-    if (config.grease?.weeklyRatePerTrap !== undefined) fields.push({ label: "Grease - Weekly Rate per Trap", value: config.grease.weeklyRatePerTrap, path: ["grease", "weeklyRatePerTrap"] });
-    if (config.grease?.installPerTrap !== undefined) fields.push({ label: "Grease - Install per Trap", value: config.grease.installPerTrap, path: ["grease", "installPerTrap"] });
+    // SANIPOD - ACTUAL DATABASE STRUCTURE
+    if (serviceId === "sanipod") {
+    // Core Pricing (Included with SaniClean)
+    if (config.corePricingIncludedWithSaniClean) {
+      const core = config.corePricingIncludedWithSaniClean;
+      if (core.weeklyPricePerUnit !== undefined) fields.push({ label: "Core Pricing - Weekly Price Per Unit", value: core.weeklyPricePerUnit, path: ["corePricingIncludedWithSaniClean", "weeklyPricePerUnit"], unit: "$ per pod" });
+      if (core.installPricePerUnit !== undefined) fields.push({ label: "Core Pricing - Install Price Per Unit", value: core.installPricePerUnit, path: ["corePricingIncludedWithSaniClean", "installPricePerUnit"], unit: "$ per pod" });
+      if (core.includedWeeklyRefills !== undefined) fields.push({ label: "Core Pricing - Included Weekly Refills", value: core.includedWeeklyRefills, path: ["corePricingIncludedWithSaniClean", "includedWeeklyRefills"], unit: "refills" });
+    }
 
-    // Green Drain
-    if (config.green?.weeklyRatePerDrain !== undefined) fields.push({ label: "Green - Weekly Rate per Drain", value: config.green.weeklyRatePerDrain, path: ["green", "weeklyRatePerDrain"] });
-    if (config.green?.installPerDrain !== undefined) fields.push({ label: "Green - Install per Drain", value: config.green.installPerDrain, path: ["green", "installPerDrain"] });
+    // Extra Bag Pricing
+    if (config.extraBagPricing?.pricePerBag !== undefined) fields.push({ label: "Extra Bag - Price Per Bag", value: config.extraBagPricing.pricePerBag, path: ["extraBagPricing", "pricePerBag"], unit: "$ per bag" });
 
-    // Plumbing Add-on
-    if (config.plumbing?.weeklyAddonPerDrain !== undefined) fields.push({ label: "Plumbing - Weekly Addon per Drain", value: config.plumbing.weeklyAddonPerDrain, path: ["plumbing", "weeklyAddonPerDrain"] });
+    // Standalone Pricing (Without SaniClean)
+    if (config.standalonePricingWithoutSaniClean) {
+      const standalone = config.standalonePricingWithoutSaniClean;
+      if (standalone.pricePerUnitPerWeek !== undefined) fields.push({ label: "Standalone - Price Per Unit Per Week (Option A)", value: standalone.pricePerUnitPerWeek, path: ["standalonePricingWithoutSaniClean", "pricePerUnitPerWeek"], unit: "$ per pod" });
+      if (standalone.alternatePricePerUnitPerWeek !== undefined) fields.push({ label: "Standalone - Alternate Price Per Unit Per Week (Option B)", value: standalone.alternatePricePerUnitPerWeek, path: ["standalonePricingWithoutSaniClean", "alternatePricePerUnitPerWeek"], unit: "$ per pod" });
+      if (standalone.weeklyMinimumPrice !== undefined) fields.push({ label: "Standalone - Weekly Minimum Price", value: standalone.weeklyMinimumPrice, path: ["standalonePricingWithoutSaniClean", "weeklyMinimumPrice"], unit: "$" });
+    }
 
-    // Installation Rules
-    if (config.installationRules?.filthyMultiplier !== undefined) fields.push({ label: "Installation - Filthy Multiplier", value: config.installationRules.filthyMultiplier, path: ["installationRules", "filthyMultiplier"] });
-
-    // Trip Charges
-    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"] });
-    if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"] });
+    // Frequency Schedules
+    if (config.frequencySchedules) {
+      if (config.frequencySchedules.weekly?.visitsPerYear !== undefined) fields.push({ label: "Frequency Schedule - Weekly Visits Per Year", value: config.frequencySchedules.weekly.visitsPerYear, path: ["frequencySchedules", "weekly", "visitsPerYear"], unit: "visits/year" });
+      if (config.frequencySchedules.biweekly?.visitsPerYear !== undefined) fields.push({ label: "Frequency Schedule - Biweekly Visits Per Year", value: config.frequencySchedules.biweekly.visitsPerYear, path: ["frequencySchedules", "biweekly", "visitsPerYear"], unit: "visits/year" });
+      if (config.frequencySchedules.monthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency Schedule - Monthly Visits Per Year", value: config.frequencySchedules.monthly.visitsPerYear, path: ["frequencySchedules", "monthly", "visitsPerYear"], unit: "visits/year" });
+    }
 
     // Billing Conversions
-    if (config.billingConversions?.weekly?.monthlyVisits !== undefined) fields.push({ label: "Billing - Weekly Monthly Visits", value: config.billingConversions.weekly.monthlyVisits, path: ["billingConversions", "weekly", "monthlyVisits"] });
-    if (config.billingConversions?.weekly?.firstMonthExtraMonths !== undefined) fields.push({ label: "Billing - First Month Extra", value: config.billingConversions.weekly.firstMonthExtraMonths, path: ["billingConversions", "weekly", "firstMonthExtraMonths"] });
-    if (config.billingConversions?.weekly?.normalMonthFactor !== undefined) fields.push({ label: "Billing - Normal Month Factor", value: config.billingConversions.weekly.normalMonthFactor, path: ["billingConversions", "weekly", "normalMonthFactor"] });
-    if (config.billingConversions?.bimonthly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Bimonthly Multiplier", value: config.billingConversions.bimonthly.monthlyMultiplier, path: ["billingConversions", "bimonthly", "monthlyMultiplier"] });
+    if (config.billingConversions) {
+      if (config.billingConversions.weeksPerMonth !== undefined) fields.push({ label: "Billing Conversions - Weeks Per Month", value: config.billingConversions.weeksPerMonth, path: ["billingConversions", "weeksPerMonth"], unit: "weeks" });
+      if (config.billingConversions.weeksPerYear !== undefined) fields.push({ label: "Billing Conversions - Weeks Per Year", value: config.billingConversions.weeksPerYear, path: ["billingConversions", "weeksPerYear"], unit: "weeks" });
+    }
 
     // Contract Terms
-    if (config.contract?.minMonths !== undefined) fields.push({ label: "Contract - Minimum Months", value: config.contract.minMonths, path: ["contract", "minMonths"] });
-    if (config.contract?.maxMonths !== undefined) fields.push({ label: "Contract - Maximum Months", value: config.contract.maxMonths, path: ["contract", "maxMonths"] });
-    if (config.contract?.defaultMonths !== undefined) fields.push({ label: "Contract - Default Months", value: config.contract.defaultMonths, path: ["contract", "defaultMonths"] });
-
-    // MICROFIBER MOPPING
-    if (config.includedBathroomRate !== undefined) fields.push({ label: "Included Bathroom Rate", value: config.includedBathroomRate, path: ["includedBathroomRate"] });
-    if (config.hugeBathroomPricing?.ratePerSqFt !== undefined) fields.push({ label: "Huge Bathroom - Rate per Sq Ft", value: config.hugeBathroomPricing.ratePerSqFt, path: ["hugeBathroomPricing", "ratePerSqFt"] });
-    if (config.extraAreaPricing?.singleLargeAreaRate !== undefined) fields.push({ label: "Extra Area - Single Large Area Rate", value: config.extraAreaPricing.singleLargeAreaRate, path: ["extraAreaPricing", "singleLargeAreaRate"] });
-    if (config.extraAreaPricing?.extraAreaRatePerUnit !== undefined) fields.push({ label: "Extra Area - Rate per Unit", value: config.extraAreaPricing.extraAreaRatePerUnit, path: ["extraAreaPricing", "extraAreaRatePerUnit"] });
-    if (config.standalonePricing?.standaloneRatePerUnit !== undefined) fields.push({ label: "Standalone - Rate per Unit", value: config.standalonePricing.standaloneRatePerUnit, path: ["standalonePricing", "standaloneRatePerUnit"] });
-    if (config.standalonePricing?.standaloneMinimum !== undefined) fields.push({ label: "Standalone - Minimum", value: config.standalonePricing.standaloneMinimum, path: ["standalonePricing", "standaloneMinimum"] });
-
-    // RPM WINDOWS - Complete extraction
-    if (config.smallWindowRate !== undefined) fields.push({ label: "Small Window Rate", value: config.smallWindowRate, path: ["smallWindowRate"] });
-    if (config.mediumWindowRate !== undefined) fields.push({ label: "Medium Window Rate", value: config.mediumWindowRate, path: ["mediumWindowRate"] });
-    if (config.largeWindowRate !== undefined) fields.push({ label: "Large Window Rate", value: config.largeWindowRate, path: ["largeWindowRate"] });
-    if (config.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.tripCharge, path: ["tripCharge"] });
-
-    // Install Multipliers
-    if (config.installMultiplierFirstTime !== undefined) fields.push({ label: "Install Multiplier - First Time", value: config.installMultiplierFirstTime, path: ["installMultiplierFirstTime"] });
-    if (config.installMultiplierClean !== undefined) fields.push({ label: "Install Multiplier - Clean", value: config.installMultiplierClean, path: ["installMultiplierClean"] });
-
-    // Frequency Multipliers
-    if (config.frequencyMultipliers) {
-      if (config.frequencyMultipliers.weekly !== undefined) fields.push({ label: "Frequency Multiplier - Weekly", value: config.frequencyMultipliers.weekly, path: ["frequencyMultipliers", "weekly"] });
-      if (config.frequencyMultipliers.biweekly !== undefined) fields.push({ label: "Frequency Multiplier - Biweekly", value: config.frequencyMultipliers.biweekly, path: ["frequencyMultipliers", "biweekly"] });
-      if (config.frequencyMultipliers.monthly !== undefined) fields.push({ label: "Frequency Multiplier - Monthly", value: config.frequencyMultipliers.monthly, path: ["frequencyMultipliers", "monthly"] });
-      if (config.frequencyMultipliers.quarterly !== undefined) fields.push({ label: "Frequency Multiplier - Quarterly", value: config.frequencyMultipliers.quarterly, path: ["frequencyMultipliers", "quarterly"] });
-      if (config.frequencyMultipliers.quarterlyFirstTime !== undefined) fields.push({ label: "Frequency Multiplier - Quarterly First Time", value: config.frequencyMultipliers.quarterlyFirstTime, path: ["frequencyMultipliers", "quarterlyFirstTime"] });
-    }
-
-    // Annual Frequencies
-    if (config.annualFrequencies) {
-      if (config.annualFrequencies.weekly !== undefined) fields.push({ label: "Annual Frequency - Weekly", value: config.annualFrequencies.weekly, path: ["annualFrequencies", "weekly"] });
-      if (config.annualFrequencies.biweekly !== undefined) fields.push({ label: "Annual Frequency - Biweekly", value: config.annualFrequencies.biweekly, path: ["annualFrequencies", "biweekly"] });
-      if (config.annualFrequencies.monthly !== undefined) fields.push({ label: "Annual Frequency - Monthly", value: config.annualFrequencies.monthly, path: ["annualFrequencies", "monthly"] });
-      if (config.annualFrequencies.quarterly !== undefined) fields.push({ label: "Annual Frequency - Quarterly", value: config.annualFrequencies.quarterly, path: ["annualFrequencies", "quarterly"] });
-    }
-
-    // Monthly Conversions
-    if (config.monthlyConversions) {
-      if (config.monthlyConversions.weekly !== undefined) fields.push({ label: "Monthly Conversion - Weekly", value: config.monthlyConversions.weekly, path: ["monthlyConversions", "weekly"] });
-      if (config.monthlyConversions.actualWeeksPerMonth !== undefined) fields.push({ label: "Actual Weeks Per Month", value: config.monthlyConversions.actualWeeksPerMonth, path: ["monthlyConversions", "actualWeeksPerMonth"] });
-      if (config.monthlyConversions.actualWeeksPerYear !== undefined) fields.push({ label: "Actual Weeks Per Year", value: config.monthlyConversions.actualWeeksPerYear, path: ["monthlyConversions", "actualWeeksPerYear"] });
-    }
-
-    // Rate Categories
-    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
-    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
-
-    // CARPET CLEANING - Complete extraction
-    if (config.unitSqFt !== undefined) fields.push({ label: "Unit Square Feet", value: config.unitSqFt, path: ["unitSqFt"] });
-    if (config.firstUnitRate !== undefined) fields.push({ label: "First Unit Rate", value: config.firstUnitRate, path: ["firstUnitRate"] });
-    if (config.additionalUnitRate !== undefined) fields.push({ label: "Additional Unit Rate", value: config.additionalUnitRate, path: ["additionalUnitRate"] });
-    if (config.perVisitMinimum !== undefined) fields.push({ label: "Per Visit Minimum", value: config.perVisitMinimum, path: ["perVisitMinimum"] });
-
-    // Install Multipliers for Carpet Cleaning
-    if (config.installMultipliers?.dirty !== undefined) fields.push({ label: "Install Multiplier - Dirty", value: config.installMultipliers.dirty, path: ["installMultipliers", "dirty"] });
-    if (config.installMultipliers?.clean !== undefined) fields.push({ label: "Install Multiplier - Clean", value: config.installMultipliers.clean, path: ["installMultipliers", "clean"] });
-
-    // Frequency Meta for Carpet Cleaning
-    if (config.frequencyMeta) {
-      if (config.frequencyMeta.monthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Monthly Visits/Year", value: config.frequencyMeta.monthly.visitsPerYear, path: ["frequencyMeta", "monthly", "visitsPerYear"] });
-      if (config.frequencyMeta.twicePerMonth?.visitsPerYear !== undefined) fields.push({ label: "Frequency - 2x Per Month Visits/Year", value: config.frequencyMeta.twicePerMonth.visitsPerYear, path: ["frequencyMeta", "twicePerMonth", "visitsPerYear"] });
-      if (config.frequencyMeta.bimonthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Bimonthly Visits/Year", value: config.frequencyMeta.bimonthly.visitsPerYear, path: ["frequencyMeta", "bimonthly", "visitsPerYear"] });
-      if (config.frequencyMeta.quarterly?.visitsPerYear !== undefined) fields.push({ label: "Frequency - Quarterly Visits/Year", value: config.frequencyMeta.quarterly.visitsPerYear, path: ["frequencyMeta", "quarterly", "visitsPerYear"] });
-    }
-
-    // PURE JANITORIAL
-    if (config.baseHourlyRate !== undefined) fields.push({ label: "Base Hourly Rate", value: config.baseHourlyRate, path: ["baseHourlyRate"] });
-    if (config.shortJobHourlyRate !== undefined) fields.push({ label: "Short Job Hourly Rate", value: config.shortJobHourlyRate, path: ["shortJobHourlyRate"] });
-    if (config.minHoursPerVisit !== undefined) fields.push({ label: "Minimum Hours per Visit", value: config.minHoursPerVisit, path: ["minHoursPerVisit"] });
-    if (config.weeksPerMonth !== undefined) fields.push({ label: "Weeks Per Month", value: config.weeksPerMonth, path: ["weeksPerMonth"] });
-    if (config.dirtyInitialMultiplier !== undefined) fields.push({ label: "Dirty Initial Multiplier", value: config.dirtyInitialMultiplier, path: ["dirtyInitialMultiplier"] });
-    if (config.infrequentMultiplier !== undefined) fields.push({ label: "Infrequent Service Multiplier", value: config.infrequentMultiplier, path: ["infrequentMultiplier"] });
-    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"] });
-    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"] });
-    if (config.dustingPlacesPerHour !== undefined) fields.push({ label: "Dusting Places Per Hour", value: config.dustingPlacesPerHour, path: ["dustingPlacesPerHour"] });
-    if (config.dustingPricePerPlace !== undefined) fields.push({ label: "Dusting Price Per Place", value: config.dustingPricePerPlace, path: ["dustingPricePerPlace"] });
-    if (config.vacuumingDefaultHours !== undefined) fields.push({ label: "Vacuuming Default Hours", value: config.vacuumingDefaultHours, path: ["vacuumingDefaultHours"] });
-    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
-    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
-
-    // STRIP & WAX - Complete extraction
-    if (config.variants?.standardFull) {
-      if (config.variants.standardFull.ratePerSqFt !== undefined) fields.push({ label: "Standard Full - Rate per Sq Ft", value: config.variants.standardFull.ratePerSqFt, path: ["variants", "standardFull", "ratePerSqFt"] });
-      if (config.variants.standardFull.minCharge !== undefined) fields.push({ label: "Standard Full - Minimum Charge", value: config.variants.standardFull.minCharge, path: ["variants", "standardFull", "minCharge"] });
-    }
-    if (config.variants?.noSealant) {
-      if (config.variants.noSealant.ratePerSqFt !== undefined) fields.push({ label: "No Sealant - Rate per Sq Ft", value: config.variants.noSealant.ratePerSqFt, path: ["variants", "noSealant", "ratePerSqFt"] });
-      if (config.variants.noSealant.minCharge !== undefined) fields.push({ label: "No Sealant - Minimum Charge", value: config.variants.noSealant.minCharge, path: ["variants", "noSealant", "minCharge"] });
-    }
-    if (config.variants?.wellMaintained) {
-      if (config.variants.wellMaintained.ratePerSqFt !== undefined) fields.push({ label: "Well Maintained - Rate per Sq Ft", value: config.variants.wellMaintained.ratePerSqFt, path: ["variants", "wellMaintained", "ratePerSqFt"] });
-      if (config.variants.wellMaintained.minCharge !== undefined) fields.push({ label: "Well Maintained - Minimum Charge", value: config.variants.wellMaintained.minCharge, path: ["variants", "wellMaintained", "minCharge"] });
-    }
-
-    // Strip & Wax Contract Terms
-    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"] });
-    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"] });
-
-    // Strip & Wax Billing Conversions
-    if (config.weeksPerMonth !== undefined) fields.push({ label: "Weeks Per Month", value: config.weeksPerMonth, path: ["weeksPerMonth"] });
-
-    // Strip & Wax Rate Tiers
-    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"] });
-    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"] });
-
-    // REFRESH POWER SCRUB - Updated to match new backend structure
-    if (config.coreRates?.defaultHourlyRate !== undefined) fields.push({ label: "Default Hourly Rate", value: config.coreRates.defaultHourlyRate, path: ["coreRates", "defaultHourlyRate"] });
-    if (config.coreRates?.perWorkerRate !== undefined) fields.push({ label: "Per Worker Rate", value: config.coreRates.perWorkerRate, path: ["coreRates", "perWorkerRate"] });
-    if (config.coreRates?.perHourRate !== undefined) fields.push({ label: "Per Hour Rate", value: config.coreRates.perHourRate, path: ["coreRates", "perHourRate"] });
-    if (config.coreRates?.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.coreRates.tripCharge, path: ["coreRates", "tripCharge"] });
-    if (config.coreRates?.minimumVisit !== undefined) fields.push({ label: "Minimum Visit", value: config.coreRates.minimumVisit, path: ["coreRates", "minimumVisit"] });
-    if (config.areaSpecificPricing?.kitchen?.smallMedium !== undefined) fields.push({ label: "Kitchen - Small/Medium", value: config.areaSpecificPricing.kitchen.smallMedium, path: ["areaSpecificPricing", "kitchen", "smallMedium"] });
-    if (config.areaSpecificPricing?.kitchen?.large !== undefined) fields.push({ label: "Kitchen - Large", value: config.areaSpecificPricing.kitchen.large, path: ["areaSpecificPricing", "kitchen", "large"] });
-    if (config.areaSpecificPricing?.frontOfHouse !== undefined) fields.push({ label: "Front of House Rate", value: config.areaSpecificPricing.frontOfHouse, path: ["areaSpecificPricing", "frontOfHouse"] });
-    if (config.areaSpecificPricing?.patio?.standalone !== undefined) fields.push({ label: "Patio - Standalone", value: config.areaSpecificPricing.patio.standalone, path: ["areaSpecificPricing", "patio", "standalone"] });
-    if (config.areaSpecificPricing?.patio?.upsell !== undefined) fields.push({ label: "Patio - Upsell", value: config.areaSpecificPricing.patio.upsell, path: ["areaSpecificPricing", "patio", "upsell"] });
-    if (config.squareFootagePricing?.fixedFee !== undefined) fields.push({ label: "Square Footage - Fixed Fee", value: config.squareFootagePricing.fixedFee, path: ["squareFootagePricing", "fixedFee"] });
-    if (config.squareFootagePricing?.insideRate !== undefined) fields.push({ label: "Square Footage - Inside Rate", value: config.squareFootagePricing.insideRate, path: ["squareFootagePricing", "insideRate"] });
-    if (config.squareFootagePricing?.outsideRate !== undefined) fields.push({ label: "Square Footage - Outside Rate", value: config.squareFootagePricing.outsideRate, path: ["squareFootagePricing", "outsideRate"] });
-
-    // ELECTROSTATIC SPRAY - Complete extraction
-    if (config.defaultRatePerRoom !== undefined) fields.push({ label: "Default Rate Per Room", value: config.defaultRatePerRoom, path: ["defaultRatePerRoom"], unit: "$ per room" });
-    if (config.defaultRatePerSqFt !== undefined) fields.push({ label: "Default Rate Per Sq Ft", value: config.defaultRatePerSqFt, path: ["defaultRatePerSqFt"], unit: "$ per sq ft" });
-    if (config.defaultTripCharge !== undefined) fields.push({ label: "Default Trip Charge", value: config.defaultTripCharge, path: ["defaultTripCharge"], unit: "$" });
-    if (config.ratePerRoom !== undefined) fields.push({ label: "Rate Per Room", value: config.ratePerRoom, path: ["ratePerRoom"], unit: "$ per room" });
-    if (config.ratePerThousandSqFt !== undefined) fields.push({ label: "Rate Per 1000 Sq Ft", value: config.ratePerThousandSqFt, path: ["ratePerThousandSqFt"], unit: "$ per 1000 sq ft" });
-    if (config.sqFtUnit !== undefined) fields.push({ label: "Sq Ft Unit", value: config.sqFtUnit, path: ["sqFtUnit"], unit: "sq ft" });
-
-    // Electrostatic Spray Trip Charges
-    if (config.tripCharges?.insideBeltway !== undefined) fields.push({ label: "Trip Charge - Inside Beltway", value: config.tripCharges.insideBeltway, path: ["tripCharges", "insideBeltway"], unit: "$" });
-    if (config.tripCharges?.outsideBeltway !== undefined) fields.push({ label: "Trip Charge - Outside Beltway", value: config.tripCharges.outsideBeltway, path: ["tripCharges", "outsideBeltway"], unit: "$" });
-    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
-
-    // Electrostatic Spray Billing Conversions
-    if (config.billingConversions?.weekly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Weekly Monthly Multiplier", value: config.billingConversions.weekly.monthlyMultiplier, path: ["billingConversions", "weekly", "monthlyMultiplier"] });
-    if (config.billingConversions?.weekly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Weekly Annual Multiplier", value: config.billingConversions.weekly.annualMultiplier, path: ["billingConversions", "weekly", "annualMultiplier"] });
-    if (config.billingConversions?.biweekly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Biweekly Monthly Multiplier", value: config.billingConversions.biweekly.monthlyMultiplier, path: ["billingConversions", "biweekly", "monthlyMultiplier"] });
-    if (config.billingConversions?.biweekly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Biweekly Annual Multiplier", value: config.billingConversions.biweekly.annualMultiplier, path: ["billingConversions", "biweekly", "annualMultiplier"] });
-    if (config.billingConversions?.monthly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Monthly Multiplier", value: config.billingConversions.monthly.monthlyMultiplier, path: ["billingConversions", "monthly", "monthlyMultiplier"] });
-    if (config.billingConversions?.monthly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Monthly Annual Multiplier", value: config.billingConversions.monthly.annualMultiplier, path: ["billingConversions", "monthly", "annualMultiplier"] });
-    if (config.billingConversions?.bimonthly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Bimonthly Monthly Multiplier", value: config.billingConversions.bimonthly.monthlyMultiplier, path: ["billingConversions", "bimonthly", "monthlyMultiplier"] });
-    if (config.billingConversions?.bimonthly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Bimonthly Annual Multiplier", value: config.billingConversions.bimonthly.annualMultiplier, path: ["billingConversions", "bimonthly", "annualMultiplier"] });
-    if (config.billingConversions?.quarterly?.monthlyMultiplier !== undefined) fields.push({ label: "Billing - Quarterly Monthly Multiplier", value: config.billingConversions.quarterly.monthlyMultiplier, path: ["billingConversions", "quarterly", "monthlyMultiplier"] });
-    if (config.billingConversions?.quarterly?.annualMultiplier !== undefined) fields.push({ label: "Billing - Quarterly Annual Multiplier", value: config.billingConversions.quarterly.annualMultiplier, path: ["billingConversions", "quarterly", "annualMultiplier"] });
-    if (config.billingConversions?.actualWeeksPerMonth !== undefined) fields.push({ label: "Billing - Actual Weeks Per Month", value: config.billingConversions.actualWeeksPerMonth, path: ["billingConversions", "actualWeeksPerMonth"] });
-
-    // Electrostatic Spray Contract Terms
     if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"], unit: "months" });
     if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"], unit: "months" });
+
+    // Rate Tiers
+    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"], unit: "×" });
+    if (config.rateCategories?.redRate?.commissionRate !== undefined) {
+      const commValue = typeof config.rateCategories.redRate.commissionRate === 'string'
+        ? parseFloat(config.rateCategories.redRate.commissionRate.replace('%', ''))
+        : config.rateCategories.redRate.commissionRate;
+      fields.push({ label: "Red Rate Commission", value: commValue, path: ["rateCategories", "redRate", "commissionRate"], unit: "%" });
+    }
+    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"], unit: "×" });
+    if (config.rateCategories?.greenRate?.commissionRate !== undefined) {
+      const commValue = typeof config.rateCategories.greenRate.commissionRate === 'string'
+        ? parseFloat(config.rateCategories.greenRate.commissionRate.replace('%', ''))
+        : config.rateCategories.greenRate.commissionRate;
+      fields.push({ label: "Green Rate Commission", value: commValue, path: ["rateCategories", "greenRate", "commissionRate"], unit: "%" });
+    }
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End SaniPod
+
+    // SANISCRUB - Complete extraction (ACTUAL STRUCTURE FROM DATABASE)
+    if (serviceId === "saniscrub") {
+    // Monthly Pricing
+    if (config.monthlyPricing) {
+      if (config.monthlyPricing.pricePerFixture !== undefined) fields.push({ label: "Monthly - Price Per Fixture", value: config.monthlyPricing.pricePerFixture, path: ["monthlyPricing", "pricePerFixture"], unit: "$ per fixture" });
+      if (config.monthlyPricing.minimumPrice !== undefined) fields.push({ label: "Monthly - Minimum Price", value: config.monthlyPricing.minimumPrice, path: ["monthlyPricing", "minimumPrice"], unit: "$" });
+    }
+
+    // Bimonthly Pricing
+    if (config.bimonthlyPricing) {
+      if (config.bimonthlyPricing.pricePerFixture !== undefined) fields.push({ label: "Bimonthly - Price Per Fixture", value: config.bimonthlyPricing.pricePerFixture, path: ["bimonthlyPricing", "pricePerFixture"], unit: "$ per fixture" });
+      if (config.bimonthlyPricing.minimumPrice !== undefined) fields.push({ label: "Bimonthly - Minimum Price", value: config.bimonthlyPricing.minimumPrice, path: ["bimonthlyPricing", "minimumPrice"], unit: "$" });
+    }
+
+    // Quarterly Pricing
+    if (config.quarterlyPricing) {
+      if (config.quarterlyPricing.pricePerFixture !== undefined) fields.push({ label: "Quarterly - Price Per Fixture", value: config.quarterlyPricing.pricePerFixture, path: ["quarterlyPricing", "pricePerFixture"], unit: "$ per fixture" });
+      if (config.quarterlyPricing.minimumPrice !== undefined) fields.push({ label: "Quarterly - Minimum Price", value: config.quarterlyPricing.minimumPrice, path: ["quarterlyPricing", "minimumPrice"], unit: "$" });
+    }
+
+    // Twice Per Month Pricing
+    if (config.twicePerMonthPricing?.discountFromMonthlyRate !== undefined) fields.push({ label: "Twice Per Month - Discount from Monthly Rate", value: config.twicePerMonthPricing.discountFromMonthlyRate, path: ["twicePerMonthPricing", "discountFromMonthlyRate"], unit: "$" });
+
+    // Non-Bathroom Pricing
+    if (config.nonBathroomSqFtPricingRule) {
+      if (config.nonBathroomSqFtPricingRule.sqFtBlockUnit !== undefined) fields.push({ label: "Non-Bathroom - Sq Ft Block Unit", value: config.nonBathroomSqFtPricingRule.sqFtBlockUnit, path: ["nonBathroomSqFtPricingRule", "sqFtBlockUnit"], unit: "sq ft" });
+      if (config.nonBathroomSqFtPricingRule.priceFirstBlock !== undefined) fields.push({ label: "Non-Bathroom - Price First Block", value: config.nonBathroomSqFtPricingRule.priceFirstBlock, path: ["nonBathroomSqFtPricingRule", "priceFirstBlock"], unit: "$" });
+      if (config.nonBathroomSqFtPricingRule.priceAdditionalBlock !== undefined) fields.push({ label: "Non-Bathroom - Price Additional Block", value: config.nonBathroomSqFtPricingRule.priceAdditionalBlock, path: ["nonBathroomSqFtPricingRule", "priceAdditionalBlock"], unit: "$" });
+    }
+
+    // Installation Pricing
+    if (config.installationPricing?.installMultiplierDirtyOrFirstTime !== undefined) fields.push({ label: "Installation - Multiplier (Dirty or First Time)", value: config.installationPricing.installMultiplierDirtyOrFirstTime, path: ["installationPricing", "installMultiplierDirtyOrFirstTime"], unit: "×" });
+
+    // Trip Charges & Fees
+    if (config.tripCharges) {
+      if (config.tripCharges.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
+      if (config.tripCharges.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"], unit: "$" });
+    }
+    if (config.parkingFeeAddOn !== undefined) fields.push({ label: "Parking Fee Add-On", value: config.parkingFeeAddOn, path: ["parkingFeeAddOn"], unit: "$" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End SaniScrub
+
+    // FOAMING DRAIN - Complete extraction (NEW STRUCTURE)
+    if (serviceId === "foamingDrain") {
+    if (config.standardPricing) {
+      if (config.standardPricing.standardDrainRate !== undefined) fields.push({ label: "Standard Drain Rate", value: config.standardPricing.standardDrainRate, path: ["standardPricing", "standardDrainRate"], unit: "$ per drain" });
+      if (config.standardPricing.alternateBaseCharge !== undefined) fields.push({ label: "Alternate Base Charge", value: config.standardPricing.alternateBaseCharge, path: ["standardPricing", "alternateBaseCharge"], unit: "$" });
+      if (config.standardPricing.alternateExtraPerDrain !== undefined) fields.push({ label: "Alternate Extra per Drain", value: config.standardPricing.alternateExtraPerDrain, path: ["standardPricing", "alternateExtraPerDrain"], unit: "$ per drain" });
+    }
+    if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
+
+    // Volume Pricing (NEW STRUCTURE)
+    if (config.volumePricing?.minimumDrains !== undefined) fields.push({ label: "Volume Pricing - Minimum Drains", value: config.volumePricing.minimumDrains, path: ["volumePricing", "minimumDrains"], unit: "drains" });
+    if (config.volumePricing?.weeklyRatePerDrain !== undefined) fields.push({ label: "Volume Pricing - Weekly Rate per Drain", value: config.volumePricing.weeklyRatePerDrain, path: ["volumePricing", "weeklyRatePerDrain"], unit: "$ per drain" });
+    if (config.volumePricing?.bimonthlyRatePerDrain !== undefined) fields.push({ label: "Volume Pricing - Bimonthly Rate per Drain", value: config.volumePricing.bimonthlyRatePerDrain, path: ["volumePricing", "bimonthlyRatePerDrain"], unit: "$ per drain" });
+
+    // Grease Trap (NEW STRUCTURE)
+    if (config.greaseTrapPricing) {
+      if (config.greaseTrapPricing.weeklyRatePerTrap !== undefined) fields.push({ label: "Grease Trap - Weekly Rate per Trap", value: config.greaseTrapPricing.weeklyRatePerTrap, path: ["greaseTrapPricing", "weeklyRatePerTrap"], unit: "$ per trap" });
+      if (config.greaseTrapPricing.installPerTrap !== undefined) fields.push({ label: "Grease Trap - Install per Trap", value: config.greaseTrapPricing.installPerTrap, path: ["greaseTrapPricing", "installPerTrap"], unit: "$" });
+    }
+
+    // Green Drain (NEW STRUCTURE)
+    if (config.greenDrainPricing) {
+      if (config.greenDrainPricing.installPerDrain !== undefined) fields.push({ label: "Green Drain - Install per Drain", value: config.greenDrainPricing.installPerDrain, path: ["greenDrainPricing", "installPerDrain"], unit: "$" });
+      if (config.greenDrainPricing.weeklyRatePerDrain !== undefined) fields.push({ label: "Green Drain - Weekly Rate per Drain", value: config.greenDrainPricing.weeklyRatePerDrain, path: ["greenDrainPricing", "weeklyRatePerDrain"], unit: "$ per drain" });
+    }
+
+    // Add-ons (NEW STRUCTURE)
+    if (config.addOns?.plumbingWeeklyAddonPerDrain !== undefined) fields.push({ label: "Plumbing - Weekly Addon per Drain", value: config.addOns.plumbingWeeklyAddonPerDrain, path: ["addOns", "plumbingWeeklyAddonPerDrain"], unit: "$ per drain" });
+
+    // Installation Multipliers (NEW STRUCTURE)
+    if (config.installationMultipliers?.filthyMultiplier !== undefined) fields.push({ label: "Installation - Filthy Multiplier", value: config.installationMultipliers.filthyMultiplier, path: ["installationMultipliers", "filthyMultiplier"], unit: "×" });
+
+    // Contract Terms (NEW STRUCTURE)
+    if (config.contract?.minMonths !== undefined) fields.push({ label: "Contract - Minimum Months", value: config.contract.minMonths, path: ["contract", "minMonths"], unit: "months" });
+    if (config.contract?.maxMonths !== undefined) fields.push({ label: "Contract - Maximum Months", value: config.contract.maxMonths, path: ["contract", "maxMonths"], unit: "months" });
+    if (config.contract?.defaultMonths !== undefined) fields.push({ label: "Contract - Default Months", value: config.contract.defaultMonths, path: ["contract", "defaultMonths"], unit: "months" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+    }
+    } // End Foaming Drain
+
+    // MICROFIBER MOPPING - Complete extraction (NEW STRUCTURE)
+    if (serviceId === "microfiberMopping") {
+    // Bathroom Mopping Pricing
+    if (config.bathroomMoppingPricing?.flatPricePerBathroom !== undefined) fields.push({ label: "Flat Price Per Bathroom", value: config.bathroomMoppingPricing.flatPricePerBathroom, path: ["bathroomMoppingPricing", "flatPricePerBathroom"], unit: "$ per bathroom" });
+    if (config.bathroomMoppingPricing?.hugeBathroomSqFtUnit !== undefined) fields.push({ label: "Huge Bathroom - Sq-ft Unit", value: config.bathroomMoppingPricing.hugeBathroomSqFtUnit, path: ["bathroomMoppingPricing", "hugeBathroomSqFtUnit"], unit: "sq ft" });
+    if (config.bathroomMoppingPricing?.hugeBathroomRate !== undefined) fields.push({ label: "Huge Bathroom - Rate", value: config.bathroomMoppingPricing.hugeBathroomRate, path: ["bathroomMoppingPricing", "hugeBathroomRate"], unit: "$ per unit" });
+
+    // Non-Bathroom Addon Areas
+    if (config.nonBathroomAddonAreas?.flatPriceSingleLargeArea !== undefined) fields.push({ label: "Non-Bathroom - Flat Price Single Large Area", value: config.nonBathroomAddonAreas.flatPriceSingleLargeArea, path: ["nonBathroomAddonAreas", "flatPriceSingleLargeArea"], unit: "$" });
+    if (config.nonBathroomAddonAreas?.sqFtUnit !== undefined) fields.push({ label: "Non-Bathroom - Sq-ft Unit", value: config.nonBathroomAddonAreas.sqFtUnit, path: ["nonBathroomAddonAreas", "sqFtUnit"], unit: "sq ft" });
+    if (config.nonBathroomAddonAreas?.ratePerSqFtUnit !== undefined) fields.push({ label: "Non-Bathroom - Rate Per Sq-ft Unit", value: config.nonBathroomAddonAreas.ratePerSqFtUnit, path: ["nonBathroomAddonAreas", "ratePerSqFtUnit"], unit: "$ per unit" });
+
+    // Standalone Mopping Pricing
+    if (config.standaloneMoppingPricing?.sqFtUnit !== undefined) fields.push({ label: "Standalone - Sq-ft Unit", value: config.standaloneMoppingPricing.sqFtUnit, path: ["standaloneMoppingPricing", "sqFtUnit"], unit: "sq ft" });
+    if (config.standaloneMoppingPricing?.ratePerSqFtUnit !== undefined) fields.push({ label: "Standalone - Rate Per Sq-ft Unit", value: config.standaloneMoppingPricing.ratePerSqFtUnit, path: ["standaloneMoppingPricing", "ratePerSqFtUnit"], unit: "$ per unit" });
+    if (config.standaloneMoppingPricing?.minimumPrice !== undefined) fields.push({ label: "Standalone - Minimum Price", value: config.standaloneMoppingPricing.minimumPrice, path: ["standaloneMoppingPricing", "minimumPrice"], unit: "$" });
+
+    // Trip Charges & Minimum
+    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
+    if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"], unit: "$" });
+    if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End Microfiber Mopping
+
+    // RPM WINDOWS - Complete extraction (NEW STRUCTURE - 2025)
+    if (serviceId === "rpmWindows") {
+    // Window Pricing (Both Sides Included)
+    if (config.windowPricingBothSidesIncluded?.smallWindowPrice !== undefined) fields.push({ label: "Small Window Price", value: config.windowPricingBothSidesIncluded.smallWindowPrice, path: ["windowPricingBothSidesIncluded", "smallWindowPrice"], unit: "$ per window" });
+    if (config.windowPricingBothSidesIncluded?.mediumWindowPrice !== undefined) fields.push({ label: "Medium Window Price", value: config.windowPricingBothSidesIncluded.mediumWindowPrice, path: ["windowPricingBothSidesIncluded", "mediumWindowPrice"], unit: "$ per window" });
+    if (config.windowPricingBothSidesIncluded?.largeWindowPrice !== undefined) fields.push({ label: "Large Window Price", value: config.windowPricingBothSidesIncluded.largeWindowPrice, path: ["windowPricingBothSidesIncluded", "largeWindowPrice"], unit: "$ per window" });
+
+    // Install Pricing
+    if (config.installPricing?.installationMultiplier !== undefined) fields.push({ label: "Installation Multiplier", value: config.installPricing.installationMultiplier, path: ["installPricing", "installationMultiplier"], unit: "×" });
+
+    // Minimum Charge
+    if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
+
+    // Trip Charges
+    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
+    if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"], unit: "$" });
+
+    // Frequency Price Multipliers
+    if (config.frequencyPriceMultipliers?.biweeklyPriceMultiplier !== undefined) fields.push({ label: "Biweekly Price Multiplier", value: config.frequencyPriceMultipliers.biweeklyPriceMultiplier, path: ["frequencyPriceMultipliers", "biweeklyPriceMultiplier"], unit: "×" });
+    if (config.frequencyPriceMultipliers?.monthlyPriceMultiplier !== undefined) fields.push({ label: "Monthly Price Multiplier", value: config.frequencyPriceMultipliers.monthlyPriceMultiplier, path: ["frequencyPriceMultipliers", "monthlyPriceMultiplier"], unit: "×" });
+    if (config.frequencyPriceMultipliers?.quarterlyPriceMultiplierAfterFirstTime !== undefined) fields.push({ label: "Quarterly Price Multiplier (After First Time)", value: config.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime, path: ["frequencyPriceMultipliers", "quarterlyPriceMultiplierAfterFirstTime"], unit: "×" });
+    if (config.frequencyPriceMultipliers?.quarterlyFirstTimeMultiplier !== undefined) fields.push({ label: "Quarterly First Time Multiplier", value: config.frequencyPriceMultipliers.quarterlyFirstTimeMultiplier, path: ["frequencyPriceMultipliers", "quarterlyFirstTimeMultiplier"], unit: "×" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+
+    // Contract Terms
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"], unit: "months" });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"], unit: "months" });
+    } // End RPM Windows
+
+    // CARPET CLEANING - Complete extraction (NEW STRUCTURE)
+    if (serviceId === "carpetCleaning") {
+    if (config.baseSqFtUnit !== undefined) fields.push({ label: "Base Sq-ft Unit", value: config.baseSqFtUnit, path: ["baseSqFtUnit"], unit: "sq ft" });
+    if (config.basePrice !== undefined) fields.push({ label: "Base Price", value: config.basePrice, path: ["basePrice"], unit: "$" });
+    if (config.additionalSqFtUnit !== undefined) fields.push({ label: "Additional Sq-ft Unit", value: config.additionalSqFtUnit, path: ["additionalSqFtUnit"], unit: "sq ft" });
+    if (config.additionalUnitPrice !== undefined) fields.push({ label: "Additional Unit Price", value: config.additionalUnitPrice, path: ["additionalUnitPrice"], unit: "$" });
+    if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
+
+    // Install Multipliers for Carpet Cleaning (NEW STRUCTURE)
+    if (config.installationMultipliers?.dirtyInstallMultiplier !== undefined) fields.push({ label: "Dirty Install Multiplier", value: config.installationMultipliers.dirtyInstallMultiplier, path: ["installationMultipliers", "dirtyInstallMultiplier"], unit: "×" });
+    if (config.installationMultipliers?.cleanInstallMultiplier !== undefined) fields.push({ label: "Clean Install Multiplier", value: config.installationMultipliers.cleanInstallMultiplier, path: ["installationMultipliers", "cleanInstallMultiplier"], unit: "×" });
+
+    // Frequency Metadata for Carpet Cleaning (NEW STRUCTURE)
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+
+    // Contract Terms for Carpet Cleaning
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"], unit: "months" });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"], unit: "months" });
+    } // End Carpet Cleaning
+
+    // PURE JANITORIAL - Complete extraction (NEW STRUCTURE - ACTUAL DATABASE)
+    if (serviceId === "pureJanitorial") {
+    // Standard Hourly Pricing
+    if (config.standardHourlyPricing?.standardHourlyRate !== undefined) fields.push({ label: "Standard Hourly Rate", value: config.standardHourlyPricing.standardHourlyRate, path: ["standardHourlyPricing", "standardHourlyRate"], unit: "$ per hour" });
+    if (config.standardHourlyPricing?.minimumHoursPerTrip !== undefined) fields.push({ label: "Minimum Hours Per Trip", value: config.standardHourlyPricing.minimumHoursPerTrip, path: ["standardHourlyPricing", "minimumHoursPerTrip"], unit: "hours" });
+
+    // Short Job Hourly Pricing
+    if (config.shortJobHourlyPricing?.shortJobHourlyRate !== undefined) fields.push({ label: "Short Job Hourly Rate", value: config.shortJobHourlyPricing.shortJobHourlyRate, path: ["shortJobHourlyPricing", "shortJobHourlyRate"], unit: "$ per hour" });
+
+    // Dusting
+    if (config.dusting?.itemsPerHour !== undefined) fields.push({ label: "Dusting - Items Per Hour", value: config.dusting.itemsPerHour, path: ["dusting", "itemsPerHour"], unit: "items/hour" });
+    if (config.dusting?.pricePerItem !== undefined) fields.push({ label: "Dusting - Price Per Item", value: config.dusting.pricePerItem, path: ["dusting", "pricePerItem"], unit: "$ per item" });
+    if (config.dusting?.dirtyFirstTimeMultiplier !== undefined) fields.push({ label: "Dusting - Dirty First Time Multiplier", value: config.dusting.dirtyFirstTimeMultiplier, path: ["dusting", "dirtyFirstTimeMultiplier"], unit: "×" });
+    if (config.dusting?.infrequentServiceMultiplier4PerYear !== undefined) fields.push({ label: "Dusting - Infrequent Service Multiplier (4x/year)", value: config.dusting.infrequentServiceMultiplier4PerYear, path: ["dusting", "infrequentServiceMultiplier4PerYear"], unit: "×" });
+
+    // Vacuuming
+    if (config.vacuuming?.estimatedTimeHoursPerJob !== undefined) fields.push({ label: "Vacuuming - Estimated Time Hours Per Job", value: config.vacuuming.estimatedTimeHoursPerJob, path: ["vacuuming", "estimatedTimeHoursPerJob"], unit: "hours" });
+    if (config.vacuuming?.largeJobMinimumTimeHours !== undefined) fields.push({ label: "Vacuuming - Large Job Minimum Time Hours", value: config.vacuuming.largeJobMinimumTimeHours, path: ["vacuuming", "largeJobMinimumTimeHours"], unit: "hours" });
+
+    // Smooth Breakdown Pricing Table
+    if (config.smoothBreakdownPricingTable && Array.isArray(config.smoothBreakdownPricingTable)) {
+      config.smoothBreakdownPricingTable.forEach((row: any, index: number) => {
+        const label = row.description || `Pricing Tier ${index + 1}`;
+        const value = row.price || row.ratePerHour || 0;
+        const unit = row.upToMinutes !== undefined ? `up to ${row.upToMinutes} min` : (row.upToHours !== undefined ? `up to ${row.upToHours} hrs` : "$");
+        fields.push({ label, value, path: ["smoothBreakdownPricingTable", index.toString(), row.price !== undefined ? "price" : "ratePerHour"], unit });
+      });
+    }
+
+    // Minimum Charge & Trip Charges
+    if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
+    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
+    if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"], unit: "$" });
+
+    // Contract Terms
+    if (config.contract?.minMonths !== undefined) fields.push({ label: "Contract - Minimum Months", value: config.contract.minMonths, path: ["contract", "minMonths"], unit: "months" });
+    if (config.contract?.maxMonths !== undefined) fields.push({ label: "Contract - Maximum Months", value: config.contract.maxMonths, path: ["contract", "maxMonths"], unit: "months" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End Pure Janitorial
+
+    // STRIP & WAX - Complete extraction (NEW STRUCTURE)
+    if (serviceId === "stripWax") {
+    // Variants
+    if (config.variants?.standardFull) {
+      if (config.variants.standardFull.ratePerSqFt !== undefined) fields.push({ label: "Standard Full - Rate per Sq Ft", value: config.variants.standardFull.ratePerSqFt, path: ["variants", "standardFull", "ratePerSqFt"], unit: "$ per sq ft" });
+      if (config.variants.standardFull.minCharge !== undefined) fields.push({ label: "Standard Full - Minimum Charge", value: config.variants.standardFull.minCharge, path: ["variants", "standardFull", "minCharge"], unit: "$" });
+    }
+    if (config.variants?.noSealant) {
+      if (config.variants.noSealant.ratePerSqFt !== undefined) fields.push({ label: "No Sealant - Rate per Sq Ft", value: config.variants.noSealant.ratePerSqFt, path: ["variants", "noSealant", "ratePerSqFt"], unit: "$ per sq ft" });
+      if (config.variants.noSealant.minCharge !== undefined) fields.push({ label: "No Sealant - Minimum Charge", value: config.variants.noSealant.minCharge, path: ["variants", "noSealant", "minCharge"], unit: "$" });
+    }
+    if (config.variants?.wellMaintained) {
+      if (config.variants.wellMaintained.ratePerSqFt !== undefined) fields.push({ label: "Well Maintained - Rate per Sq Ft", value: config.variants.wellMaintained.ratePerSqFt, path: ["variants", "wellMaintained", "ratePerSqFt"], unit: "$ per sq ft" });
+      if (config.variants.wellMaintained.minCharge !== undefined) fields.push({ label: "Well Maintained - Minimum Charge", value: config.variants.wellMaintained.minCharge, path: ["variants", "wellMaintained", "minCharge"], unit: "$" });
+    }
+
+    // Contract Terms
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"], unit: "months" });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"], unit: "months" });
+
+    // Billing Conversions
+    if (config.weeksPerMonth !== undefined) fields.push({ label: "Weeks Per Month", value: config.weeksPerMonth, path: ["weeksPerMonth"], unit: "weeks" });
+
+    // Rate Tiers
+    if (config.rateCategories?.redRate?.multiplier !== undefined) fields.push({ label: "Red Rate Multiplier", value: config.rateCategories.redRate.multiplier, path: ["rateCategories", "redRate", "multiplier"], unit: "×" });
+    if (config.rateCategories?.redRate?.commissionRate !== undefined) {
+      const commValue = typeof config.rateCategories.redRate.commissionRate === 'string'
+        ? parseFloat(config.rateCategories.redRate.commissionRate.replace('%', ''))
+        : config.rateCategories.redRate.commissionRate;
+      fields.push({ label: "Red Rate Commission", value: commValue, path: ["rateCategories", "redRate", "commissionRate"], unit: "%" });
+    }
+    if (config.rateCategories?.greenRate?.multiplier !== undefined) fields.push({ label: "Green Rate Multiplier", value: config.rateCategories.greenRate.multiplier, path: ["rateCategories", "greenRate", "multiplier"], unit: "×" });
+    if (config.rateCategories?.greenRate?.commissionRate !== undefined) {
+      const commValue = typeof config.rateCategories.greenRate.commissionRate === 'string'
+        ? parseFloat(config.rateCategories.greenRate.commissionRate.replace('%', ''))
+        : config.rateCategories.greenRate.commissionRate;
+      fields.push({ label: "Green Rate Commission", value: commValue, path: ["rateCategories", "greenRate", "commissionRate"], unit: "%" });
+    }
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End Strip & Wax
+
+    // REFRESH POWER SCRUB - Complete extraction (NEW STRUCTURE)
+    if (serviceId === "refreshPowerScrub") {
+    // Core Rates
+    if (config.coreRates?.defaultHourlyRate !== undefined) fields.push({ label: "Default Hourly Rate", value: config.coreRates.defaultHourlyRate, path: ["coreRates", "defaultHourlyRate"], unit: "$ per hour per worker" });
+    if (config.coreRates?.perWorkerRate !== undefined) fields.push({ label: "Per Worker Rate", value: config.coreRates.perWorkerRate, path: ["coreRates", "perWorkerRate"], unit: "$ per worker" });
+    if (config.coreRates?.perHourRate !== undefined) fields.push({ label: "Per Hour Rate", value: config.coreRates.perHourRate, path: ["coreRates", "perHourRate"], unit: "$ per hour" });
+    if (config.coreRates?.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.coreRates.tripCharge, path: ["coreRates", "tripCharge"], unit: "$" });
+    if (config.coreRates?.minimumVisit !== undefined) fields.push({ label: "Minimum Visit", value: config.coreRates.minimumVisit, path: ["coreRates", "minimumVisit"], unit: "$" });
+
+    // Area-Specific Pricing
+    if (config.areaSpecificPricing?.kitchen?.smallMedium !== undefined) fields.push({ label: "Kitchen - Small/Medium", value: config.areaSpecificPricing.kitchen.smallMedium, path: ["areaSpecificPricing", "kitchen", "smallMedium"], unit: "$" });
+    if (config.areaSpecificPricing?.kitchen?.large !== undefined) fields.push({ label: "Kitchen - Large", value: config.areaSpecificPricing.kitchen.large, path: ["areaSpecificPricing", "kitchen", "large"], unit: "$" });
+    if (config.areaSpecificPricing?.frontOfHouse !== undefined) fields.push({ label: "Front of House Rate", value: config.areaSpecificPricing.frontOfHouse, path: ["areaSpecificPricing", "frontOfHouse"], unit: "$" });
+    if (config.areaSpecificPricing?.patio?.standalone !== undefined) fields.push({ label: "Patio - Standalone", value: config.areaSpecificPricing.patio.standalone, path: ["areaSpecificPricing", "patio", "standalone"], unit: "$" });
+    if (config.areaSpecificPricing?.patio?.upsell !== undefined) fields.push({ label: "Patio - Upsell", value: config.areaSpecificPricing.patio.upsell, path: ["areaSpecificPricing", "patio", "upsell"], unit: "$" });
+
+    // Square Footage Pricing
+    if (config.squareFootagePricing?.fixedFee !== undefined) fields.push({ label: "Square Footage - Fixed Fee", value: config.squareFootagePricing.fixedFee, path: ["squareFootagePricing", "fixedFee"], unit: "$" });
+    if (config.squareFootagePricing?.insideRate !== undefined) fields.push({ label: "Square Footage - Inside Rate", value: config.squareFootagePricing.insideRate, path: ["squareFootagePricing", "insideRate"], unit: "$ per sq ft" });
+    if (config.squareFootagePricing?.outsideRate !== undefined) fields.push({ label: "Square Footage - Outside Rate", value: config.squareFootagePricing.outsideRate, path: ["squareFootagePricing", "outsideRate"], unit: "$ per sq ft" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
+    } // End Refresh Power Scrub
+
+    // ELECTROSTATIC SPRAY - Complete extraction (NEW STRUCTURE)
+    if (serviceId === "electrostaticSpray") {
+    // Standard Spray Pricing
+    if (config.standardSprayPricing?.sprayRatePerRoom !== undefined) fields.push({ label: "Spray Rate Per Room", value: config.standardSprayPricing.sprayRatePerRoom, path: ["standardSprayPricing", "sprayRatePerRoom"], unit: "$ per room" });
+    if (config.standardSprayPricing?.sqFtUnit !== undefined) fields.push({ label: "Sq-ft Unit", value: config.standardSprayPricing.sqFtUnit, path: ["standardSprayPricing", "sqFtUnit"], unit: "sq ft" });
+    if (config.standardSprayPricing?.sprayRatePerSqFtUnit !== undefined) fields.push({ label: "Spray Rate Per Sq-ft Unit", value: config.standardSprayPricing.sprayRatePerSqFtUnit, path: ["standardSprayPricing", "sprayRatePerSqFtUnit"], unit: "$ per unit" });
+    if (config.standardSprayPricing?.minimumPriceOptional !== undefined) fields.push({ label: "Minimum Price Optional", value: config.standardSprayPricing.minimumPriceOptional, path: ["standardSprayPricing", "minimumPriceOptional"], unit: "$" });
+    if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
+
+    // Trip Charges
+    if (config.tripCharges?.standard !== undefined) fields.push({ label: "Trip Charge - Standard", value: config.tripCharges.standard, path: ["tripCharges", "standard"], unit: "$" });
+    if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"], unit: "$" });
+
+    // Frequency Metadata
+    if (config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+    if (config.frequencyMetadata?.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+    if (config.frequencyMetadata?.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+    if (config.frequencyMetadata?.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+    if (config.frequencyMetadata?.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+
+    // Contract Terms
+    if (config.minContractMonths !== undefined) fields.push({ label: "Minimum Contract Months", value: config.minContractMonths, path: ["minContractMonths"], unit: "months" });
+    if (config.maxContractMonths !== undefined) fields.push({ label: "Maximum Contract Months", value: config.maxContractMonths, path: ["maxContractMonths"], unit: "months" });
+    } // End Electrostatic Spray
 
     return fields;
   };
@@ -744,7 +991,7 @@ export const PricingTablesView: React.FC = () => {
             </div>
 
             {(() => {
-              const pricingFields = extractServicePricing(selectedServiceData.config);
+              const pricingFields = extractServicePricing(selectedServiceData.config, selectedServiceData.serviceId);
 
               if (pricingFields.length === 0) {
                 return (

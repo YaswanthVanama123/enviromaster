@@ -71,6 +71,43 @@ type InputChangeEvent =
   | ChangeEvent<HTMLInputElement>
   | ChangeEvent<HTMLSelectElement>;
 
+// ✅ Helper function to convert frequencyMetadata to billingConversions format
+function convertFrequencyMetadataToBillingConversions(config: any): BackendMicrofiberConfig {
+  // If the config already has billingConversions, return as-is
+  if (config.billingConversions) {
+    return config as BackendMicrofiberConfig;
+  }
+
+  // If the config has frequencyMetadata, convert it to billingConversions format
+  if (config.frequencyMetadata) {
+    const freqMeta = config.frequencyMetadata;
+
+    return {
+      ...config,
+      billingConversions: {
+        weekly: {
+          annualMultiplier: 52,
+          monthlyMultiplier: freqMeta.weekly?.monthlyRecurringMultiplier ?? 4.33,
+        },
+        biweekly: {
+          annualMultiplier: 26,
+          monthlyMultiplier: freqMeta.biweekly?.monthlyRecurringMultiplier ?? 2.165,
+        },
+        monthly: {
+          annualMultiplier: 12,
+          monthlyMultiplier: 1, // monthly always 1 visit per month
+        },
+        actualWeeksPerYear: 52,
+        actualWeeksPerMonth: 4.33, // 52/12
+      },
+    } as BackendMicrofiberConfig;
+  }
+
+  // Fallback: return config as-is (will use static defaults)
+  console.warn('⚠️ Microfiber Mopping config has neither billingConversions nor frequencyMetadata');
+  return config as BackendMicrofiberConfig;
+}
+
 const DEFAULT_FORM: MicrofiberMoppingFormState = {
   // Base service meta
   serviceId: "microfiber_mopping",
@@ -162,7 +199,7 @@ export function useMicrofiberMoppingCalc(
           const fallbackConfig = servicesContext.getBackendPricingForService("microfiberMopping");
           if (fallbackConfig?.config) {
             console.log('✅ [Microfiber Mopping] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendMicrofiberConfig;
+            const config = convertFrequencyMetadataToBillingConversions(fallbackConfig.config);
             setBackendConfig(config);
             updateFormWithConfig(config);
 
@@ -197,7 +234,7 @@ export function useMicrofiberMoppingCalc(
         return;
       }
 
-      const config = document.config as BackendMicrofiberConfig;
+      const config = convertFrequencyMetadataToBillingConversions(document.config);
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
@@ -232,7 +269,7 @@ export function useMicrofiberMoppingCalc(
         const fallbackConfig = servicesContext.getBackendPricingForService("microfiberMopping");
         if (fallbackConfig?.config) {
           console.log('✅ [Microfiber Mopping] Using backend pricing data from context after error');
-          const config = fallbackConfig.config as BackendMicrofiberConfig;
+          const config = convertFrequencyMetadataToBillingConversions(fallbackConfig.config);
           setBackendConfig(config);
           updateFormWithConfig(config);
           return;
