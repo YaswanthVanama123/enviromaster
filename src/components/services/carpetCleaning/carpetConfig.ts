@@ -70,11 +70,15 @@ export const carpetPricingConfig: CarpetPricingConfig = {
 
   // Frequency multipliers (same as other services)
   frequencyMeta: {
+    oneTime: { visitsPerYear: 1, monthlyMultiplier: 0 },
     weekly: { visitsPerYear: 52, monthlyMultiplier: 4.33 }, // 4.33 visits per month (not 4.333...)
-    monthly: { visitsPerYear: 12, monthlyMultiplier: 1 }, // 1× per month
+    biweekly: { visitsPerYear: 26, monthlyMultiplier: 2.165 }, // 2.165 visits per month
     twicePerMonth: { visitsPerYear: 24, monthlyMultiplier: 2 }, // 2× per month
+    monthly: { visitsPerYear: 12, monthlyMultiplier: 1 }, // 1× per month
     bimonthly: { visitsPerYear: 6, monthlyMultiplier: 0.5 }, // every 2 months (0.5 visits per month)
     quarterly: { visitsPerYear: 4, monthlyMultiplier: 0.333 }, // quarterly (0.333 visits per month)
+    biannual: { visitsPerYear: 2, monthlyMultiplier: 0.167 }, // bi-annual (0.167 visits per month)
+    annual: { visitsPerYear: 1, monthlyMultiplier: 0.083 }, // annual (0.083 visits per month)
   },
 };
 

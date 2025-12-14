@@ -19,11 +19,22 @@ export const DEFAULT_ROWS: PriceRow[] = [
     serviceKey: "saniscrub",
     displayName: "SaniScrub (per fixture)",
     category: "Service",
-    base: { Monthly: 25, Bimonthly: 35, Quarterly: 40 },
+    base: {
+      "One-Time": 25,
+      Weekly: 25,
+      Biweekly: 25,
+      Monthly: 25,
+      Bimonthly: 35,
+      Quarterly: 40,
+      "Bi-Annual": 25,
+      Annual: 25
+    },
     unitType: "per_fixture",
     minimum: 175,
     installMultiplier: 3,
-    notes: "2×/month with Sani: $15 off monthly fixture rate.",
+    installationCost: 75, // separate installation cost
+    hasInstallationScenarios: true, // enables new calculation logic
+    notes: "Installation-based pricing with frequency-specific calculations. Installation cost separate from service cost.",
   },
   {
     id: "mopping",
@@ -33,6 +44,27 @@ export const DEFAULT_ROWS: PriceRow[] = [
     base: { Weekly: 10 },
     unitType: "per_bathroom",
     notes: "$10/bathroom (or $10/300 sq ft if large).",
+  },
+  {
+    id: "carpet_cleaning",
+    serviceKey: "carpet_cleaning",
+    displayName: "Carpet Cleaning (per sqft)",
+    category: "Service",
+    base: {
+      "One-Time": 0.50,
+      Weekly: 0.50,
+      Biweekly: 0.50,
+      Monthly: 0.50,
+      Bimonthly: 0.75,
+      Quarterly: 1.00,
+      "Bi-Annual": 0.50,
+      Annual: 0.50
+    },
+    unitType: "per_sqft",
+    minimum: 200,
+    installationCost: 150, // separate installation cost
+    hasInstallationScenarios: true, // enables new calculation logic
+    notes: "Installation-based carpet cleaning with frequency-specific calculations. Installation cost separate from service cost.",
   },
 
   // Windows (RPM – both sides)

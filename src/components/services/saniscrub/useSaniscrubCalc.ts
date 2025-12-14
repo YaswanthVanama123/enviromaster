@@ -505,36 +505,84 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       ? form.customInstallationFee
       : calculatedInstallOneTime;
 
-    // ----------------6) FIRST MONTH ----------------
+    // ----------------6) FIRST MONTH - NEW INSTALLATION-BASED RULES ----------------
     let calculatedFirstMonthTotal = 0;
 
     if (serviceActive) {
       if (freq === "oneTime") {
-        // One-time service with or without installation
-        calculatedFirstMonthTotal = form.includeInstall && installOneTime > 0
-          ? installOneTime + perVisitWithTrip
-          : perVisitWithTrip;
+        // One-Time: Installation Cost only if included, otherwise Service Cost × 1
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime; // Installation only
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip; // Service cost × 1
+        }
+      } else if (freq === "weekly") {
+        // Weekly: First month = Installation + (4.33 - 1) × Service Cost
+        if (form.includeInstall && installOneTime > 0) {
+          const remainingVisits = 4.33 - 1; // 3.33 remaining visits
+          calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
+        } else {
+          calculatedFirstMonthTotal = 4.33 * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "biweekly") {
+        // Bi-Weekly: First month = Installation + (2.165 - 1) × Service Cost
+        if (form.includeInstall && installOneTime > 0) {
+          const remainingVisits = 2.165 - 1; // 1.165 remaining visits
+          calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
+        } else {
+          calculatedFirstMonthTotal = 2.165 * (basePerVisitCost + perVisitTrip);
+        }
       } else if (freq === "monthly") {
-        // Monthly: install already includes service, just add trip
-        calculatedFirstMonthTotal = form.includeInstall ? (installOneTime + perVisitTrip) : monthlyRecurring;
+        // Monthly: First month = Installation only (no service)
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime; // Installation only
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip; // Service cost
+        }
+      } else if (freq === "bimonthly") {
+        // Bi-Monthly: First visit = Installation only (every 2 months = 1 visit per 2-month period)
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime; // Installation only for first visit
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip;
+        }
+      } else if (freq === "quarterly") {
+        // Quarterly: First visit = Installation only (4 visits per year)
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime; // Installation only for first visit
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip;
+        }
+      } else if (freq === "biannual") {
+        // Bi-Annual: First service = Installation only
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime; // Installation only
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip;
+        }
+      } else if (freq === "annual") {
+        // Annual: Installation only if included, otherwise service cost
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime; // Installation only
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip;
+        }
       } else if (freq === "twicePerMonth") {
-        // ✅ FIXED: 2x/month calculation
-        if (form.includeInstall) {
-          // With install: install + one base visit - $15 discount
-          const baseVisitCost = basePerVisitCost + perVisitTrip; // Use base amounts
-          calculatedFirstMonthTotal = installOneTime + baseVisitCost;
+        // 2×/month: Similar to biweekly but with discount logic
+        if (form.includeInstall && installOneTime > 0) {
+          const remainingVisits = 2 - 1; // 1 remaining visit
+          calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
 
-          // Apply SaniClean discount to the total month
+          // Apply SaniClean discount
           if (form.hasSaniClean) {
             calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - 15);
           }
         } else {
-          // Without install: just the normal monthly recurring (already includes discount)
-          calculatedFirstMonthTotal = monthlyRecurring;
+          calculatedFirstMonthTotal = 2 * (basePerVisitCost + perVisitTrip);
+          if (form.hasSaniClean) {
+            calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - 15);
+          }
         }
-      } else {
-        // Visit-based frequencies: install already includes full service
-        calculatedFirstMonthTotal = form.includeInstall ? installOneTime : (basePerVisitCost + perVisitTrip);
       }
     }
 
@@ -543,7 +591,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       ? form.customFirstMonthPrice
       : calculatedFirstMonthTotal;
 
-    // ---------------- 7) CONTRACT TOTAL ----------------
+    // ---------------- 7) CONTRACT TOTAL - NEW INSTALLATION-BASED RULES ----------------
     const contractMonths = clampContractMonths(form.contractMonths);
     let calculatedContractTotal = 0;
     let monthsPerVisit = 1;
@@ -554,32 +602,116 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         // One-time service: just the first visit total
         calculatedContractTotal = firstMonthTotal;
         totalVisitsForContract = 1;
-      } else if (isVisitBasedFrequency) {
-        // Visit-based frequencies: calculate based on visits per year
-        const totalVisits = Math.round((contractMonths / 12) * visitsPerYear);
-        totalVisitsForContract = totalVisits;
-        monthsPerVisit = freq === "bimonthly" ? 2 : freq === "quarterly" ? 3 : freq === "biannual" ? 6 : freq === "annual" ? 12 : 1;
-
-        if (form.includeInstall && installOneTime > 0 && totalVisits > 0) {
-          // ✅ CORRECTED: Installation already includes first visit service
-          // Remaining visits = service + trip only
-          const remainingVisits = Math.max(totalVisits - 1, 0);
-          calculatedContractTotal = installOneTime + (remainingVisits * perVisitWithTrip);
-        } else {
-          // No installation: all visits = service + trip
-          calculatedContractTotal = totalVisits * perVisitWithTrip;
-        }
-      } else {
-        // ✅ FIXED: Month-based calculation (monthly/2x month/weekly/biweekly)
-        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
+      } else if (freq === "weekly") {
+        // Weekly: 4.33 visits per month
+        totalVisitsForContract = Math.round(contractMonths * 4.33);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month includes install, remaining months are normal recurring
+          // First month: installation + 3.33 × service
+          // Remaining months: 4.33 × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * 4.33 * (basePerVisitCost + perVisitTrip));
         } else {
-          // No installation: all months the same
-          calculatedContractTotal = contractMonths * monthlyRecurring;
+          // No installation: all months 4.33 × service
+          calculatedContractTotal = contractMonths * 4.33 * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "biweekly") {
+        // Bi-Weekly: 2.165 visits per month
+        totalVisitsForContract = Math.round(contractMonths * 2.165);
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First month: installation + 1.165 × service
+          // Remaining months: 2.165 × service each
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * 2.165 * (basePerVisitCost + perVisitTrip));
+        } else {
+          // No installation: all months 2.165 × service
+          calculatedContractTotal = contractMonths * 2.165 * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "monthly") {
+        // Monthly: 1 visit per month
+        totalVisitsForContract = contractMonths;
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First month: installation only
+          // From second month onward: 1 × service each month
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * (basePerVisitCost + perVisitTrip));
+        } else {
+          // No installation: all months 1 × service
+          calculatedContractTotal = contractMonths * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "bimonthly") {
+        // Bi-Monthly: 6 visits in 12 months (1 visit every 2 months)
+        const totalVisits = Math.round(contractMonths / 2);
+        totalVisitsForContract = totalVisits;
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First visit: installation only, remaining visits: service cost
+          const remainingVisits = Math.max(totalVisits - 1, 0); // 5 remaining visits for 12-month contract
+          calculatedContractTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
+        } else {
+          // No installation: all visits are service cost
+          calculatedContractTotal = totalVisits * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "quarterly") {
+        // Quarterly: 4 visits in 12 months (1 visit every 3 months)
+        const totalVisits = Math.round(contractMonths / 3);
+        totalVisitsForContract = totalVisits;
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First visit: installation only, remaining visits: service cost
+          const remainingVisits = Math.max(totalVisits - 1, 0); // 3 remaining visits for 12-month contract
+          calculatedContractTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
+        } else {
+          // No installation: all visits are service cost
+          calculatedContractTotal = totalVisits * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "biannual") {
+        // Bi-Annual: 2 services per year
+        const totalServices = Math.round((contractMonths / 12) * 2);
+        totalVisitsForContract = totalServices;
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First service: installation, second service: normal service
+          const remainingServices = Math.max(totalServices - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingServices * (basePerVisitCost + perVisitTrip));
+        } else {
+          // No installation: all services normal
+          calculatedContractTotal = totalServices * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "annual") {
+        // Annual: 1 service per year
+        const totalServices = Math.round(contractMonths / 12);
+        totalVisitsForContract = totalServices;
+
+        if (form.includeInstall && installOneTime > 0) {
+          // If installation included, total = installation only (per rule)
+          calculatedContractTotal = installOneTime;
+        } else {
+          // No installation: service cost
+          calculatedContractTotal = totalServices * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "twicePerMonth") {
+        // 2×/month: 2 visits per month
+        totalVisitsForContract = Math.round(contractMonths * 2);
+
+        if (form.includeInstall && installOneTime > 0) {
+          // First month: installation + 1 × service (with discount)
+          // Remaining months: 2 × service each (with discount)
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          let monthlyRecurringWithDiscount = 2 * (basePerVisitCost + perVisitTrip);
+          if (form.hasSaniClean) {
+            monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - 15);
+          }
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurringWithDiscount);
+        } else {
+          // No installation: all months 2 × service with discount
+          let monthlyRecurringWithDiscount = 2 * (basePerVisitCost + perVisitTrip);
+          if (form.hasSaniClean) {
+            monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - 15);
+          }
+          calculatedContractTotal = contractMonths * monthlyRecurringWithDiscount;
         }
       }
     }
