@@ -371,10 +371,10 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
     const freq = clampFrequency(form.frequency);
 
-    // ✅ Get billing conversion for current frequency
-    const conv = cfg.billingConversions[freq];
-    const visitsPerYear = conv.annualMultiplier;
-    const monthlyVisits = conv.monthlyMultiplier;
+    // ✅ Get billing conversion for current frequency from active config (backend if available)
+    const conv = activeConfig.frequencyMeta[freq] || cfg.billingConversions[freq];
+    const visitsPerYear = conv?.visitsPerYear || cfg.billingConversions[freq]?.annualMultiplier || 1;
+    const monthlyVisits = conv?.monthlyMultiplier || cfg.billingConversions[freq]?.monthlyMultiplier || 1;
     const visitsPerMonth = visitsPerYear / 12;
 
     // ✅ Detect visit-based frequencies (oneTime, quarterly, biannual, annual, bimonthly)
@@ -517,20 +517,20 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
           calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip; // Service cost × 1
         }
       } else if (freq === "weekly") {
-        // Weekly: First month = Installation + (4.33 - 1) × Service Cost
+        // Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = 4.33 - 1; // 3.33 remaining visits
+          const remainingVisits = monthlyVisits - 1; // e.g., 4.33 - 1 = 3.33 remaining visits
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
         } else {
-          calculatedFirstMonthTotal = 4.33 * (basePerVisitCost + perVisitTrip);
+          calculatedFirstMonthTotal = monthlyVisits * (basePerVisitCost + perVisitTrip);
         }
       } else if (freq === "biweekly") {
-        // Bi-Weekly: First month = Installation + (2.165 - 1) × Service Cost
+        // Bi-Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = 2.165 - 1; // 1.165 remaining visits
+          const remainingVisits = monthlyVisits - 1; // e.g., 2.165 - 1 = 1.165 remaining visits
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
         } else {
-          calculatedFirstMonthTotal = 2.165 * (basePerVisitCost + perVisitTrip);
+          calculatedFirstMonthTotal = monthlyVisits * (basePerVisitCost + perVisitTrip);
         }
       } else if (freq === "monthly") {
         // Monthly: First month = Installation only (no service)
@@ -570,7 +570,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       } else if (freq === "twicePerMonth") {
         // 2×/month: Similar to biweekly but with discount logic
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = 2 - 1; // 1 remaining visit
+          const remainingVisits = monthlyVisits - 1; // e.g., 2 - 1 = 1 remaining visit
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
 
           // Apply SaniClean discount
@@ -578,7 +578,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
             calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - 15);
           }
         } else {
-          calculatedFirstMonthTotal = 2 * (basePerVisitCost + perVisitTrip);
+          calculatedFirstMonthTotal = monthlyVisits * (basePerVisitCost + perVisitTrip);
           if (form.hasSaniClean) {
             calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - 15);
           }
@@ -603,30 +603,30 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         calculatedContractTotal = firstMonthTotal;
         totalVisitsForContract = 1;
       } else if (freq === "weekly") {
-        // Weekly: 4.33 visits per month
-        totalVisitsForContract = Math.round(contractMonths * 4.33);
+        // Weekly: Use backend monthlyVisits multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + 3.33 × service
-          // Remaining months: 4.33 × service each
+          // First month: installation + remaining visits × service
+          // Remaining months: monthlyVisits × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * 4.33 * (basePerVisitCost + perVisitTrip));
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * (basePerVisitCost + perVisitTrip));
         } else {
-          // No installation: all months 4.33 × service
-          calculatedContractTotal = contractMonths * 4.33 * (basePerVisitCost + perVisitTrip);
+          // No installation: all months monthlyVisits × service
+          calculatedContractTotal = contractMonths * monthlyVisits * (basePerVisitCost + perVisitTrip);
         }
       } else if (freq === "biweekly") {
-        // Bi-Weekly: 2.165 visits per month
-        totalVisitsForContract = Math.round(contractMonths * 2.165);
+        // Bi-Weekly: Use backend monthlyVisits multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + 1.165 × service
-          // Remaining months: 2.165 × service each
+          // First month: installation + remaining visits × service
+          // Remaining months: monthlyVisits × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * 2.165 * (basePerVisitCost + perVisitTrip));
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * (basePerVisitCost + perVisitTrip));
         } else {
-          // No installation: all months 2.165 × service
-          calculatedContractTotal = contractMonths * 2.165 * (basePerVisitCost + perVisitTrip);
+          // No installation: all months monthlyVisits × service
+          calculatedContractTotal = contractMonths * monthlyVisits * (basePerVisitCost + perVisitTrip);
         }
       } else if (freq === "monthly") {
         // Monthly: 1 visit per month
@@ -693,21 +693,21 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
           calculatedContractTotal = totalServices * (basePerVisitCost + perVisitTrip);
         }
       } else if (freq === "twicePerMonth") {
-        // 2×/month: 2 visits per month
-        totalVisitsForContract = Math.round(contractMonths * 2);
+        // 2×/month: Use backend monthlyVisits multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + 1 × service (with discount)
-          // Remaining months: 2 × service each (with discount)
+          // First month: installation + remaining visits × service (with discount)
+          // Remaining months: monthlyVisits × service each (with discount)
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          let monthlyRecurringWithDiscount = 2 * (basePerVisitCost + perVisitTrip);
+          let monthlyRecurringWithDiscount = monthlyVisits * (basePerVisitCost + perVisitTrip);
           if (form.hasSaniClean) {
             monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - 15);
           }
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurringWithDiscount);
         } else {
-          // No installation: all months 2 × service with discount
-          let monthlyRecurringWithDiscount = 2 * (basePerVisitCost + perVisitTrip);
+          // No installation: all months monthlyVisits × service with discount
+          let monthlyRecurringWithDiscount = monthlyVisits * (basePerVisitCost + perVisitTrip);
           if (form.hasSaniClean) {
             monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - 15);
           }

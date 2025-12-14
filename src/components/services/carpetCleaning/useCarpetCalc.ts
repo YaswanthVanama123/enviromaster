@@ -370,10 +370,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     const freq = clampFrequency(form.frequency);
 
-    // ✅ Get billing conversion for current frequency
-    const conv = cfg.billingConversions[freq];
-    const monthlyVisits = conv.monthlyMultiplier;
-    const visitsPerYear = conv.annualMultiplier;
+    // ✅ Get billing conversion for current frequency from active config (backend if available)
+    const conv = activeConfig.frequencyMeta[freq] || cfg.billingConversions[freq];
+    const monthlyVisits = conv?.monthlyMultiplier || cfg.billingConversions[freq]?.monthlyMultiplier || 1;
+    const visitsPerYear = conv?.visitsPerYear || cfg.billingConversions[freq]?.annualMultiplier || 1;
     const visitsPerMonth = visitsPerYear / 12;
 
     // ✅ Detect visit-based frequencies (oneTime, quarterly, biannual, annual, bimonthly)
@@ -474,20 +474,20 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedFirstMonthTotal = perVisitCharge; // Service cost × 1
         }
       } else if (freq === "weekly") {
-        // Weekly: First month = Installation + (4.33 - 1) × Service Cost
+        // Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = 4.33 - 1; // 3.33 remaining visits
+          const remainingVisits = monthlyVisits - 1; // e.g., 4.33 - 1 = 3.33 remaining visits
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
-          calculatedFirstMonthTotal = 4.33 * perVisitCharge;
+          calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
       } else if (freq === "biweekly") {
-        // Bi-Weekly: First month = Installation + (2.165 - 1) × Service Cost
+        // Bi-Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = 2.165 - 1; // 1.165 remaining visits
+          const remainingVisits = monthlyVisits - 1; // e.g., 2.165 - 1 = 1.165 remaining visits
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
-          calculatedFirstMonthTotal = 2.165 * perVisitCharge;
+          calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
       } else if (freq === "monthly") {
         // Monthly: First month = Installation only (no service)
@@ -525,12 +525,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedFirstMonthTotal = perVisitCharge;
         }
       } else if (freq === "twicePerMonth") {
-        // 2×/month: Similar to biweekly
+        // 2×/month: Use backend monthlyVisits multiplier
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = 2 - 1; // 1 remaining visit
+          const remainingVisits = monthlyVisits - 1; // e.g., 2 - 1 = 1 remaining visit
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
-          calculatedFirstMonthTotal = 2 * perVisitCharge;
+          calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
       }
     }
@@ -553,30 +553,30 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         calculatedContractTotal = firstMonthTotal;
         totalVisitsForContract = 1;
       } else if (freq === "weekly") {
-        // Weekly: 4.33 visits per month
-        totalVisitsForContract = Math.round(contractMonths * 4.33);
+        // Weekly: Use backend monthlyVisits multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + 3.33 × service
-          // Remaining months: 4.33 × service each
+          // First month: installation + remaining visits × service
+          // Remaining months: monthlyVisits × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * 4.33 * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * perVisitCharge);
         } else {
-          // No installation: all months 4.33 × service
-          calculatedContractTotal = contractMonths * 4.33 * perVisitCharge;
+          // No installation: all months monthlyVisits × service
+          calculatedContractTotal = contractMonths * monthlyVisits * perVisitCharge;
         }
       } else if (freq === "biweekly") {
-        // Bi-Weekly: 2.165 visits per month
-        totalVisitsForContract = Math.round(contractMonths * 2.165);
+        // Bi-Weekly: Use backend monthlyVisits multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + 1.165 × service
-          // Remaining months: 2.165 × service each
+          // First month: installation + remaining visits × service
+          // Remaining months: monthlyVisits × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * 2.165 * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * perVisitCharge);
         } else {
-          // No installation: all months 2.165 × service
-          calculatedContractTotal = contractMonths * 2.165 * perVisitCharge;
+          // No installation: all months monthlyVisits × service
+          calculatedContractTotal = contractMonths * monthlyVisits * perVisitCharge;
         }
       } else if (freq === "monthly") {
         // Monthly: 1 visit per month
@@ -643,17 +643,17 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedContractTotal = totalServices * perVisitCharge;
         }
       } else if (freq === "twicePerMonth") {
-        // 2×/month: 2 visits per month
-        totalVisitsForContract = Math.round(contractMonths * 2);
+        // 2×/month: Use backend monthlyVisits multiplier
+        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + 1 × service
-          // Remaining months: 2 × service each
+          // First month: installation + remaining visits × service
+          // Remaining months: monthlyVisits × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * 2 * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * perVisitCharge);
         } else {
-          // No installation: all months 2 × service
-          calculatedContractTotal = contractMonths * 2 * perVisitCharge;
+          // No installation: all months monthlyVisits × service
+          calculatedContractTotal = contractMonths * monthlyVisits * perVisitCharge;
         }
       }
     }
