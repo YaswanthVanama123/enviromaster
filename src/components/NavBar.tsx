@@ -17,6 +17,7 @@ export default function NavBar() {
     { path: "/home", label: "Home" },
     { path: "/form-filling", label: "Form Filling" },
     { path: "/saved-pdfs", label: "Saved PDFs" },
+    { path: "/trash", label: "Trash" },
     { path: "/admin-login", label: "Admin Panel" }
   ];
 

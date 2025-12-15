@@ -15,7 +15,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare, faCloudUploadAlt
+  faPlus, faCheckSquare, faSquare, faCloudUploadAlt, faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
@@ -81,6 +81,11 @@ export default function SavedFilesAgreements() {
   // File upload state
   const [fileUploadOpen, setFileUploadOpen] = useState(false);
   const [currentUploadAgreement, setCurrentUploadAgreement] = useState<SavedFileGroup | null>(null);
+
+  // ✅ NEW: Delete confirmation state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string} | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -510,6 +515,57 @@ export default function SavedFilesAgreements() {
     }
   };
 
+  // ✅ NEW: Delete confirmation handlers
+  const handleDelete = (type: 'file' | 'folder', id: string, title: string) => {
+    setItemToDelete({ type, id, title });
+    setDeleteConfirmText('');
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete || deleteConfirmText !== 'DELETE') {
+      setToastMessage({
+        message: "Please type 'DELETE' to confirm",
+        type: "error"
+      });
+      return;
+    }
+
+    try {
+      let result;
+      if (itemToDelete.type === 'folder') {
+        result = await pdfApi.deleteAgreement(itemToDelete.id);
+      } else {
+        result = await pdfApi.deleteFile(itemToDelete.id);
+      }
+
+      if (result.success) {
+        setDeleteConfirmOpen(false);
+        setItemToDelete(null);
+        setDeleteConfirmText('');
+
+        setToastMessage({
+          message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} moved to trash successfully!`,
+          type: "success"
+        });
+
+        // Refresh the list
+        await fetchAgreements(currentPage, query);
+      } else {
+        setToastMessage({
+          message: result.message || "Failed to delete. Please try again.",
+          type: "error"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to delete:", error);
+      setToastMessage({
+        message: "Failed to delete. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
   // Helper function to read file as ArrayBuffer
   const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
     return new Promise((resolve, reject) => {
@@ -771,6 +827,32 @@ export default function SavedFilesAgreements() {
                       Edit Agreement
                     </button>
                   )}
+
+                  {/* ✅ NEW: Delete Agreement button */}
+                  <button
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '6px',
+                      padding: '6px 8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      color: '#dc2626',
+                      fontWeight: '500',
+                      marginLeft: '8px'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete('folder', agreement.id, agreement.agreementTitle);
+                    }}
+                    title="Delete this agreement (move to trash)"
+                  >
+                    <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
+                    Delete
+                  </button>
                 </div>
               </div>
 
@@ -914,6 +996,18 @@ export default function SavedFilesAgreements() {
                           disabled={!file.hasPdf}
                         >
                           <FontAwesomeIcon icon={faUpload} />
+                        </button>
+                        {/* ✅ NEW: Delete file button */}
+                        <button
+                          className="iconbtn"
+                          title="Delete file (move to trash)"
+                          onClick={() => handleDelete('file', file.id, file.title)}
+                          style={{
+                            color: '#dc2626',
+                            borderColor: '#fca5a5'
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
                     </div>
@@ -1096,6 +1190,174 @@ export default function SavedFilesAgreements() {
                 }}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: Delete Confirmation Modal */}
+      {deleteConfirmOpen && itemToDelete && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '16px'
+            }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  style={{
+                    color: '#dc2626',
+                    fontSize: '20px'
+                  }}
+                />
+              </div>
+              <div>
+                <h3 style={{
+                  margin: '0 0 4px',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#374151'
+                }}>
+                  Delete {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}
+                </h3>
+                <p style={{
+                  margin: 0,
+                  fontSize: '14px',
+                  color: '#6b7280'
+                }}>
+                  This action will move the item to trash
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '12px',
+              marginBottom: '20px'
+            }}>
+              <p style={{
+                margin: '0 0 8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#374151'
+              }}>
+                {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}: {itemToDelete.title}
+              </p>
+              <p style={{
+                margin: 0,
+                fontSize: '12px',
+                color: '#6b7280'
+              }}>
+                {itemToDelete.type === 'folder'
+                  ? 'This will move the entire agreement and all its files to trash.'
+                  : 'This will move only this file to trash.'
+                }
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#374151',
+                marginBottom: '8px'
+              }}>
+                Type "DELETE" to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase'
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                type="button"
+                style={{
+                  background: '#f3f4f6',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#374151'
+                }}
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setItemToDelete(null);
+                  setDeleteConfirmText('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={{
+                  background: deleteConfirmText === 'DELETE' ? '#dc2626' : '#f3f4f6',
+                  border: `1px solid ${deleteConfirmText === 'DELETE' ? '#dc2626' : '#d1d5db'}`,
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: deleteConfirmText === 'DELETE' ? '#fff' : '#9ca3af',
+                  opacity: deleteConfirmText === 'DELETE' ? 1 : 0.6
+                }}
+                onClick={confirmDelete}
+                disabled={deleteConfirmText !== 'DELETE'}
+              >
+                <FontAwesomeIcon icon={faTrash} style={{ marginRight: '6px' }} />
+                Move to Trash
               </button>
             </div>
           </div>

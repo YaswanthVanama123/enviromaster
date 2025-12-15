@@ -1118,6 +1118,59 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   // Reference Tables for Salespeople
   // ---------------------------
 
+  // Helper function to get product description
+  const getProductDescription = (product: EnvProduct): string => {
+    const descriptions: Record<string, string> = {
+      // Paper Products
+      'paper_towel_premium': 'High-quality paper towels for general cleaning and spill control',
+      'paper_towel_standard': 'Standard paper towels for everyday cleaning tasks',
+      'toilet_paper_premium': 'Premium toilet paper for guest restrooms and high-traffic areas',
+      'toilet_paper_standard': 'Standard toilet paper for employee restrooms',
+      'napkins_premium': 'High-quality napkins for dining areas and customer-facing spaces',
+      'napkins_standard': 'Standard napkins for break rooms and staff areas',
+
+      // Chemical Products
+      'all_purpose_cleaner': 'Multi-surface cleaner for general cleaning tasks',
+      'glass_cleaner': 'Streak-free glass and mirror cleaner',
+      'disinfectant_spray': 'EPA-approved disinfectant for sanitizing surfaces',
+      'floor_cleaner': 'Professional floor cleaning solution for all floor types',
+      'degreaser': 'Heavy-duty degreaser for kitchen and industrial cleaning',
+      'bathroom_cleaner': 'Specialized cleaner for bathroom fixtures and surfaces',
+
+      // Dispensers
+      'paper_towel_dispenser': 'Wall-mounted dispenser for paper towels',
+      'toilet_paper_dispenser': 'Commercial toilet paper dispenser',
+      'soap_dispenser': 'Automatic or manual soap dispenser',
+      'sanitizer_dispenser': 'Touch-free hand sanitizer dispenser',
+      'napkin_dispenser': 'Counter-top or wall-mounted napkin dispenser',
+
+      // Default descriptions by family
+      'paper': 'Paper product for cleaning and hygiene',
+      'chemicals': 'Cleaning chemical for maintenance and sanitation',
+      'dispensers': 'Dispenser for paper or liquid products',
+      'equipment': 'Cleaning equipment and tools',
+      'supplies': 'General cleaning supplies and accessories'
+    };
+
+    // Try exact key match first
+    if (descriptions[product.key]) {
+      return descriptions[product.key];
+    }
+
+    // Try family-based description
+    if (descriptions[product.familyKey]) {
+      return descriptions[product.familyKey];
+    }
+
+    // Generate description based on product kind or name
+    if (product.kind) {
+      return `${product.kind} - Professional cleaning product`;
+    }
+
+    // Default description
+    return 'Professional cleaning product for commercial use';
+  };
+
   const ProductsReferenceTable = () => {
     const productsForReference = getProductsForColumn("products", allProducts);
 
@@ -1126,30 +1179,77 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         <div className="prod__ribbon">
           <div className="prod__title">PRODUCTS REFERENCE - FOR SALESPEOPLE</div>
         </div>
-        <div className="reference-table-wrapper">
-          <table className="reference-table">
+        <div className="reference-table-wrapper" style={{
+          overflowX: 'auto',
+          marginTop: '16px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px'
+        }}>
+          <table className="reference-table" style={{
+            width: '100%',
+            minWidth: '900px',
+            borderCollapse: 'collapse',
+            backgroundColor: '#fff'
+          }}>
             <thead>
               <tr>
-                <th className="h h-blue">Product Name</th>
-                <th className="h h-blue center">Family</th>
-                <th className="h h-blue center">Base Price</th>
-                <th className="h h-blue center">Unit</th>
-                <th className="h h-blue center">Case Info</th>
+                <th className="h h-blue" style={{ width: '20%', minWidth: '180px' }}>Product Name</th>
+                <th className="h h-blue" style={{ width: '30%', minWidth: '250px' }}>Description & Use Case</th>
+                <th className="h h-blue center" style={{ width: '12%', minWidth: '100px' }}>Family</th>
+                <th className="h h-blue center" style={{ width: '12%', minWidth: '100px' }}>Base Price</th>
+                <th className="h h-blue center" style={{ width: '10%', minWidth: '80px' }}>Unit</th>
+                <th className="h h-blue center" style={{ width: '16%', minWidth: '120px' }}>Case Info</th>
               </tr>
             </thead>
             <tbody>
               {productsForReference.map((product) => (
                 <tr key={product.key}>
-                  <td className="label">{product.name}</td>
-                  <td className="center">{product.familyKey}</td>
-                  <td className="center">
+                  <td className="label" style={{
+                    fontWeight: '600',
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    wordWrap: 'break-word'
+                  }}>
+                    {product.name}
+                  </td>
+                  <td className="label" style={{
+                    fontSize: '13px',
+                    color: '#4b5563',
+                    lineHeight: '1.4',
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    wordWrap: 'break-word'
+                  }}>
+                    {getProductDescription(product)}
+                  </td>
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb'
+                  }}>
+                    {product.familyKey}
+                  </td>
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontWeight: '600',
+                    color: '#059669'
+                  }}>
                     ${product.basePrice?.amount ? product.basePrice.amount.toFixed(2) : 'N/A'}
                   </td>
-                  <td className="center">{product.basePrice?.uom || 'Each'}</td>
-                  <td className="center">
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb'
+                  }}>
+                    {product.basePrice?.uom || 'Each'}
+                  </td>
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontSize: '12px'
+                  }}>
                     {product.quantityPerCase ? `${product.quantityPerCase} per case` : 'N/A'}
                     {product.basePrice?.unitSizeLabel && (
-                      <div style={{fontSize: '12px', color: '#666'}}>
+                      <div style={{fontSize: '11px', color: '#666', marginTop: '2px'}}>
                         {product.basePrice.unitSizeLabel}
                       </div>
                     )}
@@ -1163,6 +1263,63 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     );
   };
 
+  // Helper function to get dispenser description
+  const getDispenserDescription = (dispenser: EnvProduct): string => {
+    const descriptions: Record<string, string> = {
+      // Specific dispenser descriptions
+      'paper_towel_dispenser_basic': 'Basic wall-mounted paper towel dispenser for low-traffic areas',
+      'paper_towel_dispenser_premium': 'Premium automatic paper towel dispenser with sensor activation',
+      'toilet_paper_dispenser_single': 'Single-roll toilet paper dispenser for small restrooms',
+      'toilet_paper_dispenser_double': 'Double-roll toilet paper dispenser for high-traffic restrooms',
+      'soap_dispenser_manual': 'Manual push-button soap dispenser',
+      'soap_dispenser_automatic': 'Touch-free automatic soap dispenser with sensor',
+      'sanitizer_dispenser_wall': 'Wall-mounted hand sanitizer dispenser',
+      'sanitizer_dispenser_floor': 'Floor-standing hand sanitizer dispenser for high-traffic areas',
+      'napkin_dispenser_counter': 'Counter-top napkin dispenser for dining areas',
+      'napkin_dispenser_wall': 'Wall-mounted napkin dispenser for break rooms',
+
+      // General dispenser descriptions by type
+      'paper_towel_dispenser': 'Reliable paper towel dispenser for commercial restrooms and kitchens',
+      'toilet_paper_dispenser': 'Durable toilet paper dispenser designed for heavy commercial use',
+      'soap_dispenser': 'Professional soap dispenser for maintaining proper hand hygiene',
+      'sanitizer_dispenser': 'Hand sanitizer dispenser to promote health and safety protocols',
+      'napkin_dispenser': 'Convenient napkin dispenser for food service and dining areas',
+      'tissue_dispenser': 'Facial tissue dispenser for office and public spaces',
+      'cup_dispenser': 'Paper cup dispenser for water stations and break rooms',
+      'glove_dispenser': 'Disposable glove dispenser for food service and cleaning',
+
+      // Default by family
+      'dispensers': 'Commercial dispenser for maintaining supplies and hygiene standards'
+    };
+
+    // Try exact key match first
+    if (descriptions[dispenser.key]) {
+      return descriptions[dispenser.key];
+    }
+
+    // Try partial key matching for common dispenser types
+    const keyLower = dispenser.key.toLowerCase();
+    if (keyLower.includes('paper_towel')) return descriptions['paper_towel_dispenser'];
+    if (keyLower.includes('toilet_paper')) return descriptions['toilet_paper_dispenser'];
+    if (keyLower.includes('soap')) return descriptions['soap_dispenser'];
+    if (keyLower.includes('sanitizer')) return descriptions['sanitizer_dispenser'];
+    if (keyLower.includes('napkin')) return descriptions['napkin_dispenser'];
+    if (keyLower.includes('tissue')) return descriptions['tissue_dispenser'];
+    if (keyLower.includes('cup')) return descriptions['cup_dispenser'];
+    if (keyLower.includes('glove')) return descriptions['glove_dispenser'];
+
+    // Try name-based matching
+    const nameLower = dispenser.name.toLowerCase();
+    if (nameLower.includes('paper towel')) return descriptions['paper_towel_dispenser'];
+    if (nameLower.includes('toilet paper')) return descriptions['toilet_paper_dispenser'];
+    if (nameLower.includes('soap')) return descriptions['soap_dispenser'];
+    if (nameLower.includes('sanitizer')) return descriptions['sanitizer_dispenser'];
+    if (nameLower.includes('napkin')) return descriptions['napkin_dispenser'];
+
+    // Default description
+    return descriptions['dispensers'];
+  };
+
   const DispensersReferenceTable = () => {
     const dispensersForReference = getProductsForColumn("dispensers", allProducts);
 
@@ -1171,30 +1328,90 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         <div className="prod__ribbon">
           <div className="prod__title">DISPENSERS REFERENCE - FOR SALESPEOPLE</div>
         </div>
-        <div className="reference-table-wrapper">
-          <table className="reference-table">
+        <div className="reference-table-wrapper" style={{
+          overflowX: 'auto',
+          marginTop: '16px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px'
+        }}>
+          <table className="reference-table" style={{
+            width: '100%',
+            minWidth: '1100px',
+            borderCollapse: 'collapse',
+            backgroundColor: '#fff'
+          }}>
             <thead>
               <tr>
-                <th className="h h-blue">Dispenser Name</th>
-                <th className="h h-blue center">Base Price</th>
-                <th className="h h-blue center">Unit</th>
-                <th className="h h-blue center">Warranty Rate</th>
-                <th className="h h-blue center">Warranty Period</th>
+                <th className="h h-blue" style={{ width: '18%', minWidth: '160px' }}>Dispenser Name</th>
+                <th className="h h-blue" style={{ width: '25%', minWidth: '220px' }}>Description & Use Case</th>
+                <th className="h h-blue center" style={{ width: '12%', minWidth: '100px' }}>Base Price</th>
+                <th className="h h-blue center" style={{ width: '10%', minWidth: '80px' }}>Unit</th>
+                <th className="h h-blue center" style={{ width: '12%', minWidth: '100px' }}>Warranty Rate</th>
+                <th className="h h-blue center" style={{ width: '12%', minWidth: '100px' }}>Warranty Period</th>
+                <th className="h h-blue center" style={{ width: '11%', minWidth: '90px' }}>Best For</th>
               </tr>
             </thead>
             <tbody>
               {dispensersForReference.map((dispenser) => (
                 <tr key={dispenser.key}>
-                  <td className="label">{dispenser.name}</td>
-                  <td className="center">
+                  <td className="label" style={{
+                    fontWeight: '600',
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    wordWrap: 'break-word'
+                  }}>
+                    {dispenser.name}
+                  </td>
+                  <td className="label" style={{
+                    fontSize: '13px',
+                    color: '#4b5563',
+                    lineHeight: '1.4',
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    wordWrap: 'break-word'
+                  }}>
+                    {getDispenserDescription(dispenser)}
+                  </td>
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontWeight: '600',
+                    color: '#059669'
+                  }}>
                     ${dispenser.basePrice?.amount ? dispenser.basePrice.amount.toFixed(2) : 'N/A'}
                   </td>
-                  <td className="center">{dispenser.basePrice?.uom || 'Each'}</td>
-                  <td className="center">
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb'
+                  }}>
+                    {dispenser.basePrice?.uom || 'Each'}
+                  </td>
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontWeight: '600',
+                    color: '#dc2626'
+                  }}>
                     ${dispenser.warrantyPricePerUnit?.amount ? dispenser.warrantyPricePerUnit.amount.toFixed(2) : 'N/A'}
                   </td>
-                  <td className="center">
+                  <td className="center" style={{
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb',
+                    fontSize: '12px'
+                  }}>
                     {dispenser.warrantyPricePerUnit?.billingPeriod || 'Per week'}
+                  </td>
+                  <td className="center" style={{
+                    fontSize: '12px',
+                    color: '#059669',
+                    fontWeight: '500',
+                    padding: '12px 8px',
+                    borderBottom: '1px solid #e5e7eb'
+                  }}>
+                    {dispenser.name.toLowerCase().includes('automatic') || dispenser.name.toLowerCase().includes('sensor') ? 'High Traffic' :
+                     dispenser.name.toLowerCase().includes('premium') || dispenser.name.toLowerCase().includes('commercial') ? 'Commercial Use' :
+                     dispenser.name.toLowerCase().includes('basic') || dispenser.name.toLowerCase().includes('standard') ? 'Standard Use' :
+                     'All Areas'}
                   </td>
                 </tr>
               ))}

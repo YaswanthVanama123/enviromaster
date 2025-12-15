@@ -3,7 +3,8 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import Home from "./components/Home";
 import FormFilling from "./components/FormFilling";
-import SavedFilesAgreements from "./components/SavedFilesAgreements"; // ✅ UPDATED: Use new folder-like component
+import SavedFilesAgreements from "./components/SavedFilesAgreements"; // ✅ BACK to original working component
+import TrashView from "./components/TrashView"; // ✅ NEW: Import TrashView component
 import PDFViewer from "./components/PDFViewer";
 import AdminLogin from "./components/AdminLogin";
 import AdminPanel from "./components/AdminPanel";
@@ -25,6 +26,7 @@ function AppContent() {
           <Route path="/form-filling" element={<FormFilling />} />
           <Route path="/edit/pdf/:id?" element={<FormFilling />} />
           <Route path="/saved-pdfs" element={<SavedFilesAgreements />} />
+          <Route path="/trash" element={<TrashView />} />
           <Route path="/pdf-viewer" element={<PDFViewer />} />
           <Route path="/admin-login" element={<AdminLogin/>} />
           <Route path="/admin-panel/:tab/services/:modalType?/:itemId?" element={<AdminPanel />} />

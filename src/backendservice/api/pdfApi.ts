@@ -11,6 +11,10 @@ export interface CustomerHeader {
   status: string;
   createdAt: string;
   updatedAt: string;
+  // ✅ NEW: Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
 }
 
 export interface CustomerHeadersResponse {
@@ -65,6 +69,10 @@ export interface SavedFileListItem {
     crmDealId: string | null;
     crmFileId: string | null;
   };
+  // ✅ NEW: Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
 }
 
 export interface SavedFilesListResponse {
@@ -89,6 +97,10 @@ export interface SavedFileGroup {
   statuses: string[];            // Main agreement status
   hasUploads: boolean;           // Any files uploaded to Zoho
   files: SavedFileListItem[];    // Main PDF + all attached files
+  // ✅ NEW: Soft delete fields
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
 }
 
 // ✅ NEW: Interface for adding files to agreement
@@ -340,12 +352,12 @@ export const pdfApi = {
    * Get saved files list with pagination (lightweight - only high-level data)
    * @param page Page number (default: 1)
    * @param limit Items per page (default: 20, max: 100)
-   * @param filters Optional filters like status, search
+   * @param filters Optional filters like status, search, isDeleted
    */
   async getSavedFilesList(
     page = 1,
     limit = 20,
-    filters: { status?: string; search?: string } = {}
+    filters: { status?: string; search?: string; isDeleted?: boolean } = {}
   ): Promise<SavedFilesListResponse> {
     const params = new URLSearchParams();
     params.set('page', page.toString());
@@ -356,6 +368,9 @@ export const pdfApi = {
     }
     if (filters.search) {
       params.set('search', filters.search);
+    }
+    if (filters.isDeleted !== undefined) {
+      params.set('isDeleted', filters.isDeleted.toString());
     }
 
     const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files?${params}`, {
@@ -368,12 +383,12 @@ export const pdfApi = {
    * Get saved files grouped by agreement (folder-like structure)
    * @param page Page number (default: 1)
    * @param limit Groups per page (default: 20, max: 100)
-   * @param filters Optional filters like status, search
+   * @param filters Optional filters like status, search, isDeleted
    */
   async getSavedFilesGrouped(
     page = 1,
     limit = 20,
-    filters: { status?: string; search?: string } = {}
+    filters: { status?: string; search?: string; isDeleted?: boolean } = {}
   ): Promise<SavedFilesGroupedResponse> {
     const params = new URLSearchParams();
     params.set('page', page.toString());
@@ -384,6 +399,9 @@ export const pdfApi = {
     }
     if (filters.search) {
       params.set('search', filters.search);
+    }
+    if (filters.isDeleted !== undefined) {
+      params.set('isDeleted', filters.isDeleted.toString());
     }
 
     const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files/grouped?${params}`, {
@@ -412,6 +430,125 @@ export const pdfApi = {
     const res = await axios.post(
       `${API_BASE_URL}/api/pdf/saved-files/${agreementId}/add-files`,
       request,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Restore deleted agreement from trash
+   */
+  async restoreAgreement(agreementId: string): Promise<{
+    success: boolean;
+    message: string;
+    agreement?: {
+      id: string;
+      title: string;
+    };
+  }> {
+    const res = await axios.patch(
+      `${API_BASE_URL}/api/pdf/agreements/${agreementId}/restore`,
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Restore deleted file from trash
+   */
+  async restoreFile(fileId: string): Promise<{
+    success: boolean;
+    message: string;
+    file?: {
+      id: string;
+      title: string;
+    };
+  }> {
+    const res = await axios.patch(
+      `${API_BASE_URL}/api/pdf/files/${fileId}/restore`,
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Soft delete agreement (move to trash)
+   */
+  async deleteAgreement(agreementId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const res = await axios.patch(
+      `${API_BASE_URL}/api/pdf/agreements/${agreementId}/delete`,
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Soft delete file (move to trash)
+   */
+  async deleteFile(fileId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const res = await axios.patch(
+      `${API_BASE_URL}/api/pdf/files/${fileId}/delete`,
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Permanently delete agreement and all associated files
+   */
+  async permanentlyDeleteAgreement(agreementId: string): Promise<{
+    success: boolean;
+    message: string;
+    deletedData?: {
+      agreementId: string;
+      deletedAttachedFiles: number;
+      deletedZohoMappings: number;
+      deletedVersions: number;
+    };
+  }> {
+    const res = await axios.delete(
+      `${API_BASE_URL}/api/pdf/agreements/${agreementId}/permanent-delete`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Permanently delete individual file and cleanup references
+   */
+  async permanentlyDeleteFile(fileId: string): Promise<{
+    success: boolean;
+    message: string;
+    deletedData?: {
+      fileId: string;
+      fileName: string;
+      cleanedReferences: number;
+    };
+  }> {
+    const res = await axios.delete(
+      `${API_BASE_URL}/api/pdf/files/${fileId}/permanent-delete`,
       {
         headers: { "Content-Type": "application/json" },
       }
