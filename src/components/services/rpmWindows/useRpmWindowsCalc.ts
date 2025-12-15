@@ -12,52 +12,54 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendRpmConfig {
-  smallWindowRate: number;
-  mediumWindowRate: number;
-  largeWindowRate: number;
-  tripCharge: number;
-  installMultiplierFirstTime: number;
-  installMultiplierClean: number;
-  frequencyMultipliers: {
-    oneTime: number;
-    weekly: number;
-    biweekly: number;
-    twicePerMonth: number;
-    monthly: number;
-    bimonthly: number;
-    quarterly: number;
-    biannual: number;
-    annual: number;
-    quarterlyFirstTime: number;
+  windowPricingBothSidesIncluded: {
+    smallWindowPrice: number;
+    mediumWindowPrice: number;
+    largeWindowPrice: number;
   };
-  annualFrequencies: {
-    oneTime: number;
-    weekly: number;
-    biweekly: number;
-    twicePerMonth: number;
-    monthly: number;
-    bimonthly: number;
-    quarterly: number;
-    biannual: number;
-    annual: number;
+  installPricing: {
+    installationMultiplier: number;
   };
-  monthlyConversions: {
-    weekly: number;
-    actualWeeksPerMonth: number;
-    actualWeeksPerYear: number;
+  minimumChargePerVisit: number;
+  tripCharges: {
+    standard: number;
+    beltway: number;
   };
-  rateCategories: {
-    redRate: {
-      multiplier: number;
-      commissionRate: string;
+  frequencyPriceMultipliers: {
+    biweeklyPriceMultiplier: number;
+    monthlyPriceMultiplier: number;
+    quarterlyPriceMultiplierAfterFirstTime: number;
+    quarterlyFirstTimeMultiplier: number;
+  };
+  frequencyMetadata: {
+    weekly: {
+      monthlyRecurringMultiplier: number;
+      firstMonthExtraMultiplier: number;
     };
-    greenRate: {
-      multiplier: number;
-      commissionRate: string;
+    biweekly: {
+      monthlyRecurringMultiplier: number;
+      firstMonthExtraMultiplier: number;
+    };
+    bimonthly: {
+      cycleMonths: number;
+    };
+    quarterly: {
+      cycleMonths: number;
+    };
+    biannual: {
+      cycleMonths: number;
+    };
+    annual: {
+      cycleMonths: number;
+    };
+    monthly: {
+      cycleMonths: number;
     };
   };
+  minContractMonths: number;
+  maxContractMonths: number;
 }
 
 const DEFAULT_FORM: RpmWindowsFormState = {
@@ -87,23 +89,24 @@ function mapFrequency(v: string): RpmFrequencyKey {
 }
 
 export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
-  const [form, setForm] = useState<RpmWindowsFormState>({
-    ...DEFAULT_FORM,
-    ...initial,
-  });
-
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
 
-  // ✅ Store base weekly rates (from backend) separately
+  // ✅ Store base weekly rates (initialize with config, will be updated by backend)
   const [baseWeeklyRates, setBaseWeeklyRates] = useState({
     small: cfg.smallWindowRate,
     medium: cfg.mediumWindowRate,
     large: cfg.largeWindowRate,
     trip: cfg.tripCharge,
+  });
+
+  // ✅ Initialize form state (will be updated when backend config loads)
+  const [form, setForm] = useState<RpmWindowsFormState>({
+    ...DEFAULT_FORM,
+    ...initial,
   });
 
   // ✅ Loading state for refresh button
@@ -112,15 +115,12 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
-    console.log('🔍 [RPM Windows] Fetching config from backend...');
-    console.log('🔍 [RPM Windows] API call: serviceConfigApi.getActive("rpmWindows")');
+    console.log('🔄 [RPM Windows] Fetching fresh configuration from backend...');
 
     try {
       const response = await serviceConfigApi.getActive("rpmWindows");
 
       console.log('📥 [RPM Windows] Backend response:', response);
-      console.log('📥 [RPM Windows] Response type:', typeof response);
-      console.log('📥 [RPM Windows] Has "data" property?', response && 'data' in response);
 
       // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
@@ -135,12 +135,24 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
             const config = fallbackConfig.config as BackendRpmConfig;
             setBackendConfig(config);
 
-            setBaseWeeklyRates({
-              small: config.smallWindowRate ?? baseWeeklyRates.small,
-              medium: config.mediumWindowRate ?? baseWeeklyRates.medium,
-              large: config.largeWindowRate ?? baseWeeklyRates.large,
-              trip: config.tripCharge ?? baseWeeklyRates.trip,
-            });
+            const newBaseRates = {
+              small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
+              medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
+              large: config.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
+              trip: config.tripCharges?.standard ?? cfg.tripCharge,
+            };
+
+            console.log('📊 [RPM Windows] Updating base rates from fallback config:', newBaseRates);
+            setBaseWeeklyRates(newBaseRates);
+
+            // ✅ FORCE UPDATE FORM with backend values immediately
+            setForm(prev => ({
+              ...prev,
+              smallWindowRate: newBaseRates.small,
+              mediumWindowRate: newBaseRates.medium,
+              largeWindowRate: newBaseRates.large,
+              tripCharge: newBaseRates.trip,
+            }));
 
             console.log('✅ RPM Windows FALLBACK CONFIG loaded from context:', config);
             return;
@@ -153,8 +165,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
       // ✅ Extract the actual document from response.data
       const document = response.data;
-      console.log('📥 [RPM Windows] Document from response.data:', document);
-      console.log('📥 [RPM Windows] Has "config" in document?', 'config' in document);
 
       if (!document.config) {
         console.warn('⚠️ RPM Windows document has no config property');
@@ -175,49 +185,39 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
       // ✅ Store base weekly rates for frequency adjustment
       const newBaseRates = {
-        small: config.smallWindowRate ?? cfg.smallWindowRate,
-        medium: config.mediumWindowRate ?? cfg.mediumWindowRate,
-        large: config.largeWindowRate ?? cfg.largeWindowRate,
-        trip: config.tripCharge ?? cfg.tripCharge,
+        small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
+        medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
+        large: config.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
+        trip: config.tripCharges?.standard ?? cfg.tripCharge,
       };
 
-      console.log('📊 [RPM Windows] Setting new base rates:', newBaseRates);
-      console.log('📊 [RPM Windows] Old hardcoded defaults:', {
-        small: cfg.smallWindowRate,
-        medium: cfg.mediumWindowRate,
-        large: cfg.largeWindowRate,
-      });
+      console.log('📊 [RPM Windows] Setting new base rates from backend:', newBaseRates);
+      console.log('📊 [RPM Windows] Previous rates were:', baseWeeklyRates);
 
       setBaseWeeklyRates(newBaseRates);
 
-      // ✅ Note: We don't update form rates here - the useEffect at line 200-215
-      // will automatically update form rates when baseWeeklyRates changes.
-      // This prevents race conditions between multiple setForm() calls.
-      console.log('📊 [RPM Windows] Base rates updated, useEffect will apply frequency multiplier');
+      // ✅ FORCE UPDATE FORM with backend values immediately (without frequency multiplier initially)
+      setForm(prev => ({
+        ...prev,
+        smallWindowRate: newBaseRates.small,
+        mediumWindowRate: newBaseRates.medium,
+        largeWindowRate: newBaseRates.large,
+        tripCharge: newBaseRates.trip,
+      }));
 
-      console.log('✅ RPM Windows FULL CONFIG loaded from backend:', {
+      console.log('✅ RPM Windows config loaded from backend and form updated:', {
         windowRates: {
-          small: config.smallWindowRate,
-          medium: config.mediumWindowRate,
-          large: config.largeWindowRate,
+          small: config.windowPricingBothSidesIncluded?.smallWindowPrice,
+          medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice,
+          large: config.windowPricingBothSidesIncluded?.largeWindowPrice,
         },
-        frequencyMultipliers: config.frequencyMultipliers,
-        installMultipliers: {
-          firstTime: config.installMultiplierFirstTime,
-          clean: config.installMultiplierClean,
-        },
-        rateCategories: config.rateCategories,
-        monthlyConversions: config.monthlyConversions,
-        annualFrequencies: config.annualFrequencies,
+        installMultiplier: config.installPricing?.installationMultiplier,
+        minimumCharge: config.minimumChargePerVisit,
+        tripCharges: config.tripCharges,
+        frequencyMetadata: config.frequencyMetadata,
       });
     } catch (error) {
       console.error('❌ Failed to fetch RPM Windows config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -227,12 +227,24 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           const config = fallbackConfig.config as BackendRpmConfig;
           setBackendConfig(config);
 
-          setBaseWeeklyRates({
-            small: config.smallWindowRate ?? baseWeeklyRates.small,
-            medium: config.mediumWindowRate ?? baseWeeklyRates.medium,
-            large: config.largeWindowRate ?? baseWeeklyRates.large,
-            trip: config.tripCharge ?? baseWeeklyRates.trip,
-          });
+          const newBaseRates = {
+            small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
+            medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
+            large: config.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
+            trip: config.tripCharges?.standard ?? cfg.tripCharge,
+          };
+
+          setBaseWeeklyRates(newBaseRates);
+
+          // ✅ FORCE UPDATE FORM with backend values immediately
+          setForm(prev => ({
+            ...prev,
+            smallWindowRate: newBaseRates.small,
+            mediumWindowRate: newBaseRates.medium,
+            largeWindowRate: newBaseRates.large,
+            tripCharge: newBaseRates.trip,
+          }));
+
           return;
         }
       }
@@ -283,24 +295,46 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
   // ✅ Update rate fields when frequency changes (apply frequency multiplier)
   useEffect(() => {
-    // Use backend config if available, otherwise use fallback
-    const activeFreqMult = backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers;
-
+    // ✅ Use backend config frequency data if available, otherwise use fallback
+    let freqMult = 1;
     const freqKey = mapFrequency(form.frequency);
 
-    // ✅ NEW: Apply special pricing rules for certain frequencies
-    let effectiveFreqKey = freqKey;
-
-    // 2×/Month and Bi-Monthly use Monthly pricing
-    if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
-      effectiveFreqKey = "monthly";
+    if (backendConfig?.frequencyMetadata) {
+      // Use new backend frequencyMetadata structure
+      if (freqKey === "weekly" && backendConfig.frequencyMetadata.weekly) {
+        freqMult = 1; // Weekly is base rate
+      } else if (freqKey === "biweekly" && backendConfig.frequencyPriceMultipliers?.biweeklyPriceMultiplier) {
+        freqMult = backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier;
+      } else if (freqKey === "monthly" && backendConfig.frequencyPriceMultipliers?.monthlyPriceMultiplier) {
+        freqMult = backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier;
+      } else if (freqKey === "quarterly" && backendConfig.frequencyPriceMultipliers?.quarterlyPriceMultiplierAfterFirstTime) {
+        freqMult = backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime;
+      } else if (freqKey === "bimonthly" && backendConfig.frequencyMetadata.bimonthly?.cycleMonths) {
+        // For frequencies with cycleMonths, calculate multiplier based on cycle length
+        const cycleMonths = backendConfig.frequencyMetadata.bimonthly.cycleMonths;
+        freqMult = cycleMonths > 0 ? cycleMonths * 0.5 : 1; // Rough approximation
+      } else if (freqKey === "biannual" && backendConfig.frequencyMetadata.biannual?.cycleMonths) {
+        const cycleMonths = backendConfig.frequencyMetadata.biannual.cycleMonths;
+        freqMult = cycleMonths > 0 ? cycleMonths * 0.4 : 1;
+      } else if (freqKey === "annual" && backendConfig.frequencyMetadata.annual?.cycleMonths) {
+        const cycleMonths = backendConfig.frequencyMetadata.annual.cycleMonths;
+        freqMult = cycleMonths > 0 ? cycleMonths * 0.25 : 1;
+      } else {
+        // Use fallback config multipliers
+        const activeFreqMult = cfg.frequencyMultipliers;
+        freqMult = activeFreqMult[freqKey] || 1;
+      }
+    } else {
+      // Use fallback config multipliers
+      const activeFreqMult = cfg.frequencyMultipliers;
+      freqMult = activeFreqMult[freqKey] || 1;
     }
-    // Bi-Annual and Annual use Quarterly pricing
-    else if (freqKey === "biannual" || freqKey === "annual") {
-      effectiveFreqKey = "quarterly";
-    }
 
-    const freqMult = activeFreqMult[effectiveFreqKey] || 1;
+    console.log('📊 [RPM Windows] Applying frequency multiplier:', {
+      frequency: freqKey,
+      multiplier: freqMult,
+      baseRates: baseWeeklyRates,
+    });
 
     // Apply frequency multiplier to base weekly rates
     setForm((prev) => ({
@@ -389,16 +423,29 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
           // Calculate base weekly rate from current frequency-adjusted value
           const freqKey = mapFrequency(prev.frequency);
 
-          // ✅ Apply same special pricing rules as useEffect and useMemo
-          let effectiveFreqKey = freqKey;
-          if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
-            effectiveFreqKey = "monthly";
-          } else if (freqKey === "biannual" || freqKey === "annual") {
-            effectiveFreqKey = "quarterly";
+          // ✅ Apply same frequency multiplier logic as useEffect
+          let freqMult = 1;
+          if (backendConfig?.frequencyMetadata) {
+            // Use new backend frequencyMetadata structure
+            if (freqKey === "weekly") {
+              freqMult = 1; // Weekly is base rate
+            } else if (freqKey === "biweekly" && backendConfig.frequencyPriceMultipliers?.biweeklyPriceMultiplier) {
+              freqMult = backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier;
+            } else if (freqKey === "monthly" && backendConfig.frequencyPriceMultipliers?.monthlyPriceMultiplier) {
+              freqMult = backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier;
+            } else if (freqKey === "quarterly" && backendConfig.frequencyPriceMultipliers?.quarterlyPriceMultiplierAfterFirstTime) {
+              freqMult = backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime;
+            } else {
+              // Use fallback config multipliers for other frequencies
+              const activeFreqMult = cfg.frequencyMultipliers;
+              freqMult = activeFreqMult[freqKey] || 1;
+            }
+          } else {
+            // Use fallback config multipliers
+            const activeFreqMult = cfg.frequencyMultipliers;
+            freqMult = activeFreqMult[freqKey] || 1;
           }
 
-          const activeFreqMult = backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers;
-          const freqMult = activeFreqMult[effectiveFreqKey] || 1;
           const weeklyBase = displayVal / freqMult;
 
           // Update base weekly rates
@@ -485,16 +532,36 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   const calc = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
     const activeConfig = {
-      smallWindowRate: backendConfig?.smallWindowRate ?? cfg.smallWindowRate,
-      mediumWindowRate: backendConfig?.mediumWindowRate ?? cfg.mediumWindowRate,
-      largeWindowRate: backendConfig?.largeWindowRate ?? cfg.largeWindowRate,
-      tripCharge: backendConfig?.tripCharge ?? cfg.tripCharge,
-      installMultiplierFirstTime: backendConfig?.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime,
-      installMultiplierClean: backendConfig?.installMultiplierClean ?? cfg.installMultiplierClean,
-      frequencyMultipliers: backendConfig?.frequencyMultipliers ?? cfg.frequencyMultipliers,
-      rateCategories: backendConfig?.rateCategories ?? cfg.rateCategories,
-      monthlyConversions: backendConfig?.monthlyConversions ?? cfg.monthlyConversions,
-      annualFrequencies: backendConfig?.annualFrequencies ?? cfg.annualFrequencies,
+      smallWindowRate: backendConfig?.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
+      mediumWindowRate: backendConfig?.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
+      largeWindowRate: backendConfig?.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
+      tripCharge: backendConfig?.tripCharges?.standard ?? cfg.tripCharge,
+      installMultiplierFirstTime: backendConfig?.installPricing?.installationMultiplier ?? cfg.installMultiplierFirstTime,
+      installMultiplierClean: 1, // Clean install is always 1x
+      minimumChargePerVisit: backendConfig?.minimumChargePerVisit ?? 0,
+      // Map backend frequency structure to expected format
+      frequencyMultipliers: {
+        weekly: 1,
+        biweekly: backendConfig?.frequencyPriceMultipliers?.biweeklyPriceMultiplier ?? cfg.frequencyMultipliers.biweekly,
+        monthly: backendConfig?.frequencyPriceMultipliers?.monthlyPriceMultiplier ?? cfg.frequencyMultipliers.monthly,
+        quarterly: backendConfig?.frequencyPriceMultipliers?.quarterlyPriceMultiplierAfterFirstTime ?? cfg.frequencyMultipliers.quarterly,
+        bimonthly: cfg.frequencyMultipliers.bimonthly, // Use fallback for missing frequencies
+        annual: cfg.frequencyMultipliers.annual,
+        biannual: cfg.frequencyMultipliers.biannual,
+        twicePerMonth: cfg.frequencyMultipliers.twicePerMonth,
+        oneTime: cfg.frequencyMultipliers.oneTime,
+        quarterlyFirstTime: backendConfig?.frequencyPriceMultipliers?.quarterlyFirstTimeMultiplier ?? cfg.frequencyMultipliers.quarterlyFirstTime,
+      },
+      // Map backend frequency metadata to monthly conversions
+      monthlyConversions: {
+        weekly: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? cfg.monthlyConversions.weekly,
+        actualWeeksPerMonth: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? cfg.monthlyConversions.actualWeeksPerMonth,
+        actualWeeksPerYear: 52,
+      },
+      // Use fallback for annual frequencies (not in backend structure)
+      annualFrequencies: cfg.annualFrequencies,
+      // Use fallback rate categories (not in current backend structure)
+      rateCategories: cfg.rateCategories,
     };
 
     const freqKey = mapFrequency(form.frequency);
