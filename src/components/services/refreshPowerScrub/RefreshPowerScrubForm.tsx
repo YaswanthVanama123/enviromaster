@@ -5,13 +5,6 @@ import type {
   RefreshPowerScrubFormState,
 } from "./refreshPowerScrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
-import {
-  REFRESH_FOH_RATE,
-  REFRESH_KITCHEN_LARGE,
-  REFRESH_KITCHEN_SMALL_MED,
-  REFRESH_PATIO_STANDALONE,
-  REFRESH_PATIO_UPSELL,
-} from "./refreshPowerScrubConfig";
 import "./refreshPowerScrub.css";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
@@ -70,7 +63,6 @@ export const RefreshPowerScrubForm: React.FC<
     setFrequency,
     setContractMonths,
     setNotes,
-    setCustomPerVisitTotal,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
@@ -85,16 +77,6 @@ export const RefreshPowerScrubForm: React.FC<
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
-
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (value === '' || value === null) {
-      if (name === 'customPerVisitTotal') {
-        setCustomPerVisitTotal(undefined);
-      }
-    }
-  };
 
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
@@ -120,6 +102,27 @@ export const RefreshPowerScrubForm: React.FC<
 
   const getFixedFee = (): number => {
     return backendConfig?.squareFootagePricing?.fixedFee ?? 200;
+  };
+
+  // ✅ Backend-driven preset pricing (replaces static imports)
+  const getPatioStandalone = (): number => {
+    return backendConfig?.areaSpecificPricing?.patio?.standalone ?? 800;
+  };
+
+  const getPatioUpsell = (): number => {
+    return backendConfig?.areaSpecificPricing?.patio?.upsell ?? 500;
+  };
+
+  const getFohRate = (): number => {
+    return backendConfig?.areaSpecificPricing?.frontOfHouse ?? 2500;
+  };
+
+  const getKitchenSmallMed = (): number => {
+    return backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? 1500;
+  };
+
+  const getKitchenLarge = (): number => {
+    return backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500;
   };
 
   useEffect(() => {
@@ -210,36 +213,36 @@ export const RefreshPowerScrubForm: React.FC<
               serviceData.hours = {
                 isDisplay: true,
                 quantity: area.hours || 0,
-                priceRate: getHourRate(),
-                total: (area.hours || 0) * getHourRate(),
+                priceRate: area.hourlyRate,
+                total: (area.hours || 0) * area.hourlyRate,
                 type: "calc"
               };
             } else if (area.pricingType === 'perWorker') {
               serviceData.workersCalc = {
                 isDisplay: true,
                 quantity: area.workers || 0,
-                priceRate: getWorkerRate(),
-                total: (area.workers || 0) * getWorkerRate(),
+                priceRate: area.workerRate,
+                total: (area.workers || 0) * area.workerRate,
                 type: "calc"
               };
             } else if (area.pricingType === 'squareFeet') {
               serviceData.fixedFee = {
                 isDisplay: true,
-                value: getFixedFee(),
+                value: area.sqFtFixedFee,
                 type: "text"
               };
               serviceData.insideSqft = {
                 isDisplay: true,
                 quantity: area.insideSqFt || 0,
-                priceRate: getInsideRate(),
-                total: (area.insideSqFt || 0) * getInsideRate(),
+                priceRate: area.insideRate,
+                total: (area.insideSqFt || 0) * area.insideRate,
                 type: "calc"
               };
               serviceData.outsideSqft = {
                 isDisplay: true,
                 quantity: area.outsideSqFt || 0,
-                priceRate: getOutsideRate(),
-                total: (area.outsideSqFt || 0) * getOutsideRate(),
+                priceRate: area.outsideRate,
+                total: (area.outsideSqFt || 0) * area.outsideRate,
                 type: "calc"
               };
             } else if (area.pricingType === 'preset') {
@@ -331,16 +334,16 @@ export const RefreshPowerScrubForm: React.FC<
 
       case "patio":
         return form.patio.patioMode === "upsell"
-          ? REFRESH_PATIO_UPSELL
-          : REFRESH_PATIO_STANDALONE;
+          ? getPatioUpsell()
+          : getPatioStandalone();
 
       case "foh":
-        return REFRESH_FOH_RATE;
+        return getFohRate();
 
       case "boh":
         return form.boh.kitchenSize === "large"
-          ? REFRESH_KITCHEN_LARGE
-          : REFRESH_KITCHEN_SMALL_MED;
+          ? getKitchenLarge()
+          : getKitchenSmallMed();
 
       case "walkway":
       case "other":
@@ -368,7 +371,25 @@ export const RefreshPowerScrubForm: React.FC<
                   border: '1px solid #ccc'
                 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                    Patio Service: ${REFRESH_PATIO_STANDALONE} (Base)
+                    Patio Service (Base)
+                  </div>
+                  <div className="rps-inline" style={{ marginBottom: '6px' }}>
+                    <span>$</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      step="0.01"
+                      value={area.customAmount > 0 ? area.customAmount : getPatioStandalone()}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setAreaField(areaKey, "customAmount", value.toString());
+                      }}
+                      style={{
+                        width: '80px',
+                        backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
+                      }}
+                      title={`Patio base price - editable (default: $${getPatioStandalone()})`}
+                    />
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                     <input
@@ -376,7 +397,17 @@ export const RefreshPowerScrubForm: React.FC<
                       checked={area.includePatioAddon}
                       onChange={(e) => setAreaField(areaKey, "includePatioAddon", e.target.checked)}
                     />
-                    <span>Add-on Service: +${REFRESH_PATIO_UPSELL}</span>
+                    <span>Add-on Service: +$</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      step="0.01"
+                      value={getPatioUpsell()}
+                      onChange={() => {}} // For now keep static, can be made editable later if needed
+                      disabled
+                      style={{ width: '60px', backgroundColor: '#f5f5f5' }}
+                      title="Add-on service price"
+                    />
                   </label>
                   <div style={{
                     marginTop: '6px',
@@ -384,26 +415,63 @@ export const RefreshPowerScrubForm: React.FC<
                     fontWeight: 'bold',
                     color: '#0066cc'
                   }}>
-                    Total: ${REFRESH_PATIO_STANDALONE + (area.includePatioAddon ? REFRESH_PATIO_UPSELL : 0)}
+                    Total: ${(area.customAmount > 0 ? area.customAmount : getPatioStandalone()) + (area.includePatioAddon ? getPatioUpsell() : 0)}
                   </div>
                 </div>
               </div>
             )}
             {areaKey === "boh" && (
-              <select
-                className="rps-line"
-                value={area.kitchenSize}
-                onChange={(e) => setAreaField(areaKey, "kitchenSize", e.target.value)}
-                style={{ width: '160px' }}
-              >
-                <option value="smallMedium">Small/Med (${REFRESH_KITCHEN_SMALL_MED})</option>
-                <option value="large">Large (${REFRESH_KITCHEN_LARGE})</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <select
+                  className="rps-line"
+                  value={area.kitchenSize}
+                  onChange={(e) => setAreaField(areaKey, "kitchenSize", e.target.value)}
+                  style={{ width: '160px' }}
+                >
+                  <option value="smallMedium">Small/Medium Kitchen</option>
+                  <option value="large">Large Kitchen</option>
+                </select>
+                <div className="rps-inline">
+                  <span className="rps-label">Price:</span>
+                  <span>$</span>
+                  <input
+                    className="rps-line rps-num"
+                    type="number"
+                    step="0.01"
+                    value={area.customAmount > 0 ? area.customAmount : (area.kitchenSize === "large" ? getKitchenLarge() : getKitchenSmallMed())}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setAreaField(areaKey, "customAmount", value.toString());
+                    }}
+                    style={{
+                      width: '100px',
+                      backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
+                    }}
+                    title={`Kitchen price - editable (default: $${area.kitchenSize === "large" ? getKitchenLarge() : getKitchenSmallMed()})`}
+                  />
+                </div>
+              </div>
             )}
             {areaKey !== "patio" && areaKey !== "boh" && (
-              <span className="rps-label">
-                Default: ${formatAmount(getPresetAmount(areaKey))}
-              </span>
+              <div className="rps-inline">
+                <span className="rps-label">Price:</span>
+                <span>$</span>
+                <input
+                  className="rps-line rps-num"
+                  type="number"
+                  step="0.01"
+                  value={area.customAmount > 0 ? area.customAmount : getPresetAmount(areaKey)}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 0;
+                    setAreaField(areaKey, "customAmount", value.toString());
+                  }}
+                  style={{
+                    width: '100px',
+                    backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
+                  }}
+                  title={`Preset package price - editable (default: $${formatAmount(getPresetAmount(areaKey))})`}
+                />
+              </div>
             )}
           </div>
         );
@@ -414,13 +482,22 @@ export const RefreshPowerScrubForm: React.FC<
             <span className="rps-label">Workers</span>
             <input
               className="rps-line rps-num"
-              type="text"
+              type="number"
               value={area.workers}
               onChange={(e) => setAreaField(areaKey, "workers", e.target.value)}
               style={{ width: '60px' }}
             />
-            <span className="rps-label">@ ${getWorkerRate()}</span>
-            <span className="rps-label">= ${formatAmount((area.workers || 0) * getWorkerRate())}</span>
+            <span>@</span>
+            <input
+              className="rps-line rps-num"
+              type="number"
+              step="0.01"
+              value={area.workerRate}
+              onChange={(e) => setAreaField(areaKey, "workerRate", e.target.value)}
+              style={{ width: '80px' }}
+              title="Per worker rate - editable"
+            />
+            <span className="rps-label">= ${formatAmount((area.workers || 0) * area.workerRate)}</span>
           </div>
         );
 
@@ -435,8 +512,17 @@ export const RefreshPowerScrubForm: React.FC<
               onChange={(e) => setAreaField(areaKey, "hours", e.target.value)}
               style={{ width: '60px' }}
             />
-            <span className="rps-label">@ ${getHourRate()}</span>
-            <span className="rps-label">= ${formatAmount((area.hours || 0) * getHourRate())}</span>
+            <span>@</span>
+            <input
+              className="rps-line rps-num"
+              type="number"
+              step="0.01"
+              value={area.hourlyRate}
+              onChange={(e) => setAreaField(areaKey, "hourlyRate", e.target.value)}
+              style={{ width: '80px' }}
+              title="Per hour rate - editable"
+            />
+            <span className="rps-label">= ${formatAmount((area.hours || 0) * area.hourlyRate)}</span>
           </div>
         );
 
@@ -444,7 +530,17 @@ export const RefreshPowerScrubForm: React.FC<
         return (
           <>
             <div className="rps-inline">
-              <span className="rps-label">Fixed: ${getFixedFee()}</span>
+              <span className="rps-label">Fixed:</span>
+              <span>$</span>
+              <input
+                className="rps-line rps-num"
+                type="number"
+                step="0.01"
+                value={area.sqFtFixedFee}
+                onChange={(e) => setAreaField(areaKey, "sqFtFixedFee", e.target.value)}
+                style={{ width: '80px' }}
+                title="Fixed fee - editable"
+              />
             </div>
             <div className="rps-inline" style={{ marginTop: '4px' }}>
               <span className="rps-label">Inside</span>
@@ -455,8 +551,17 @@ export const RefreshPowerScrubForm: React.FC<
                 onChange={(e) => setAreaField(areaKey, "insideSqFt", e.target.value)}
                 style={{ width: '80px' }}
               />
-              <span>@ ${getInsideRate()}</span>
-              <span>= ${formatAmount((area.insideSqFt || 0) * getInsideRate())}</span>
+              <span>@</span>
+              <input
+                className="rps-line rps-num"
+                type="number"
+                step="0.01"
+                value={area.insideRate}
+                onChange={(e) => setAreaField(areaKey, "insideRate", e.target.value)}
+                style={{ width: '60px' }}
+                title="Inside rate - editable"
+              />
+              <span>= ${formatAmount((area.insideSqFt || 0) * area.insideRate)}</span>
             </div>
             <div className="rps-inline" style={{ marginTop: '4px' }}>
               <span className="rps-label">Outside</span>
@@ -467,8 +572,17 @@ export const RefreshPowerScrubForm: React.FC<
                 onChange={(e) => setAreaField(areaKey, "outsideSqFt", e.target.value)}
                 style={{ width: '80px' }}
               />
-              <span>@ ${getOutsideRate()}</span>
-              <span>= ${formatAmount((area.outsideSqFt || 0) * getOutsideRate())}</span>
+              <span>@</span>
+              <input
+                className="rps-line rps-num"
+                type="number"
+                step="0.01"
+                value={area.outsideRate}
+                onChange={(e) => setAreaField(areaKey, "outsideRate", e.target.value)}
+                style={{ width: '60px' }}
+                title="Outside rate - editable"
+              />
+              <span>= ${formatAmount((area.outsideSqFt || 0) * area.outsideRate)}</span>
             </div>
           </>
         );
@@ -631,71 +745,85 @@ export const RefreshPowerScrubForm: React.FC<
                       </select>
                     </div>
 
-                    <div className="rps-inline" style={{ marginTop: '8px' }}>
-                      <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
-                    </div>
-
-                    {/* Monthly Total – HIDE for visit-based frequencies (Quarterly, Bi-annual, Annual) */}
-                    {form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" &&
-                     form[areaKey].frequencyLabel?.toLowerCase() !== "bi-annual" &&
-                     form[areaKey].frequencyLabel?.toLowerCase() !== "annual" && (
+                    {/* For OneTime frequency, show "Total Visit" instead of regular Total + Monthly */}
+                    {form[areaKey].frequencyLabel?.toLowerCase() === "one time" ? (
                       <div className="rps-inline" style={{ marginTop: '8px' }}>
-                        <span className="rps-label">Monthly: ${formatAmount(areaMonthlyTotals[areaKey])}</span>
+                        <span className="rps-label" style={{ color: '#0066cc', fontWeight: 'bold' }}>
+                          Total Visit: ${formatAmount(areaTotals[areaKey])}
+                        </span>
                       </div>
+                    ) : (
+                      <>
+                        <div className="rps-inline" style={{ marginTop: '8px' }}>
+                          <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
+                        </div>
+
+                        {/* Monthly Total – HIDE for visit-based frequencies (Quarterly, Bi-annual, Annual) */}
+                        {form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" &&
+                         form[areaKey].frequencyLabel?.toLowerCase() !== "bi-annual" &&
+                         form[areaKey].frequencyLabel?.toLowerCase() !== "annual" && (
+                          <div className="rps-inline" style={{ marginTop: '8px' }}>
+                            <span className="rps-label">Monthly: ${formatAmount(areaMonthlyTotals[areaKey])}</span>
+                          </div>
+                        )}
+                      </>
                     )}
 
-                    <div className="rps-inline" style={{ marginTop: '8px' }}>
-                      <span className="rps-label">Contract:</span>
-                      <select
-                        className="rps-line"
-                        style={{ width: '60px', marginLeft: '4px', marginRight: '4px' }}
-                        value={form[areaKey].contractMonths}
-                        onChange={(e) => setAreaField(areaKey, "contractMonths", e.target.value)}
-                      >
-                        {form[areaKey].frequencyLabel?.toLowerCase() === "quarterly" ? (
-                          // For quarterly: show multiples of 3 months only
-                          Array.from({ length: 12 }, (_, i) => {
-                            const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
-                            return (
-                              <option key={months} value={months}>
-                                {months} mo
-                              </option>
-                            );
-                          })
-                        ) : form[areaKey].frequencyLabel?.toLowerCase() === "bi-annual" ? (
-                          // For bi-annual: show multiples of 6 months only
-                          Array.from({ length: 6 }, (_, i) => {
-                            const months = (i + 1) * 6; // 6, 12, 18, 24, 30, 36
-                            return (
-                              <option key={months} value={months}>
-                                {months} mo
-                              </option>
-                            );
-                          })
-                        ) : form[areaKey].frequencyLabel?.toLowerCase() === "annual" ? (
-                          // For annual: show multiples of 12 months only
-                          Array.from({ length: 3 }, (_, i) => {
-                            const months = (i + 1) * 12; // 12, 24, 36
-                            return (
-                              <option key={months} value={months}>
-                                {months} mo
-                              </option>
-                            );
-                          })
-                        ) : (
-                          // For all other frequencies: show 2-36 months
-                          Array.from({ length: 35 }, (_, i) => {
-                            const months = i + 2; // 2 to 36 months
-                            return (
-                              <option key={months} value={months}>
-                                {months} mo
-                              </option>
-                            );
-                          })
-                        )}
-                      </select>
-                      <span className="rps-label">${formatAmount(areaContractTotals[areaKey])}</span>
-                    </div>
+                    {/* Hide Contract for OneTime frequency */}
+                    {form[areaKey].frequencyLabel?.toLowerCase() !== "one time" && (
+                      <div className="rps-inline" style={{ marginTop: '8px' }}>
+                        <span className="rps-label">Contract:</span>
+                        <select
+                          className="rps-line"
+                          style={{ width: '60px', marginLeft: '4px', marginRight: '4px' }}
+                          value={form[areaKey].contractMonths}
+                          onChange={(e) => setAreaField(areaKey, "contractMonths", e.target.value)}
+                        >
+                          {form[areaKey].frequencyLabel?.toLowerCase() === "quarterly" ? (
+                            // For quarterly: show multiples of 3 months only
+                            Array.from({ length: 12 }, (_, i) => {
+                              const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+                              return (
+                                <option key={months} value={months}>
+                                  {months} mo
+                                </option>
+                              );
+                            })
+                          ) : form[areaKey].frequencyLabel?.toLowerCase() === "bi-annual" ? (
+                            // For bi-annual: show multiples of 6 months only
+                            Array.from({ length: 6 }, (_, i) => {
+                              const months = (i + 1) * 6; // 6, 12, 18, 24, 30, 36
+                              return (
+                                <option key={months} value={months}>
+                                  {months} mo
+                                </option>
+                              );
+                            })
+                          ) : form[areaKey].frequencyLabel?.toLowerCase() === "annual" ? (
+                            // For annual: show multiples of 12 months only
+                            Array.from({ length: 3 }, (_, i) => {
+                              const months = (i + 1) * 12; // 12, 24, 36
+                              return (
+                                <option key={months} value={months}>
+                                  {months} mo
+                                </option>
+                              );
+                            })
+                          ) : (
+                            // For all other frequencies: show 2-36 months
+                            Array.from({ length: 35 }, (_, i) => {
+                              const months = i + 2; // 2 to 36 months
+                              return (
+                                <option key={months} value={months}>
+                                  {months} mo
+                                </option>
+                              );
+                            })
+                          )}
+                        </select>
+                        <span className="rps-label">${formatAmount(areaContractTotals[areaKey])}</span>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -707,35 +835,7 @@ export const RefreshPowerScrubForm: React.FC<
       {/* Summary */}
       <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
         <div className="rps-inline">
-          <span className="rps-label-strong">TOTAL PER VISIT:</span>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="rps-num"
-              type="number"
-              step="0.01"
-              name="customPerVisitTotal"
-              value={
-                form.customPerVisitTotal !== undefined
-                  ? form.customPerVisitTotal.toFixed(2)
-                  : quote.perVisitPrice.toFixed(2)
-              }
-              onChange={(e) => {
-                const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                if (numVal === undefined || !isNaN(numVal)) {
-                  setCustomPerVisitTotal(numVal);
-                }
-              }}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customPerVisitTotal !== undefined ? '#fffacd' : 'white',
-                border: '1px solid #ccc',
-                width: '100px',
-                marginLeft: '8px'
-              }}
-              title="Total per visit - editable"
-            />
-          </div>
+          <span className="rps-label-strong">TOTAL PER VISIT: ${formatAmount(quote.perVisitPrice)}</span>
         </div>
       </div>
 

@@ -558,9 +558,16 @@ export const SanicleanForm: React.FC<
             type="number"
             step="0.01"
             name="luxuryUpgradePerDispenser"
-            value={form.soapType === "luxury" ? form.luxuryUpgradePerDispenser : 0}
+            value={form.luxuryUpgradePerDispenser}
             onChange={onChange}
-            title="Luxury soap upgrade rate per dispenser per week - editable"
+            disabled={form.soapType !== "luxury"}
+            style={{
+              backgroundColor: form.soapType !== "luxury" ? '#f5f5f5' : 'white',
+              color: form.soapType !== "luxury" ? '#999' : 'black'
+            }}
+            title={form.soapType === "luxury"
+              ? "Luxury soap upgrade rate per dispenser per week - editable"
+              : "Luxury soap upgrade (disabled - select luxury soap type to edit)"}
           />
           <span>=</span>
           <input

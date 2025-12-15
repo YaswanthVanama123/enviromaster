@@ -35,6 +35,7 @@ export interface RefreshAreaCalcState {
   workers: number;
   hours: number;
   hourlyRate: number; // Custom hourly rate per service
+  workerRate: number; // Custom rate per worker
 
   /** Square-footage, used when you want to price by sq-ft */
   insideSqFt: number;
@@ -80,9 +81,6 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
   foh: RefreshAreaCalcState;
   boh: RefreshAreaCalcState;
   other: RefreshAreaCalcState;
-
-  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
-  customPerVisitTotal?: number;
 }
 
 // Per-column per-visit totals used by the header table
