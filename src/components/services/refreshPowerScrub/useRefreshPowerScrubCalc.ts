@@ -106,8 +106,8 @@ function getBillingMultiplier(
       case "biweekly":
         return conversions.biweekly?.monthlyMultiplier ?? defaultMultipliers.biweekly;
       case "twicepermonth":
-        // ✅ ALWAYS use 1.0 for twicePerMonth (same as monthly, just visit 2× per month)
-        return 1.0;
+        // ✅ ALWAYS use 2.0 for twicePerMonth (2 visits per month)
+        return 2.0;
       case "monthly":
         return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
       case "bimonthly":
@@ -132,7 +132,8 @@ function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null
     pricingType: "preset",
     workers: 2,
     hours: 0,
-    hourlyRate: backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY,
+    hourlyRate: backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE, // Use per-hour rate for hourly pricing
+    workerRate: backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY, // Use per-worker rate
     insideSqFt: 0,
     outsideSqFt: 0,
     insideRate: backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE,
@@ -180,7 +181,8 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   pricingType: "preset",
   workers: 2,
   hours: 0,
-  hourlyRate: FALLBACK_DEFAULT_HOURLY, // $200/hr default
+  hourlyRate: FALLBACK_PER_HOUR_RATE, // $400/hr default for per-hour pricing
+  workerRate: FALLBACK_DEFAULT_HOURLY, // $200/worker default for per-worker pricing
   insideSqFt: 0,
   outsideSqFt: 0,
   insideRate: FALLBACK_SQFT_INSIDE_RATE, // $0.60/sq ft default
@@ -239,7 +241,8 @@ function calcPerWorker(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const perWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+  // Use area's worker rate if set, otherwise use backend rate, otherwise fallback
+  const perWorkerRate = state.workerRate > 0 ? state.workerRate : (backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY);
   const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
 
   const calculatedAmount = (state.workers || 0) * perWorkerRate;
@@ -257,7 +260,8 @@ function calcPerHour(
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const perHourRate = backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
+  // Use area's hourly rate if set, otherwise use backend rate, otherwise fallback
+  const perHourRate = state.hourlyRate > 0 ? state.hourlyRate : (backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE);
   const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
 
   const calculatedAmount = (state.hours || 0) * perHourRate;
@@ -393,7 +397,12 @@ function calcAreaCost(
   const state = form[area];
   if (!state.enabled) return { cost: 0, isPackage: false };
 
-  // Use the selected pricing type
+  // ✅ Check for price override first (if customAmount is set and > 0)
+  if (state.customAmount && state.customAmount > 0) {
+    return { cost: state.customAmount, isPackage: true }; // Assume overrides are package prices
+  }
+
+  // Use the selected pricing type for automatic calculation
   switch (state.pricingType) {
     case "preset":
       // Preset prices are package prices (trip included)
@@ -483,70 +492,82 @@ export function useRefreshPowerScrubCalc(
 
   // Helper function to update form with config data
   const updateFormWithConfig = (config: BackendRefreshPowerScrubConfig) => {
+    console.log('🔧 [Refresh Power Scrub] Updating form with backend config:', config);
+
     setForm((prev) => {
       const updatedDefaultArea = createDefaultArea(config);
       const backendForm = createDefaultForm(config);
 
-      // Merge with existing form state, preserving user inputs but updating defaults
-      return {
-        ...backendForm,
-        ...prev, // Keep any user-modified values
+      // ✅ FIXED: Preserve user input state (enabled/disabled areas) while updating backend rates
+      // Only update rates that come from backend, don't override user customizations
+      const updatedForm = {
+        ...prev, // Keep all current form state
 
-        // Update rates from backend
+        // ✅ Update global rates from backend (only if not already customized)
         tripCharge: config.coreRates?.tripCharge ?? prev.tripCharge,
         hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.hourlyRate,
         minimumVisit: config.coreRates?.minimumVisit ?? prev.minimumVisit,
 
-        // Update area defaults while preserving enabled states and user inputs
+        // ✅ Update each area's default rates from backend while preserving user settings
         dumpster: {
-          ...updatedDefaultArea,
-          ...prev.dumpster,
-          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.dumpster.hourlyRate,
-          insideRate: config.squareFootagePricing?.insideRate ?? prev.dumpster.insideRate,
-          outsideRate: config.squareFootagePricing?.outsideRate ?? prev.dumpster.outsideRate,
-          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.dumpster.sqFtFixedFee,
+          ...prev.dumpster, // Keep user's enabled state and custom amounts
+          // Update default rates from backend
+          hourlyRate: config.coreRates?.perHourRate ?? updatedDefaultArea.hourlyRate,
+          workerRate: config.coreRates?.perWorkerRate ?? config.coreRates?.defaultHourlyRate ?? updatedDefaultArea.workerRate,
+          insideRate: config.squareFootagePricing?.insideRate ?? updatedDefaultArea.insideRate,
+          outsideRate: config.squareFootagePricing?.outsideRate ?? updatedDefaultArea.outsideRate,
+          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? updatedDefaultArea.sqFtFixedFee,
         },
         patio: {
-          ...updatedDefaultArea,
-          ...prev.patio,
-          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.patio.hourlyRate,
-          insideRate: config.squareFootagePricing?.insideRate ?? prev.patio.insideRate,
-          outsideRate: config.squareFootagePricing?.outsideRate ?? prev.patio.outsideRate,
-          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.patio.sqFtFixedFee,
+          ...prev.patio, // Keep user's enabled state and custom amounts
+          hourlyRate: config.coreRates?.perHourRate ?? updatedDefaultArea.hourlyRate,
+          workerRate: config.coreRates?.perWorkerRate ?? config.coreRates?.defaultHourlyRate ?? updatedDefaultArea.workerRate,
+          insideRate: config.squareFootagePricing?.insideRate ?? updatedDefaultArea.insideRate,
+          outsideRate: config.squareFootagePricing?.outsideRate ?? updatedDefaultArea.outsideRate,
+          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? updatedDefaultArea.sqFtFixedFee,
         },
         walkway: {
-          ...updatedDefaultArea,
-          ...prev.walkway,
-          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.walkway.hourlyRate,
-          insideRate: config.squareFootagePricing?.insideRate ?? prev.walkway.insideRate,
-          outsideRate: config.squareFootagePricing?.outsideRate ?? prev.walkway.outsideRate,
-          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.walkway.sqFtFixedFee,
+          ...prev.walkway, // Keep user's enabled state and custom amounts
+          hourlyRate: config.coreRates?.perHourRate ?? updatedDefaultArea.hourlyRate,
+          workerRate: config.coreRates?.perWorkerRate ?? config.coreRates?.defaultHourlyRate ?? updatedDefaultArea.workerRate,
+          insideRate: config.squareFootagePricing?.insideRate ?? updatedDefaultArea.insideRate,
+          outsideRate: config.squareFootagePricing?.outsideRate ?? updatedDefaultArea.outsideRate,
+          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? updatedDefaultArea.sqFtFixedFee,
         },
         foh: {
-          ...updatedDefaultArea,
-          ...prev.foh,
-          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.foh.hourlyRate,
-          insideRate: config.squareFootagePricing?.insideRate ?? prev.foh.insideRate,
-          outsideRate: config.squareFootagePricing?.outsideRate ?? prev.foh.outsideRate,
-          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.foh.sqFtFixedFee,
+          ...prev.foh, // Keep user's enabled state and custom amounts
+          hourlyRate: config.coreRates?.perHourRate ?? updatedDefaultArea.hourlyRate,
+          workerRate: config.coreRates?.perWorkerRate ?? config.coreRates?.defaultHourlyRate ?? updatedDefaultArea.workerRate,
+          insideRate: config.squareFootagePricing?.insideRate ?? updatedDefaultArea.insideRate,
+          outsideRate: config.squareFootagePricing?.outsideRate ?? updatedDefaultArea.outsideRate,
+          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? updatedDefaultArea.sqFtFixedFee,
         },
         boh: {
-          ...updatedDefaultArea,
-          ...prev.boh,
-          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.boh.hourlyRate,
-          insideRate: config.squareFootagePricing?.insideRate ?? prev.boh.insideRate,
-          outsideRate: config.squareFootagePricing?.outsideRate ?? prev.boh.outsideRate,
-          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.boh.sqFtFixedFee,
+          ...prev.boh, // Keep user's enabled state and custom amounts
+          hourlyRate: config.coreRates?.perHourRate ?? updatedDefaultArea.hourlyRate,
+          workerRate: config.coreRates?.perWorkerRate ?? config.coreRates?.defaultHourlyRate ?? updatedDefaultArea.workerRate,
+          insideRate: config.squareFootagePricing?.insideRate ?? updatedDefaultArea.insideRate,
+          outsideRate: config.squareFootagePricing?.outsideRate ?? updatedDefaultArea.outsideRate,
+          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? updatedDefaultArea.sqFtFixedFee,
         },
         other: {
-          ...updatedDefaultArea,
-          ...prev.other,
-          hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.other.hourlyRate,
-          insideRate: config.squareFootagePricing?.insideRate ?? prev.other.insideRate,
-          outsideRate: config.squareFootagePricing?.outsideRate ?? prev.other.outsideRate,
-          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? prev.other.sqFtFixedFee,
+          ...prev.other, // Keep user's enabled state and custom amounts
+          hourlyRate: config.coreRates?.perHourRate ?? updatedDefaultArea.hourlyRate,
+          workerRate: config.coreRates?.perWorkerRate ?? config.coreRates?.defaultHourlyRate ?? updatedDefaultArea.workerRate,
+          insideRate: config.squareFootagePricing?.insideRate ?? updatedDefaultArea.insideRate,
+          outsideRate: config.squareFootagePricing?.outsideRate ?? updatedDefaultArea.outsideRate,
+          sqFtFixedFee: config.squareFootagePricing?.fixedFee ?? updatedDefaultArea.sqFtFixedFee,
         },
       };
+
+      console.log('🔧 [Refresh Power Scrub] Form updated with new rates:', {
+        hourlyRate: updatedForm.hourlyRate,
+        minimumVisit: updatedForm.minimumVisit,
+        patioWorkerRate: updatedForm.patio.workerRate,
+        fohWorkerRate: updatedForm.foh.workerRate,
+      });
+
+      return updatedForm;
     });
   };
 
@@ -554,6 +575,8 @@ export function useRefreshPowerScrubCalc(
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
     try {
+      console.log('🔄 [Refresh Power Scrub] Fetching fresh configuration from backend...');
+
       // First try to get active service config
       const response = await serviceConfigApi.getActive("refreshPowerScrub");
 
@@ -569,6 +592,17 @@ export function useRefreshPowerScrubCalc(
             const config = fallbackConfig.config as BackendRefreshPowerScrubConfig;
             setBackendConfig(config);
             updateFormWithConfig(config);
+
+            // ✅ Clear any custom amounts to ensure backend values are used
+            setForm(prev => ({
+              ...prev,
+              dumpster: { ...prev.dumpster, customAmount: 0 },
+              patio: { ...prev.patio, customAmount: 0 },
+              walkway: { ...prev.walkway, customAmount: 0 },
+              foh: { ...prev.foh, customAmount: 0 },
+              boh: { ...prev.boh, customAmount: 0 },
+              other: { ...prev.other, customAmount: 0 },
+            }));
 
             console.log('✅ Refresh Power Scrub FALLBACK CONFIG loaded from context:', {
               coreRates: config.coreRates,
@@ -594,9 +628,21 @@ export function useRefreshPowerScrubCalc(
 
       const config = document.config as BackendRefreshPowerScrubConfig;
 
-      // ✅ Store the backend config
+      // ✅ Store the backend config and update form
       setBackendConfig(config);
       updateFormWithConfig(config);
+
+      // ✅ Clear any custom amounts to ensure backend values are used
+      setForm(prev => ({
+        ...prev,
+        // Clear all custom amounts that might override backend values
+        dumpster: { ...prev.dumpster, customAmount: 0 },
+        patio: { ...prev.patio, customAmount: 0 },
+        walkway: { ...prev.walkway, customAmount: 0 },
+        foh: { ...prev.foh, customAmount: 0 },
+        boh: { ...prev.boh, customAmount: 0 },
+        other: { ...prev.other, customAmount: 0 },
+      }));
 
       console.log('📊 [Refresh Power Scrub] Active Backend Config Received:', {
         coreRates: config.coreRates,
@@ -605,7 +651,7 @@ export function useRefreshPowerScrubCalc(
         billingConversions: config.billingConversions,
       });
 
-      console.log('✅ Refresh Power Scrub config loaded from backend:', config);
+      console.log('✅ Refresh Power Scrub config loaded from backend, custom amounts cleared');
     } catch (error) {
       console.error('❌ Failed to fetch Refresh Power Scrub config from backend:', error);
 
@@ -617,6 +663,18 @@ export function useRefreshPowerScrubCalc(
           const config = fallbackConfig.config as BackendRefreshPowerScrubConfig;
           setBackendConfig(config);
           updateFormWithConfig(config);
+
+          // ✅ Clear any custom amounts to ensure backend values are used
+          setForm(prev => ({
+            ...prev,
+            dumpster: { ...prev.dumpster, customAmount: 0 },
+            patio: { ...prev.patio, customAmount: 0 },
+            walkway: { ...prev.walkway, customAmount: 0 },
+            foh: { ...prev.foh, customAmount: 0 },
+            boh: { ...prev.boh, customAmount: 0 },
+            other: { ...prev.other, customAmount: 0 },
+          }));
+
           return;
         }
       }
@@ -668,7 +726,7 @@ export function useRefreshPowerScrubCalc(
 
         // ✅ Log price override for numeric pricing fields
         if (value !== originalValue && value > 0 &&
-            ['workers', 'hours', 'hourlyRate', 'insideSqFt', 'outsideSqFt',
+            ['workers', 'hours', 'hourlyRate', 'workerRate', 'insideSqFt', 'outsideSqFt',
              'insideRate', 'outsideRate', 'sqFtFixedFee', 'customAmount'].includes(field as string)) {
 
           // Convert area key to readable name
@@ -807,10 +865,7 @@ export function useRefreshPowerScrubCalc(
     // Use areas subtotal as-is, only apply minimum visit if needed
     const calculatedPerVisit = Math.max(areasSubtotal, form.minimumVisit);
 
-    // ✅ Apply custom override if set
-    const perVisit = form.customPerVisitTotal ?? calculatedPerVisit;
-
-    const rounded = Math.round(perVisit * 100) / 100;
+    const rounded = Math.round(calculatedPerVisit * 100) / 100;
 
     // Calculate monthly and contract totals based on frequency
     let monthlyRecurring = 0;
@@ -881,28 +936,13 @@ export function useRefreshPowerScrubCalc(
       monthlyRecurring,
       contractTotal,
     };
-  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, form.customPerVisitTotal, areaMonthlyTotals, areaContractTotals, backendConfig]);
+  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig]);
 
   const setNotes = (notes: string) => {
     setForm((prev) => ({
       ...prev,
       notes,
     }));
-  };
-
-  const setCustomPerVisitTotal = (value: number | undefined) => {
-    const originalValue = form.customPerVisitTotal || 0;
-    const newValue = value || 0;
-
-    setForm((prev) => ({
-      ...prev,
-      customPerVisitTotal: value,
-    }));
-
-    // ✅ Log price override if value changed
-    if (newValue !== originalValue && newValue > 0) {
-      addServiceFieldChange('global', 'customPerVisitTotal', originalValue, newValue);
-    }
   };
 
   return {
@@ -912,7 +952,6 @@ export function useRefreshPowerScrubCalc(
     setFrequency,
     setContractMonths,
     setNotes,
-    setCustomPerVisitTotal,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
