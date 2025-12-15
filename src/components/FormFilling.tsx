@@ -18,7 +18,7 @@ import { pdfApi } from "../backendservice/api";
 import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
 import { useAllServicePricing } from "../backendservice/hooks";
-import { useVersionChangeCollection } from "../hooks/useVersionChangeCollection";
+import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger } from "../utils/fileLogger";
 
 type HeaderRow = {
   labelLeft: string;
@@ -117,8 +117,18 @@ export default function FormFilling() {
   // Fetch all service pricing data for context provider
   const { pricingData } = useAllServicePricing();
 
-  // ✅ NEW: Version change collection for batch logging
-  const { logVersionChanges, clearChanges, changes, hasChanges } = useVersionChangeCollection();
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+  const hasChanges = hasPriceChanges();
+  const changesCount = getPriceChangeCount();
+
+  // ✅ DEBUG: Log change collection status
+  console.log(`🔍 [FORMFILLING] File logger status:`, {
+    hasChanges,
+    changesCount
+  });
+
+  // Debug file logger on every render
+  debugFileLogger();
 
   // Detect if we're in edit mode based on URL path
   const isInEditMode = location.pathname.startsWith('/edit/pdf');
@@ -464,19 +474,20 @@ export default function FormFilling() {
         console.log("Draft updated successfully for agreement:", documentId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
-        // ✅ Log version changes for draft save (if any changes exist)
+        // ✅ SIMPLIFIED: Log version changes using file logger
         console.log(`📝 [DEBUG] Checking changes before draft save:`, {
           hasChanges,
-          changesCount: changes.length,
-          changes: changes
+          changesCount
         });
 
-        if (hasChanges) {
+        const currentHasChanges = hasPriceChanges();
+        const currentChangesCount = getPriceChangeCount();
+        if (currentHasChanges) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [DRAFT-SAVE] Logging ${changes.length} changes for draft update`);
+            console.log(`📝 [DRAFT-SAVE] Creating log file with ${currentChangesCount} changes for draft update`);
 
-            await logVersionChanges({
+            await createVersionLogFile({
               agreementId: documentId,
               versionId: documentId, // For drafts, use agreement ID as version ID
               versionNumber: 1, // Drafts are always version 1 until they become PDFs
@@ -486,11 +497,9 @@ export default function FormFilling() {
               documentTitle,
             });
 
-            // Clear collected changes after successful logging
-            clearChanges();
-            console.log(`✅ [DRAFT-SAVE] Successfully logged changes and cleared collection`);
+            console.log(`✅ [DRAFT-SAVE] Successfully created log file and cleared changes`);
           } catch (logError) {
-            console.error('❌ [DRAFT-SAVE] Failed to log version changes:', logError);
+            console.error('❌ [DRAFT-SAVE] Failed to create log file:', logError);
             // Don't fail the draft save if logging fails
           }
         }
@@ -502,13 +511,15 @@ export default function FormFilling() {
         console.log("Draft created successfully with ID:", newId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
-        // ✅ Log version changes for new draft (if any changes exist)
-        if (hasChanges && newId) {
+        // ✅ SIMPLIFIED: Log version changes using file logger for new draft
+        const currentHasChanges = hasPriceChanges();
+        const currentChangesCount = getPriceChangeCount();
+        if (currentHasChanges && newId) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [DRAFT-CREATE] Logging ${changes.length} changes for new draft`);
+            console.log(`📝 [DRAFT-CREATE] Creating log file with ${currentChangesCount} changes for new draft`);
 
-            await logVersionChanges({
+            await createVersionLogFile({
               agreementId: newId,
               versionId: newId, // For drafts, use agreement ID as version ID
               versionNumber: 1, // Drafts are always version 1 until they become PDFs
@@ -518,13 +529,13 @@ export default function FormFilling() {
               documentTitle,
             });
 
-            // Clear collected changes after successful logging
-            clearChanges();
-            console.log(`✅ [DRAFT-CREATE] Successfully logged changes and cleared collection`);
+            console.log(`✅ [DRAFT-CREATE] Successfully created log file and cleared changes`);
           } catch (logError) {
-            console.error('❌ [DRAFT-CREATE] Failed to log version changes:', logError);
+            console.error('❌ [DRAFT-CREATE] Failed to create log file:', logError);
             // Don't fail the draft save if logging fails
           }
+        } else {
+          console.log(`ℹ️ [DRAFT-CREATE] No changes to log (hasChanges: ${currentHasChanges}, newId: ${newId})`);
         }
       }
     } catch (err) {
@@ -611,12 +622,14 @@ export default function FormFilling() {
 
       console.log("✅ [FIRST VERSION SUCCESS] v1 created successfully:", result);
 
-      // ✅ Log version changes for PDF generation (if any changes exist)
-      if (hasChanges && result.version?.id) {
+      // ✅ SIMPLIFIED: Log version changes using file logger for PDF generation
+      const currentHasChanges = hasPriceChanges();
+      const currentChangesCount = getPriceChangeCount();
+      if (currentHasChanges && result.version?.id) {
         try {
-          console.log(`📝 [FIRST-VERSION-PDF] Logging ${changes.length} changes for first version PDF`);
+          console.log(`📝 [FIRST-VERSION-PDF] Creating log file with ${currentChangesCount} changes for first version PDF`);
 
-          await logVersionChanges({
+          await createVersionLogFile({
             agreementId: documentId,
             versionId: result.version.id,
             versionNumber: result.version.versionNumber || 1,
@@ -626,11 +639,9 @@ export default function FormFilling() {
             documentTitle: payload?.headerTitle || 'Untitled Document',
           });
 
-          // Clear collected changes after successful logging
-          clearChanges();
-          console.log(`✅ [FIRST-VERSION-PDF] Successfully logged changes and cleared collection`);
+          console.log(`✅ [FIRST-VERSION-PDF] Successfully created log file and cleared changes`);
         } catch (logError) {
-          console.error('❌ [FIRST-VERSION-PDF] Failed to log version changes:', logError);
+          console.error('❌ [FIRST-VERSION-PDF] Failed to create log file:', logError);
           // Don't fail the PDF generation if logging fails
         }
       }
@@ -708,13 +719,15 @@ export default function FormFilling() {
 
         console.log("✅ [NEW DOCUMENT] v1 created successfully:", versionResult);
 
-        // ✅ Log version changes for new document PDF generation (if any changes exist)
-        if (hasChanges && versionResult.version?.id) {
+        // ✅ SIMPLIFIED: Log version changes using file logger for new document PDF
+        const currentHasChanges = hasPriceChanges();
+        const currentChangesCount = getPriceChangeCount();
+        if (currentHasChanges && versionResult.version?.id) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [NEW-DOCUMENT-PDF] Logging ${changes.length} changes for new document first version`);
+            console.log(`📝 [NEW-DOCUMENT-PDF] Creating log file with ${currentChangesCount} changes for new document first version`);
 
-            await logVersionChanges({
+            await createVersionLogFile({
               agreementId: newId,
               versionId: versionResult.version.id,
               versionNumber: versionResult.version.versionNumber || 1,
@@ -724,11 +737,9 @@ export default function FormFilling() {
               documentTitle,
             });
 
-            // Clear collected changes after successful logging
-            clearChanges();
-            console.log(`✅ [NEW-DOCUMENT-PDF] Successfully logged changes and cleared collection`);
+            console.log(`✅ [NEW-DOCUMENT-PDF] Successfully created log file and cleared changes`);
           } catch (logError) {
-            console.error('❌ [NEW-DOCUMENT-PDF] Failed to log version changes:', logError);
+            console.error('❌ [NEW-DOCUMENT-PDF] Failed to create log file:', logError);
             // Don't fail the PDF generation if logging fails
           }
         }
@@ -769,12 +780,14 @@ export default function FormFilling() {
 
       console.log("✅ [VERSION SUCCESS] Version created successfully:", result);
 
-      // ✅ Log version changes for subsequent PDF generation (if any changes exist)
-      if (hasChanges && result.version?.id) {
+      // ✅ SIMPLIFIED: Log version changes using file logger for subsequent PDF
+      const currentHasChanges = hasPriceChanges();
+      const currentChangesCount = getPriceChangeCount();
+      if (currentHasChanges && result.version?.id) {
         try {
-          console.log(`📝 [VERSION-PDF] Logging ${changes.length} changes for version ${result.version.versionNumber}`);
+          console.log(`📝 [VERSION-PDF] Creating log file with ${currentChangesCount} changes for version ${result.version.versionNumber}`);
 
-          await logVersionChanges({
+          await createVersionLogFile({
             agreementId: documentId,
             versionId: result.version.id,
             versionNumber: result.version.versionNumber || 1,
@@ -784,11 +797,9 @@ export default function FormFilling() {
             documentTitle: payload?.headerTitle || 'Untitled Document',
           });
 
-          // Clear collected changes after successful logging
-          clearChanges();
-          console.log(`✅ [VERSION-PDF] Successfully logged changes and cleared collection`);
+          console.log(`✅ [VERSION-PDF] Successfully created log file and cleared changes`);
         } catch (logError) {
-          console.error('❌ [VERSION-PDF] Failed to log version changes:', logError);
+          console.error('❌ [VERSION-PDF] Failed to create log file:', logError);
           // Don't fail the PDF generation if logging fails
         }
       }

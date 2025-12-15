@@ -10,6 +10,7 @@ import type {
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendSanipodConfig {
@@ -477,23 +478,31 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // Version change collection
-  const { addChange } = useVersionChangeCollection();
-
-  // Helper function to add service field changes
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    addChange({
-      fieldName: fieldName,
-      fieldDisplayName: `Sanipod - ${fieldName}`,
+    addPriceChange({
+      productKey: `sanipod_${fieldName}`,
+      productName: `SaniPod - ${getFieldDisplayName(fieldName)}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      serviceId: 'sanipod',
+      quantity: form.unitCount || 1,
+      frequency: form.frequency || ''
     });
-  }, [addChange]);
+
+    console.log(`📝 [SANIPOD-FILE-LOGGER] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [form.unitCount, form.frequency]);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>

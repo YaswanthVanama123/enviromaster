@@ -11,6 +11,7 @@ import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // Backend config interface matching MongoDB structure
 interface BackendSanicleanConfig extends SanicleanPricingConfig {}
@@ -683,49 +684,31 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Version Change Collection Setup
-  const { addChange } = useVersionChangeCollection();
-
-  // ✅ Helper function to add service field changes to collection
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    // Get field display name for better readability
-    const fieldDisplayNames: Record<string, string> = {
-      customBaseService: 'Base Service Cost',
-      customTripCharge: 'Trip Charge',
-      customFacilityComponents: 'Facility Components',
-      customSoapUpgrade: 'Soap Upgrade',
-      customExcessSoap: 'Excess Soap',
-      customMicrofiberMopping: 'Microfiber Mopping',
-      customWarrantyFees: 'Warranty Fees',
-      customPaperOverage: 'Paper Overage',
-      customWeeklyTotal: 'Weekly Total',
-      customMonthlyTotal: 'Monthly Total',
-      customContractTotal: 'Contract Total'
-    };
-
-    addChange({
+    addPriceChange({
       productKey: `saniclean_${fieldName}`,
-      productName: `SaniClean - ${fieldDisplayNames[fieldName] || fieldName}`,
+      productName: `SaniClean - ${getFieldDisplayName(fieldName)}`,
       productType: 'service',
       fieldType: fieldName,
-      fieldDisplayName: fieldDisplayNames[fieldName] || fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
       quantity: form.fixtureCount || 1,
       frequency: 'weekly'
     });
 
-    console.log(`📝 [SANICLEAN-CHANGE-COLLECTION] Added change for ${fieldName}:`, {
+    console.log(`📝 [SANICLEAN-FILE-LOGGER] Added change for ${fieldName}:`, {
       from: originalValue,
       to: newValue,
       change: newValue - originalValue,
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
-  }, [addChange, form.fixtureCount]);
+  }, [form.fixtureCount]);
 
   // Calculate quote based on pricing mode
   const quote: SanicleanQuoteResult = useMemo(() => {

@@ -4,7 +4,7 @@ import "./ProductsSection.css";
 import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
 import { useServicesContextOptional } from "../services/ServicesContext";
-import { useVersionChangeCollection, getProductTypeFromFamily, getFieldType } from "../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName, getProductTypeFromFamily, getFieldType } from "../../utils/fileLogger";
 
 // Export interface for ref handle
 export interface ProductsSectionHandle {
@@ -705,8 +705,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-  // ✅ NEW: Version Change Collection Setup
-  const { addChange } = useVersionChangeCollection();
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
 
   // ✅ Tab Management
   const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -895,20 +894,20 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
                 // Only log if override is different from original
                 if (originalValue !== newValue) {
-                  // Collect the change for version-based batch logging
-                  addChange({
+                  // Use file logger for version-based batch logging
+                  addPriceChange({
                     productKey: product.key,
                     productName: product.name,
                     productType: getProductTypeFromFamily(product.familyKey),
                     fieldType: getFieldType(field),
-                    fieldDisplayName: getFieldType(field),
+                    fieldDisplayName: getFieldDisplayName(getFieldType(field)),
                     originalValue: originalValue,
                     newValue: newValue,
                     quantity: currentRow.qty || 0,
                     frequency: currentRow.frequency || ''
                   });
 
-                  console.log(`📝 [PRODUCT-CHANGE-COLLECTION] Added change for ${product.name}:`, {
+                  console.log(`📝 [PRODUCT-FILE-LOGGER] Added change for ${product.name}:`, {
                     field,
                     from: originalValue,
                     to: newValue,
@@ -927,7 +926,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         };
       });
     },
-    [addChange, getProduct]
+    [getProduct] // ✅ SIMPLIFIED: Removed addChange since we use file logger directly
   );
 
   const updateRowProductKey = useCallback(

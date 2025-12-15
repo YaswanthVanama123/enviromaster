@@ -12,6 +12,7 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 import { useSharedVersionChangeCollectionOptional } from "../../../hooks/VersionChangeCollectionContext";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure from API
 interface BackendMicrofiberConfig {
@@ -397,55 +398,31 @@ export function useMicrofiberMoppingCalc(
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Version Change Collection Setup - Use shared context if available, otherwise own instance
-  const sharedChangeCollection = useSharedVersionChangeCollectionOptional();
-  const ownChangeCollection = useVersionChangeCollection();
-  const { addChange } = sharedChangeCollection || ownChangeCollection;
-
-  // ✅ Helper function to add service field changes to collection
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    // Get field display name for better readability
-    const fieldDisplayNames: Record<string, string> = {
-      includedBathroomRate: 'Included Bathroom Rate',
-      hugeBathroomRatePerSqFt: 'Huge Bathroom Rate per Sq Ft',
-      extraAreaRatePerUnit: 'Extra Area Rate per Unit',
-      standaloneRatePerUnit: 'Standalone Rate per Unit',
-      dailyChemicalPerGallon: 'Daily Chemical per Gallon',
-      customStandardBathroomTotal: 'Standard Bathroom Total',
-      customHugeBathroomTotal: 'Huge Bathroom Total',
-      customExtraAreaTotal: 'Extra Area Total',
-      customStandaloneTotal: 'Standalone Total',
-      customChemicalTotal: 'Chemical Total',
-      customPerVisitPrice: 'Per Visit Price',
-      customMonthlyRecurring: 'Monthly Recurring',
-      customFirstMonthPrice: 'First Month Price',
-      customContractTotal: 'Contract Total'
-    };
-
-    addChange({
+    addPriceChange({
       productKey: `microfiberMopping_${fieldName}`,
-      productName: `Microfiber Mopping - ${fieldDisplayNames[fieldName] || fieldName}`,
+      productName: `Microfiber Mopping - ${getFieldDisplayName(fieldName)}`,
       productType: 'service',
       fieldType: fieldName,
-      fieldDisplayName: fieldDisplayNames[fieldName] || fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
       quantity: (form.bathroomCount + form.hugeBathroomSqFt + form.extraAreaSqFt + form.standaloneSqFt) || 1,
       frequency: form.frequency || ''
     });
 
-    console.log(`📝 [MICROFIBER-CHANGE-COLLECTION] Added change for ${fieldName}:`, {
+    console.log(`📝 [MICROFIBER-FILE-LOGGER] Added change for ${fieldName}:`, {
       from: originalValue,
       to: newValue,
       change: newValue - originalValue,
-      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A',
-      usingSharedContext: !!sharedChangeCollection
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
-  }, [addChange, form.frequency, form.bathroomCount, form.hugeBathroomSqFt, form.extraAreaSqFt, form.standaloneSqFt]);
+  }, [form.frequency, form.bathroomCount, form.hugeBathroomSqFt, form.extraAreaSqFt, form.standaloneSqFt]);
 
   const onChange = (ev: InputChangeEvent) => {
     const target = ev.target as HTMLInputElement;

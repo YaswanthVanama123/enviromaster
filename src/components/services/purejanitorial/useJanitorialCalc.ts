@@ -10,7 +10,7 @@ import type {
 } from "./janitorialTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
-import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // ✅ Backend tiered pricing structure
 interface TieredPricingTier {
@@ -253,23 +253,31 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // Version change collection
-  const { addChange } = useVersionChangeCollection();
-
-  // Helper function to add service field changes
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    addChange({
-      fieldName: fieldName,
-      fieldDisplayName: `Pure Janitorial - ${fieldName}`,
+    addPriceChange({
+      productKey: `pureJanitorial_${fieldName}`,
+      productName: `Pure Janitorial - ${getFieldDisplayName(fieldName)}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      serviceId: 'purejanitorial',
+      quantity: form.manualHours || form.vacuumingHours || 1,
+      frequency: form.frequency || ''
     });
-  }, [addChange]);
+
+    console.log(`📝 [PURE-JANITORIAL-FILE-LOGGER] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [form.manualHours, form.vacuumingHours, form.frequency]);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>

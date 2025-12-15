@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, ChangeEvent, useCallback } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
-import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import type {
   JanitorialFormState,
   JanitorialQuoteResult,
@@ -90,23 +90,31 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // Version change collection
-  const { addChange } = useVersionChangeCollection();
-
-  // Helper function to add service field changes
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    addChange({
-      fieldName: fieldName,
-      fieldDisplayName: `Janitorial - ${fieldName}`,
+    addPriceChange({
+      productKey: `janitorial_${fieldName}`,
+      productName: `Janitorial - ${getFieldDisplayName(fieldName)}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      serviceId: 'janitorial',
+      quantity: form.baseHours || 1,
+      frequency: form.frequency || ''
     });
-  }, [addChange]);
+
+    console.log(`📝 [JANITORIAL-FILE-LOGGER] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [form.baseHours, form.frequency]);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();

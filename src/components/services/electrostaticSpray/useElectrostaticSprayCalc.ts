@@ -9,7 +9,7 @@ import type {
 import { electrostaticSprayPricingConfig as cfg } from "./electrostaticSprayConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
-import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // Backend config interface matching MongoDB JSON structure
 interface BackendElectrostaticSprayConfig {
@@ -240,23 +240,31 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // Version change collection
-  const { addChange } = useVersionChangeCollection();
-
-  // Helper function to add service field changes
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    addChange({
-      fieldName: fieldName,
-      fieldDisplayName: `Electrostatic Spray - ${fieldName}`,
+    addPriceChange({
+      productKey: `electrostaticSpray_${fieldName}`,
+      productName: `Electrostatic Spray - ${getFieldDisplayName(fieldName)}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      serviceId: 'electrostaticSpray',
+      quantity: form.roomCount || form.squareFeet || 1,
+      frequency: form.frequency || ''
     });
-  }, [addChange]);
+
+    console.log(`📝 [ELECTROSTATIC-SPRAY-FILE-LOGGER] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [form.roomCount, form.squareFeet, form.frequency]);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, type } = e.target;

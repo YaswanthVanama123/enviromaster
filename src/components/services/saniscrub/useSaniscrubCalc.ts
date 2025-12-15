@@ -9,6 +9,7 @@ import {
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // ✅ Backend config interface matching the corrected MongoDB JSON structure
 interface BackendSaniscrubConfig {
@@ -218,23 +219,31 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // Version change collection
-  const { addChange } = useVersionChangeCollection();
-
-  // Helper function to add service field changes
+  // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    addChange({
-      fieldName: fieldName,
-      fieldDisplayName: `Saniscrub - ${fieldName}`,
+    addPriceChange({
+      productKey: `saniscrub_${fieldName}`,
+      productName: `SaniScrub - ${getFieldDisplayName(fieldName)}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      serviceId: 'saniscrub',
+      quantity: form.bathroomCount || 1,
+      frequency: form.frequency || ''
     });
-  }, [addChange]);
+
+    console.log(`📝 [SANISCRUB-FILE-LOGGER] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [form.bathroomCount, form.frequency]);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>

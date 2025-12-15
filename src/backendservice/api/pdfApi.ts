@@ -184,6 +184,42 @@ export interface SavedFileDetailsResponse {
   };
 }
 
+// ✅ NEW: Version logs interfaces
+export interface VersionLogRequest {
+  agreementId: string;
+  versionId: string;
+  versionNumber: number;
+  salespersonId: string;
+  salespersonName: string;
+  saveAction: 'save_draft' | 'generate_pdf' | 'manual_save';
+  documentTitle: string;
+  changes?: Array<{
+    productKey: string;
+    productName: string;
+    productType: 'product' | 'dispenser' | 'service';
+    fieldType: string;
+    fieldDisplayName: string;
+    originalValue: number;
+    newValue: number;
+    changeAmount: number;
+    changePercentage: number;
+    quantity?: number;
+    frequency?: string;
+    timestamp: string;
+  }>;
+}
+
+export interface VersionLogResponse {
+  success: boolean;
+  message: string;
+  logFile?: {
+    fileName: string;
+    totalChanges: number;
+    totalPriceImpact: number;
+    hasSignificantChanges: boolean;
+  } | null;
+}
+
 /**
  * PDF API Service
  * Handles all PDF-related operations: customer headers, admin templates, downloads
@@ -549,6 +585,20 @@ export const pdfApi = {
   }> {
     const res = await axios.delete(
       `${API_BASE_URL}/api/pdf/files/${fileId}/permanent-delete`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Create version log file for price changes
+   */
+  async createVersionLog(request: VersionLogRequest): Promise<VersionLogResponse> {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/pdf/version-logs/create`,
+      request,
       {
         headers: { "Content-Type": "application/json" },
       }
