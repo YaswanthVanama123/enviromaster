@@ -1,5 +1,5 @@
 // src/features/services/refreshPowerScrub/useRefreshPowerScrubCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type {
   RefreshAreaCalcState,
   RefreshAreaKey,
@@ -9,6 +9,7 @@ import type {
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Fallback constants (only used when backend is unavailable)
 const FALLBACK_DEFAULT_HOURLY = 200;
@@ -453,6 +454,24 @@ export function useRefreshPowerScrubCalc(
     return base;
   });
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Refresh Power Scrub - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'refreshPowerScrub',
+    });
+  }, [addChange]);
+
   // ✅ State to store backend config
   const [backendConfig, setBackendConfig] = useState<BackendRefreshPowerScrubConfig | null>(null);
 
@@ -640,10 +659,31 @@ export function useRefreshPowerScrubCalc(
     setForm((prev) => {
       const current = prev[area];
       let value: any = raw;
+      let originalValue: any = current[field];
 
       if (numericAreaFields.includes(field)) {
         const n = parseFloat(raw);
         value = Number.isFinite(n) ? n : 0;
+        originalValue = typeof originalValue === 'number' ? originalValue : 0;
+
+        // ✅ Log price override for numeric pricing fields
+        if (value !== originalValue && value > 0 &&
+            ['workers', 'hours', 'hourlyRate', 'insideSqFt', 'outsideSqFt',
+             'insideRate', 'outsideRate', 'sqFtFixedFee', 'customAmount'].includes(field as string)) {
+
+          // Convert area key to readable name
+          const areaName = area === 'boh' ? 'Back of House' :
+                          area === 'foh' ? 'Front of House' :
+                          area.charAt(0).toUpperCase() + area.slice(1);
+
+          addServiceFieldChange(
+            areaName,
+            field as string,
+            originalValue,
+            value,
+            current
+          );
+        }
       }
 
       return {
@@ -659,18 +699,34 @@ export function useRefreshPowerScrubCalc(
   /** Root config helpers */
   const setHourlyRate = (raw: string) => {
     const n = parseFloat(raw);
+    const newValue = Number.isFinite(n) ? n : 0;
+    const originalValue = form.hourlyRate;
+
     setForm((prev) => ({
       ...prev,
-      hourlyRate: Number.isFinite(n) ? n : 0,
+      hourlyRate: newValue,
     }));
+
+    // ✅ Log price override if value changed
+    if (newValue !== originalValue && newValue > 0) {
+      addServiceFieldChange('global', 'hourlyRate', originalValue, newValue);
+    }
   };
 
   const setMinimumVisit = (raw: string) => {
     const n = parseFloat(raw);
+    const newValue = Number.isFinite(n) ? n : 0;
+    const originalValue = form.minimumVisit;
+
     setForm((prev) => ({
       ...prev,
-      minimumVisit: Number.isFinite(n) ? n : 0,
+      minimumVisit: newValue,
     }));
+
+    // ✅ Log price override if value changed
+    if (newValue !== originalValue && newValue > 0) {
+      addServiceFieldChange('global', 'minimumVisit', originalValue, newValue);
+    }
   };
 
   const setFrequency = (frequency: string) => {
@@ -835,10 +891,18 @@ export function useRefreshPowerScrubCalc(
   };
 
   const setCustomPerVisitTotal = (value: number | undefined) => {
+    const originalValue = form.customPerVisitTotal || 0;
+    const newValue = value || 0;
+
     setForm((prev) => ({
       ...prev,
       customPerVisitTotal: value,
     }));
+
+    // ✅ Log price override if value changed
+    if (newValue !== originalValue && newValue > 0) {
+      addServiceFieldChange('global', 'customPerVisitTotal', originalValue, newValue);
+    }
   };
 
   return {

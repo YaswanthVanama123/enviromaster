@@ -1,8 +1,9 @@
 // src/components/services/janitorial/useJanitorialCalc.ts
-import { useState, useEffect, useMemo, ChangeEvent } from "react";
+import { useState, useEffect, useMemo, ChangeEvent, useCallback } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 import type {
   JanitorialFormState,
   JanitorialQuoteResult,
@@ -88,6 +89,24 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Janitorial - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'janitorial',
+    });
+  }, [addChange]);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
@@ -210,10 +229,27 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     field: K,
     value: JanitorialFormState[K]
   ) => {
+    // ✅ Capture original value before update
+    const originalValue = form[field];
+
     setForm(prev => ({
       ...prev,
       [field]: value
     }));
+
+    // ✅ Log price override for numeric pricing fields
+    const pricingFields = [
+      'recurringServiceRate', 'oneTimeServiceRate', 'vacuumingRatePerHour', 'dustingRatePerHour',
+      'perVisitMinimum', 'recurringContractMinimum', 'standardTripCharge', 'beltwayTripCharge',
+      'paidParkingTripCharge', 'parkingCost', 'baseHours', 'vacuumingHours', 'dustingHours'
+    ];
+
+    if (pricingFields.includes(field as string) &&
+        typeof value === 'number' && typeof originalValue === 'number' &&
+        value !== originalValue && value > 0) {
+
+      addServiceFieldChange(field as string, originalValue, value);
+    }
   };
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

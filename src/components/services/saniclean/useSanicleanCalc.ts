@@ -1,5 +1,5 @@
 // src/features/services/saniclean/useSanicleanCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import type {
   SanicleanFormState,
   SanicleanPricingConfig,
@@ -10,6 +10,7 @@ import type {
 import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // Backend config interface matching MongoDB structure
 interface BackendSanicleanConfig extends SanicleanPricingConfig {}
@@ -613,6 +614,50 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ Version Change Collection Setup
+  const { addChange } = useVersionChangeCollection();
+
+  // ✅ Helper function to add service field changes to collection
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    // Get field display name for better readability
+    const fieldDisplayNames: Record<string, string> = {
+      customBaseService: 'Base Service Cost',
+      customTripCharge: 'Trip Charge',
+      customFacilityComponents: 'Facility Components',
+      customSoapUpgrade: 'Soap Upgrade',
+      customExcessSoap: 'Excess Soap',
+      customMicrofiberMopping: 'Microfiber Mopping',
+      customWarrantyFees: 'Warranty Fees',
+      customPaperOverage: 'Paper Overage',
+      customWeeklyTotal: 'Weekly Total',
+      customMonthlyTotal: 'Monthly Total',
+      customContractTotal: 'Contract Total'
+    };
+
+    addChange({
+      productKey: `saniclean_${fieldName}`,
+      productName: `SaniClean - ${fieldDisplayNames[fieldName] || fieldName}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: fieldDisplayNames[fieldName] || fieldName,
+      originalValue,
+      newValue,
+      quantity: form.fixtureCount || 1,
+      frequency: 'weekly'
+    });
+
+    console.log(`📝 [SANICLEAN-CHANGE-COLLECTION] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [addChange, form.fixtureCount]);
+
   // Calculate quote based on pricing mode
   const quote: SanicleanQuoteResult = useMemo(() => {
     const config = backendConfig || SANICLEAN_CONFIG;
@@ -649,6 +694,12 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   // Form update helpers
   const updateForm = (updates: Partial<SanicleanFormState>) => {
     setForm((prev) => {
+      // ✅ Capture original values before update for price override logging
+      const originalValues: any = {};
+      Object.keys(updates).forEach(key => {
+        originalValues[key] = prev[key as keyof SanicleanFormState];
+      });
+
       const next = { ...prev, ...updates };
 
       // ✅ AUTO-CLEAR CUSTOM OVERRIDES when base inputs change
@@ -682,6 +733,39 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         next.customMonthlyTotal = undefined;
         next.customContractTotal = undefined;
       }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        // All-inclusive rates
+        'allInclusiveWeeklyRatePerFixture', 'luxuryUpgradePerDispenser', 'excessStandardSoapRate', 'excessLuxurySoapRate',
+        'paperCreditPerFixture', 'microfiberMoppingPerBathroom',
+        // Per-item rates
+        'insideBeltwayRatePerFixture', 'insideBeltwayMinimum', 'insideBeltwayTripCharge', 'insideBeltwayParkingFee',
+        'outsideBeltwayRatePerFixture', 'outsideBeltwayTripCharge', 'smallFacilityThreshold', 'smallFacilityMinimum',
+        // Component rates
+        'urinalScreenMonthly', 'urinalMatMonthly', 'toiletClipsMonthly', 'seatCoverDispenserMonthly', 'sanipodServiceMonthly',
+        // Warranty & billing
+        'warrantyFeePerDispenserPerWeek', 'weeklyToMonthlyMultiplier', 'weeklyToAnnualMultiplier',
+        'redRateMultiplier', 'greenRateMultiplier',
+        // Custom overrides
+        'customBaseService', 'customTripCharge', 'customFacilityComponents', 'customSoapUpgrade', 'customExcessSoap',
+        'customMicrofiberMopping', 'customWarrantyFees', 'customPaperOverage', 'customWeeklyTotal', 'customMonthlyTotal', 'customContractTotal'
+      ];
+
+      // Check each updated field for price overrides
+      Object.keys(updates).forEach(fieldName => {
+        if (pricingFields.includes(fieldName)) {
+          const newValue = updates[fieldName as keyof SanicleanFormState] as number | undefined;
+          const oldValue = originalValues[fieldName] as number | undefined;
+
+          // Handle undefined values (when cleared) - don't log clearing to undefined
+          if (newValue !== undefined && oldValue !== undefined &&
+              typeof newValue === 'number' && typeof oldValue === 'number' &&
+              newValue !== oldValue && newValue > 0) {
+            addServiceFieldChange(fieldName, oldValue, newValue);
+          }
+        }
+      });
 
       return recomputeFixtureCount(next);
     });

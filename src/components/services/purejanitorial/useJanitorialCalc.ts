@@ -1,5 +1,5 @@
 // src/features/services/janitorial/useJanitorialCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import type {
@@ -10,6 +10,7 @@ import type {
 } from "./janitorialTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend tiered pricing structure
 interface TieredPricingTier {
@@ -252,6 +253,24 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Pure Janitorial - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'purejanitorial',
+    });
+  }, [addChange]);
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -259,6 +278,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     const t: any = e.target;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof JanitorialFormState];
+
       const next: JanitorialFormState = { ...prev };
 
       // ✅ NEW: Handle custom override fields for totals
@@ -273,10 +295,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
         if (numVal === undefined || !isNaN(numVal)) {
           (next as any)[name] = numVal;
         }
-        return next;
-      }
-
-      if (type === "checkbox") {
+      } else if (type === "checkbox") {
         (next as any)[name] = t.checked;
       } else if (type === "number") {
         const raw = t.value;
@@ -284,6 +303,26 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
         (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
       } else {
         (next as any)[name] = t.value;
+      }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'baseHourlyRate', 'shortJobHourlyRate', 'minHoursPerVisit', 'weeksPerMonth',
+        'dirtyInitialMultiplier', 'infrequentMultiplier', 'dustingPlacesPerHour',
+        'dustingPricePerPlace', 'vacuumingDefaultHours', 'redRateMultiplier', 'greenRateMultiplier',
+        'customPerVisit', 'customFirstVisit', 'customMonthly', 'customOngoingMonthly', 'customContractTotal'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = (next as any)[name] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
       }
 
       console.log(`📝 Form updated: ${name} =`, (next as any)[name]);

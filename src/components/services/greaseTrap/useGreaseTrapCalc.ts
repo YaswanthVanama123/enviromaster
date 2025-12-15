@@ -1,6 +1,6 @@
 // src/features/services/greaseTrap/useGreaseTrapCalc.ts
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type { GreaseTrapFormState } from "./greaseTrapTypes";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
@@ -8,6 +8,7 @@ import { annualFromPerVisit } from "../common/pricingUtils";
 import { GREASE_TRAP_PER_TRAP_RATE, GREASE_TRAP_PER_GALLON_RATE } from "./greaseTrapConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendGreaseTrapConfig {
@@ -148,32 +149,66 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Grease Trap - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'greaseTrap',
+    });
+  }, [addChange]);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof GreaseTrapFormState];
+
+      let newFormState = prev;
+
       if (name === "numberOfTraps") {
-        return { ...prev, numberOfTraps: Number(value) || 0 };
+        newFormState = { ...prev, numberOfTraps: Number(value) || 0 };
+      } else if (name === "sizeOfTraps") {
+        newFormState = { ...prev, sizeOfTraps: Number(value) || 0 };
+      } else if (name === "frequency") {
+        newFormState = { ...prev, frequency: value as GreaseTrapFormState["frequency"] };
+      } else if (name === "contractMonths") {
+        newFormState = { ...prev, contractMonths: Number(value) || 12 };
+      } else if (name === "notes") {
+        newFormState = { ...prev, notes: value };
+      } else if (name === "perTrapRate") {
+        newFormState = { ...prev, perTrapRate: Number(value) || 0 };
+      } else if (name === "perGallonRate") {
+        newFormState = { ...prev, perGallonRate: Number(value) || 0 };
+      } else {
+        newFormState = prev;
       }
-      if (name === "sizeOfTraps") {
-        return { ...prev, sizeOfTraps: Number(value) || 0 };
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = ['perTrapRate', 'perGallonRate'];
+      if (pricingFields.includes(name) &&
+          typeof newFormState[name as keyof GreaseTrapFormState] === 'number' &&
+          typeof originalValue === 'number') {
+
+        const newValue = newFormState[name as keyof GreaseTrapFormState] as number;
+        const oldValue = originalValue as number;
+
+        if (newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
       }
-      if (name === "frequency") {
-        return { ...prev, frequency: value as GreaseTrapFormState["frequency"] };
-      }
-      if (name === "contractMonths") {
-        return { ...prev, contractMonths: Number(value) || 12 };
-      }
-      if (name === "notes") {
-        return { ...prev, notes: value };
-      }
-      if (name === "perTrapRate") {
-        return { ...prev, perTrapRate: Number(value) || 0 };
-      }
-      if (name === "perGallonRate") {
-        return { ...prev, perGallonRate: Number(value) || 0 };
-      }
-      return prev;
+
+      return newFormState;
     });
   };
 

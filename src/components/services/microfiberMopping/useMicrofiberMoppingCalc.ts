@@ -1,5 +1,5 @@
 // src/features/services/microfiberMopping/useMicrofiberMoppingCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type {
@@ -10,6 +10,8 @@ import type {
 import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { useSharedVersionChangeCollectionOptional } from "../../../hooks/VersionChangeCollectionContext";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure from API
 interface BackendMicrofiberConfig {
@@ -395,11 +397,64 @@ export function useMicrofiberMoppingCalc(
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ Version Change Collection Setup - Use shared context if available, otherwise own instance
+  const sharedChangeCollection = useSharedVersionChangeCollectionOptional();
+  const ownChangeCollection = useVersionChangeCollection();
+  const { addChange } = sharedChangeCollection || ownChangeCollection;
+
+  // ✅ Helper function to add service field changes to collection
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    // Get field display name for better readability
+    const fieldDisplayNames: Record<string, string> = {
+      includedBathroomRate: 'Included Bathroom Rate',
+      hugeBathroomRatePerSqFt: 'Huge Bathroom Rate per Sq Ft',
+      extraAreaRatePerUnit: 'Extra Area Rate per Unit',
+      standaloneRatePerUnit: 'Standalone Rate per Unit',
+      dailyChemicalPerGallon: 'Daily Chemical per Gallon',
+      customStandardBathroomTotal: 'Standard Bathroom Total',
+      customHugeBathroomTotal: 'Huge Bathroom Total',
+      customExtraAreaTotal: 'Extra Area Total',
+      customStandaloneTotal: 'Standalone Total',
+      customChemicalTotal: 'Chemical Total',
+      customPerVisitPrice: 'Per Visit Price',
+      customMonthlyRecurring: 'Monthly Recurring',
+      customFirstMonthPrice: 'First Month Price',
+      customContractTotal: 'Contract Total'
+    };
+
+    addChange({
+      productKey: `microfiberMopping_${fieldName}`,
+      productName: `Microfiber Mopping - ${fieldDisplayNames[fieldName] || fieldName}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: fieldDisplayNames[fieldName] || fieldName,
+      originalValue,
+      newValue,
+      quantity: (form.bathroomCount + form.hugeBathroomSqFt + form.extraAreaSqFt + form.standaloneSqFt) || 1,
+      frequency: form.frequency || ''
+    });
+
+    console.log(`📝 [MICROFIBER-CHANGE-COLLECTION] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A',
+      usingSharedContext: !!sharedChangeCollection
+    });
+  }, [addChange, form.frequency, form.bathroomCount, form.hugeBathroomSqFt, form.extraAreaSqFt, form.standaloneSqFt]);
+
   const onChange = (ev: InputChangeEvent) => {
     const target = ev.target as HTMLInputElement;
     const { name, type, value, checked } = target;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof MicrofiberMoppingFormState];
+
       let nextValue: unknown = value;
 
       if (type === "checkbox") {
@@ -454,6 +509,29 @@ export function useMicrofiberMoppingCalc(
 
       if (name === "isHugeBathroom" && nextValue === true) {
         next.bathroomCount = 0;
+      }
+
+      // ✅ Collect field changes for version-based logging
+      const pricingFields = [
+        // Backend pricing rates
+        'includedBathroomRate', 'hugeBathroomRatePerSqFt', 'extraAreaRatePerUnit',
+        'standaloneRatePerUnit', 'dailyChemicalPerGallon',
+        // Custom override fields
+        'customStandardBathroomTotal', 'customHugeBathroomTotal', 'customExtraAreaTotal',
+        'customStandaloneTotal', 'customChemicalTotal', 'customPerVisitPrice',
+        'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = nextValue as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
       }
 
       return next;

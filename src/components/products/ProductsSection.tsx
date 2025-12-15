@@ -4,6 +4,7 @@ import "./ProductsSection.css";
 import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
 import { useServicesContextOptional } from "../services/ServicesContext";
+import { useVersionChangeCollection, getProductTypeFromFamily, getFieldType } from "../../hooks/useVersionChangeCollection";
 
 // Export interface for ref handle
 export interface ProductsSectionHandle {
@@ -704,6 +705,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
+  // ✅ NEW: Version Change Collection Setup
+  const { addChange } = useVersionChangeCollection();
+
   // ✅ Tab Management
   const [currentTab, setCurrentTab] = useState<string>(() => {
     return activeTab || 'form'; // Default to 'form' tab
@@ -831,10 +835,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     [productMap]
   );
 
-  // Generic row updater
+  // Generic row updater with price override logging
   const updateRowField = useCallback(
     (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) => {
       setData((prev) => {
+        const currentRow = prev[bucket].find((r) => r.id === rowId);
+        if (!currentRow) return prev;
+
         const newBucket = prev[bucket].map((r) =>
           r.id === rowId ? { ...r, ...patch } : r
         );
@@ -844,13 +851,83 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           return prev;
         }
 
+        // ✅ NEW: Price override logging
+        const product = getProduct(currentRow);
+        if (product && currentRow.productKey) {
+          // Check if any price-related fields are being updated
+          const priceFields = ['unitPriceOverride', 'amountOverride', 'warrantyPriceOverride', 'replacementPriceOverride', 'totalOverride'];
+
+          for (const field of priceFields) {
+            if (patch[field as keyof ProductRow] !== undefined) {
+              const newValue = patch[field as keyof ProductRow] as number;
+              const oldValue = currentRow[field as keyof ProductRow] as number;
+
+              // Only log if there's an actual change from a base price to an override
+              if (newValue !== oldValue && newValue !== undefined) {
+                // Determine original value (from product catalog or previous override)
+                let originalValue = 0;
+                switch (field) {
+                  case 'unitPriceOverride':
+                    originalValue = oldValue || product.basePrice?.amount || 0;
+                    break;
+                  case 'amountOverride':
+                    originalValue = oldValue || product.basePrice?.amount || 0;
+                    break;
+                  case 'warrantyPriceOverride':
+                    originalValue = oldValue || product.warrantyPricePerUnit?.amount || 0;
+                    break;
+                  case 'replacementPriceOverride':
+                    originalValue = oldValue || product.basePrice?.amount || 0;
+                    break;
+                  case 'totalOverride':
+                    // For total, calculate the original based on unit price * qty
+                    const qty = currentRow.qty || 0;
+                    if (bucket === 'dispensers') {
+                      originalValue = oldValue || ((product.basePrice?.amount || 0) * qty);
+                    } else {
+                      const unitPrice = product.familyKey === 'paper'
+                        ? (product.basePrice?.amount || 0)
+                        : (product.basePrice?.amount || 0);
+                      originalValue = oldValue || (unitPrice * qty);
+                    }
+                    break;
+                }
+
+                // Only log if override is different from original
+                if (originalValue !== newValue) {
+                  // Collect the change for version-based batch logging
+                  addChange({
+                    productKey: product.key,
+                    productName: product.name,
+                    productType: getProductTypeFromFamily(product.familyKey),
+                    fieldType: getFieldType(field),
+                    fieldDisplayName: getFieldType(field),
+                    originalValue: originalValue,
+                    newValue: newValue,
+                    quantity: currentRow.qty || 0,
+                    frequency: currentRow.frequency || ''
+                  });
+
+                  console.log(`📝 [PRODUCT-CHANGE-COLLECTION] Added change for ${product.name}:`, {
+                    field,
+                    from: originalValue,
+                    to: newValue,
+                    change: newValue - originalValue,
+                    changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+                  });
+                }
+              }
+            }
+          }
+        }
+
         return {
           ...prev,
           [bucket]: newBucket,
         };
       });
     },
-    []
+    [addChange, getProduct]
   );
 
   const updateRowProductKey = useCallback(

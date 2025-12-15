@@ -1,5 +1,5 @@
 // src/features/services/rpmWindows/useRpmWindowsCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type {
@@ -10,6 +10,7 @@ import type {
 import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendRpmConfig {
@@ -254,6 +255,24 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `RPM Windows - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'rpmWindows',
+    });
+  }, [addChange]);
+
   // ✅ Update rate fields when frequency changes (apply frequency multiplier)
   useEffect(() => {
     // Use backend config if available, otherwise use fallback
@@ -289,23 +308,33 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     const { name, value, checked } = e.target as any;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof RpmWindowsFormState];
+
+      let newFormState = prev;
+
       switch (name) {
         case "frequency":
-          return { ...prev, frequency: mapFrequency(value) };
+          newFormState = { ...prev, frequency: mapFrequency(value) };
+          break;
 
         case "selectedRateCategory":
-          return { ...prev, selectedRateCategory: value as RpmRateCategory };
+          newFormState = { ...prev, selectedRateCategory: value as RpmRateCategory };
+          break;
 
         case "includeMirrors":
-          return { ...prev, includeMirrors: !!checked };
+          newFormState = { ...prev, includeMirrors: !!checked };
+          break;
 
         case "smallQty":
         case "mediumQty":
         case "largeQty":
-          return { ...prev, [name]: Number(value) || 0 };
+          newFormState = { ...prev, [name]: Number(value) || 0 };
+          break;
 
         case "contractMonths":
-          return { ...prev, contractMonths: Number(value) || 0 };
+          newFormState = { ...prev, contractMonths: Number(value) || 0 };
+          break;
 
         // Custom total overrides
         case "customSmallTotal":
@@ -316,24 +345,30 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         case "customAnnualPrice": {
           // Allow empty string to clear the field (set to undefined)
           if (value === '') {
-            return { ...prev, [name]: undefined };
+            newFormState = { ...prev, [name]: undefined };
+          } else {
+            const numVal = parseFloat(value);
+            if (!isNaN(numVal)) {
+              newFormState = { ...prev, [name]: numVal };
+            } else {
+              newFormState = prev;
+            }
           }
-          const numVal = parseFloat(value);
-          if (!isNaN(numVal)) {
-            return { ...prev, [name]: numVal };
-          }
-          return prev;
+          break;
         }
 
         case "customInstallationFee": {
           if (value === '') {
-            return { ...prev, customInstallationFee: undefined };
+            newFormState = { ...prev, customInstallationFee: undefined };
+          } else {
+            const numVal = parseFloat(value);
+            if (!isNaN(numVal)) {
+              newFormState = { ...prev, customInstallationFee: numVal };
+            } else {
+              newFormState = prev;
+            }
           }
-          const numVal = parseFloat(value);
-          if (!isNaN(numVal)) {
-            return { ...prev, customInstallationFee: numVal };
-          }
-          return prev;
+          break;
         }
 
         // Rate fields - when manually edited, update base weekly rate
@@ -369,12 +404,35 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
             setBaseWeeklyRates(b => ({ ...b, trip: weeklyBase }));
           }
 
-          return { ...prev, [name]: displayVal };
+          newFormState = { ...prev, [name]: displayVal };
+          break;
         }
 
         default:
-          return prev;
+          newFormState = prev;
+          break;
       }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'smallWindowRate', 'mediumWindowRate', 'largeWindowRate', 'tripCharge',
+        'customSmallTotal', 'customMediumTotal', 'customLargeTotal',
+        'customPerVisitPrice', 'customMonthlyRecurring', 'customAnnualPrice', 'customInstallationFee'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = newFormState[name as keyof RpmWindowsFormState] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
+      }
+
+      return newFormState;
     });
   };
 

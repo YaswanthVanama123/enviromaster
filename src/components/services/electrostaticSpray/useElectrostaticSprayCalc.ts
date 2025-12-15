@@ -1,6 +1,6 @@
 // src/components/services/electrostaticSpray/useElectrostaticSprayCalc.ts
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type {
   ElectrostaticSprayFormState,
@@ -9,6 +9,7 @@ import type {
 import { electrostaticSprayPricingConfig as cfg } from "./electrostaticSprayConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // Backend config interface matching MongoDB JSON structure
 interface BackendElectrostaticSprayConfig {
@@ -239,11 +240,32 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Electrostatic Spray - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'electrostaticSpray',
+    });
+  }, [addChange]);
+
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
     const target: any = e.target;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof ElectrostaticSprayFormState];
+
       const next: ElectrostaticSprayFormState = { ...prev };
 
       if (type === "checkbox") {
@@ -271,6 +293,25 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         next[name as keyof ElectrostaticSprayFormState] = isNaN(val) ? 0 : val;
       } else {
         next[name as keyof ElectrostaticSprayFormState] = target.value;
+      }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'ratePerRoom', 'ratePerThousandSqFt', 'tripChargePerVisit',
+        'customServiceCharge', 'customPerVisitPrice', 'customMonthlyRecurring',
+        'customContractTotal', 'customFirstMonthTotal'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = next[name as keyof ElectrostaticSprayFormState] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
       }
 
       return next;

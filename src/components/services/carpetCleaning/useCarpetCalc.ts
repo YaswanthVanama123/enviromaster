@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { CarpetFormState, CarpetFrequency } from "./carpetTypes";
@@ -8,6 +8,7 @@ import {
 } from "./carpetConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendCarpetConfig {
@@ -228,20 +229,44 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Carpet Cleaning - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'carpetCleaning',
+    });
+  }, [addChange]);
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target as any;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof CarpetFormState];
+
+      let newFormState = prev;
+
       switch (name as keyof CarpetFormState) {
         case "areaSqFt": {
           const num = parseFloat(String(value));
           const newValue = Number.isFinite(num) && num > 0 ? num : 0;
-          return {
+          newFormState = {
             ...prev,
             areaSqFt: newValue,
           };
+          break;
         }
 
         // ✅ NEW: Handle editable rate fields
@@ -252,10 +277,11 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         case "installMultiplierDirty":
         case "installMultiplierClean": {
           const num = parseFloat(String(value));
-          return {
+          newFormState = {
             ...prev,
             [name]: Number.isFinite(num) && num >= 0 ? num : 0,
           };
+          break;
         }
 
         // ✅ NEW: Handle custom override fields for rates
@@ -269,49 +295,80 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         case "customInstallationFee": {
           const numVal = value === '' ? undefined : parseFloat(value);
           if (numVal === undefined || !isNaN(numVal)) {
-            return { ...prev, [name]: numVal };
+            newFormState = { ...prev, [name]: numVal };
+          } else {
+            newFormState = prev;
           }
-          return prev;
+          break;
         }
 
         case "frequency":
-          return {
+          newFormState = {
             ...prev,
             frequency: clampFrequency(String(value)),
           };
+          break;
 
         case "contractMonths":
-          return {
+          newFormState = {
             ...prev,
             contractMonths: clampContractMonths(value),
           };
+          break;
 
         case "needsParking":
         case "tripChargeIncluded":
         case "includeInstall":
         case "isDirtyInstall":
         case "useExactSqft":
-          return {
+          newFormState = {
             ...prev,
             [name]: type === "checkbox" ? !!checked : Boolean(value),
           };
+          break;
 
         case "location":
-          return {
+          newFormState = {
             ...prev,
             location:
               value === "outsideBeltway" ? "outsideBeltway" : "insideBeltway",
           };
+          break;
 
         case "notes":
-          return {
+          newFormState = {
             ...prev,
             notes: String(value ?? ""),
           };
+          break;
 
         default:
-          return prev;
+          newFormState = prev;
+          break;
       }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'unitSqFt', 'firstUnitRate', 'additionalUnitRate', 'perVisitMinimum',
+        'installMultiplierDirty', 'installMultiplierClean',
+        'customFirstUnitRate', 'customAdditionalUnitRate', 'customPerVisitMinimum',
+        'customPerVisitPrice', 'customMonthlyRecurring', 'customFirstMonthPrice',
+        'customContractTotal', 'customInstallationFee'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = newFormState[name as keyof CarpetFormState] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
+      }
+
+      return newFormState;
     });
   };
 

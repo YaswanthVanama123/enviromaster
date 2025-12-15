@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare, faTrash, faUndo
+  faPlus, faCheckSquare, faSquare, faTrash, faUndo, faClipboardList
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
@@ -77,6 +77,12 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
 
   // ✅ NEW: Status update state
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
+
+  // ✅ NEW: Version logs state
+  const [logsModalOpen, setLogsModalOpen] = useState(false);
+  const [currentLogsFile, setCurrentLogsFile] = useState<SavedFileListItem | null>(null);
+  const [versionLogs, setVersionLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // ✅ NEW: Delete confirmation modal state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -332,6 +338,51 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
     }
     setCurrentZohoFile(file);
     setZohoUploadOpen(true);
+  };
+
+  // ✅ NEW: View version change logs handler
+  const handleViewLogs = async (file: SavedFileListItem) => {
+    if (file.fileType !== 'version_pdf') {
+      setToastMessage({
+        message: "Logs are only available for version PDFs.",
+        type: "error"
+      });
+      return;
+    }
+
+    setCurrentLogsFile(file);
+    setLogsModalOpen(true);
+    setLoadingLogs(true);
+    setVersionLogs([]);
+
+    try {
+      console.log(`📋 [VIEW LOGS] Fetching logs for version: ${file.id}`);
+
+      // Fetch version change logs using the version ID
+      const response = await fetch(`/api/pdf/version-changes/log/${file.id}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch logs: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.log) {
+        console.log(`✅ [VIEW LOGS] Found log for version ${file.id}:`, data.log);
+        setVersionLogs([data.log]); // Single log per version
+      } else {
+        console.log(`ℹ️ [VIEW LOGS] No change log found for version ${file.id}`);
+        setVersionLogs([]);
+      }
+    } catch (err) {
+      console.error('❌ [VIEW LOGS] Failed to fetch version logs:', err);
+      setToastMessage({
+        message: "Failed to load version change logs. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setLoadingLogs(false);
+    }
   };
 
   const handleEdit = async (file: SavedFileListItem, groupId: string) => {
@@ -1095,6 +1146,20 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                               >
                                 <FontAwesomeIcon icon={faEnvelope} />
                               </button>
+                              {/* ✅ NEW: View Logs button for version PDFs */}
+                              {file.fileType === 'version_pdf' && (
+                                <button
+                                  className="iconbtn"
+                                  title="View Change Logs"
+                                  onClick={() => handleViewLogs(file)}
+                                  style={{
+                                    backgroundColor: '#f3f4f6',
+                                    border: '1px solid #d1d5db'
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faClipboardList} />
+                                </button>
+                              )}
                               <button
                                 className="iconbtn zoho-upload-btn"
                                 title="Upload to Zoho Bigin"
@@ -1230,6 +1295,285 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
             });
           }}
         />
+      )}
+
+      {/* ✅ NEW: Version Change Logs Modal */}
+      {logsModalOpen && currentLogsFile && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '800px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              borderBottom: '2px solid #e5e7eb',
+              paddingBottom: '16px'
+            }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#374151'
+              }}>
+                Version Change Logs - {currentLogsFile.title}
+              </h3>
+              <button
+                onClick={() => {
+                  setLogsModalOpen(false);
+                  setCurrentLogsFile(null);
+                  setVersionLogs([]);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '4px'
+                }}
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingLogs && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px',
+                color: '#6b7280'
+              }}>
+                <div>Loading version change logs...</div>
+              </div>
+            )}
+
+            {!loadingLogs && versionLogs.length === 0 && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px',
+                color: '#6b7280',
+                textAlign: 'center'
+              }}>
+                <FontAwesomeIcon
+                  icon={faClipboardList}
+                  style={{ fontSize: '48px', marginBottom: '16px', color: '#d1d5db' }}
+                />
+                <div style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>
+                  No Change Logs Found
+                </div>
+                <div style={{ fontSize: '14px' }}>
+                  No price override changes have been logged for this version yet.
+                </div>
+              </div>
+            )}
+
+            {!loadingLogs && versionLogs.length > 0 && versionLogs.map((log, logIndex) => (
+              <div key={logIndex} style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                overflow: 'hidden'
+              }}>
+                {/* Log Header */}
+                <div style={{
+                  background: '#f9fafb',
+                  padding: '16px',
+                  borderBottom: '1px solid #e5e7eb'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <div>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '4px'
+                      }}>
+                        Version {log.versionNumber} Changes
+                      </div>
+                      <div style={{
+                        fontSize: '14px',
+                        color: '#6b7280'
+                      }}>
+                        {log.totalChanges} change{log.totalChanges !== 1 ? 's' : ''} logged
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        color: log.totalPriceImpact >= 0 ? '#059669' : '#dc2626',
+                        marginBottom: '4px'
+                      }}>
+                        {log.totalPriceImpact >= 0 ? '+' : ''}${log.totalPriceImpact?.toFixed(2) || '0.00'}
+                      </div>
+                      <div style={{
+                        fontSize: '12px',
+                        color: '#6b7280'
+                      }}>
+                        Total Impact
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Log Metadata */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '16px',
+                    marginTop: '12px',
+                    padding: '12px',
+                    background: '#fff',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}>
+                    <div>
+                      <span style={{ fontWeight: '500', color: '#374151' }}>Salesperson:</span>
+                      <span style={{ marginLeft: '8px', color: '#6b7280' }}>
+                        {log.salespersonName || 'Unknown'}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ fontWeight: '500', color: '#374151' }}>Action:</span>
+                      <span style={{
+                        marginLeft: '8px',
+                        color: '#6b7280',
+                        textTransform: 'capitalize'
+                      }}>
+                        {log.saveAction?.replace('_', ' ') || 'Unknown'}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ fontWeight: '500', color: '#374151' }}>Date:</span>
+                      <span style={{ marginLeft: '8px', color: '#6b7280' }}>
+                        {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : 'Unknown'}
+                      </span>
+                    </div>
+                    {log.hasSignificantChanges && (
+                      <div>
+                        <span style={{
+                          background: '#fef3c7',
+                          color: '#92400e',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '600'
+                        }}>
+                          ⚠️ Significant Changes
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Changes List */}
+                {log.changes && log.changes.length > 0 && (
+                  <div style={{ padding: '16px' }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '12px'
+                    }}>
+                      Price Override Changes:
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {log.changes.map((change, changeIndex) => (
+                        <div key={changeIndex} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px',
+                          background: change.changeAmount >= 0 ? '#f0fdf4' : '#fef2f2',
+                          borderRadius: '6px',
+                          fontSize: '13px'
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{
+                              fontWeight: '500',
+                              color: '#374151',
+                              marginBottom: '2px'
+                            }}>
+                              {change.productName}
+                            </div>
+                            <div style={{ color: '#6b7280', fontSize: '12px' }}>
+                              {change.fieldDisplayName}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', minWidth: '120px' }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '12px',
+                              color: '#6b7280',
+                              marginBottom: '2px'
+                            }}>
+                              <span>${change.originalValue?.toFixed(2) || '0.00'}</span>
+                              <span>→</span>
+                              <span>${change.newValue?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            <div style={{
+                              fontWeight: '600',
+                              color: change.changeAmount >= 0 ? '#059669' : '#dc2626'
+                            }}>
+                              {change.changeAmount >= 0 ? '+' : ''}${change.changeAmount?.toFixed(2) || '0.00'}
+                              {change.changePercentage !== undefined && change.changePercentage !== null && (
+                                <span style={{ marginLeft: '4px' }}>
+                                  ({change.changePercentage >= 0 ? '+' : ''}{change.changePercentage.toFixed(1)}%)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {(!log.changes || log.changes.length === 0) && (
+                  <div style={{
+                    padding: '16px',
+                    textAlign: 'center',
+                    color: '#6b7280',
+                    fontSize: '14px'
+                  }}>
+                    No individual changes recorded for this version.
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ✅ NEW: Bulk Zoho Upload Modal */}

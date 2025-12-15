@@ -1,5 +1,5 @@
 // src/features/services/sanipod/useSanipodCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import { sanipodPricingConfig as cfg } from "./sanipodConfig";
 import type {
@@ -9,6 +9,7 @@ import type {
 } from "./sanipodTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendSanipodConfig {
@@ -476,6 +477,24 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Sanipod - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'sanipod',
+    });
+  }, [addChange]);
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -483,6 +502,9 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     const t: any = e.target;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof SanipodFormState];
+
       const next: SanipodFormState = { ...prev };
 
       if (type === "checkbox") {
@@ -517,6 +539,26 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       // Special handling for frequency
       if (name === "frequency") {
         next.frequency = t.value as SanipodFrequencyKey;
+      }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'weeklyRatePerUnit', 'altWeeklyRatePerUnit', 'extraBagPrice',
+        'standaloneExtraWeeklyCharge', 'tripChargePerVisit', 'installRatePerPod',
+        'customInstallationFee', 'customPerVisitPrice', 'customMonthlyPrice',
+        'customAnnualPrice', 'customWeeklyPodRate', 'customPodServiceTotal', 'customExtraBagsTotal'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = (next as any)[name] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
       }
 
       return next;

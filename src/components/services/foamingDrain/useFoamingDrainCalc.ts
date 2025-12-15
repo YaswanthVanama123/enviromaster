@@ -1,5 +1,5 @@
 // src/features/services/foamingDrain/useFoamingDrainCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { FOAMING_DRAIN_CONFIG as cfg } from "./foamingDrainConfig";
 import type {
   FoamingDrainFormState,
@@ -11,6 +11,7 @@ import type {
 } from "./foamingDrainTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendFoamingDrainConfig {
@@ -280,6 +281,24 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Foaming Drain - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'foamingDrain',
+    });
+  }, [addChange]);
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
@@ -676,6 +695,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     value: FoamingDrainFormState[K]
   ) => {
     setState((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[key];
+
       const next = {
         ...prev,
         [key]: value,
@@ -739,6 +761,26 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customMonthlyRecurring = undefined;
         next.customFirstMonthPrice = undefined;
         next.customContractTotal = undefined;
+      }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'standardDrainRate', 'altBaseCharge', 'altExtraPerDrain',
+        'volumeWeeklyRate', 'volumeBimonthlyRate', 'greaseWeeklyRate', 'greaseInstallRate',
+        'greenWeeklyRate', 'greenInstallRate', 'plumbingAddonRate', 'filthyMultiplier',
+        'customWeeklyService', 'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
+      ];
+
+      if (pricingFields.includes(key as string)) {
+        const newValue = value as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(key as string, oldValue, newValue);
+        }
       }
 
       return next;

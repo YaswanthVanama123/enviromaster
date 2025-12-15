@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { SaniscrubFormState, SaniscrubFrequency } from "./saniscrubTypes";
@@ -8,6 +8,7 @@ import {
 } from "./saniscrubConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching the corrected MongoDB JSON structure
 interface BackendSaniscrubConfig {
@@ -217,20 +218,44 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Saniscrub - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'saniscrub',
+    });
+  }, [addChange]);
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target as any;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof SaniscrubFormState];
+
+      let newFormState = prev;
+
       switch (name as keyof SaniscrubFormState) {
         case "fixtureCount":
         case "nonBathroomSqFt": {
           const num = parseFloat(String(value));
-          return {
+          newFormState = {
             ...prev,
             [name]: Number.isFinite(num) && num > 0 ? num : 0,
           };
+          break;
         }
 
         // ✅ NEW: Handle editable rate fields
@@ -245,19 +270,22 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         case "installMultiplierClean":
         case "twoTimesPerMonthDiscount": {
           const num = parseFloat(String(value));
-          return {
+          newFormState = {
             ...prev,
             [name]: Number.isFinite(num) && num >= 0 ? num : 0,
           };
+          break;
         }
 
         // ✅ NEW: Handle custom installation fee
         case "customInstallationFee": {
           const numVal = value === '' ? undefined : parseFloat(value);
           if (numVal === undefined || !isNaN(numVal)) {
-            return { ...prev, customInstallationFee: numVal };
+            newFormState = { ...prev, customInstallationFee: numVal };
+          } else {
+            newFormState = prev;
           }
-          return prev;
+          break;
         }
 
         // ✅ NEW: Handle custom override fields for totals
@@ -267,22 +295,26 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         case "customContractTotal": {
           const numVal = value === '' ? undefined : parseFloat(value);
           if (numVal === undefined || !isNaN(numVal)) {
-            return { ...prev, [name]: numVal };
+            newFormState = { ...prev, [name]: numVal };
+          } else {
+            newFormState = prev;
           }
-          return prev;
+          break;
         }
 
         case "frequency":
-          return {
+          newFormState = {
             ...prev,
             frequency: clampFrequency(String(value)),
           };
+          break;
 
         case "contractMonths":
-          return {
+          newFormState = {
             ...prev,
             contractMonths: clampContractMonths(value),
           };
+          break;
 
         case "hasSaniClean":
         case "needsParking":
@@ -290,27 +322,54 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         case "includeInstall":
         case "isDirtyInstall":
         case "useExactNonBathroomSqft":
-          return {
+          newFormState = {
             ...prev,
             [name]: type === "checkbox" ? !!checked : Boolean(value),
           };
+          break;
 
         case "location":
-          return {
+          newFormState = {
             ...prev,
             location:
               value === "outsideBeltway" ? "outsideBeltway" : "insideBeltway",
           };
+          break;
 
         case "notes":
-          return {
+          newFormState = {
             ...prev,
             notes: String(value ?? ""),
           };
+          break;
 
         default:
-          return prev;
+          newFormState = prev;
+          break;
       }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'fixtureRateMonthly', 'fixtureRateBimonthly', 'fixtureRateQuarterly',
+        'minimumMonthly', 'minimumBimonthly', 'nonBathroomFirstUnitRate',
+        'nonBathroomAdditionalUnitRate', 'installMultiplierDirty', 'installMultiplierClean',
+        'twoTimesPerMonthDiscount', 'customInstallationFee', 'customPerVisitPrice',
+        'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = newFormState[name as keyof SaniscrubFormState] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
+      }
+
+      return newFormState;
     });
   };
 

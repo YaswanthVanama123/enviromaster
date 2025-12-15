@@ -18,6 +18,7 @@ import { pdfApi } from "../backendservice/api";
 import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
 import { useAllServicePricing } from "../backendservice/hooks";
+import { useVersionChangeCollection } from "../hooks/useVersionChangeCollection";
 
 type HeaderRow = {
   labelLeft: string;
@@ -115,6 +116,9 @@ export default function FormFilling() {
 
   // Fetch all service pricing data for context provider
   const { pricingData } = useAllServicePricing();
+
+  // ✅ NEW: Version change collection for batch logging
+  const { logVersionChanges, clearChanges, changes, hasChanges } = useVersionChangeCollection();
 
   // Detect if we're in edit mode based on URL path
   const isInEditMode = location.pathname.startsWith('/edit/pdf');
@@ -459,6 +463,37 @@ export default function FormFilling() {
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
         console.log("Draft updated successfully for agreement:", documentId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
+
+        // ✅ Log version changes for draft save (if any changes exist)
+        console.log(`📝 [DEBUG] Checking changes before draft save:`, {
+          hasChanges,
+          changesCount: changes.length,
+          changes: changes
+        });
+
+        if (hasChanges) {
+          try {
+            const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
+            console.log(`📝 [DRAFT-SAVE] Logging ${changes.length} changes for draft update`);
+
+            await logVersionChanges({
+              agreementId: documentId,
+              versionId: documentId, // For drafts, use agreement ID as version ID
+              versionNumber: 1, // Drafts are always version 1 until they become PDFs
+              salespersonId: 'salesperson_001', // TODO: Get from auth context
+              salespersonName: 'Sales Person', // TODO: Get from auth context
+              saveAction: 'save_draft',
+              documentTitle,
+            });
+
+            // Clear collected changes after successful logging
+            clearChanges();
+            console.log(`✅ [DRAFT-SAVE] Successfully logged changes and cleared collection`);
+          } catch (logError) {
+            console.error('❌ [DRAFT-SAVE] Failed to log version changes:', logError);
+            // Don't fail the draft save if logging fails
+          }
+        }
       } else {
         // Create new draft
         const result = await pdfApi.createCustomerHeader(payloadToSend);
@@ -466,6 +501,31 @@ export default function FormFilling() {
         setDocumentId(newId);
         console.log("Draft created successfully with ID:", newId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
+
+        // ✅ Log version changes for new draft (if any changes exist)
+        if (hasChanges && newId) {
+          try {
+            const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
+            console.log(`📝 [DRAFT-CREATE] Logging ${changes.length} changes for new draft`);
+
+            await logVersionChanges({
+              agreementId: newId,
+              versionId: newId, // For drafts, use agreement ID as version ID
+              versionNumber: 1, // Drafts are always version 1 until they become PDFs
+              salespersonId: 'salesperson_001', // TODO: Get from auth context
+              salespersonName: 'Sales Person', // TODO: Get from auth context
+              saveAction: 'save_draft',
+              documentTitle,
+            });
+
+            // Clear collected changes after successful logging
+            clearChanges();
+            console.log(`✅ [DRAFT-CREATE] Successfully logged changes and cleared collection`);
+          } catch (logError) {
+            console.error('❌ [DRAFT-CREATE] Failed to log version changes:', logError);
+            // Don't fail the draft save if logging fails
+          }
+        }
       }
     } catch (err) {
       console.error("Error saving draft:", err);
@@ -550,6 +610,31 @@ export default function FormFilling() {
       });
 
       console.log("✅ [FIRST VERSION SUCCESS] v1 created successfully:", result);
+
+      // ✅ Log version changes for PDF generation (if any changes exist)
+      if (hasChanges && result.version?.id) {
+        try {
+          console.log(`📝 [FIRST-VERSION-PDF] Logging ${changes.length} changes for first version PDF`);
+
+          await logVersionChanges({
+            agreementId: documentId,
+            versionId: result.version.id,
+            versionNumber: result.version.versionNumber || 1,
+            salespersonId: 'salesperson_001', // TODO: Get from auth context
+            salespersonName: 'Sales Person', // TODO: Get from auth context
+            saveAction: 'generate_pdf',
+            documentTitle: payload?.headerTitle || 'Untitled Document',
+          });
+
+          // Clear collected changes after successful logging
+          clearChanges();
+          console.log(`✅ [FIRST-VERSION-PDF] Successfully logged changes and cleared collection`);
+        } catch (logError) {
+          console.error('❌ [FIRST-VERSION-PDF] Failed to log version changes:', logError);
+          // Don't fail the PDF generation if logging fails
+        }
+      }
+
       setToastMessage({
         message: "First version (v1) created successfully!",
         type: "success"
@@ -622,6 +707,32 @@ export default function FormFilling() {
         });
 
         console.log("✅ [NEW DOCUMENT] v1 created successfully:", versionResult);
+
+        // ✅ Log version changes for new document PDF generation (if any changes exist)
+        if (hasChanges && versionResult.version?.id) {
+          try {
+            const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
+            console.log(`📝 [NEW-DOCUMENT-PDF] Logging ${changes.length} changes for new document first version`);
+
+            await logVersionChanges({
+              agreementId: newId,
+              versionId: versionResult.version.id,
+              versionNumber: versionResult.version.versionNumber || 1,
+              salespersonId: 'salesperson_001', // TODO: Get from auth context
+              salespersonName: 'Sales Person', // TODO: Get from auth context
+              saveAction: 'generate_pdf',
+              documentTitle,
+            });
+
+            // Clear collected changes after successful logging
+            clearChanges();
+            console.log(`✅ [NEW-DOCUMENT-PDF] Successfully logged changes and cleared collection`);
+          } catch (logError) {
+            console.error('❌ [NEW-DOCUMENT-PDF] Failed to log version changes:', logError);
+            // Don't fail the PDF generation if logging fails
+          }
+        }
+
         setToastMessage({ message: "Agreement created and first version (v1) generated successfully!", type: "success" });
 
         // Redirect to saved PDFs
@@ -657,6 +768,31 @@ export default function FormFilling() {
       });
 
       console.log("✅ [VERSION SUCCESS] Version created successfully:", result);
+
+      // ✅ Log version changes for subsequent PDF generation (if any changes exist)
+      if (hasChanges && result.version?.id) {
+        try {
+          console.log(`📝 [VERSION-PDF] Logging ${changes.length} changes for version ${result.version.versionNumber}`);
+
+          await logVersionChanges({
+            agreementId: documentId,
+            versionId: result.version.id,
+            versionNumber: result.version.versionNumber || 1,
+            salespersonId: 'salesperson_001', // TODO: Get from auth context
+            salespersonName: 'Sales Person', // TODO: Get from auth context
+            saveAction: 'generate_pdf',
+            documentTitle: payload?.headerTitle || 'Untitled Document',
+          });
+
+          // Clear collected changes after successful logging
+          clearChanges();
+          console.log(`✅ [VERSION-PDF] Successfully logged changes and cleared collection`);
+        } catch (logError) {
+          console.error('❌ [VERSION-PDF] Failed to log version changes:', logError);
+          // Don't fail the PDF generation if logging fails
+        }
+      }
+
       setToastMessage({
         message: replaceRecent
           ? `Current version replaced successfully!`

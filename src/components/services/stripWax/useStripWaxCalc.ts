@@ -1,5 +1,5 @@
 // src/features/services/stripWax/useStripWaxCalc.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import { stripWaxPricingConfig as cfg } from "./stripWaxConfig";
 import type {
@@ -10,6 +10,7 @@ import type {
 } from "./stripWaxTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
+import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendStripWaxConfig {
@@ -241,6 +242,24 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // Version change collection
+  const { addChange } = useVersionChangeCollection();
+
+  // Helper function to add service field changes
+  const addServiceFieldChange = useCallback((
+    fieldName: string,
+    originalValue: number,
+    newValue: number
+  ) => {
+    addChange({
+      fieldName: fieldName,
+      fieldDisplayName: `Strip & Wax - ${fieldName}`,
+      originalValue,
+      newValue,
+      serviceId: 'stripWax',
+    });
+  }, [addChange]);
+
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -248,6 +267,9 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
     const t: any = e.target;
 
     setForm((prev) => {
+      // ✅ Capture original value before update for price override logging
+      const originalValue = prev[name as keyof StripWaxFormState];
+
       const next: StripWaxFormState = { ...prev };
 
       // Special handling when service type changes: reset rate + minimum FROM FORM VALUES
@@ -292,6 +314,26 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
         (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
       } else {
         (next as any)[name] = t.value;
+      }
+
+      // ✅ Log price override for numeric pricing fields
+      const pricingFields = [
+        'floorAreaSqFt', 'ratePerSqFt', 'minCharge', 'weeksPerMonth',
+        'standardFullRatePerSqFt', 'standardFullMinCharge', 'noSealantRatePerSqFt', 'noSealantMinCharge',
+        'wellMaintainedRatePerSqFt', 'wellMaintainedMinCharge', 'redRateMultiplier', 'greenRateMultiplier',
+        'customPerVisit', 'customMonthly', 'customOngoingMonthly', 'customContractTotal'
+      ];
+
+      if (pricingFields.includes(name)) {
+        const newValue = (next as any)[name] as number | undefined;
+        const oldValue = originalValue as number | undefined;
+
+        // Handle undefined values (when cleared) - don't log clearing to undefined
+        if (newValue !== undefined && oldValue !== undefined &&
+            typeof newValue === 'number' && typeof oldValue === 'number' &&
+            newValue !== oldValue && newValue > 0) {
+          addServiceFieldChange(name, oldValue, newValue);
+        }
       }
 
       return next;
