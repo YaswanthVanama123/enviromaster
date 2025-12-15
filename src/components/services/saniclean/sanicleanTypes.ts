@@ -201,6 +201,9 @@ export interface SanicleanFormState {
   // Rate Tier
   rateTier: SanicleanRateTier; // "redRate" | "greenRate"
 
+  // Service Frequency
+  frequency: string; // "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual"
+
   // Notes
   notes: string;
 

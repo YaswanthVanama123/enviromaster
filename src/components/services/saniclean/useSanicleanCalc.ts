@@ -65,6 +65,9 @@ const DEFAULT_FORM: SanicleanFormState = {
   // Rate Tier
   rateTier: "redRate",
 
+  // Service Frequency
+  frequency: "weekly",
+
   // Notes
   notes: "",
 
@@ -106,6 +109,50 @@ const DEFAULT_FORM: SanicleanFormState = {
   // Rate Tiers
   redRateMultiplier: SANICLEAN_CONFIG.rateTiers.redRate.multiplier,
   greenRateMultiplier: SANICLEAN_CONFIG.rateTiers.greenRate.multiplier,
+};
+
+// Frequency to multiplier mapping for billing calculations (backend-driven)
+const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number => {
+  // First try to get from backend frequencyMetadata
+  if (backendConfig?.frequencyMetadata?.[frequency]) {
+    const metadata = backendConfig.frequencyMetadata[frequency];
+
+    // Use monthlyRecurringMultiplier if available
+    if (typeof metadata.monthlyRecurringMultiplier === 'number') {
+      return metadata.monthlyRecurringMultiplier;
+    }
+
+    // Calculate from cycleMonths if available
+    if (typeof metadata.cycleMonths === 'number') {
+      if (metadata.cycleMonths === 0) {
+        return 1.0; // Monthly (cycleMonths: 0 means monthly)
+      }
+      return 1 / metadata.cycleMonths; // Convert cycle months to monthly multiplier
+    }
+  }
+
+  // Special handling for frequencies not in backend yet
+  if (frequency === 'oneTime') {
+    return 0; // One-time service (no monthly recurring)
+  }
+
+  if (frequency === 'twicePerMonth') {
+    return 2.0; // 2 visits per month
+  }
+
+  // Fallback multipliers based on backend pattern for missing frequencies
+  const fallbackMultipliers: Record<string, number> = {
+    weekly: 4.33,      // 4.33 visits per month (should come from backend)
+    biweekly: 2.165,   // 2.165 visits per month (should come from backend)
+    monthly: 1.0,      // 1 visit per month
+    bimonthly: 0.5,    // 0.5 visits per month (every 2 months) - calculated from cycleMonths: 2
+    quarterly: 0.33,   // 0.33 visits per month (every 3 months) - calculated from cycleMonths: 3
+    biannual: 0.17,    // 0.17 visits per month (every 6 months) - calculated from cycleMonths: 6
+    annual: 0.083,     // 0.083 visits per month (every 12 months) - calculated from cycleMonths: 12
+  };
+
+  console.log(`⚠️ [SaniClean] Using fallback multiplier for frequency: ${frequency}. Consider adding to backend frequencyMetadata.`);
+  return fallbackMultipliers[frequency] || 4.33; // Default to weekly if frequency not found
 };
 
 function recomputeFixtureCount(state: SanicleanFormState): SanicleanFormState {
@@ -155,7 +202,10 @@ function calculateAllInclusive(
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
   const weeklyTotal = baseService + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage + tripCharge + facilityComponents;
-  const monthlyTotal = weeklyTotal * form.weeklyToMonthlyMultiplier;
+
+  // ✅ Use frequency-based multiplier instead of fixed weeklyToMonthlyMultiplier
+  const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
+  const monthlyTotal = frequencyMultiplier > 0 ? weeklyTotal * frequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
   const contractTotal = monthlyTotal * form.contractMonths;
 
   // Dispenser counts for transparency
@@ -269,15 +319,17 @@ function calculatePerItemCharge(
   const baseService = form.customBaseService ?? baseServiceCalc;
   const tripCharge = form.customTripCharge ?? tripChargeCalc;
 
-  // Facility Components (monthly converted to weekly) - Only if enabled and quantities > 0
-  const monthlyToWeekly = 1 / form.weeklyToMonthlyMultiplier;
+  // Facility Components (monthly converted to frequency-based) - Only if enabled and quantities > 0
+  // ✅ Use frequency-based multiplier for monthly-to-frequency conversion
+  const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
+  const monthlyToFrequency = frequencyMultiplier > 0 ? (1 / frequencyMultiplier) : 1; // For oneTime, use 1:1 ratio
 
   const urinalComponents = form.addUrinalComponents ?
-    (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) * monthlyToWeekly : 0;
+    (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) * monthlyToFrequency : 0;
   const maleToiletComponents = form.addMaleToiletComponents ?
-    (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) * monthlyToWeekly : 0;
+    (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) * monthlyToFrequency : 0;
   const femaleToiletComponents = form.addFemaleToiletComponents ?
-    form.sanipodsQty * form.sanipodServiceMonthly * monthlyToWeekly : 0;
+    form.sanipodsQty * form.sanipodServiceMonthly * monthlyToFrequency : 0;
   const facilityComponentsCalc = urinalComponents + maleToiletComponents + femaleToiletComponents;
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
@@ -307,7 +359,9 @@ function calculatePerItemCharge(
   const paperOverage = form.customPaperOverage ?? paperOverageCalc;
 
   const weeklyTotal = baseService + tripCharge + facilityComponents + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
-  const monthlyTotal = weeklyTotal * form.weeklyToMonthlyMultiplier;
+
+  // ✅ Use frequency-based multiplier instead of fixed weeklyToMonthlyMultiplier
+  const monthlyTotal = frequencyMultiplier > 0 ? weeklyTotal * frequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
   const contractTotal = monthlyTotal * form.contractMonths;
 
   // Component counts
@@ -390,6 +444,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
     try {
+      console.log('🔄 [SaniClean] Fetching configuration...');
+
       // First try to get active service config
       const response = await serviceConfigApi.getActive("saniclean");
 
@@ -458,7 +514,19 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       }));
 
     } catch (error) {
-      console.error('❌ Failed to fetch SaniClean config from backend:', error);
+      console.error('❌ [SaniClean] Failed to fetch config from backend:', error);
+
+      // Log the full error details for debugging
+      if (error instanceof Error) {
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
+
+      // Log any response details if it's a fetch error
+      if (error && typeof error === 'object' && 'response' in error) {
+        console.error('❌ Response status:', (error as any).response?.status);
+        console.error('❌ Response data:', (error as any).response?.data);
+      }
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -565,7 +633,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       // Components
       urinalScreenMonthly: typeof config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number' ?
                            config.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice :
-                           (config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'included' ? 0 :
+                           (config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'included' ?
+                            (config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? 0) : // Use urinalMatMonthlyPrice when included
                            (config.perItemCharge?.facilityComponents?.urinals?.components?.urinalScreen ?? prev.urinalScreenMonthly)),
 
       urinalMatMonthly: config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ??
@@ -674,8 +743,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     // 2. Apply customWeeklyTotal override if set
     const effectiveWeeklyTotal = form.customWeeklyTotal ?? baseQuote.weeklyTotal;
 
-    // 3. Calculate monthly/contract from effective weekly (cascade)
-    const calculatedMonthly = effectiveWeeklyTotal * form.weeklyToMonthlyMultiplier;
+    // 3. Calculate monthly/contract from effective weekly (cascade) using frequency-based multiplier
+    const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
+    const calculatedMonthly = frequencyMultiplier > 0 ? effectiveWeeklyTotal * frequencyMultiplier : effectiveWeeklyTotal;
     const calculatedContract = calculatedMonthly * form.contractMonths;
 
     // 4. Apply custom monthly/contract overrides if set (they override the cascade)

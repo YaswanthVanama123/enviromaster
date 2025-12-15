@@ -11,6 +11,19 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const formatMoney = (n: number): string => `$${(isNaN(n) ? 0 : n).toFixed(2)}`;
 const safeNumber = (n: any): number => (typeof n === "number" && !isNaN(n)) ? n : 0;
 
+// Frequency options for SaniClean (matching backend frequencyMetadata keys)
+const sanicleanFrequencyLabels: Record<string, string> = {
+  oneTime: "One Time",
+  weekly: "Weekly",
+  biweekly: "Bi-Weekly",
+  twicePerMonth: "2× / Month (with SaniClean)",
+  monthly: "Monthly",
+  bimonthly: "Bi-Monthly (Every 2 Months)",
+  quarterly: "Quarterly",
+  biannual: "Bi-Annual",
+  annual: "Annual",
+};
+
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData, onRemove }) => {
@@ -25,6 +38,7 @@ export const SanicleanForm: React.FC<
     setSoapType,
     setRateTier,
     setNotes,
+    backendConfig,
   } = useSanicleanCalc(initialData);
 
   const servicesContext = useServicesContextOptional();
@@ -292,6 +306,27 @@ export const SanicleanForm: React.FC<
           >
             <option value="all_inclusive">All Inclusive</option>
             <option value="per_item_charge">Per Item Charge</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Frequency selection */}
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            {Object.entries(sanicleanFrequencyLabels).map(
+              ([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              )
+            )}
           </select>
         </div>
       </div>
