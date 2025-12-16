@@ -46,12 +46,35 @@ export interface FormPayload {
   agreement: any;
 }
 
+// ✅ NEW: Status types for agreements and versions
+export type AgreementStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized';
+export type VersionStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized' | 'archived';
+
+// ✅ NEW: Interface for updating version status
+export interface UpdateVersionStatusRequest {
+  versionId: string;
+  status: VersionStatus;
+  notes?: string;
+}
+
+export interface UpdateVersionStatusResponse {
+  success: boolean;
+  message: string;
+  version?: {
+    id: string;
+    versionNumber: number;
+    status: VersionStatus;
+    updatedAt: string;
+  };
+}
+
 // New interfaces for saved-files API
 export interface SavedFileListItem {
   id: string;
   agreementId?: string;                 // ✅ FIX: Agreement ID (CustomerHeaderDoc._id) for Zoho upload
+  versionId?: string;                   // ✅ NEW: Version ID for proper version mapping
   fileName: string;                     // ✅ NEW: Actual file name
-  fileType: 'main_pdf' | 'attached_pdf' | 'version_pdf'; // ✅ NEW: Distinguish main vs attached
+  fileType: 'main_pdf' | 'attached_pdf' | 'version_pdf' | 'version_log'; // ✅ NEW: Added version_log type
   title: string;
   status: string;
   createdAt: string;
@@ -63,6 +86,9 @@ export interface SavedFileListItem {
   hasPdf: boolean;
   description?: string;                 // ✅ NEW: For attached files
   versionNumber?: number;               // ✅ NEW: For version files
+  versionStatus?: VersionStatus;        // ✅ NEW: Status specific to this version
+  isLatestVersion?: boolean;            // ✅ NEW: Flag to identify if this is the latest version
+  canChangeStatus?: boolean;            // ✅ NEW: Flag to determine if status can be changed
   zohoInfo: {
     biginDealId: string | null;
     biginFileId: string | null;
@@ -92,11 +118,14 @@ export interface SavedFilesListResponse {
 export interface SavedFileGroup {
   id: string;                    // Agreement document ID
   agreementTitle: string;        // Agreement title
+  agreementStatus: AgreementStatus; // ✅ NEW: Agreement-level status
   fileCount: number;             // Main PDF + attached files count
   latestUpdate: string;          // Latest update to agreement or attached files
   statuses: string[];            // Main agreement status
   hasUploads: boolean;           // Any files uploaded to Zoho
   files: SavedFileListItem[];    // Main PDF + all attached files
+  hasVersions: boolean;          // ✅ NEW: Flag if agreement has PDF versions
+  isDraftOnly: boolean;          // ✅ NEW: Flag if agreement is draft-only (no PDFs generated)
   // ✅ NEW: Soft delete fields
   isDeleted?: boolean;
   deletedAt?: string | null;
@@ -184,7 +213,7 @@ export interface SavedFileDetailsResponse {
   };
 }
 
-// ✅ NEW: Version logs interfaces
+// ✅ ENHANCED: Version logs interfaces with overwriting support
 export interface VersionLogRequest {
   agreementId: string;
   versionId: string;
@@ -193,6 +222,9 @@ export interface VersionLogRequest {
   salespersonName: string;
   saveAction: 'save_draft' | 'generate_pdf' | 'manual_save';
   documentTitle: string;
+  // ✅ NEW: Overwriting support for smart log management
+  overwriteExisting?: boolean;
+  overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
   changes?: Array<{
     productKey: string;
     productName: string;
@@ -212,13 +244,127 @@ export interface VersionLogRequest {
 export interface VersionLogResponse {
   success: boolean;
   message: string;
-  logFile?: {
+  log?: {
+    logId: string;
     fileName: string;
     totalChanges: number;
     totalPriceImpact: number;
     hasSignificantChanges: boolean;
   } | null;
 }
+
+// ✅ SIMPLIFIED: Log document structure (separate collection)
+export interface LogDocument {
+  _id: string;
+  agreementId: string;
+  versionId: string;
+  versionNumber: number;
+  fileName: string;
+  salespersonId: string;
+  salespersonName: string;
+  saveAction: 'save_draft' | 'generate_pdf' | 'manual_save';
+  documentTitle: string;
+  totalChanges: number;
+  totalPriceImpact: number;
+  hasSignificantChanges: boolean;
+  changes: Array<{
+    productKey: string;
+    productName: string;
+    productType: 'product' | 'dispenser' | 'service';
+    fieldType: string;
+    fieldDisplayName: string;
+    originalValue: number;
+    newValue: number;
+    changeAmount: number;
+    changePercentage: number;
+    quantity?: number;
+    frequency?: string;
+    timestamp: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ✅ UPDATED: Helper function to map LogDocument to SavedFileListItem format
+export const mapLogToSavedFileItem = (log: LogDocument, agreementTitle?: string): SavedFileListItem => {
+  // ✅ IMPROVED: Generate descriptive file name with version info and date
+  const customerName = agreementTitle || 'Agreement';
+  const safeCustomerName = customerName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
+  const logDate = new Date(log.createdAt).toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+  const versionInfo = `v${log.versionNumber}`;
+  const changeCount = `${log.totalChanges}changes`;
+
+  // Format: "Agreement_CustomerName_v2_15changes_20241216.txt"
+  const descriptiveFileName = `Agreement_${safeCustomerName}_${versionInfo}_${changeCount}_${logDate}.txt`;
+
+  return {
+    id: log._id,
+    agreementId: log.agreementId,
+    versionId: log.versionId,
+    fileName: descriptiveFileName, // ✅ NEW: Descriptive name with version info
+    fileType: 'version_log',
+    title: descriptiveFileName, // ✅ NEW: Use descriptive name for title too
+    status: 'attached', // Logs are treated as attachments to the agreement
+    createdAt: log.createdAt,
+    updatedAt: log.updatedAt,
+    createdBy: log.salespersonId,
+    updatedBy: null,
+    fileSize: Math.max(1000, log.totalChanges * 200), // Estimate file size based on changes
+    pdfStoredAt: null, // Logs are stored as TXT, not PDF
+    hasPdf: true, // ✅ UPDATED: Can be downloaded as TXT file
+    description: `Version ${log.versionNumber} changes: ${log.totalChanges} modifications ($${log.totalPriceImpact.toFixed(2)} impact)`,
+    versionNumber: log.versionNumber,
+    versionStatus: undefined, // Logs don't have changeable status
+    isLatestVersion: false, // Logs are not versions themselves
+    canChangeStatus: false, // Logs cannot have their status changed
+    zohoInfo: {
+      biginDealId: null,
+      biginFileId: null,
+      crmDealId: null,
+      crmFileId: null,
+    },
+    isDeleted: false,
+    deletedAt: null,
+    deletedBy: null,
+  };
+};
+
+// ✅ NEW: Helper function to merge logs into agreement groups (can be used in backend or frontend)
+export const mergeLogsIntoAgreements = async (
+  agreements: SavedFileGroup[],
+  getLogsForAgreement: (agreementId: string) => Promise<LogDocument[]>
+): Promise<SavedFileGroup[]> => {
+  const enrichedAgreements: SavedFileGroup[] = [];
+
+  for (const agreement of agreements) {
+    try {
+      // Fetch logs for this agreement
+      const logs = await getLogsForAgreement(agreement.id);
+
+      // Map logs to SavedFileListItem format
+      const logFiles = logs.map(log => mapLogToSavedFileItem(log, agreement.agreementTitle));
+
+      // Merge logs with existing files, sorted by creation date (newest first)
+      const allFiles = [...agreement.files, ...logFiles].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      enrichedAgreements.push({
+        ...agreement,
+        files: allFiles,
+        fileCount: allFiles.length, // Update file count to include logs
+      });
+
+      console.log(`📋 [MERGE-LOGS] Agreement "${agreement.agreementTitle}": +${logFiles.length} logs (${allFiles.length} total files)`);
+    } catch (error) {
+      console.warn(`⚠️ [MERGE-LOGS] Failed to fetch logs for agreement ${agreement.id}:`, error);
+      // Include agreement without logs if fetching fails
+      enrichedAgreements.push(agreement);
+    }
+  }
+
+  return enrichedAgreements;
+};
 
 /**
  * PDF API Service
@@ -417,6 +563,14 @@ export const pdfApi = {
 
   /**
    * Get saved files grouped by agreement (folder-like structure)
+   * ✅ UPDATED: Now includes version logs as files within each agreement
+   *
+   * **BACKEND REQUIREMENTS**:
+   * 1. When `includeLogs: true`, backend must include version logs in files array for each agreement
+   * 2. Backend must set `isLatestVersion: true` for the newest version PDF of each agreement
+   * 3. Backend must set `canChangeStatus: true` for latest version PDFs (frontend will override this)
+   * 4. Log files should be mapped using mapLogToSavedFileItem format with descriptive filenames
+   *
    * @param page Page number (default: 1)
    * @param limit Groups per page (default: 20, max: 100)
    * @param filters Optional filters like status, search, isDeleted
@@ -424,11 +578,13 @@ export const pdfApi = {
   async getSavedFilesGrouped(
     page = 1,
     limit = 20,
-    filters: { status?: string; search?: string; isDeleted?: boolean } = {}
+    filters: { status?: string; search?: string; isDeleted?: boolean; includeLogs?: boolean } = {}
   ): Promise<SavedFilesGroupedResponse> {
     const params = new URLSearchParams();
     params.set('page', page.toString());
     params.set('limit', limit.toString());
+    // ✅ NEW: Always include logs by default in grouped view
+    params.set('includeLogs', (filters.includeLogs !== false).toString());
 
     if (filters.status) {
       params.set('status', filters.status);
@@ -593,12 +749,121 @@ export const pdfApi = {
   },
 
   /**
-   * ✅ NEW: Create version log file for price changes
+   * ✅ SIMPLIFIED: Create version log (separate Logs collection, store IDs in Agreement & Version)
    */
   async createVersionLog(request: VersionLogRequest): Promise<VersionLogResponse> {
     const res = await axios.post(
-      `${API_BASE_URL}/api/pdf/version-logs/create`,
+      `${API_BASE_URL}/api/pdf/logs/create`,
       request,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ SIMPLIFIED: Get version logs for an agreement (from Logs collection)
+   */
+  async getVersionLogs(agreementId: string): Promise<{
+    success: boolean;
+    agreement: {
+      id: string;
+      title: string;
+    };
+    logs: LogDocument[];
+  }> {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/pdf/logs/agreement/${agreementId}`,
+      {
+        headers: { Accept: "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ SIMPLIFIED: Get ALL version logs (from Logs collection)
+   */
+  async getAllVersionLogs(params?: {
+    page?: number;
+    limit?: number;
+    agreementId?: string;
+  }): Promise<{
+    success: boolean;
+    logs: Array<LogDocument & {
+      agreementTitle?: string;
+    }>;
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalLogs: number;
+      limit: number;
+    };
+  }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.agreementId) searchParams.set('agreementId', params.agreementId);
+
+    const res = await axios.get(
+      `${API_BASE_URL}/api/pdf/logs/all?${searchParams}`,
+      {
+        headers: { Accept: "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ SIMPLIFIED: Download version log (from Logs collection)
+   */
+  async downloadVersionLog(logId: string): Promise<Blob> {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/pdf/logs/${logId}/download`,
+      {
+        responseType: "blob",
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Update version status
+   */
+  async updateVersionStatus(request: UpdateVersionStatusRequest): Promise<UpdateVersionStatusResponse> {
+    const res = await axios.patch(
+      `${API_BASE_URL}/api/pdf/versions/${request.versionId}/status`,
+      {
+        status: request.status,
+        notes: request.notes,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  },
+
+  /**
+   * ✅ NEW: Update agreement status
+   */
+  async updateAgreementStatus(agreementId: string, status: AgreementStatus, notes?: string): Promise<{
+    success: boolean;
+    message: string;
+    agreement?: {
+      id: string;
+      title: string;
+      status: AgreementStatus;
+      updatedAt: string;
+    };
+  }> {
+    const res = await axios.patch(
+      `${API_BASE_URL}/api/pdf/agreements/${agreementId}/status`,
+      {
+        status,
+        notes,
+      },
       {
         headers: { "Content-Type": "application/json" },
       }

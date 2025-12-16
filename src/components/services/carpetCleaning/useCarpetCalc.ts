@@ -8,7 +8,6 @@ import {
 } from "./carpetConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
-import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure

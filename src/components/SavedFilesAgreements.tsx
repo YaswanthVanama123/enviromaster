@@ -3,11 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
-import { versionApi } from "../backendservice/api/versionApi";
 import type {
   SavedFileListItem,
   SavedFileGroup,
-  AddFileToAgreementRequest
+  AddFileToAgreementRequest,
+  LogDocument,
+  AgreementStatus,
+  VersionStatus,
 } from "../backendservice/api/pdfApi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
@@ -15,7 +17,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare, faCloudUploadAlt, faTrash
+  faPlus, faCheckSquare, faSquare, faCloudUploadAlt, faTrash, faEdit
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
@@ -28,6 +30,36 @@ type FileStatus =
   | "approved_salesman"
   | "approved_admin"
   | "attached";
+
+// ✅ UPDATED: Use existing status system from your architecture
+const EXISTING_STATUSES: { value: string; label: string; color: string; canManuallySelect: boolean }[] = [
+  { value: 'draft', label: 'Draft', color: '#6b7280', canManuallySelect: false }, // System controlled - only for agreements without PDFs
+  { value: 'saved', label: 'Saved', color: '#059669', canManuallySelect: false }, // Default after PDF creation
+  { value: 'pending_approval', label: 'Pending Approval', color: '#f59e0b', canManuallySelect: true },
+  { value: 'approved_salesman', label: 'Approved by Salesman', color: '#3b82f6', canManuallySelect: true },
+  { value: 'approved_admin', label: 'Approved by Admin', color: '#10b981', canManuallySelect: true },
+  { value: 'attached', label: 'Attached File', color: '#8b5cf6', canManuallySelect: false }, // For attached files and logs
+];
+
+// Helper function to get status configuration
+const getStatusConfig = (status: string) => {
+  return EXISTING_STATUSES.find(s => s.value === status) ||
+         { value: status, label: status, color: '#6b7280', canManuallySelect: true };
+};
+
+// Get available statuses for dropdown (exclude system-controlled ones)
+const getAvailableStatusesForDropdown = (currentStatus: string, isLatestVersion: boolean = true) => {
+  return EXISTING_STATUSES.filter(status => {
+    // Always allow current status to stay
+    if (status.value === currentStatus) return true;
+
+    // For latest versions, allow manual status changes
+    if (isLatestVersion && status.canManuallySelect) return true;
+
+    // For old versions, don't allow changes to draft or system statuses
+    return false;
+  });
+};
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -87,68 +119,196 @@ export default function SavedFilesAgreements() {
   const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
+  // ✅ NEW: Status change state
+  const [statusChangeLoading, setStatusChangeLoading] = useState<Record<string, boolean>>({});
+
   const navigate = useNavigate();
   const location = useLocation();
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // ✅ FIXED: Fetch agreements AND draft-only agreements
+  // ✅ NEW: Handle status change for version files
+  const handleStatusChange = async (file: SavedFileListItem, newStatus: string) => {
+    if (!file.versionId || statusChangeLoading[file.id]) return;
+
+    console.log(`📊 [STATUS-CHANGE] Updating ${file.fileName} from ${file.status} to ${newStatus}`);
+
+    setStatusChangeLoading(prev => ({ ...prev, [file.id]: true }));
+
+    try {
+      // Update version status using existing API
+      await pdfApi.updateDocumentStatus(file.versionId, newStatus);
+
+      setToastMessage({
+        message: `Status updated to "${getStatusConfig(newStatus).label}" successfully!`,
+        type: "success"
+      });
+
+      // Refresh the agreements to show updated status
+      await fetchAgreements(currentPage, query);
+
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      setToastMessage({
+        message: "Failed to update status. Please try again.",
+        type: "error"
+      });
+    } finally {
+      setStatusChangeLoading(prev => ({ ...prev, [file.id]: false }));
+    }
+  };
+
+  // ✅ UPDATED: Fetch agreements AND disable individual log calls (logs should come from grouped API)
   const fetchAgreements = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
       console.log(`📁 [AGREEMENTS] Fetching page ${page} with search: "${search}"`);
 
-      // 1. Fetch grouped files (agreements with PDFs)
+      // 1. Fetch grouped files (agreements with PDFs) - backend should include logs automatically
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
-        search: search.trim() || undefined
+        search: search.trim() || undefined,
+        includeLogs: true // ✅ Request logs to be included by backend
       });
 
       console.log(`📁 [AGREEMENTS] Loaded ${groupedResponse.groups.length} agreements with PDFs`);
 
-      // 2. ✅ OPTIMIZED: Use lightweight summary API instead of full customer headers
-      // This avoids loading heavy payload data for all agreements upfront
+      // 2. ✅ OPTIMIZED: Use lightweight summary API for draft-only agreements
+      console.log(`📋 [DRAFT-DEBUG] Fetching customer headers summary for draft detection...`);
       const headersResponse = await pdfApi.getCustomerHeadersSummary();
+
+      console.log(`📋 [DRAFT-DEBUG] Headers API response:`, {
+        totalItems: headersResponse.items?.length || 0,
+        sampleItems: headersResponse.items?.slice(0, 3).map(h => ({
+          id: h._id,
+          status: h.status,
+          title: h.headerTitle,
+          updatedAt: h.updatedAt
+        })),
+        allStatuses: [...new Set(headersResponse.items?.map(h => h.status) || [])]
+      });
 
       // Find draft agreements that don't appear in the grouped response (no PDFs)
       const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
-      const draftOnlyHeaders = headersResponse.items.filter(header =>
-        !groupedIds.has(header._id) &&
-        header.status === 'draft' &&
-        // Apply search filter if provided
-        (!search.trim() ||
-         (header.headerTitle &&
-          header.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
+      console.log(`📋 [DRAFT-DEBUG] Grouped IDs (agreements with PDFs):`, Array.from(groupedIds));
+
+      // Debug filtering step by step
+      const allHeaders = headersResponse.items || [];
+      const headersNotInGrouped = allHeaders.filter(header => !groupedIds.has(header._id));
+      const draftHeaders = headersNotInGrouped.filter(header => header.status === 'draft');
+
+      console.log(`📋 [DRAFT-DEBUG] Filtering steps:`, {
+        totalHeaders: allHeaders.length,
+        headersNotInGrouped: headersNotInGrouped.length,
+        headersWithDraftStatus: draftHeaders.length,
+        draftHeadersDetails: draftHeaders.map(h => ({
+          id: h._id,
+          status: h.status,
+          title: h.headerTitle,
+          updatedAt: h.updatedAt
+        }))
+      });
+
+      // Apply search filter if provided
+      const draftOnlyHeaders = draftHeaders.filter(header =>
+        !search.trim() ||
+        (header.headerTitle &&
+         header.headerTitle.toLowerCase().includes(search.trim().toLowerCase()))
       );
+
+      if (search.trim()) {
+        console.log(`📋 [DRAFT-DEBUG] Search filter "${search}" applied:`, {
+          beforeSearchFilter: draftHeaders.length,
+          afterSearchFilter: draftOnlyHeaders.length,
+          filteredOut: draftHeaders.filter(h =>
+            !(h.headerTitle && h.headerTitle.toLowerCase().includes(search.trim().toLowerCase()))
+          ).map(h => ({ id: h._id, title: h.headerTitle }))
+        });
+      }
 
       // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
       const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
         id: header._id,
         agreementTitle: header.headerTitle || `Agreement ${header._id}`,
+        agreementStatus: 'draft' as AgreementStatus, // ✅ NEW: Agreement is in draft status
         fileCount: 0, // No PDFs yet
         latestUpdate: header.updatedAt,
         statuses: [header.status],
         hasUploads: false,
-        files: [] // No files yet - this is the key issue we're fixing
+        files: [], // No files yet - this is the key issue we're fixing
+        hasVersions: false, // ✅ NEW: No versions exist yet
+        isDraftOnly: true, // ✅ NEW: Flag for draft-only agreements
       }));
 
-      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements`);
+      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements:`,
+        draftGroups.map(d => ({ id: d.id, title: d.agreementTitle, status: d.agreementStatus }))
+      );
 
-      // 4. ✅ NEW: Merge grouped files with draft-only agreements
+      // 4. ✅ DISABLED: No longer merge logs on frontend - backend should include them
       const allAgreements = [...groupedResponse.groups, ...draftGroups];
 
-      // ✅ DEBUG: Log first few agreements and their files to check fileType
-      console.log(`🔍 [FETCH-DEBUG] Sample agreements with fileType data:`);
-      allAgreements.slice(0, 2).forEach((agreement, agIndex) => {
-        console.log(`   Agreement ${agIndex + 1}: ${agreement.agreementTitle} (${agreement.files.length} files)`);
-        agreement.files.slice(0, 3).forEach((file, fileIndex) => {
-          console.log(`     File ${fileIndex + 1}: ${file.fileName} (Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
+      // ✅ FIX STATUS DROPDOWNS: Ensure canChangeStatus is set correctly for version PDFs
+      allAgreements.forEach(agreement => {
+        // ✅ FALLBACK: If backend doesn't set isLatestVersion, determine it from version numbers
+        if (agreement.files.some(file => file.isLatestVersion === undefined)) {
+          console.log(`🔧 [FALLBACK] Backend didn't set isLatestVersion for ${agreement.agreementTitle}, determining from version numbers`);
+
+          // Find the highest version number for each file type
+          const versionFiles = agreement.files.filter(file => file.fileType === 'version_pdf' || file.fileType === 'main_pdf');
+
+          // Extract version numbers and find the highest one
+          let highestVersionNumber = 0;
+          const versionMap = new Map<number, SavedFileListItem[]>();
+
+          versionFiles.forEach(file => {
+            const versionMatch = file.fileName.match(/Version (\d+)/i);
+            const versionNumber = versionMatch ? parseInt(versionMatch[1], 10) : 1;
+
+            if (versionNumber > highestVersionNumber) {
+              highestVersionNumber = versionNumber;
+            }
+
+            if (!versionMap.has(versionNumber)) {
+              versionMap.set(versionNumber, []);
+            }
+            versionMap.get(versionNumber)!.push(file);
+          });
+
+          // Mark files with highest version number as latest
+          const latestVersionFiles = versionMap.get(highestVersionNumber) || [];
+          latestVersionFiles.forEach(file => {
+            file.isLatestVersion = true;
+            console.log(`✅ [FALLBACK] Marked as latest: ${file.fileName} (v${highestVersionNumber})`);
+          });
+
+          // Mark all other version files as not latest
+          versionFiles.forEach(file => {
+            if (file.isLatestVersion === undefined) {
+              file.isLatestVersion = false;
+            }
+          });
+        }
+
+        // Set canChangeStatus based on isLatestVersion
+        agreement.files.forEach(file => {
+          if (file.fileType === 'version_pdf' || file.fileType === 'main_pdf') {
+            // Version PDFs can change status if they are the latest version
+            file.canChangeStatus = file.isLatestVersion === true;
+
+            // ✅ DEBUG: Log file status dropdown eligibility
+            console.log(`🔍 [STATUS-DEBUG] File: ${file.fileName}, Type: ${file.fileType}, IsLatest: ${file.isLatestVersion}, CanChange: ${file.canChangeStatus}`);
+          } else {
+            // Other file types (logs, attachments) cannot change status
+            file.canChangeStatus = false;
+          }
         });
       });
 
+      console.log(`📁 [FINAL] Total agreements: ${allAgreements.length} (${groupedResponse.groups.length} with PDFs, ${draftGroups.length} draft-only)`);
+
       setAgreements(allAgreements);
       setTotalAgreements(groupedResponse.totalGroups + draftGroups.length);
-      setTotalFiles(groupedResponse.total);
+      setTotalFiles(allAgreements.reduce((sum, agreement) => sum + agreement.files.length, 0));
       setCurrentPage(page);
     } catch (err) {
       console.error("Error fetching agreements:", err);
@@ -162,15 +322,13 @@ export default function SavedFilesAgreements() {
   };
 
   useEffect(() => {
-    fetchAgreements(1, query);
-  }, []);
-
-  useEffect(() => {
+    // Use timeout for query changes, immediate for initial load
     const timeoutId = setTimeout(() => {
       fetchAgreements(1, query);
-    }, 500);
+    }, query === "" ? 0 : 500); // No delay for empty query (initial load), 500ms delay for search
+
     return () => clearTimeout(timeoutId);
-  }, [query]);
+  }, [query]); // Only depends on query
 
   // Selection helpers
   const selectedFileIds = useMemo(() =>
@@ -241,22 +399,23 @@ export default function SavedFilesAgreements() {
 
   // Bulk Zoho upload handler
   const handleBulkZohoUpload = () => {
-    const filesWithPdf = selectedFileObjects.filter(file => file.hasPdf);
+    // ✅ UPDATED: Support both PDFs and TXT log files for bulk upload
+    const uploadableFiles = selectedFileObjects.filter(file => file.hasPdf || file.fileType === 'version_log');
 
     // ✅ DEBUG: Log the selected files to check fileType preservation
-    console.log(`🔍 [BULK-UPLOAD-DEBUG] Selected ${filesWithPdf.length} files with PDF:`);
-    filesWithPdf.forEach((file, index) => {
+    console.log(`🔍 [BULK-UPLOAD-DEBUG] Selected ${uploadableFiles.length} uploadable files (PDFs + TXT logs):`);
+    uploadableFiles.forEach((file, index) => {
       console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
     });
 
-    if (filesWithPdf.length === 0) {
+    if (uploadableFiles.length === 0) {
       setToastMessage({
-        message: "Please select files with PDFs to upload to Zoho.",
+        message: "Please select files (PDFs or TXT logs) to upload to Zoho.",
         type: "error"
       });
       return;
     }
-    setSelectedFilesForBulkUpload(filesWithPdf);
+    setSelectedFilesForBulkUpload(uploadableFiles);
     setBulkZohoUploadOpen(true);
   };
 
@@ -286,8 +445,8 @@ export default function SavedFilesAgreements() {
       let documentType: string;
       if (file.fileType === 'main_pdf') {
         documentType = 'agreement';
-      } else if (file.fileType === 'version_pdf') {
-        documentType = 'version'; // ✅ NEW: Handle version PDFs
+      } else if (file.fileType === 'version_log') {
+        documentType = 'version-log'; // ✅ NEW: Handle version logs
       } else {
         documentType = 'attached-file';
       }
@@ -317,24 +476,35 @@ export default function SavedFilesAgreements() {
       // ✅ Use different download methods based on file type
       if (file.fileType === 'main_pdf') {
         blob = await pdfApi.downloadPdf(file.id);
-      } else if (file.fileType === 'version_pdf') {
-        // ✅ NEW: Download version PDFs using version API
-        blob = await versionApi.downloadVersion(file.id);
+      } else if (file.fileType === 'version_log') {
+        // ✅ Download version log files using version log API
+        blob = await pdfApi.downloadVersionLog(file.id);
       } else {
+        // Handle version_pdf and attached_pdf files
         blob = await pdfApi.downloadAttachedFile(file.id);
       }
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeName = (file.fileName || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") + ".pdf";
+      // ✅ Use appropriate file extension based on file type
+      let safeName: string;
+      if (file.fileType === 'version_log') {
+        // ✅ UPDATED: Version logs already have .txt extension in fileName
+        safeName = file.fileName || "EnviroMaster_Version_Log.txt";
+      } else {
+        // For PDFs, add .pdf extension if not present
+        const extension = '.pdf';
+        const baseFileName = file.fileName || "EnviroMaster_Document";
+        safeName = baseFileName.endsWith('.pdf') ? baseFileName : baseFileName.replace(/[^\w\-]+/g, "_") + extension;
+      }
       a.download = safeName;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setToastMessage({ message: "Unable to download this PDF. Please try again.", type: "error" });
+      setToastMessage({ message: "Unable to download this file. Please try again.", type: "error" });
     }
   };
 
@@ -344,9 +514,11 @@ export default function SavedFilesAgreements() {
   };
 
   const handleZohoUpload = (file: SavedFileListItem) => {
-    if (!file.hasPdf) {
+    // ✅ UPDATED: Support both PDFs and TXT log files for Zoho upload
+    const isUploadableFile = file.hasPdf || file.fileType === 'version_log';
+    if (!isUploadableFile) {
       setToastMessage({
-        message: "This document doesn't have a PDF to upload. Please generate the PDF first.",
+        message: "This document doesn't have a file to upload. Please generate a PDF or ensure the file exists.",
         type: "error"
       });
       return;
@@ -357,77 +529,67 @@ export default function SavedFilesAgreements() {
 
   // ✅ NEW: Handle Zoho upload for entire agreement (folder-level upload)
   const handleAgreementZohoUpload = (agreement: SavedFileGroup) => {
-    const filesWithPdf = agreement.files.filter(file => file.hasPdf);
+    // ✅ UPDATED: Support both PDFs and TXT log files for agreement upload
+    const uploadableFiles = agreement.files.filter(file => file.hasPdf || file.fileType === 'version_log');
 
-    if (filesWithPdf.length === 0) {
+    if (uploadableFiles.length === 0) {
       setToastMessage({
-        message: "This agreement has no PDFs to upload. Please generate PDFs first.",
+        message: "This agreement has no uploadable files. Please generate PDFs first or ensure log files exist.",
         type: "error"
       });
       return;
     }
 
     // For single file agreements, use the single file upload modal
-    if (filesWithPdf.length === 1) {
-      setCurrentZohoFile(filesWithPdf[0]);
+    if (uploadableFiles.length === 1) {
+      setCurrentZohoFile(uploadableFiles[0]);
       setZohoUploadOpen(true);
     } else {
       // ✅ FIXED: For multiple files, use original file IDs but handle them properly in backend
-      console.log(`🔍 [FOLDER-UPLOAD] Uploading ${filesWithPdf.length} files from agreement folder`);
-      setSelectedFilesForBulkUpload(filesWithPdf); // Use original file structure
+      console.log(`🔍 [FOLDER-UPLOAD] Uploading ${uploadableFiles.length} files (PDFs + TXT logs) from agreement folder`);
+      setSelectedFilesForBulkUpload(uploadableFiles); // Use original file structure
       setBulkZohoUploadOpen(true);
     }
   };
 
   const handleEdit = async (file: SavedFileListItem) => {
     try {
-      // ✅ UPDATED: Only allow editing the most recent version PDF, not main agreements
-      if (file.fileType !== 'version_pdf') {
+      // ✅ FIXED: Allow editing main PDFs and latest version PDFs
+      const canEdit = file.fileType === 'main_pdf' ||
+                     (file.fileType === 'version_pdf' && file.isLatestVersion === true);
+
+      if (!canEdit) {
         setToastMessage({
-          message: "Only the most recent version can be edited.",
+          message: "Only the latest version of agreements can be edited.",
           type: "error"
         });
         return;
       }
 
-      // For version PDFs, check if it's the most recent version
-      // Find the agreement this version belongs to
-      const agreement = agreements.find(agreement =>
-        agreement.files.some(f => f.id === file.id)
-      );
+      console.log(`📝 [EDIT] Editing agreement: ${file.agreementId || file.id}`);
 
-      if (!agreement) {
-        setToastMessage({
-          message: "Cannot find agreement for this version.",
-          type: "error"
-        });
-        return;
-      }
+      // ✅ DEBUG: Log file properties to verify version ID
+      console.log(`📝 [EDIT-DEBUG] File properties:`, {
+        fileId: file.id,
+        fileType: file.fileType,
+        versionId: file.versionId,
+        agreementId: file.agreementId,
+        fileName: file.fileName,
+        isLatestVersion: file.isLatestVersion
+      });
 
-      // Get all version PDFs for this agreement and find the highest version number
-      const versionFiles = agreement.files
-        .filter(f => f.fileType === 'version_pdf')
-        .map(f => ({ ...f, versionNumber: (f as any).versionNumber || 0 }))
-        .sort((a, b) => b.versionNumber - a.versionNumber);
+      const versionIdToPass = file.fileType === 'version_pdf' ? file.versionId : undefined;
+      console.log(`📝 [EDIT-DEBUG] Version ID being passed:`, versionIdToPass);
 
-      const isLatestVersion = versionFiles.length > 0 && versionFiles[0].id === file.id;
-
-      if (!isLatestVersion) {
-        setToastMessage({
-          message: "Only the most recent version can be edited. Edit the latest version to make changes.",
-          type: "error"
-        });
-        return;
-      }
-
-      console.log(`📝 [EDIT VERSION] Editing agreement: ${agreement.id} (was viewing version: ${file.id})`);
-
-      // ✅ FIXED: Navigate using agreement ID, not version ID
-      navigate(`/edit/pdf/${agreement.id}`, {
+      // ✅ FIXED: Navigate using agreement ID and pass version info if editing a version PDF
+      navigate(`/edit/pdf/${file.agreementId || file.id}`, {
         state: {
           editing: true,
-          id: agreement.id, // ✅ Use agreement ID, not version ID
+          id: file.agreementId || file.id,
           returnPath: returnPath,
+          // ✅ NEW: Pass version info for status updates
+          editingVersionId: versionIdToPass,
+          editingVersionFile: file.fileType === 'version_pdf' ? file.id : undefined,
         },
       });
     } catch (err) {
@@ -613,10 +775,10 @@ export default function SavedFilesAgreements() {
                 type="button"
                 className="sf__btn sf__btn--primary zoho-upload-btn"
                 onClick={handleBulkZohoUpload}
-                disabled={selectedFileObjects.filter(f => f.hasPdf).length === 0}
+                disabled={selectedFileObjects.filter(f => f.hasPdf || f.fileType === 'version_log').length === 0}
               >
                 <FontAwesomeIcon icon={faUpload} style={{ marginRight: '6px' }} />
-                Upload to Zoho ({selectedFileObjects.filter(f => f.hasPdf).length})
+                Upload to Zoho ({selectedFileObjects.filter(f => f.hasPdf || f.fileType === 'version_log').length})
               </button>
             </>
           )}
@@ -744,6 +906,19 @@ export default function SavedFilesAgreements() {
                         📤 Zoho
                       </span>
                     )}
+                    {/* ✅ NEW: Agreement Status Badge (show draft for agreements without PDFs) */}
+                    {agreement.isDraftOnly && (
+                      <span style={{
+                        background: getStatusConfig('draft').color,
+                        color: '#fff',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: '600'
+                      }}>
+                        📝 {getStatusConfig('draft').label}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -763,14 +938,14 @@ export default function SavedFilesAgreements() {
                       fontSize: '12px',
                       color: '#fff',
                       fontWeight: '500',
-                      opacity: agreement.files.filter(f => f.hasPdf).length > 0 ? 1 : 0.5
+                      opacity: agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length > 0 ? 1 : 0.5
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAgreementZohoUpload(agreement);
                     }}
-                    disabled={agreement.files.filter(f => f.hasPdf).length === 0}
-                    title={`Upload ${agreement.files.filter(f => f.hasPdf).length} PDFs to Zoho Bigin`}
+                    disabled={agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length === 0}
+                    title={`Upload ${agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length} files to Zoho Bigin`}
                   >
                     <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
                     Zoho
@@ -895,6 +1070,8 @@ export default function SavedFilesAgreements() {
                               ? '#2563eb'
                               : file.fileType === 'version_pdf'
                               ? '#7c3aed'  // Purple for version PDFs
+                              : file.fileType === 'version_log'
+                              ? '#f59e0b'  // Orange for version logs
                               : '#10b981',
                             fontSize: '16px'
                           }}
@@ -921,11 +1098,15 @@ export default function SavedFilesAgreements() {
                             ? '#e0f2fe'
                             : file.fileType === 'version_pdf'
                             ? '#f3e8ff'  // Light purple for version PDFs
+                            : file.fileType === 'version_log'
+                            ? '#fef3c7'  // Light orange for version logs
                             : '#f0fdf4',
                           color: file.fileType === 'main_pdf'
                             ? '#0e7490'
                             : file.fileType === 'version_pdf'
                             ? '#7c2d12'  // Dark purple for version PDFs
+                            : file.fileType === 'version_log'
+                            ? '#92400e'  // Dark orange for version logs
                             : '#166534',
                           fontWeight: '600'
                         }}>
@@ -933,8 +1114,11 @@ export default function SavedFilesAgreements() {
                             ? 'Main Agreement'
                             : file.fileType === 'version_pdf'
                             ? `Version ${(file as any).versionNumber || ''}`  // Show version number
+                            : file.fileType === 'version_log'
+                            ? `Log v${(file as any).versionNumber || ''}`  // Show log version number
                             : 'Attached'}
                         </span>
+
                         {file.description && (
                           <span style={{
                             fontSize: '11px',
@@ -948,18 +1132,11 @@ export default function SavedFilesAgreements() {
 
                       {/* File actions */}
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        {/* ✅ UPDATED: Only show edit button for the most recent version PDF, not main agreements */}
-                        {file.fileType === 'version_pdf' && (() => {
-                          // Check if this is the most recent version for edit button visibility
-                          const versionFiles = agreement.files
-                            .filter(f => f.fileType === 'version_pdf')
-                            .map(f => ({ ...f, versionNumber: (f as any).versionNumber || 0 }))
-                            .sort((a, b) => b.versionNumber - a.versionNumber);
-                          return versionFiles.length > 0 && versionFiles[0].id === file.id;
-                        })() && (
+                        {/* ✅ FIXED: Show edit button for main PDFs AND latest version PDFs */}
+                        {(file.fileType === 'main_pdf' || (file.fileType === 'version_pdf' && file.isLatestVersion === true)) && (
                           <button
                             className="iconbtn"
-                            title="Edit Latest Version"
+                            title="Edit Agreement"
                             onClick={() => handleEdit(file)}
                           >
                             <FontAwesomeIcon icon={faPencilAlt} />
@@ -993,10 +1170,60 @@ export default function SavedFilesAgreements() {
                           className="iconbtn zoho-upload-btn"
                           title="Upload to Zoho Bigin"
                           onClick={() => handleZohoUpload(file)}
-                          disabled={!file.hasPdf}
+                          disabled={!file.hasPdf && file.fileType !== 'version_log'}
                         >
                           <FontAwesomeIcon icon={faUpload} />
                         </button>
+
+                        {/* ✅ MOVED: Status Dropdown for version PDFs (now in action buttons area) */}
+                        {(file.fileType === 'main_pdf' || file.fileType === 'version_pdf') && (
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            {file.canChangeStatus && !statusChangeLoading[file.id] ? (
+                              <select
+                                value={file.status}
+                                onChange={(e) => handleStatusChange(file, e.target.value)}
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #d1d5db',
+                                  background: getStatusConfig(file.status).color,
+                                  color: '#fff',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                  minWidth: '120px'
+                                }}
+                                title="Change status"
+                              >
+                                {getAvailableStatusesForDropdown(file.status, file.isLatestVersion).map(status => (
+                                  <option key={status.value} value={status.value} style={{ color: '#000' }}>
+                                    {status.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  background: getStatusConfig(file.status).color,
+                                  color: '#fff',
+                                  fontWeight: '600',
+                                  opacity: statusChangeLoading[file.id] ? 0.6 : 1,
+                                  minWidth: '120px',
+                                  display: 'inline-block',
+                                  textAlign: 'center'
+                                }}
+                                title={statusChangeLoading[file.id] ? "Updating status..." : "Status (read-only)"}
+                              >
+                                {statusChangeLoading[file.id] ? "Updating..." : getStatusConfig(file.status).label}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* ✅ NEW: Delete file button */}
                         <button
                           className="iconbtn"

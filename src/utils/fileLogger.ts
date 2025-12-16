@@ -96,8 +96,11 @@ class FileLogger {
     return this.changes.size;
   }
 
-  // Create log file via API
-  async createLogFile(logData: Omit<LogData, 'changes'>): Promise<any> {
+  // ✅ NEW: Create or overwrite log via API (separate Logs collection, store IDs in Agreement & Version)
+  async createLogFile(logData: Omit<LogData, 'changes'>, options: {
+    overwriteExisting?: boolean;
+    overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
+  } = {}): Promise<any> {
     const changes = this.getChanges();
 
     if (changes.length === 0) {
@@ -105,23 +108,32 @@ class FileLogger {
       return {
         success: true,
         message: 'No changes to log',
-        logFile: null
+        log: null
       };
     }
 
-    console.log(`📦 [FILE-LOGGER] Creating log file with ${changes.length} changes for version ${logData.versionNumber}`);
+    console.log(`📦 [FILE-LOGGER] Creating/updating log in Logs collection with ${changes.length} changes for version ${logData.versionNumber}`);
+
+    if (options.overwriteExisting) {
+      console.log(`🔄 [FILE-LOGGER] Overwrite mode enabled - reason: ${options.overwriteReason}`);
+    }
 
     try {
+      // ✅ NEW: Enhanced API call with overwriting support
       const result = await pdfApi.createVersionLog({
         ...logData,
-        changes
+        changes,
+        // ✅ NEW: Pass overwriting options to backend
+        overwriteExisting: options.overwriteExisting || false,
+        overwriteReason: options.overwriteReason,
       });
 
-      console.log(`✅ [FILE-LOGGER] Log file created successfully:`, {
-        fileName: result.logFile?.fileName,
-        totalChanges: result.logFile?.totalChanges,
-        totalPriceImpact: result.logFile?.totalPriceImpact,
-        hasSignificantChanges: result.logFile?.hasSignificantChanges
+      console.log(`✅ [FILE-LOGGER] Log created in Logs collection:`, {
+        logId: result.log?.logId,
+        fileName: result.log?.fileName,
+        totalChanges: result.log?.totalChanges,
+        totalPriceImpact: result.log?.totalPriceImpact,
+        hasSignificantChanges: result.log?.hasSignificantChanges
       });
 
       // Clear changes after successful logging
@@ -130,7 +142,7 @@ class FileLogger {
       return result;
 
     } catch (error) {
-      console.error('❌ [FILE-LOGGER] Failed to create log file:', error);
+      console.error('❌ [FILE-LOGGER] Failed to create log in Logs collection:', error);
       throw error;
     }
   }
@@ -173,12 +185,54 @@ export const getPriceChangeCount = (): number => {
   return fileLogger.getChangeCount();
 };
 
-export const createVersionLogFile = async (logData: Omit<LogData, 'changes'>) => {
-  return await fileLogger.createLogFile(logData);
+export const createVersionLogFile = async (
+  logData: Omit<LogData, 'changes'>,
+  options: {
+    overwriteExisting?: boolean;
+    overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
+  } = {}
+) => {
+  return await fileLogger.createLogFile(logData, options);
 };
 
 export const debugFileLogger = () => {
   fileLogger.debug();
+};
+
+// ✅ SIMPLIFIED: Helper function to get all version logs for testing (uses Logs collection)
+export const getAllVersionLogsForTesting = async (params?: {
+  page?: number;
+  limit?: number;
+  agreementId?: string;
+}) => {
+  try {
+    const { pdfApi } = await import('../backendservice/api/pdfApi');
+    const result = await pdfApi.getAllVersionLogs(params);
+
+    console.log('📋 [ALL-VERSION-LOGS] Results from Logs collection:', {
+      totalLogs: result.pagination.totalLogs,
+      currentPage: result.pagination.currentPage,
+      totalPages: result.pagination.totalPages,
+      logs: result.logs.length
+    });
+
+    console.table(result.logs.map(log => ({
+      logId: log._id,
+      fileName: log.fileName,
+      agreementId: log.agreementId,
+      agreementTitle: log.agreementTitle || 'N/A',
+      versionNumber: log.versionNumber,
+      totalChanges: log.totalChanges,
+      priceImpact: `$${log.totalPriceImpact}`,
+      createdAt: new Date(log.createdAt).toLocaleString(),
+      salesperson: log.salespersonName
+    })));
+
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to fetch all version logs from Logs collection:', error);
+    return null;
+  }
 };
 
 // Utility function to get product type from family key

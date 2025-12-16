@@ -18,7 +18,7 @@ import { pdfApi } from "../backendservice/api";
 import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
 import { useAllServicePricing } from "../backendservice/hooks";
-import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger } from "../utils/fileLogger";
+import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
 
 type HeaderRow = {
   labelLeft: string;
@@ -88,6 +88,9 @@ type LocationState = {
   returnPath?: string;
   returnState?: any;
   fromPdfViewer?: boolean; // Added to track if coming from PDF viewer
+  // ✅ NEW: Version info for status updates when editing versioned PDFs
+  editingVersionId?: string;
+  editingVersionFile?: string;
 };
 
 // customer document we were using before (for saving when not editing an existing one)
@@ -197,7 +200,11 @@ export default function FormFilling() {
       editing,
       id,
       locationState,
-      urlId
+      urlId,
+      // ✅ NEW: Debug version info
+      editingVersionId: locationState.editingVersionId,
+      editingVersionFile: locationState.editingVersionFile,
+      hasVersionInfo: !!(locationState.editingVersionId)
     });
 
     // ✅ FIXED: Always use agreement ID directly - no version mapping needed
@@ -464,14 +471,25 @@ export default function FormFilling() {
     const payloadToSend = {
       ...collectFormData(), // Collect current data from all child components
       status: "draft",
+      // ✅ NEW: Include version context for backend to update correct version status
+      versionContext: locationState.editingVersionId ? {
+        editingVersionId: locationState.editingVersionId,
+        editingVersionFile: locationState.editingVersionFile,
+        updateVersionStatus: true
+      } : undefined
     };
 
     try {
       // ✅ SIMPLIFIED: documentId is always the agreement ID now
       if (documentId) {
-        // Update existing agreement
+        // Update existing agreement (backend will also update version status if versionContext provided)
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
         console.log("Draft updated successfully for agreement:", documentId);
+
+        if (locationState.editingVersionId) {
+          console.log("✅ Backend should have updated version status for:", locationState.editingVersionId);
+        }
+
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
         // ✅ SIMPLIFIED: Log version changes using file logger
@@ -485,16 +503,20 @@ export default function FormFilling() {
         if (currentHasChanges) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [DRAFT-SAVE] Creating log file with ${currentChangesCount} changes for draft update`);
+            console.log(`📝 [DRAFT-SAVE] Creating/updating log file with ${currentChangesCount} changes for draft update`);
 
+            // ✅ NEW: For drafts, always overwrite existing logs to maintain single log per agreement
             await createVersionLogFile({
               agreementId: documentId,
-              versionId: documentId, // For drafts, use agreement ID as version ID
-              versionNumber: 1, // Drafts are always version 1 until they become PDFs
+              versionId: locationState.editingVersionId || documentId, // Use version ID if editing a version, otherwise agreement ID
+              versionNumber: locationState.editingVersionId ? undefined : 1, // Version number not needed when overwriting version logs
               salespersonId: 'salesperson_001', // TODO: Get from auth context
               salespersonName: 'Sales Person', // TODO: Get from auth context
               saveAction: 'save_draft',
               documentTitle,
+            }, {
+              overwriteExisting: true,
+              overwriteReason: locationState.editingVersionId ? 'version_update' : 'draft_update'
             });
 
             console.log(`✅ [DRAFT-SAVE] Successfully created log file and cleared changes`);
@@ -517,8 +539,9 @@ export default function FormFilling() {
         if (currentHasChanges && newId) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [DRAFT-CREATE] Creating log file with ${currentChangesCount} changes for new draft`);
+            console.log(`📝 [DRAFT-CREATE] Creating/updating log file with ${currentChangesCount} changes for new draft`);
 
+            // ✅ NEW: For new drafts, overwrite any existing logs to maintain single log per agreement
             await createVersionLogFile({
               agreementId: newId,
               versionId: newId, // For drafts, use agreement ID as version ID
@@ -527,6 +550,9 @@ export default function FormFilling() {
               salespersonName: 'Sales Person', // TODO: Get from auth context
               saveAction: 'save_draft',
               documentTitle,
+            }, {
+              overwriteExisting: true,
+              overwriteReason: 'draft_update'
             });
 
             console.log(`✅ [DRAFT-CREATE] Successfully created log file and cleared changes`);
