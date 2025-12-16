@@ -127,17 +127,26 @@ export default function SavedFilesAgreements() {
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // ✅ NEW: Handle status change for version files
+  // ✅ UPDATED: Handle status change for different file types
   const handleStatusChange = async (file: SavedFileListItem, newStatus: string) => {
-    if (!file.versionId || statusChangeLoading[file.id]) return;
+    if (statusChangeLoading[file.id]) return;
 
-    console.log(`📊 [STATUS-CHANGE] Updating ${file.fileName} from ${file.status} to ${newStatus}`);
+    console.log(`📊 [STATUS-CHANGE] Updating ${file.fileName} (${file.fileType}) from ${file.status} to ${newStatus}`);
 
     setStatusChangeLoading(prev => ({ ...prev, [file.id]: true }));
 
     try {
-      // Update version status using existing API
-      await pdfApi.updateDocumentStatus(file.versionId, newStatus);
+      // ✅ FIX: Use file.id directly as version ID for version PDFs
+      if (file.fileType === 'version_pdf') {
+        // For version PDFs, use the file.id directly as the version ID
+        console.log(`📊 [STATUS-CHANGE-DEBUG] Using file.id as version ID: ${file.id}`);
+        await pdfApi.updateVersionStatus(file.id, newStatus);
+      } else if (file.fileType === 'main_pdf' && file.agreementId) {
+        // For main agreement PDFs, update agreement status
+        await pdfApi.updateDocumentStatus(file.agreementId, newStatus);
+      } else {
+        throw new Error(`Cannot update status for file type: ${file.fileType}`);
+      }
 
       setToastMessage({
         message: `Status updated to "${getStatusConfig(newStatus).label}" successfully!`,
@@ -568,18 +577,19 @@ export default function SavedFilesAgreements() {
 
       console.log(`📝 [EDIT] Editing agreement: ${file.agreementId || file.id}`);
 
-      // ✅ DEBUG: Log file properties to verify version ID
+      // ✅ DEBUG: Log file properties to verify we're using file.id as version ID
       console.log(`📝 [EDIT-DEBUG] File properties:`, {
         fileId: file.id,
         fileType: file.fileType,
         versionId: file.versionId,
         agreementId: file.agreementId,
         fileName: file.fileName,
-        isLatestVersion: file.isLatestVersion
+        isLatestVersion: file.isLatestVersion,
+        usingFileIdAsVersionId: file.fileType === 'version_pdf'
       });
 
-      const versionIdToPass = file.fileType === 'version_pdf' ? file.versionId : undefined;
-      console.log(`📝 [EDIT-DEBUG] Version ID being passed:`, versionIdToPass);
+      const versionIdToPass = file.fileType === 'version_pdf' ? file.id : undefined;
+      console.log(`📝 [EDIT-DEBUG] Using file.id as version ID:`, versionIdToPass);
 
       // ✅ FIXED: Navigate using agreement ID and pass version info if editing a version PDF
       navigate(`/edit/pdf/${file.agreementId || file.id}`, {

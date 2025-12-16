@@ -50,24 +50,6 @@ export interface FormPayload {
 export type AgreementStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized';
 export type VersionStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized' | 'archived';
 
-// ✅ NEW: Interface for updating version status
-export interface UpdateVersionStatusRequest {
-  versionId: string;
-  status: VersionStatus;
-  notes?: string;
-}
-
-export interface UpdateVersionStatusResponse {
-  success: boolean;
-  message: string;
-  version?: {
-    id: string;
-    versionNumber: number;
-    status: VersionStatus;
-    updatedAt: string;
-  };
-}
-
 // New interfaces for saved-files API
 export interface SavedFileListItem {
   id: string;
@@ -496,6 +478,19 @@ export const pdfApi = {
   },
 
   /**
+   * Update version status (for version PDFs)
+   */
+  async updateVersionStatus(versionId: string, status: string): Promise<void> {
+    await axios.patch(
+      `${API_BASE_URL}/api/versions/version/${versionId}/status`,
+      { status },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  },
+
+  /**
    * Download PDF as blob
    */
   async downloadPdf(documentId: string): Promise<Blob> {
@@ -823,23 +818,6 @@ export const pdfApi = {
       `${API_BASE_URL}/api/pdf/logs/${logId}/download`,
       {
         responseType: "blob",
-      }
-    );
-    return res.data;
-  },
-
-  /**
-   * ✅ NEW: Update version status
-   */
-  async updateVersionStatus(request: UpdateVersionStatusRequest): Promise<UpdateVersionStatusResponse> {
-    const res = await axios.patch(
-      `${API_BASE_URL}/api/pdf/versions/${request.versionId}/status`,
-      {
-        status: request.status,
-        notes: request.notes,
-      },
-      {
-        headers: { "Content-Type": "application/json" },
       }
     );
     return res.data;

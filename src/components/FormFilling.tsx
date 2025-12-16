@@ -486,8 +486,19 @@ export default function FormFilling() {
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
         console.log("Draft updated successfully for agreement:", documentId);
 
+        // ✅ NEW: Explicitly update version status to "draft" if editing a version PDF
         if (locationState.editingVersionId) {
-          console.log("✅ Backend should have updated version status for:", locationState.editingVersionId);
+          try {
+            console.log(`🔄 Attempting to update version status for ID: ${locationState.editingVersionId}`);
+            console.log(`🔄 API URL will be: /api/versions/version/${locationState.editingVersionId}/status`);
+            await pdfApi.updateVersionStatus(locationState.editingVersionId, "draft");
+            console.log("✅ Version status updated to draft for:", locationState.editingVersionId);
+          } catch (versionError) {
+            console.error("❌ Failed to update version status:", versionError);
+            console.error("❌ Version ID used:", locationState.editingVersionId);
+            console.error("❌ Full error:", versionError.response || versionError);
+            // Don't fail the draft save if version status update fails
+          }
         }
 
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
