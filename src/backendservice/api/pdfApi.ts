@@ -478,11 +478,69 @@ export const pdfApi = {
   },
 
   /**
+   * Get all version PDFs with pagination and filtering
+   */
+  async getAllVersionPdfs(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    agreementId?: string;
+    versionNumber?: number;
+    includeDeleted?: boolean;
+  }): Promise<{
+    success: boolean;
+    data: Array<{
+      id: string;
+      agreementId: string;
+      agreementTitle: string;
+      versionNumber: number;
+      versionLabel: string;
+      fileName: string;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+      createdBy: string;
+      changeNotes: string;
+      fileSize: number;
+      pdfStoredAt: string | null;
+      hasPdf: boolean;
+      zohoInfo: {
+        biginDealId: string | null;
+        biginFileId: string | null;
+        crmDealId: string | null;
+        crmFileId: string | null;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  }> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.agreementId) searchParams.set('agreementId', params.agreementId);
+    if (params?.versionNumber) searchParams.set('versionNumber', params.versionNumber.toString());
+    if (params?.includeDeleted) searchParams.set('includeDeleted', params.includeDeleted.toString());
+
+    const res = await axios.get(`${API_BASE_URL}/api/versions?${searchParams}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
    * Update version status (for version PDFs)
    */
   async updateVersionStatus(versionId: string, status: string): Promise<void> {
     await axios.patch(
-      `${API_BASE_URL}/api/versions/version/${versionId}/status`,
+      `${API_BASE_URL}/api/versions/${versionId}/status`,
       { status },
       {
         headers: { "Content-Type": "application/json" },
