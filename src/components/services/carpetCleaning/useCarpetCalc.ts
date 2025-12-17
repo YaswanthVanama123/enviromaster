@@ -56,6 +56,66 @@ const DEFAULT_FORM: CarpetFormState = {
   installMultiplierClean: cfg.installMultipliers.clean,
 };
 
+// ✅ Helper function to transform backend frequencyMetadata to frontend format
+function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequencyMetadata'] | undefined) {
+  if (!backendMeta) {
+    console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
+    return cfg.frequencyMeta;
+  }
+
+  console.log('🔧 [Carpet] Transforming backend frequencyMetadata:', backendMeta);
+
+  // Transform backend structure to frontend expected structure
+  const transformedMeta: any = {};
+
+  // Handle weekly and biweekly with their special multipliers
+  if (backendMeta.weekly) {
+    transformedMeta.weekly = {
+      monthlyMultiplier: backendMeta.weekly.monthlyRecurringMultiplier,
+      firstMonthExtraMultiplier: backendMeta.weekly.firstMonthExtraMultiplier,
+      visitsPerYear: Math.round(backendMeta.weekly.monthlyRecurringMultiplier * 12),
+      annualMultiplier: Math.round(backendMeta.weekly.monthlyRecurringMultiplier * 12),
+    };
+  }
+
+  if (backendMeta.biweekly) {
+    transformedMeta.biweekly = {
+      monthlyMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier,
+      firstMonthExtraMultiplier: backendMeta.biweekly.firstMonthExtraMultiplier,
+      visitsPerYear: Math.round(backendMeta.biweekly.monthlyRecurringMultiplier * 12),
+      annualMultiplier: Math.round(backendMeta.biweekly.monthlyRecurringMultiplier * 12),
+    };
+  }
+
+  // Handle cycle-based frequencies (monthly, bimonthly, quarterly, biannual, annual)
+  const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
+
+  for (const freq of cycleBased) {
+    const backendFreqData = backendMeta[freq];
+    if (backendFreqData?.cycleMonths) {
+      const cycleMonths = backendFreqData.cycleMonths;
+      const visitsPerYear = 12 / cycleMonths; // e.g., monthly: 12/1=12, quarterly: 12/3=4
+      const monthlyMultiplier = visitsPerYear / 12; // e.g., monthly: 12/12=1, quarterly: 4/12=0.333
+
+      transformedMeta[freq] = {
+        cycleMonths,
+        monthlyMultiplier,
+        visitsPerYear,
+        annualMultiplier: visitsPerYear,
+      };
+    }
+  }
+
+  // Add fallback frequencies that might not be in backend
+  const finalMeta = {
+    ...cfg.frequencyMeta, // Start with fallback values
+    ...transformedMeta,   // Override with backend values
+  };
+
+  console.log('✅ [Carpet] Transformed frequencyMetadata:', finalMeta);
+  return finalMeta;
+}
+
 function clampFrequency(f: string): CarpetFrequency {
   return carpetFrequencyList.includes(f as CarpetFrequency)
     ? (f as CarpetFrequency)
@@ -180,6 +240,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         minimumChargePerVisit: config.minimumChargePerVisit,
         installationMultipliers: config.installationMultipliers,
         frequencyMetadata: config.frequencyMetadata,
+        contractLimits: `${config.minContractMonths}-${config.maxContractMonths} months`,
       });
     } catch (error) {
       console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
@@ -398,7 +459,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     totalVisitsForContract,
   } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Map backend config to our expected format, ensuring all frequencies are available
+    // Map backend config to our expected format, using backend frequencyMetadata when available
     const baseConfig = backendConfig ? {
       unitSqFt: backendConfig.baseSqFtUnit ?? cfg.unitSqFt,
       firstUnitRate: backendConfig.basePrice ?? cfg.firstUnitRate,
@@ -408,8 +469,8 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         dirty: backendConfig.installationMultipliers?.dirtyInstallMultiplier ?? cfg.installMultipliers.dirty,
         clean: backendConfig.installationMultipliers?.cleanInstallMultiplier ?? cfg.installMultipliers.clean,
       },
-      // ✅ CRITICAL: Use local config for frequencyMeta since backend has different structure
-      frequencyMeta: cfg.frequencyMeta,
+      // ✅ UPDATED: Transform backend frequencyMetadata to frontend format
+      frequencyMeta: transformBackendFrequencyMeta(backendConfig.frequencyMetadata),
     } : {
       unitSqFt: cfg.unitSqFt,
       firstUnitRate: cfg.firstUnitRate,
@@ -435,10 +496,30 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
 
     const freq = clampFrequency(form.frequency);
 
-    // ✅ Get billing conversion for current frequency from active config (backend if available)
-    const conv = activeConfig.frequencyMeta[freq] || cfg.billingConversions[freq];
-    const monthlyVisits = conv?.monthlyMultiplier || cfg.billingConversions[freq]?.monthlyMultiplier || 1;
-    const visitsPerYear = conv?.visitsPerYear || cfg.billingConversions[freq]?.annualMultiplier || 1;
+    // ✅ Get billing conversion for current frequency from backend config (if available)
+    const conv = activeConfig.frequencyMeta[freq];
+    let monthlyVisits = 1;
+    let visitsPerYear = 12;
+
+    if (conv) {
+      // Use backend frequency metadata
+      if (conv.monthlyMultiplier !== undefined) {
+        monthlyVisits = conv.monthlyMultiplier;
+        visitsPerYear = conv.visitsPerYear || conv.annualMultiplier || (monthlyVisits * 12);
+      } else if (conv.cycleMonths !== undefined) {
+        // For cycle-based frequencies (monthly, bimonthly, quarterly, etc.)
+        visitsPerYear = 12 / conv.cycleMonths;
+        monthlyVisits = visitsPerYear / 12;
+      }
+    } else {
+      // Fallback to static config
+      const fallbackConv = cfg.billingConversions[freq];
+      if (fallbackConv) {
+        monthlyVisits = fallbackConv.monthlyMultiplier || 1;
+        visitsPerYear = fallbackConv.annualMultiplier || 12;
+      }
+    }
+
     const visitsPerMonth = visitsPerYear / 12;
 
     // ✅ Detect visit-based frequencies (oneTime, quarterly, biannual, annual, bimonthly)
@@ -539,18 +620,36 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedFirstMonthTotal = perVisitCharge; // Service cost × 1
         }
       } else if (freq === "weekly") {
-        // Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
+        // ✅ BACKEND-DRIVEN: Weekly first month calculation using backend firstMonthExtraMultiplier
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = monthlyVisits - 1; // e.g., 4.33 - 1 = 3.33 remaining visits
-          calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
+          const backendWeeklyMeta = backendConfig?.frequencyMetadata?.weekly;
+          if (backendWeeklyMeta?.firstMonthExtraMultiplier !== undefined) {
+            // Use backend's first month extra multiplier (e.g., 3.33 extra visits)
+            const extraVisits = backendWeeklyMeta.firstMonthExtraMultiplier;
+            calculatedFirstMonthTotal = installOneTime + (extraVisits * perVisitCharge);
+            console.log(`🔧 [Carpet Weekly] Backend first month: install + ${extraVisits} extra visits = $${calculatedFirstMonthTotal.toFixed(2)}`);
+          } else {
+            // Fallback to old logic
+            const remainingVisits = monthlyVisits - 1; // e.g., 4.33 - 1 = 3.33 remaining visits
+            calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
+          }
         } else {
           calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
       } else if (freq === "biweekly") {
-        // Bi-Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
+        // ✅ BACKEND-DRIVEN: Biweekly first month calculation using backend firstMonthExtraMultiplier
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = monthlyVisits - 1; // e.g., 2.165 - 1 = 1.165 remaining visits
-          calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
+          const backendBiweeklyMeta = backendConfig?.frequencyMetadata?.biweekly;
+          if (backendBiweeklyMeta?.firstMonthExtraMultiplier !== undefined) {
+            // Use backend's first month extra multiplier (e.g., 1.165 extra visits)
+            const extraVisits = backendBiweeklyMeta.firstMonthExtraMultiplier;
+            calculatedFirstMonthTotal = installOneTime + (extraVisits * perVisitCharge);
+            console.log(`🔧 [Carpet Biweekly] Backend first month: install + ${extraVisits} extra visits = $${calculatedFirstMonthTotal.toFixed(2)}`);
+          } else {
+            // Fallback to old logic
+            const remainingVisits = monthlyVisits - 1; // e.g., 2.165 - 1 = 1.165 remaining visits
+            calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
+          }
         } else {
           calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
@@ -618,34 +717,42 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         calculatedContractTotal = firstMonthTotal;
         totalVisitsForContract = 1;
       } else if (freq === "weekly") {
-        // Weekly: Use backend monthlyVisits multiplier
-        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
+        // ✅ BACKEND-DRIVEN: Weekly contract calculation using backend monthlyRecurringMultiplier
+        const backendWeeklyMeta = backendConfig?.frequencyMetadata?.weekly;
+        const effectiveMonthlyVisits = backendWeeklyMeta?.monthlyRecurringMultiplier ?? monthlyVisits;
+        totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + remaining visits × service
-          // Remaining months: monthlyVisits × service each
+          // First month: installation + extra visits × service (from backend firstMonthExtraMultiplier)
+          // Remaining months: monthlyRecurringMultiplier × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * effectiveMonthlyVisits * perVisitCharge);
+          console.log(`🔧 [Carpet Weekly Contract] Backend: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × ${effectiveMonthlyVisits} = $${calculatedContractTotal.toFixed(2)}`);
         } else {
-          // No installation: all months monthlyVisits × service
-          calculatedContractTotal = contractMonths * monthlyVisits * perVisitCharge;
+          // No installation: all months effectiveMonthlyVisits × service
+          calculatedContractTotal = contractMonths * effectiveMonthlyVisits * perVisitCharge;
         }
       } else if (freq === "biweekly") {
-        // Bi-Weekly: Use backend monthlyVisits multiplier
-        totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
+        // ✅ BACKEND-DRIVEN: Biweekly contract calculation using backend monthlyRecurringMultiplier
+        const backendBiweeklyMeta = backendConfig?.frequencyMetadata?.biweekly;
+        const effectiveMonthlyVisits = backendBiweeklyMeta?.monthlyRecurringMultiplier ?? monthlyVisits;
+        totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + remaining visits × service
-          // Remaining months: monthlyVisits × service each
+          // First month: installation + extra visits × service (from backend firstMonthExtraMultiplier)
+          // Remaining months: monthlyRecurringMultiplier × service each
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * effectiveMonthlyVisits * perVisitCharge);
+          console.log(`🔧 [Carpet Biweekly Contract] Backend: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × ${effectiveMonthlyVisits} = $${calculatedContractTotal.toFixed(2)}`);
         } else {
-          // No installation: all months monthlyVisits × service
-          calculatedContractTotal = contractMonths * monthlyVisits * perVisitCharge;
+          // No installation: all months effectiveMonthlyVisits × service
+          calculatedContractTotal = contractMonths * effectiveMonthlyVisits * perVisitCharge;
         }
       } else if (freq === "monthly") {
-        // Monthly: 1 visit per month
-        totalVisitsForContract = contractMonths;
+        // ✅ BACKEND-DRIVEN: Monthly uses cycleMonths from backend
+        const backendMonthlyMeta = backendConfig?.frequencyMetadata?.monthly;
+        const cycleMonths = backendMonthlyMeta?.cycleMonths ?? 1;
+        totalVisitsForContract = Math.round(contractMonths / cycleMonths);
 
         if (form.includeInstall && installOneTime > 0) {
           // First month: installation only
@@ -657,38 +764,44 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedContractTotal = contractMonths * perVisitCharge;
         }
       } else if (freq === "bimonthly") {
-        // Bi-Monthly: 6 visits in 12 months (1 visit every 2 months)
-        const totalVisits = Math.round(contractMonths / 2);
+        // ✅ BACKEND-DRIVEN: Bimonthly uses cycleMonths from backend
+        const backendBimonthlyMeta = backendConfig?.frequencyMetadata?.bimonthly;
+        const cycleMonths = backendBimonthlyMeta?.cycleMonths ?? 2;
+        const totalVisits = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalVisits;
 
         if (form.includeInstall && installOneTime > 0) {
           // First visit: installation only, remaining visits: service cost
-          const remainingVisits = Math.max(totalVisits - 1, 0); // 5 remaining visits for 12-month contract
+          const remainingVisits = Math.max(totalVisits - 1, 0);
           calculatedContractTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
           // No installation: all visits are service cost
           calculatedContractTotal = totalVisits * perVisitCharge;
         }
       } else if (freq === "quarterly") {
-        // Quarterly: 4 visits in 12 months (1 visit every 3 months)
-        const totalVisits = Math.round(contractMonths / 3);
+        // ✅ BACKEND-DRIVEN: Quarterly uses cycleMonths from backend
+        const backendQuarterlyMeta = backendConfig?.frequencyMetadata?.quarterly;
+        const cycleMonths = backendQuarterlyMeta?.cycleMonths ?? 3;
+        const totalVisits = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalVisits;
 
         if (form.includeInstall && installOneTime > 0) {
           // First visit: installation only, remaining visits: service cost
-          const remainingVisits = Math.max(totalVisits - 1, 0); // 3 remaining visits for 12-month contract
+          const remainingVisits = Math.max(totalVisits - 1, 0);
           calculatedContractTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
           // No installation: all visits are service cost
           calculatedContractTotal = totalVisits * perVisitCharge;
         }
       } else if (freq === "biannual") {
-        // Bi-Annual: 2 services per year
-        const totalServices = Math.round((contractMonths / 12) * 2);
+        // ✅ BACKEND-DRIVEN: Biannual uses cycleMonths from backend
+        const backendBiannualMeta = backendConfig?.frequencyMetadata?.biannual;
+        const cycleMonths = backendBiannualMeta?.cycleMonths ?? 6;
+        const totalServices = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalServices;
 
         if (form.includeInstall && installOneTime > 0) {
-          // First service: installation, second service: normal service
+          // First service: installation, remaining services: normal service
           const remainingServices = Math.max(totalServices - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingServices * perVisitCharge);
         } else {
@@ -696,8 +809,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedContractTotal = totalServices * perVisitCharge;
         }
       } else if (freq === "annual") {
-        // Annual: 1 service per year
-        const totalServices = Math.round(contractMonths / 12);
+        // ✅ BACKEND-DRIVEN: Annual uses cycleMonths from backend
+        const backendAnnualMeta = backendConfig?.frequencyMetadata?.annual;
+        const cycleMonths = backendAnnualMeta?.cycleMonths ?? 12;
+        const totalServices = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalServices;
 
         if (form.includeInstall && installOneTime > 0) {

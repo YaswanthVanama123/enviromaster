@@ -204,6 +204,9 @@ export interface SanicleanFormState {
   // Service Frequency
   frequency: string; // "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual"
 
+  // ✅ NEW: Facility Components Frequency (separate from main service frequency)
+  facilityComponentFrequency: string; // "weekly" | "biweekly" | "monthly" - separate frequency for components
+
   // Notes
   notes: string;
 

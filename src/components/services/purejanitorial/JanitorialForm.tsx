@@ -40,7 +40,7 @@ export const JanitorialForm: React.FC<
       const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingPlaces ?? 0) > 0;
 
       const data = isActive ? {
-        serviceId: "janitorial",
+        serviceId: "pureJanitorial", // ✅ FIXED: Use correct service ID to match backend
         displayName: "Pure Janitorial",
         isActive: true,
 
@@ -170,7 +170,7 @@ export const JanitorialForm: React.FC<
         console.log('✅ Totals section:', JSON.stringify(data?.totals, null, 2));
 
         prevDataRef.current = dataStr;
-        servicesContext.updateService("janitorial", data);
+        servicesContext.updateService("pureJanitorial", data); // ✅ FIXED: Use correct service ID
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

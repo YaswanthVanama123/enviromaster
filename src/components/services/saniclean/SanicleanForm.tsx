@@ -857,10 +857,33 @@ export const SanicleanForm: React.FC<
             </>
           )}
 
-          {/* Total Facility Components (weekly equivalent) - Only show if any components are enabled */}
+          {/* Facility Component Frequency - Only show if any components are enabled */}
           {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
             <div className="svc-row">
-              <label>Total Facility Components (weekly equivalent)</label>
+              <label>Facility Component Frequency</label>
+              <div className="svc-row-right">
+                <select
+                  className="svc-in"
+                  name="facilityComponentFrequency"
+                  value={form.facilityComponentFrequency}
+                  onChange={onChange}
+                  title="Separate frequency for facility components (independent of main service frequency)"
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi-Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+                <span className="svc-small" style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
+                  Facility components can have their own frequency separate from main service
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Total Facility Components (at facility frequency) - Only show if any components are enabled */}
+          {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
+            <div className="svc-row">
+              <label>Total Facility Components (at {form.facilityComponentFrequency} frequency)</label>
               <div className="svc-row-right">
                 <input
                   className="svc-in-box"
@@ -869,9 +892,11 @@ export const SanicleanForm: React.FC<
                   value={formatMoney(
                     ((form.addUrinalComponents ? (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) : 0) +
                      (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
-                     (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0)) / form.weeklyToMonthlyMultiplier
+                     (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0))
+                    / (form.facilityComponentFrequency === 'weekly' ? 4.33 :
+                       form.facilityComponentFrequency === 'biweekly' ? 2.165 : 1)
                   )}
-                  title="Monthly facility components ÷ 4.33 weeks/month"
+                  title={`Monthly facility components converted to ${form.facilityComponentFrequency} frequency`}
                 />
               </div>
             </div>

@@ -13,43 +13,89 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+// ✅ Helper function to transform backend frequencyMetadata to frontend format
+function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['frequencyMetadata'] | undefined) {
+  if (!backendMeta) {
+    console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
+    return cfg.billingConversions;
+  }
+
+  console.log('🔧 [Foaming Drain] Transforming backend frequencyMetadata:', backendMeta);
+
+  // Transform backend structure to frontend billingConversions format
+  const transformedBilling: any = {};
+
+  // Handle weekly and biweekly with their special multipliers
+  if (backendMeta.weekly) {
+    transformedBilling.weekly = {
+      monthlyMultiplier: backendMeta.weekly.monthlyRecurringMultiplier,
+      firstMonthExtraMultiplier: backendMeta.weekly.firstMonthExtraMultiplier,
+    };
+  }
+
+  if (backendMeta.biweekly) {
+    transformedBilling.biweekly = {
+      monthlyMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier,
+      firstMonthExtraMultiplier: backendMeta.biweekly.firstMonthExtraMultiplier,
+    };
+  }
+
+  // Handle cycle-based frequencies (monthly, bimonthly, quarterly, biannual, annual)
+  const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
+
+  for (const freq of cycleBased) {
+    const backendFreqData = backendMeta[freq];
+    if (backendFreqData?.cycleMonths) {
+      const cycleMonths = backendFreqData.cycleMonths;
+      const monthlyMultiplier = 1 / cycleMonths; // e.g., bimonthly: 1/2=0.5, quarterly: 1/3=0.333
+
+      transformedBilling[freq] = {
+        cycleMonths,
+        monthlyMultiplier,
+      };
+    }
+  }
+
+  // Merge with fallback config
+  const finalBilling = {
+    ...cfg.billingConversions, // Start with fallback values
+    ...transformedBilling,     // Override with backend values
+  };
+
+  console.log('✅ [Foaming Drain] Transformed frequencyMetadata to billingConversions:', finalBilling);
+  return finalBilling;
+}
+
+// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendFoamingDrainConfig {
-  standardDrainRate: number;
-  altBaseCharge: number;
-  altExtraPerDrain: number;
+  standardPricing: {
+    standardDrainRate: number;
+    alternateBaseCharge: number;
+    alternateExtraPerDrain: number;
+  };
   volumePricing: {
     minimumDrains: number;
-    weekly: { ratePerDrain: number };
-    bimonthly: { ratePerDrain: number };
+    weeklyRatePerDrain: number;
+    bimonthlyRatePerDrain: number;
   };
-  grease: {
+  addOns: {
+    plumbingWeeklyAddonPerDrain: number;
+  };
+  minimumChargePerVisit: number;
+  installationMultipliers: {
+    filthyMultiplier: number;
+  };
+  greenDrainPricing: {
+    installPerDrain: number;
+    weeklyRatePerDrain: number;
+  };
+  greaseTrapPricing: {
     weeklyRatePerTrap: number;
     installPerTrap: number;
-  };
-  green: {
-    weeklyRatePerDrain: number;
-    installPerDrain: number;
-  };
-  plumbing: {
-    weeklyAddonPerDrain: number;
-  };
-  installationRules: {
-    filthyMultiplier: number;
   };
   tripCharges: {
     standard: number;
     beltway: number;
-  };
-  billingConversions: {
-    weekly: {
-      monthlyVisits: number;
-      firstMonthExtraMonths: number;
-      normalMonthFactor: number;
-    };
-    bimonthly: {
-      monthlyMultiplier: number;
-    };
   };
   contract: {
     minMonths: number;
@@ -58,6 +104,15 @@ interface BackendFoamingDrainConfig {
   };
   defaultFrequency: string;
   allowedFrequencies: string[];
+  frequencyMetadata: {
+    weekly?: { monthlyRecurringMultiplier: number; firstMonthExtraMultiplier: number };
+    biweekly?: { monthlyRecurringMultiplier: number; firstMonthExtraMultiplier: number };
+    monthly?: { cycleMonths: number };
+    bimonthly?: { cycleMonths: number };
+    quarterly?: { cycleMonths: number };
+    biannual?: { cycleMonths: number };
+    annual?: { cycleMonths: number };
+  };
 }
 
 const DEFAULT_FREQUENCY: FoamingDrainFrequency = cfg.defaultFrequency;
@@ -125,22 +180,22 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
 
-  // Helper function to update state with config data
+  // Helper function to update state with config data from the actual backend structure
   const updateStateWithConfig = (config: BackendFoamingDrainConfig) => {
     setState((prev) => ({
       ...prev,
-      // Update all rate fields from backend if available
-      standardDrainRate: config.standardDrainRate ?? prev.standardDrainRate,
-      altBaseCharge: config.altBaseCharge ?? prev.altBaseCharge,
-      altExtraPerDrain: config.altExtraPerDrain ?? prev.altExtraPerDrain,
-      volumeWeeklyRate: config.volumePricing?.weekly?.ratePerDrain ?? prev.volumeWeeklyRate,
-      volumeBimonthlyRate: config.volumePricing?.bimonthly?.ratePerDrain ?? prev.volumeBimonthlyRate,
-      greaseWeeklyRate: config.grease?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
-      greaseInstallRate: config.grease?.installPerTrap ?? prev.greaseInstallRate,
-      greenWeeklyRate: config.green?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
-      greenInstallRate: config.green?.installPerDrain ?? prev.greenInstallRate,
-      plumbingAddonRate: config.plumbing?.weeklyAddonPerDrain ?? prev.plumbingAddonRate,
-      filthyMultiplier: config.installationRules?.filthyMultiplier ?? prev.filthyMultiplier,
+      // ✅ Extract from nested backend structure
+      standardDrainRate: config.standardPricing?.standardDrainRate ?? prev.standardDrainRate,
+      altBaseCharge: config.standardPricing?.alternateBaseCharge ?? prev.altBaseCharge,
+      altExtraPerDrain: config.standardPricing?.alternateExtraPerDrain ?? prev.altExtraPerDrain,
+      volumeWeeklyRate: config.volumePricing?.weeklyRatePerDrain ?? prev.volumeWeeklyRate,
+      volumeBimonthlyRate: config.volumePricing?.bimonthlyRatePerDrain ?? prev.volumeBimonthlyRate,
+      greaseWeeklyRate: config.greaseTrapPricing?.weeklyRatePerTrap ?? prev.greaseWeeklyRate,
+      greaseInstallRate: config.greaseTrapPricing?.installPerTrap ?? prev.greaseInstallRate,
+      greenWeeklyRate: config.greenDrainPricing?.weeklyRatePerDrain ?? prev.greenWeeklyRate,
+      greenInstallRate: config.greenDrainPricing?.installPerDrain ?? prev.greenInstallRate,
+      plumbingAddonRate: config.addOns?.plumbingWeeklyAddonPerDrain ?? prev.plumbingAddonRate,
+      filthyMultiplier: config.installationMultipliers?.filthyMultiplier ?? prev.filthyMultiplier,
     }));
   };
 
@@ -174,17 +229,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             }));
 
             console.log('✅ Foaming Drain FALLBACK CONFIG loaded from context:', {
-              standardDrainRate: config.standardDrainRate,
-              altPricing: {
-                baseCharge: config.altBaseCharge,
-                extraPerDrain: config.altExtraPerDrain,
-              },
+              standardPricing: config.standardPricing,
               volumePricing: config.volumePricing,
-              grease: config.grease,
-              green: config.green,
-              plumbing: config.plumbing,
-              installationRules: config.installationRules,
-              billingConversions: config.billingConversions,
+              addOns: config.addOns,
+              minimumChargePerVisit: config.minimumChargePerVisit,
+              installationMultipliers: config.installationMultipliers,
+              greenDrainPricing: config.greenDrainPricing,
+              greaseTrapPricing: config.greaseTrapPricing,
+              tripCharges: config.tripCharges,
+              frequencyMetadata: config.frequencyMetadata,
               contract: config.contract,
             });
             return;
@@ -219,18 +272,17 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       }));
 
       console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
-        standardDrainRate: config.standardDrainRate,
-        altPricing: {
-          baseCharge: config.altBaseCharge,
-          extraPerDrain: config.altExtraPerDrain,
-        },
+        standardPricing: config.standardPricing,
         volumePricing: config.volumePricing,
-        grease: config.grease,
-        green: config.green,
-        plumbing: config.plumbing,
-        installationRules: config.installationRules,
-        billingConversions: config.billingConversions,
+        addOns: config.addOns,
+        minimumChargePerVisit: config.minimumChargePerVisit,
+        installationMultipliers: config.installationMultipliers,
+        greenDrainPricing: config.greenDrainPricing,
+        greaseTrapPricing: config.greaseTrapPricing,
+        tripCharges: config.tripCharges,
+        frequencyMetadata: config.frequencyMetadata,
         contract: config.contract,
+        contractLimits: `${config.contract?.minMonths}-${config.contract?.maxMonths} months`,
       });
     } catch (error) {
       console.error('❌ Failed to fetch Foaming Drain config from backend:', error);
@@ -310,22 +362,47 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Use property-level fallbacks to handle incomplete backend configs
+    // Map backend config to expected format with proper fallbacks
     const activeConfig = {
-      standardDrainRate: backendConfig?.standardDrainRate ?? cfg.standardDrainRate,
-      altBaseCharge: backendConfig?.altBaseCharge ?? cfg.altBaseCharge,
-      altExtraPerDrain: backendConfig?.altExtraPerDrain ?? cfg.altExtraPerDrain,
-      volumePricing: backendConfig?.volumePricing ?? cfg.volumePricing,
-      grease: backendConfig?.grease ?? cfg.grease,
-      green: backendConfig?.green ?? cfg.green,
-      plumbing: backendConfig?.plumbing ?? cfg.plumbing,
-      installationRules: backendConfig?.installationRules ?? cfg.installationRules,
+      standardDrainRate: backendConfig?.standardPricing?.standardDrainRate ?? cfg.standardDrainRate,
+      altBaseCharge: backendConfig?.standardPricing?.alternateBaseCharge ?? cfg.altBaseCharge,
+      altExtraPerDrain: backendConfig?.standardPricing?.alternateExtraPerDrain ?? cfg.altExtraPerDrain,
+      volumePricing: {
+        minimumDrains: backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains,
+        weeklyRatePerDrain: backendConfig?.volumePricing?.weeklyRatePerDrain ?? cfg.volumePricing.weekly.ratePerDrain,
+        bimonthlyRatePerDrain: backendConfig?.volumePricing?.bimonthlyRatePerDrain ?? cfg.volumePricing.bimonthly.ratePerDrain,
+      },
+      grease: {
+        weeklyRatePerTrap: backendConfig?.greaseTrapPricing?.weeklyRatePerTrap ?? cfg.grease.weeklyRatePerTrap,
+        installPerTrap: backendConfig?.greaseTrapPricing?.installPerTrap ?? cfg.grease.installPerTrap,
+      },
+      green: {
+        weeklyRatePerDrain: backendConfig?.greenDrainPricing?.weeklyRatePerDrain ?? cfg.green.weeklyRatePerDrain,
+        installPerDrain: backendConfig?.greenDrainPricing?.installPerDrain ?? cfg.green.installPerDrain,
+      },
+      plumbing: {
+        weeklyAddonPerDrain: backendConfig?.addOns?.plumbingWeeklyAddonPerDrain ?? cfg.plumbing.weeklyAddonPerDrain,
+      },
+      installationRules: {
+        filthyMultiplier: backendConfig?.installationMultipliers?.filthyMultiplier ?? cfg.installationRules.filthyMultiplier,
+      },
       tripCharges: backendConfig?.tripCharges ?? cfg.tripCharges,
-      billingConversions: backendConfig?.billingConversions ?? cfg.billingConversions,
       contract: backendConfig?.contract ?? cfg.contract,
       defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
       allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
+      // ✅ NEW: Transform backend frequencyMetadata
+      billingConversions: transformBackendFrequencyMeta(backendConfig?.frequencyMetadata),
     };
+
+    if (!backendConfig) {
+      console.warn('⚠️ [Foaming Drain] Using fallback config - backend not loaded yet');
+    } else {
+      console.log('✅ [Foaming Drain] Using backend config with transformed frequency metadata:', {
+        standardPricing: activeConfig.standardDrainRate,
+        volumePricing: activeConfig.volumePricing,
+        billingConversions: activeConfig.billingConversions,
+      });
+    }
 
     // ---------- 1) Normalize inputs ----------
     const standardDrains = Math.max(0, Number(state.standardDrainCount) || 0);
@@ -533,7 +610,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       activeConfig.contract.maxMonths   // ✅ USE BACKEND
     );
 
-    // ✅ Get frequency multiplier from backend config
+    // ✅ Get frequency multiplier from backend-transformed billing conversions
     const getFrequencyMultiplier = (freq: string) => {
       const normalized = freq.toLowerCase().replace(/\s+/g, '');
 
@@ -579,22 +656,59 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     normalMonth = round2(normalMonth);
     firstMonthPrice = round2(firstMonthPrice);
 
-    // Contract total calculation - handle special frequencies
+    // ✅ FIXED: Contract total calculation with proper bimonthly logic
     let contractTotalRaw = 0;
     const freqLower = frequency.toLowerCase();
 
-    if (freqLower === "quarterly") {
+    if (freqLower === "bimonthly") {
+      // ✅ CORRECTED: Bimonthly = every 2 months = 6 visits in 12 months
+      // When installation is present: Installation + 5 regular visits (not 6)
+      const totalVisitsIn12Months = 6; // 12 months / 2 months per visit = 6 visits
+      const contractVisitsForTerm = Math.round((contractMonths / 12) * totalVisitsIn12Months);
+
+      if (installation > 0) {
+        // First visit includes installation, remaining visits are regular service
+        const remainingVisits = Math.max(contractVisitsForTerm - 1, 0);
+        contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
+        console.log(`🔧 [Foaming Drain Bimonthly Contract] Fixed calculation: first visit=$${firstVisitPrice.toFixed(2)}, remaining ${remainingVisits} visits × $${effectiveWeeklyService.toFixed(2)} = $${contractTotalRaw.toFixed(2)}`);
+      } else {
+        // No installation: all visits are regular service
+        contractTotalRaw = effectiveWeeklyService * contractVisitsForTerm;
+        console.log(`🔧 [Foaming Drain Bimonthly Contract] No installation: ${contractVisitsForTerm} visits × $${effectiveWeeklyService.toFixed(2)} = $${contractTotalRaw.toFixed(2)}`);
+      }
+    } else if (freqLower === "quarterly") {
       // Quarterly: visits = months / 3
       const quarterlyVisits = contractMonths / 3;
-      contractTotalRaw = firstVisitPrice + effectiveWeeklyService * (quarterlyVisits - 1);
+      const totalVisits = Math.round(quarterlyVisits);
+
+      if (installation > 0) {
+        const remainingVisits = Math.max(totalVisits - 1, 0);
+        contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
+      } else {
+        contractTotalRaw = effectiveWeeklyService * totalVisits;
+      }
     } else if (freqLower === "biannual") {
       // Bi-annual: visits = months / 6
       const biannualVisits = contractMonths / 6;
-      contractTotalRaw = firstVisitPrice + effectiveWeeklyService * (biannualVisits - 1);
+      const totalVisits = Math.round(biannualVisits);
+
+      if (installation > 0) {
+        const remainingVisits = Math.max(totalVisits - 1, 0);
+        contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
+      } else {
+        contractTotalRaw = effectiveWeeklyService * totalVisits;
+      }
     } else if (freqLower === "annual") {
       // Annual: visits = months / 12
       const annualVisits = contractMonths / 12;
-      contractTotalRaw = firstVisitPrice + effectiveWeeklyService * (annualVisits - 1);
+      const totalVisits = Math.round(annualVisits);
+
+      if (installation > 0) {
+        const remainingVisits = Math.max(totalVisits - 1, 0);
+        contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
+      } else {
+        contractTotalRaw = effectiveWeeklyService * totalVisits;
+      }
     } else {
       // All other frequencies: FirstMonth + (Months − 1) × NormalMonth
       contractTotalRaw = firstMonthPrice + (contractMonths - 1) * normalMonth;

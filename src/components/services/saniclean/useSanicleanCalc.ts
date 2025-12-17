@@ -12,8 +12,84 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-// Backend config interface matching MongoDB structure
-interface BackendSanicleanConfig extends SanicleanPricingConfig {}
+// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
+interface BackendSanicleanConfig {
+  includedItems: {
+    electrostaticSprayIncluded: boolean;
+    includedWeeklyRefillsDefault: number;
+  };
+  warrantyFees: {
+    airFreshenerDispenserWarrantyFeePerWeek: number;
+    soapDispenserWarrantyFeePerWeek: number;
+  };
+  smallBathroomMinimums: {
+    minimumFixturesThreshold: number;
+    minimumPriceUnderThreshold: number;
+  };
+  allInclusivePricing: {
+    pricePerFixture: number;
+    includeAllAddOns: boolean;
+    waiveTripCharge: boolean;
+    waiveWarrantyFees: boolean;
+    autoAllInclusiveMinFixtures: number;
+  };
+  soapUpgrades: {
+    standardToLuxuryPerDispenserPerWeek: number;
+    excessUsageCharges: {
+      standardSoapPerGallon: number;
+      luxurySoapPerGallon: number;
+    };
+  };
+  paperCredit: {
+    creditPerFixturePerWeek: number;
+  };
+  standardALaCartePricing: {
+    insideBeltway: {
+      pricePerFixture: number;
+      minimumPrice: number;
+      tripCharge: number;
+      parkingFeeAddOn: number;
+    };
+    outsideBeltway: {
+      pricePerFixture: number;
+      tripCharge: number;
+    };
+  };
+  monthlyAddOnSupplyPricing: {
+    urinalMatMonthlyPrice: number;
+    urinalScreenMonthlyPrice: string | number; // "included" or number
+    toiletClipMonthlyPrice: number;
+    toiletSeatCoverDispenserMonthlyPrice: string | number; // "included" or number
+    sanipodMonthlyPricePerPod: number;
+  };
+  microfiberMoppingIncludedWithSaniClean: {
+    pricePerBathroom: number;
+    hugeBathroomSqFtUnit: number;
+    hugeBathroomRate: number;
+  };
+  tripChargesNonAllInclusiveOnly: {
+    standard: number;
+    beltway: number;
+  };
+  minimumChargePerVisit: number;
+  frequencyMetadata: {
+    weekly: {
+      monthlyRecurringMultiplier: number;
+      firstMonthExtraMultiplier: number;
+    };
+    biweekly: {
+      monthlyRecurringMultiplier: number;
+      firstMonthExtraMultiplier: number;
+    };
+    monthly: { cycleMonths: number };
+    bimonthly: { cycleMonths: number };
+    quarterly: { cycleMonths: number };
+    biannual: { cycleMonths: number };
+    annual: { cycleMonths: number };
+  };
+  minContractMonths: number;
+  maxContractMonths: number;
+}
 
 const DEFAULT_FORM: SanicleanFormState = {
   serviceId: "saniclean",
@@ -67,6 +143,9 @@ const DEFAULT_FORM: SanicleanFormState = {
 
   // Service Frequency
   frequency: "weekly",
+
+  // ✅ NEW: Facility Components Frequency (separate from main service)
+  facilityComponentFrequency: "weekly", // Default to weekly for components
 
   // Notes
   notes: "",
@@ -164,20 +243,20 @@ function recomputeFixtureCount(state: SanicleanFormState): SanicleanFormState {
 // All-Inclusive Pricing Calculation
 function calculateAllInclusive(
   form: SanicleanFormState,
-  config: SanicleanPricingConfig
+  config: BackendSanicleanConfig | SanicleanPricingConfig
 ): SanicleanQuoteResult {
   const fixtureCount = form.fixtureCount;
   const rateTierMultiplier = form.rateTier === "greenRate" ? form.greenRateMultiplier : form.redRateMultiplier;
 
-  // Base Service: $20/fixture/week
+  // Base Service: Uses backend pricePerFixture
   const baseServiceCalc = fixtureCount * form.allInclusiveWeeklyRatePerFixture * rateTierMultiplier;
   const baseService = form.customBaseService ?? baseServiceCalc;
 
-  // Soap Upgrade: $5/dispenser/week for luxury (sinks = soap dispensers)
+  // Soap Upgrade: Uses backend standardToLuxuryPerDispenserPerWeek
   const soapUpgradeCalc = form.soapType === "luxury" ? form.sinks * form.luxuryUpgradePerDispenser : 0;
   const soapUpgrade = form.customSoapUpgrade ?? soapUpgradeCalc;
 
-  // Excess Soap: beyond "one fill"
+  // Excess Soap: Uses backend excess usage charges
   const excessSoapCalc = form.excessSoapGallonsPerWeek > 0 ?
     form.excessSoapGallonsPerWeek * (form.soapType === "luxury" ? form.excessLuxurySoapRate : form.excessStandardSoapRate) : 0;
   const excessSoap = form.customExcessSoap ?? excessSoapCalc;
@@ -186,7 +265,7 @@ function calculateAllInclusive(
   const microfiberMoppingCalc = 0; // Included in base price
   const microfiberMopping = form.customMicrofiberMopping ?? microfiberMoppingCalc;
 
-  // Paper Overage: $5/fixture/week credit, charge for anything above
+  // Paper Overage: Uses backend creditPerFixturePerWeek
   const paperCredit = fixtureCount * form.paperCreditPerFixture;
   const paperOverageCalc = Math.max(0, form.estimatedPaperSpendPerWeek - paperCredit);
   const paperOverage = form.customPaperOverage ?? paperOverageCalc;
@@ -203,7 +282,7 @@ function calculateAllInclusive(
 
   const weeklyTotal = baseService + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage + tripCharge + facilityComponents;
 
-  // ✅ Use frequency-based multiplier instead of fixed weeklyToMonthlyMultiplier
+  // ✅ Use frequency-based multiplier from backend instead of fixed weeklyToMonthlyMultiplier
   const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
   const monthlyTotal = frequencyMultiplier > 0 ? weeklyTotal * frequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
   const contractTotal = monthlyTotal * form.contractMonths;
@@ -278,7 +357,7 @@ function calculateAllInclusive(
 // Per-Item-Charge Pricing Calculation
 function calculatePerItemCharge(
   form: SanicleanFormState,
-  config: SanicleanPricingConfig
+  config: BackendSanicleanConfig | SanicleanPricingConfig
 ): SanicleanQuoteResult {
   const fixtureCount = form.fixtureCount;
   const rateTierMultiplier = form.rateTier === "greenRate" ? form.greenRateMultiplier : form.redRateMultiplier;
@@ -319,18 +398,36 @@ function calculatePerItemCharge(
   const baseService = form.customBaseService ?? baseServiceCalc;
   const tripCharge = form.customTripCharge ?? tripChargeCalc;
 
-  // Facility Components (monthly converted to frequency-based) - Only if enabled and quantities > 0
-  // ✅ Use frequency-based multiplier for monthly-to-frequency conversion
-  const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
-  const monthlyToFrequency = frequencyMultiplier > 0 ? (1 / frequencyMultiplier) : 1; // For oneTime, use 1:1 ratio
+  // ✅ FIXED: Facility Components calculation with separate frequency handling
+  // Don't divide by service frequency - use separate facility component frequency
+  let facilityComponentsCalc = 0;
 
-  const urinalComponents = form.addUrinalComponents ?
-    (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) * monthlyToFrequency : 0;
-  const maleToiletComponents = form.addMaleToiletComponents ?
-    (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) * monthlyToFrequency : 0;
-  const femaleToiletComponents = form.addFemaleToiletComponents ?
-    form.sanipodsQty * form.sanipodServiceMonthly * monthlyToFrequency : 0;
-  const facilityComponentsCalc = urinalComponents + maleToiletComponents + femaleToiletComponents;
+  // Get the facility component frequency (separate from main service frequency)
+  const facilityFrequency = form.facilityComponentFrequency || 'weekly'; // Default to weekly
+  const facilityFrequencyMultiplier = getFrequencyMultiplier(facilityFrequency, config);
+
+  // Calculate facility components at their own frequency (weekly/biweekly/monthly)
+  if (form.addUrinalComponents) {
+    const urinalComponentsMonthly = form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly;
+    // Convert monthly to the facility frequency (weekly/biweekly/monthly only)
+    const urinalComponentsAtFrequency = facilityFrequencyMultiplier > 0 ? urinalComponentsMonthly / facilityFrequencyMultiplier : urinalComponentsMonthly;
+    facilityComponentsCalc += urinalComponentsAtFrequency;
+  }
+
+  if (form.addMaleToiletComponents) {
+    const maleToiletComponentsMonthly = form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly;
+    // Convert monthly to the facility frequency (weekly/biweekly/monthly only)
+    const maleToiletComponentsAtFrequency = facilityFrequencyMultiplier > 0 ? maleToiletComponentsMonthly / facilityFrequencyMultiplier : maleToiletComponentsMonthly;
+    facilityComponentsCalc += maleToiletComponentsAtFrequency;
+  }
+
+  if (form.addFemaleToiletComponents) {
+    const femaleToiletComponentsMonthly = form.sanipodsQty * form.sanipodServiceMonthly;
+    // Convert monthly to the facility frequency (weekly/biweekly/monthly only)
+    const femaleToiletComponentsAtFrequency = facilityFrequencyMultiplier > 0 ? femaleToiletComponentsMonthly / facilityFrequencyMultiplier : femaleToiletComponentsMonthly;
+    facilityComponentsCalc += femaleToiletComponentsAtFrequency;
+  }
+
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
   // Soap upgrades (only applicable if they want luxury)
@@ -358,10 +455,21 @@ function calculatePerItemCharge(
   const paperOverageCalc = 0;
   const paperOverage = form.customPaperOverage ?? paperOverageCalc;
 
-  const weeklyTotal = baseService + tripCharge + facilityComponents + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
+  // ✅ FIXED: Calculate weekly total properly adding facility components at their frequency
+  // Convert facility components from their frequency to match service frequency for weekly total
+  const serviceFrequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
+  let facilityComponentsAtServiceFrequency = facilityComponents;
+
+  // If facility frequency is different from service frequency, adjust the rate
+  if (form.facilityComponentFrequency !== form.frequency) {
+    const facilityToServiceRatio = facilityFrequencyMultiplier / serviceFrequencyMultiplier;
+    facilityComponentsAtServiceFrequency = facilityComponents * facilityToServiceRatio;
+  }
+
+  const weeklyTotal = baseService + tripCharge + facilityComponentsAtServiceFrequency + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
 
   // ✅ Use frequency-based multiplier instead of fixed weeklyToMonthlyMultiplier
-  const monthlyTotal = frequencyMultiplier > 0 ? weeklyTotal * frequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
+  const monthlyTotal = serviceFrequencyMultiplier > 0 ? weeklyTotal * serviceFrequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
   const contractTotal = monthlyTotal * form.contractMonths;
 
   // Component counts
@@ -563,111 +671,73 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     }
   };
 
-  // Helper function to update form with config data
-  const updateFormWithConfig = (config: any) => {
+  // Helper function to update form with config data from the actual backend structure
+  const updateFormWithConfig = (config: BackendSanicleanConfig) => {
     setForm((prev) => ({
       ...prev,
-      // ✅ Map backend API fields to form state (supports both old and new format)
+      // ✅ Extract from nested backend structure
       // All-Inclusive rates
-      allInclusiveWeeklyRatePerFixture: config.allInclusivePricing?.pricePerFixture ??
-                                        config.allInclusivePackage?.weeklyRatePerFixture ??
-                                        prev.allInclusiveWeeklyRatePerFixture,
+      allInclusiveWeeklyRatePerFixture: config.allInclusivePricing?.pricePerFixture ?? prev.allInclusiveWeeklyRatePerFixture,
 
-      luxuryUpgradePerDispenser: config.soapUpgrades?.standardToLuxuryPerDispenserPerWeek ??
-                                 config.allInclusivePackage?.soapUpgrade?.luxuryUpgradePerDispenser ??
-                                 prev.luxuryUpgradePerDispenser,
+      luxuryUpgradePerDispenser: config.soapUpgrades?.standardToLuxuryPerDispenserPerWeek ?? prev.luxuryUpgradePerDispenser,
 
-      excessStandardSoapRate: config.soapUpgrades?.excessUsageCharges?.standardSoapPerGallon ??
-                              config.allInclusivePackage?.soapUpgrade?.excessUsageCharges?.standardSoap ??
-                              prev.excessStandardSoapRate,
+      excessStandardSoapRate: config.soapUpgrades?.excessUsageCharges?.standardSoapPerGallon ?? prev.excessStandardSoapRate,
 
-      excessLuxurySoapRate: config.soapUpgrades?.excessUsageCharges?.luxurySoapPerGallon ??
-                            config.allInclusivePackage?.soapUpgrade?.excessUsageCharges?.luxurySoap ??
-                            prev.excessLuxurySoapRate,
+      excessLuxurySoapRate: config.soapUpgrades?.excessUsageCharges?.luxurySoapPerGallon ?? prev.excessLuxurySoapRate,
 
-      paperCreditPerFixture: config.paperCredit?.creditPerFixturePerWeek ??
-                             config.allInclusivePackage?.paperCredit?.creditPerFixturePerWeek ??
-                             prev.paperCreditPerFixture,
+      paperCreditPerFixture: config.paperCredit?.creditPerFixturePerWeek ?? prev.paperCreditPerFixture,
 
-      microfiberMoppingPerBathroom: config.microfiberMoppingIncludedWithSaniClean?.pricePerBathroom ??
-                                     config.allInclusivePackage?.microfiberMopping?.pricePerBathroom ??
-                                     prev.microfiberMoppingPerBathroom,
+      microfiberMoppingPerBathroom: config.microfiberMoppingIncludedWithSaniClean?.pricePerBathroom ?? prev.microfiberMoppingPerBathroom,
 
       // Per-Item rates
-      insideBeltwayRatePerFixture: config.standardALaCartePricing?.insideBeltway?.pricePerFixture ??
-                                    config.perItemCharge?.insideBeltway?.ratePerFixture ??
-                                    prev.insideBeltwayRatePerFixture,
+      insideBeltwayRatePerFixture: config.standardALaCartePricing?.insideBeltway?.pricePerFixture ?? prev.insideBeltwayRatePerFixture,
 
-      insideBeltwayMinimum: config.standardALaCartePricing?.insideBeltway?.minimumPrice ??
-                            config.perItemCharge?.insideBeltway?.weeklyMinimum ??
-                            prev.insideBeltwayMinimum,
+      insideBeltwayMinimum: config.standardALaCartePricing?.insideBeltway?.minimumPrice ?? prev.insideBeltwayMinimum,
 
-      insideBeltwayTripCharge: config.standardALaCartePricing?.insideBeltway?.tripCharge ??
-                               config.tripChargesNonAllInclusiveOnly?.beltway ??
-                               config.perItemCharge?.insideBeltway?.tripCharge ??
-                               prev.insideBeltwayTripCharge,
+      insideBeltwayTripCharge: config.standardALaCartePricing?.insideBeltway?.tripCharge ?? prev.insideBeltwayTripCharge,
 
-      insideBeltwayParkingFee: config.standardALaCartePricing?.insideBeltway?.parkingFeeAddOn ??
-                               config.perItemCharge?.insideBeltway?.parkingFee ??
-                               prev.insideBeltwayParkingFee,
+      insideBeltwayParkingFee: config.standardALaCartePricing?.insideBeltway?.parkingFeeAddOn ?? prev.insideBeltwayParkingFee,
 
-      outsideBeltwayRatePerFixture: config.standardALaCartePricing?.outsideBeltway?.pricePerFixture ??
-                                     config.perItemCharge?.outsideBeltway?.ratePerFixture ??
-                                     prev.outsideBeltwayRatePerFixture,
+      outsideBeltwayRatePerFixture: config.standardALaCartePricing?.outsideBeltway?.pricePerFixture ?? prev.outsideBeltwayRatePerFixture,
 
-      outsideBeltwayTripCharge: config.standardALaCartePricing?.outsideBeltway?.tripCharge ??
-                                config.tripChargesNonAllInclusiveOnly?.standard ??
-                                config.perItemCharge?.outsideBeltway?.tripCharge ??
-                                prev.outsideBeltwayTripCharge,
+      outsideBeltwayTripCharge: config.standardALaCartePricing?.outsideBeltway?.tripCharge ?? prev.outsideBeltwayTripCharge,
 
       // Small facility
-      smallFacilityThreshold: config.smallBathroomMinimums?.minimumFixturesThreshold ??
-                              config.perItemCharge?.smallFacility?.fixtureThreshold ??
-                              prev.smallFacilityThreshold,
+      smallFacilityThreshold: config.smallBathroomMinimums?.minimumFixturesThreshold ?? prev.smallFacilityThreshold,
 
-      smallFacilityMinimum: config.smallBathroomMinimums?.minimumPriceUnderThreshold ??
-                            config.minimumChargePerVisit ??
-                            config.perItemCharge?.smallFacility?.minimumWeekly ??
-                            prev.smallFacilityMinimum,
+      smallFacilityMinimum: config.smallBathroomMinimums?.minimumPriceUnderThreshold ?? prev.smallFacilityMinimum,
 
-      // Components
+      // ✅ FIXED: Urinal Screens should use Urinal Mats rate when marked as "included"
       urinalScreenMonthly: typeof config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number' ?
                            config.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice :
                            (config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'included' ?
-                            (config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? 0) : // Use urinalMatMonthlyPrice when included
-                           (config.perItemCharge?.facilityComponents?.urinals?.components?.urinalScreen ?? prev.urinalScreenMonthly)),
+                            config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? prev.urinalScreenMonthly :
+                            prev.urinalScreenMonthly),
 
-      urinalMatMonthly: config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ??
-                        config.perItemCharge?.facilityComponents?.urinals?.components?.urinalMat ??
-                        prev.urinalMatMonthly,
+      urinalMatMonthly: config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? prev.urinalMatMonthly,
 
-      toiletClipsMonthly: config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ??
-                          config.perItemCharge?.facilityComponents?.maleToilets?.components?.toiletClips ??
-                          prev.toiletClipsMonthly,
+      toiletClipsMonthly: config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ?? prev.toiletClipsMonthly,
 
+      // ✅ FIXED: Seat Cover Dispenser should use toilet clips rate when marked as "included"
       seatCoverDispenserMonthly: typeof config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'number' ?
                                  config.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice :
-                                 (config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'included' ? 0 :
-                                 (config.perItemCharge?.facilityComponents?.maleToilets?.components?.seatCoverDispenser ?? prev.seatCoverDispenserMonthly)),
+                                 (config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'included' ?
+                                  config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ?? prev.seatCoverDispenserMonthly :
+                                  prev.seatCoverDispenserMonthly),
 
-      sanipodServiceMonthly: config.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod ??
-                             config.perItemCharge?.facilityComponents?.femaleToilets?.components?.sanipodService ??
-                             prev.sanipodServiceMonthly,
+      sanipodServiceMonthly: config.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod ?? prev.sanipodServiceMonthly,
 
       // Warranty
       warrantyFeePerDispenserPerWeek: (config.warrantyFees?.soapDispenserWarrantyFeePerWeek ??
                                        config.warrantyFees?.airFreshenerDispenserWarrantyFeePerWeek ??
-                                       config.perItemCharge?.warrantyFees?.perDispenserPerWeek ??
                                        prev.warrantyFeePerDispenserPerWeek),
 
       // Billing
-      weeklyToMonthlyMultiplier: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ??
-                                 config.billingConversions?.weekly?.monthlyMultiplier ??
-                                 prev.weeklyToMonthlyMultiplier,
+      weeklyToMonthlyMultiplier: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? prev.weeklyToMonthlyMultiplier,
 
-      // Rate tiers
-      redRateMultiplier: config.rateTiers?.redRate?.multiplier ?? prev.redRateMultiplier,
-      greenRateMultiplier: config.rateTiers?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+      // Rate tiers (keeping existing multipliers since not in backend config)
+      redRateMultiplier: prev.redRateMultiplier,
+      greenRateMultiplier: prev.greenRateMultiplier,
     }));
   };
 
