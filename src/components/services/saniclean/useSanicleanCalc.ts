@@ -6,6 +6,10 @@ import type {
   SanicleanQuoteResult,
   SanicleanPricingMode,
   SanicleanRateTier,
+  SanicleanFrequency,
+  SanicleanCalculationMode,
+  SanicleanDualFrequencyResult,
+  getCalculationMode
 } from "./sanicleanTypes";
 import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
@@ -141,11 +145,13 @@ const DEFAULT_FORM: SanicleanFormState = {
   // Rate Tier
   rateTier: "redRate",
 
-  // Service Frequency
-  frequency: "weekly",
+  // ✅ UPDATED: Dual frequency fields with proper typing
+  mainServiceFrequency: "weekly" as SanicleanFrequency,          // Primary service frequency
+  facilityComponentsFrequency: "weekly" as SanicleanFrequency,   // Independent facility frequency
 
-  // ✅ NEW: Facility Components Frequency (separate from main service)
-  facilityComponentFrequency: "weekly", // Default to weekly for components
+  // ✅ BACKWARD COMPATIBILITY: Keep old field for existing code
+  frequency: "weekly", // Mapped to mainServiceFrequency for compatibility
+  facilityComponentFrequency: "weekly", // Mapped to facilityComponentsFrequency for compatibility
 
   // Notes
   notes: "",
@@ -234,6 +240,153 @@ const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number 
   return fallbackMultipliers[frequency] || 4.33; // Default to weekly if frequency not found
 };
 
+// ✅ NEW: Dual frequency calculation functions
+
+/**
+ * ✅ NEW: Enhanced frequency multiplier that handles both monthly and per-visit modes
+ */
+const getDualFrequencyMultiplier = (
+  frequency: SanicleanFrequency,
+  mode: SanicleanCalculationMode,
+  backendConfig?: any
+): number => {
+  // For monthly mode: use existing logic (monthly recurring multipliers)
+  if (mode === "monthly") {
+    return getFrequencyMultiplier(frequency, backendConfig);
+  }
+
+  // For per-visit mode: different multipliers based on frequency intensity
+  // Higher frequency = lower per-visit price, lower frequency = higher per-visit price
+  const perVisitMultipliers: Record<string, number> = {
+    weekly: 1.0,        // Base rate (most frequent)
+    biweekly: 1.15,     // Slightly higher per visit
+    twicePerMonth: 1.2, // Higher per visit
+    monthly: 1.5,       // Even higher per visit
+    bimonthly: 2.0,     // Much higher per visit (less frequent service)
+    quarterly: 2.5,     // Very high per visit
+    biannual: 3.5,      // Extremely high per visit
+    annual: 5.0,        // Maximum per visit (least frequent)
+  };
+
+  // Try to get per-visit multiplier from backend first
+  if (backendConfig?.frequencyMetadata?.[frequency]?.perVisitMultiplier) {
+    return backendConfig.frequencyMetadata[frequency].perVisitMultiplier;
+  }
+
+  console.log(`⚠️ [SaniClean] Using fallback per-visit multiplier for frequency: ${frequency}`);
+  return perVisitMultipliers[frequency] || 1.0;
+};
+
+/**
+ * ✅ NEW: Calculate visits in contract period for per-visit mode
+ */
+const calculateVisitsInContract = (
+  frequency: SanicleanFrequency,
+  contractMonths: number,
+  backendConfig?: any
+): number => {
+  // Try to get visits per year from backend
+  let visitsPerYear = 12; // Default fallback
+
+  if (backendConfig?.frequencyMetadata?.[frequency]?.visitsPerYear) {
+    visitsPerYear = backendConfig.frequencyMetadata[frequency].visitsPerYear;
+  } else {
+    // Calculate based on frequency
+    const visitsPerYearMap: Record<string, number> = {
+      weekly: 52,
+      biweekly: 26,
+      twicePerMonth: 24,
+      monthly: 12,
+      bimonthly: 6,
+      quarterly: 4,
+      biannual: 2,
+      annual: 1,
+    };
+    visitsPerYear = visitsPerYearMap[frequency] || 12;
+  }
+
+  return Math.round((visitsPerYear * contractMonths) / 12);
+};
+
+/**
+ * ✅ NEW: Main dual frequency calculation function
+ */
+const calculateDualFrequency = (
+  mainServiceFrequency: SanicleanFrequency,
+  facilityComponentsFrequency: SanicleanFrequency,
+  mainServiceBasePrice: number,
+  facilityComponentsBasePrice: number,
+  contractMonths: number,
+  backendConfig?: any
+): SanicleanDualFrequencyResult => {
+  // Determine calculation mode based on main service frequency
+  const calculationMode = getCalculationMode(mainServiceFrequency);
+
+  console.log(`🔧 [SaniClean] Dual frequency calculation:`, {
+    mainServiceFrequency,
+    facilityComponentsFrequency,
+    calculationMode,
+    mainServiceBasePrice,
+    facilityComponentsBasePrice,
+  });
+
+  if (calculationMode === "monthly") {
+    // MONTHLY MODE: Both main service and facility components convert to monthly
+    const mainServiceMultiplier = getDualFrequencyMultiplier(mainServiceFrequency, "monthly", backendConfig);
+    const facilityMultiplier = getDualFrequencyMultiplier(facilityComponentsFrequency, "monthly", backendConfig);
+
+    const mainServiceMonthly = mainServiceBasePrice * mainServiceMultiplier;
+    const facilityComponentsMonthly = facilityComponentsBasePrice * facilityMultiplier;
+    const monthlyTotal = mainServiceMonthly + facilityComponentsMonthly;
+    const contractTotal = monthlyTotal * contractMonths;
+
+    console.log(`📊 [SaniClean] Monthly mode calculation:`, {
+      mainServiceMonthly,
+      facilityComponentsMonthly,
+      monthlyTotal,
+      contractTotal,
+    });
+
+    return {
+      calculationMode,
+      mainServiceTotal: mainServiceMonthly,
+      facilityComponentsTotal: facilityComponentsMonthly,
+      combinedTotal: monthlyTotal,
+      monthlyTotal,
+      contractTotal,
+    };
+  } else {
+    // PER-VISIT MODE: Both use their own frequency multipliers for per-visit pricing
+    const mainServiceMultiplier = getDualFrequencyMultiplier(mainServiceFrequency, "perVisit", backendConfig);
+    const facilityMultiplier = getDualFrequencyMultiplier(facilityComponentsFrequency, "perVisit", backendConfig);
+
+    const mainServicePerVisit = mainServiceBasePrice * mainServiceMultiplier;
+    const facilityComponentsPerVisit = facilityComponentsBasePrice * facilityMultiplier;
+    const perVisitTotal = mainServicePerVisit + facilityComponentsPerVisit;
+
+    const visitsInContract = calculateVisitsInContract(mainServiceFrequency, contractMonths, backendConfig);
+    const contractTotal = perVisitTotal * visitsInContract;
+
+    console.log(`📊 [SaniClean] Per-visit mode calculation:`, {
+      mainServicePerVisit,
+      facilityComponentsPerVisit,
+      perVisitTotal,
+      visitsInContract,
+      contractTotal,
+    });
+
+    return {
+      calculationMode,
+      mainServiceTotal: mainServicePerVisit,
+      facilityComponentsTotal: facilityComponentsPerVisit,
+      combinedTotal: perVisitTotal,
+      perVisitTotal,
+      contractTotal,
+      visitsInContract,
+    };
+  }
+};
+
 function recomputeFixtureCount(state: SanicleanFormState): SanicleanFormState {
   const total = Math.max(0, state.sinks) + Math.max(0, state.urinals) +
                 Math.max(0, state.maleToilets) + Math.max(0, state.femaleToilets);
@@ -280,12 +433,26 @@ function calculateAllInclusive(
   const facilityComponentsCalc = 0;
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
-  const weeklyTotal = baseService + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage + tripCharge + facilityComponents;
+  // ✅ NEW: Use dual frequency calculation for All-Inclusive
+  // Main service includes: baseService + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage + tripCharge
+  const mainServiceTotal = baseService + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage + tripCharge;
 
-  // ✅ Use frequency-based multiplier from backend instead of fixed weeklyToMonthlyMultiplier
-  const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
-  const monthlyTotal = frequencyMultiplier > 0 ? weeklyTotal * frequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
-  const contractTotal = monthlyTotal * form.contractMonths;
+  // Facility components total (All-Inclusive has no facility components, but kept for consistency)
+  const facilityComponentsTotal = facilityComponents;
+
+  // ✅ Use new dual frequency calculation engine
+  const dualFreqResult = calculateDualFrequency(
+    form.mainServiceFrequency,
+    form.facilityComponentsFrequency,
+    mainServiceTotal,
+    facilityComponentsTotal,
+    form.contractMonths,
+    config
+  );
+
+  const weeklyTotal = mainServiceTotal + facilityComponentsTotal;
+  const monthlyTotal = dualFreqResult.monthlyTotal ?? dualFreqResult.combinedTotal;
+  const contractTotal = dualFreqResult.contractTotal;
 
   // Dispenser counts for transparency
   const soapDispensers = form.sinks; // 1 soap per sink
@@ -452,28 +619,26 @@ function calculatePerItemCharge(
   const paperOverageCalc = 0;
   const paperOverage = form.customPaperOverage ?? paperOverageCalc;
 
-  // ✅ FIXED: Calculate weekly total properly adding facility components at their frequency
-  // Convert facility components from their frequency to match service frequency for weekly total
-  const serviceFrequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
-  let facilityComponentsAtServiceFrequency = facilityComponents;
+  // ✅ NEW: Use dual frequency calculation for Per-Item-Charge
+  // Main service includes: baseService + tripCharge + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage
+  const mainServiceTotal = baseService + tripCharge + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
 
-  // Convert facility components to match service frequency for proper weekly total
-  if (form.facilityComponentFrequency !== form.frequency) {
-    // Get multipliers for conversion
-    const facilityFrequencyMultiplier = getFrequencyMultiplier(facilityFrequency, config);
+  // Facility components total (at their own frequency)
+  const facilityComponentsTotal = facilityComponents;
 
-    if (facilityFrequencyMultiplier > 0 && serviceFrequencyMultiplier > 0) {
-      // Convert facility components to match service frequency
-      const facilityToServiceRatio = facilityFrequencyMultiplier / serviceFrequencyMultiplier;
-      facilityComponentsAtServiceFrequency = facilityComponents * facilityToServiceRatio;
-    }
-  }
+  // ✅ Use new dual frequency calculation engine
+  const dualFreqResult = calculateDualFrequency(
+    form.mainServiceFrequency,
+    form.facilityComponentsFrequency,
+    mainServiceTotal,
+    facilityComponentsTotal,
+    form.contractMonths,
+    config
+  );
 
-  const weeklyTotal = baseService + tripCharge + facilityComponentsAtServiceFrequency + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
-
-  // ✅ Use frequency-based multiplier instead of fixed weeklyToMonthlyMultiplier
-  const monthlyTotal = serviceFrequencyMultiplier > 0 ? weeklyTotal * serviceFrequencyMultiplier : weeklyTotal; // For oneTime, don't multiply
-  const contractTotal = monthlyTotal * form.contractMonths;
+  const weeklyTotal = mainServiceTotal + facilityComponentsTotal;
+  const monthlyTotal = dualFreqResult.monthlyTotal ?? dualFreqResult.combinedTotal;
+  const contractTotal = dualFreqResult.contractTotal;
 
   // Component counts
   const urinalScreens = form.urinals;
@@ -786,28 +951,36 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
   const quote: SanicleanQuoteResult = useMemo(() => {
     const config = backendConfig || SANICLEAN_CONFIG;
 
+    // ✅ NEW: Ensure backward compatibility by mapping old frequency fields to new ones
+    const mappedForm = {
+      ...form,
+      // Map old frequency field to mainServiceFrequency if needed
+      mainServiceFrequency: form.mainServiceFrequency || (form.frequency as SanicleanFrequency) || "weekly",
+      // Default facilityComponentsFrequency to match main service if not set
+      facilityComponentsFrequency: form.facilityComponentsFrequency || form.mainServiceFrequency || (form.frequency as SanicleanFrequency) || "weekly",
+    };
+
     let baseQuote: SanicleanQuoteResult;
-    if (form.pricingMode === "all_inclusive") {
-      baseQuote = calculateAllInclusive(form, config);
+    if (mappedForm.pricingMode === "all_inclusive") {
+      baseQuote = calculateAllInclusive(mappedForm, config);
     } else {
-      baseQuote = calculatePerItemCharge(form, config);
+      baseQuote = calculatePerItemCharge(mappedForm, config);
     }
 
-    // ✅ Cascade behavior: component overrides → weeklyTotal → monthlyTotal → contractTotal
+    // ✅ Apply custom overrides with cascade (dual frequency calculations already handled in calculate functions)
     // 1. Component overrides are already applied in calculate functions
     // 2. Apply customWeeklyTotal override if set
-    const effectiveWeeklyTotal = form.customWeeklyTotal ?? baseQuote.weeklyTotal;
+    const effectiveWeeklyTotal = mappedForm.customWeeklyTotal ?? baseQuote.weeklyTotal;
 
-    // 3. Calculate monthly/contract from effective weekly (cascade) using frequency-based multiplier
-    const frequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
+    // 3. For backward compatibility with old custom overrides, still support old single-frequency cascade
+    const frequencyMultiplier = getFrequencyMultiplier(mappedForm.mainServiceFrequency, config);
     const calculatedMonthly = frequencyMultiplier > 0 ? effectiveWeeklyTotal * frequencyMultiplier : effectiveWeeklyTotal;
-    const calculatedContract = calculatedMonthly * form.contractMonths;
+    const calculatedContract = calculatedMonthly * mappedForm.contractMonths;
 
     // 4. Apply custom monthly/contract overrides if set (they override the cascade)
-    const effectiveMonthlyTotal = form.customMonthlyTotal ?? calculatedMonthly;
-    const effectiveContractTotal = form.customContractTotal ?? calculatedContract;
+    const effectiveMonthlyTotal = mappedForm.customMonthlyTotal ?? baseQuote.monthlyTotal;
+    const effectiveContractTotal = mappedForm.customContractTotal ?? baseQuote.contractTotal;
 
-    // ✅ Apply custom overrides with cascade
     return {
       ...baseQuote,
       weeklyTotal: effectiveWeeklyTotal,
@@ -920,6 +1093,23 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     updateForm({ notes });
   };
 
+  // ✅ NEW: Dual frequency setters
+  const setMainServiceFrequency = (frequency: SanicleanFrequency) => {
+    updateForm({
+      mainServiceFrequency: frequency,
+      // Also update old frequency field for backward compatibility
+      frequency: frequency
+    });
+  };
+
+  const setFacilityComponentsFrequency = (frequency: SanicleanFrequency) => {
+    updateForm({
+      facilityComponentsFrequency: frequency,
+      // Also update old field for backward compatibility
+      facilityComponentFrequency: frequency
+    });
+  };
+
   return {
     form,
     quote,
@@ -933,5 +1123,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     setSoapType,
     setRateTier,
     setNotes,
+    // ✅ NEW: Dual frequency functions
+    setMainServiceFrequency,
+    setFacilityComponentsFrequency,
   };
 }

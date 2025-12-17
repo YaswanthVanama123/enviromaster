@@ -5,6 +5,16 @@ export type SanicleanSoapType = "standard" | "luxury";
 export type SanicleanPricingMode = "all_inclusive" | "per_item_charge";
 export type SanicleanRateTier = "redRate" | "greenRate";
 
+// ✅ NEW: Proper frequency type definition for dual frequency support
+export type SanicleanFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
+
+// ✅ NEW: Calculation mode derived from main service frequency
+export type SanicleanCalculationMode = "monthly" | "perVisit";
+
+// ✅ NEW: Frequency categorization for dual frequency logic
+export const MONTHLY_AND_BELOW: SanicleanFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
+export const ABOVE_MONTHLY: SanicleanFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
+
 // Back-compat aliases
 export type LocationKey = SanicleanLocation;
 export type SoapType = SanicleanSoapType;
@@ -201,11 +211,12 @@ export interface SanicleanFormState {
   // Rate Tier
   rateTier: SanicleanRateTier; // "redRate" | "greenRate"
 
-  // Service Frequency
-  frequency: string; // "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual"
+  // ✅ UPDATED: Dual frequency fields with proper typing
+  mainServiceFrequency: SanicleanFrequency; // Primary service frequency (was just "frequency")
+  facilityComponentsFrequency: SanicleanFrequency; // Independent facility component frequency
 
-  // ✅ NEW: Facility Components Frequency (separate from main service frequency)
-  facilityComponentFrequency: string; // "weekly" | "biweekly" | "monthly" - separate frequency for components
+  // ✅ NEW: Derived calculation mode for internal logic
+  calculationMode?: SanicleanCalculationMode; // Derived from mainServiceFrequency, not user-editable
 
   // Notes
   notes: string;
@@ -312,4 +323,44 @@ export interface SanicleanQuoteResult {
 
   // Applied Rules
   appliedRules: string[];
+}
+
+// ✅ NEW: Enhanced frequency metadata for dual frequency calculations
+export interface SanicleanEnhancedFrequencyMetadata {
+  [key: string]: {
+    monthlyRecurringMultiplier: number;    // For monthly mode calculations (e.g., weekly: 4.33)
+    perVisitMultiplier: number;            // For per-visit mode calculations (usually 1.0)
+    visitsPerYear: number;                 // Total visits per year (e.g., weekly: 52)
+    cycleMonths?: number;                  // For visit-based frequencies (e.g., quarterly: 3)
+    firstMonthExtraMultiplier?: number;    // Additional multiplier for first month
+  };
+}
+
+// ✅ NEW: Dual frequency calculation helpers
+export interface SanicleanDualFrequencyResult {
+  calculationMode: SanicleanCalculationMode;
+  mainServiceTotal: number;
+  facilityComponentsTotal: number;
+  combinedTotal: number;
+
+  // Mode-specific totals
+  monthlyTotal?: number;         // Only for monthly mode
+  perVisitTotal?: number;        // Only for per-visit mode
+
+  // Contract calculations
+  contractTotal: number;
+  visitsInContract?: number;     // Only for per-visit mode
+}
+
+// ✅ NEW: Frequency conversion utilities
+export function getCalculationMode(frequency: SanicleanFrequency): SanicleanCalculationMode {
+  return MONTHLY_AND_BELOW.includes(frequency) ? "monthly" : "perVisit";
+}
+
+export function isMonthlyModeFrequency(frequency: SanicleanFrequency): boolean {
+  return MONTHLY_AND_BELOW.includes(frequency);
+}
+
+export function isPerVisitModeFrequency(frequency: SanicleanFrequency): boolean {
+  return ABOVE_MONTHLY.includes(frequency);
 }

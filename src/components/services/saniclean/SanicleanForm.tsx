@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "../ServicesSection.css";
 import { useSanicleanCalc } from "./useSanicleanCalc";
-import type { SanicleanFormState } from "./sanicleanTypes";
+import type { SanicleanFormState, SanicleanFrequency } from "./sanicleanTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
@@ -39,6 +39,9 @@ export const SanicleanForm: React.FC<
     setRateTier,
     setNotes,
     backendConfig,
+    // ✅ NEW: Dual frequency setters
+    setMainServiceFrequency,
+    setFacilityComponentsFrequency,
   } = useSanicleanCalc(initialData);
 
   const servicesContext = useServicesContextOptional();
@@ -310,15 +313,15 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Frequency selection */}
+      {/* ✅ NEW: Dual Frequency Selection */}
       <div className="svc-row">
-        <label>Frequency</label>
+        <label>Main Service Frequency</label>
         <div className="svc-row-right">
           <select
             className="svc-in"
-            name="frequency"
-            value={form.frequency}
-            onChange={onChange}
+            name="mainServiceFrequency"
+            value={form.mainServiceFrequency}
+            onChange={(e) => setMainServiceFrequency(e.target.value as SanicleanFrequency)}
           >
             {Object.entries(sanicleanFrequencyLabels).map(
               ([value, label]) => (
@@ -330,6 +333,34 @@ export const SanicleanForm: React.FC<
           </select>
         </div>
       </div>
+
+      {/* ✅ NEW: Facility Components Frequency (only show for per-item-charge) */}
+      {form.pricingMode === "per_item_charge" && (
+        <div className="svc-row">
+          <label>
+            Facility Components Frequency
+            <small style={{ display: 'block', fontSize: '11px', color: '#666', fontWeight: 'normal' }}>
+              Independent of main service frequency
+            </small>
+          </label>
+          <div className="svc-row-right">
+            <select
+              className="svc-in"
+              name="facilityComponentsFrequency"
+              value={form.facilityComponentsFrequency}
+              onChange={(e) => setFacilityComponentsFrequency(e.target.value as SanicleanFrequency)}
+            >
+              {Object.entries(sanicleanFrequencyLabels).map(
+                ([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Total Restroom Fixtures */}
       <div className="svc-row">
@@ -857,33 +888,12 @@ export const SanicleanForm: React.FC<
             </>
           )}
 
-          {/* Facility Component Frequency - Only show if any components are enabled */}
-          {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
-            <div className="svc-row">
-              <label>Facility Component Frequency</label>
-              <div className="svc-row-right">
-                <select
-                  className="svc-in"
-                  name="facilityComponentFrequency"
-                  value={form.facilityComponentFrequency}
-                  onChange={onChange}
-                  title="Separate frequency for facility components (independent of main service frequency)"
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="biweekly">Bi-Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-                <span className="svc-small" style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
-                  Facility components can have their own frequency separate from main service
-                </span>
-              </div>
-            </div>
-          )}
+          {/* ✅ REMOVED: Old facility component frequency dropdown - now handled by main dual frequency system above */}
 
           {/* Total Facility Components (at facility frequency) - Only show if any components are enabled */}
           {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
             <div className="svc-row">
-              <label>Total Facility Components (at {form.facilityComponentFrequency} frequency)</label>
+              <label>Total Facility Components (at {form.facilityComponentsFrequency} frequency)</label>
               <div className="svc-row-right">
                 <input
                   className="svc-in-box"
@@ -894,7 +904,7 @@ export const SanicleanForm: React.FC<
                     (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
                     (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0)
                   )}
-                  title={`Component rates treated as ${form.facilityComponentFrequency} rates - no conversion applied`}
+                  title={`Component rates treated as ${form.facilityComponentsFrequency} rates - no conversion applied`}
                 />
               </div>
             </div>
