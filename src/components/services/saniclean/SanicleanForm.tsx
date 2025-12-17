@@ -890,13 +890,11 @@ export const SanicleanForm: React.FC<
                   type="text"
                   readOnly
                   value={formatMoney(
-                    ((form.addUrinalComponents ? (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) : 0) +
-                     (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
-                     (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0))
-                    / (form.facilityComponentFrequency === 'weekly' ? 4.33 :
-                       form.facilityComponentFrequency === 'biweekly' ? 2.165 : 1)
+                    (form.addUrinalComponents ? (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) : 0) +
+                    (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
+                    (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0)
                   )}
-                  title={`Monthly facility components converted to ${form.facilityComponentFrequency} frequency`}
+                  title={`Component rates treated as ${form.facilityComponentFrequency} rates - no conversion applied`}
                 />
               </div>
             </div>

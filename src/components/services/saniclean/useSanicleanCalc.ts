@@ -399,34 +399,31 @@ function calculatePerItemCharge(
   const tripCharge = form.customTripCharge ?? tripChargeCalc;
 
   // ✅ FIXED: Facility Components calculation with separate frequency handling
-  // Don't divide by service frequency - use separate facility component frequency
+  // Component rates are base rates - frequency determines if they're weekly, biweekly, or monthly
   let facilityComponentsCalc = 0;
 
   // Get the facility component frequency (separate from main service frequency)
   const facilityFrequency = form.facilityComponentFrequency || 'weekly'; // Default to weekly
-  const facilityFrequencyMultiplier = getFrequencyMultiplier(facilityFrequency, config);
 
-  // Calculate facility components at their own frequency (weekly/biweekly/monthly)
+  // Calculate facility components base total
   if (form.addUrinalComponents) {
-    const urinalComponentsMonthly = form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly;
-    // Convert monthly to the facility frequency (weekly/biweekly/monthly only)
-    const urinalComponentsAtFrequency = facilityFrequencyMultiplier > 0 ? urinalComponentsMonthly / facilityFrequencyMultiplier : urinalComponentsMonthly;
-    facilityComponentsCalc += urinalComponentsAtFrequency;
+    const urinalComponentsBase = form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly;
+    facilityComponentsCalc += urinalComponentsBase;
   }
 
   if (form.addMaleToiletComponents) {
-    const maleToiletComponentsMonthly = form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly;
-    // Convert monthly to the facility frequency (weekly/biweekly/monthly only)
-    const maleToiletComponentsAtFrequency = facilityFrequencyMultiplier > 0 ? maleToiletComponentsMonthly / facilityFrequencyMultiplier : maleToiletComponentsMonthly;
-    facilityComponentsCalc += maleToiletComponentsAtFrequency;
+    const maleToiletComponentsBase = form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly;
+    facilityComponentsCalc += maleToiletComponentsBase;
   }
 
   if (form.addFemaleToiletComponents) {
-    const femaleToiletComponentsMonthly = form.sanipodsQty * form.sanipodServiceMonthly;
-    // Convert monthly to the facility frequency (weekly/biweekly/monthly only)
-    const femaleToiletComponentsAtFrequency = facilityFrequencyMultiplier > 0 ? femaleToiletComponentsMonthly / facilityFrequencyMultiplier : femaleToiletComponentsMonthly;
-    facilityComponentsCalc += femaleToiletComponentsAtFrequency;
+    const femaleToiletComponentsBase = form.sanipodsQty * form.sanipodServiceMonthly;
+    facilityComponentsCalc += femaleToiletComponentsBase;
   }
+
+  // ✅ NEW: The base rates are treated as rates for the selected frequency
+  // No conversion needed - if user selects "weekly", the $24 is weekly price
+  // If user selects "monthly", the $24 is monthly price
 
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
@@ -460,10 +457,16 @@ function calculatePerItemCharge(
   const serviceFrequencyMultiplier = getFrequencyMultiplier(form.frequency, config);
   let facilityComponentsAtServiceFrequency = facilityComponents;
 
-  // If facility frequency is different from service frequency, adjust the rate
+  // Convert facility components to match service frequency for proper weekly total
   if (form.facilityComponentFrequency !== form.frequency) {
-    const facilityToServiceRatio = facilityFrequencyMultiplier / serviceFrequencyMultiplier;
-    facilityComponentsAtServiceFrequency = facilityComponents * facilityToServiceRatio;
+    // Get multipliers for conversion
+    const facilityFrequencyMultiplier = getFrequencyMultiplier(facilityFrequency, config);
+
+    if (facilityFrequencyMultiplier > 0 && serviceFrequencyMultiplier > 0) {
+      // Convert facility components to match service frequency
+      const facilityToServiceRatio = facilityFrequencyMultiplier / serviceFrequencyMultiplier;
+      facilityComponentsAtServiceFrequency = facilityComponents * facilityToServiceRatio;
+    }
   }
 
   const weeklyTotal = baseService + tripCharge + facilityComponentsAtServiceFrequency + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
