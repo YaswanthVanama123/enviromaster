@@ -20,6 +20,11 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
  *  - First month = install-only first visit + (monthlyVisits − 1) × normal service
  *  - Contract total is based on that first month + remaining months
  */
+
+// Helper function to format numbers without unnecessary decimals
+const formatNumber = (num: number): string => {
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+};
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
@@ -54,14 +59,14 @@ export const SaniscrubForm: React.FC<
 
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {
-    // ✅ FIXED: Always show BASE rates, not frequency-adjusted rates
+    // ✅ FIXED: Use backend rates from form state instead of hardcoded values
     if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
-      return 25; // Always show base rate of $25 for monthly/2xMonth
+      return form.fixtureRateMonthly; // Use backend monthly rate
     }
     if (form.frequency === "bimonthly") {
-      return 35; // Always show base rate of $35 for bimonthly
+      return form.fixtureRateBimonthly; // Use backend bimonthly rate
     }
-    return 40; // Always show base rate of $40 for quarterly
+    return form.fixtureRateQuarterly; // Use backend quarterly rate (for quarterly, biannual, annual)
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
@@ -527,9 +532,9 @@ export const SaniscrubForm: React.FC<
             <input
               className="svc-in multiplier-field"
               type="number"
-              step="0.01"
+              step="0.1"
               name="installMultiplierDirty"
-              value={form.installMultiplierDirty.toFixed(2)}
+              value={form.installMultiplierDirty % 1 === 0 ? form.installMultiplierDirty.toString() : form.installMultiplierDirty.toFixed(1)}
               onChange={onChange}
               style={{ display: "inline" }}
             />
@@ -539,9 +544,9 @@ export const SaniscrubForm: React.FC<
           <input
             className="svc-in multiplier-field"
             type="number"
-            step="0.01"
+            step="0.1"
             name="installMultiplierClean"
-            value={form.installMultiplierClean.toFixed(2)}
+            value={form.installMultiplierClean % 1 === 0 ? form.installMultiplierClean.toString() : form.installMultiplierClean.toFixed(1)}
             onChange={onChange}
             style={{ display: "inline" }}
           />
@@ -563,8 +568,8 @@ export const SaniscrubForm: React.FC<
                 name="customInstallationFee"
                 value={
                   form.customInstallationFee !== undefined
-                    ? form.customInstallationFee.toFixed(2)
-                    : calc.installOneTime.toFixed(2)
+                    ? formatNumber(form.customInstallationFee)
+                    : formatNumber(calc.installOneTime)
                 }
                 onChange={onChange}
               />
@@ -586,8 +591,8 @@ export const SaniscrubForm: React.FC<
               type="number"
               step="0.01"
               value={form.customFirstMonthPrice !== undefined
-                ? form.customFirstMonthPrice.toFixed(2)
-                : calc.firstMonthTotal.toFixed(2)}
+                ? formatNumber(form.customFirstMonthPrice)
+                : formatNumber(calc.firstMonthTotal)}
               onChange={onChange}
               onBlur={(e) => {
                 if (e.target.value === '') {
@@ -616,8 +621,8 @@ export const SaniscrubForm: React.FC<
                 type="number"
                 step="0.01"
                 value={form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice.toFixed(2)
-                  : calc.perVisitEffective.toFixed(2)}
+                  ? formatNumber(form.customPerVisitPrice)
+                  : formatNumber(calc.perVisitEffective)}
                 onChange={onChange}
                 onBlur={(e) => {
                   if (e.target.value === '') {
@@ -645,8 +650,8 @@ export const SaniscrubForm: React.FC<
                 type="number"
                 step="0.01"
                 value={form.customMonthlyRecurring !== undefined
-                  ? form.customMonthlyRecurring.toFixed(2)
-                  : calc.monthlyTotal.toFixed(2)}
+                  ? formatNumber(form.customMonthlyRecurring)
+                  : formatNumber(calc.monthlyTotal)}
                 onChange={onChange}
                 onBlur={(e) => {
                   if (e.target.value === '') {
@@ -735,8 +740,8 @@ export const SaniscrubForm: React.FC<
                 className="svc-in"
                 value={
                   form.customContractTotal !== undefined
-                    ? form.customContractTotal.toFixed(2)
-                    : calc.annualTotal.toFixed(2)
+                    ? formatNumber(form.customContractTotal)
+                    : formatNumber(calc.annualTotal)
                 }
                 onChange={onChange}
                 onBlur={handleBlur}

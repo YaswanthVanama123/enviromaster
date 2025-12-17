@@ -396,6 +396,31 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
+        {/* Filthy Multiplier - Only show when filthy condition */}
+        {state.facilityCondition === "filthy" && (
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Filthy Multiplier</span>
+            </div>
+            <div className="svc-field">
+              <div className="svc-inline">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  className="svc-in field-rate"
+                  value={state.filthyMultiplier}
+                  onChange={(e) => updateField("filthyMultiplier", parseFloat(e.target.value) || 0)}
+                  title="Filthy installation multiplier (from backend, editable)"
+                />
+                <span className="svc-note" style={{ marginLeft: 8 }}>
+                  × weekly cost = installation fee (usually 3×)
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* How many filthy install drains (for 3× install) */}
         {/* {state.facilityCondition === "filthy" && isInstallLevelUi && (
           <div className="svc-row">
