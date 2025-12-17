@@ -30,6 +30,8 @@ export interface FoamingDrainFormState {
 
   // Site / frequency
   frequency: FoamingDrainFrequency;
+  // ✅ UPDATED: Separate frequency for install mode (weekly or bimonthly per backend config)
+  installFrequency: "weekly" | "bimonthly";
   facilityCondition: FoamingDrainCondition;
   location: FoamingDrainLocation;
 

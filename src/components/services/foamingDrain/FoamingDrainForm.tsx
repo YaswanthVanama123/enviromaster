@@ -30,7 +30,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   initialData,
   onRemove,
 }) => {
-  const { state, quote, updateField, reset, refreshConfig, isLoadingConfig } =
+  const { state, quote, updateField, reset, refreshConfig, isLoadingConfig, backendConfig } =
     useFoamingDrainCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
@@ -94,6 +94,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           value: typeof state.frequency === 'string'
             ? state.frequency.charAt(0).toUpperCase() + state.frequency.slice(1)
             : String(state.frequency || 'Weekly'),
+        },
+
+        // ✅ NEW: Install frequency (separate from main service frequency)
+        installFrequency: {
+          isDisplay: true,
+          label: "Install Frequency",
+          type: "text" as const,
+          value: state.installFrequency.charAt(0).toUpperCase() + state.installFrequency.slice(1),
         },
 
         location: {
@@ -176,9 +184,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, quote, breakdown, customFields]);
 
-  // Availability for alt options
+  // Availability for alt options - ✅ USE DYNAMIC BACKEND CONFIG
+  const dynamicMinimumDrains = backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains;
   const isWeekly = state.frequency === "weekly";
-  const isVolume = state.standardDrainCount >= cfg.volumePricing.minimumDrains; // 10+
+  const isVolume = state.standardDrainCount >= dynamicMinimumDrains; // ✅ DYNAMIC from backend
 
   // Small alt only for weekly, <10 drains
   const canUseSmallAlt =
@@ -201,7 +210,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       if (field === "standardDrainCount") {
         const newCount = safe;
         const newIsVolume =
-          newCount >= cfg.volumePricing.minimumDrains;
+          newCount >= dynamicMinimumDrains; // ✅ USE DYNAMIC from backend
         const newCanSmallAlt =
           state.frequency === "weekly" &&
           newCount > 0 &&
@@ -237,7 +246,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       // If we come back to weekly, revalidate small-alt with current count
       const count = state.standardDrainCount;
       const newIsVolume =
-        count >= cfg.volumePricing.minimumDrains;
+        count >= dynamicMinimumDrains; // ✅ USE DYNAMIC from backend
       const newCanSmallAlt = count > 0 && !newIsVolume;
 
       if (!newCanSmallAlt && state.useSmallAltPricingWeekly) {
@@ -246,14 +255,15 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     }
   };
 
-  // ✅ NEW: Validate frequency when install mode becomes active
-  React.useEffect(() => {
-    // When install mode is active, ensure frequency is supported (weekly or monthly only)
-    if (isInstallLevelUi && state.frequency !== "weekly" && state.frequency !== "monthly") {
-      console.log(`🔧 [FoamingDrain] Install mode active but frequency is ${state.frequency}, switching to weekly`);
-      updateField("frequency", "weekly");
-    }
-  }, [isInstallLevelUi, state.frequency, updateField]);
+  // ✅ UPDATED: Separate handler for install frequency changes (weekly/bimonthly)
+  const handleInstallFrequencyChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const newInstallFreq = e.target.value as "weekly" | "bimonthly";
+    updateField("installFrequency", newInstallFreq);
+  };
+
+  // ✅ REMOVED: Old frequency validation - no longer needed with separate install frequency field
 
   const handleLocationChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -698,12 +708,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           <div className="svc-field">
             <select
               className="svc-in"
-              value={state.frequency}
-              onChange={handleFrequencyChange}
+              value={state.installFrequency}
+              onChange={handleInstallFrequencyChange}
             >
-              {/* ✅ LIMITED: Install frequency only supports Weekly and Monthly */}
+              {/* ✅ UPDATED: Install frequency supports Weekly and Bimonthly per backend config */}
               <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
+              <option value="bimonthly">Bimonthly</option>
             </select>
           </div>
         </div>
@@ -731,12 +741,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     step={0.01}
                     className="svc-in field-qty"
                     
-                    value={state.frequency === "weekly" ? state.volumeWeeklyRate : state.volumeBimonthlyRate}
+                    value={state.installFrequency === "weekly" ? state.volumeWeeklyRate : state.volumeBimonthlyRate}
                     onChange={(e) => updateField(
-                      state.frequency === "weekly" ? "volumeWeeklyRate" : "volumeBimonthlyRate",
+                      state.installFrequency === "weekly" ? "volumeWeeklyRate" : "volumeBimonthlyRate",
                       parseFloat(e.target.value) || 0
                     )}
-                    title={`Volume ${state.frequency} rate (from backend)`}
+                    title={`Volume ${state.installFrequency} rate (from backend)`}
                   />
                   <span>=</span>
                   {/* TOTAL weekly cost for install drains */}

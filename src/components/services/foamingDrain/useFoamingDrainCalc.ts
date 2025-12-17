@@ -130,6 +130,8 @@ const DEFAULT_FOAMING_DRAIN_FORM_STATE: FoamingDrainFormState = {
   needsPlumbing: false,
 
   frequency: DEFAULT_FREQUENCY,
+  // ✅ NEW: Default install frequency to weekly
+  installFrequency: "weekly" as const,
   facilityCondition: "normal",
   location: "standard",
 
@@ -494,21 +496,21 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       : tenTotal;
 
     // ---------- 3) Install-level drains (10+ program) ----------
-    // IMPORTANT: drains are always serviced weekly.
-    // The Weekly / Bi-Monthly selector is ONLY used to decide
-    // the install-program rate:
-    //   Weekly     → $20 / install drain
-    //   Bi-Monthly → $10 / install drain
+    // IMPORTANT: drains are always serviced at their install frequency.
+    // The Install Frequency selector is used to decide the install-program rate:
+    //   Weekly  → $20 / install drain
+    //   Monthly → $10 / install drain (treated as bimonthly rate for compatibility)
     let weeklyInstallDrains = 0;
     let volumePricingApplied = false;
 
     if (installDrains > 0 && canUseInstallProgram) {
       volumePricingApplied = true;
 
+      // ✅ UPDATED: Use correct backend pricing structure for install frequencies
       const perDrainRate =
-        frequency === "bimonthly"
-          ? state.volumeBimonthlyRate  // ✅ USE FORM VALUE (from backend, e.g. 10)
-          : state.volumeWeeklyRate;    // ✅ USE FORM VALUE (from backend, e.g. 20)
+        state.installFrequency === "bimonthly"
+          ? state.volumeBimonthlyRate  // ✅ USE FORM VALUE (from backend volumePricing.bimonthlyRatePerDrain)
+          : state.volumeWeeklyRate;    // ✅ USE FORM VALUE (from backend volumePricing.weeklyRatePerDrain)
 
       weeklyInstallDrains = perDrainRate * installDrains;
     }
@@ -533,7 +535,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyGreaseTraps +
       weeklyGreenDrains;
 
-    const weeklyService = round2(weeklyServiceRaw);
+    // ✅ NEW: Apply minimum charge per visit from backend
+    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? 50; // Default $50
+    const weeklyServiceBeforeMin = round2(weeklyServiceRaw);
+    const weeklyService = Math.max(weeklyServiceBeforeMin, minimumChargePerVisit);
     const tripCharge = 0; // Trip charge removed from math
     const weeklyTotal = weeklyService; // (service only)
 
@@ -929,5 +934,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     reset,
     refreshConfig: fetchPricing,
     isLoadingConfig,
+    backendConfig, // ✅ EXPOSE: Backend config for dynamic thresholds
   };
 }
