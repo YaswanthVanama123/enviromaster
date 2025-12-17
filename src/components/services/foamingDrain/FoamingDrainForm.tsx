@@ -246,6 +246,15 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     }
   };
 
+  // ✅ NEW: Validate frequency when install mode becomes active
+  React.useEffect(() => {
+    // When install mode is active, ensure frequency is supported (weekly or monthly only)
+    if (isInstallLevelUi && state.frequency !== "weekly" && state.frequency !== "monthly") {
+      console.log(`🔧 [FoamingDrain] Install mode active but frequency is ${state.frequency}, switching to weekly`);
+      updateField("frequency", "weekly");
+    }
+  }, [isInstallLevelUi, state.frequency, updateField]);
+
   const handleLocationChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -692,15 +701,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               value={state.frequency}
               onChange={handleFrequencyChange}
             >
-              <option value="oneTime">One Time</option>
+              {/* ✅ LIMITED: Install frequency only supports Weekly and Monthly */}
               <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-weekly</option>
-              <option value="twicePerMonth">2× / Month</option>
               <option value="monthly">Monthly</option>
-              <option value="bimonthly">Bi-monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="biannual">Bi-annual</option>
-              <option value="annual">Annual</option>
             </select>
           </div>
         </div>
