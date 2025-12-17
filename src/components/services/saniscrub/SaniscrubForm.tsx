@@ -582,16 +582,58 @@ export const SaniscrubForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="text"
-              readOnly
-              value={calc.firstMonthTotal.toFixed(2)}
+              name="customFirstMonthPrice"
+              type="number"
+              step="0.01"
+              value={form.customFirstMonthPrice !== undefined
+                ? form.customFirstMonthPrice.toFixed(2)
+                : calc.firstMonthTotal.toFixed(2)}
+              onChange={onChange}
+              onBlur={(e) => {
+                if (e.target.value === '') {
+                  setForm(prev => ({ ...prev, customFirstMonthPrice: undefined }));
+                }
+              }}
+              style={{ backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white' }}
+              title="Override first month calculation (clear to use auto-calculated value)"
             />
           </div>
         </div>
       </div>
 
-      {/* ✅ NEW: Monthly Recurring - only show for monthly-based frequencies */}
-      {(form.frequency === "monthly" || form.frequency === "twicePerMonth") && (
+      {/* Per Visit Price Override – Show for 2×/month to annually */}
+      {(form.frequency === "twicePerMonth" || form.frequency === "monthly" ||
+        form.frequency === "bimonthly" || form.frequency === "quarterly" ||
+        form.frequency === "biannual" || form.frequency === "annual") && (
+        <div className="svc-row svc-row-charge">
+          <label>Per Visit Price</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                name="customPerVisitPrice"
+                type="number"
+                step="0.01"
+                value={form.customPerVisitPrice !== undefined
+                  ? form.customPerVisitPrice.toFixed(2)
+                  : calc.perVisitEffective.toFixed(2)}
+                onChange={onChange}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setForm(prev => ({ ...prev, customPerVisitPrice: undefined }));
+                  }
+                }}
+                style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
+                title="Override per visit calculation (clear to use auto-calculated value)"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Recurring – Show only for weekly and biweekly */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly") && (
         <div className="svc-row svc-row-charge">
           <label>Monthly Recurring</label>
           <div className="svc-row-right">
@@ -599,9 +641,20 @@ export const SaniscrubForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={calc.monthlyTotal.toFixed(2)}
+                name="customMonthlyRecurring"
+                type="number"
+                step="0.01"
+                value={form.customMonthlyRecurring !== undefined
+                  ? form.customMonthlyRecurring.toFixed(2)
+                  : calc.monthlyTotal.toFixed(2)}
+                onChange={onChange}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setForm(prev => ({ ...prev, customMonthlyRecurring: undefined }));
+                  }
+                }}
+                style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
+                title="Override monthly recurring calculation (clear to use auto-calculated value)"
               />
             </div>
           </div>

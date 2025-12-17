@@ -488,6 +488,43 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
+      {/* Installation Multipliers */}
+      <div className="svc-row">
+        <label>Install Multiplier (Dirty)</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <input
+              name="installMultiplierFirstTime"
+              type="number"
+              step="0.1"
+              value={form.installMultiplierFirstTime}
+              onChange={onChange}
+              style={{ backgroundColor: form.installMultiplierFirstTime !== 3 ? '#fffacd' : 'white' }}
+              title="Multiplier for dirty/first-time installations (typically 3×)"
+            />
+            <span>×</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Install Multiplier (Clean)</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <input
+              name="installMultiplierClean"
+              type="number"
+              step="0.1"
+              value={form.installMultiplierClean}
+              onChange={onChange}
+              style={{ backgroundColor: form.installMultiplierClean !== 1 ? '#fffacd' : 'white' }}
+              title="Multiplier for clean installations (typically 1×)"
+            />
+            <span>×</span>
+          </div>
+        </div>
+      </div>
+
       {/* Frequency */}
       <div className="svc-row">
         <label>Frequency</label>
@@ -589,8 +626,8 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
-      {form.frequency !== "oneTime" && form.frequency !== "quarterly" && form.frequency !== "biannual" && form.frequency !== "annual" && form.frequency !== "bimonthly" && (
+      {/* Monthly Recurring – Show only for weekly and biweekly */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly") && (
         <div className="svc-row svc-row-charge">
           <label>Monthly Recurring</label>
           <div className="svc-row-right">
@@ -607,6 +644,34 @@ export const RpmWindowsForm: React.FC<
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
+                title="Override monthly recurring calculation (clear to use auto-calculated value)"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Per Visit – Show for 2×/month to annually */}
+      {(form.frequency === "twicePerMonth" || form.frequency === "monthly" ||
+        form.frequency === "bimonthly" || form.frequency === "quarterly" ||
+        form.frequency === "biannual" || form.frequency === "annual") && (
+        <div className="svc-row svc-row-charge">
+          <label>Per Visit</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                name="customPerVisitPrice"
+                type="number"
+                step="0.01"
+                value={form.customPerVisitPrice !== undefined
+                  ? form.customPerVisitPrice.toFixed(2)
+                  : (calc.recurringPerVisitRated ?? 0).toFixed(2)}
+                onChange={onChange}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
+                title="Override per visit calculation (clear to use auto-calculated value)"
               />
             </div>
           </div>
