@@ -558,6 +558,31 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     }));
   };
 
+  // ✅ Helper function to get cycle months from backend configuration
+  const getCycleMonths = (frequency: string, backendConfig: any): number => {
+    const cycleMonths = backendConfig?.frequencyMetadata?.[frequency]?.cycleMonths;
+
+    // Handle special case: monthly has cycleMonths: 0, which means 1 month cycle
+    if (frequency === "monthly") {
+      return cycleMonths === 0 ? 1 : (cycleMonths ?? 1);
+    }
+
+    // For other frequencies, use cycleMonths or fallback to hardcoded values
+    if (typeof cycleMonths === 'number' && cycleMonths > 0) {
+      return cycleMonths;
+    }
+
+    // Fallback to hardcoded values if backend config is unavailable
+    const fallbackCycles: Record<string, number> = {
+      bimonthly: 2,
+      quarterly: 3,
+      biannual: 6,
+      annual: 12,
+    };
+
+    return fallbackCycles[frequency] ?? 1;
+  };
+
   const calc = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
     const activeConfig = {
@@ -746,13 +771,17 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     if (standardMonthlyBillRated === 0 && recurringPerVisitRated > 0) {
       // Visit-based frequencies: prorate the per-visit cost over the visit interval
       if (freqKey === "quarterly") {
-        displayMonthlyBillRated = recurringPerVisitRated / 3; // 1 visit every 3 months
+        const cycleMonths = getCycleMonths("quarterly", backendConfig); // ✅ FROM BACKEND (3)
+        displayMonthlyBillRated = recurringPerVisitRated / cycleMonths;
       } else if (freqKey === "biannual") {
-        displayMonthlyBillRated = recurringPerVisitRated / 6; // 1 visit every 6 months
+        const cycleMonths = getCycleMonths("biannual", backendConfig); // ✅ FROM BACKEND (6)
+        displayMonthlyBillRated = recurringPerVisitRated / cycleMonths;
       } else if (freqKey === "annual") {
-        displayMonthlyBillRated = recurringPerVisitRated / 12; // 1 visit every 12 months
+        const cycleMonths = getCycleMonths("annual", backendConfig); // ✅ FROM BACKEND (12)
+        displayMonthlyBillRated = recurringPerVisitRated / cycleMonths;
       } else if (freqKey === "bimonthly") {
-        displayMonthlyBillRated = recurringPerVisitRated / 2; // 1 visit every 2 months
+        const cycleMonths = getCycleMonths("bimonthly", backendConfig); // ✅ FROM BACKEND (2)
+        displayMonthlyBillRated = recurringPerVisitRated / cycleMonths;
       }
     }
 
@@ -791,10 +820,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         // ✅ For oneTime: just the first visit (installation or service)
         contractTotalRated = firstMonthBillRated;
       } else if (freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly") {
-        // ✅ For visit-based frequencies: use annual frequencies FROM BACKEND
-        // Uses annualFrequencies.quarterly: 4, bimonthly: 6, biannual: 2, annual: 1 from your MongoDB config
-        const visitsPerYear = activeConfig.annualFrequencies?.[freqKey] ?? 1;
-        const totalVisits = (contractMonths / 12) * visitsPerYear;
+        // ✅ For visit-based frequencies: use backend cycleMonths consistently
+        const cycleMonths = getCycleMonths(freqKey, backendConfig);
+        const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
 
         if (form.isFirstTimeInstall) {
           // First visit is install only, remaining visits are service
@@ -816,19 +844,81 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       }
     }
 
+    // ✅ NEW: Apply minimum charge per visit from backend
+    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? activeConfig.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
+    const recurringPerVisitWithMinimum = Math.max(recurringPerVisitRated, minimumChargePerVisit);
+
+    // ✅ RECALCULATE MONTHLY VALUES with minimum charge applied
+    const standardMonthlyBillWithMinimum = recurringPerVisitWithMinimum * monthlyVisits;
+    let displayMonthlyBillWithMinimum = standardMonthlyBillWithMinimum;
+
+    // For visit-based frequencies, use prorated amounts
+    if (isVisitBasedFrequency) {
+      if (freqKey === "quarterly") {
+        const cycleMonths = getCycleMonths("quarterly", backendConfig); // ✅ FROM BACKEND (3)
+        displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
+      } else if (freqKey === "biannual") {
+        const cycleMonths = getCycleMonths("biannual", backendConfig); // ✅ FROM BACKEND (6)
+        displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
+      } else if (freqKey === "annual") {
+        const cycleMonths = getCycleMonths("annual", backendConfig); // ✅ FROM BACKEND (12)
+        displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
+      } else if (freqKey === "bimonthly") {
+        const cycleMonths = getCycleMonths("bimonthly", backendConfig); // ✅ FROM BACKEND (2)
+        displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
+      }
+    }
+
+    // First month bill recalculation
+    let firstMonthBillWithMinimum = 0;
+    if (form.isFirstTimeInstall) {
+      if (isVisitBasedFrequency) {
+        // For visit-based frequencies install: just the installation cost
+        firstMonthBillWithMinimum = firstVisitTotalRated;
+      } else {
+        // For other frequencies: installation + remaining service visits in first month
+        firstMonthBillWithMinimum = firstVisitTotalRated +
+          recurringPerVisitWithMinimum * effectiveServiceVisitsFirstMonth;
+      }
+    } else {
+      // No installation, just standard monthly billing (or 0 for visit-based)
+      firstMonthBillWithMinimum = standardMonthlyBillWithMinimum;
+    }
+
+    // Contract total recalculation
+    let contractTotalWithMinimum = 0;
+    if (contractMonths > 0) {
+      if (isVisitBasedFrequency) {
+        // For visit-based: total number of visits × per-visit price
+        // ✅ Use backend cycleMonths instead of hardcoded divisors
+        const cycleMonths = getCycleMonths(freqKey, backendConfig);
+        const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
+        contractTotalWithMinimum = (form.isFirstTimeInstall ? firstVisitTotalRated : 0) +
+          recurringPerVisitWithMinimum * (totalVisits - (form.isFirstTimeInstall ? 1 : 0));
+      } else {
+        // For monthly/weekly/biweekly: standard monthly calculation
+        if (form.isFirstTimeInstall && firstMonthBillWithMinimum !== standardMonthlyBillWithMinimum) {
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          contractTotalWithMinimum = firstMonthBillWithMinimum + standardMonthlyBillWithMinimum * remainingMonths;
+        } else {
+          contractTotalWithMinimum = standardMonthlyBillWithMinimum * contractMonths;
+        }
+      }
+    }
+
     return {
       effSmall,
       effMedium,
       effLarge,
       effTrip,
-      // ✅ Apply custom overrides with hierarchy
-      recurringPerVisitRated: form.customPerVisitPrice ?? recurringPerVisitRated,
+      // ✅ Apply custom overrides with hierarchy and minimum charge
+      recurringPerVisitRated: form.customPerVisitPrice ?? recurringPerVisitWithMinimum,
       installOneTime: form.customInstallationFee ?? installOneTime,
       firstVisitTotalRated: form.customInstallationFee ?? firstVisitTotalRated,
-      standardMonthlyBillRated: form.customMonthlyRecurring ?? standardMonthlyBillRated,
-      firstMonthBillRated: form.customFirstMonthPrice ?? firstMonthBillRated,
-      monthlyBillRated: form.customMonthlyRecurring ?? monthlyBillRated,
-      contractTotalRated: form.customContractTotal ?? contractTotalRated,
+      standardMonthlyBillRated: form.customMonthlyRecurring ?? standardMonthlyBillWithMinimum,
+      firstMonthBillRated: form.customFirstMonthPrice ?? firstMonthBillWithMinimum,
+      monthlyBillRated: form.customMonthlyRecurring ?? displayMonthlyBillWithMinimum,
+      contractTotalRated: form.customContractTotal ?? contractTotalWithMinimum,
     };
   }, [
     backendConfig, // ✅ CRITICAL: Re-calculate when backend config loads!

@@ -46,6 +46,8 @@ export function getServicePricingFields(
   switch (serviceId) {
     case "electrostaticSpray":
       return getElectrostaticSprayFields(config);
+    case "foamingDrain":
+      return getFoamingDrainFields(config);
     case "pureJanitorial":
       return getPureJanitorialFields(config);
     case "saniclean":
@@ -61,6 +63,214 @@ export function getServicePricingFields(
     default:
       return {};
   }
+}
+
+/**
+ * FOAMING DRAIN - Complete field mapping
+ */
+function getFoamingDrainFields(config: any): Record<string, PricingField[]> {
+  const standardPricing = getValue(config, []) || {};
+  const volumePricing = getValue(config, ["volumePricing"]) || {};
+  const greasePricing = getValue(config, ["grease"]) || {};
+  const greenPricing = getValue(config, ["green"]) || {};
+  const plumbingPricing = getValue(config, ["plumbing"]) || {};
+  const billingConv = getValue(config, ["billingConversions"]) || {};
+  const contractSettings = getValue(config, ["contract"]) || {};
+  const tripCharges = getValue(config, ["tripCharges"]) || {};
+
+  return {
+    standardRates: [
+      {
+        label: "Standard Drain Rate",
+        value: config.standardDrainRate ?? 0,
+        path: ["standardDrainRate"],
+        unit: "$ per drain",
+        description: "Standard rate per drain (typically $10)",
+      },
+      {
+        label: "Alternative Base Charge",
+        value: config.altBaseCharge ?? 0,
+        path: ["altBaseCharge"],
+        unit: "$",
+        description: "Alternative base charge (typically $20)",
+      },
+      {
+        label: "Alternative Extra Per Drain",
+        value: config.altExtraPerDrain ?? 0,
+        path: ["altExtraPerDrain"],
+        unit: "$ per drain",
+        description: "Alternative extra charge per drain (typically $4)",
+      },
+    ],
+    volumePricing: [
+      {
+        label: "Volume Pricing - Minimum Drains",
+        value: volumePricing.minimumDrains ?? 0,
+        path: ["volumePricing", "minimumDrains"],
+        unit: "drains",
+        description: "Minimum drains for volume pricing (typically 10)",
+      },
+      {
+        label: "Volume Pricing - Weekly Rate Per Drain",
+        value: volumePricing.weekly?.ratePerDrain ?? 0,
+        path: ["volumePricing", "weekly", "ratePerDrain"],
+        unit: "$ per drain",
+        description: "Weekly rate per drain for volume pricing (typically $20)",
+      },
+      {
+        label: "Volume Pricing - Bimonthly Rate Per Drain",
+        value: volumePricing.bimonthly?.ratePerDrain ?? 0,
+        path: ["volumePricing", "bimonthly", "ratePerDrain"],
+        unit: "$ per drain",
+        description: "Bimonthly rate per drain for volume pricing (typically $10)",
+      },
+    ],
+    greaseTraps: [
+      {
+        label: "Grease Trap - Weekly Rate Per Trap",
+        value: greasePricing.weeklyRatePerTrap ?? 0,
+        path: ["grease", "weeklyRatePerTrap"],
+        unit: "$ per trap",
+        description: "Weekly rate per grease trap (typically $125)",
+      },
+      {
+        label: "Grease Trap - Install Per Trap",
+        value: greasePricing.installPerTrap ?? 0,
+        path: ["grease", "installPerTrap"],
+        unit: "$",
+        description: "One-time installation per grease trap (typically $300)",
+      },
+    ],
+    greenDrains: [
+      {
+        label: "Green Drain - Weekly Rate Per Drain",
+        value: greenPricing.weeklyRatePerDrain ?? 0,
+        path: ["green", "weeklyRatePerDrain"],
+        unit: "$ per drain",
+        description: "Weekly rate per green drain (typically $5)",
+      },
+      {
+        label: "Green Drain - Install Per Drain",
+        value: greenPricing.installPerDrain ?? 0,
+        path: ["green", "installPerDrain"],
+        unit: "$",
+        description: "One-time installation per green drain (typically $100)",
+      },
+    ],
+    plumbingAddon: [
+      {
+        label: "Plumbing Add-on Per Drain Per Week",
+        value: plumbingPricing.weeklyAddonPerDrain ?? 0,
+        path: ["plumbing", "weeklyAddonPerDrain"],
+        unit: "$ per drain",
+        description: "Weekly plumbing add-on per drain (typically $10)",
+      },
+    ],
+    tripCharges: [
+      {
+        label: "Standard Trip Charge",
+        value: tripCharges.standard ?? 0,
+        path: ["tripCharges", "standard"],
+        unit: "$",
+        description: "Standard trip charge",
+      },
+      {
+        label: "Beltway Trip Charge",
+        value: tripCharges.beltway ?? 0,
+        path: ["tripCharges", "beltway"],
+        unit: "$",
+        description: "Beltway area trip charge",
+      },
+    ],
+    contractTerms: [
+      {
+        label: "Minimum Contract Months",
+        value: contractSettings.minMonths ?? 0,
+        path: ["contract", "minMonths"],
+        unit: "months",
+        description: "Minimum contract duration (typically 2 months)",
+      },
+      {
+        label: "Maximum Contract Months",
+        value: contractSettings.maxMonths ?? 0,
+        path: ["contract", "maxMonths"],
+        unit: "months",
+        description: "Maximum contract duration (typically 36 months)",
+      },
+      {
+        label: "Default Contract Months",
+        value: contractSettings.defaultMonths ?? 0,
+        path: ["contract", "defaultMonths"],
+        unit: "months",
+        description: "Default contract duration (typically 12 months)",
+      },
+    ],
+    frequencyConversions: [
+      {
+        label: "Weekly - Monthly Recurring Multiplier",
+        value: billingConv.weekly?.monthlyMultiplier ?? 0,
+        path: ["billingConversions", "weekly", "monthlyMultiplier"],
+        unit: "×",
+        description: "Multiply weekly rate to get monthly billing (typically 4.33)",
+      },
+      {
+        label: "Weekly - First Month Extra Multiplier",
+        value: billingConv.weekly?.monthlyVisits ?? 0,
+        path: ["billingConversions", "weekly", "monthlyVisits"],
+        unit: "×",
+        description: "Additional multiplier for first month (typically 3.33)",
+      },
+      {
+        label: "Biweekly - Monthly Recurring Multiplier",
+        value: billingConv.biweekly?.monthlyMultiplier ?? 0,
+        path: ["billingConversions", "biweekly", "monthlyMultiplier"],
+        unit: "×",
+        description: "Multiply biweekly rate to get monthly billing (typically 2.165)",
+      },
+      {
+        label: "Biweekly - First Month Extra Multiplier",
+        value: (billingConv.biweekly?.monthlyMultiplier ?? 0) - 1,
+        path: ["billingConversions", "biweekly", "monthlyMultiplier"],
+        unit: "×",
+        description: "Additional multiplier for first month (typically 1.165)",
+      },
+      {
+        label: "Monthly - Cycle Months",
+        value: billingConv.monthly?.monthlyMultiplier ?? 0,
+        path: ["billingConversions", "monthly", "monthlyMultiplier"],
+        unit: "months",
+        description: "Monthly billing cycle multiplier (typically 1)",
+      },
+      {
+        label: "Bimonthly - Cycle Months",
+        value: 1 / (billingConv.bimonthly?.monthlyMultiplier ?? 1),
+        path: ["billingConversions", "bimonthly", "monthlyMultiplier"],
+        unit: "months",
+        description: "Billing cycle in months (typically 2)",
+      },
+      {
+        label: "Quarterly - Cycle Months",
+        value: 1 / (billingConv.quarterly?.monthlyMultiplier ?? 1),
+        path: ["billingConversions", "quarterly", "monthlyMultiplier"],
+        unit: "months",
+        description: "Billing cycle in months (typically 3)",
+      },
+      {
+        label: "Biannual - Monthly Multiplier",
+        value: billingConv.biannual?.monthlyMultiplier ?? 0,
+        path: ["billingConversions", "biannual", "monthlyMultiplier"],
+        unit: "×",
+        description: "Biannual to monthly conversion (typically 0.167)",
+      },
+      {
+        label: "Annual - Monthly Multiplier",
+        value: billingConv.annual?.monthlyMultiplier ?? 0,
+        path: ["billingConversions", "annual", "monthlyMultiplier"],
+        unit: "×",
+        description: "Annual to monthly conversion (typically 0.083)",
+      },
+    ],
+  };
 }
 
 /**

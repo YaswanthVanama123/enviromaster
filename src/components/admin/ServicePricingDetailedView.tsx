@@ -876,6 +876,20 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "months",
           description: "Billing cycle in months (typically 3)",
         },
+        {
+          label: "Biannual - Cycle Months",
+          value: freqMeta.biannual?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "biannual", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 6)",
+        },
+        {
+          label: "Annual - Cycle Months",
+          value: freqMeta.annual?.cycleMonths ?? 0,
+          path: ["frequencyMetadata", "annual", "cycleMonths"],
+          unit: "months",
+          description: "Billing cycle in months (typically 12)",
+        },
       ];
 
       // Contract Terms
