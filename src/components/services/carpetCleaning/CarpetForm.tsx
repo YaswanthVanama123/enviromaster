@@ -622,8 +622,8 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring - Hide for oneTime and visit-based */}
-      {!calc.isVisitBasedFrequency && form.frequency !== "oneTime" && (
+      {/* Monthly Recurring - Show only for weekly and biweekly */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly") && (
         <div className="svc-row svc-row-total">
           <label>Monthly Recurring</label>
           <div className="svc-dollar">

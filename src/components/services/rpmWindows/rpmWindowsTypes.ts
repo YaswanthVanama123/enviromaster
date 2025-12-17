@@ -110,6 +110,10 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
   selectedRateCategory: RpmRateCategory; // "redRate" / "greenRate"
   includeMirrors: boolean;               // flag only; price not yet changed
 
+  // ✅ NEW: Editable installation multipliers (from backend config)
+  installMultiplierFirstTime: number;    // typically 3× (editable)
+  installMultiplierClean: number;        // typically 1× (editable)
+
   // custom installation override (user can manually set installation cost)
   customInstallationFee?: number;        // if set, overrides calculated installation
 
@@ -121,7 +125,7 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
 
   // Custom overrides for final totals
   customPerVisitPrice?: number;         // override for Total Price (Per Visit)
-  customFirstMonthTotal?: number;       // override for First Month Total
+  customFirstMonthPrice?: number;       // override for First Month Total
   customMonthlyRecurring?: number;      // override for Monthly Recurring
-  customAnnualPrice?: number;           // override for Annual Price
+  customContractTotal?: number;         // override for Contract Total (renamed from customAnnualPrice)
 }
