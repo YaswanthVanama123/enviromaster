@@ -76,6 +76,13 @@ export default function AdminPanel() {
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // ✅ NEW: Dashboard statistics from admin API
+  const [dashboardStats, setDashboardStats] = useState({
+    manualUploads: 0,
+    savedDocuments: 0,
+    totalDocuments: 0
+  });
+
   // Pie chart states
   const [pieTimeFilter, setPieTimeFilter] = useState("This Week");
   const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
@@ -134,65 +141,78 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // Fetch recent documents from backend
+  // Fetch dashboard data from new admin API
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // ✅ OPTIMIZED: Use lightweight summary API for dashboard display
-        const data = await pdfApi.getCustomerHeadersSummary();
-        const items = data.items || [];
+        // ✅ NEW: Use the new admin dashboard API that provides everything in one call
+        const dashboardData = await pdfApi.getAdminDashboardData();
 
-        const mapped: Document[] = items.map((item: any) => ({
-          id: item._id || item.id,
-          name: item.headerTitle || "Untitled", // ✅ Uses summary API headerTitle
-          uploadedOn: new Date(item.updatedAt).toLocaleDateString("en-US", {
-            month: "long",
-            year: "numeric",
-          }),
-          status: item.status || "draft",
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
+        // Map recent documents to the existing Document interface
+        const mapped: Document[] = dashboardData.recentDocuments.map((doc: any) => ({
+          id: doc.id,
+          name: doc.title, // ✅ Now using real document titles from backend
+          uploadedOn: doc.uploadedOnFormatted,
+          status: doc.status,
+          createdAt: doc.createdDate,
+          updatedAt: doc.uploadedOn,
         }));
 
-        // Sort by most recent (updatedAt) - show all documents
-        const sortedRecent = mapped
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        setDocuments(mapped);
 
-        setDocuments(sortedRecent);
+        // ✅ Set all statistics from the dashboard API response
+        setUploadCount(dashboardData.stats.manualUploads);
+        setDashboardStats(dashboardData.stats);
+
+        // Set last upload date from the most recent document
+        if (dashboardData.recentDocuments.length > 0) {
+          setLastUploadDate(dashboardData.recentDocuments[0].createdDate);
+        } else {
+          setLastUploadDate(new Date().toISOString());
+        }
+
+        console.log("✅ Dashboard data loaded:", {
+          documents: mapped.length,
+          stats: dashboardData.stats,
+          documentStatus: dashboardData.documentStatus
+        });
+
       } catch (err) {
-        console.error("Error fetching documents:", err);
+        console.error("Error fetching dashboard data:", err);
+
+        // ✅ Fallback: If new API fails, use old API calls
+        console.log("⚠️ Falling back to old API calls...");
+        try {
+          const data = await pdfApi.getCustomerHeadersSummary();
+          const items = data.items || [];
+
+          const mapped: Document[] = items.map((item: any) => ({
+            id: item._id || item.id,
+            name: item.headerTitle || "Untitled Document",
+            uploadedOn: new Date(item.updatedAt).toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            }),
+            status: item.status || "draft",
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          }));
+
+          const sortedRecent = mapped
+            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+          setDocuments(sortedRecent);
+        } catch (fallbackErr) {
+          console.error("Fallback API also failed:", fallbackErr);
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDocuments();
+    fetchDashboardData();
   }, []);
-
-  // Fetch manual uploads stats
-  useEffect(() => {
-    const fetchUploadStats = async () => {
-      try {
-        const data = await manualUploadApi.getManualUploads();
-        const uploads = data.items || [];
-
-        setUploadCount(uploads.length);
-
-        // Get the most recent upload date
-        if (uploads.length > 0) {
-          const latestUpload = uploads[0]; // Already sorted by createdAt desc
-          setLastUploadDate(latestUpload.createdAt);
-        } else {
-          setLastUploadDate(new Date().toISOString());
-        }
-      } catch (err) {
-        console.error("Error fetching upload stats:", err);
-      }
-    };
-
-    fetchUploadStats();
-  }, [activeTab]); // Refresh when tab changes
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -462,7 +482,7 @@ export default function AdminPanel() {
                     </div>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-number">{uploadCount}+</div>
+                    <div className="stat-number">{dashboardStats.manualUploads}+</div>
                     <div className="stat-label">Manual Uploads</div>
                   </div>
                 </div>
@@ -474,7 +494,7 @@ export default function AdminPanel() {
                     </div>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-number">{documents.length}+</div>
+                    <div className="stat-number">{dashboardStats.savedDocuments}+</div>
                     <div className="stat-label">Saved Documents</div>
                   </div>
                 </div>
@@ -486,7 +506,7 @@ export default function AdminPanel() {
                     </div>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-number">{uploadCount + documents.length}+</div>
+                    <div className="stat-number">{dashboardStats.totalDocuments}+</div>
                     <div className="stat-label">Total Documents</div>
                   </div>
                 </div>

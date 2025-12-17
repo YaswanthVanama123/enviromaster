@@ -906,4 +906,81 @@ export const pdfApi = {
     );
     return res.data;
   },
+
+  /**
+   * Get admin dashboard data including recent documents and statistics
+   * Uses the new admin dashboard API endpoint
+   */
+  async getAdminDashboardData(): Promise<{
+    stats: {
+      manualUploads: number;
+      savedDocuments: number;
+      totalDocuments: number;
+    };
+    recentDocuments: Array<{
+      id: string;
+      title: string;
+      status: string;
+      createdDate: string;
+      uploadedOn: string;
+      createdDateFormatted: string;
+      uploadedOnFormatted: string;
+      hasPdf: boolean;
+      fileSize: number;
+    }>;
+    documentStatus: {
+      done: number;
+      pending: number;
+      saved: number;
+      drafts: number;
+    };
+  }> {
+    const token = localStorage.getItem('adminToken'); // Assuming admin token is stored in localStorage
+    const res = await axios.get(`${API_BASE_URL}/api/admin/dashboard`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      },
+    });
+    return res.data;
+  },
+
+  /**
+   * Get paginated recent documents for admin panel
+   */
+  async getAdminRecentDocuments(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<{
+    total: number;
+    page: number;
+    limit: number;
+    documents: Array<{
+      id: string;
+      title: string;
+      status: string;
+      createdDate: string;
+      uploadedOn: string;
+      createdDateFormatted: string;
+      uploadedOnFormatted: string;
+      hasPdf: boolean;
+      fileSize: number;
+    }>;
+  }> {
+    const token = localStorage.getItem('adminToken');
+    const searchParams = new URLSearchParams();
+
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.status) searchParams.append('status', params.status);
+
+    const res = await axios.get(`${API_BASE_URL}/api/admin/recent-documents?${searchParams.toString()}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      },
+    });
+    return res.data;
+  },
 };
