@@ -1,50 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
-import { pdfApi, emailApi } from "../backendservice/api";
+import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
+import type {
+  SavedFileListItem,
+  SavedFileGroup,
+  AgreementStatus,
+  VersionStatus,
+} from "../backendservice/api/pdfApi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileAlt, faEye, faDownload, faEnvelope, faSave } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFileAlt, faEye, faDownload, faEnvelope, faSave, faFolder, faFolderOpen,
+  faChevronDown, faChevronRight, faCheckSquare, faSquare
+} from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import "./ApprovalDocuments.css";
 
 type FileStatus =
   | "draft"
+  | "uploaded"
+  | "processing"
+  | "completed"
+  | "failed"
   | "pending_approval"
   | "approved_salesman"
   | "approved_admin";
-
-type Document = {
-  id: string;
-  fileName: string;
-  updatedAt: string;
-  status: FileStatus;
-
-  createdAt?: string;
-  headerTitle?: string;
-  zoho?: {
-    bigin: {
-      dealId: string | null;
-      fileId: string | null;
-      url: string | null;
-    };
-    crm: {
-      dealId: string | null;
-      fileId: string | null;
-      url: string | null;
-    };
-  };
-};
-
-type BackendItem = {
-  id: string;
-  headerTitle: string;
-  status: FileStatus;
-  createdAt: string;
-  updatedAt: string;
-  zoho: Document["zoho"];
-};
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -60,15 +42,31 @@ function timeAgo(iso: string) {
 
 const STATUS_LABEL: Record<FileStatus, string> = {
   draft: "Draft",
+  uploaded: "Uploaded",
+  processing: "Processing",
+  completed: "Completed",
+  failed: "Failed",
   pending_approval: "Pending Approval",
   approved_salesman: "Approved by Salesman",
   approved_admin: "Approved by Admin",
 };
 
+const STATUS_COLORS: Record<FileStatus, string> = {
+  draft: '#6b7280',
+  uploaded: '#3b82f6',
+  processing: '#f59e0b',
+  completed: '#10b981',
+  failed: '#ef4444',
+  pending_approval: '#f59e0b',
+  approved_salesman: '#3b82f6',
+  approved_admin: '#10b981',
+};
+
 export default function ApprovalDocuments() {
-  const [docs, setDocs] = useState<Document[]>([]);
+  // ✅ UPDATED: Use grouped structure for approval documents
+  const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
+  const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +76,11 @@ export default function ApprovalDocuments() {
 
   // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
-  const [currentEmailDoc, setCurrentEmailDoc] = useState<Document | null>(null);
+  const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
+
+  // Statistics
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [totalAgreements, setTotalAgreements] = useState(0);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -97,61 +99,59 @@ export default function ApprovalDocuments() {
     }
   }, [isAuthenticated, navigate]);
 
-  // ---- Fetch documents from backend on mount ----
+  // ---- Fetch approval documents from backend on mount ----
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchApprovalDocuments = async () => {
       setLoading(true);
       setError(null);
       try {
-        // ✅ OPTIMIZED: Use lightweight summary API for approval document list
-        const data = await pdfApi.getCustomerHeadersSummary();
-        const items = data.items || [];
+        // ✅ NEW: Use approval documents grouped API
+        const data = await pdfApi.getApprovalDocumentsGrouped();
+        const groups = data.groups || [];
 
-        // Map and filter for pending_approval status only
-        const mapped: Document[] = items
-          .map((item: any) => ({
-            id: item._id || item.id,
-            fileName: item.headerTitle ?? "Untitled", // ✅ Uses summary API headerTitle
-            updatedAt: item.updatedAt,
-            status: item.status ?? "draft",
-            createdAt: item.createdAt,
-            headerTitle: item.headerTitle, // ✅ Uses summary API headerTitle
-            zoho: item.zoho,
-          }))
-          .filter((doc: Document) => doc.status === "pending_approval");
+        console.log("📋 [APPROVAL-DOCS] Fetched approval documents:", {
+          totalGroups: data.totalGroups,
+          totalFiles: data.totalFiles,
+          groups: groups.length
+        });
 
-        setDocs(mapped);
+        setAgreements(groups);
+        setTotalAgreements(data.totalGroups || 0);
+        setTotalFiles(data.totalFiles || 0);
       } catch (err) {
         console.error("Error fetching approval documents:", err);
-        setError("Unable to load documents. Please try again.");
+        setError("Unable to load approval documents. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDocuments();
+    fetchApprovalDocuments();
   }, []);
 
-  const filtered = useMemo(() => {
+  // Filter and expand/collapse functionality for folder structure
+  const filteredAgreements = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let out = docs.filter((d) => d.fileName.toLowerCase().includes(q));
-    out = out.sort((a, b) => {
-      const order = STATUS_LABEL[a.status].localeCompare(
-        STATUS_LABEL[b.status]
-      );
-      return sortDir === "asc" ? order : -order;
-    });
-    return out;
-  }, [docs, query, sortDir]);
+    if (!q) return agreements;
 
-  const allSelected =
-    filtered.length > 0 && filtered.every((f) => selected[f.id]);
+    return agreements.filter(agreement =>
+      agreement.agreementTitle.toLowerCase().includes(q) ||
+      agreement.files.some(file => file.fileName.toLowerCase().includes(q))
+    );
+  }, [agreements, query]);
+
+  // Get all files from all agreements for selection logic
+  const allFiles = useMemo(() => {
+    return filteredAgreements.flatMap(agreement => agreement.files);
+  }, [filteredAgreements]);
+
+  const allSelected = allFiles.length > 0 && allFiles.every((f) => selected[f.id]);
   const anySelected = Object.values(selected).some(Boolean);
 
   function toggleSelectAll() {
     const next = { ...selected };
     const to = !allSelected;
-    filtered.forEach((f) => (next[f.id] = to));
+    allFiles.forEach((f) => (next[f.id] = to));
     setSelected(next);
   }
 
@@ -159,34 +159,89 @@ export default function ApprovalDocuments() {
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  function changeStatus(id: string, next: FileStatus) {
-    // Update UI immediately
-    setDocs((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, status: next } : it))
-    );
+  function toggleAgreement(agreementId: string) {
+    setExpandedAgreements(prev => {
+      const next = new Set(prev);
+      if (next.has(agreementId)) {
+        next.delete(agreementId);
+      } else {
+        next.add(agreementId);
+      }
+      return next;
+    });
+  }
 
-    // Save to backend automatically
-    saveStatusToBackend(id, next);
+  async function changeFileStatus(file: SavedFileListItem, newStatus: string) {
+    try {
+      setSavingStatusId(file.id);
+
+      // Handle different file types with appropriate API calls
+      if (file.fileType === 'main_pdf') {
+        await pdfApi.updateDocumentStatus(file.id, newStatus);
+      } else if (file.fileType === 'version_pdf') {
+        await pdfApi.updateVersionStatus(file.id, newStatus);
+      } else if (file.fileType === 'attached_pdf') {
+        await manualUploadApi.updateStatus(file.id, newStatus);
+      }
+
+      // Update local state to reflect the change
+      setAgreements(prev => prev.map(agreement => ({
+        ...agreement,
+        files: agreement.files.map(f =>
+          f.id === file.id ? { ...f, status: newStatus } : f
+        )
+      })));
+
+      // If status changed away from approval statuses, remove from this view
+      const approvalStatuses = ['pending_approval', 'approved_salesman'];
+      if (!approvalStatuses.includes(newStatus)) {
+        setAgreements(prev => prev.map(agreement => ({
+          ...agreement,
+          files: agreement.files.filter(f => f.id !== file.id),
+          fileCount: agreement.files.filter(f => f.id !== file.id).length
+        })).filter(agreement => agreement.fileCount > 0));
+
+        setTotalFiles(prev => prev - 1);
+      }
+
+      setToastMessage({ message: "Status updated successfully!", type: "success" });
+    } catch (err) {
+      console.error("Error updating status:", err);
+      setToastMessage({ message: "Unable to update status. Please try again.", type: "error" });
+    } finally {
+      setSavingStatusId(null);
+    }
   }
 
   function approveSelected() {
-    const ids = Object.entries(selected)
-      .filter(([, v]) => v)
-      .map(([k]) => k);
-    if (ids.length === 0) return;
+    const selectedFiles = allFiles.filter(file => selected[file.id]);
+    if (selectedFiles.length === 0) return;
 
     // Bulk approve: change all selected to approved_admin
-    ids.forEach((id) => changeStatus(id, "approved_admin"));
+    selectedFiles.forEach((file) => changeFileStatus(file, "approved_admin"));
     setSelected({});
   }
 
   // ---- View/Edit handler (eye icon) ----
-  const handleView = (doc: Document) => {
+  const handleView = (file: SavedFileListItem) => {
+    // ✅ FIX: Map file type to correct PDFViewer document type
+    let documentType: 'agreement' | 'manual-upload' | 'attached-file' | 'version' | undefined = undefined;
+
+    if (file.fileType === 'main_pdf') {
+      documentType = 'agreement';
+    } else if (file.fileType === 'attached_pdf') {
+      documentType = 'attached-file';
+    } else if (file.fileType === 'version_pdf') {
+      documentType = 'version';  // ✅ FIX: Map version_pdf to 'version' for PDFViewer
+    }
+
+    console.log(`📄 [APPROVAL-VIEW] Viewing document ${file.id} (file type: ${file.fileType} → PDFViewer type: ${documentType || 'auto-detect'})`);
+
     navigate("/pdf-viewer", {
       state: {
-        documentId: doc.id,
-        fileName: doc.fileName,
-        // Add navigation context to prevent loops - use dynamic return path
+        documentId: file.id,
+        fileName: file.fileName,
+        documentType: documentType, // ✅ NEW: Include correct document type
         originalReturnPath: returnPath,
         originalReturnState: null,
       },
@@ -194,18 +249,26 @@ export default function ApprovalDocuments() {
   };
 
   // ---- Download handler ----
-  const handleDownload = async (doc: Document) => {
+  const handleDownload = async (file: SavedFileListItem) => {
     try {
-      setDownloadingId(doc.id);
+      setDownloadingId(file.id);
 
-      const blob = await pdfApi.downloadPdf(doc.id);
+      let blob: Blob;
+      if (file.fileType === 'attached_pdf') {
+        // ✅ FIX: Use attached files API for attached files
+        blob = await pdfApi.downloadAttachedFile(file.id);
+      } else if (file.fileType === 'version_pdf') {
+        // ✅ FIX: Use version PDF API for version PDFs
+        blob = await pdfApi.downloadVersionPdf(file.id);
+      } else {
+        // ✅ FIX: Use main PDF API for main agreement PDFs
+        blob = await pdfApi.downloadPdf(file.id);
+      }
+
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
-      const safeName =
-        (doc.fileName || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") +
-        ".pdf";
+      const safeName = (file.fileName || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") + ".pdf";
       a.download = safeName;
       document.body.appendChild(a);
       a.click();
@@ -220,36 +283,15 @@ export default function ApprovalDocuments() {
     }
   };
 
-  // ---- Save status handler ----
-  const saveStatusToBackend = async (id: string, status: FileStatus) => {
-    try {
-      setSavingStatusId(id);
-
-      await pdfApi.updateDocumentStatus(id, status);
-      console.log("Status updated successfully");
-
-      // If status changed from pending_approval, remove from this view
-      if (status !== "pending_approval") {
-        setDocs((prev) => prev.filter((d) => d.id !== id));
-      }
-      setToastMessage({ message: "Status updated successfully!", type: "success" });
-    } catch (err) {
-      console.error("Error updating status:", err);
-      setToastMessage({ message: "Unable to update status. Please try again.", type: "error" });
-    } finally {
-      setSavingStatusId(null);
-    }
-  };
-
   // ---- Email handler ----
-  const handleEmail = (doc: Document) => {
-    setCurrentEmailDoc(doc);
+  const handleEmail = (file: SavedFileListItem) => {
+    setCurrentEmailFile(file);
     setEmailComposerOpen(true);
   };
 
   // ---- Send email handler ----
   const handleSendEmail = async (emailData: EmailData) => {
-    if (!currentEmailDoc) return;
+    if (!currentEmailFile) return;
 
     try {
       await emailApi.sendEmailWithPdfById({
@@ -257,8 +299,8 @@ export default function ApprovalDocuments() {
         from: emailData.from,
         subject: emailData.subject,
         body: emailData.body,
-        documentId: currentEmailDoc.id,
-        fileName: currentEmailDoc.fileName
+        documentId: currentEmailFile.id,
+        fileName: currentEmailFile.fileName
       });
 
       setToastMessage({
@@ -268,7 +310,7 @@ export default function ApprovalDocuments() {
 
       // Close composer
       setEmailComposerOpen(false);
-      setCurrentEmailDoc(null);
+      setCurrentEmailFile(null);
 
     } catch (error) {
       console.error("Error sending email:", error);
@@ -279,7 +321,7 @@ export default function ApprovalDocuments() {
   // ---- Close email composer ----
   const handleCloseEmailComposer = () => {
     setEmailComposerOpen(false);
-    setCurrentEmailDoc(null);
+    setCurrentEmailFile(null);
   };
 
   // Show nothing while checking auth
@@ -303,18 +345,16 @@ export default function ApprovalDocuments() {
         />
 
         <div className="ad__actions">
-          <button
-            className="ad__btn ad__btn--light"
-            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
-          >
-            Sort by Status
-          </button>
+          <div className="ad__stats">
+            <span>{totalAgreements} agreements</span>
+            <span>{totalFiles} files pending approval</span>
+          </div>
           <button
             className="ad__btn ad__btn--primary"
             disabled={!anySelected}
             onClick={approveSelected}
           >
-            Approve Selected
+            Approve Selected ({Object.values(selected).filter(Boolean).length})
           </button>
         </div>
       </div>
@@ -330,7 +370,8 @@ export default function ApprovalDocuments() {
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th>File Name</th>
+              <th>Agreement / File Name</th>
+              <th>Type</th>
               <th>Updated</th>
               <th>Status</th>
               <th>Actions</th>
@@ -339,104 +380,168 @@ export default function ApprovalDocuments() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={5} className="empty">
-                  Loading documents…
-                </td>
-              </tr>
-            )}
-
-            {!loading &&
-              filtered.map((doc) => (
-                <tr key={doc.id}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={!!selected[doc.id]}
-                      onChange={() => toggleRow(doc.id)}
-                    />
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <FontAwesomeIcon icon={faFileAlt} style={{ color: '#2563eb', fontSize: '18px' }} />
-                      <span>{doc.fileName}</span>
-                    </div>
-                  </td>
-                  <td>{timeAgo(doc.updatedAt)}</td>
-                  <td>
-                    <select
-                      className={`pill pill--${doc.status}`}
-                      value={doc.status}
-                      onChange={(e) =>
-                        changeStatus(doc.id, e.target.value as FileStatus)
-                      }
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="pending_approval">
-                        Pending Approval
-                      </option>
-                      <option value="approved_salesman">
-                        Approved by Salesman
-                      </option>
-                      <option value="approved_admin">
-                        Approved by Admin
-                      </option>
-                    </select>
-                  </td>
-                  <td>
-                    <div className="rowactions">
-                      <button
-                        className="iconbtn"
-                        title="View"
-                        type="button"
-                        onClick={() => handleView(doc)}
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                      <button
-                        className="iconbtn"
-                        title="Download"
-                        type="button"
-                        onClick={() => handleDownload(doc)}
-                        disabled={downloadingId === doc.id}
-                      >
-                        {downloadingId === doc.id ? "⏳" : <FontAwesomeIcon icon={faDownload} />}
-                      </button>
-                      <button
-                        className="iconbtn"
-                        title="Email"
-                        type="button"
-                        onClick={() => handleEmail(doc)}
-                      >
-                        <FontAwesomeIcon icon={faEnvelope} />
-                      </button>
-                      <button
-                        className="iconbtn"
-                        title="Status Auto-Saves"
-                        type="button"
-                        disabled
-                      >
-                        {savingStatusId === doc.id ? "💾…" : <FontAwesomeIcon icon={faSave} />}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-            {!loading && !error && filtered.length === 0 && (
-              <tr>
-                <td colSpan={5} className="empty">
-                  No pending approval documents found.
+                <td colSpan={6} className="empty">
+                  Loading approval documents…
                 </td>
               </tr>
             )}
 
             {!loading && error && (
               <tr>
-                <td colSpan={5} className="empty">
+                <td colSpan={6} className="empty error">
                   {error}
                 </td>
               </tr>
             )}
+
+            {!loading && !error && filteredAgreements.length === 0 && (
+              <tr>
+                <td colSpan={6} className="empty">
+                  No documents pending approval found.
+                </td>
+              </tr>
+            )}
+
+            {!loading && !error && filteredAgreements.map((agreement) => (
+              <React.Fragment key={agreement.id}>
+                {/* Agreement Header Row */}
+                <tr className="agreement-header">
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={agreement.files.every(f => selected[f.id])}
+                      onChange={() => {
+                        const allSelected = agreement.files.every(f => selected[f.id]);
+                        const next = { ...selected };
+                        agreement.files.forEach(f => next[f.id] = !allSelected);
+                        setSelected(next);
+                      }}
+                    />
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                         onClick={() => toggleAgreement(agreement.id)}>
+                      <FontAwesomeIcon
+                        icon={expandedAgreements.has(agreement.id) ? faFolderOpen : faFolder}
+                        style={{ color: '#f59e0b', fontSize: '18px' }}
+                      />
+                      <FontAwesomeIcon
+                        icon={expandedAgreements.has(agreement.id) ? faChevronDown : faChevronRight}
+                        style={{ fontSize: '12px', color: '#6b7280' }}
+                      />
+                      <strong>{agreement.agreementTitle}</strong>
+                      <span style={{ color: '#6b7280', fontSize: '14px' }}>
+                        ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
+                      </span>
+                    </div>
+                  </td>
+                  <td>Agreement</td>
+                  <td>{timeAgo(agreement.latestUpdate)}</td>
+                  <td>
+                    <span className={`pill pill--${agreement.agreementStatus}`}>
+                      {STATUS_LABEL[agreement.agreementStatus as FileStatus] || agreement.agreementStatus}
+                    </span>
+                  </td>
+                  <td></td>
+                </tr>
+
+                {/* Agreement Files - Only show when expanded */}
+                {expandedAgreements.has(agreement.id) && agreement.files.map((file) => (
+                  <tr key={file.id} className="file-row">
+                    <td style={{ paddingLeft: '40px' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!selected[file.id]}
+                        onChange={() => toggleRow(file.id)}
+                      />
+                    </td>
+                    <td style={{ paddingLeft: '40px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FontAwesomeIcon
+                          icon={faFileAlt}
+                          style={{
+                            color: file.fileType === 'version_pdf' ? '#8b5cf6' :
+                                   file.fileType === 'attached_pdf' ? '#10b981' : '#2563eb',
+                            fontSize: '16px'
+                          }}
+                        />
+                        <span>{file.fileName}</span>
+                        {file.description && (
+                          <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                            - {file.description}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{
+                        fontSize: '12px',
+                        color: file.fileType === 'version_pdf' ? '#8b5cf6' :
+                               file.fileType === 'attached_pdf' ? '#10b981' : '#2563eb'
+                      }}>
+                        {file.fileType === 'main_pdf' ? 'Main PDF' :
+                         file.fileType === 'version_pdf' ? `Version ${file.versionNumber || ''}` :
+                         file.fileType === 'attached_pdf' ? 'Attached' :
+                         file.fileType}
+                      </span>
+                    </td>
+                    <td>{timeAgo(file.updatedAt)}</td>
+                    <td>
+                      <select
+                        className={`pill pill--${file.status}`}
+                        value={file.status}
+                        onChange={(e) => changeFileStatus(file, e.target.value)}
+                        disabled={savingStatusId === file.id}
+                      >
+                        <option value="pending_approval">Pending Approval</option>
+                        <option value="approved_salesman">Approved by Salesman</option>
+                        <option value="approved_admin">Approved by Admin</option>
+                        <option value="draft">Draft</option>
+                      </select>
+                    </td>
+                    <td>
+                      <div className="rowactions">
+                        <button
+                          className="iconbtn"
+                          title="View"
+                          type="button"
+                          onClick={() => handleView(file)}
+                          disabled={!file.hasPdf}
+                        >
+                          <FontAwesomeIcon icon={faEye} />
+                        </button>
+                        <button
+                          className="iconbtn"
+                          title="Download"
+                          type="button"
+                          onClick={() => handleDownload(file)}
+                          disabled={downloadingId === file.id || !file.hasPdf}
+                        >
+                          {downloadingId === file.id ? "⏳" : <FontAwesomeIcon icon={faDownload} />}
+                        </button>
+                        <button
+                          className="iconbtn"
+                          title="Email"
+                          type="button"
+                          onClick={() => handleEmail(file)}
+                          disabled={!file.hasPdf}
+                        >
+                          <FontAwesomeIcon icon={faEnvelope} />
+                        </button>
+                        <button
+                          className="iconbtn"
+                          title="Status Auto-Saves"
+                          type="button"
+                          disabled
+                        >
+                          {savingStatusId === file.id ? "💾…" : <FontAwesomeIcon icon={faSave} />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
+            ))}
           </tbody>
         </table>
       </div>
@@ -464,13 +569,26 @@ export default function ApprovalDocuments() {
         isOpen={emailComposerOpen}
         onClose={handleCloseEmailComposer}
         onSend={handleSendEmail}
-        attachment={currentEmailDoc ? {
-          id: currentEmailDoc.id,
-          fileName: currentEmailDoc.fileName,
-          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailDoc.id)
+        attachment={currentEmailFile ? {
+          id: currentEmailFile.id,
+          fileName: currentEmailFile.fileName,
+          downloadUrl: currentEmailFile.fileType === 'attached_pdf'
+            ? pdfApi.getPdfDownloadUrl(currentEmailFile.id) // Use generic download for attached files
+            : pdfApi.getPdfDownloadUrl(currentEmailFile.id)
         } : undefined}
-        defaultSubject={currentEmailDoc ? `${currentEmailDoc.fileName} - Approval Request` : ''}
-        defaultBody={currentEmailDoc ? `Hello,\n\nPlease review the following customer header document for approval.\n\nDocument: ${currentEmailDoc.fileName}\nStatus: ${STATUS_LABEL[currentEmailDoc.status]}\nUpdated: ${timeAgo(currentEmailDoc.updatedAt)}\n\nBest regards` : ''}
+        defaultSubject={currentEmailFile ? `${currentEmailFile.fileName} - Approval Request` : ''}
+        defaultBody={currentEmailFile ? `Hello,
+
+Please review the following document for approval.
+
+Document: ${currentEmailFile.fileName}
+Type: ${currentEmailFile.fileType === 'main_pdf' ? 'Main Agreement PDF' :
+         currentEmailFile.fileType === 'version_pdf' ? `Version ${currentEmailFile.versionNumber || ''} PDF` :
+         currentEmailFile.fileType === 'attached_pdf' ? 'Attached PDF' : 'Document'}
+Status: ${STATUS_LABEL[currentEmailFile.status as FileStatus] || currentEmailFile.status}
+Updated: ${timeAgo(currentEmailFile.updatedAt)}
+
+Best regards` : ''}
         userEmail="" // TODO: Get from admin login context
       />
     </section>

@@ -71,7 +71,7 @@ export default function PDFViewer() {
         } else if (documentType === 'version') {
           // Use version API
           console.log(`📝 [PDF-VIEWER] Using version API for document ${documentId}`);
-          blob = await versionApi.viewVersion(documentId);
+          blob = await pdfApi.downloadVersionPdf(documentId); // ✅ FIX: Use pdfApi instead of versionApi
           detectedType = 'version';
         } else {
           // 🔍 AUTO-DETECTION: Try different APIs until one works
@@ -88,7 +88,7 @@ export default function PDFViewer() {
               try {
                 // Try version API
                 console.log(`🔍 [PDF-VIEWER] Trying version API...`);
-                blob = await versionApi.viewVersion(documentId);
+                blob = await pdfApi.downloadVersionPdf(documentId); // ✅ FIX: Use pdfApi instead of versionApi
                 detectedType = 'version';
                 console.log(`✅ [PDF-VIEWER] Auto-detected as version document`);
               } catch (versionErr: any) {
@@ -203,7 +203,7 @@ export default function PDFViewer() {
 
       if (documentType === 'version') {
         // Use version API for version PDFs
-        blob = await versionApi.downloadVersion(documentId);
+        blob = await pdfApi.downloadVersionPdf(documentId); // ✅ FIX: Use pdfApi instead of versionApi
       } else if (documentType === 'manual-upload') {
         // Use manual upload API
         blob = await manualUploadApi.downloadFile(documentId);

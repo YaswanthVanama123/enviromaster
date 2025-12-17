@@ -1578,3 +1578,44 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ✅ NEW: Admin Panel Folder Structure Styling */
+.agreement-header-admin {
+  background-color: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.agreement-header-admin:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.agreement-header-admin td {
+  font-weight: 600;
+  color: #1e293b;
+  padding: 12px !important;
+}
+
+.file-row-admin {
+  background-color: #fff;
+}
+
+.file-row-admin:hover {
+  background-color: #f9fafb !important;
+}
+
+.file-row-admin td {
+  border-bottom: 1px solid #f3f4f6 !important;
+  color: #4b5563;
+  padding: 8px 12px !important;
+}
+
+/* Adjust action buttons for smaller rows */
+.file-row-admin .action-buttons-group {
+  gap: 4px;
+}
+
+.file-row-admin .action-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}

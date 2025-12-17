@@ -1,9 +1,10 @@
 // src/components/AdminPanel.tsx
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
+import type { SavedFileGroup, SavedFileListItem } from "../backendservice/api/pdfApi";
 import SavedFilesAgreements from "./SavedFilesAgreements"; // ✅ UPDATED: Use new folder-like component
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
@@ -18,7 +19,10 @@ import {
   faChevronDown,
   faBriefcase,
   faEye,
-  faDollarSign
+  faDollarSign,
+  faFolder,
+  faFolderOpen,
+  faChevronRight
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
@@ -71,6 +75,8 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<TabType>(getActiveTabFromUrl());
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [recentAgreements, setRecentAgreements] = useState<SavedFileGroup[]>([]);
+  const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [uploadCount, setUploadCount] = useState(0);
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
@@ -149,7 +155,7 @@ export default function AdminPanel() {
         // ✅ NEW: Use the new admin dashboard API that provides everything in one call
         const dashboardData = await pdfApi.getAdminDashboardData();
 
-        // Map recent documents to the existing Document interface
+        // Map recent documents to the existing Document interface for compatibility
         const mapped: Document[] = dashboardData.recentDocuments.map((doc: any) => ({
           id: doc.id,
           name: doc.title, // ✅ Now using real document titles from backend
@@ -160,6 +166,10 @@ export default function AdminPanel() {
         }));
 
         setDocuments(mapped);
+
+        // ✅ NEW: Also fetch grouped recent documents for folder view
+        const groupedData = await pdfApi.getSavedFilesGrouped(1, 10); // Get first 10 groups for recent view
+        setRecentAgreements(groupedData.groups || []);
 
         // ✅ Set all statistics from the dashboard API response
         setUploadCount(dashboardData.stats.manualUploads);
@@ -174,6 +184,7 @@ export default function AdminPanel() {
 
         console.log("✅ Dashboard data loaded:", {
           documents: mapped.length,
+          recentAgreements: groupedData.groups?.length || 0,
           stats: dashboardData.stats,
           documentStatus: dashboardData.documentStatus
         });
@@ -203,6 +214,14 @@ export default function AdminPanel() {
             .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
           setDocuments(sortedRecent);
+
+          // Try to get grouped data as fallback
+          try {
+            const groupedData = await pdfApi.getSavedFilesGrouped(1, 5);
+            setRecentAgreements(groupedData.groups || []);
+          } catch (groupedErr) {
+            console.warn("Could not fetch grouped data:", groupedErr);
+          }
         } catch (fallbackErr) {
           console.error("Fallback API also failed:", fallbackErr);
         }
@@ -229,11 +248,21 @@ export default function AdminPanel() {
     return null;
   }
 
-  const handleDownload = async (docId: string, fileName: string) => {
+  const handleDownload = async (docId: string, fileName: string, fileType?: string) => {
     try {
-      const blob = await pdfApi.downloadPdf(docId);
-      const url = window.URL.createObjectURL(blob);
+      let blob: Blob;
+      if (fileType === 'attached_pdf') {
+        // ✅ FIX: Use attached files API for attached files
+        blob = await pdfApi.downloadAttachedFile(docId);
+      } else if (fileType === 'version_pdf') {
+        // ✅ FIX: Use version PDF API for version PDFs
+        blob = await pdfApi.downloadVersionPdf(docId);
+      } else {
+        // ✅ FIX: Use main PDF API for main agreement PDFs
+        blob = await pdfApi.downloadPdf(docId);
+      }
 
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       const safeName = (fileName || "Document").replace(/[^\w\-]+/g, "_") + ".pdf";
@@ -255,7 +284,7 @@ export default function AdminPanel() {
 
     // ✅ SMART DOCUMENT TYPE DETECTION: For admin panel, try to determine document type
     // If docType is provided, use it; otherwise rely on PDFViewer auto-detection
-    let documentType: 'agreement' | 'manual-upload' | 'attached-file' | undefined = undefined;
+    let documentType: 'agreement' | 'manual-upload' | 'attached-file' | 'version' | undefined = undefined;
 
     if (docType === 'agreement' || docType === 'main_pdf') {
       documentType = 'agreement';
@@ -263,6 +292,8 @@ export default function AdminPanel() {
       documentType = 'manual-upload';
     } else if (docType === 'attached-file' || docType === 'attached_pdf') {
       documentType = 'attached-file';
+    } else if (docType === 'version_pdf') {
+      documentType = 'version';  // ✅ FIX: Map version_pdf to 'version' for PDFViewer
     }
     // If no type specified, PDFViewer will auto-detect by trying different APIs
 
@@ -287,6 +318,30 @@ export default function AdminPanel() {
       logout();
     }
   };
+
+  const toggleAgreement = (agreementId: string) => {
+    setExpandedAgreements(prev => {
+      const next = new Set(prev);
+      if (next.has(agreementId)) {
+        next.delete(agreementId);
+      } else {
+        next.add(agreementId);
+      }
+      return next;
+    });
+  };
+
+  function timeAgo(iso: string) {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const sec = Math.max(1, Math.floor(diffMs / 1000));
+    const min = Math.floor(sec / 60);
+    const hr = Math.floor(min / 60);
+    const day = Math.floor(hr / 24);
+    if (day > 0) return `${day} day${day > 1 ? "s" : ""} ago`;
+    if (hr > 0) return `${hr} hour${hr > 1 ? "s" : ""} ago`;
+    if (min > 0) return `${min} minute${min > 1 ? "s" : ""} ago`;
+    return `${sec} sec ago`;
+  }
 
   const formatUploadDate = (dateString: string) => {
     if (!dateString) return "N/A";
@@ -512,21 +567,21 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Recent Documents Table */}
+              {/* Recent Documents - Grouped by Agreement */}
               <div className="recent-section">
                 <div className="section-header">
                   <h2 className="section-heading">Recent Documents</h2>
-                  <button className="view-all-btn">→</button>
+                  <button className="view-all-btn" onClick={() => handleTabChange("saved-pdfs")}>→</button>
                 </div>
 
                 <div className="modern-table-wrapper">
                   <table className="modern-table">
                     <thead>
                       <tr>
-                        <th>Created Date</th>
-                        <th>Document</th>
+                        <th>Agreement / File Name</th>
+                        <th>Type</th>
+                        <th>Updated</th>
                         <th>Status ↕</th>
-                        <th>Uploaded On</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -537,53 +592,107 @@ export default function AdminPanel() {
                             Loading documents...
                           </td>
                         </tr>
-                      ) : documents.length === 0 ? (
+                      ) : recentAgreements.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="table-empty">
                             No documents found
                           </td>
                         </tr>
                       ) : (
-                        documents.slice(0, 4).map((doc) => (
-                          <tr key={doc.id}>
-                            <td className="created-date">
-                              {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }) : "—"}
-                            </td>
-                            <td>
-                              <div className="doc-cell">
-                                <FontAwesomeIcon icon={faFileAlt} className="doc-icon-table" />
-                                <span>{doc.name}</span>
-                              </div>
-                            </td>
-                            <td>
-                              <span className={`status-pill status-${doc.status}`}>
-                                {doc.status === "approved_admin" ? "Completed" : "Pending"}
-                              </span>
-                            </td>
-                            <td className="statistics">{doc.uploadedOn}</td>
-                            <td>
-                              <div className="action-buttons-group">
-                                <button
-                                  className="action-btn action-view"
-                                  onClick={() => handleViewPDF(doc.id, doc.name)}
-                                  title="View PDF"
+                        recentAgreements.slice(0, 4).map((agreement) => (
+                          <React.Fragment key={agreement.id}>
+                            {/* Agreement Header Row */}
+                            <tr className="agreement-header-admin">
+                              <td>
+                                <div
+                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                                  onClick={() => toggleAgreement(agreement.id)}
                                 >
-                                  <FontAwesomeIcon icon={faEye} size="lg" />
-                                </button>
-                                <button
-                                  className="action-btn action-download"
-                                  onClick={() => handleDownload(doc.id, doc.name)}
-                                  title="Download PDF"
-                                >
-                                  <FontAwesomeIcon icon={faDownload} size="lg" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
+                                  <FontAwesomeIcon
+                                    icon={expandedAgreements.has(agreement.id) ? faFolderOpen : faFolder}
+                                    style={{ color: '#f59e0b', fontSize: '16px' }}
+                                  />
+                                  <FontAwesomeIcon
+                                    icon={expandedAgreements.has(agreement.id) ? faChevronDown : faChevronRight}
+                                    style={{ fontSize: '10px', color: '#6b7280' }}
+                                  />
+                                  <strong>{agreement.agreementTitle}</strong>
+                                  <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                                    ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
+                                  </span>
+                                </div>
+                              </td>
+                              <td>Agreement</td>
+                              <td>{timeAgo(agreement.latestUpdate)}</td>
+                              <td>
+                                <span className={`status-pill status-${agreement.agreementStatus}`}>
+                                  {agreement.agreementStatus === "approved_admin" ? "Completed" :
+                                   agreement.agreementStatus === "pending_approval" ? "Pending" :
+                                   agreement.agreementStatus === "draft" ? "Draft" : "Saved"}
+                                </span>
+                              </td>
+                              <td></td>
+                            </tr>
+
+                            {/* Agreement Files - Only show when expanded and limit to 3 files per agreement */}
+                            {expandedAgreements.has(agreement.id) && agreement.files.slice(0, 3).map((file) => (
+                              <tr key={file.id} className="file-row-admin">
+                                <td style={{ paddingLeft: '40px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FontAwesomeIcon
+                                      icon={faFileAlt}
+                                      style={{
+                                        color: file.fileType === 'version_pdf' ? '#8b5cf6' :
+                                               file.fileType === 'attached_pdf' ? '#10b981' : '#2563eb',
+                                        fontSize: '14px'
+                                      }}
+                                    />
+                                    <span>{file.fileName}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span style={{
+                                    fontSize: '11px',
+                                    color: file.fileType === 'version_pdf' ? '#8b5cf6' :
+                                           file.fileType === 'attached_pdf' ? '#10b981' : '#2563eb'
+                                  }}>
+                                    {file.fileType === 'main_pdf' ? 'Main PDF' :
+                                     file.fileType === 'version_pdf' ? `v${file.versionNumber || ''}` :
+                                     file.fileType === 'attached_pdf' ? 'Attached' :
+                                     file.fileType}
+                                  </span>
+                                </td>
+                                <td>{timeAgo(file.updatedAt)}</td>
+                                <td>
+                                  <span className={`status-pill status-${file.status}`}>
+                                    {file.status === "approved_admin" ? "Completed" :
+                                     file.status === "pending_approval" ? "Pending" :
+                                     file.status === "draft" ? "Draft" : "Saved"}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="action-buttons-group">
+                                    <button
+                                      className="action-btn action-view"
+                                      onClick={() => handleViewPDF(file.id, file.fileName, file.fileType)}
+                                      title="View PDF"
+                                      disabled={!file.hasPdf}
+                                    >
+                                      <FontAwesomeIcon icon={faEye} size="sm" />
+                                    </button>
+                                    <button
+                                      className="action-btn action-download"
+                                      onClick={() => handleDownload(file.id, file.fileName, file.fileType)}
+                                      title="Download PDF"
+                                      disabled={!file.hasPdf}
+                                    >
+                                      <FontAwesomeIcon icon={faDownload} size="sm" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
                         ))
                       )}
                     </tbody>

@@ -562,6 +562,19 @@ export const pdfApi = {
   },
 
   /**
+   * ✅ NEW: Download version PDF as blob
+   */
+  async downloadVersionPdf(versionId: string): Promise<Blob> {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/versions/${versionId}/download`,
+      {
+        responseType: "blob",
+      }
+    );
+    return res.data;
+  },
+
+  /**
    * ✅ NEW: Download attached file from ManualUploadDocument collection
    */
   async downloadAttachedFile(fileId: string): Promise<Blob> {
@@ -882,6 +895,27 @@ export const pdfApi = {
   },
 
   /**
+   * ✅ NEW: Get all approval documents grouped by agreement (folder structure)
+   * Returns version PDFs, attached files, and main PDFs that are pending approval
+   */
+  async getApprovalDocumentsGrouped(): Promise<{
+    success: boolean;
+    totalGroups: number;
+    totalFiles: number;
+    groups: SavedFileGroup[];
+    _metadata: {
+      queryType: 'approval_documents_grouped';
+      includedStatuses: string[];
+      fileTypes: string[];
+    };
+  }> {
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/approval-documents/grouped`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
    * ✅ NEW: Update agreement status
    */
   async updateAgreementStatus(agreementId: string, status: AgreementStatus, notes?: string): Promise<{
@@ -935,7 +969,12 @@ export const pdfApi = {
       drafts: number;
     };
   }> {
-    const token = localStorage.getItem('adminToken'); // Assuming admin token is stored in localStorage
+    const token = localStorage.getItem('admin_token'); // Use consistent token key
+
+    if (!token) {
+      throw new Error('No admin token found. Please log in as admin first.');
+    }
+
     const res = await axios.get(`${API_BASE_URL}/api/admin/dashboard`, {
       headers: {
         Accept: "application/json",
@@ -968,7 +1007,12 @@ export const pdfApi = {
       fileSize: number;
     }>;
   }> {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('admin_token');
+
+    if (!token) {
+      throw new Error('No admin token found. Please log in as admin first.');
+    }
+
     const searchParams = new URLSearchParams();
 
     if (params?.page) searchParams.append('page', params.page.toString());

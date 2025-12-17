@@ -500,6 +500,8 @@ export default function SavedFilesAgreements() {
       let documentType: string;
       if (file.fileType === 'main_pdf') {
         documentType = 'agreement';
+      } else if (file.fileType === 'version_pdf') {
+        documentType = 'version'; // ✅ FIX: Map version_pdf to 'version' for PDFViewer
       } else if (file.fileType === 'version_log') {
         documentType = 'version-log'; // ✅ NEW: Handle version logs
       } else if (file.fileType === 'attached_pdf') {
@@ -533,6 +535,9 @@ export default function SavedFilesAgreements() {
       // ✅ Use different download methods based on file type
       if (file.fileType === 'main_pdf') {
         blob = await pdfApi.downloadPdf(file.id);
+      } else if (file.fileType === 'version_pdf') {
+        // ✅ FIX: Use version PDF API for version PDFs
+        blob = await pdfApi.downloadVersionPdf(file.id);
       } else if (file.fileType === 'version_log') {
         // ✅ Download version log files using version log API
         blob = await pdfApi.downloadVersionLog(file.id);
@@ -540,7 +545,7 @@ export default function SavedFilesAgreements() {
         // ✅ FIX: Use manual upload API for manually uploaded attached files
         blob = await manualUploadApi.downloadFile(file.id);
       } else {
-        // Handle other attached files (version_pdf, etc.)
+        // Handle other attached files
         blob = await pdfApi.downloadAttachedFile(file.id);
       }
 

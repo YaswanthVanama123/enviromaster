@@ -127,7 +127,7 @@
   background: #f9fbff;
 }
 
-/* ✅ Equal column widths */
+/* ✅ Equal column widths for 6-column layout */
 .ad__table th:nth-child(1),
 .ad__table td:nth-child(1) { width: 5%; text-align: center; }
 
@@ -135,13 +135,62 @@
 .ad__table td:nth-child(2) { width: 35%; }
 
 .ad__table th:nth-child(3),
-.ad__table td:nth-child(3) { width: 15%; }
+.ad__table td:nth-child(3) { width: 12%; }
 
 .ad__table th:nth-child(4),
-.ad__table td:nth-child(4) { width: 20%; }
+.ad__table td:nth-child(4) { width: 12%; }
 
 .ad__table th:nth-child(5),
-.ad__table td:nth-child(5) { width: 25%; }
+.ad__table td:nth-child(5) { width: 16%; }
+
+.ad__table th:nth-child(6),
+.ad__table td:nth-child(6) { width: 20%; }
+
+/* ✅ NEW: Folder structure styling */
+.agreement-header {
+  background-color: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.agreement-header:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.agreement-header td {
+  font-weight: 600;
+  color: #1e293b;
+  padding: 16px !important;
+}
+
+.file-row {
+  background-color: #fff;
+}
+
+.file-row:hover {
+  background-color: #f9fafb !important;
+}
+
+.file-row td {
+  border-bottom: 1px solid #f3f4f6 !important;
+  color: #4b5563;
+}
+
+/* Statistics display */
+.ad__stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ad__stats span {
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
 
 /* Dropdown */
 .dropdown {
