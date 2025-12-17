@@ -9,8 +9,8 @@ import type {
   SanicleanFrequency,
   SanicleanCalculationMode,
   SanicleanDualFrequencyResult,
-  getCalculationMode
 } from "./sanicleanTypes";
+import { getCalculationMode } from "./sanicleanTypes";
 import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
