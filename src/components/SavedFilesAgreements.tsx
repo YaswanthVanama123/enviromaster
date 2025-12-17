@@ -2,7 +2,7 @@
 // ✅ CORRECTED: Single document per agreement with attachedFiles array
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { pdfApi, emailApi } from "../backendservice/api";
+import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import type {
   SavedFileListItem,
   SavedFileGroup,
@@ -26,15 +26,23 @@ import "./SavedFiles.css";
 type FileStatus =
   | "saved"
   | "draft"
+  | "uploaded"
+  | "processing"
+  | "completed"
+  | "failed"
   | "pending_approval"
   | "approved_salesman"
   | "approved_admin"
   | "attached";
 
-// ✅ UPDATED: Use existing status system from your architecture
+// ✅ UPDATED: Include manual upload statuses in the system
 const EXISTING_STATUSES: { value: string; label: string; color: string; canManuallySelect: boolean }[] = [
   { value: 'draft', label: 'Draft', color: '#6b7280', canManuallySelect: false }, // System controlled - only for agreements without PDFs
   { value: 'saved', label: 'Saved', color: '#059669', canManuallySelect: false }, // Default after PDF creation
+  { value: 'uploaded', label: 'Uploaded', color: '#3b82f6', canManuallySelect: false }, // Default for manual uploads
+  { value: 'processing', label: 'Processing', color: '#f59e0b', canManuallySelect: false }, // System controlled - Zoho upload in progress
+  { value: 'completed', label: 'Completed', color: '#10b981', canManuallySelect: false }, // System controlled - Zoho upload completed
+  { value: 'failed', label: 'Failed', color: '#ef4444', canManuallySelect: false }, // System controlled - Zoho upload failed
   { value: 'pending_approval', label: 'Pending Approval', color: '#f59e0b', canManuallySelect: true },
   { value: 'approved_salesman', label: 'Approved by Salesman', color: '#3b82f6', canManuallySelect: true },
   { value: 'approved_admin', label: 'Approved by Admin', color: '#10b981', canManuallySelect: true },
@@ -47,13 +55,18 @@ const getStatusConfig = (status: string) => {
          { value: status, label: status, color: '#6b7280', canManuallySelect: true };
 };
 
-// Get available statuses for dropdown (exclude system-controlled ones)
-const getAvailableStatusesForDropdown = (currentStatus: string, isLatestVersion: boolean = true) => {
+// Get available statuses for dropdown based on file type
+const getAvailableStatusesForDropdown = (currentStatus: string, isLatestVersion: boolean = true, fileType?: string) => {
   return EXISTING_STATUSES.filter(status => {
     // Always allow current status to stay
     if (status.value === currentStatus) return true;
 
-    // For latest versions, allow manual status changes
+    // For manual uploads (attached_pdf), allow approval workflow statuses
+    if (fileType === 'attached_pdf') {
+      return status.canManuallySelect; // Allow: pending_approval, approved_salesman, approved_admin
+    }
+
+    // For latest versions of PDFs, allow manual status changes
     if (isLatestVersion && status.canManuallySelect) return true;
 
     // For old versions, don't allow changes to draft or system statuses
@@ -76,6 +89,10 @@ function timeAgo(iso: string) {
 const STATUS_LABEL: Record<FileStatus, string> = {
   saved: "Saved",
   draft: "Draft",
+  uploaded: "Uploaded",
+  processing: "Processing",
+  completed: "Completed",
+  failed: "Failed",
   pending_approval: "Pending Approval",
   approved_salesman: "Approved by Salesman",
   approved_admin: "Approved by Admin",
@@ -127,17 +144,30 @@ export default function SavedFilesAgreements() {
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // ✅ NEW: Handle status change for version files
+  // ✅ UPDATED: Handle status change for different file types including manual uploads
   const handleStatusChange = async (file: SavedFileListItem, newStatus: string) => {
-    if (!file.versionId || statusChangeLoading[file.id]) return;
+    if (statusChangeLoading[file.id]) return;
 
-    console.log(`📊 [STATUS-CHANGE] Updating ${file.fileName} from ${file.status} to ${newStatus}`);
+    console.log(`📊 [STATUS-CHANGE] Updating ${file.fileName} (${file.fileType}) from ${file.status} to ${newStatus}`);
 
     setStatusChangeLoading(prev => ({ ...prev, [file.id]: true }));
 
     try {
-      // Update version status using existing API
-      await pdfApi.updateDocumentStatus(file.versionId, newStatus);
+      // ✅ FIX: Handle different file types appropriately
+      if (file.fileType === 'version_pdf') {
+        // For version PDFs, use the file.id directly as the version ID
+        console.log(`📊 [STATUS-CHANGE-DEBUG] Using file.id as version ID: ${file.id}`);
+        await pdfApi.updateVersionStatus(file.id, newStatus);
+      } else if (file.fileType === 'main_pdf' && file.agreementId) {
+        // For main agreement PDFs, update agreement status
+        await pdfApi.updateDocumentStatus(file.agreementId, newStatus);
+      } else if (file.fileType === 'attached_pdf') {
+        // ✅ NEW: For manually uploaded attached files, update manual upload status
+        console.log(`📊 [MANUAL-UPLOAD-STATUS] Updating manual upload ${file.id} to ${newStatus}`);
+        await manualUploadApi.updateStatus(file.id, newStatus);
+      } else {
+        throw new Error(`Cannot update status for file type: ${file.fileType}`);
+      }
 
       setToastMessage({
         message: `Status updated to "${getStatusConfig(newStatus).label}" successfully!`,
@@ -289,14 +319,39 @@ export default function SavedFilesAgreements() {
           });
         }
 
-        // Set canChangeStatus based on isLatestVersion
+        // Set canChangeStatus based on file type and version status
         agreement.files.forEach(file => {
+          // ✅ DEBUG: Log file details for attached files
+          if (file.fileType === 'attached_pdf') {
+            console.log(`🔍 [ATTACHED-FILE-DEBUG] File: ${file.fileName}`, {
+              id: file.id,
+              fileType: file.fileType,
+              status: file.status,
+              hasPdf: file.hasPdf,
+              fileSize: file.fileSize,
+              createdAt: file.createdAt
+            });
+
+            // ✅ TEMPORARY FIX: Force hasPdf = true for attached files with fileSize > 0
+            // This works around the backend pdfBuffer issue
+            if (file.fileSize && file.fileSize > 0) {
+              console.log(`🔧 [TEMP-FIX] Forcing hasPdf = true for ${file.fileName} (fileSize: ${file.fileSize})`);
+              file.hasPdf = true;
+            }
+          }
+
           if (file.fileType === 'version_pdf' || file.fileType === 'main_pdf') {
             // Version PDFs can change status if they are the latest version
             file.canChangeStatus = file.isLatestVersion === true;
 
             // ✅ DEBUG: Log file status dropdown eligibility
             console.log(`🔍 [STATUS-DEBUG] File: ${file.fileName}, Type: ${file.fileType}, IsLatest: ${file.isLatestVersion}, CanChange: ${file.canChangeStatus}`);
+          } else if (file.fileType === 'attached_pdf') {
+            // ✅ NEW: Manual uploads can change status (except system-controlled statuses)
+            const systemControlledStatuses = ['processing', 'completed', 'failed'];
+            file.canChangeStatus = !systemControlledStatuses.includes(file.status);
+
+            console.log(`🔍 [MANUAL-STATUS-DEBUG] File: ${file.fileName}, Type: ${file.fileType}, Status: ${file.status}, CanChange: ${file.canChangeStatus}, HasPdf: ${file.hasPdf}`);
           } else {
             // Other file types (logs, attachments) cannot change status
             file.canChangeStatus = false;
@@ -447,6 +502,8 @@ export default function SavedFilesAgreements() {
         documentType = 'agreement';
       } else if (file.fileType === 'version_log') {
         documentType = 'version-log'; // ✅ NEW: Handle version logs
+      } else if (file.fileType === 'attached_pdf') {
+        documentType = 'manual-upload'; // ✅ FIX: Use manual-upload type for manually uploaded files
       } else {
         documentType = 'attached-file';
       }
@@ -479,8 +536,11 @@ export default function SavedFilesAgreements() {
       } else if (file.fileType === 'version_log') {
         // ✅ Download version log files using version log API
         blob = await pdfApi.downloadVersionLog(file.id);
+      } else if (file.fileType === 'attached_pdf') {
+        // ✅ FIX: Use manual upload API for manually uploaded attached files
+        blob = await manualUploadApi.downloadFile(file.id);
       } else {
-        // Handle version_pdf and attached_pdf files
+        // Handle other attached files (version_pdf, etc.)
         blob = await pdfApi.downloadAttachedFile(file.id);
       }
 
@@ -568,18 +628,19 @@ export default function SavedFilesAgreements() {
 
       console.log(`📝 [EDIT] Editing agreement: ${file.agreementId || file.id}`);
 
-      // ✅ DEBUG: Log file properties to verify version ID
+      // ✅ DEBUG: Log file properties to verify we're using file.id as version ID
       console.log(`📝 [EDIT-DEBUG] File properties:`, {
         fileId: file.id,
         fileType: file.fileType,
         versionId: file.versionId,
         agreementId: file.agreementId,
         fileName: file.fileName,
-        isLatestVersion: file.isLatestVersion
+        isLatestVersion: file.isLatestVersion,
+        usingFileIdAsVersionId: file.fileType === 'version_pdf'
       });
 
-      const versionIdToPass = file.fileType === 'version_pdf' ? file.versionId : undefined;
-      console.log(`📝 [EDIT-DEBUG] Version ID being passed:`, versionIdToPass);
+      const versionIdToPass = file.fileType === 'version_pdf' ? file.id : undefined;
+      console.log(`📝 [EDIT-DEBUG] Using file.id as version ID:`, versionIdToPass);
 
       // ✅ FIXED: Navigate using agreement ID and pass version info if editing a version PDF
       navigate(`/edit/pdf/${file.agreementId || file.id}`, {
@@ -1175,8 +1236,8 @@ export default function SavedFilesAgreements() {
                           <FontAwesomeIcon icon={faUpload} />
                         </button>
 
-                        {/* ✅ MOVED: Status Dropdown for version PDFs (now in action buttons area) */}
-                        {(file.fileType === 'main_pdf' || file.fileType === 'version_pdf') && (
+                        {/* ✅ UPDATED: Status Dropdown for PDFs and manual uploads */}
+                        {(file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
                           <div style={{ position: 'relative', display: 'inline-block' }}>
                             {file.canChangeStatus && !statusChangeLoading[file.id] ? (
                               <select
@@ -1196,7 +1257,7 @@ export default function SavedFilesAgreements() {
                                 }}
                                 title="Change status"
                               >
-                                {getAvailableStatusesForDropdown(file.status, file.isLatestVersion).map(status => (
+                                {getAvailableStatusesForDropdown(file.status, file.isLatestVersion, file.fileType).map(status => (
                                   <option key={status.value} value={status.value} style={{ color: '#000' }}>
                                     {status.label}
                                   </option>

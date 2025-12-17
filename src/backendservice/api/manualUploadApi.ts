@@ -7,14 +7,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000
 export interface ManualUpload {
   _id: string;
   id?: string;
-  filename: string;
-  originalName: string;
-  size: number;
+  fileName: string;
+  originalFileName: string;
+  fileSize: number;
   mimeType: string;
   uploadedBy?: string;
   description?: string;
+  status: "uploaded" | "processing" | "completed" | "failed" | "pending_approval" | "approved_salesman" | "approved_admin";
   createdAt: string;
   updatedAt?: string;
+  zoho?: {
+    bigin?: { fileId: string | null; url: string | null };
+    crm?: { fileId: string | null; url: string | null };
+  };
 }
 
 export interface ManualUploadsResponse {
@@ -67,6 +72,19 @@ export const manualUploadApi = {
       }
     );
     return res.data;
+  },
+
+  /**
+   * Update manual upload status
+   */
+  async updateStatus(id: string, status: string): Promise<void> {
+    await axios.patch(
+      `${API_BASE_URL}/api/manual-upload/${id}/status`,
+      { status },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   },
 
   /**

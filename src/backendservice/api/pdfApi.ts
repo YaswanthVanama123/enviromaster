@@ -50,24 +50,6 @@ export interface FormPayload {
 export type AgreementStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized';
 export type VersionStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized' | 'archived';
 
-// ✅ NEW: Interface for updating version status
-export interface UpdateVersionStatusRequest {
-  versionId: string;
-  status: VersionStatus;
-  notes?: string;
-}
-
-export interface UpdateVersionStatusResponse {
-  success: boolean;
-  message: string;
-  version?: {
-    id: string;
-    versionNumber: number;
-    status: VersionStatus;
-    updatedAt: string;
-  };
-}
-
 // New interfaces for saved-files API
 export interface SavedFileListItem {
   id: string;
@@ -496,6 +478,77 @@ export const pdfApi = {
   },
 
   /**
+   * Get all version PDFs with pagination and filtering
+   */
+  async getAllVersionPdfs(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    agreementId?: string;
+    versionNumber?: number;
+    includeDeleted?: boolean;
+  }): Promise<{
+    success: boolean;
+    data: Array<{
+      id: string;
+      agreementId: string;
+      agreementTitle: string;
+      versionNumber: number;
+      versionLabel: string;
+      fileName: string;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+      createdBy: string;
+      changeNotes: string;
+      fileSize: number;
+      pdfStoredAt: string | null;
+      hasPdf: boolean;
+      zohoInfo: {
+        biginDealId: string | null;
+        biginFileId: string | null;
+        crmDealId: string | null;
+        crmFileId: string | null;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  }> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.agreementId) searchParams.set('agreementId', params.agreementId);
+    if (params?.versionNumber) searchParams.set('versionNumber', params.versionNumber.toString());
+    if (params?.includeDeleted) searchParams.set('includeDeleted', params.includeDeleted.toString());
+
+    const res = await axios.get(`${API_BASE_URL}/api/versions?${searchParams}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
+  },
+
+  /**
+   * Update version status (for version PDFs)
+   */
+  async updateVersionStatus(versionId: string, status: string): Promise<void> {
+    await axios.patch(
+      `${API_BASE_URL}/api/versions/${versionId}/status`,
+      { status },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  },
+
+  /**
    * Download PDF as blob
    */
   async downloadPdf(documentId: string): Promise<Blob> {
@@ -829,23 +882,6 @@ export const pdfApi = {
   },
 
   /**
-   * ✅ NEW: Update version status
-   */
-  async updateVersionStatus(request: UpdateVersionStatusRequest): Promise<UpdateVersionStatusResponse> {
-    const res = await axios.patch(
-      `${API_BASE_URL}/api/pdf/versions/${request.versionId}/status`,
-      {
-        status: request.status,
-        notes: request.notes,
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-    return res.data;
-  },
-
-  /**
    * ✅ NEW: Update agreement status
    */
   async updateAgreementStatus(agreementId: string, status: AgreementStatus, notes?: string): Promise<{
@@ -868,6 +904,83 @@ export const pdfApi = {
         headers: { "Content-Type": "application/json" },
       }
     );
+    return res.data;
+  },
+
+  /**
+   * Get admin dashboard data including recent documents and statistics
+   * Uses the new admin dashboard API endpoint
+   */
+  async getAdminDashboardData(): Promise<{
+    stats: {
+      manualUploads: number;
+      savedDocuments: number;
+      totalDocuments: number;
+    };
+    recentDocuments: Array<{
+      id: string;
+      title: string;
+      status: string;
+      createdDate: string;
+      uploadedOn: string;
+      createdDateFormatted: string;
+      uploadedOnFormatted: string;
+      hasPdf: boolean;
+      fileSize: number;
+    }>;
+    documentStatus: {
+      done: number;
+      pending: number;
+      saved: number;
+      drafts: number;
+    };
+  }> {
+    const token = localStorage.getItem('adminToken'); // Assuming admin token is stored in localStorage
+    const res = await axios.get(`${API_BASE_URL}/api/admin/dashboard`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      },
+    });
+    return res.data;
+  },
+
+  /**
+   * Get paginated recent documents for admin panel
+   */
+  async getAdminRecentDocuments(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<{
+    total: number;
+    page: number;
+    limit: number;
+    documents: Array<{
+      id: string;
+      title: string;
+      status: string;
+      createdDate: string;
+      uploadedOn: string;
+      createdDateFormatted: string;
+      uploadedOnFormatted: string;
+      hasPdf: boolean;
+      fileSize: number;
+    }>;
+  }> {
+    const token = localStorage.getItem('adminToken');
+    const searchParams = new URLSearchParams();
+
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.status) searchParams.append('status', params.status);
+
+    const res = await axios.get(`${API_BASE_URL}/api/admin/recent-documents?${searchParams.toString()}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      },
+    });
     return res.data;
   },
 };

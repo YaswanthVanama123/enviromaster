@@ -486,8 +486,20 @@ export default function FormFilling() {
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
         console.log("Draft updated successfully for agreement:", documentId);
 
+        // ✅ FIXED: Use proper MVC architecture for version status update
         if (locationState.editingVersionId) {
-          console.log("✅ Backend should have updated version status for:", locationState.editingVersionId);
+          try {
+            console.log(`🔄 Attempting to update version PDF status for ID: ${locationState.editingVersionId}`);
+            console.log(`🔄 Using proper MVC API: /api/versions/${locationState.editingVersionId}/status`);
+            // Use the proper MVC version status API
+            await pdfApi.updateVersionStatus(locationState.editingVersionId, "draft");
+            console.log("✅ Version PDF status updated to draft for:", locationState.editingVersionId);
+          } catch (statusError) {
+            console.error("❌ Failed to update version PDF status:", statusError);
+            console.error("❌ Version ID used:", locationState.editingVersionId);
+            console.error("❌ Full error:", statusError.response || statusError);
+            // Don't fail the draft save if status update fails
+          }
         }
 
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
