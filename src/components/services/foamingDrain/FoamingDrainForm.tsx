@@ -260,6 +260,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
     const newInstallFreq = e.target.value as "weekly" | "bimonthly";
+    console.log(`🔧 [Foaming Drain] Install frequency changed from ${state.installFrequency} to ${newInstallFreq}`);
     updateField("installFrequency", newInstallFreq);
   };
 
@@ -323,9 +324,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     installQty > 0
       ? installTotal / installQty
       : isInstallLevelUi
-      ? state.frequency === "bimonthly"
-        ? cfg.volumePricing.bimonthly.ratePerDrain
-        : cfg.volumePricing.weekly.ratePerDrain
+      ? state.installFrequency === "bimonthly"  // ✅ FIXED: Use installFrequency and form values
+        ? state.volumeBimonthlyRate
+        : state.volumeWeeklyRate
       : 0;
 
   const tripInputValue =
@@ -710,6 +711,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               className="svc-in"
               value={state.installFrequency}
               onChange={handleInstallFrequencyChange}
+              key="install-frequency-select" // ✅ Ensure stable identity
             >
               {/* ✅ UPDATED: Install frequency supports Weekly and Bimonthly per backend config */}
               <option value="weekly">Weekly</option>

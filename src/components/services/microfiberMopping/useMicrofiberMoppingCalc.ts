@@ -888,5 +888,25 @@ export function useMicrofiberMoppingCalc(
     calc,
     refreshConfig: fetchPricing,
     isLoadingConfig,
+    // ✅ EXPOSE: Backend config for dynamic pricing text
+    activeConfig: {
+      extraAreaPricing: {
+        singleLargeAreaRate: backendConfig?.nonBathroomAddonAreas?.flatPriceSingleLargeArea ??
+                             backendConfig?.extraAreaPricing?.singleLargeAreaRate ??
+                             cfg.extraAreaPricing.singleLargeAreaRate,
+        extraAreaSqFtUnit: backendConfig?.nonBathroomAddonAreas?.sqFtUnit ??
+                           backendConfig?.extraAreaPricing?.extraAreaSqFtUnit ??
+                           cfg.extraAreaPricing.extraAreaSqFtUnit,
+      },
+      standalonePricing: {
+        standaloneSqFtUnit: backendConfig?.standaloneMoppingPricing?.sqFtUnit ??
+                            backendConfig?.standalonePricing?.standaloneSqFtUnit ??
+                            cfg.standalonePricing.standaloneSqFtUnit,
+        standaloneMinimum: backendConfig?.standaloneMoppingPricing?.minimumPrice ??
+                           backendConfig?.minimumChargePerVisit ??
+                           backendConfig?.standalonePricing?.standaloneMinimum ??
+                           cfg.standalonePricing.standaloneMinimum,
+      },
+    },
   };
 }

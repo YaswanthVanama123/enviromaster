@@ -12,7 +12,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData, onRemove }) => {
-  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useMicrofiberMoppingCalc(initialData);
+  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, activeConfig } = useMicrofiberMoppingCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state - initialize with initialData if available
@@ -491,8 +491,8 @@ export const MicrofiberMoppingForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactExtraAreaSqft
-              ? `(${cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${cfg.extraAreaPricing.singleLargeAreaRate} first + $${form.extraAreaRatePerUnit.toFixed(2)} per extra)`
-              : `(Direct: $${cfg.extraAreaPricing.singleLargeAreaRate} for first ${cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${(form.extraAreaRatePerUnit / cfg.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
+              ? `(${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${activeConfig.extraAreaPricing.singleLargeAreaRate} first + $${form.extraAreaRatePerUnit.toFixed(2)} per extra)`
+              : `(Direct: $${activeConfig.extraAreaPricing.singleLargeAreaRate} for first ${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${(form.extraAreaRatePerUnit / activeConfig.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
           </span>
         </div>
       </div>
@@ -557,8 +557,8 @@ export const MicrofiberMoppingForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactStandaloneSqft
-              ? `(${cfg.standalonePricing.standaloneSqFtUnit} sq ft units: $${cfg.standalonePricing.standaloneMinimum} first + $${form.standaloneRatePerUnit.toFixed(2)} per extra)`
-              : `(Direct: $${cfg.standalonePricing.standaloneMinimum} for first ${cfg.standalonePricing.standaloneSqFtUnit} sq ft + area × $${(form.standaloneRatePerUnit / cfg.standalonePricing.standaloneSqFtUnit).toFixed(4)}/sq ft)`}
+              ? `(${activeConfig.standalonePricing.standaloneSqFtUnit} sq ft units: $${activeConfig.standalonePricing.standaloneMinimum} first + $${form.standaloneRatePerUnit.toFixed(2)} per extra)`
+              : `(Direct: $${activeConfig.standalonePricing.standaloneMinimum} for first ${activeConfig.standalonePricing.standaloneSqFtUnit} sq ft + area × $${(form.standaloneRatePerUnit / activeConfig.standalonePricing.standaloneSqFtUnit).toFixed(4)}/sq ft)`}
           </span>
         </div>
       </div>

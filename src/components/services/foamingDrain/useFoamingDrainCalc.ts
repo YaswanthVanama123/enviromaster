@@ -792,6 +792,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.plumbingDrainCount,
     state.needsPlumbing,
     state.frequency,
+    state.installFrequency, // ✅ MISSING: Re-calculate when install frequency changes!
     state.facilityCondition,
     state.location,
     state.useSmallAltPricingWeekly,
