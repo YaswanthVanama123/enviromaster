@@ -25,45 +25,76 @@ const FALLBACK_SQFT_INSIDE_RATE = 0.6;
 const FALLBACK_SQFT_OUTSIDE_RATE = 0.4;
 const FALLBACK_PER_HOUR_RATE = 400;
 
-// ✅ Backend config interface matching MongoDB JSON structure
+// ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
 interface BackendRefreshPowerScrubConfig {
   coreRates: {
-    defaultHourlyRate: number;
-    perWorkerRate?: number;    // Backend rate per worker
-    perHourRate?: number;      // Backend rate per hour
-    tripCharge: number;
-    minimumVisit: number;
+    defaultHourlyRate: number;      // 200
+    perWorkerRate: number;          // 200
+    perHourRate: number;            // 400
+    tripCharge: number;             // 75
+    minimumVisit: number;           // 400
   };
   areaSpecificPricing: {
     kitchen: {
-      smallMedium: number;
-      large: number;
+      smallMedium: number;          // 1500
+      large: number;                // 2500
     };
-    frontOfHouse: number;
+    frontOfHouse: number;           // 2500
     patio: {
-      standalone: number;
-      upsell: number;
+      standalone: number;           // 800
+      upsell: number;               // 500
     };
   };
   squareFootagePricing: {
-    fixedFee: number;
-    insideRate: number;
-    outsideRate: number;
+    fixedFee: number;               // 200
+    insideRate: number;             // 0.6
+    outsideRate: number;            // 0.4
   };
   billingConversions: {
-    oneTime: { monthlyMultiplier: number; annualMultiplier: number; };
-    weekly: { monthlyMultiplier: number; annualMultiplier: number; };
-    biweekly: { monthlyMultiplier: number; annualMultiplier: number; };
-    twicePerMonth: { monthlyMultiplier: number; annualMultiplier: number; };
-    monthly: { monthlyMultiplier: number; annualMultiplier: number; };
-    bimonthly: { monthlyMultiplier: number; annualMultiplier: number; };
-    quarterly: { monthlyMultiplier: number; annualMultiplier: number; };
-    biannual: { monthlyMultiplier: number; annualMultiplier: number; };
-    annual: { monthlyMultiplier: number; annualMultiplier: number; };
+    weekly: {
+      monthlyMultiplier: number;    // 4.33
+      annualMultiplier: number;     // 52
+      description: string;
+    };
+    biweekly: {
+      monthlyMultiplier: number;    // 2.165
+      annualMultiplier: number;     // 26
+      description: string;
+    };
+    monthly: {
+      monthlyMultiplier: number;    // 1
+      annualMultiplier: number;     // 12
+      description: string;
+    };
+    bimonthly: {
+      monthlyMultiplier: number;    // 0.5
+      annualMultiplier: number;     // 6
+      description: string;
+    };
+    quarterly: {
+      monthlyMultiplier: number;    // 0.333
+      annualMultiplier: number;     // 4
+      description: string;
+    };
   };
-  frequencyOptions?: string[];
-  areaTypes?: string[];
-  pricingTypes?: string[];
+  frequencyOptions: string[];       // ["weekly", "biweekly", "monthly", "bimonthly", "quarterly"]
+  areaTypes: string[];              // ["dumpster", "patio", "walkway", "foh", "boh", "other"]
+  pricingTypes: string[];           // ["preset", "perWorker", "perHour", "squareFeet", "custom"]
+  frequencyMetadata: {
+    weekly: {
+      monthlyRecurringMultiplier: number;     // 4.33
+      firstMonthExtraMultiplier: number;      // 3.33
+    };
+    biweekly: {
+      monthlyRecurringMultiplier: number;     // 2.165
+      firstMonthExtraMultiplier: number;      // 1.165
+    };
+    monthly: { cycleMonths: number };         // 1
+    bimonthly: { cycleMonths: number };       // 2
+    quarterly: { cycleMonths: number };       // 3
+    biannual: { cycleMonths: number };        // 6
+    annual: { cycleMonths: number };          // 12
+  };
 }
 
 const AREA_KEYS: RefreshAreaKey[] = [
@@ -74,6 +105,54 @@ const AREA_KEYS: RefreshAreaKey[] = [
   "boh",
   "other",
 ];
+
+// ✅ Helper function to transform backend frequencyMetadata to frontend format
+function transformBackendFrequencyMeta(backendMeta: BackendRefreshPowerScrubConfig['frequencyMetadata'] | undefined) {
+  if (!backendMeta) {
+    console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
+    return null;
+  }
+
+  console.log('🔧 [Refresh Power Scrub] Transforming backend frequencyMetadata:', backendMeta);
+
+  // Transform backend structure to frontend billingConversions format
+  const transformedBilling: any = {};
+
+  // Handle weekly and biweekly with their special multipliers
+  if (backendMeta.weekly) {
+    transformedBilling.weekly = {
+      monthlyMultiplier: backendMeta.weekly.monthlyRecurringMultiplier,
+      annualMultiplier: backendMeta.weekly.monthlyRecurringMultiplier * 12,
+    };
+  }
+
+  if (backendMeta.biweekly) {
+    transformedBilling.biweekly = {
+      monthlyMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier,
+      annualMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier * 12,
+    };
+  }
+
+  // Handle cycle-based frequencies (monthly, bimonthly, quarterly, biannual, annual)
+  const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
+
+  for (const freq of cycleBased) {
+    const backendFreqData = backendMeta[freq];
+    if (backendFreqData?.cycleMonths) {
+      const cycleMonths = backendFreqData.cycleMonths;
+      const monthlyMultiplier = 1 / cycleMonths; // e.g., bimonthly: 1/2=0.5, quarterly: 1/3=0.333
+      const annualMultiplier = 12 / cycleMonths; // e.g., bimonthly: 12/2=6, quarterly: 12/3=4
+
+      transformedBilling[freq] = {
+        monthlyMultiplier,
+        annualMultiplier,
+      };
+    }
+  }
+
+  console.log('✅ [Refresh Power Scrub] Transformed frequencyMetadata to billingConversions:', transformedBilling);
+  return transformedBilling;
+}
 
 // ✅ Helper function to get billing multipliers from backend with fallbacks
 function getBillingMultiplier(
@@ -87,7 +166,7 @@ function getBillingMultiplier(
     "onetime": 0,
     "weekly": 4.33,
     "biweekly": 2.165,
-    "twicepermonth": 1.0,  // ✅ FIXED: Same monthly price as monthly, just visit 2× per month
+    "twicepermonth": 2.0,  // 2 visits per month
     "monthly": 1.0,
     "bimonthly": 0.5,
     "quarterly": 0.333,
@@ -99,26 +178,26 @@ function getBillingMultiplier(
   if (backendConfig?.billingConversions) {
     const conversions = backendConfig.billingConversions;
     switch (normalizedFrequency) {
-      case "onetime":
-        return conversions.oneTime?.monthlyMultiplier ?? defaultMultipliers.onetime;
       case "weekly":
         return conversions.weekly?.monthlyMultiplier ?? defaultMultipliers.weekly;
       case "biweekly":
         return conversions.biweekly?.monthlyMultiplier ?? defaultMultipliers.biweekly;
-      case "twicepermonth":
-        // ✅ ALWAYS use 2.0 for twicePerMonth (2 visits per month)
-        return 2.0;
       case "monthly":
         return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
       case "bimonthly":
         return conversions.bimonthly?.monthlyMultiplier ?? defaultMultipliers.bimonthly;
       case "quarterly":
         return conversions.quarterly?.monthlyMultiplier ?? defaultMultipliers.quarterly;
-      case "biannual":
-        return conversions.biannual?.monthlyMultiplier ?? defaultMultipliers.biannual;
-      case "annual":
-        return conversions.annual?.monthlyMultiplier ?? defaultMultipliers.annual;
+      case "twicepermonth":
+        // Always use 2.0 for twicePerMonth (2 visits per month)
+        return 2.0;
     }
+  }
+
+  // Also try transformed frequencyMetadata if billingConversions not available
+  const transformedMeta = transformBackendFrequencyMeta(backendConfig?.frequencyMetadata);
+  if (transformedMeta && transformedMeta[normalizedFrequency]) {
+    return transformedMeta[normalizedFrequency].monthlyMultiplier;
   }
 
   // Return default multiplier

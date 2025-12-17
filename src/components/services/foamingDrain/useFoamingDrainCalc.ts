@@ -223,6 +223,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             setState(prev => ({
               ...prev,
               customWeeklyService: undefined,
+              customInstallationTotal: undefined,
               customMonthlyRecurring: undefined,
               customFirstMonthPrice: undefined,
               customContractTotal: undefined,
@@ -266,6 +267,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       setState(prev => ({
         ...prev,
         customWeeklyService: undefined,
+        customInstallationTotal: undefined,
         customMonthlyRecurring: undefined,
         customFirstMonthPrice: undefined,
         customContractTotal: undefined,
@@ -306,6 +308,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           setState(prev => ({
             ...prev,
             customWeeklyService: undefined,
+            customInstallationTotal: undefined,
             customMonthlyRecurring: undefined,
             customFirstMonthPrice: undefined,
             customContractTotal: undefined,
@@ -761,7 +764,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyTotal: effectiveWeeklyService,
       monthlyRecurring: state.customMonthlyRecurring ?? calculatedMonthlyRecurring,
       annualRecurring: state.customContractTotal ?? calculatedContractTotal,
-      installation,
+      installation: state.customInstallationTotal ?? installation,
       tripCharge,
 
       firstVisitPrice,
@@ -807,6 +810,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.filthyMultiplier,
     // ✅ Custom override fields
     state.customWeeklyService,
+    state.customInstallationTotal,
     state.customMonthlyRecurring,
     state.customFirstMonthPrice,
     state.customContractTotal,
@@ -852,6 +856,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customGreaseInstall = undefined;
         next.customGreenInstall = undefined;
         next.customWeeklyService = undefined;
+        next.customInstallationTotal = undefined;
         next.customMonthlyRecurring = undefined;
         next.customFirstMonthPrice = undefined;
         next.customContractTotal = undefined;
@@ -880,6 +885,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customGreaseInstall = undefined;
         next.customGreenInstall = undefined;
         next.customWeeklyService = undefined;
+        next.customInstallationTotal = undefined;
         next.customMonthlyRecurring = undefined;
         next.customFirstMonthPrice = undefined;
         next.customContractTotal = undefined;
@@ -890,7 +896,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         'standardDrainRate', 'altBaseCharge', 'altExtraPerDrain',
         'volumeWeeklyRate', 'volumeBimonthlyRate', 'greaseWeeklyRate', 'greaseInstallRate',
         'greenWeeklyRate', 'greenInstallRate', 'plumbingAddonRate', 'filthyMultiplier',
-        'customWeeklyService', 'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
+        'customWeeklyService', 'customInstallationTotal', 'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
       ];
 
       if (pricingFields.includes(key as string)) {

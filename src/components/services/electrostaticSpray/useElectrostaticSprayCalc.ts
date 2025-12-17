@@ -11,74 +11,99 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-// Backend config interface matching MongoDB JSON structure
+// Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendElectrostaticSprayConfig {
-  // Flat structure (what we use internally)
-  pricingMethodOptions?: string[];
-  frequencyOptions?: string[];
-  locationOptions?: string[];
-  combinedServiceOptions?: string[];
-  defaultRatePerRoom?: number;
-  defaultRatePerSqFt?: number;
-  defaultTripCharge?: number;
-  minContractMonths?: number;
-  maxContractMonths?: number;
+  pricingMethodOptions: string[]; // ["By Room", "By Square Feet"]
+  combinedServiceOptions: string[]; // ["Sani-Clean", "None"]
+  locationOptions: string[]; // ["Inside Beltway", "Outside Beltway"]
 
-  // Nested structure (what backend actually sends)
-  standardSprayPricing?: {
-    sprayRatePerRoom: number;
-    sqFtUnit: number;
-    sprayRatePerSqFtUnit: number;
-    minimumPriceOptional: number;
+  standardSprayPricing: {
+    sprayRatePerRoom: number; // 20
+    sqFtUnit: number; // 1000
+    sprayRatePerSqFtUnit: number; // 50
+    minimumPriceOptional: number; // 0
   };
-  tripCharges?: {
-    standard: number;
-    beltway: number;
+
+  tripCharges: {
+    standard: number; // 0
+    beltway: number; // 0
   };
-  frequencyMetadata?: {
-    [key: string]: {
-      monthlyRecurringMultiplier?: number;
-      firstMonthExtraMultiplier?: number;
-      cycleMonths?: number;
+
+  minimumChargePerVisit: number; // 50
+
+  frequencyMetadata: {
+    weekly?: { monthlyRecurringMultiplier: number; firstMonthExtraMultiplier: number };
+    biweekly?: { monthlyRecurringMultiplier: number; firstMonthExtraMultiplier: number };
+    monthly?: { cycleMonths: number };
+    bimonthly?: { cycleMonths: number };
+    quarterly?: { cycleMonths: number };
+    biannual?: { cycleMonths: number };
+    annual?: { cycleMonths: number };
+  };
+
+  minContractMonths: number; // 2
+  maxContractMonths: number; // 36
+}
+
+// ✅ Helper function to transform backend frequencyMetadata to frontend format
+function transformBackendFrequencyMeta(backendMeta: BackendElectrostaticSprayConfig['frequencyMetadata'] | undefined) {
+  if (!backendMeta) {
+    console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
+    return cfg.billingConversions;
+  }
+
+  console.log('🔧 [Electrostatic Spray] Transforming backend frequencyMetadata:', backendMeta);
+
+  // Transform backend structure to frontend billingConversions format
+  const transformedBilling: any = { ...cfg.billingConversions }; // Start with fallback
+
+  // Handle weekly and biweekly with their special multipliers
+  if (backendMeta.weekly) {
+    transformedBilling.weekly = {
+      monthlyMultiplier: backendMeta.weekly.monthlyRecurringMultiplier,
+      annualMultiplier: backendMeta.weekly.monthlyRecurringMultiplier * 12,
     };
-  };
+  }
+
+  if (backendMeta.biweekly) {
+    transformedBilling.biweekly = {
+      monthlyMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier,
+      annualMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier * 12,
+    };
+  }
+
+  // Handle cycle-based frequencies (monthly, bimonthly, quarterly, biannual, annual)
+  const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
+
+  for (const freq of cycleBased) {
+    const backendFreqData = backendMeta[freq];
+    if (backendFreqData?.cycleMonths) {
+      const cycleMonths = backendFreqData.cycleMonths;
+      const monthlyMultiplier = 1 / cycleMonths; // e.g., bimonthly: 1/2=0.5, quarterly: 1/3=0.333
+      const annualMultiplier = 12 / cycleMonths; // e.g., bimonthly: 12/2=6, quarterly: 12/3=4
+
+      transformedBilling[freq] = {
+        monthlyMultiplier,
+        annualMultiplier,
+      };
+    }
+  }
+
+  console.log('✅ [Electrostatic Spray] Transformed frequencyMetadata to billingConversions:', transformedBilling);
+  return transformedBilling;
 }
 
 /**
- * Normalize backend config to extract values from nested structure
+ * Helper function to update form state with backend config data
  */
-function normalizeBackendConfig(config: BackendElectrostaticSprayConfig): BackendElectrostaticSprayConfig {
-  // Extract pricing values from nested structure if they exist
-  const defaultRatePerRoom =
-    config.defaultRatePerRoom ??
-    config.standardSprayPricing?.sprayRatePerRoom ??
-    cfg.ratePerRoom;
-
-  const defaultRatePerSqFt =
-    config.defaultRatePerSqFt ??
-    config.standardSprayPricing?.sprayRatePerSqFtUnit ??
-    cfg.ratePerThousandSqFt;
-
-  const defaultTripCharge =
-    config.defaultTripCharge ??
-    config.tripCharges?.standard ??
-    cfg.tripCharges.standard;
-
-  const minContractMonths =
-    config.minContractMonths ?? cfg.minContractMonths;
-
-  const maxContractMonths =
-    config.maxContractMonths ?? cfg.maxContractMonths;
-
-  // Build normalized config
-  return {
-    ...config,
-    defaultRatePerRoom,
-    defaultRatePerSqFt,
-    defaultTripCharge,
-    minContractMonths,
-    maxContractMonths,
-  };
+function updateFormWithConfig(config: BackendElectrostaticSprayConfig, setForm: any, initialData?: any) {
+  setForm((prev: any) => ({
+    ...prev,
+    // ✅ Extract from nested backend structure
+    ratePerRoom: config.standardSprayPricing?.sprayRatePerRoom ?? prev.ratePerRoom,
+    ratePerThousandSqFt: config.standardSprayPricing?.sprayRatePerSqFtUnit ?? prev.ratePerThousandSqFt,
+    tripChargePerVisit: config.tripCharges?.standard ?? prev.tripChargePerVisit,
+  }));
 }
 
 const DEFAULT_FORM_STATE: ElectrostaticSprayFormState = {
@@ -109,44 +134,16 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
 
-  // Helper function to update form with config data
-  const updateFormWithConfig = (config: BackendElectrostaticSprayConfig) => {
-    setForm((prev) => {
-      // Only update if not already set by initialData
-      const updates: Partial<ElectrostaticSprayFormState> = {};
-
-      if (config.defaultRatePerRoom != null && !initialData?.ratePerRoom) {
-        updates.ratePerRoom = config.defaultRatePerRoom;
-      }
-
-      if (config.defaultRatePerSqFt != null && !initialData?.ratePerThousandSqFt) {
-        // defaultRatePerSqFt is already per 1000 sq ft from normalization
-        updates.ratePerThousandSqFt = config.defaultRatePerSqFt;
-      }
-
-      if (config.defaultTripCharge != null && !initialData?.tripChargePerVisit) {
-        updates.tripChargePerVisit = config.defaultTripCharge;
-      }
-
-      console.log('📊 [ElectrostaticSpray] Updating Form State:', updates);
-
-      return {
-        ...prev,
-        ...updates,
-      };
-    });
-  };
-
   // Fetch pricing config from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
     try {
+      // First try to get active service config
       const response = await serviceConfigApi.getActive("electrostaticSpray");
 
-      // Check if response has error or no data
+      // ✅ Check if response has error or no data
       if (!response || response.error || !response.data) {
         console.warn('⚠️ ElectrostaticSpray config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [ElectrostaticSpray] Error:', response?.error);
 
         // FALLBACK: Use context's backend pricing data for inactive services
         if (servicesContext?.getBackendPricingForService) {
@@ -154,17 +151,23 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
           if (fallbackConfig?.config) {
             console.log('✅ [ElectrostaticSpray] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
+            setBackendConfig(config);
+            updateFormWithConfig(config, setForm, initialData);
 
-            // Normalize fallback config
-            const normalizedConfig = normalizeBackendConfig(config);
-
-            setBackendConfig(normalizedConfig);
-            updateFormWithConfig(normalizedConfig);
+            // ✅ Clear all custom overrides when refreshing config
+            setForm((prev: any) => ({
+              ...prev,
+              customServiceCharge: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customContractTotal: undefined,
+              customFirstMonthTotal: undefined,
+            }));
 
             console.log('✅ ElectrostaticSpray FALLBACK CONFIG loaded from context:', {
-              ratePerRoom: normalizedConfig.defaultRatePerRoom,
-              ratePerSqFt: normalizedConfig.defaultRatePerSqFt,
-              tripCharge: normalizedConfig.defaultTripCharge,
+              standardSprayPricing: config.standardSprayPricing,
+              tripCharges: config.tripCharges,
+              frequencyMetadata: config.frequencyMetadata,
             });
             return;
           }
@@ -174,7 +177,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         return;
       }
 
-      // Extract the actual document from response.data
+      // ✅ Extract the actual document from response.data
       const document = response.data;
 
       if (!document.config) {
@@ -184,26 +187,27 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
       const config = document.config as BackendElectrostaticSprayConfig;
 
-      // Normalize config to extract values from nested structure
-      const normalizedConfig = normalizeBackendConfig(config);
+      // ✅ Store the ENTIRE backend config for use in calculations
+      setBackendConfig(config);
+      updateFormWithConfig(config, setForm, initialData);
 
-      // Store the backend config
-      setBackendConfig(normalizedConfig);
-      updateFormWithConfig(normalizedConfig);
+      // ✅ Clear all custom overrides when refreshing config
+      setForm((prev: any) => ({
+        ...prev,
+        customServiceCharge: undefined,
+        customPerVisitPrice: undefined,
+        customMonthlyRecurring: undefined,
+        customContractTotal: undefined,
+        customFirstMonthTotal: undefined,
+      }));
 
-      console.log('✅ ElectrostaticSpray CONFIG loaded from backend:', {
-        ratePerRoom: normalizedConfig.defaultRatePerRoom,
-        ratePerSqFt: normalizedConfig.defaultRatePerSqFt,
-        tripCharge: normalizedConfig.defaultTripCharge,
+      console.log('✅ ElectrostaticSpray ACTIVE CONFIG loaded from backend:', {
+        standardSprayPricing: config.standardSprayPricing,
+        tripCharges: config.tripCharges,
+        frequencyMetadata: config.frequencyMetadata,
       });
     } catch (error) {
       console.error('❌ Failed to fetch ElectrostaticSpray config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -211,12 +215,19 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         if (fallbackConfig?.config) {
           console.log('✅ [ElectrostaticSpray] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config, setForm, initialData);
 
-          // Normalize fallback config
-          const normalizedConfig = normalizeBackendConfig(config);
+          // ✅ Clear all custom overrides when refreshing config
+          setForm((prev: any) => ({
+            ...prev,
+            customServiceCharge: undefined,
+            customPerVisitPrice: undefined,
+            customMonthlyRecurring: undefined,
+            customContractTotal: undefined,
+            customFirstMonthTotal: undefined,
+          }));
 
-          setBackendConfig(normalizedConfig);
-          updateFormWithConfig(normalizedConfig);
           return;
         }
       }
@@ -327,6 +338,32 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   };
 
   const calc: ElectrostaticSprayCalcResult = useMemo(() => {
+    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    // Map backend config to expected format with proper fallbacks
+    const activeConfig = {
+      standardSprayPricing: backendConfig?.standardSprayPricing ?? {
+        sprayRatePerRoom: cfg.ratePerRoom,
+        sqFtUnit: cfg.sqFtUnit,
+        sprayRatePerSqFtUnit: cfg.ratePerThousandSqFt,
+        minimumPriceOptional: 0,
+      },
+      tripCharges: backendConfig?.tripCharges ?? cfg.tripCharges,
+      minimumChargePerVisit: backendConfig?.minimumChargePerVisit ?? 0,
+      minContractMonths: backendConfig?.minContractMonths ?? cfg.minContractMonths,
+      maxContractMonths: backendConfig?.maxContractMonths ?? cfg.maxContractMonths,
+      // ✅ NEW: Transform backend frequencyMetadata
+      billingConversions: transformBackendFrequencyMeta(backendConfig?.frequencyMetadata),
+    };
+
+    if (!backendConfig) {
+      console.warn('⚠️ [ElectrostaticSpray] Using fallback config - backend not loaded yet');
+    } else {
+      console.log('✅ [ElectrostaticSpray] Using backend config:', {
+        standardSprayPricing: activeConfig.standardSprayPricing,
+        tripCharges: activeConfig.tripCharges,
+      });
+    }
+
     // Determine service charge based on pricing method
     let calculatedServiceCharge = 0;
     let effectiveRate = 0;
@@ -342,18 +379,23 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       if (!form.useExactCalculation) {
         // Use minimum square feet tier pricing
         // Find the minimum tier that covers the entered square feet
-        const minTier = cfg.sqFtUnit; // 1000 sq ft minimum
+        const minTier = activeConfig.standardSprayPricing.sqFtUnit; // 1000 sq ft minimum
         if (calculateForSqFt <= minTier) {
           calculateForSqFt = minTier; // If 500 entered, use 1000
         } else {
           // Round up to next 1000 sq ft tier (1001 becomes 2000)
-          calculateForSqFt = Math.ceil(calculateForSqFt / cfg.sqFtUnit) * cfg.sqFtUnit;
+          calculateForSqFt = Math.ceil(calculateForSqFt / activeConfig.standardSprayPricing.sqFtUnit) * activeConfig.standardSprayPricing.sqFtUnit;
         }
       }
 
-      const units = calculateForSqFt / cfg.sqFtUnit; // Convert to 1000 sq ft units
+      const units = calculateForSqFt / activeConfig.standardSprayPricing.sqFtUnit; // Convert to 1000 sq ft units
       calculatedServiceCharge = units * form.ratePerThousandSqFt;
       effectiveRate = form.ratePerThousandSqFt;
+    }
+
+    // Apply minimum charge if needed
+    if (activeConfig.minimumChargePerVisit > 0) {
+      calculatedServiceCharge = Math.max(calculatedServiceCharge, activeConfig.minimumChargePerVisit);
     }
 
     // Use custom override if set
@@ -365,9 +407,10 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     // Per visit total
     const perVisit = form.customPerVisitPrice ?? (serviceCharge + tripCharge);
 
-    // Get frequency multiplier
-    const freqConfig = cfg.billingConversions[form.frequency];
-    const monthlyMultiplier = freqConfig.monthlyMultiplier;
+    // Get frequency multiplier from backend or fallback
+    const freqConfig = activeConfig.billingConversions[form.frequency];
+    const monthlyMultiplier = freqConfig?.monthlyMultiplier ?? 0;
+    const annualMultiplier = freqConfig?.annualMultiplier ?? 0;
 
     // Frequency-specific UI helpers
     const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
@@ -388,7 +431,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       contractTotal = form.customContractTotal ?? perVisit;
     } else if (isVisitBasedFrequency) {
       // For quarterly, biannual, annual, bimonthly: use annual multipliers
-      const visitsPerYear = freqConfig.annualMultiplier;
+      const visitsPerYear = annualMultiplier;
       const totalVisits = (form.contractMonths / 12) * visitsPerYear;
       contractTotal = form.customContractTotal ?? (totalVisits * perVisit);
     } else {
@@ -408,7 +451,10 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       isVisitBasedFrequency,
       monthsPerVisit,
     };
-  }, [form]);
+  }, [
+    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    form,
+  ]);
 
   return {
     form,

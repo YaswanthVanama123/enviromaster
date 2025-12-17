@@ -9,6 +9,14 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+// Helper function to format numbers without unnecessary decimals
+const formatNumber = (num: number | undefined): string => {
+  if (num === undefined || num === null || isNaN(num)) {
+    return "0";
+  }
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+};
+
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
 export const JanitorialForm: React.FC<
@@ -30,8 +38,13 @@ export const JanitorialForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (value === '' || value === null) {
-      // This will be handled by the parent component's setForm if needed
-      console.log(`Clearing custom field: ${name}`);
+      if (name === 'customPerVisit' ||
+          name === 'customMonthly' ||
+          name === 'customOngoingMonthly' ||
+          name === 'customContractTotal') {
+        // Note: The actual clearing will be handled by the parent onChange handler
+        console.log(`Clearing custom field: ${name}`);
+      }
     }
   };
 
@@ -275,7 +288,7 @@ export const JanitorialForm: React.FC<
               <option value={7}>7 visits per week (daily)</option>
             </select>
             <span className="svc-small">
-              Monthly visits: {(form.weeksPerMonth * form.visitsPerWeek).toFixed(1)}
+              Monthly visits: {formatNumber((form.weeksPerMonth || 0) * (form.visitsPerWeek || 0))}
             </span>
           </div>
         </div>
@@ -304,7 +317,7 @@ export const JanitorialForm: React.FC<
                 title="One-time service hourly rate (from backend)"
               />
             </div>
-            <span className="svc-small">/hr (min {form.minHoursPerVisit} hours = ${(form.minHoursPerVisit * form.shortJobHourlyRate).toFixed(0)} minimum)</span>
+            <span className="svc-small">/hr (min {form.minHoursPerVisit || 0} hours = ${formatNumber((form.minHoursPerVisit || 0) * (form.shortJobHourlyRate || 0))} minimum)</span>
           </div>
         </div>
       )}
@@ -327,7 +340,7 @@ export const JanitorialForm: React.FC<
                 title="Recurring service hourly rate (from backend)"
               />
             </div>
-            <span className="svc-small">/hr (min {form.minHoursPerVisit} hours = ${(form.minHoursPerVisit * form.baseHourlyRate).toFixed(0)} minimum)</span>
+            <span className="svc-small">/hr (min {form.minHoursPerVisit || 0} hours = ${formatNumber((form.minHoursPerVisit || 0) * (form.baseHourlyRate || 0))} minimum)</span>
           </div>
         </div>
       )}
@@ -498,8 +511,8 @@ export const JanitorialForm: React.FC<
               name="customPerVisit"
               value={
                 form.customPerVisit !== undefined
-                  ? form.customPerVisit.toFixed(2)
-                  : fmt(calc.perVisit)
+                  ? formatNumber(form.customPerVisit)
+                  : formatNumber(calc?.perVisit || 0)
               }
               onChange={onChange}
               onBlur={handleBlur}
@@ -525,7 +538,7 @@ export const JanitorialForm: React.FC<
                 className="svc-in"
                 type="text"
                 readOnly
-                value={fmt(calc.weekly)}
+                value={formatNumber(calc?.weekly || 0)}
                 style={{
                   backgroundColor: 'white',
                   border: 'none',
@@ -540,7 +553,7 @@ export const JanitorialForm: React.FC<
       {/* Recurring monthly total - Only show for recurring */}
       {form.serviceType === "recurring" && (
         <div className="svc-row svc-row-charge">
-          <label>Monthly Recurring ({(form.weeksPerMonth * form.visitsPerWeek).toFixed(1)} visits/month)</label>
+          <label>Monthly Recurring ({formatNumber((form.weeksPerMonth || 0) * (form.visitsPerWeek || 0))} visits/month)</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -551,8 +564,8 @@ export const JanitorialForm: React.FC<
                 name="customOngoingMonthly"
                 value={
                   form.customOngoingMonthly !== undefined
-                    ? form.customOngoingMonthly.toFixed(2)
-                    : fmt(calc.recurringMonthly)
+                    ? formatNumber(form.customOngoingMonthly)
+                    : formatNumber(calc?.recurringMonthly || 0)
                 }
                 onChange={onChange}
                 onBlur={handleBlur}
@@ -582,8 +595,8 @@ export const JanitorialForm: React.FC<
                 name="customMonthly"
                 value={
                   form.customMonthly !== undefined
-                    ? form.customMonthly.toFixed(2)
-                    : fmt(calc.firstMonth)
+                    ? formatNumber(form.customMonthly)
+                    : formatNumber(calc?.firstMonth || 0)
                 }
                 onChange={onChange}
                 onBlur={handleBlur}
@@ -638,8 +651,8 @@ export const JanitorialForm: React.FC<
               className="svc-in"
               value={
                 form.customContractTotal !== undefined
-                  ? form.customContractTotal.toFixed(2)
-                  : fmt(calc.contractTotal)
+                  ? formatNumber(form.customContractTotal)
+                  : formatNumber(calc?.contractTotal || 0)
               }
               onChange={onChange}
               onBlur={handleBlur}

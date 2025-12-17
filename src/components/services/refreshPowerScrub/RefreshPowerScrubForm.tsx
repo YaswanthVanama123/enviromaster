@@ -9,7 +9,15 @@ import "./refreshPowerScrub.css";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-const formatAmount = (n: number): string => n.toFixed(2);
+// Helper function to format numbers without unnecessary decimals
+const formatNumber = (num: number | undefined): string => {
+  if (num === undefined || num === null || isNaN(num)) {
+    return "0";
+  }
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+};
+
+const formatAmount = (n: number): string => formatNumber(n);
 
 const FREQ_OPTIONS = [
   { value: "oneTime", label: "One Time" },
@@ -304,7 +312,7 @@ export const RefreshPowerScrubForm: React.FC<
             isDisplay: true,
             label: "Total Per Visit",
             type: "dollar" as const,
-            amount: parseFloat(quote.perVisitPrice.toFixed(2)),
+            amount: parseFloat(formatNumber(quote.perVisitPrice)),
           },
         },
 

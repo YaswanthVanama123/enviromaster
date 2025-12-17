@@ -8,6 +8,14 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+// Helper function to format numbers without unnecessary decimals
+const formatNumber = (num: number | undefined): string => {
+  if (num === undefined || num === null || isNaN(num)) {
+    return "0";
+  }
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+};
+
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
 > = ({ initialData, onRemove }) => {
@@ -301,7 +309,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customSmallTotal !== undefined ? '#fffacd' : 'white' }}
-            title={`Calculated total (Qty × $${calc.effSmall.toFixed(2)} effective rate)`}
+            title={`Calculated total (Qty × $${formatNumber(calc.effSmall)} effective rate)`}
           />
         </div>
       </div>
@@ -341,7 +349,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customMediumTotal !== undefined ? '#fffacd' : 'white' }}
-            title={`Calculated total (Qty × $${calc.effMedium.toFixed(2)} effective rate)`}
+            title={`Calculated total (Qty × $${formatNumber(calc.effMedium)} effective rate)`}
           />
         </div>
       </div>
@@ -381,7 +389,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customLargeTotal !== undefined ? '#fffacd' : 'white' }}
-            title={`Calculated total (Qty × $${calc.effLarge.toFixed(2)} effective rate)`}
+            title={`Calculated total (Qty × $${formatNumber(calc.effLarge)} effective rate)`}
           />
         </div>
       </div>
@@ -432,7 +440,7 @@ export const RpmWindowsForm: React.FC<
             <input
               className="svc-in"
               type="number"
-              value={calc.effTrip.toFixed(2)}
+              value={formatNumber(calc.effTrip)}
               readOnly
             />
           </div>
@@ -613,8 +621,8 @@ export const RpmWindowsForm: React.FC<
                 type="number"
                 step="0.01"
                 value={form.customFirstMonthTotal !== undefined
-                  ? form.customFirstMonthTotal.toFixed(2)
-                  : (form.isFirstTimeInstall ? (calc.firstMonthBillRated ?? 0).toFixed(2) : (calc.monthlyBillRated ?? 0).toFixed(2))}
+                  ? formatNumber(form.customFirstMonthTotal)
+                  : (form.isFirstTimeInstall ? formatNumber(calc.firstMonthBillRated ?? 0) : formatNumber(calc.monthlyBillRated ?? 0))}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
@@ -639,8 +647,8 @@ export const RpmWindowsForm: React.FC<
                 type="number"
                 step="0.01"
                 value={form.customMonthlyRecurring !== undefined
-                  ? form.customMonthlyRecurring.toFixed(2)
-                  : (calc.monthlyBillRated ?? 0).toFixed(2)}
+                  ? formatNumber(form.customMonthlyRecurring)
+                  : formatNumber(calc.monthlyBillRated ?? 0)}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
@@ -666,8 +674,8 @@ export const RpmWindowsForm: React.FC<
                 type="number"
                 step="0.01"
                 value={form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice.toFixed(2)
-                  : (calc.recurringPerVisitRated ?? 0).toFixed(2)}
+                  ? formatNumber(form.customPerVisitPrice)
+                  : formatNumber(calc.recurringPerVisitRated ?? 0)}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
@@ -691,10 +699,10 @@ export const RpmWindowsForm: React.FC<
                 type="number"
                 step="0.01"
                 value={form.customFirstMonthTotal !== undefined
-                  ? form.customFirstMonthTotal.toFixed(2)
+                  ? formatNumber(form.customFirstMonthTotal)
                   : (form.isFirstTimeInstall
-                    ? (calc.firstVisitTotalRated ?? 0).toFixed(2)
-                    : (calc.recurringPerVisitRated ?? 0).toFixed(2))}
+                    ? formatNumber(calc.firstVisitTotalRated ?? 0)
+                    : formatNumber(calc.recurringPerVisitRated ?? 0))}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
@@ -759,7 +767,7 @@ export const RpmWindowsForm: React.FC<
                 name="customAnnualPrice"
                 type="number"
                 step="0.01"
-                value={form.customAnnualPrice !== undefined ? form.customAnnualPrice.toFixed(2) : (quote.annualPrice ?? 0).toFixed(2)}
+                value={form.customAnnualPrice !== undefined ? formatNumber(form.customAnnualPrice) : formatNumber(quote.annualPrice ?? 0)}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}

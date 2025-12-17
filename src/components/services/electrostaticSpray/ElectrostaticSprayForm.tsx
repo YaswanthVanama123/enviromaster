@@ -10,6 +10,11 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+// Helper function to format numbers without unnecessary decimals
+const formatNumber = (num: number): string => {
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+};
+
 export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSprayFormState>> = ({
   initialData,
   onRemove,
@@ -34,7 +39,13 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (value === '' || value === null) {
-      setForm((prev) => ({ ...prev, [name]: undefined }));
+      if (name === 'customServiceCharge' ||
+          name === 'customPerVisitPrice' ||
+          name === 'customMonthlyRecurring' ||
+          name === 'customContractTotal' ||
+          name === 'customFirstMonthTotal') {
+        setForm((prev) => ({ ...prev, [name]: undefined }));
+      }
     }
   };
 
@@ -321,8 +332,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               value={form.pricingMethod}
               onChange={onChange}
             >
-              <option value="byRoom">By Room (${form.ratePerRoom.toFixed(2)} per room)</option>
-              <option value="bySqFt">By Square Feet (${form.ratePerThousandSqFt.toFixed(2)} per 1000 sq ft)</option>
+              <option value="byRoom">By Room (${formatNumber(form.ratePerRoom)} per room)</option>
+              <option value="bySqFt">By Square Feet (${formatNumber(form.ratePerThousandSqFt)} per 1000 sq ft)</option>
             </select>
           </div>
         </div>
@@ -367,7 +378,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     readOnly
                     className="svc-in field-qty"
-                    value={calc.serviceCharge.toFixed(2)}
+                    value={formatNumber(calc.serviceCharge)}
                     title="Total service charge"
                   />
                 </div>
@@ -407,7 +418,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     readOnly
                     className="svc-in field-qty"
-                    value={calc.serviceCharge.toFixed(2)}
+                    value={formatNumber(calc.serviceCharge)}
                     title="Total service charge"
                   />
                 </div>
@@ -534,8 +545,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 className="svc-in sm"
                 value={
                   form.customServiceCharge !== undefined
-                    ? form.customServiceCharge.toFixed(2)
-                    : calc.serviceCharge.toFixed(2)
+                    ? formatNumber(form.customServiceCharge)
+                    : formatNumber(calc.serviceCharge)
                 }
                 onChange={onChange}
                 onBlur={handleBlur}
@@ -558,7 +569,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <input
                   readOnly
                   className="svc-in sm"
-                  value={calc.tripCharge.toFixed(2)}
+                  value={formatNumber(calc.tripCharge)}
                 />
               </div>
             </div>
@@ -578,8 +589,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 className="svc-in sm"
                 value={
                   form.customPerVisitPrice !== undefined
-                    ? form.customPerVisitPrice.toFixed(2)
-                    : calc.perVisit.toFixed(2)
+                    ? formatNumber(form.customPerVisitPrice)
+                    : formatNumber(calc.perVisit)
                 }
                 onChange={onChange}
                 onBlur={handleBlur}
@@ -606,8 +617,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   className="svc-in sm"
                   value={
                     form.customMonthlyRecurring !== undefined
-                      ? form.customMonthlyRecurring.toFixed(2)
-                      : calc.monthlyRecurring.toFixed(2)
+                      ? formatNumber(form.customMonthlyRecurring)
+                      : formatNumber(calc.monthlyRecurring)
                   }
                   onChange={onChange}
                   onBlur={handleBlur}
@@ -635,8 +646,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   className="svc-in sm"
                   value={
                     form.customFirstMonthTotal !== undefined
-                      ? form.customFirstMonthTotal.toFixed(2)
-                      : calc.perVisit.toFixed(2)
+                      ? formatNumber(form.customFirstMonthTotal)
+                      : formatNumber(calc.perVisit)
                   }
                   onChange={onChange}
                   onBlur={handleBlur}
@@ -664,8 +675,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   className="svc-in sm"
                   value={
                     form.customFirstMonthTotal !== undefined
-                      ? form.customFirstMonthTotal.toFixed(2)
-                      : calc.perVisit.toFixed(2)
+                      ? formatNumber(form.customFirstMonthTotal)
+                      : formatNumber(calc.perVisit)
                   }
                   onChange={onChange}
                   onBlur={handleBlur}
@@ -713,8 +724,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   className="svc-in sm"
                   value={
                     form.customContractTotal !== undefined
-                      ? form.customContractTotal.toFixed(2)
-                      : calc.contractTotal.toFixed(2)
+                      ? formatNumber(form.customContractTotal)
+                      : formatNumber(calc.contractTotal)
                   }
                   onChange={onChange}
                   onBlur={handleBlur}

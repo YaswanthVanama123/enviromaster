@@ -21,6 +21,11 @@ interface FoamingDrainFormProps {
 // Hide 0.00 when nothing entered
 const formatAmount = (n: number): string => (n > 0 ? n.toFixed(2) : "");
 
+// Helper function to format numbers without unnecessary decimals (like SaniScrub)
+const formatNumber = (num: number): string => {
+  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+};
+
 export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   initialData,
   onRemove,
@@ -43,6 +48,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     const { name, value } = e.target;
     if (value === '' || value === null) {
       if (name === 'customWeeklyService' ||
+          name === 'customInstallationTotal' ||
           name === 'customMonthlyRecurring' ||
           name === 'customFirstMonthPrice' ||
           name === 'customContractTotal') {
@@ -883,7 +889,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 className="svc-in weekly-total-field"
                 value={
                   state.customWeeklyService !== undefined
-                    ? state.customWeeklyService.toFixed(2)
+                    ? formatNumber(state.customWeeklyService)
                     : formatAmount(quote.weeklyTotal)
                 }
                 onChange={(e) => {
@@ -918,7 +924,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   className="svc-in field-qty"
                   value={
                     state.customFirstMonthPrice !== undefined
-                      ? state.customFirstMonthPrice.toFixed(2)
+                      ? formatNumber(state.customFirstMonthPrice)
                       : formatAmount(quote.firstMonthPrice)
                   }
                   onChange={(e) => {
@@ -955,7 +961,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   className="svc-in monthly-total-field"
                   value={
                     state.customMonthlyRecurring !== undefined
-                      ? state.customMonthlyRecurring.toFixed(2)
+                      ? formatNumber(state.customMonthlyRecurring)
                       : formatAmount(quote.monthlyRecurring)
                   }
                   onChange={(e) => {
@@ -982,9 +988,26 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                readOnly
+                type="number"
+                step="0.01"
+                name="customInstallationTotal"
                 className="svc-in total-field"
-                value={formatAmount(quote.installation)}
+                value={
+                  state.customInstallationTotal !== undefined
+                    ? formatNumber(state.customInstallationTotal)
+                    : formatAmount(quote.installation)
+                }
+                onChange={(e) => {
+                  const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                  if (numVal === undefined || !isNaN(numVal)) {
+                    updateField('customInstallationTotal', numVal as any);
+                  }
+                }}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: state.customInstallationTotal !== undefined ? '#fffacd' : 'white',
+                }}
+                title="Installation total - editable"
               />
             </div>
           </div>
@@ -1069,7 +1092,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     }}
                     value={
                       state.customContractTotal !== undefined
-                        ? state.customContractTotal.toFixed(2)
+                        ? formatNumber(state.customContractTotal)
                         : formatAmount(quote.annualRecurring)
                     }
                     onChange={(e) => {

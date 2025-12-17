@@ -74,6 +74,7 @@ export interface FoamingDrainFormState {
   customGreaseInstall?: number;
   customGreenInstall?: number;
   customWeeklyService?: number;
+  customInstallationTotal?: number;
   customMonthlyRecurring?: number;
   customFirstMonthPrice?: number;
   customContractTotal?: number;

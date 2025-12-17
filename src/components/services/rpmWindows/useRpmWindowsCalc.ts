@@ -12,54 +12,45 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
+// ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
 interface BackendRpmConfig {
   windowPricingBothSidesIncluded: {
-    smallWindowPrice: number;
-    mediumWindowPrice: number;
-    largeWindowPrice: number;
+    smallWindowPrice: number;      // 5
+    mediumWindowPrice: number;     // 10
+    largeWindowPrice: number;      // 15
   };
   installPricing: {
-    installationMultiplier: number;
+    installationMultiplier: number; // 3
+    cleanInstallationMultiplier: number; // 1
   };
-  minimumChargePerVisit: number;
+  minimumChargePerVisit: number;   // 50
   tripCharges: {
-    standard: number;
-    beltway: number;
+    standard: number;              // 25
+    beltway: number;               // 40
   };
   frequencyPriceMultipliers: {
-    biweeklyPriceMultiplier: number;
-    monthlyPriceMultiplier: number;
-    quarterlyPriceMultiplierAfterFirstTime: number;
-    quarterlyFirstTimeMultiplier: number;
+    biweeklyPriceMultiplier: number;              // 1.15
+    monthlyPriceMultiplier: number;               // 1.5
+    quarterlyPriceMultiplierAfterFirstTime: number; // 2.5
+    quarterlyFirstTimeMultiplier: number;         // 3
   };
   frequencyMetadata: {
     weekly: {
-      monthlyRecurringMultiplier: number;
-      firstMonthExtraMultiplier: number;
+      monthlyRecurringMultiplier: number;    // 4.33
+      firstMonthExtraMultiplier: number;     // 3.33
     };
     biweekly: {
-      monthlyRecurringMultiplier: number;
-      firstMonthExtraMultiplier: number;
+      monthlyRecurringMultiplier: number;    // 2.165
+      firstMonthExtraMultiplier: number;     // 1.165
     };
-    bimonthly: {
-      cycleMonths: number;
-    };
-    quarterly: {
-      cycleMonths: number;
-    };
-    biannual: {
-      cycleMonths: number;
-    };
-    annual: {
-      cycleMonths: number;
-    };
-    monthly: {
-      cycleMonths: number;
-    };
+    monthly: { cycleMonths: number };        // 1
+    bimonthly: { cycleMonths: number };      // 2
+    quarterly: { cycleMonths: number };      // 3
+    biannual: { cycleMonths: number };       // 6
+    annual: { cycleMonths: number };         // 12
   };
-  minContractMonths: number;
-  maxContractMonths: number;
+  minContractMonths: number;         // 2
+  maxContractMonths: number;         // 36
 }
 
 const DEFAULT_FORM: RpmWindowsFormState = {
@@ -158,7 +149,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
               tripCharge: newBaseRates.trip,
               // ✅ NEW: Update installation multipliers from backend
               installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
-              installMultiplierClean: 1, // Clean install is always 1x
+              installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
             }));
 
             console.log('✅ RPM Windows FALLBACK CONFIG loaded from context:', config);
@@ -212,7 +203,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
         tripCharge: newBaseRates.trip,
         // ✅ NEW: Update installation multipliers from backend
         installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
-        installMultiplierClean: 1, // Clean install is always 1x
+        installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
       }));
 
       console.log('✅ RPM Windows config loaded from backend and form updated:', {
@@ -255,7 +246,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
             tripCharge: newBaseRates.trip,
             // ✅ NEW: Update installation multipliers from backend
             installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
-            installMultiplierClean: 1, // Clean install is always 1x
+            installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
           }));
 
           return;
@@ -575,7 +566,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       largeWindowRate: backendConfig?.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
       tripCharge: backendConfig?.tripCharges?.standard ?? cfg.tripCharge,
       installMultiplierFirstTime: backendConfig?.installPricing?.installationMultiplier ?? cfg.installMultiplierFirstTime,
-      installMultiplierClean: 1, // Clean install is always 1x
+      installMultiplierClean: backendConfig?.installPricing?.cleanInstallationMultiplier ?? cfg.installMultiplierClean,
       minimumChargePerVisit: backendConfig?.minimumChargePerVisit ?? 0,
       // Map backend frequency structure to expected format
       frequencyMultipliers: {
@@ -593,6 +584,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       // Map backend frequency metadata to monthly conversions
       monthlyConversions: {
         weekly: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? cfg.monthlyConversions.weekly,
+        biweekly: backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? (cfg.monthlyConversions.weekly / 2),
         actualWeeksPerMonth: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? cfg.monthlyConversions.actualWeeksPerMonth,
         actualWeeksPerYear: 52,
       },
@@ -701,22 +693,45 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     // ✅ MONTHLY VISITS FROM BACKEND CONFIG (using original frequency for visit counts)
     // Uses your monthlyConversions.weekly: 4.33 from MongoDB
+    // ✅ FIXED: Use backend frequencyMetadata for monthly visit calculations
     let monthlyVisits = 0;
     const weeksPerMonth = activeConfig.monthlyConversions.actualWeeksPerMonth ?? 4.33;
 
-    // Use ORIGINAL frequency key for visit counts (not effective for pricing)
-    if (freqKey === "oneTime") monthlyVisits = 0; // oneTime has no monthly billing
-    else if (freqKey === "weekly") monthlyVisits = weeksPerMonth;
-    else if (freqKey === "biweekly") monthlyVisits = weeksPerMonth / 2;
-    else if (freqKey === "twicePerMonth") monthlyVisits = 2; // 2×/month = 2 visits per month
-    else if (freqKey === "monthly") monthlyVisits = 1; // monthly = 1 visit per month
-    else if (freqKey === "bimonthly") monthlyVisits = 0.5; // every 2 months = 0.5 per month
-    else if (freqKey === "quarterly") monthlyVisits = 0; // no monthly for quarterly
-    else if (freqKey === "biannual") monthlyVisits = 0; // no monthly for biannual
-    else if (freqKey === "annual") monthlyVisits = 0; // no monthly for annual
+    // Use ORIGINAL frequency key for visit counts (use backend metadata when available)
+    if (freqKey === "oneTime") {
+      monthlyVisits = 0; // oneTime has no monthly billing
+    } else if (freqKey === "weekly") {
+      // Use backend weekly monthlyRecurringMultiplier if available
+      monthlyVisits = backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? weeksPerMonth;
+    } else if (freqKey === "biweekly") {
+      // ✅ FIXED: Use backend biweekly monthlyRecurringMultiplier instead of weekly/2
+      monthlyVisits = backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? (weeksPerMonth / 2);
+      console.log(`🔧 [RPM Windows] Using biweekly monthly multiplier: ${monthlyVisits} (backend: ${backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier}, fallback: ${weeksPerMonth / 2})`);
+    } else if (freqKey === "twicePerMonth") {
+      monthlyVisits = 2; // 2×/month = 2 visits per month
+    } else if (freqKey === "monthly") {
+      monthlyVisits = 1; // monthly = 1 visit per month
+    } else if (freqKey === "bimonthly") {
+      monthlyVisits = 0.5; // every 2 months = 0.5 per month
+    } else if (freqKey === "quarterly") {
+      monthlyVisits = 0; // no monthly for quarterly
+    } else if (freqKey === "biannual") {
+      monthlyVisits = 0; // no monthly for biannual
+    } else if (freqKey === "annual") {
+      monthlyVisits = 0; // no monthly for annual
+    }
 
     // Standard ongoing monthly bill (after the first month)
     let standardMonthlyBillRated = recurringPerVisitRated * monthlyVisits;
+
+    console.log(`🔧 [RPM Windows] Frequency calculation summary:`, {
+      freqKey,
+      monthlyVisits,
+      standardMonthlyBillRated,
+      backendWeeklyMultiplier: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier,
+      backendBiweeklyMultiplier: backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier,
+      fallbackWeeksPerMonth: weeksPerMonth,
+    });
 
     // ✅ SPECIAL FIX: Make 2×/month monthly total equal to monthly frequency total
     // User wants 2×/month to have same monthly recurring as monthly

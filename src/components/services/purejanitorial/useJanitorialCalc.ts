@@ -23,49 +23,49 @@ interface TieredPricingTier {
   standalonePrice?: number;
 }
 
-// ✅ Backend config interface matching the actual MongoDB JSON structure
+// ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
 interface BackendJanitorialConfig {
   standardHourlyPricing: {
-    standardHourlyRate: number;
-    minimumHoursPerTrip: number;
+    standardHourlyRate: number; // 30
+    minimumHoursPerTrip: number; // 4
   };
   shortJobHourlyPricing: {
-    shortJobHourlyRate: number;
+    shortJobHourlyRate: number; // 50
   };
   vacuuming: {
-    estimatedTimeHoursPerJob: number;
-    largeJobMinimumTimeHours: number;
+    estimatedTimeHoursPerJob: number; // 1
+    largeJobMinimumTimeHours: number; // 1
   };
   dusting: {
-    itemsPerHour: number;
-    pricePerItem: number;
-    dirtyFirstTimeMultiplier: number;
-    infrequentServiceMultiplier4PerYear: number;
+    itemsPerHour: number; // 30
+    pricePerItem: number; // 1
+    dirtyFirstTimeMultiplier: number; // 3
+    infrequentServiceMultiplier4PerYear: number; // 3
   };
   smoothBreakdownPricingTable: TieredPricingTier[];
-  minimumChargePerVisit: number;
+  minimumChargePerVisit: number; // 50
   tripCharges: {
-    standard: number;
-    beltway: number;
+    standard: number; // 0
+    beltway: number; // 0
   };
   contract: {
-    minMonths: number;
-    maxMonths: number;
+    minMonths: number; // 2
+    maxMonths: number; // 36
   };
   frequencyMetadata: {
     weekly: {
-      monthlyRecurringMultiplier: number;
-      firstMonthExtraMultiplier: number;
+      monthlyRecurringMultiplier: number; // 4.33
+      firstMonthExtraMultiplier: number; // 3.33
     };
     biweekly: {
-      monthlyRecurringMultiplier: number;
-      firstMonthExtraMultiplier: number;
+      monthlyRecurringMultiplier: number; // 2.165
+      firstMonthExtraMultiplier: number; // 1.165
     };
-    bimonthly: { cycleMonths: number };
-    quarterly: { cycleMonths: number };
-    biannual: { cycleMonths: number };
-    annual: { cycleMonths: number };
-    monthly: { cycleMonths: number };
+    bimonthly: { cycleMonths: number }; // 2
+    quarterly: { cycleMonths: number }; // 3
+    biannual: { cycleMonths: number }; // 6
+    annual: { cycleMonths: number }; // 12
+    monthly: { cycleMonths: number }; // 0 - special case
   };
 }
 
