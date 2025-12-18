@@ -12,33 +12,52 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+// ✅ Backend config interface matching the EXACT MongoDB JSON structure
 interface BackendStripWaxConfig {
-  // Flat structure (what we use internally)
-  weeksPerMonth?: number;
-  weeksPerYear?: number;
-  minContractMonths?: number;
-  maxContractMonths?: number;
-  defaultFrequency?: string;
-  defaultVariant?: string;
-  variants?: {
+  variants: {
     standardFull: {
       label: string;
       ratePerSqFt: number;
       minCharge: number;
+      coatsIncluded: number;
+      sealantIncluded: boolean;
     };
     noSealant: {
       label: string;
-      ratePerSqFt: number;
+      alternateRatePerSqFt: number;  // ✅ Note: Different field name in MongoDB!
       minCharge: number;
+      includeExtraCoatFourthFree: boolean;
     };
     wellMaintained: {
       label: string;
       ratePerSqFt: number;
       minCharge: number;
+      coatsIncluded: number;
     };
   };
-  rateCategories?: {
+  tripCharges: {
+    standard: number;
+    beltway: number;
+  };
+  frequencyMetadata: {
+    weekly?: {
+      monthlyRecurringMultiplier: number;
+      firstMonthExtraMultiplier: number;
+    };
+    biweekly?: {
+      monthlyRecurringMultiplier: number;
+      firstMonthExtraMultiplier: number;
+    };
+    bimonthly?: { cycleMonths: number };
+    quarterly?: { cycleMonths: number };
+    biannual?: { cycleMonths: number };
+    annual?: { cycleMonths: number };
+  };
+  minContractMonths: number;
+  maxContractMonths: number;
+  defaultFrequency: string;
+  defaultVariant: string;
+  rateCategories: {
     redRate: {
       multiplier: number;
       commissionRate: string;
@@ -48,38 +67,143 @@ interface BackendStripWaxConfig {
       commissionRate: string;
     };
   };
-
-  // Nested structure (what backend actually sends)
-  tripCharges?: {
-    standard: number;
-    beltway: number;
-  };
-  frequencyMetadata?: {
-    [key: string]: {
-      monthlyRecurringMultiplier?: number;
-      firstMonthExtraMultiplier?: number;
-      cycleMonths?: number;
-    };
-  };
 }
 
 /**
- * Normalize backend config to extract values from nested structure
+ * ✅ NEW: Build active config directly from backend structure
+ * Maps the MongoDB JSON structure to calculation-friendly format
  */
-function normalizeBackendConfig(config: BackendStripWaxConfig): BackendStripWaxConfig {
-  // Build normalized config with all required fields
-  return {
-    weeksPerMonth: config.weeksPerMonth ?? cfg.weeksPerMonth,
-    weeksPerYear: config.weeksPerYear ?? cfg.weeksPerYear,
-    minContractMonths: config.minContractMonths ?? cfg.minContractMonths,
-    maxContractMonths: config.maxContractMonths ?? cfg.maxContractMonths,
-    defaultFrequency: config.defaultFrequency ?? cfg.defaultFrequency,
-    defaultVariant: config.defaultVariant ?? cfg.defaultVariant,
-    variants: config.variants ?? cfg.variants,
-    rateCategories: config.rateCategories ?? cfg.rateCategories,
-    tripCharges: config.tripCharges,
-    frequencyMetadata: config.frequencyMetadata,
+function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
+  // Default values from static config
+  const defaults = {
+    weeksPerMonth: cfg.weeksPerMonth || 4.33,
+    weeksPerYear: cfg.weeksPerYear || 52,
+    minContractMonths: cfg.minContractMonths || 2,
+    maxContractMonths: cfg.maxContractMonths || 36,
+    defaultFrequency: cfg.defaultFrequency || 'weekly',
+    defaultVariant: cfg.defaultVariant || 'standardFull',
+    variants: cfg.variants || {
+      standardFull: { label: "Standard Full", ratePerSqFt: 0.75, minCharge: 550 },
+      noSealant: { label: "No Sealant", ratePerSqFt: 0.7, minCharge: 550 },
+      wellMaintained: { label: "Well Maintained", ratePerSqFt: 0.4, minCharge: 400 }
+    },
+    rateCategories: cfg.rateCategories || {
+      redRate: { multiplier: 1, commissionRate: "20%" },
+      greenRate: { multiplier: 1.3, commissionRate: "25%" }
+    }
   };
+
+  if (!backendConfig) {
+    console.log('📊 [Strip & Wax] Using static config fallback values');
+    return {
+      ...defaults,
+      frequencyMultipliers: {
+        oneTime: 0,
+        weekly: 4.33,
+        biweekly: 2.165,
+        twicePerMonth: 2,
+        monthly: 1.0,
+        bimonthly: 0.5,
+        quarterly: 0,
+        biannual: 0,
+        annual: 0,
+      },
+      annualFrequencies: {
+        oneTime: 1,
+        weekly: 52,
+        biweekly: 26,
+        twicePerMonth: 24,
+        monthly: 12,
+        bimonthly: 6,
+        quarterly: 4,
+        biannual: 2,
+        annual: 1,
+      }
+    };
+  }
+
+  console.log('📊 [Strip & Wax] Building active config from backend:', backendConfig);
+
+  // ✅ Extract values directly from the MongoDB JSON structure
+  const activeConfig = {
+    // Contract limits from top-level config
+    minContractMonths: backendConfig.minContractMonths ?? defaults.minContractMonths,
+    maxContractMonths: backendConfig.maxContractMonths ?? defaults.maxContractMonths,
+    defaultFrequency: backendConfig.defaultFrequency ?? defaults.defaultFrequency,
+    defaultVariant: backendConfig.defaultVariant ?? defaults.defaultVariant,
+
+    // ✅ Extract variant pricing - handle special case for noSealant
+    variants: {
+      standardFull: {
+        label: backendConfig.variants?.standardFull?.label ?? defaults.variants.standardFull.label,
+        ratePerSqFt: backendConfig.variants?.standardFull?.ratePerSqFt ?? defaults.variants.standardFull.ratePerSqFt,
+        minCharge: backendConfig.variants?.standardFull?.minCharge ?? defaults.variants.standardFull.minCharge,
+      },
+      noSealant: {
+        label: backendConfig.variants?.noSealant?.label ?? defaults.variants.noSealant.label,
+        // ✅ SPECIAL HANDLING: noSealant uses alternateRatePerSqFt in MongoDB
+        ratePerSqFt: backendConfig.variants?.noSealant?.alternateRatePerSqFt ?? defaults.variants.noSealant.ratePerSqFt,
+        minCharge: backendConfig.variants?.noSealant?.minCharge ?? defaults.variants.noSealant.minCharge,
+      },
+      wellMaintained: {
+        label: backendConfig.variants?.wellMaintained?.label ?? defaults.variants.wellMaintained.label,
+        ratePerSqFt: backendConfig.variants?.wellMaintained?.ratePerSqFt ?? defaults.variants.wellMaintained.ratePerSqFt,
+        minCharge: backendConfig.variants?.wellMaintained?.minCharge ?? defaults.variants.wellMaintained.minCharge,
+      }
+    },
+
+    // Rate categories
+    rateCategories: backendConfig.rateCategories ?? defaults.rateCategories,
+
+    // Trip charges (not used in calculations but available)
+    tripCharges: backendConfig.tripCharges ?? { standard: 0, beltway: 0 },
+
+    // ✅ Build frequency multipliers from frequencyMetadata
+    frequencyMultipliers: {
+      oneTime: 0,
+      weekly: backendConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? 4.33,
+      biweekly: backendConfig.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? 2.165,
+      twicePerMonth: 2, // Not in backend, use static
+      monthly: 1.0, // Monthly = 1 visit per month
+      bimonthly: 0.5, // Every 2 months = 0.5 visits per month
+      quarterly: 0, // Visit-based, no monthly calculation
+      biannual: 0, // Visit-based, no monthly calculation
+      annual: 0, // Visit-based, no monthly calculation
+    },
+
+    // ✅ Build annual frequencies from cycle months
+    annualFrequencies: {
+      oneTime: 1,
+      weekly: 52,
+      biweekly: 26,
+      twicePerMonth: 24,
+      monthly: 12,
+      bimonthly: backendConfig.frequencyMetadata?.bimonthly?.cycleMonths ? 12 / backendConfig.frequencyMetadata.bimonthly.cycleMonths : 6,
+      quarterly: backendConfig.frequencyMetadata?.quarterly?.cycleMonths ? 12 / backendConfig.frequencyMetadata.quarterly.cycleMonths : 4,
+      biannual: backendConfig.frequencyMetadata?.biannual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.biannual.cycleMonths : 2,
+      annual: backendConfig.frequencyMetadata?.annual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.annual.cycleMonths : 1,
+    },
+
+    // Store the frequency metadata for reference
+    frequencyMetadata: backendConfig.frequencyMetadata,
+  };
+
+  console.log('✅ [Strip & Wax] Active config built:', {
+    variants: {
+      standardFull: activeConfig.variants.standardFull,
+      noSealant: activeConfig.variants.noSealant,
+      wellMaintained: activeConfig.variants.wellMaintained,
+    },
+    rateCategories: activeConfig.rateCategories,
+    frequencyMultipliers: activeConfig.frequencyMultipliers,
+    annualFrequencies: activeConfig.annualFrequencies,
+    contractLimits: {
+      min: activeConfig.minContractMonths,
+      max: activeConfig.maxContractMonths,
+    }
+  });
+
+  return activeConfig;
 }
 
 export interface StripWaxCalcResult {
@@ -140,20 +264,31 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
   const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data
-  const updateFormWithConfig = (config: BackendStripWaxConfig) => {
+  const updateFormWithConfig = (activeConfig: any) => {
     setForm((prev) => ({
       ...prev,
-      // Update all rate fields from backend if available
-      weeksPerMonth: config.weeksPerMonth ?? prev.weeksPerMonth,
-      standardFullRatePerSqFt: config.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
-      standardFullMinCharge: config.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
-      noSealantRatePerSqFt: config.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
-      noSealantMinCharge: config.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
-      wellMaintainedRatePerSqFt: config.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
-      wellMaintainedMinCharge: config.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
-      redRateMultiplier: config.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
-      greenRateMultiplier: config.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+      // Update all rate fields from backend config
+      weeksPerMonth: activeConfig.frequencyMultipliers?.weekly ?? prev.weeksPerMonth,
+      standardFullRatePerSqFt: activeConfig.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
+      standardFullMinCharge: activeConfig.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
+      noSealantRatePerSqFt: activeConfig.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
+      noSealantMinCharge: activeConfig.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
+      wellMaintainedRatePerSqFt: activeConfig.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
+      wellMaintainedMinCharge: activeConfig.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
+      redRateMultiplier: activeConfig.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
+      greenRateMultiplier: activeConfig.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
     }));
+
+    console.log('✅ [Strip & Wax] Form updated with backend config values:', {
+      standardFullRate: activeConfig.variants?.standardFull?.ratePerSqFt,
+      standardFullMinimum: activeConfig.variants?.standardFull?.minCharge,
+      noSealantRate: activeConfig.variants?.noSealant?.ratePerSqFt,
+      noSealantMinimum: activeConfig.variants?.noSealant?.minCharge,
+      wellMaintainedRate: activeConfig.variants?.wellMaintained?.ratePerSqFt,
+      wellMaintainedMinimum: activeConfig.variants?.wellMaintained?.minCharge,
+      redRateMultiplier: activeConfig.rateCategories?.redRate?.multiplier,
+      greenRateMultiplier: activeConfig.rateCategories?.greenRate?.multiplier,
+    });
   };
 
   // ✅ Fetch COMPLETE pricing configuration from backend
@@ -172,15 +307,15 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
           const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
           if (fallbackConfig?.config) {
             console.log('✅ [Strip Wax] Using backend pricing data from context for inactive service');
-            const config = normalizeBackendConfig(fallbackConfig.config as BackendStripWaxConfig);
-            setBackendConfig(config);
-            updateFormWithConfig(config);
+            const config = fallbackConfig.config as BackendStripWaxConfig;
 
-            console.log('✅ Strip Wax FALLBACK CONFIG loaded from context:', {
-              weeksPerMonth: config.weeksPerMonth,
-              variants: config.variants,
-              rateCategories: config.rateCategories,
-            });
+            // ✅ Build active config from backend structure
+            const activeConfig = buildActiveConfig(config);
+
+            setBackendConfig(config);
+            updateFormWithConfig(activeConfig);
+
+            console.log('✅ Strip Wax FALLBACK CONFIG loaded from context');
             return;
           }
         }
@@ -197,17 +332,16 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
         return;
       }
 
-      const config = normalizeBackendConfig(document.config as BackendStripWaxConfig);
+      const config = document.config as BackendStripWaxConfig;
+
+      // ✅ Build active config from backend structure
+      const activeConfig = buildActiveConfig(config);
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-      updateFormWithConfig(config);
+      updateFormWithConfig(activeConfig);
 
-      console.log('✅ Strip Wax ACTIVE CONFIG loaded from backend:', {
-        weeksPerMonth: config.weeksPerMonth,
-        variants: config.variants,
-        rateCategories: config.rateCategories,
-      });
+      console.log('✅ Strip Wax ACTIVE CONFIG loaded from backend successfully');
     } catch (error) {
       console.error('❌ Failed to fetch Strip Wax config from backend:', error);
 
@@ -216,9 +350,13 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
         const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
         if (fallbackConfig?.config) {
           console.log('✅ [Strip Wax] Using backend pricing data from context after error');
-          const config = normalizeBackendConfig(fallbackConfig.config as BackendStripWaxConfig);
+          const config = fallbackConfig.config as BackendStripWaxConfig;
+
+          // ✅ Build active config from backend structure
+          const activeConfig = buildActiveConfig(config);
+
           setBackendConfig(config);
-          updateFormWithConfig(config);
+          updateFormWithConfig(activeConfig);
           return;
         }
       }
@@ -350,15 +488,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
 
   const calc: StripWaxCalcResult = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    const activeConfig = backendConfig || {
-      weeksPerMonth: cfg.weeksPerMonth,
-      minContractMonths: cfg.minContractMonths,
-      maxContractMonths: cfg.maxContractMonths,
-      defaultFrequency: cfg.defaultFrequency,
-      defaultVariant: cfg.defaultVariant,
-      variants: cfg.variants,
-      rateCategories: cfg.rateCategories,
-    };
+    const activeConfig = buildActiveConfig(backendConfig);
 
     const areaSqFt = Math.max(0, Number(form.floorAreaSqFt) || 0);
 
@@ -382,11 +512,17 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
         : form.redRateMultiplier,
     };
 
-    const weeksPerMonth = form.weeksPerMonth;  // ✅ USE FORM VALUE (from backend)
+    const weeksPerMonth = activeConfig.frequencyMultipliers?.weekly ?? form.weeksPerMonth;  // ✅ USE ACTIVE CONFIG
 
-    // ✅ Get billing conversion for current frequency
-    const conv = cfg.billingConversions[form.frequency];
-    const monthlyVisits = conv.monthlyMultiplier;
+    // ✅ Get billing conversion for current frequency - use backend frequency metadata if available
+    let monthlyVisits: number;
+    if (activeConfig.frequencyMultipliers && activeConfig.frequencyMultipliers[form.frequency] !== undefined) {
+      monthlyVisits = activeConfig.frequencyMultipliers[form.frequency];
+    } else {
+      // Fallback to static config
+      const conv = cfg.billingConversions[form.frequency];
+      monthlyVisits = conv.monthlyMultiplier;
+    }
 
     // ✅ Detect visit-based frequencies (quarterly, biannual, annual, bimonthly, oneTime)
     const isVisitBasedFrequency = form.frequency === "oneTime" ||
@@ -449,8 +585,16 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
       monthlyPrice = perVisit;
       calculatedContractTotal = perVisit;
     } else if (isVisitBasedFrequency) {
-      // Visit-based frequencies: calculate based on visits per year
-      const visitsPerYear = conv.annualMultiplier;
+      // Visit-based frequencies: calculate based on visits per year using backend data
+      let visitsPerYear: number;
+      if (activeConfig.annualFrequencies && activeConfig.annualFrequencies[form.frequency] !== undefined) {
+        visitsPerYear = activeConfig.annualFrequencies[form.frequency];
+      } else {
+        // Fallback to static config
+        const conv = cfg.billingConversions[form.frequency];
+        visitsPerYear = conv.annualMultiplier;
+      }
+
       const totalVisits = (contractMonths / 12) * visitsPerYear;
       monthlyPrice = monthlyVisits * perVisit;
       calculatedContractTotal = totalVisits * perVisit;
