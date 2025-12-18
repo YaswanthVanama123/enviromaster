@@ -55,21 +55,34 @@ const getStatusConfig = (status: string) => {
          { value: status, label: status, color: '#6b7280', canManuallySelect: true };
 };
 
-// Get available statuses for dropdown based on file type
-const getAvailableStatusesForDropdown = (currentStatus: string, isLatestVersion: boolean = true, fileType?: string) => {
+// Get available statuses for dropdown based on file type and admin context
+const getAvailableStatusesForDropdown = (currentStatus: string, isLatestVersion: boolean = true, fileType?: string, isInAdminContext: boolean = false) => {
   return EXISTING_STATUSES.filter(status => {
     // Always allow current status to stay
     if (status.value === currentStatus) return true;
 
-    // For manual uploads (attached_pdf), allow approval workflow statuses
-    if (fileType === 'attached_pdf') {
-      return status.canManuallySelect; // Allow: pending_approval, approved_salesman, approved_admin
+    // ✅ CONTEXT-BASED FILTERING: Filter approval statuses based on admin context
+    if (!status.canManuallySelect) return false; // Skip system-controlled statuses
+
+    // In normal saved-pdfs view: hide "approved by admin" option
+    if (!isInAdminContext && status.value === 'approved_admin') {
+      return false;
     }
 
-    // For latest versions of PDFs, allow manual status changes
-    if (isLatestVersion && status.canManuallySelect) return true;
+    // In admin panel view: hide "approved by salesman" option
+    if (isInAdminContext && status.value === 'approved_salesman') {
+      return false;
+    }
 
-    // For old versions, don't allow changes to draft or system statuses
+    // For manual uploads (attached_pdf), allow remaining approval workflow statuses
+    if (fileType === 'attached_pdf') {
+      return true; // Allow: pending_approval, and remaining approval status based on context
+    }
+
+    // For latest versions of PDFs, allow manual status changes (filtered by context above)
+    if (isLatestVersion) return true;
+
+    // For old versions, don't allow changes
     return false;
   });
 };
@@ -1262,7 +1275,7 @@ export default function SavedFilesAgreements() {
                                 }}
                                 title="Change status"
                               >
-                                {getAvailableStatusesForDropdown(file.status, file.isLatestVersion, file.fileType).map(status => (
+                                {getAvailableStatusesForDropdown(file.status, file.isLatestVersion, file.fileType, isInAdminContext).map(status => (
                                   <option key={status.value} value={status.value} style={{ color: '#000' }}>
                                     {status.label}
                                   </option>

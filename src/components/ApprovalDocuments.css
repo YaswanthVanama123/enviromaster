@@ -231,6 +231,12 @@
   font-size: 13.5px;
   transition: border-color 0.2s ease;
   cursor: pointer;
+  /* ✅ FIX: Show dropdown arrow for select elements */
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path fill='gray' d='M0 0l5 6 5-6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 30px; /* Make space for dropdown arrow */
 }
 .pill:focus {
   border-color: #0056d8;
@@ -259,17 +265,26 @@
   font-weight: 600;
 }
 
-.pill--approved_salesman {
+.pill--approved_salesman,
+.pill--approved_by_salesman {
   background: #d1fae5;
   border-color: #10b981;
   color: #065f46;
   font-weight: 600;
 }
 
-.pill--approved_admin {
+.pill--approved_admin,
+.pill--approved_by_admin {
   background: #dcfce7;
   border-color: #22c55e;
   color: #14532d;
+  font-weight: 600;
+}
+
+.pill--unknown {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #7f1d1d;
   font-weight: 600;
 }
 

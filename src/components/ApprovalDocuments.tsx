@@ -62,6 +62,51 @@ const STATUS_COLORS: Record<FileStatus, string> = {
   approved_admin: '#10b981',
 };
 
+// ✅ FIX: Convert status to CSS-safe class name
+const getStatusClassName = (status: string) => {
+  return status?.toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
+};
+
+// ✅ FIX P1: Context-aware status dropdown filtering - handle actual status formats
+const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext: boolean = false) => {
+  const approvalStatuses = [
+    { value: 'Pending Approval', label: 'Pending Approval' },
+    { value: 'pending_approval', label: 'Pending Approval' },
+    { value: 'Approved by Salesman', label: 'Approved by Salesman' },
+    { value: 'approved_salesman', label: 'Approved by Salesman' },
+    { value: 'Approved by Admin', label: 'Approved by Admin' },
+    { value: 'approved_admin', label: 'Approved by Admin' },
+    { value: 'Draft', label: 'Draft' },
+    { value: 'draft', label: 'Draft' }
+  ];
+
+  return approvalStatuses.filter(status => {
+    // Always allow current status to stay
+    if (status.value === currentStatus) return true;
+
+    // ✅ CONTEXT-BASED FILTERING: Filter approval statuses based on admin context
+    // In normal approval documents view: hide admin approval options
+    if (!isInAdminContext && (
+      status.value === 'Approved by Admin' ||
+      status.value === 'approved_admin'
+    )) {
+      return false;
+    }
+
+    // In admin panel approval documents view: hide salesman approval options
+    if (isInAdminContext && (
+      status.value === 'Approved by Salesman' ||
+      status.value === 'approved_salesman'
+    )) {
+      return false;
+    }
+
+    return true;
+  });
+};
+
 export default function ApprovalDocuments() {
   // ✅ UPDATED: Use grouped structure for approval documents
   const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
@@ -132,12 +177,64 @@ export default function ApprovalDocuments() {
   // Filter and expand/collapse functionality for folder structure
   const filteredAgreements = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return agreements;
 
-    return agreements.filter(agreement =>
-      agreement.agreementTitle.toLowerCase().includes(q) ||
-      agreement.files.some(file => file.fileName.toLowerCase().includes(q))
-    );
+    // ✅ FIX P1: Debug actual status values and filter for PENDING APPROVAL only
+    console.log('🔍 [APPROVAL-DEBUG] Raw agreements from backend:', {
+      totalAgreements: agreements.length,
+      sampleStatuses: agreements.flatMap(ag => ag.files.map(f => f.status)).slice(0, 10),
+      allUniqueStatuses: [...new Set(agreements.flatMap(ag => ag.files.map(f => f.status)))]
+    });
+
+    // ✅ UPDATED: Only show documents that are PENDING approval (not already approved)
+    const approvalStatuses = [
+      'pending_approval',
+      'Pending Approval'     // ✅ Handle both formats
+    ];
+
+    let filteredList = agreements.map(agreement => {
+      const approvalFiles = agreement.files.filter(file => {
+        const status = file.status?.trim(); // Don't convert to lowercase yet
+
+        // Check both exact matches and normalized matches
+        const isApprovalStatus = approvalStatuses.includes(status) ||
+          approvalStatuses.some(approvalStatus => {
+            const normalizedStatus = status?.toLowerCase().replace(/\s+/g, '_');
+            const normalizedApprovalStatus = approvalStatus.toLowerCase().replace(/\s+/g, '_');
+            return normalizedStatus === normalizedApprovalStatus;
+          });
+
+        console.log(`🔍 [FILE-STATUS-DEBUG] File: ${file.fileName}, Status: "${status}", IsApproval: ${isApprovalStatus}`);
+        return isApprovalStatus;
+      });
+
+      return {
+        ...agreement,
+        files: approvalFiles,
+        fileCount: approvalFiles.length
+      };
+    }).filter(agreement => agreement.fileCount > 0); // Remove agreements with no approval files
+
+    // Apply search filter
+    if (q) {
+      filteredList = filteredList.filter(agreement =>
+        agreement.agreementTitle.toLowerCase().includes(q) ||
+        agreement.files.some(file => file.fileName.toLowerCase().includes(q))
+      );
+    }
+
+    console.log(`📋 [APPROVAL-FILTER] Final filtered results (PENDING APPROVAL ONLY):`, {
+      originalCount: agreements.length,
+      filteredCount: filteredList.length,
+      totalPendingFiles: filteredList.reduce((sum, ag) => sum + ag.fileCount, 0),
+      searchQuery: q,
+      filteredAgreements: filteredList.map(ag => ({
+        title: ag.agreementTitle,
+        fileCount: ag.fileCount,
+        fileStatuses: ag.files.map(f => f.status)
+      }))
+    });
+
+    return filteredList;
   }, [agreements, query]);
 
   // Get all files from all agreements for selection logic
@@ -192,8 +289,8 @@ export default function ApprovalDocuments() {
         )
       })));
 
-      // If status changed away from approval statuses, remove from this view
-      const approvalStatuses = ['pending_approval', 'approved_salesman'];
+      // If status changed away from pending approval, remove from this view
+      const approvalStatuses = ['pending_approval'];  // ✅ Only pending approval should stay in this view
       if (!approvalStatuses.includes(newStatus)) {
         setAgreements(prev => prev.map(agreement => ({
           ...agreement,
@@ -488,15 +585,16 @@ export default function ApprovalDocuments() {
                     <td>{timeAgo(file.updatedAt)}</td>
                     <td>
                       <select
-                        className={`pill pill--${file.status}`}
+                        className={`pill pill--${getStatusClassName(file.status)}`}
                         value={file.status}
                         onChange={(e) => changeFileStatus(file, e.target.value)}
                         disabled={savingStatusId === file.id}
                       >
-                        <option value="pending_approval">Pending Approval</option>
-                        <option value="approved_salesman">Approved by Salesman</option>
-                        <option value="approved_admin">Approved by Admin</option>
-                        <option value="draft">Draft</option>
+                        {getAvailableStatusesForDropdown(file.status, isInAdminContext).map(status => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td>
