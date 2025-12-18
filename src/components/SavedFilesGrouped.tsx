@@ -141,7 +141,10 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
         latestUpdate: header.updatedAt,
         statuses: [header.status],
         hasUploads: false,
-        files: [] // No files yet - detailed data loaded on-demand
+        files: [], // No files yet - detailed data loaded on-demand
+        isDeleted: header.isDeleted, // ✅ FIX: Include isDeleted property for permanent delete functionality
+        deletedAt: header.deletedAt || null, // ✅ FIX: Include deletion timestamp
+        deletedBy: header.deletedBy || null, // ✅ FIX: Include who deleted it
       }));
 
       console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements using lightweight API`);

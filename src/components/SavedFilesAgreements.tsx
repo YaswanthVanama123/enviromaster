@@ -281,6 +281,9 @@ export default function SavedFilesAgreements() {
         files: [], // No files yet - this is the key issue we're fixing
         hasVersions: false, // ✅ NEW: No versions exist yet
         isDraftOnly: true, // ✅ NEW: Flag for draft-only agreements
+        isDeleted: header.isDeleted, // ✅ FIX: Include isDeleted property for permanent delete functionality
+        deletedAt: header.deletedAt || null, // ✅ FIX: Include deletion timestamp
+        deletedBy: header.deletedBy || null, // ✅ FIX: Include who deleted it
       }));
 
       console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements:`,
