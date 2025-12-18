@@ -15,6 +15,7 @@ import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendSanicleanConfig {
@@ -534,31 +535,29 @@ function calculatePerItemCharge(
   const fixtureRate = isInsideBeltway ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture;
   const regionMinimum = isInsideBeltway ? form.insideBeltwayMinimum : 0;
 
-  // Base fixture charge - only calculate if fixtures exist
+  // Base fixture charge
   let baseServiceCalc = fixtureCount * fixtureRate * rateTierMultiplier;
 
   // Small facility rule: 5 fixtures or less = $50 minimum (includes trip)
-  // ✅ ONLY apply minimum charges when there are actual fixtures
   const isSmallFacility = fixtureCount <= form.smallFacilityThreshold;
   let tripChargeCalc = 0;
 
-  if (fixtureCount > 0) { // ✅ NEW: Only apply minimums when fixtures exist
-    if (isSmallFacility) {
-      baseServiceCalc = Math.max(baseServiceCalc, form.smallFacilityMinimum); // $50 minimum includes trip
-      tripChargeCalc = 0; // Already included in minimum
+  if (isSmallFacility) {
+    baseServiceCalc = Math.max(baseServiceCalc, form.smallFacilityMinimum); // $50 minimum includes trip
+    tripChargeCalc = 0; // Already included in minimum
+  } else {
+    // Apply regional minimum
+    baseServiceCalc = Math.max(baseServiceCalc, regionMinimum);
+
+    // Add trip charge ONLY if checkbox is enabled
+    if (form.addTripCharge) {
+      tripChargeCalc = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
+
+      // Add parking fee if inside beltway and parking needed
+      if (isInsideBeltway && form.needsParking) {
+        tripChargeCalc += form.insideBeltwayParkingFee;
+      }
     } else {
-      // Apply regional minimum
-      baseServiceCalc = Math.max(baseServiceCalc, regionMinimum);
-
-      // Add trip charge ONLY if checkbox is enabled
-      if (form.addTripCharge) {
-        tripChargeCalc = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
-
-        // Add parking fee if inside beltway and parking needed
-        if (isInsideBeltway && form.needsParking) {
-          tripChargeCalc += form.insideBeltwayParkingFee;
-        }
-      } else {
       tripChargeCalc = 0;
     }
   }
@@ -1033,6 +1032,31 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
         next.customMonthlyTotal = undefined;
         next.customContractTotal = undefined;
       }
+
+      // ✅ NEW: Log all form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'sinks', 'urinals', 'maleToilets', 'femaleToilets',
+        'microfiberBathrooms', 'estimatedPaperSpendPerWeek', 'excessSoapGallonsPerWeek',
+        'warrantyDispensers', 'contractMonths',
+        'urinalScreensQty', 'urinalMatsQty', 'toiletClipsQty', 'seatCoverDispensersQty', 'sanipodsQty',
+        // Selection fields
+        'location', 'soapType', 'pricingMode', 'rateTier',
+        'needsParking', 'addMicrofiberMopping', 'addTripCharge',
+        'addUrinalComponents', 'addMaleToiletComponents', 'addFemaleToiletComponents',
+        // Frequency fields
+        'mainServiceFrequency', 'facilityComponentsFrequency', 'frequency'
+      ];
+
+      logServiceFieldChanges(
+        'saniclean',
+        'SaniClean',
+        updates,
+        originalValues,
+        allFormFields,
+        form.fixtureCount || 1,
+        form.mainServiceFrequency || 'weekly'
+      );
 
       // ✅ Log price override for numeric pricing fields
       const pricingFields = [

@@ -10,6 +10,7 @@ import type {
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching the EXACT MongoDB JSON structure
 interface BackendSanipodConfig {
@@ -537,6 +538,29 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
             newValue !== oldValue && newValue > 0) {
           addServiceFieldChange(name, oldValue, newValue);
         }
+      }
+
+      // ✅ NEW: Log form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'podQuantity', 'extraBagsPerWeek', 'installQuantity',
+        // Selection fields
+        'frequency', 'rateCategory', 'serviceRule',
+        // Boolean fields
+        'isNewInstall', 'includedWithSaniClean', 'needsTripCharge'
+      ];
+
+      // Only log non-pricing field changes (pricing fields handled separately above)
+      if (allFormFields.includes(name)) {
+        logServiceFieldChanges(
+          'sanipod',
+          'SaniPod',
+          { [name]: next[name as keyof SanipodFormState] },
+          { [name]: originalValue },
+          [name],
+          form.podQuantity || 1,
+          form.frequency || 'weekly'
+        );
       }
 
       return next;
