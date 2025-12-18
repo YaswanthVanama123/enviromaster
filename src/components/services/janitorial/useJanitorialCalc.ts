@@ -4,6 +4,7 @@ import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 import type {
   JanitorialFormState,
   JanitorialQuoteResult,
@@ -257,6 +258,30 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
         value !== originalValue && value > 0) {
 
       addServiceFieldChange(field as string, originalValue, value);
+    }
+
+    // ✅ NEW: Log form field changes using universal logger
+    const allFormFields = [
+      // Quantity fields
+      'hoursPerWeek', 'weeksPerMonth', 'contractMonths', 'squareFootage',
+      // Selection fields
+      'frequency', 'serviceType', 'rateTier',
+      // Boolean fields
+      'includesVacuuming', 'includesDusting', 'includesRestroom', 'includesKitchen',
+      'includesTrash', 'includesWindows'
+    ];
+
+    // Log non-pricing field changes
+    if (allFormFields.includes(field as string)) {
+      logServiceFieldChanges(
+        'janitorial',
+        'Janitorial',
+        { [field]: value },
+        { [field]: originalValue },
+        [field as string],
+        form.hoursPerWeek || 1,
+        form.frequency || 'weekly'
+      );
     }
   };
 

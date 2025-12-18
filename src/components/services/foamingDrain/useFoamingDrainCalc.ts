@@ -12,6 +12,7 @@ import type {
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Helper function to transform backend frequencyMetadata to frontend format
 function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['frequencyMetadata'] | undefined) {
@@ -915,6 +916,27 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             newValue !== oldValue && newValue > 0) {
           addServiceFieldChange(key as string, oldValue, newValue);
         }
+      }
+
+      // ✅ NEW: Log form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'drainsPerWeek', 'contractMonths',
+        // Selection fields
+        'frequency', 'location', 'condition', 'rateTier'
+      ];
+
+      // Log non-pricing field changes
+      if (allFormFields.includes(key as string)) {
+        logServiceFieldChanges(
+          'foamingDrain',
+          'Foaming Drain',
+          { [key]: value },
+          { [key]: originalValue },
+          [key as string],
+          form.drainsPerWeek || 1,
+          form.frequency || 'weekly'
+        );
       }
 
       return next;

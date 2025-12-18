@@ -11,6 +11,7 @@ import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure from API
 interface BackendMicrofiberConfig {
@@ -507,6 +508,27 @@ export function useMicrofiberMoppingCalc(
             newValue !== oldValue && newValue > 0) {
           addServiceFieldChange(name, oldValue, newValue);
         }
+      }
+
+      // ✅ NEW: Log form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'bathrooms', 'hugeSqFtPerBathroom', 'contractMonths',
+        // Selection fields
+        'frequency', 'rateTier'
+      ];
+
+      // Log non-pricing field changes
+      if (allFormFields.includes(name)) {
+        logServiceFieldChanges(
+          'microfiberMopping',
+          'Microfiber Mopping',
+          { [name]: next[name as keyof MicrofiberMoppingFormState] },
+          { [name]: originalValue },
+          [name],
+          next.bathrooms || 1,
+          next.frequency || 'weekly'
+        );
       }
 
       return next;

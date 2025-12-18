@@ -9,7 +9,8 @@ import type {
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
-import { useVersionChangeCollection } from "../../../hooks/useVersionChangeCollection";
+import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Fallback constants (only used when backend is unavailable)
 const FALLBACK_DEFAULT_HOURLY = 200;
@@ -543,23 +544,31 @@ export function useRefreshPowerScrubCalc(
     return base;
   });
 
-  // Version change collection
-  const { addChange } = useVersionChangeCollection();
-
   // Helper function to add service field changes
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
     newValue: number
   ) => {
-    addChange({
-      fieldName: fieldName,
-      fieldDisplayName: `Refresh Power Scrub - ${fieldName}`,
+    addPriceChange({
+      productKey: `refreshPowerScrub_${fieldName}`,
+      productName: `Refresh Power Scrub - ${getFieldDisplayName(fieldName)}`,
+      productType: 'service',
+      fieldType: fieldName,
+      fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      serviceId: 'refreshPowerScrub',
+      quantity: 1, // Default quantity for service changes
+      frequency: form.frequency || 'monthly'
     });
-  }, [addChange]);
+
+    console.log(`📝 [REFRESH-POWER-SCRUB-FILE-LOGGER] Added change for ${fieldName}:`, {
+      from: originalValue,
+      to: newValue,
+      change: newValue - originalValue,
+      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+    });
+  }, [form.frequency]);
 
   // ✅ State to store backend config
   const [backendConfig, setBackendConfig] = useState<BackendRefreshPowerScrubConfig | null>(null);
@@ -779,13 +788,34 @@ export function useRefreshPowerScrubCalc(
 
   /** Toggle whether a column is included */
   const toggleAreaEnabled = (area: RefreshAreaKey, enabled: boolean) => {
-    setForm((prev) => ({
-      ...prev,
-      [area]: {
-        ...(prev as any)[area],
-        enabled,
-      } as RefreshAreaCalcState,
-    }));
+    setForm((prev) => {
+      const originalValue = prev[area].enabled;
+
+      // Log the area toggle change
+      if (originalValue !== enabled) {
+        const areaName = area === 'boh' ? 'Back of House' :
+                        area === 'foh' ? 'Front of House' :
+                        area.charAt(0).toUpperCase() + area.slice(1);
+
+        logServiceFieldChanges(
+          'refreshPowerScrub',
+          'Refresh Power Scrub',
+          { [`${areaName} Enabled`]: enabled },
+          { [`${areaName} Enabled`]: originalValue },
+          [`${areaName} Enabled`],
+          1, // quantity
+          prev.frequency || 'monthly'
+        );
+      }
+
+      return {
+        ...prev,
+        [area]: {
+          ...(prev as any)[area],
+          enabled,
+        } as RefreshAreaCalcState,
+      };
+    });
   };
 
   /** Update a single area field from the form */
@@ -815,11 +845,30 @@ export function useRefreshPowerScrubCalc(
                           area.charAt(0).toUpperCase() + area.slice(1);
 
           addServiceFieldChange(
-            areaName,
-            field as string,
+            `${areaName} ${field}`,
             originalValue,
-            value,
-            current
+            value
+          );
+        }
+      }
+
+      // ✅ Log form field changes for non-pricing fields
+      if (originalValue !== value) {
+        const areaName = area === 'boh' ? 'Back of House' :
+                        area === 'foh' ? 'Front of House' :
+                        area.charAt(0).toUpperCase() + area.slice(1);
+
+        const formFields = ['pricingType', 'kitchenSize', 'patioMode', 'includePatioAddon', 'frequencyLabel'];
+
+        if (formFields.includes(field as string)) {
+          logServiceFieldChanges(
+            'refreshPowerScrub',
+            'Refresh Power Scrub',
+            { [`${areaName} ${field}`]: value },
+            { [`${areaName} ${field}`]: originalValue },
+            [`${areaName} ${field}`],
+            1, // quantity
+            prev.frequency || 'monthly'
           );
         }
       }
@@ -868,17 +917,47 @@ export function useRefreshPowerScrubCalc(
   };
 
   const setFrequency = (frequency: string) => {
+    const originalValue = form.frequency;
+
     setForm((prev) => ({
       ...prev,
       frequency: frequency as any,
     }));
+
+    // ✅ Log frequency changes
+    if (originalValue !== frequency) {
+      logServiceFieldChanges(
+        'refreshPowerScrub',
+        'Refresh Power Scrub',
+        { frequency: frequency },
+        { frequency: originalValue },
+        ['frequency'],
+        1, // quantity
+        frequency
+      );
+    }
   };
 
   const setContractMonths = (months: number) => {
+    const originalValue = form.contractMonths;
+
     setForm((prev) => ({
       ...prev,
       contractMonths: months,
     }));
+
+    // ✅ Log contract months changes
+    if (originalValue !== months) {
+      logServiceFieldChanges(
+        'refreshPowerScrub',
+        'Refresh Power Scrub',
+        { contractMonths: months },
+        { contractMonths: originalValue },
+        ['contractMonths'],
+        1, // quantity
+        form.frequency || 'monthly'
+      );
+    }
   };
 
   // Calculate area totals and track if any use package pricing

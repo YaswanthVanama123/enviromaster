@@ -9,6 +9,7 @@ import { GREASE_TRAP_PER_TRAP_RATE, GREASE_TRAP_PER_GALLON_RATE } from "./grease
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching your MongoDB JSON structure
 interface BackendGreaseTrapConfig {
@@ -214,6 +215,27 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
         if (newValue !== oldValue && newValue > 0) {
           addServiceFieldChange(name, oldValue, newValue);
         }
+      }
+
+      // ✅ NEW: Log form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'trapsQuantity', 'gallonsPerTrap', 'frequency',
+        // Selection fields
+        'rateTier'
+      ];
+
+      // Log non-pricing field changes
+      if (allFormFields.includes(name)) {
+        logServiceFieldChanges(
+          'greaseTrap',
+          'Grease Trap',
+          { [name]: newFormState[name as keyof GreaseTrapFormState] },
+          { [name]: originalValue },
+          [name],
+          newFormState.trapsQuantity || 1,
+          newFormState.frequency || 'monthly'
+        );
       }
 
       return newFormState;

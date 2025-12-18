@@ -10,6 +10,7 @@ import { electrostaticSprayPricingConfig as cfg } from "./electrostaticSprayConf
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendElectrostaticSprayConfig {
@@ -331,6 +332,29 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
             newValue !== oldValue && newValue > 0) {
           addServiceFieldChange(name, oldValue, newValue);
         }
+      }
+
+      // ✅ NEW: Log form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'rooms', 'squareFeet', 'contractMonths', 'frequency',
+        // Selection fields
+        'pricingMethod', 'rateTier',
+        // Boolean fields
+        'includesTripCharge'
+      ];
+
+      // Log non-pricing field changes
+      if (allFormFields.includes(name)) {
+        logServiceFieldChanges(
+          'electrostaticSpray',
+          'Electrostatic Spray',
+          { [name]: next[name as keyof ElectrostaticSprayFormState] },
+          { [name]: originalValue },
+          [name],
+          next.rooms || next.squareFeet || 1,
+          next.frequency || 'monthly'
+        );
       }
 
       return next;

@@ -11,6 +11,7 @@ import { rpmWindowPricingConfig as cfg } from "./rpmWindowsConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
 interface BackendRpmConfig {

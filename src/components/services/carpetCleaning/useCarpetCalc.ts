@@ -438,6 +438,29 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         }
       }
 
+      // ✅ NEW: Log form field changes using universal logger
+      const allFormFields = [
+        // Quantity fields
+        'rooms', 'totalSqFt', 'contractMonths',
+        // Selection fields
+        'frequency', 'dirtLevel', 'rateTier',
+        // Boolean fields
+        'needsStainProtection'
+      ];
+
+      // Log non-pricing field changes
+      if (allFormFields.includes(name)) {
+        logServiceFieldChanges(
+          'carpetCleaning',
+          'Carpet Cleaning',
+          { [name]: newFormState[name as keyof CarpetFormState] },
+          { [name]: originalValue },
+          [name],
+          newFormState.rooms || 1,
+          newFormState.frequency || 'monthly'
+        );
+      }
+
       return newFormState;
     });
   };
