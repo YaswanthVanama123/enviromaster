@@ -50,7 +50,7 @@ export const JanitorialForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingPlaces ?? 0) > 0;
+      const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingTotalPlaces ?? 0) > 0;
 
       const data = isActive ? {
         serviceId: "pureJanitorial", // ✅ FIXED: Use correct service ID to match backend
@@ -92,12 +92,12 @@ export const JanitorialForm: React.FC<
           },
         } : {}),
 
-        ...(form.dustingPlaces !== undefined ? {
+        ...(form.dustingTotalPlaces !== undefined ? {
           dusting: {
             isDisplay: true,
             label: "Dusting",
             type: "text" as const,
-            value: `${form.dustingPlaces} places`,
+            value: `${form.dustingTotalPlaces} places = ${form.dustingCalculatedHours?.toFixed(2) || 0} hours`,
           },
         } : {}),
 
@@ -366,7 +366,7 @@ export const JanitorialForm: React.FC<
       </div>
 
       {/* Installation checkbox - Only for recurring */}
-      {form.serviceType === "recurring" && (
+      {/* {form.serviceType === "recurring" && (
         <div className="svc-row">
           <label>Installation</label>
           <div className="svc-row-right">
@@ -381,43 +381,43 @@ export const JanitorialForm: React.FC<
             </label>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Dusting */}
       <div className="svc-row">
-        <label>Dusting (places)</label>
+        <label>Dusting (Places → Hours)</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
             min={0}
             step={1}
-            name="dustingPlaces"
-            value={form.dustingPlaces}
+            name="dustingTotalPlaces"
+            value={form.dustingTotalPlaces}
             onChange={onChange}
-            placeholder="30"
+            placeholder="90"
           />
-          <span className="svc-small">places @ </span>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in svc-in-small field-qty"
-              type="number"
-              min={0}
-              step={0.01}
-              name="dustingPricePerPlace"
-              value={form.dustingPricePerPlace}
-              onChange={onChange}
-              title="Price per dusting place (from backend)"
-            />
-          </div>
-          <span className="svc-small">
-            /place (~{form.dustingPlacesPerHour} places/hr).
-            {/* {form.dirtyInitial &&
-              " – Dirty initial: first visit dusting at 3× time (non-quarterly)."}
-            {form.frequency === "quarterly" &&
-              " – Quarterly: from 2nd visit onwards dusting is 3× time each visit; first visit dusting is included in the main installation fee."} */}
-          </span>
+          <span className="svc-small">total places ÷ </span>
+          <input
+            className="svc-in svc-in-small field-qty"
+            type="number"
+            min={1}
+            step={1}
+            name="dustingPlacesPerHour"
+            value={form.dustingPlacesPerHour}
+            onChange={onChange}
+            title="Places per hour (from admin panel, editable by salesman)"
+          />
+          <span className="svc-small">places/hr = </span>
+          <input
+            className="svc-in svc-in-small field-qty"
+            type="number"
+            value={form.dustingCalculatedHours?.toFixed(2) || 0}
+            readOnly
+            style={{ backgroundColor: '#f0f8ff' }}
+            title="Calculated hours (auto-calculated)"
+          />
+          <span className="svc-small">hrs (combined with vacuum & other tasks, priced at hourly rate)</span>
         </div>
       </div>
 
@@ -461,7 +461,7 @@ export const JanitorialForm: React.FC<
       </div>
 
       {/* Contract length - Only show for recurring services */}
-      {form.serviceType === "recurring" && (
+      {/* {form.serviceType === "recurring" && (
         <div className="svc-row">
           <label>Contract Length (Months)</label>
           <div className="svc-row-right">
@@ -476,7 +476,7 @@ export const JanitorialForm: React.FC<
             />
           </div>
         </div>
-      )}
+      )} */}
 
       {/* OUTPUTS */}
       <div className="svc-h-row svc-h-row-sub">

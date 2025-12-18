@@ -97,7 +97,9 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   schedulingMode: "normalRoute",
   serviceType: "recurring", // Default to recurring service
   vacuumingHours: 0,
-  dustingPlaces: 0,
+  // ✅ NEW: Changed dusting from dustingPlaces to places + calculated hours
+  dustingTotalPlaces: 0,        // Total places needed (user input)
+  dustingCalculatedHours: 0,    // Calculated automatically (totalPlaces ÷ placesPerHour)
   dirtyInitial: false,
   frequency: cfg.defaultFrequency,
   visitsPerWeek: 1, // Default to once per week
@@ -114,7 +116,7 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   dirtyInitialMultiplier: cfg.dirtyInitialMultiplier,
   infrequentMultiplier: cfg.infrequentMultiplier,
   dustingPlacesPerHour: cfg.dustingPlacesPerHour,
-  dustingPricePerPlace: cfg.dustingPricePerPlace,
+  dustingPricePerPlace: cfg.dustingPricePerPlace, // DEPRECATED: kept for compatibility
   vacuumingDefaultHours: cfg.vacuumingDefaultHours,
   redRateMultiplier: cfg.rateCategories.redRate.multiplier,
   greenRateMultiplier: cfg.rateCategories.greenRate.multiplier,
@@ -447,6 +449,18 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
         (next as any)[name] = t.value;
       }
 
+      // ✅ NEW: Auto-calculate dusting hours when total places or places per hour change
+      if (name === 'dustingTotalPlaces' || name === 'dustingPlacesPerHour') {
+        const totalPlaces = name === 'dustingTotalPlaces' ? (next.dustingTotalPlaces || 0) : prev.dustingTotalPlaces;
+        const placesPerHour = name === 'dustingPlacesPerHour' ? (next.dustingPlacesPerHour || 0) : prev.dustingPlacesPerHour;
+
+        next.dustingCalculatedHours = totalPlaces > 0 && placesPerHour > 0
+          ? totalPlaces / placesPerHour
+          : 0;
+
+        console.log(`🔧 [Pure Janitorial] Auto-calculated dusting hours: ${totalPlaces} places ÷ ${placesPerHour} places/hr = ${next.dustingCalculatedHours.toFixed(2)} hours`);
+      }
+
       // ✅ Log price override for numeric pricing fields
       const pricingFields = [
         'baseHourlyRate', 'shortJobHourlyRate', 'minHoursPerVisit', 'weeksPerMonth',
@@ -509,15 +523,20 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     // ---- base hours with dust at 1× time ----
     const manualHours = Math.max(0, Number(form.manualHours) || 0);
     const vacuumingHours = Math.max(0, Number(form.vacuumingHours) || 0);
-    const dustingPlaces = Math.max(0, Number(form.dustingPlaces) || 0);
 
-    const dustingHoursBase =
-      dustingPlaces / form.dustingPlacesPerHour;  // ✅ USE FORM VALUE (from backend)
+    // ✅ NEW: Calculate dusting hours from total places ÷ places per hour
+    const dustingTotalPlaces = Math.max(0, Number(form.dustingTotalPlaces) || 0);
+    const dustingPlacesPerHour = form.dustingPlacesPerHour || activeConfig.dustingPlacesPerHour;
+
+    // Calculate dusting hours: total places ÷ places per hour
+    const dustingCalculatedHours = dustingTotalPlaces > 0
+      ? dustingTotalPlaces / dustingPlacesPerHour
+      : 0;
 
     const totalHoursBase =
-      manualHours + vacuumingHours + dustingHoursBase;
+      manualHours + vacuumingHours + dustingCalculatedHours;
 
-    console.log(`💰 Calculating - Hours: ${totalHoursBase.toFixed(2)}, Manual: ${manualHours}, Vacuuming: ${vacuumingHours}, Dusting: ${dustingPlaces} places`);
+    console.log(`💰 Calculating - Hours: ${totalHoursBase.toFixed(2)}, Manual: ${manualHours}, Vacuuming: ${vacuumingHours}, Dusting: ${dustingTotalPlaces} places = ${dustingCalculatedHours.toFixed(2)} hrs (${dustingPlacesPerHour} places/hr)`);
 
     const pricingMode = form.serviceType === "oneTime"
       ? `One-Time Service ($${form.shortJobHourlyRate}/hr, min ${form.minHoursPerVisit} hrs)`
@@ -610,12 +629,13 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     // Weekly: per visit * visits per week
     const recurringWeekly = recurringPerVisit * form.visitsPerWeek;
 
-    // ✅ FIXED INSTALLATION LOGIC: Only applies to dusting with 3x multiplier
-    // Calculate dusting cost per visit
-    const dustingCostPerVisit = dustingPlaces * form.dustingPricePerPlace;
+    // ✅ FIXED INSTALLATION LOGIC: Now based on dusting hours × hourly rate instead of per-place pricing
+    // Calculate dusting cost per visit using hourly rate
+    const hourlyRate = form.serviceType === "oneTime" ? form.shortJobHourlyRate : form.baseHourlyRate;
+    const dustingCostPerVisit = dustingCalculatedHours * hourlyRate;
 
     // Installation adds 2x extra dusting cost (making total 3x for first visit only)
-    const installationFee = form.installation && dustingPlaces > 0
+    const installationFee = form.installation && dustingTotalPlaces > 0
       ? dustingCostPerVisit * 2  // 2x extra (normal 1x + 2x extra = 3x total)
       : 0;
 
@@ -667,7 +687,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       breakdown: {
         manualHours,
         vacuumingHours,
-        dustingHours: dustingHoursBase,
+        dustingHours: dustingCalculatedHours,  // ✅ NEW: Use calculated hours instead of places-based calculation
+        dustingTotalPlaces,                    // ✅ NEW: Include total places in breakdown
+        dustingPlacesPerHour,                  // ✅ NEW: Include places per hour rate in breakdown
         pricingMode: `Recurring Service ($${form.baseHourlyRate}/hr, min ${form.minHoursPerVisit} hrs)`,
         basePrice: recurringBasePrice,
         appliedMultiplier: 1,

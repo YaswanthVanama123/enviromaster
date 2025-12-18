@@ -642,20 +642,21 @@ export function useMicrofiberMoppingCalc(
       const additionalUnitRate = form.extraAreaRatePerUnit; // $10 per 400 sq ft
 
       if (form.useExactExtraAreaSqft) {
-        // ✅ EXACT CALCULATION: Calculate minimum coverage first, then additional units
-        // Minimum $100 covers how many units? $100 ÷ $10 = 10 units
-        // 10 units × 400 sqft = 4000 sqft covered by minimum
-        const minimumUnits = Math.floor(firstUnitRate / additionalUnitRate); // $100 ÷ $10 = 10 units
-        const minimumCoverageSqFt = minimumUnits * unitSqFt; // 10 × 400 = 4000 sqft
+        // ✅ EXACT CALCULATION with step-down pricing model using backend values
+        // Step-down model: minimum up to threshold, then recalculate using per-unit pricing
+
+        // Calculate threshold: how many sq ft does the minimum cover?
+        const unitsInMinimum = Math.floor(firstUnitRate / additionalUnitRate); // e.g., $100 ÷ $10 = 10 units
+        const minimumCoverageSqFt = unitsInMinimum * unitSqFt; // e.g., 10 × 400 = 4000 sqft
 
         if (form.extraAreaSqFt <= minimumCoverageSqFt) {
-          // ≤ 4000 sq ft: Always $100 minimum (covers up to 4000 sqft)
+          // ≤ minimum coverage: Use minimum rate
           calculatedExtraAreaPrice = firstUnitRate;
         } else {
-          // > 4000 sq ft: $100 minimum + additional units beyond coverage
-          const extraSqFt = form.extraAreaSqFt - minimumCoverageSqFt; // sqft over 4000
-          const additionalUnits = Math.ceil(extraSqFt / unitSqFt); // additional 400sqft units needed
-          calculatedExtraAreaPrice = firstUnitRate + (additionalUnits * additionalUnitRate);
+          // > minimum coverage: Use per-unit pricing for ALL units (step-down model)
+          // Instead of minimum + extra, calculate total units × rate
+          const totalUnits = Math.ceil(form.extraAreaSqFt / unitSqFt);
+          calculatedExtraAreaPrice = totalUnits * additionalUnitRate;
         }
       } else {
         // ✅ DIRECT CALCULATION: Calculate minimum coverage first, then exact additional sqft
@@ -698,21 +699,22 @@ export function useMicrofiberMoppingCalc(
       const additionalUnitRate = form.standaloneRatePerUnit; // $10 per 200 sq ft
 
       if (form.useExactStandaloneSqft) {
-        // ✅ EXACT CALCULATION: Calculate minimum coverage first, then additional units
-        // Minimum $40 covers how many units? Need to calculate based on per-unit rate
-        // If rate is $10/200sqft and minimum is $40, then $40 ÷ $10 = 4 units
-        // 4 units × 200 sqft = 800 sqft covered by minimum
-        const minimumUnits = Math.floor(minimumRate / additionalUnitRate); // e.g., $40 ÷ $10 = 4 units
-        const minimumCoverageSqFt = minimumUnits * unitSqFt; // e.g., 4 × 200 = 800 sqft
+        // ✅ EXACT CALCULATION with step-down pricing model using backend values
+        // Step-down model: minimum up to threshold, then recalculate using per-unit pricing
+
+        // Calculate threshold: how many sq ft does the minimum cover?
+        // Based on the pattern: minimum covers X units worth of area, then switch to per-unit pricing
+        const unitsInMinimum = Math.floor(minimumRate / additionalUnitRate); // e.g., $40 ÷ $10 = 4 units
+        const minimumCoverageSqFt = unitsInMinimum * unitSqFt; // e.g., 4 × 200 = 800 sqft
 
         if (form.standaloneSqFt <= minimumCoverageSqFt) {
-          // ≤ 800 sq ft: Always $40 minimum (covers up to 800 sqft)
+          // ≤ minimum coverage: Use minimum rate
           calculatedStandaloneServicePrice = minimumRate;
         } else {
-          // > 800 sq ft: $40 minimum + additional units beyond coverage
-          const extraSqFt = form.standaloneSqFt - minimumCoverageSqFt; // sqft over 800
-          const additionalUnits = Math.ceil(extraSqFt / unitSqFt); // additional 200sqft units needed
-          calculatedStandaloneServicePrice = minimumRate + (additionalUnits * additionalUnitRate);
+          // > minimum coverage: Use per-unit pricing for ALL units (step-down model)
+          // Instead of minimum + extra, calculate total units × rate
+          const totalUnits = Math.ceil(form.standaloneSqFt / unitSqFt);
+          calculatedStandaloneServicePrice = totalUnits * additionalUnitRate;
         }
       } else {
         // ✅ DIRECT CALCULATION: Calculate minimum coverage first, then exact additional sqft

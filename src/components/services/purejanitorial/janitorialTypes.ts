@@ -52,10 +52,10 @@ export interface JanitorialPricingConfig {
   /** Default frequency to display in UI. */
   defaultFrequency: JanitorialFrequencyKey;
 
-  /** Dusting: places per hour. */
+  /** Dusting: places per hour (from admin panel, overrideable by salesman). */
   dustingPlacesPerHour: number;
 
-  /** Dusting: price per place. */
+  /** DEPRECATED: Dusting price per place - now calculated from hours × hourly rate. */
   dustingPricePerPlace: number;
 
   /** Vacuuming: default hours. */
@@ -80,7 +80,9 @@ export interface JanitorialFormState {
   schedulingMode: SchedulingMode;
   serviceType: ServiceType; // recurring or one-time
   vacuumingHours: number;
-  dustingPlaces: number;
+  // ✅ NEW: Changed dusting from price-per-place to places-and-hours model
+  dustingTotalPlaces: number;        // Total places needed (user input, e.g., 90 places)
+  dustingCalculatedHours: number;    // Calculated hours (totalPlaces ÷ placesPerHour)
   dirtyInitial: boolean; // kept for UI text only now
   frequency: JanitorialFrequencyKey;
   visitsPerWeek: number; // NEW: 1-7 visits per week
@@ -99,8 +101,8 @@ export interface JanitorialFormState {
   weeksPerMonth: number;                // 4.33 weeks per month
   dirtyInitialMultiplier: number;       // 3× for dirty initial clean
   infrequentMultiplier: number;         // 3× for quarterly dusting
-  dustingPlacesPerHour: number;         // places per hour
-  dustingPricePerPlace: number;         // price per place
+  dustingPlacesPerHour: number;         // places per hour (from admin panel, editable by salesman)
+  dustingPricePerPlace: number;         // DEPRECATED: kept for backward compatibility
   vacuumingDefaultHours: number;        // default vacuuming hours
   redRateMultiplier: number;            // red rate multiplier
   greenRateMultiplier: number;          // green rate multiplier
