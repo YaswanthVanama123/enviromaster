@@ -355,21 +355,21 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <div className="svc-inline">
                   <input
                     type="number"
+                    min="0"
                     name="roomCount"
-                    min={0}
                     className="svc-in field-qty"
-                    value={form.roomCount}
+                    value={form.roomCount || ""}
                     onChange={onChange}
                     title="Number of rooms"
                   />
                   <span>@</span>
                   <input
                     type="number"
+                    min="0"
                     name="ratePerRoom"
-                    min={0}
                     step={0.01}
                     className="svc-in field-rate"
-                    value={form.ratePerRoom}
+                    value={form.ratePerRoom || ""}
                     onChange={onChange}
                     title="Rate per room (editable - changes calculation)"
                     style={{ backgroundColor: '#f8f9fa', borderColor: '#28a745' }}
@@ -395,21 +395,21 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <div className="svc-inline">
                   <input
                     type="number"
+                    min="0"
                     name="squareFeet"
-                    min={0}
                     className="svc-in field-qty"
-                    value={form.squareFeet}
+                    value={form.squareFeet || ""}
                     onChange={onChange}
                     title="Total square feet"
                   />
                   <span>@</span>
                   <input
                     type="number"
+                    min="0"
                     name="ratePerThousandSqFt"
-                    min={0}
                     step={0.01}
                     className="svc-in field-rate"
-                    value={form.ratePerThousandSqFt}
+                    value={form.ratePerThousandSqFt || ""}
                     onChange={onChange}
                     title="Rate per 1000 sq ft (editable - changes calculation)"
                     style={{ backgroundColor: '#f8f9fa', borderColor: '#28a745' }}
@@ -540,6 +540,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <span>$</span>
               <input
                 type="number"
+            min="0"
                 step="0.01"
                 name="customServiceCharge"
                 className="svc-in sm"
@@ -584,6 +585,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <span>$</span>
               <input
                 type="number"
+            min="0"
                 step="0.01"
                 name="customPerVisitPrice"
                 className="svc-in sm"
@@ -612,6 +614,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   type="number"
+            min="0"
                   step="0.01"
                   name="customMonthlyRecurring"
                   className="svc-in sm"
@@ -641,6 +644,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   type="number"
+            min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
                   className="svc-in sm"
@@ -670,6 +674,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   type="number"
+            min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
                   className="svc-in sm"
@@ -719,6 +724,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
                 <input
                   type="number"
+            min="0"
                   step="0.01"
                   name="customContractTotal"
                   className="svc-in sm"

@@ -386,6 +386,10 @@ export const RefreshPowerScrubForm: React.FC<
                     <input
                       className="rps-line rps-num"
                       type="number"
+                  min="0"
+                    min="0"
+            min="0"
+                      min="0"
                       step="0.01"
                       value={area.customAmount > 0 ? area.customAmount : getPatioStandalone()}
                       onChange={(e) => {
@@ -409,6 +413,10 @@ export const RefreshPowerScrubForm: React.FC<
                     <input
                       className="rps-line rps-num"
                       type="number"
+                  min="0"
+                    min="0"
+            min="0"
+                      min="0"
                       step="0.01"
                       value={getPatioUpsell()}
                       onChange={() => {}} // For now keep static, can be made editable later if needed
@@ -445,6 +453,9 @@ export const RefreshPowerScrubForm: React.FC<
                   <input
                     className="rps-line rps-num"
                     type="number"
+                  min="0"
+                    min="0"
+            min="0"
                     step="0.01"
                     value={area.customAmount > 0 ? area.customAmount : (area.kitchenSize === "large" ? getKitchenLarge() : getKitchenSmallMed())}
                     onChange={(e) => {
@@ -467,6 +478,8 @@ export const RefreshPowerScrubForm: React.FC<
                 <input
                   className="rps-line rps-num"
                   type="number"
+                  min="0"
+            min="0"
                   step="0.01"
                   value={area.customAmount > 0 ? area.customAmount : getPresetAmount(areaKey)}
                   onChange={(e) => {
@@ -491,7 +504,8 @@ export const RefreshPowerScrubForm: React.FC<
             <input
               className="rps-line rps-num"
               type="number"
-              value={area.workers}
+              min="0"
+              value={area.workers || ""}
               onChange={(e) => setAreaField(areaKey, "workers", e.target.value)}
               style={{ width: '60px' }}
             />
@@ -499,8 +513,9 @@ export const RefreshPowerScrubForm: React.FC<
             <input
               className="rps-line rps-num"
               type="number"
+              min="0"
               step="0.01"
-              value={area.workerRate}
+              value={area.workerRate || ""}
               onChange={(e) => setAreaField(areaKey, "workerRate", e.target.value)}
               style={{ width: '80px' }}
               title="Per worker rate - editable"
@@ -516,7 +531,8 @@ export const RefreshPowerScrubForm: React.FC<
             <input
               className="rps-line rps-num"
               type="number"
-              value={area.hours}
+              min="0"
+              value={area.hours || ""}
               onChange={(e) => setAreaField(areaKey, "hours", e.target.value)}
               style={{ width: '60px' }}
             />
@@ -524,6 +540,7 @@ export const RefreshPowerScrubForm: React.FC<
             <input
               className="rps-line rps-num"
               type="number"
+            min="0"
               step="0.01"
               value={area.hourlyRate}
               onChange={(e) => setAreaField(areaKey, "hourlyRate", e.target.value)}
@@ -543,6 +560,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
+            min="0"
                 step="0.01"
                 value={area.sqFtFixedFee}
                 onChange={(e) => setAreaField(areaKey, "sqFtFixedFee", e.target.value)}
@@ -555,6 +573,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
+            min="0"
                 value={area.insideSqFt}
                 onChange={(e) => setAreaField(areaKey, "insideSqFt", e.target.value)}
                 style={{ width: '80px' }}
@@ -563,6 +582,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
+            min="0"
                 step="0.01"
                 value={area.insideRate}
                 onChange={(e) => setAreaField(areaKey, "insideRate", e.target.value)}
@@ -576,6 +596,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
+            min="0"
                 value={area.outsideSqFt}
                 onChange={(e) => setAreaField(areaKey, "outsideSqFt", e.target.value)}
                 style={{ width: '80px' }}
@@ -584,6 +605,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
+            min="0"
                 step="0.01"
                 value={area.outsideRate}
                 onChange={(e) => setAreaField(areaKey, "outsideRate", e.target.value)}
@@ -602,6 +624,7 @@ export const RefreshPowerScrubForm: React.FC<
             <input
               className="rps-line rps-num"
               type="number"
+            min="0"
               value={area.customAmount}
               onChange={(e) => setAreaField(areaKey, "customAmount", e.target.value)}
               style={{ width: '100px' }}
@@ -664,8 +687,9 @@ export const RefreshPowerScrubForm: React.FC<
           <span>$</span>
           <input
             type="number"
+            min="0"
             className="rps-line rps-num"
-            value={form.hourlyRate}
+            value={form.hourlyRate || ""}
             onChange={(e) => setHourlyRate(e.target.value)}
           />
           <span>/hr/worker</span>
@@ -675,8 +699,9 @@ export const RefreshPowerScrubForm: React.FC<
           <span>$</span>
           <input
             type="number"
+            min="0"
             className="rps-line rps-num"
-            value={form.minimumVisit}
+            value={form.minimumVisit || ""}
             onChange={(e) => setMinimumVisit(e.target.value)}
           />
         </div>

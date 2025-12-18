@@ -241,10 +241,10 @@ export const StripWaxForm: React.FC<
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
-            min={0}
+            min="0"
             step={1}
             name="floorAreaSqFt"
-            value={form.floorAreaSqFt}
+            value={form.floorAreaSqFt || ""}
             onChange={onChange}
           />
           <span className="svc-multi">@</span>
@@ -253,10 +253,10 @@ export const StripWaxForm: React.FC<
             <input
               className="svc-in svc-in-small field-qty"
               type="number"
-              min={0}
+              min="0"
               step={0.01}
               name="ratePerSqFt"
-              value={form.ratePerSqFt}
+              value={form.ratePerSqFt || ""}
               onChange={onChange}
               title="Rate per sq ft (from backend, editable)"
             />
@@ -288,10 +288,10 @@ export const StripWaxForm: React.FC<
             <input
               className="svc-in svc-in-small"
               type="number"
-              min={0}
+              min="0"
               step={1}
               name="minCharge"
-              value={form.minCharge}
+              value={form.minCharge || ""}
               onChange={onChange}
               title="Minimum charge per visit (from backend, editable)"
             />
@@ -345,6 +345,7 @@ export const StripWaxForm: React.FC<
         <div className="svc-dollar">
           $<input
             type="number"
+            min="0"
             step="0.01"
             name="customPerVisit"
             className="svc-in svc-in-small"
@@ -372,6 +373,7 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customMonthly"
               className="svc-in svc-in-small"
@@ -400,6 +402,7 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customMonthly"
               className="svc-in svc-in-small"
@@ -428,6 +431,7 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customMonthly"
               className="svc-in svc-in-small"
@@ -456,6 +460,7 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customOngoingMonthly"
               className="svc-in svc-in-small"
@@ -505,6 +510,7 @@ export const StripWaxForm: React.FC<
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
             <input
               type="number"
+            min="0"
               step="0.01"
               name="customContractTotal"
               className="svc-in"

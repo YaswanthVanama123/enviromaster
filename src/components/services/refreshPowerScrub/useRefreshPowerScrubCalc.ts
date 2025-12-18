@@ -326,8 +326,8 @@ function calcPerWorker(
 
   const calculatedAmount = (state.workers || 0) * perWorkerRate;
 
-  // Apply minimum if calculated amount is below minimum
-  return Math.max(calculatedAmount, minimumVisit);
+  // Apply minimum if calculated amount is below minimum - ONLY when there are workers
+  return state.workers > 0 ? Math.max(calculatedAmount, minimumVisit) : 0;
 }
 
 /** Per Hour rule:
@@ -345,8 +345,8 @@ function calcPerHour(
 
   const calculatedAmount = (state.hours || 0) * perHourRate;
 
-  // Apply minimum if calculated amount is below minimum
-  return Math.max(calculatedAmount, minimumVisit);
+  // Apply minimum if calculated amount is below minimum - ONLY when there are hours
+  return state.hours > 0 ? Math.max(calculatedAmount, minimumVisit) : 0;
 }
 
 /** Sq-ft rule:
@@ -367,8 +367,9 @@ function calcSquareFootage(
   const outsideCost = (state.outsideSqFt || 0) * outsideRate;
   const calculatedAmount = fixedFee + insideCost + outsideCost;
 
-  // Apply minimum if calculated amount is below minimum
-  return Math.max(calculatedAmount, minimumVisit);
+  // Apply minimum if calculated amount is below minimum - ONLY when there's actual sq ft
+  const hasSqFt = (state.insideSqFt || 0) > 0 || (state.outsideSqFt || 0) > 0;
+  return hasSqFt ? Math.max(calculatedAmount, minimumVisit) : 0;
 }
 
 /** Default / preset prices when no hours / sq-ft are supplied.
@@ -941,8 +942,8 @@ export function useRefreshPowerScrubCalc(
     );
 
     // ✅ REMOVED TRIP CHARGE LOGIC: No trip charge added since it's handled separately
-    // Use areas subtotal as-is, only apply minimum visit if needed
-    const calculatedPerVisit = Math.max(areasSubtotal, form.minimumVisit);
+    // Use areas subtotal as-is, only apply minimum visit if needed - ONLY when there's actual service
+    const calculatedPerVisit = areasSubtotal > 0 ? Math.max(areasSubtotal, form.minimumVisit) : 0;
 
     const rounded = Math.round(calculatedPerVisit * 100) / 100;
 

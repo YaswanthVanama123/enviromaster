@@ -282,8 +282,9 @@ export const RpmWindowsForm: React.FC<
             className="svc-in field-qty"
             name="smallQty"
             type="number"
+          min="0"
             min="0"
-            value={form.smallQty || ""}
+            value={form.smallQty}
             onChange={onChange}
           />
           <span>@</span>
@@ -291,9 +292,10 @@ export const RpmWindowsForm: React.FC<
             className="svc-in field-qty"
             name="smallWindowRate"
             type="number"
+          min="0"
             min="0"
             step="0.01"
-            value={form.smallWindowRate || ""}
+            value={form.smallWindowRate}
             onChange={onChange}
             title="Base weekly rate (from backend)"
           />
@@ -302,11 +304,12 @@ export const RpmWindowsForm: React.FC<
             className="svc-in-box field-qty"
             name="customSmallTotal"
             type="number"
+          min="0"
             min="0"
             step="0.01"
             value={
               form.customSmallTotal !== undefined
-                ? form.customSmallTotal || ""
+                ? form.customSmallTotal
                 : (form.smallQty * calc.effSmall)
             }
             onChange={onChange}
@@ -325,8 +328,9 @@ export const RpmWindowsForm: React.FC<
             className="svc-in field-qty"
             name="mediumQty"
             type="number"
+          min="0"
             min="0"
-            value={form.mediumQty || ""}
+            value={form.mediumQty}
             onChange={onChange}
           />
           <span>@</span>
@@ -334,9 +338,10 @@ export const RpmWindowsForm: React.FC<
             className="svc-in field-qty"
             name="mediumWindowRate"
             type="number"
+          min="0"
             min="0"
             step="0.01"
-            value={form.mediumWindowRate || ""}
+            value={form.mediumWindowRate}
             onChange={onChange}
             title="Base weekly rate (from backend)"
           />
@@ -345,11 +350,12 @@ export const RpmWindowsForm: React.FC<
             className="svc-in-box field-qty"
             name="customMediumTotal"
             type="number"
+          min="0"
             min="0"
             step="0.01"
             value={
               form.customMediumTotal !== undefined
-                ? form.customMediumTotal || ""
+                ? form.customMediumTotal
                 : (form.mediumQty * calc.effMedium)
             }
             onChange={onChange}
@@ -368,8 +374,9 @@ export const RpmWindowsForm: React.FC<
             className="svc-in field-qty"
             name="largeQty"
             type="number"
+          min="0"
             min="0"
-            value={form.largeQty || ""}
+            value={form.largeQty}
             onChange={onChange}
           />
           <span>@</span>
@@ -377,9 +384,10 @@ export const RpmWindowsForm: React.FC<
             className="svc-in field-qty"
             name="largeWindowRate"
             type="number"
+          min="0"
             min="0"
             step="0.01"
-            value={form.largeWindowRate || ""}
+            value={form.largeWindowRate}
             onChange={onChange}
             title="Base weekly rate (from backend)"
           />
@@ -388,11 +396,12 @@ export const RpmWindowsForm: React.FC<
             className="svc-in-box field-qty"
             name="customLargeTotal"
             type="number"
+          min="0"
             min="0"
             step="0.01"
             value={
               form.customLargeTotal !== undefined
-                ? form.customLargeTotal || ""
+                ? form.customLargeTotal
                 : (form.largeQty * calc.effLarge)
             }
             onChange={onChange}
@@ -430,7 +439,6 @@ export const RpmWindowsForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-        min="0"
           min="0"
             min="0"
                 value={line.amount}
@@ -452,7 +460,6 @@ export const RpmWindowsForm: React.FC<
             <input
               className="svc-in"
               type="number"
-        min="0"
           min="0"
             min="0"
               value={formatNumber(calc.effTrip)}
@@ -475,7 +482,6 @@ export const RpmWindowsForm: React.FC<
             <input
               className="svc-in"
               type="number"
-        min="0"
           min="0"
             min="0"
               step="0.01"
@@ -522,7 +528,6 @@ export const RpmWindowsForm: React.FC<
             <input
               name="installMultiplierFirstTime"
               type="number"
-        min="0"
           min="0"
             min="0"
               step="0.1"
@@ -543,7 +548,6 @@ export const RpmWindowsForm: React.FC<
             <input
               name="installMultiplierClean"
               type="number"
-        min="0"
           min="0"
             min="0"
               step="0.1"
@@ -622,7 +626,6 @@ export const RpmWindowsForm: React.FC<
               className="svc-in"
               name="customPerVisitPrice"
               type="number"
-        min="0"
           min="0"
             min="0"
               step="0.01"
@@ -646,7 +649,6 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customFirstMonthTotal"
                 type="number"
-        min="0"
           min="0"
             min="0"
                 step="0.01"
@@ -675,7 +677,6 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customMonthlyRecurring"
                 type="number"
-        min="0"
           min="0"
             min="0"
                 step="0.01"
@@ -705,7 +706,6 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customPerVisitPrice"
                 type="number"
-        min="0"
           min="0"
             min="0"
                 step="0.01"
@@ -733,7 +733,6 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customFirstMonthTotal"
                 type="number"
-        min="0"
           min="0"
             min="0"
                 step="0.01"
@@ -805,7 +804,6 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customAnnualPrice"
                 type="number"
-        min="0"
           min="0"
             min="0"
                 step="0.01"

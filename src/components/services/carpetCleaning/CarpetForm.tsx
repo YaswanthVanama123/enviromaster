@@ -259,10 +259,10 @@ export const CarpetForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-              min={0}
-              step={0.01}
+              min="0"
+              step="0.01"
               name="customFirstUnitRate"
-              value={form.customFirstUnitRate !== undefined ? form.customFirstUnitRate : (form.firstUnitRate || 0)}
+              value={form.customFirstUnitRate !== undefined ? form.customFirstUnitRate || "" : (form.firstUnitRate || 0)}
               onChange={onChange}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customFirstUnitRate !== undefined ? '#fffacd' : 'white' }}
@@ -281,10 +281,10 @@ export const CarpetForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-              min={0}
-              step={0.01}
+              min="0"
+              step="0.01"
               name="customAdditionalUnitRate"
-              value={form.customAdditionalUnitRate !== undefined ? form.customAdditionalUnitRate : (form.additionalUnitRate || 0)}
+              value={form.customAdditionalUnitRate !== undefined ? form.customAdditionalUnitRate || "" : (form.additionalUnitRate || 0)}
               onChange={onChange}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customAdditionalUnitRate !== undefined ? '#fffacd' : 'white' }}
@@ -303,10 +303,10 @@ export const CarpetForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-              min={0}
-              step={0.01}
+              min="0"
+              step="0.01"
               name="customPerVisitMinimum"
-              value={form.customPerVisitMinimum !== undefined ? form.customPerVisitMinimum : (form.perVisitMinimum || 0)}
+              value={form.customPerVisitMinimum !== undefined ? form.customPerVisitMinimum || "" : (form.perVisitMinimum || 0)}
               onChange={onChange}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customPerVisitMinimum !== undefined ? '#fffacd' : 'white' }}
@@ -324,8 +324,9 @@ export const CarpetForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
+            min="0"
             name="areaSqFt"
-            value={form.areaSqFt}
+            value={form.areaSqFt || ""}
             onChange={onChange}
           />
           <span className="svc-small">sq ft</span>
@@ -337,11 +338,12 @@ export const CarpetForm: React.FC<
             <input
               className="svc-in-box"
               type="number"
+            min="0"
               step="0.01"
               name="customPerVisitPrice"
               value={
                 form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice
+                  ? form.customPerVisitPrice || ""
                   : calc.perVisitCharge
               }
               onChange={onChange}
@@ -471,10 +473,10 @@ export const CarpetForm: React.FC<
                 <input
                   className="svc-in"
                   type="number"
-                  min={0}
+                  min="0"
                   step={0.1}
                   name={form.isDirtyInstall ? "installMultiplierDirty" : "installMultiplierClean"}
-                  value={form.isDirtyInstall ? form.installMultiplierDirty : form.installMultiplierClean}
+                  value={form.isDirtyInstall ? (form.installMultiplierDirty || "") : (form.installMultiplierClean || "")}
                   onChange={onChange}
                   title={`${form.isDirtyInstall ? 'Dirty' : 'Clean'} install multiplier (from backend)`}
                 />
@@ -495,6 +497,7 @@ export const CarpetForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
+            min="0"
                 step="0.01"
                 name="customInstallationFee"
                 value={
@@ -518,12 +521,13 @@ export const CarpetForm: React.FC<
         <div className="svc-dollar">
           $<input
             type="number"
+            min="0"
             step="0.01"
             name="customPerVisitPrice"
             className="svc-in svc-in-small"
             value={
               form.customPerVisitPrice !== undefined
-                ? form.customPerVisitPrice.toFixed(2)
+                ? form.customPerVisitPrice.toFixed(2) || ""
                 : calc.perVisitCharge.toFixed(2)
             }
             onChange={onChange}
@@ -545,12 +549,13 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
               value={
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2)
+                  ? form.customFirstMonthPrice.toFixed(2) || ""
                   : calc.firstMonthTotal.toFixed(2)
               }
               onChange={onChange}
@@ -573,12 +578,13 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
               value={
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2)
+                  ? form.customFirstMonthPrice.toFixed(2) || ""
                   : calc.firstMonthTotal.toFixed(2)
               }
               onChange={onChange}
@@ -601,12 +607,13 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
               value={
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2)
+                  ? form.customFirstMonthPrice.toFixed(2) || ""
                   : calc.firstMonthTotal.toFixed(2)
               }
               onChange={onChange}
@@ -629,6 +636,7 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
+            min="0"
               step="0.01"
               name="customMonthlyRecurring"
               className="svc-in svc-in-small"
@@ -678,12 +686,13 @@ export const CarpetForm: React.FC<
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
             <input
               type="number"
+            min="0"
               step="0.01"
               name="customContractTotal"
               className="svc-in"
               value={
                 form.customContractTotal !== undefined
-                  ? form.customContractTotal.toFixed(2)
+                  ? form.customContractTotal.toFixed(2) || ""
                   : calc.contractTotal.toFixed(2)
               }
               onChange={onChange}

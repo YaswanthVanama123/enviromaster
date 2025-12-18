@@ -219,8 +219,9 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 name="baseHours"
                 className="svc-in sm"
                 type="number"
+                min="0"
                 step="0.01"
-                value={form.baseHours}
+                value={form.baseHours || ""}
                 onChange={onChange}
               />
               <span>@</span>
@@ -228,13 +229,15 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 name={form.serviceType === "recurringService" ? "recurringServiceRate" : "oneTimeServiceRate"}
                 className="svc-in sm"
                 type="number"
-                value={form.serviceType === "recurringService" ? form.recurringServiceRate : form.oneTimeServiceRate}
+                min="0"
+                value={(form.serviceType === "recurringService" ? form.recurringServiceRate : form.oneTimeServiceRate) || ""}
                 onChange={onChange}
               />
               <span>=</span>
               <input
                 className="svc-in sm"
                 type="number"
+            min="0"
                 value={calc.baseServiceCost.toFixed(2)}
                 readOnly
                 style={{ backgroundColor: "#f5f5f5" }}
@@ -329,8 +332,9 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                   name="parkingCost"
                   className="svc-in-box"
                   type="number"
+            min="0"
                   step="0.01"
-                  value={form.parkingCost}
+                  value={form.parkingCost || ""}
                   onChange={onChange}
                 />
               </div>
@@ -348,7 +352,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 className="svc-in"
                 type="number"
                 min="1"
-                value={form.contractMonths}
+                value={form.contractMonths || ""}
                 onChange={onChange}
               />
             </div>
@@ -377,8 +381,9 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                   <input
                     className="svc-in-box"
                     type="number"
+            min="0"
                     step="0.01"
-                    value={field.value as string}
+                    value={field.value as string || ""}
                     onChange={(e) => updateCustomField(field.id, { value: e.target.value })}
                   />
                 </div>
@@ -388,7 +393,8 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                   <input
                     className="svc-in sm"
                     type="number"
-                    value={(field.value as any).qty || 0}
+            min="0"
+                    value={(field.value as any).qty || 0 || ""}
                     onChange={(e) => updateCustomField(field.id, {
                       value: { ...(field.value as any), qty: Number(e.target.value) }
                     })}
@@ -397,7 +403,8 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                   <input
                     className="svc-in sm"
                     type="number"
-                    value={(field.value as any).rate || 0}
+            min="0"
+                    value={(field.value as any).rate || 0 || ""}
                     onChange={(e) => updateCustomField(field.id, {
                       value: { ...(field.value as any), rate: Number(e.target.value) }
                     })}
@@ -406,6 +413,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                   <input
                     className="svc-in sm"
                     type="number"
+            min="0"
                     value={((field.value as any).qty || 0) * ((field.value as any).rate || 0)}
                     readOnly
                     style={{ backgroundColor: "#f5f5f5" }}

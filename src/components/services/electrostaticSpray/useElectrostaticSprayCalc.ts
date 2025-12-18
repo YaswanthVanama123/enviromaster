@@ -393,9 +393,14 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       effectiveRate = form.ratePerThousandSqFt;
     }
 
-    // Apply minimum charge if needed
-    if (activeConfig.minimumChargePerVisit > 0) {
+    // Apply minimum charge if needed - ONLY when there's actual service
+    const hasService = (form.pricingMethod === "byRoom" && form.roomCount > 0) ||
+                      (form.pricingMethod === "bySqFt" && form.squareFeet > 0);
+
+    if (activeConfig.minimumChargePerVisit > 0 && hasService) {
       calculatedServiceCharge = Math.max(calculatedServiceCharge, activeConfig.minimumChargePerVisit);
+    } else if (!hasService) {
+      calculatedServiceCharge = 0;
     }
 
     // Use custom override if set

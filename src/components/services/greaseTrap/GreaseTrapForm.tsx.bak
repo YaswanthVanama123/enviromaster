@@ -116,10 +116,11 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
             Number of traps
             <input
               type="number"
-              min="0"
+          min="0"
+            min="0"
               name="numberOfTraps"
               className="svc-in"
-              value={form.numberOfTraps || ""}
+              value={form.numberOfTraps}
               onChange={handleChange}
               min={0}
             />
@@ -129,10 +130,11 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
             Size of traps (gallons)
             <input
               type="number"
-              min="0"
+          min="0"
+            min="0"
               name="sizeOfTraps"
               className="svc-in"
-              value={form.sizeOfTraps || ""}
+              value={form.sizeOfTraps}
               onChange={handleChange}
               min={0}
             />
@@ -164,10 +166,11 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
                 <span>$</span>
                 <input
                   type="number"
-                  min="0"
+          min="0"
+            min="0"
                   name="perTrapRate"
                   className="svc-in field-rate"
-                  value={form.perTrapRate || ""}
+                  value={form.perTrapRate || 0}
                   onChange={handleChange}
                   min={0}
                   step={0.01}
@@ -184,10 +187,11 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
                 <span>$</span>
                 <input
                   type="number"
-                  min="0"
+          min="0"
+            min="0"
                   name="perGallonRate"
                   className="svc-in field-rate"
-                  value={form.perGallonRate || ""}
+                  value={form.perGallonRate || 0}
                   onChange={handleChange}
                   min={0}
                   step={0.01}

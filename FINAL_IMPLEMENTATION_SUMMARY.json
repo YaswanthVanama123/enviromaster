@@ -1,0 +1,3743 @@
+{
+  "errorCode": 0,
+  "errorLog": null,
+  "result": {
+    "testPaper": {
+      "testSubjects": [
+        {
+          "testSections": [
+            {
+              "testQuestions": [
+                {
+                  "testQuestion": {
+                    "id": 41853,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The aqueous solution of CuCro4 is green because it\ncontains?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167272,
+                      "testQuestionId": 41853,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Blue Cu<sup>2+</sup> ions and green CrO<sub>4</sub>\n<sup>2-</sup> ions</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167271,
+                      "testQuestionId": 41853,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Blue Cu<sup>2+</sup> ions and Yellow CrO<sub>4</sub>\n<sup>2-</sup> ions</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167270,
+                      "testQuestionId": 41853,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Green CrO<sub>4</sub><sup>\n2-</sup> ions</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167269,
+                      "testQuestionId": 41853,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Green Cu<sup>2+</sup> ions</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41889,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which sugar is present in DNA?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Sugar constituent present in DNA is deoxyribose. </p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167414,
+                      "testQuestionId": 41889,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Deoxyribose</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167413,
+                      "testQuestionId": 41889,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Purine only</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167415,
+                      "testQuestionId": 41889,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ribose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167416,
+                      "testQuestionId": 41889,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Pyrimidine only</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41846,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which statement is not correct?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Lanthanum hydroxide is more basic than luteium\nhydroxide since the basicity decreases in the period.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167241,
+                      "testQuestionId": 41846,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>La(OH)<sub>3</sub> is less basic than Lu(OH)<sub>3</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167244,
+                      "testQuestionId": 41846,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Atomic radius of Zn and Hf are same because of\nlanthanide contraction</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167243,
+                      "testQuestionId": 41846,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>La is actually an element of transition series</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167242,
+                      "testQuestionId": 41846,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>In lanthanide series, ionic radius of Ln<sup>3+</sup> ions\ndecreases</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41887,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Rapid interconversion of α-D-glucose and β-Dglucose in solution is known as:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167406,
+                      "testQuestionId": 41887,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Racemization</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167407,
+                      "testQuestionId": 41887,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Structural isomerisation</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167408,
+                      "testQuestionId": 41887,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Asymmetric induction \n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167405,
+                      "testQuestionId": 41887,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Mutarotation</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41883,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p> Fructose is ketose sugar, even then it gives red\nprecipitate with Fehling solution because </p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167390,
+                      "testQuestionId": 41883,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Ketones are oxidized by Fehling solution </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167392,
+                      "testQuestionId": 41883,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>None of these</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167389,
+                      "testQuestionId": 41883,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Keto sugars undergo transformation into aldose\nsugars in the presence of Fehling’s solution \n</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167391,
+                      "testQuestionId": 41883,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Both (a) And (b)</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41836,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Cerium (Z = 58) is an important member of the\nlanthanoids. Which of the following statements about\ncerium is incorrect?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>+3 and +4 oxidation states are shown by Ce in aqueous\nsolution.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167202,
+                      "testQuestionId": 41836,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The +3 oxidation state of cerium is more stable\nthan the +4 oxidation state</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167204,
+                      "testQuestionId": 41836,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Cerium (IV) acts as an oxidizing agent</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167203,
+                      "testQuestionId": 41836,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The +4 oxidation state of cerium is not known in\nsolutions</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167201,
+                      "testQuestionId": 41836,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The common oxidation states of cerium are +3\nand +4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41902,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>In both DNA and RNA heterocyclic base and\nphosphate ester linkages are at</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167465,
+                      "testQuestionId": 41902,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>5</sub>\n’ and C<sub>2</sub>\n’ respectively of the sugar molecule</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167468,
+                      "testQuestionId": 41902,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> C<sub>5</sub>\n’ and C<sub>1</sub>\n’ respectively of the sugar molecule </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167466,
+                      "testQuestionId": 41902,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>2</sub>\n’ and C<sub>5</sub>\n’ respectively of the sugar molecule</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167467,
+                      "testQuestionId": 41902,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>1</sub>\n’ and C<sub>5</sub>\n’ respectively of the sugar molecule</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41890,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p> Glycosamine unit is present in:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167419,
+                      "testQuestionId": 41890,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Chitin</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167417,
+                      "testQuestionId": 41890,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Heparin</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167420,
+                      "testQuestionId": 41890,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>All of these</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167418,
+                      "testQuestionId": 41890,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Nucleic acid</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41897,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which one of the following biomolecules is insoluble\nin water?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>α-keratin is a water insoluble fibrous protein. It serves\nas the major constituent of hair, nails and skin</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167447,
+                      "testQuestionId": 41897,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>ribonuclease</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167446,
+                      "testQuestionId": 41897,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>haemoglobin</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167448,
+                      "testQuestionId": 41897,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>adenine</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167445,
+                      "testQuestionId": 41897,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> α-keratin</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41838,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Two stable ions of first transition series which have\nthe largest number of unpaired electrons and have the\nhighest magnetic moment are:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Both Fe<sup>3+</sup> and Mn<sup>2+</sup> have [Ar] 3d<sup>5</sup>\n configuration.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167211,
+                      "testQuestionId": 41838,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Fe<sup>3+</sup> and Mn<sup>2+</sup></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167212,
+                      "testQuestionId": 41838,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ti<sup>4+</sup> and Cr<sup>3+</sup>\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167210,
+                      "testQuestionId": 41838,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Cr<sup>3+</sup> and Fe<sup>2+</sup>\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167209,
+                      "testQuestionId": 41838,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ni<sup>2+</sup> and Co<sup>2+</sup> </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41841,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Transition metals despite having higher values of\nstandard reduction potentials, are poor reducing\nagents. This is due to:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167222,
+                      "testQuestionId": 41841,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>High ionization energies</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167224,
+                      "testQuestionId": 41841,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>High enthalpy of vapourization\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167223,
+                      "testQuestionId": 41841,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Low ionization energies</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167221,
+                      "testQuestionId": 41841,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Low heat of hydration</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41837,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The correct order of ionic radii of Y<sup>3+</sup>, La<sup>3+</sup>, Eu<sup>3+</sup> and\nLu<sup>3+</sup> is:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167208,
+                      "testQuestionId": 41837,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Y<sup>3+</sup> &lt; Lu<sup>3+</sup> &lt; Eu<sup>3+</sup> &lt; La<sup>3+</sup></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167207,
+                      "testQuestionId": 41837,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Y<sup>3+</sup> &lt; La<sup>3+</sup> &lt; Eu<sup>3+</sup> &lt; Lu<sup>3+</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167205,
+                      "testQuestionId": 41837,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Lu<sup>3+</sup> &lt; Eu<sup>3+</sup> &lt; La<sup>3+ </sup>&lt; Y<sup>3+</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167206,
+                      "testQuestionId": 41837,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>La<sup>3+</sup> &lt; Eu<sup>3+</sup> &lt; Lu<sup>3+</sup> &lt; Y<sup>3+</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41840,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which statement is not correct with respect to\ntransition metals?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167218,
+                      "testQuestionId": 41840,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Most transition metals should, on thermodynamic\nconsiderations, liberate hydrogen from acids</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167219,
+                      "testQuestionId": 41840,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The complex formation of transition metal ions\nis often accompanied by a change of colour and\nsometimes by a change in the intensity of the\ncolour</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167220,
+                      "testQuestionId": 41840,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The compounds of the elements in low oxidation\nstates are generally ionic</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167217,
+                      "testQuestionId": 41840,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The colour of the hydrated ions is due to transitions\nof electrons from different ‘d’ orbitals of the same\nprincipal quantum number</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41885,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Glucose reacts with acetic anhydride to form</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167400,
+                      "testQuestionId": 41885,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Mono acetate \n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167397,
+                      "testQuestionId": 41885,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Hexa acetate </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167399,
+                      "testQuestionId": 41885,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Tri acetate</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167398,
+                      "testQuestionId": 41885,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Penta acetate</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41842,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which of the following compounds is expected to be\ncoloured?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>CuF2 is coloured due to the presence of one unpaired\nd electron in Cu2+. It can undergo d–d transition</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167228,
+                      "testQuestionId": 41842,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CuCl</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167225,
+                      "testQuestionId": 41842,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ag<sub>2</sub>SO<sub>4</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167227,
+                      "testQuestionId": 41842,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>MgF<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167226,
+                      "testQuestionId": 41842,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CuF<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41851,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p class=\"qwen-markdown-paragraph\">Which among the following paramagnetic pairs are rare?</p><p class=\"qwen-markdown-paragraph\">(1) [BaO₂, NO₂]<br>(2) [KO₂, NO]<br>(3) [H₂O₂, NO]<br>(4) [K₃(CN)₆, CuCl₂]</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167263,
+                      "testQuestionId": 41851,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p><span style=\"color: rgb(29, 29, 32); font-family: system-ui, ui-sans-serif, -apple-system, BlinkMacSystemFont, Inter, NotoSansHans, sans-serif; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: -0.32px; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: pre-line; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;\">2, 4 only</span></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167261,
+                      "testQuestionId": 41851,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p><span style=\"color: rgb(29, 29, 32); font-family: system-ui, ui-sans-serif, -apple-system, BlinkMacSystemFont, Inter, NotoSansHans, sans-serif; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: -0.32px; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: pre-line; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;\">3, 4 only</span></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167262,
+                      "testQuestionId": 41851,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p><span style=\"color: rgb(29, 29, 32); font-family: system-ui, ui-sans-serif, -apple-system, BlinkMacSystemFont, Inter, NotoSansHans, sans-serif; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: -0.32px; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: pre-line; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;\">1, 3 only</span></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167264,
+                      "testQuestionId": 41851,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p><span style=\"color: rgb(29, 29, 32); font-family: system-ui, ui-sans-serif, -apple-system, BlinkMacSystemFont, Inter, NotoSansHans, sans-serif; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: -0.32px; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: pre-line; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;\">1, 2, 4</span></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41834,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The Number of ions formed on dissolving one\nmolecule of Feso4 (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub> bH<sub>2</sub>O is?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p><img src=\"data:image/png;base64,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\" width=\"322\" height=\"70\"></p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167194,
+                      "testQuestionId": 41834,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167196,
+                      "testQuestionId": 41834,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>6</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167195,
+                      "testQuestionId": 41834,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>5 </p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167193,
+                      "testQuestionId": 41834,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>3</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41892,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The number of tri peptide formed by three different\namino acids are?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167425,
+                      "testQuestionId": 41892,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>3</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167428,
+                      "testQuestionId": 41892,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>6</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167426,
+                      "testQuestionId": 41892,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167427,
+                      "testQuestionId": 41892,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 5</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41888,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which amino acid is achiral?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167412,
+                      "testQuestionId": 41888,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>None of these</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167411,
+                      "testQuestionId": 41888,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Proline</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167410,
+                      "testQuestionId": 41888,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Valine</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167409,
+                      "testQuestionId": 41888,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Histidine</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41891,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The coordination number of Fe(II) in oxyhaemoglobin is:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167423,
+                      "testQuestionId": 41891,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>6</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167421,
+                      "testQuestionId": 41891,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 10</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167422,
+                      "testQuestionId": 41891,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>8</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167424,
+                      "testQuestionId": 41891,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41898,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Sucrose itself is a non reduction sugar. It is due to:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167452,
+                      "testQuestionId": 41898,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The easy conversion of sucrose into invert sugar\non hydrolysis \n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167449,
+                      "testQuestionId": 41898,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The linkage of both the anomeric carbon atoms in\nan acetal form</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167451,
+                      "testQuestionId": 41898,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The presence of equal amount of D(+) glucose\nand D(–) fructose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167450,
+                      "testQuestionId": 41898,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>The presence of α-hydroxy keto group in its structure </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41886,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>α- and β-glucose differ in the orientation of –OH\ngroup around </p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167404,
+                      "testQuestionId": 41886,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>4</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167402,
+                      "testQuestionId": 41886,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167403,
+                      "testQuestionId": 41886,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>3</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167401,
+                      "testQuestionId": 41886,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>C<sub>1</sub></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41884,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Iodine test is shown by</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Starch gives blue colouration with iodine</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167396,
+                      "testQuestionId": 41884,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glucose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167393,
+                      "testQuestionId": 41884,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Starch</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167394,
+                      "testQuestionId": 41884,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glycogen</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167395,
+                      "testQuestionId": 41884,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Polypeptides</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41896,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which of the following are correct?\n1. Acetyl salicyclic is acid is known as aspirin\n2. The compound formed in the addition of oxygen\nto haemoglobin is called oxy haemoglobin\n3. Chlorophyll is responsible for the synthesis of carbohydrates in plants\n4. The metal ion present in vitamin B<sub>12</sub> is Mg<sup>2+</sup></p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167444,
+                      "testQuestionId": 41896,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>2 and 3 only</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167442,
+                      "testQuestionId": 41896,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>2, 3 and 4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167441,
+                      "testQuestionId": 41896,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>1, 2 and 3</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167443,
+                      "testQuestionId": 41896,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 1, 2 and 4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41852,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Match the following:\n</p><p>List I&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; List II\n</p><p>1. Cu2+&nbsp; &nbsp; &nbsp; (1) Colourless\n</p><p>2. Ni2+&nbsp; &nbsp; &nbsp; &nbsp;(2) Green\n</p><p>3. Fe3+&nbsp; &nbsp; &nbsp; (3) Yellow\n</p><p>4. Ti3+&nbsp; &nbsp; &nbsp; &nbsp;(4) Blue\n</p><p>(5) Purple\nThe correct matching is:\n</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167266,
+                      "testQuestionId": 41852,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>\n(b) (1) (3) (2) (4)</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167265,
+                      "testQuestionId": 41852,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>(a) (1) (2) (3) (5)\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167268,
+                      "testQuestionId": 41852,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>d) (4) (2) (3) (5)</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167267,
+                      "testQuestionId": 41852,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>(c) (2) (1) (3) (5)\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41855,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which is not correctly matched here?</p><p>\nIon n Colour</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167279,
+                      "testQuestionId": 41855,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>V<sup>3+&nbsp;&nbsp;</sup> 3&nbsp; &nbsp;Violet\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167277,
+                      "testQuestionId": 41855,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ti<sup>3+&nbsp;</sup> &nbsp;1&nbsp; &nbsp;Purple</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167278,
+                      "testQuestionId": 41855,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>V<sup>3+</sup>&nbsp; &nbsp;3&nbsp; &nbsp;Violet\n</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167280,
+                      "testQuestionId": 41855,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> N<sub>1</sub>\n<sup>+2</sup>&nbsp; &nbsp;2&nbsp; &nbsp;Green</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41845,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p> Which one of the following metals will not reduce\nH<sub>2</sub>O?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p> Reducing strength ∝ 1\nionization potential\n‘Cu’ has a greater I.P. value.\nIt cannot reduce H2\nO</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167240,
+                      "testQuestionId": 41845,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ca</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167237,
+                      "testQuestionId": 41845,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Li </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167238,
+                      "testQuestionId": 41845,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Fe</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167239,
+                      "testQuestionId": 41845,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Cu </p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41844,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The pair of which salts is expected to have the same\ncolour in their freshly prepared aqueous solutions.</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Here V is in the form of V<sup>4+</sup> and C is in the form of\nCu<sup>2+</sup> that is, both have one unpaired electron so have\nsame colour.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167235,
+                      "testQuestionId": 41844,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>FeCl<sub>2</sub>, VOCl<sub>2 </sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167233,
+                      "testQuestionId": 41844,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>VOCl<sub>2</sub>, CuCl<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167234,
+                      "testQuestionId": 41844,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CuCl<sub>2</sub>, FeCl<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167236,
+                      "testQuestionId": 41844,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>MnCl<sub>2</sub>, FeCl<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41835,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Ruthenium Carbonyl is?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167197,
+                      "testQuestionId": 41835,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ru(Co)<sub>4</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167200,
+                      "testQuestionId": 41835,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ru(Co)<sub>5</sub></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167199,
+                      "testQuestionId": 41835,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ru(Co)<sub>8 </sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167198,
+                      "testQuestionId": 41835,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Ru(Co)<sub>6</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41848,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The product formed on oxidation of I–\n with MnO<sub>4</sub>\n–\n in\nalkaline medium is:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>2MnO<sub>4\n</sub><sup>–</sup>\n + I<sup>–</sup>\n + H<sub>2</sub>O → IO<sub>3</sub>\n–\n + 2MnO<sub>2</sub> + 2OH<sup>–</sup></p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167249,
+                      "testQuestionId": 41848,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>IO<sub>4\n</sub><sup>– </sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167251,
+                      "testQuestionId": 41848,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>IO<sup>-</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167250,
+                      "testQuestionId": 41848,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> I<sub>2</sub></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167252,
+                      "testQuestionId": 41848,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>IO<sub>3</sub>\n<sup>–</sup></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41854,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>What would happen when a solution of potassium\nchromate is treated with an excess of dilute nitric\nacid?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>2CrO<sub>4</sub>\n<sup>2–</sup> + 2H<sup>+ </sup>→ Cr<sub>2</sub>O<sub>7</sub><sup>\n2–</sup> + H<sub>2</sub>O</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167273,
+                      "testQuestionId": 41854,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Cr<sub>2</sub>O<sub>7\n</sub><sup>2–</sup> and H<sub>2</sub>O are formed</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167276,
+                      "testQuestionId": 41854,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CrO<sub>4</sub>\n<sup>2– </sup>is reduced to +3 state of Cr</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167274,
+                      "testQuestionId": 41854,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Cr<sup>3+</sup> and Cr<sub>2</sub>O<sub>7</sub>\n<sup>2– </sup>are formed</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167275,
+                      "testQuestionId": 41854,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CrO<sub>4</sub>\n<sup>2–</sup> is oxidized to +7 state to Cr\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41839,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>What is the general outer configuration of the coinage\nmetals?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Cu, Ag and Au are coinage metals.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167214,
+                      "testQuestionId": 41839,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>(n – 1) d<sup>9</sup>\n ns<sup>2</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167215,
+                      "testQuestionId": 41839,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>(n – 1) d<sup>10 </sup>ns<sup>1</sup></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167216,
+                      "testQuestionId": 41839,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> (n – 1) d<sup>10</sup> ns<sup>2</sup>\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167213,
+                      "testQuestionId": 41839,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>ns<sup>2</sup>\nnp<sup>6</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41843,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Zinc-copper couple that can be used as a reducing\nagent is obtained by:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>Zinc–copper couple is obtained by combining zinc\nwith copper.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167230,
+                      "testQuestionId": 41843,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Zinc and copper wires welded together</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167231,
+                      "testQuestionId": 41843,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Mixing zinc dust and copper gauze</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167232,
+                      "testQuestionId": 41843,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Copper coated with zinc</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167229,
+                      "testQuestionId": 41843,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Zinc coated with copper</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41893,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The pair in which both the compounds give positive\ntest with Tollen’s reagent is \n</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167432,
+                      "testQuestionId": 41893,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glucose and fructose</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167429,
+                      "testQuestionId": 41893,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Fructose and sucrose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167430,
+                      "testQuestionId": 41893,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Acetophenone and hexanal</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167431,
+                      "testQuestionId": 41893,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glucose and sucrose \n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41900,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>In the given polypeptide—</p><p>\nArg–Try–Ile–Asn–Gly\n</p><p>C-terminus amino acid is:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167458,
+                      "testQuestionId": 41900,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Try</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167457,
+                      "testQuestionId": 41900,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Arg</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167459,
+                      "testQuestionId": 41900,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Gly</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167460,
+                      "testQuestionId": 41900,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Asn</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41882,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which of the following is known as leavulose sugar?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167386,
+                      "testQuestionId": 41882,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Fructose</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167385,
+                      "testQuestionId": 41882,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glucose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167388,
+                      "testQuestionId": 41882,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Arabinose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167387,
+                      "testQuestionId": 41882,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Surcose</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41901,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Cellulose is a straight chain polysaccharide composed\nof only:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167462,
+                      "testQuestionId": 41901,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>D-glucose units joined by β-glucosidic linkage</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167461,
+                      "testQuestionId": 41901,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>D-glucose units joined by α-glucosidic linkage</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167463,
+                      "testQuestionId": 41901,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>D-galactose units joined by α-glucosidic linkage</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167464,
+                      "testQuestionId": 41901,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> D-galactose units joined by β-glucosidic linkage </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41899,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>In most of the proteins, the first Amino acid is:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>As starting codon is AUG and AUG always codes for\nmethionine.</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167454,
+                      "testQuestionId": 41899,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glutamic acid\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167455,
+                      "testQuestionId": 41899,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Methionine</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167456,
+                      "testQuestionId": 41899,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> Aspartic acid</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167453,
+                      "testQuestionId": 41899,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Glycine</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41895,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Maximum number of monosaccharide units present in\noligosaccharides is:</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167440,
+                      "testQuestionId": 41895,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>20</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167439,
+                      "testQuestionId": 41895,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>15</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167437,
+                      "testQuestionId": 41895,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>5</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167438,
+                      "testQuestionId": 41895,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>10</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41894,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which one of the following is the first member of\nmonosaccharides? </p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167433,
+                      "testQuestionId": 41894,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> CH<sub>2</sub>\nOH–CHOH–CHO</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167434,
+                      "testQuestionId": 41894,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CH<sub>2</sub>\nOH–C–CH<sub>2</sub>\nOH\n</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ║\n</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; O</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167436,
+                      "testQuestionId": 41894,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CH<sub>2</sub>\nOH–CHOH–CHOH–CHO</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167435,
+                      "testQuestionId": 41894,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>CH<sub>2\n</sub>OH–CHOH–C–CH<sub>2</sub>\nOH\n</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ║</p><p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; O</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41849,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The Magnetic moment of a transition metal of 3dseries\nis 6.92 B.M. Its electronic configuration is?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>s u = 6.92 B.M\nSo n = 6\n</p><p>Hence electronic configuration is 3d<sup>5</sup>\n 4s<sup>1</sup></p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167255,
+                      "testQuestionId": 41849,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>3d<sup>5</sup>\n4s<sup>0</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167256,
+                      "testQuestionId": 41849,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 3d<sup>3</sup>\n4s<sup>2</sup>\n</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167254,
+                      "testQuestionId": 41849,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>3d<sup>6\n</sup>4s<sup>2</sup></p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167253,
+                      "testQuestionId": 41849,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 3d<sup>5</sup>\n4s<sup>1</sup></p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41903,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which one of the following pairs is incorrectly\nmatched?\n</p><p>A Sucrose&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;1. Monosaccharide\n</p><p>B Fructose&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2. Aldose sugar\n</p><p>C Glucose&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;3. Mutarotation\n</p><p>D Sucrose&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 4. Reducing sugar </p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167469,
+                      "testQuestionId": 41903,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>2, 3 and 4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167471,
+                      "testQuestionId": 41903,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>1, 2 and 4</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167472,
+                      "testQuestionId": 41903,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>2 and 4 only </p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167470,
+                      "testQuestionId": 41903,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>1, 2 and 3</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41847,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The number of unpaired electrons in Fe+2, Mn<sup>2+</sup>, Cr<sup>3+</sup>,\nV<sup>5+ </sup>and Cu<sup>2+</sup> are respectively?</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;n</p><p>Fe<sup>2+</sup> → [Ar] 3d<sup>6</sup>&nbsp; &nbsp; &nbsp; &nbsp;4</p><p>\nMn<sup>2+</sup> → [Ar] 3d<sup>5</sup>&nbsp; &nbsp; &nbsp; 5\n</p><p>Cr<sup>3+ </sup>→ [Ar] 3d<sup>3</sup>&nbsp; &nbsp; &nbsp;&nbsp; 3\n</p><p>V<sup>+5 </sup>→ [Ar] 3d<sup>0&nbsp;</sup> &nbsp; &nbsp; &nbsp; &nbsp;0&nbsp; &nbsp; </p><p>u<sup>2+</sup> → [Ar] 3d<sup>9&nbsp;</sup> &nbsp; &nbsp; &nbsp; &nbsp;1</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167248,
+                      "testQuestionId": 41847,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 5, 5, 3, 0, 1</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167245,
+                      "testQuestionId": 41847,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>4, 5, 3, 0, 1</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167247,
+                      "testQuestionId": 41847,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>4, 5, 3, 1, 1</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167246,
+                      "testQuestionId": 41847,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>5, 4, 3, 0, 1</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41881,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>The conversion of maltose to glucose is possible by\nthe enzyme </p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p> Maltose Maltase glucose + glucose</p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167383,
+                      "testQuestionId": 41881,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Maltase</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    },
+                    {
+                      "id": 167384,
+                      "testQuestionId": 41881,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Diastase</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167381,
+                      "testQuestionId": 41881,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Zymase</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167382,
+                      "testQuestionId": 41881,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>Lactase</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    }
+                  ]
+                },
+                {
+                  "testQuestion": {
+                    "id": 41850,
+                    "text": [
+                      {
+                        "lcid": 1033,
+                        "text": "<p>Which of the following statement is correct with\nreference to the ferrous and ferric ions?</p><p>1. Fe<sup>3+</sup> gives brown colour with potassium ferricyanide</p><p>\n2. Fe<sup>2+</sup> gives blue precipitate with potassium\nferricyanide\n</p><p>3. Fe<sup>3+</sup> gives red colour with potassium thiocyanate</p><p>\n4. Fe<sup>2+</sup> gives brown colour with ammonium\nthiocyanate</p>"
+                      }
+                    ],
+                    "type": 2,
+                    "timeOutInSec": 60,
+                    "score": 4,
+                    "selectedOptionId": null,
+                    "solution": "<p><br></p>",
+                    "testQuestionOptions": null
+                  },
+                  "testQuestionOptions": [
+                    {
+                      "id": 167260,
+                      "testQuestionId": 41850,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>all of these</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167258,
+                      "testQuestionId": 41850,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>1, 2</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167257,
+                      "testQuestionId": 41850,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p>1, 4</p>"
+                        }
+                      ],
+                      "isCorrect": false
+                    },
+                    {
+                      "id": 167259,
+                      "testQuestionId": 41850,
+                      "text": [
+                        {
+                          "lcid": 1033,
+                          "text": "<p> 2, 3</p>"
+                        }
+                      ],
+                      "isCorrect": true
+                    }
+                  ]
+                }
+              ],
+              "id": 1546,
+              "name": "SECTION -A",
+              "testSubjectId": 1040,
+              "instructions": "",
+              "maxQuestions": 45,
+              "maxPoints": 180,
+              "questionSettings": [
+                {
+                  "qType": 2,
+                  "noOfQuestions": 45,
+                  "noOfOptions": 4,
+                  "marksPerQuestion": 4,
+                  "noOfMandatoryQuestions": 0,
+                  "complexity": 2
+                }
+              ],
+              "subjectTopicId": [
+                44
+              ],
+              "subjectSubTopicId": [
+                1159
+              ]
+            }
+          ],
+          "id": 1040,
+          "subjectId": 5,
+          "instructions": "",
+          "maxQuestions": 45,
+          "maxPoints": 180
+        }
+      ],
+      "duration": 1,
+      "durationUnit": 2,
+      "instructions": "",
+      "targetExamId": 7,
+      "streamCategoryId": 33,
+      "courses": [
+        289,
+        290,
+        291,
+        391,
+        389
+      ],
+      "academicYear": 2,
+      "state": 2,
+      "maxQuestions": 45,
+      "maxPoints": 180,
+      "paperType": 2,
+      "createdBy": 0,
+      "createdDate": "2025-12-02T07:54:04.501183",
+      "modifiedBy": 0,
+      "modifiedDate": "2025-12-16T15:34:30.878172",
+      "id": 902,
+      "name": "12 th - JEE - CHEMISTRY PART TEST - 2  EVENING SECTION - 1",
+      "displayName": null,
+      "description": null,
+      "iconPath": null
+    },
+    "testPaperId": 902,
+    "duration": 1,
+    "durationUnit": 2,
+    "scheduleStart": "2025-12-16T15:26:00",
+    "scheduleEnd": "2025-12-16T15:30:00",
+    "state": 4,
+    "packages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      18,
+      20,
+      21,
+      27,
+      28,
+      29,
+      30
+    ],
+    "pauseCount": 3,
+    "isAllowedToPause": false,
+    "testType": null,
+    "isReevaluate": false,
+    "marksState": 3,
+    "rankState": 3,
+    "keySolutionState": 3,
+    "marksPublishMode": 1,
+    "rankPublishMode": 1,
+    "keySolutionPublishMode": 1,
+    "marksPublishDate": "2025-12-16T15:40:00",
+    "rankPublishDate": "2025-12-16T15:41:00",
+    "keySolutionPublishDate": "2025-12-16T15:42:00",
+    "subjectWeightages": [],
+    "paperRules": [
+      {
+        "type": 2,
+        "questionType": 2,
+        "operand": 1,
+        "unit": 1,
+        "operandValue": "1",
+        "criteria": 0
+      }
+    ],
+    "subjectRules": null,
+    "sectionRules": null,
+    "id": 718,
+    "name": "Dec16Test",
+    "displayName": [],
+    "description": [],
+    "iconPath": null
+  }
+}
+
+
+
+
+
+{
+  "errorCode": 0,
+  "errorLog": null,
+  "result": {
+    "testResult": {
+      "id": 385,
+      "userId": 517,
+      "testScheduleId": 718,
+      "startTime": "2025-12-16T15:26:15.472",
+      "endTime": "2025-12-16T15:29:36.431",
+      "durationInSec": 68,
+      "pauseCount": 1,
+      "state": 4,
+      "totalMarks": -14,
+      "result": [
+        {
+          "qId": 41853,
+          "oId": [
+            167272
+          ],
+          "ans": "",
+          "duration": 25,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41889,
+          "oId": [
+            167413
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41846,
+          "oId": [
+            167244
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41887,
+          "oId": [
+            167407
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41883,
+          "oId": [
+            167392
+          ],
+          "ans": "",
+          "duration": 2,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41836,
+          "oId": [
+            167204
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41902,
+          "oId": [
+            167466
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41890,
+          "oId": [
+            167417
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41897,
+          "oId": [
+            167445
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": 4,
+          "status": 2
+        },
+        {
+          "qId": 41838,
+          "oId": [
+            167212
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41841,
+          "oId": [
+            167222
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41837,
+          "oId": [
+            167206
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41840,
+          "oId": [
+            167219
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41885,
+          "oId": [
+            167399
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41842,
+          "oId": [
+            167227
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41851,
+          "oId": [
+            167263
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41834,
+          "oId": [
+            167195
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": 4,
+          "status": 2
+        },
+        {
+          "qId": 41892,
+          "oId": [
+            167426
+          ],
+          "ans": "",
+          "duration": 2,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41888,
+          "oId": [
+            167411
+          ],
+          "ans": "",
+          "duration": 2,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41891,
+          "oId": [
+            167422
+          ],
+          "ans": "",
+          "duration": 3,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41898,
+          "oId": [
+            167452
+          ],
+          "ans": "",
+          "duration": 2,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41886,
+          "oId": [
+            167403
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41884,
+          "oId": [
+            167395
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41896,
+          "oId": [
+            167442
+          ],
+          "ans": "",
+          "duration": 1,
+          "marks": -1,
+          "status": 5
+        },
+        {
+          "qId": 41852,
+          "oId": [],
+          "ans": "",
+          "duration": 2,
+          "marks": 0,
+          "status": 1
+        },
+        {
+          "qId": 41855,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41845,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41844,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41835,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41848,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41854,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41839,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41843,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41893,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41900,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41882,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41901,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41899,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41895,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41894,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41849,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41903,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41847,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41881,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        },
+        {
+          "qId": 41850,
+          "oId": [],
+          "ans": "",
+          "duration": 0,
+          "marks": 0,
+          "status": 0
+        }
+      ],
+      "feedback": null,
+      "rank": [
+        {
+          "type": 4,
+          "rank": 1,
+          "tsId": 1040
+        }
+      ],
+      "subjectResult": [
+        {
+          "tsId": 1040,
+          "duration": 56,
+          "marks": -14
+        }
+      ]
+    },
+    "keySolution": {
+      "testPaperId": 902,
+      "content": {
+        "subjects": [
+          {
+            "id": 1040,
+            "sections": [
+              {
+                "id": 1546,
+                "questions": [
+                  {
+                    "qId": 41853,
+                    "oIds": [
+                      167271
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41889,
+                    "oIds": [
+                      167414
+                    ],
+                    "solution": "<p>Sugar constituent present in DNA is deoxyribose. </p>"
+                  },
+                  {
+                    "qId": 41846,
+                    "oIds": [
+                      167243
+                    ],
+                    "solution": "<p>Lanthanum hydroxide is more basic than luteium\nhydroxide since the basicity decreases in the period.</p>"
+                  },
+                  {
+                    "qId": 41887,
+                    "oIds": [
+                      167405
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41883,
+                    "oIds": [
+                      167389
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41836,
+                    "oIds": [
+                      167203
+                    ],
+                    "solution": "<p>+3 and +4 oxidation states are shown by Ce in aqueous\nsolution.</p>"
+                  },
+                  {
+                    "qId": 41902,
+                    "oIds": [
+                      167467
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41890,
+                    "oIds": [
+                      167420
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41897,
+                    "oIds": [
+                      167445
+                    ],
+                    "solution": "<p>α-keratin is a water insoluble fibrous protein. It serves\nas the major constituent of hair, nails and skin</p>"
+                  },
+                  {
+                    "qId": 41838,
+                    "oIds": [
+                      167211
+                    ],
+                    "solution": "<p>Both Fe<sup>3+</sup> and Mn<sup>2+</sup> have [Ar] 3d<sup>5</sup>\n configuration.</p>"
+                  },
+                  {
+                    "qId": 41841,
+                    "oIds": [
+                      167221
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41837,
+                    "oIds": [
+                      167208
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41840,
+                    "oIds": [
+                      167218
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41885,
+                    "oIds": [
+                      167398
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41842,
+                    "oIds": [
+                      167226
+                    ],
+                    "solution": "<p>CuF2 is coloured due to the presence of one unpaired\nd electron in Cu2+. It can undergo d–d transition</p>"
+                  },
+                  {
+                    "qId": 41851,
+                    "oIds": [
+                      167261
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41834,
+                    "oIds": [
+                      167195
+                    ],
+                    "solution": "<p><img src=\"data:image/png;base64</p>"
+                    "oIds": [
+                      167428
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41888,
+                    "oIds": [
+                      167412
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41891,
+                    "oIds": [
+                      167423
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41898,
+                    "oIds": [
+                      167449
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41886,
+                    "oIds": [
+                      167401
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41884,
+                    "oIds": [
+                      167393
+                    ],
+                    "solution": "<p>Starch gives blue colouration with iodine</p>"
+                  },
+                  {
+                    "qId": 41896,
+                    "oIds": [
+                      167441
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41852,
+                    "oIds": [
+                      167266
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41855,
+                    "oIds": [
+                      167278
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41845,
+                    "oIds": [
+                      167239
+                    ],
+                    "solution": "<p> Reducing strength ∝ 1\nionization potential\n‘Cu’ has a greater I.P. value.\nIt cannot reduce H2\nO</p>"
+                  },
+                  {
+                    "qId": 41844,
+                    "oIds": [
+                      167233
+                    ],
+                    "solution": "<p>Here V is in the form of V<sup>4+</sup> and C is in the form of\nCu<sup>2+</sup> that is, both have one unpaired electron so have\nsame colour.</p>"
+                  },
+                  {
+                    "qId": 41835,
+                    "oIds": [
+                      167200
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41848,
+                    "oIds": [
+                      167252
+                    ],
+                    "solution": "<p>2MnO<sub>4\n</sub><sup>–</sup>\n + I<sup>–</sup>\n + H<sub>2</sub>O → IO<sub>3</sub>\n–\n + 2MnO<sub>2</sub> + 2OH<sup>–</sup></p>"
+                  },
+                  {
+                    "qId": 41854,
+                    "oIds": [
+                      167273
+                    ],
+                    "solution": "<p>2CrO<sub>4</sub>\n<sup>2–</sup> + 2H<sup>+ </sup>→ Cr<sub>2</sub>O<sub>7</sub><sup>\n2–</sup> + H<sub>2</sub>O</p>"
+                  },
+                  {
+                    "qId": 41839,
+                    "oIds": [
+                      167215
+                    ],
+                    "solution": "<p>Cu, Ag and Au are coinage metals.</p>"
+                  },
+                  {
+                    "qId": 41843,
+                    "oIds": [
+                      167229
+                    ],
+                    "solution": "<p>Zinc–copper couple is obtained by combining zinc\nwith copper.</p>"
+                  },
+                  {
+                    "qId": 41893,
+                    "oIds": [
+                      167432
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41900,
+                    "oIds": [
+                      167458
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41882,
+                    "oIds": [
+                      167386
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41901,
+                    "oIds": [
+                      167462
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41899,
+                    "oIds": [
+                      167455
+                    ],
+                    "solution": "<p>As starting codon is AUG and AUG always codes for\nmethionine.</p>"
+                  },
+                  {
+                    "qId": 41895,
+                    "oIds": [
+                      167438
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41894,
+                    "oIds": [
+                      167433
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41849,
+                    "oIds": [
+                      167253
+                    ],
+                    "solution": "<p>s u = 6.92 B.M\nSo n = 6\n</p><p>Hence electronic configuration is 3d<sup>5</sup>\n 4s<sup>1</sup></p>"
+                  },
+                  {
+                    "qId": 41903,
+                    "oIds": [
+                      167471
+                    ],
+                    "solution": ""
+                  },
+                  {
+                    "qId": 41847,
+                    "oIds": [
+                      167245
+                    ],
+                    "solution": "<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;n</p><p>Fe<sup>2+</sup> → [Ar] 3d<sup>6</sup>&nbsp; &nbsp; &nbsp; &nbsp;4</p><p>\nMn<sup>2+</sup> → [Ar] 3d<sup>5</sup>&nbsp; &nbsp; &nbsp; 5\n</p><p>Cr<sup>3+ </sup>→ [Ar] 3d<sup>3</sup>&nbsp; &nbsp; &nbsp;&nbsp; 3\n</p><p>V<sup>+5 </sup>→ [Ar] 3d<sup>0&nbsp;</sup> &nbsp; &nbsp; &nbsp; &nbsp;0&nbsp; &nbsp; </p><p>u<sup>2+</sup> → [Ar] 3d<sup>9&nbsp;</sup> &nbsp; &nbsp; &nbsp; &nbsp;1</p>"
+                  },
+                  {
+                    "qId": 41881,
+                    "oIds": [
+                      167383
+                    ],
+                    "solution": "<p> Maltose Maltase glucose + glucose</p>"
+                  },
+                  {
+                    "qId": 41850,
+                    "oIds": [
+                      167259
+                    ],
+                    "solution": "<p><br></p>"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "leaderBoard": null
+  }
+}

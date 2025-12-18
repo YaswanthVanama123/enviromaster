@@ -309,10 +309,12 @@ export const JanitorialForm: React.FC<
               <input
                 className="svc-in svc-in-small"
                 type="number"
+          min="0"
+            min="0"
                 min={0}
                 step={0.01}
                 name="shortJobHourlyRate"
-                value={form.shortJobHourlyRate || ""}
+                value={form.shortJobHourlyRate}
                 onChange={onChange}
                 title="One-time service hourly rate (from backend)"
               />
@@ -332,10 +334,12 @@ export const JanitorialForm: React.FC<
               <input
                 className="svc-in svc-in-small"
                 type="number"
+          min="0"
+            min="0"
                 min={0}
                 step={0.01}
                 name="baseHourlyRate"
-                value={form.baseHourlyRate || ""}
+                value={form.baseHourlyRate}
                 onChange={onChange}
                 title="Recurring service hourly rate (from backend)"
               />
@@ -352,10 +356,12 @@ export const JanitorialForm: React.FC<
           <input
             className="svc-in svc-in-small"
             type="number"
+          min="0"
+            min="0"
             min={0}
             step={0.25}
             name="vacuumingHours"
-            value={form.vacuumingHours || ""}
+            value={form.vacuumingHours}
             onChange={onChange}
             placeholder={cfg.vacuumingDefaultHours.toString()}
           />
@@ -390,10 +396,12 @@ export const JanitorialForm: React.FC<
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+          min="0"
+            min="0"
             min={0}
             step={1}
             name="dustingTotalPlaces"
-            value={form.dustingTotalPlaces || ""}
+            value={form.dustingTotalPlaces}
             onChange={onChange}
             placeholder="90"
           />
@@ -401,10 +409,12 @@ export const JanitorialForm: React.FC<
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+          min="0"
+            min="0"
             min={1}
             step={1}
             name="dustingPlacesPerHour"
-            value={form.dustingPlacesPerHour || ""}
+            value={form.dustingPlacesPerHour}
             onChange={onChange}
             title="Places per hour (from admin panel, editable by salesman)"
           />
@@ -412,7 +422,8 @@ export const JanitorialForm: React.FC<
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
-              min="0"
+          min="0"
+            min="0"
             value={form.dustingCalculatedHours?.toFixed(2) || 0}
             readOnly
             style={{ backgroundColor: '#f0f8ff' }}
@@ -429,10 +440,12 @@ export const JanitorialForm: React.FC<
           <input
             className="svc-in svc-in-small"
             type="number"
+          min="0"
+            min="0"
             min={0}
             step={0.25}
             name="manualHours"
-            value={form.manualHours || ""}
+            value={form.manualHours}
             onChange={onChange}
           />
           <span className="svc-small">
@@ -448,10 +461,12 @@ export const JanitorialForm: React.FC<
           <input
             className="svc-in svc-in-small"
             type="number"
+          min="0"
+            min="0"
             min={0}
             step={1}
             name="addonTimeMinutes"
-            value={form.addonTimeMinutes || ""}
+            value={form.addonTimeMinutes}
             onChange={onChange}
             placeholder="0"
           />
@@ -469,7 +484,8 @@ export const JanitorialForm: React.FC<
             <input
               className="svc-in svc-in-small"
               type="number"
-              min="0"
+          min="0"
+            min="0"
               min={cfg.minContractMonths}
               max={cfg.maxContractMonths}
               name="contractMonths"
@@ -509,7 +525,8 @@ export const JanitorialForm: React.FC<
             <input
               className="svc-in"
               type="number"
-              min="0"
+          min="0"
+            min="0"
               step="0.01"
               name="customPerVisit"
               value={
@@ -563,7 +580,8 @@ export const JanitorialForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-              min="0"
+          min="0"
+            min="0"
                 step="0.01"
                 name="customOngoingMonthly"
                 value={
@@ -595,7 +613,8 @@ export const JanitorialForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-              min="0"
+          min="0"
+            min="0"
                 step="0.01"
                 name="customMonthly"
                 value={
@@ -651,7 +670,8 @@ export const JanitorialForm: React.FC<
             <span style={{ fontSize: '18px', fontWeight: 'bold', marginLeft: '10px' }}>$</span>
             <input
               type="number"
-              min="0"
+          min="0"
+            min="0"
               step="0.01"
               name="customContractTotal"
               className="svc-in"

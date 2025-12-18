@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { money, unmoney } from "./money";
 
 const inputStyle = {
@@ -12,6 +12,23 @@ const inputStyle = {
 export default function InlineMoneyEditor({ value, display, onCommit }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(display ?? money(value ?? 0));
+  const [cursorPosition, setCursorPosition] = useState(null);
+  const inputRef = useRef(null);
+
+  // ✅ FIX: Restore cursor position after state update
+  useEffect(() => {
+    if (editing && inputRef.current && cursorPosition !== null) {
+      inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      setCursorPosition(null); // Reset after applying
+    }
+  }, [text, editing, cursorPosition]);
+
+  const handleChange = (e) => {
+    // ✅ FIX: Store cursor position before updating state
+    const currentPosition = e.target.selectionStart;
+    setCursorPosition(currentPosition);
+    setText(e.target.value);
+  };
 
   const commit = () => {
     const v = unmoney(text);
@@ -21,9 +38,10 @@ export default function InlineMoneyEditor({ value, display, onCommit }) {
 
   return editing ? (
     <input
+      ref={inputRef}
       style={inputStyle}
       value={text}
-      onChange={(e) => setText(e.target.value)}
+      onChange={handleChange}
       onBlur={commit}
       onKeyDown={(e) => e.key === "Enter" && commit()}
       autoFocus

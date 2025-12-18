@@ -343,8 +343,9 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
+            min="0"
             name="bathroomCount"
-            value={form.bathroomCount}
+            value={form.bathroomCount || ""}
             onChange={onChange}
             disabled={
               isBathroomDisabled || !form.hasExistingSaniService || form.isAllInclusive
@@ -356,9 +357,10 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
+              min="0"
               step="0.01"
               name="includedBathroomRate"
-              value={form.includedBathroomRate}
+              value={form.includedBathroomRate || ""}
               onChange={onChange}
             />
           </div>
@@ -366,6 +368,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customStandardBathroomTotal"
             value={
@@ -389,8 +392,9 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
+            min="0"
             name="hugeBathroomSqFt"
-            value={form.hugeBathroomSqFt}
+            value={form.hugeBathroomSqFt || ""}
             onChange={onChange}
             disabled={form.isAllInclusive || !form.hasExistingSaniService}
           />
@@ -400,9 +404,10 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
+              min="0"
               step="0.01"
               name="hugeBathroomRatePerSqFt"
-              value={form.hugeBathroomRatePerSqFt}
+              value={form.hugeBathroomRatePerSqFt || ""}
               onChange={onChange}
             />
           </div>
@@ -411,6 +416,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customHugeBathroomTotal"
             value={
@@ -434,8 +440,9 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
+            min="0"
             name="extraAreaSqFt"
-            value={form.extraAreaSqFt}
+            value={form.extraAreaSqFt || ""}
             onChange={onChange}
             disabled={form.isAllInclusive}
           />
@@ -445,6 +452,7 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
+            min="0"
               step="0.01"
               name="extraAreaRatePerUnit"
               value={extraAreaRatePerSqFt.toFixed(4)}
@@ -457,6 +465,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customExtraAreaTotal"
             value={
@@ -504,8 +513,9 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
+            min="0"
             name="standaloneSqFt"
-            value={form.standaloneSqFt}
+            value={form.standaloneSqFt || ""}
             onChange={onChange}
             disabled={form.isAllInclusive}
           />
@@ -515,9 +525,10 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
+              min="0"
               step="0.01"
               name="standaloneRatePerUnit"
-              value={form.standaloneRatePerUnit}
+              value={form.standaloneRatePerUnit || ""}
               onChange={onChange}
             />
           </div>
@@ -526,6 +537,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customStandaloneTotal"
             value={
@@ -626,6 +638,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
+            min="0"
             name="chemicalGallons"
             value={form.chemicalGallons}
             onChange={onChange}
@@ -636,6 +649,7 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
+            min="0"
               step="0.01"
               name="dailyChemicalPerGallon"
               value={form.dailyChemicalPerGallon}
@@ -646,6 +660,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customChemicalTotal"
             value={
@@ -695,6 +710,7 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in"
               type="number"
+            min="0"
               step="0.01"
               name="customPerVisitPrice"
               value={
@@ -785,6 +801,7 @@ export const MicrofiberMoppingForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
+            min="0"
                 step="0.01"
                 name="customFirstMonthPrice"
                 value={
@@ -814,6 +831,7 @@ export const MicrofiberMoppingForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
+            min="0"
                 step="0.01"
                 name="customFirstMonthPrice"
                 value={
@@ -884,6 +902,7 @@ export const MicrofiberMoppingForm: React.FC<
                 <input
                   className="svc-in"
                   type="number"
+            min="0"
                   step="0.01"
                   name="customContractTotal"
                   value={

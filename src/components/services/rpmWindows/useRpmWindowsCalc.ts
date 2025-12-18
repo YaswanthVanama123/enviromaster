@@ -844,9 +844,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       }
     }
 
-    // ✅ NEW: Apply minimum charge per visit from backend
+    // ✅ NEW: Apply minimum charge per visit from backend ONLY when there are windows
     const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? activeConfig.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
-    const recurringPerVisitWithMinimum = Math.max(recurringPerVisitRated, minimumChargePerVisit);
+    const recurringPerVisitWithMinimum = hasWindows ? Math.max(recurringPerVisitRated, minimumChargePerVisit) : 0;
 
     // ✅ RECALCULATE MONTHLY VALUES with minimum charge applied
     const standardMonthlyBillWithMinimum = recurringPerVisitWithMinimum * monthlyVisits;

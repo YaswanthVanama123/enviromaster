@@ -404,7 +404,7 @@ const FrequenciesTab: React.FC<{
                         onChange={(e) =>
                           updateLinkedFields(
                             ["fixtureRates", freq],
-                            Number(e.target.value),
+                            Number(e.target.value) || 0 || 0,
                             linkedPaths
                           )
                         }
@@ -420,7 +420,7 @@ const FrequenciesTab: React.FC<{
                         onChange={(e) =>
                           updateLinkedFields(
                             ["minimums", freq],
-                            Number(e.target.value),
+                            Number(e.target.value) || 0 || 0,
                             linkedMinimumPaths
                           )
                         }
@@ -436,7 +436,7 @@ const FrequenciesTab: React.FC<{
                         onChange={(e) =>
                           updateConfig(
                             ["frequencyMeta", freq, "visitsPerYear"],
-                            Number(e.target.value)
+                            Number(e.target.value) || 0 || 0
                           )
                         }
                         min="0"
@@ -483,7 +483,7 @@ const FrequenciesTab: React.FC<{
                       className="spe__input"
                       value={frequencyMultipliers[freq] || ""}
                       onChange={(e) =>
-                        updateConfig(["frequencyMultipliers", freq], Number(e.target.value))
+                        updateConfig(["frequencyMultipliers", freq], Number(e.target.value) || 0 || 0)
                       }
                       step="0.01"
                       min="0"
@@ -495,7 +495,7 @@ const FrequenciesTab: React.FC<{
                       className="spe__input"
                       value={annualFrequencies[freq] || ""}
                       onChange={(e) =>
-                        updateConfig(["annualFrequencies", freq], Number(e.target.value))
+                        updateConfig(["annualFrequencies", freq], Number(e.target.value) || 0 || 0)
                       }
                       min="0"
                     />
@@ -512,7 +512,7 @@ const FrequenciesTab: React.FC<{
               className="spe__input"
               value={frequencyMultipliers.quarterlyFirstTime || ""}
               onChange={(e) =>
-                updateConfig(["frequencyMultipliers", "quarterlyFirstTime"], Number(e.target.value))
+                updateConfig(["frequencyMultipliers", "quarterlyFirstTime"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -550,7 +550,7 @@ const FrequenciesTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "annualMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.01"
@@ -565,7 +565,7 @@ const FrequenciesTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "monthlyMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.01"
@@ -605,7 +605,7 @@ const FrequenciesTab: React.FC<{
                       className="spe__input"
                       value={annualFrequencies[freq] || ""}
                       onChange={(e) =>
-                        updateConfig(["annualFrequencies", freq], Number(e.target.value))
+                        updateConfig(["annualFrequencies", freq], Number(e.target.value) || 0 || 0)
                       }
                       min="0"
                     />
@@ -621,7 +621,7 @@ const FrequenciesTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["weeksPerMonth"]) || ""}
-              onChange={(e) => updateConfig(["weeksPerMonth"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["weeksPerMonth"], Number(e.target.value) || 0)}
               step="0.01"
               min="0"
             />
@@ -633,7 +633,7 @@ const FrequenciesTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["weeksPerYear"]) || ""}
-              onChange={(e) => updateConfig(["weeksPerYear"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["weeksPerYear"], Number(e.target.value) || 0)}
               min="0"
             />
           </div>
@@ -669,7 +669,7 @@ const FrequenciesTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "monthlyMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.001"
@@ -684,7 +684,7 @@ const FrequenciesTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "annualMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.01"
@@ -702,7 +702,7 @@ const FrequenciesTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["billingConversions", "actualWeeksPerMonth"]) || ""}
-              onChange={(e) => updateConfig(["billingConversions", "actualWeeksPerMonth"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["billingConversions", "actualWeeksPerMonth"], Number(e.target.value) || 0)}
               step="0.01"
               min="0"
             />
@@ -740,7 +740,7 @@ const FrequenciesTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "monthlyMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.001"
@@ -756,7 +756,7 @@ const FrequenciesTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "annualMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.01"
@@ -828,7 +828,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "insideBeltway", "ratePerFixture"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -845,7 +845,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "insideBeltway", "weeklyMinimum"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -862,7 +862,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "insideBeltway", "tripCharge"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -879,7 +879,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "insideBeltway", "parkingFee"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -901,7 +901,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "outsideBeltway", "ratePerFixture"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -918,7 +918,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "outsideBeltway", "weeklyMinimum"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -935,7 +935,7 @@ const GeographicTab: React.FC<{
               onChange={(e) =>
                 updateConfig(
                   ["geographicPricing", "outsideBeltway", "tripCharge"],
-                  Number(e.target.value)
+                  Number(e.target.value) || 0
                 )
               }
               step="0.01"
@@ -976,7 +976,7 @@ const RateTiersTab: React.FC<{
               className="spe__input"
               value={redRate.multiplier || ""}
               onChange={(e) =>
-                updateConfig([pathPrefix, "redRate", "multiplier"], Number(e.target.value))
+                updateConfig([pathPrefix, "redRate", "multiplier"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1008,7 +1008,7 @@ const RateTiersTab: React.FC<{
               className="spe__input"
               value={greenRate.multiplier || ""}
               onChange={(e) =>
-                updateConfig([pathPrefix, "greenRate", "multiplier"], Number(e.target.value))
+                updateConfig([pathPrefix, "greenRate", "multiplier"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1059,7 +1059,7 @@ const MinimumsTab: React.FC<{
               className="spe__input"
               value={smallFacilityMinimum.fixtureThreshold || ""}
               onChange={(e) =>
-                updateConfig(["smallFacilityMinimum", "fixtureThreshold"], Number(e.target.value))
+                updateConfig(["smallFacilityMinimum", "fixtureThreshold"], Number(e.target.value) || 0)
               }
               min="0"
             />
@@ -1073,7 +1073,7 @@ const MinimumsTab: React.FC<{
               className="spe__input"
               value={smallFacilityMinimum.minimumWeeklyCharge || ""}
               onChange={(e) =>
-                updateConfig(["smallFacilityMinimum", "minimumWeeklyCharge"], Number(e.target.value))
+                updateConfig(["smallFacilityMinimum", "minimumWeeklyCharge"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1104,7 +1104,7 @@ const MinimumsTab: React.FC<{
               className="spe__input"
               value={allInclusivePackage.weeklyRatePerFixture || ""}
               onChange={(e) =>
-                updateConfig(["allInclusivePackage", "weeklyRatePerFixture"], Number(e.target.value))
+                updateConfig(["allInclusivePackage", "weeklyRatePerFixture"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1118,7 +1118,7 @@ const MinimumsTab: React.FC<{
               className="spe__input"
               value={allInclusivePackage.autoAllInclusiveMinFixtures || ""}
               onChange={(e) =>
-                updateConfig(["allInclusivePackage", "autoAllInclusiveMinFixtures"], Number(e.target.value))
+                updateConfig(["allInclusivePackage", "autoAllInclusiveMinFixtures"], Number(e.target.value) || 0)
               }
               min="0"
             />
@@ -1184,7 +1184,7 @@ const MinimumsTab: React.FC<{
               className="spe__input"
               value={standalonePricing.standaloneMinimum || ""}
               onChange={(e) =>
-                updateConfig(["standalonePricing", "standaloneMinimum"], Number(e.target.value))
+                updateConfig(["standalonePricing", "standaloneMinimum"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1237,7 +1237,7 @@ const MultipliersTab: React.FC<{
             className="spe__input"
             value={installMultipliers.dirty || ""}
             onChange={(e) =>
-              updateConfig(["installMultipliers", "dirty"], Number(e.target.value))
+              updateConfig(["installMultipliers", "dirty"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1252,7 +1252,7 @@ const MultipliersTab: React.FC<{
             className="spe__input"
             value={installMultipliers.clean || ""}
             onChange={(e) =>
-              updateConfig(["installMultipliers", "clean"], Number(e.target.value))
+              updateConfig(["installMultipliers", "clean"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1278,7 +1278,7 @@ const MultipliersTab: React.FC<{
             className="spe__input"
             value={installMultiplierFirstTime}
             onChange={(e) =>
-              updateConfig(["installMultiplierFirstTime"], Number(e.target.value))
+              updateConfig(["installMultiplierFirstTime"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1293,7 +1293,7 @@ const MultipliersTab: React.FC<{
             className="spe__input"
             value={installMultiplierClean}
             onChange={(e) =>
-              updateConfig(["installMultiplierClean"], Number(e.target.value))
+              updateConfig(["installMultiplierClean"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1336,7 +1336,7 @@ const MultipliersTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "monthlyMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.001"
@@ -1363,7 +1363,7 @@ const MultipliersTab: React.FC<{
                       onChange={(e) =>
                         updateConfig(
                           ["billingConversions", freq, "annualMultiplier"],
-                          Number(e.target.value)
+                          Number(e.target.value) || 0
                         )
                       }
                       step="0.01"
@@ -1439,7 +1439,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={urinals.urinalScreen || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "urinals", "urinalScreen"], Number(e.target.value))
+              updateConfig(["facilityComponents", "urinals", "urinalScreen"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1453,7 +1453,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={urinals.urinalMat || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "urinals", "urinalMat"], Number(e.target.value))
+              updateConfig(["facilityComponents", "urinals", "urinalMat"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1471,7 +1471,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={maleToilets.toiletClips || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "maleToilets", "toiletClips"], Number(e.target.value))
+              updateConfig(["facilityComponents", "maleToilets", "toiletClips"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1485,7 +1485,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={maleToilets.seatCoverDispenser || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "maleToilets", "seatCoverDispenser"], Number(e.target.value))
+              updateConfig(["facilityComponents", "maleToilets", "seatCoverDispenser"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1503,7 +1503,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={femaleToilets.sanipodService || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "femaleToilets", "sanipodService"], Number(e.target.value))
+              updateConfig(["facilityComponents", "femaleToilets", "sanipodService"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1521,7 +1521,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={sinks.ratioSinkToSoap || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "sinks", "ratioSinkToSoap"], Number(e.target.value))
+              updateConfig(["facilityComponents", "sinks", "ratioSinkToSoap"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1535,7 +1535,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={sinks.ratioSinkToAirFreshener || ""}
             onChange={(e) =>
-              updateConfig(["facilityComponents", "sinks", "ratioSinkToAirFreshener"], Number(e.target.value))
+              updateConfig(["facilityComponents", "sinks", "ratioSinkToAirFreshener"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1553,7 +1553,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={soapUpgrades.standardToLuxury || ""}
             onChange={(e) =>
-              updateConfig(["soapUpgrades", "standardToLuxury"], Number(e.target.value))
+              updateConfig(["soapUpgrades", "standardToLuxury"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1567,7 +1567,7 @@ const ComponentsTab: React.FC<{
             className="spe__input"
             value={warrantyFeePerDispenser}
             onChange={(e) =>
-              updateConfig(["warrantyFeePerDispenser"], Number(e.target.value))
+              updateConfig(["warrantyFeePerDispenser"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1603,7 +1603,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={microfiberMopping.pricePerBathroom || ""}
               onChange={(e) =>
-                updateConfig(["addOnServices", "microfiberMopping", "pricePerBathroom"], Number(e.target.value))
+                updateConfig(["addOnServices", "microfiberMopping", "pricePerBathroom"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1633,7 +1633,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={tripCharges.insideBeltway || ""}
               onChange={(e) =>
-                updateConfig(["tripCharges", "insideBeltway"], Number(e.target.value))
+                updateConfig(["tripCharges", "insideBeltway"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1647,7 +1647,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={tripCharges.outsideBeltway || ""}
               onChange={(e) =>
-                updateConfig(["tripCharges", "outsideBeltway"], Number(e.target.value))
+                updateConfig(["tripCharges", "outsideBeltway"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1661,7 +1661,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={tripCharges.standard || ""}
               onChange={(e) =>
-                updateConfig(["tripCharges", "standard"], Number(e.target.value))
+                updateConfig(["tripCharges", "standard"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1692,7 +1692,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={hugeBathroomPricing.ratePerSqFt || ""}
               onChange={(e) =>
-                updateConfig(["hugeBathroomPricing", "ratePerSqFt"], Number(e.target.value))
+                updateConfig(["hugeBathroomPricing", "ratePerSqFt"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1706,7 +1706,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={hugeBathroomPricing.sqFtUnit || ""}
               onChange={(e) =>
-                updateConfig(["hugeBathroomPricing", "sqFtUnit"], Number(e.target.value))
+                updateConfig(["hugeBathroomPricing", "sqFtUnit"], Number(e.target.value) || 0)
               }
               min="0"
             />
@@ -1724,7 +1724,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={extraAreaPricing.singleLargeAreaRate || ""}
               onChange={(e) =>
-                updateConfig(["extraAreaPricing", "singleLargeAreaRate"], Number(e.target.value))
+                updateConfig(["extraAreaPricing", "singleLargeAreaRate"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1738,7 +1738,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={extraAreaPricing.extraAreaSqFtUnit || ""}
               onChange={(e) =>
-                updateConfig(["extraAreaPricing", "extraAreaSqFtUnit"], Number(e.target.value))
+                updateConfig(["extraAreaPricing", "extraAreaSqFtUnit"], Number(e.target.value) || 0)
               }
               min="0"
             />
@@ -1751,7 +1751,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={extraAreaPricing.extraAreaRatePerUnit || ""}
               onChange={(e) =>
-                updateConfig(["extraAreaPricing", "extraAreaRatePerUnit"], Number(e.target.value))
+                updateConfig(["extraAreaPricing", "extraAreaRatePerUnit"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1778,7 +1778,7 @@ const AddonsTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["ratePerRoom"]) || ""}
-              onChange={(e) => updateConfig(["ratePerRoom"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["ratePerRoom"], Number(e.target.value) || 0)}
               step="0.01"
               min="0"
             />
@@ -1791,7 +1791,7 @@ const AddonsTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["ratePerThousandSqFt"]) || ""}
-              onChange={(e) => updateConfig(["ratePerThousandSqFt"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["ratePerThousandSqFt"], Number(e.target.value) || 0)}
               step="0.01"
               min="0"
             />
@@ -1804,7 +1804,7 @@ const AddonsTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["sqFtUnit"]) || ""}
-              onChange={(e) => updateConfig(["sqFtUnit"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["sqFtUnit"], Number(e.target.value) || 0)}
               min="0"
             />
             <div className="spe__hint">Square footage unit (typically 1000)</div>
@@ -1821,7 +1821,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={tripCharges.insideBeltway || ""}
               onChange={(e) =>
-                updateConfig(["tripCharges", "insideBeltway"], Number(e.target.value))
+                updateConfig(["tripCharges", "insideBeltway"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1835,7 +1835,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={tripCharges.outsideBeltway || ""}
               onChange={(e) =>
-                updateConfig(["tripCharges", "outsideBeltway"], Number(e.target.value))
+                updateConfig(["tripCharges", "outsideBeltway"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1849,7 +1849,7 @@ const AddonsTab: React.FC<{
               className="spe__input"
               value={tripCharges.standard || ""}
               onChange={(e) =>
-                updateConfig(["tripCharges", "standard"], Number(e.target.value))
+                updateConfig(["tripCharges", "standard"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -1866,7 +1866,7 @@ const AddonsTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["minContractMonths"]) || ""}
-              onChange={(e) => updateConfig(["minContractMonths"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["minContractMonths"], Number(e.target.value) || 0)}
               min="0"
             />
           </div>
@@ -1877,7 +1877,7 @@ const AddonsTab: React.FC<{
               type="number"
               className="spe__input"
               value={getConfigValue(["maxContractMonths"]) || ""}
-              onChange={(e) => updateConfig(["maxContractMonths"], Number(e.target.value))}
+              onChange={(e) => updateConfig(["maxContractMonths"], Number(e.target.value) || 0)}
               min="0"
             />
           </div>
@@ -1919,7 +1919,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={coreRates.defaultHourlyRate || ""}
             onChange={(e) =>
-              updateConfig(["coreRates", "defaultHourlyRate"], Number(e.target.value))
+              updateConfig(["coreRates", "defaultHourlyRate"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1935,7 +1935,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={coreRates.perWorkerRate || ""}
             onChange={(e) =>
-              updateConfig(["coreRates", "perWorkerRate"], Number(e.target.value))
+              updateConfig(["coreRates", "perWorkerRate"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1951,7 +1951,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={coreRates.perHourRate || ""}
             onChange={(e) =>
-              updateConfig(["coreRates", "perHourRate"], Number(e.target.value))
+              updateConfig(["coreRates", "perHourRate"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1967,7 +1967,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={coreRates.tripCharge || ""}
             onChange={(e) =>
-              updateConfig(["coreRates", "tripCharge"], Number(e.target.value))
+              updateConfig(["coreRates", "tripCharge"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -1983,7 +1983,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={coreRates.minimumVisit || ""}
             onChange={(e) =>
-              updateConfig(["coreRates", "minimumVisit"], Number(e.target.value))
+              updateConfig(["coreRates", "minimumVisit"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -2005,7 +2005,7 @@ const RefreshPowerScrubTab: React.FC<{
               className="spe__input"
               value={areaSpecificPricing.kitchen?.smallMedium || ""}
               onChange={(e) =>
-                updateConfig(["areaSpecificPricing", "kitchen", "smallMedium"], Number(e.target.value))
+                updateConfig(["areaSpecificPricing", "kitchen", "smallMedium"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -2021,7 +2021,7 @@ const RefreshPowerScrubTab: React.FC<{
               className="spe__input"
               value={areaSpecificPricing.kitchen?.large || ""}
               onChange={(e) =>
-                updateConfig(["areaSpecificPricing", "kitchen", "large"], Number(e.target.value))
+                updateConfig(["areaSpecificPricing", "kitchen", "large"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -2038,7 +2038,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={areaSpecificPricing.frontOfHouse || ""}
             onChange={(e) =>
-              updateConfig(["areaSpecificPricing", "frontOfHouse"], Number(e.target.value))
+              updateConfig(["areaSpecificPricing", "frontOfHouse"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -2055,7 +2055,7 @@ const RefreshPowerScrubTab: React.FC<{
               className="spe__input"
               value={areaSpecificPricing.patio?.standalone || ""}
               onChange={(e) =>
-                updateConfig(["areaSpecificPricing", "patio", "standalone"], Number(e.target.value))
+                updateConfig(["areaSpecificPricing", "patio", "standalone"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -2071,7 +2071,7 @@ const RefreshPowerScrubTab: React.FC<{
               className="spe__input"
               value={areaSpecificPricing.patio?.upsell || ""}
               onChange={(e) =>
-                updateConfig(["areaSpecificPricing", "patio", "upsell"], Number(e.target.value))
+                updateConfig(["areaSpecificPricing", "patio", "upsell"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -2093,7 +2093,7 @@ const RefreshPowerScrubTab: React.FC<{
             className="spe__input"
             value={squareFootagePricing.fixedFee || ""}
             onChange={(e) =>
-              updateConfig(["squareFootagePricing", "fixedFee"], Number(e.target.value))
+              updateConfig(["squareFootagePricing", "fixedFee"], Number(e.target.value) || 0)
             }
             step="0.01"
             min="0"
@@ -2110,7 +2110,7 @@ const RefreshPowerScrubTab: React.FC<{
               className="spe__input"
               value={squareFootagePricing.insideRate || ""}
               onChange={(e) =>
-                updateConfig(["squareFootagePricing", "insideRate"], Number(e.target.value))
+                updateConfig(["squareFootagePricing", "insideRate"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"
@@ -2126,7 +2126,7 @@ const RefreshPowerScrubTab: React.FC<{
               className="spe__input"
               value={squareFootagePricing.outsideRate || ""}
               onChange={(e) =>
-                updateConfig(["squareFootagePricing", "outsideRate"], Number(e.target.value))
+                updateConfig(["squareFootagePricing", "outsideRate"], Number(e.target.value) || 0)
               }
               step="0.01"
               min="0"

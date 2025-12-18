@@ -535,10 +535,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyGreaseTraps +
       weeklyGreenDrains;
 
-    // ✅ NEW: Apply minimum charge per visit from backend
+    // ✅ NEW: Apply minimum charge per visit from backend ONLY when there's actual service
     const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? 50; // Default $50
     const weeklyServiceBeforeMin = round2(weeklyServiceRaw);
-    const weeklyService = Math.max(weeklyServiceBeforeMin, minimumChargePerVisit);
+    const weeklyService = weeklyServiceRaw > 0 ? Math.max(weeklyServiceBeforeMin, minimumChargePerVisit) : 0;
     const tripCharge = 0; // Trip charge removed from math
     const weeklyTotal = weeklyService; // (service only)
 

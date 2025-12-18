@@ -712,7 +712,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       const rawAmount = fixtureCount * baseRate;
 
       // Base amount with minimum applied (this is what shows in the "= $___" box)
-      fixtureBaseAmount = Math.max(rawAmount, minimumAmount);
+      // ✅ ONLY apply minimum when there are actual fixtures
+      fixtureBaseAmount = fixtureCount > 0 ? Math.max(rawAmount, minimumAmount) : 0;
 
       if (freq === "monthly") {
         // Monthly: Base amount is the monthly amount

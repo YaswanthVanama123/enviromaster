@@ -3,25 +3,39 @@ import type { MoneyRow } from "../types";
 
 const Dollar = ({
   name,
-  defaultValue,
+  value,
+  onChange,
 }: {
   name: string;
-  defaultValue?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }) => (
   <div className="svc-dollar">
     <span>$</span>
-    <input className="svc-in-box" name={name} defaultValue={defaultValue} />
+    <input
+      className="svc-in-box"
+      name={name}
+      type="number"
+      step="0.01"
+      min="0"
+      value={value || ""}
+      onChange={(e) => onChange?.(e.target.value)}
+    />
   </div>
 );
 
 export default function RowMoney({
   row,
+  value,
   onRemove,
   onRename,
+  onChange,
 }: {
   row: MoneyRow;
+  value?: string;
   onRemove?: () => void;
   onRename?: (label: string) => void;
+  onChange?: (value: string) => void;
 }) {
   return (
     <div className="svc-row svc-row-charge">
@@ -36,7 +50,11 @@ export default function RowMoney({
       )}
 
       <div className="svc-row-right">
-        <Dollar name={row.name} defaultValue={row.defaultValue} />
+        <Dollar
+          name={row.name}
+          value={value || row.defaultValue}
+          onChange={onChange}
+        />
         {row.isCustom && (
           <button
             type="button"

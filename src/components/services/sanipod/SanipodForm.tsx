@@ -416,9 +416,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
-            min={0}
+            min="0"
             name="podQuantity"
-            value={form.podQuantity}
+            value={form.podQuantity || ""}
             onChange={onChange}
             style={{width:"70px"}}
           />
@@ -426,11 +426,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customWeeklyPodRate"
             value={
               form.customWeeklyPodRate !== undefined
-                ? form.customWeeklyPodRate
+                ? form.customWeeklyPodRate || ""
                 : parseFloat(calc.effectiveRatePerPod.toFixed(2))
             }
             onChange={onChange}
@@ -443,11 +444,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customPodServiceTotal"
             value={
               form.customPodServiceTotal !== undefined
-                ? form.customPodServiceTotal
+                ? form.customPodServiceTotal || ""
                 : parseFloat(calc.adjustedPodServiceTotal.toFixed(2))
             }
             onChange={onChange}
@@ -470,18 +472,19 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
-            min={0}
+            min="0"
             name="extraBagsPerWeek"
-            value={form.extraBagsPerWeek}
+            value={form.extraBagsPerWeek || ""}
             onChange={onChange}
           />
           <span className="svc-multi">@</span>
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="extraBagPrice"
-            value={form.extraBagPrice}
+            value={form.extraBagPrice || ""}
             onChange={onChange}
           />
           <span className="svc-small">{bagUnitLabel}</span>
@@ -489,11 +492,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+            min="0"
             step="0.01"
             name="customExtraBagsTotal"
             value={
               form.customExtraBagsTotal !== undefined
-                ? form.customExtraBagsTotal
+                ? form.customExtraBagsTotal || ""
                 : parseFloat(calc.adjustedBagsTotal.toFixed(2))
             }
             onChange={onChange}
@@ -524,6 +528,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small"
             type="number"
+            min="0"
             step="0.01"
             name="tripChargePerVisit"
             value={form.tripChargePerVisit}
@@ -556,9 +561,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small"
             type="number"
+            min="0"
             step="0.01"
             name="installRatePerPod"
-            value={form.installRatePerPod}
+            value={form.installRatePerPod || ""}
             onChange={onChange}
             style={{ width: "60px" }}
           />
@@ -575,9 +581,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               <input
                 className="svc-in svc-in-small"
                 type="number"
-                min={0}
+                min="0"
                 name="installQuantity"
-                value={form.installQuantity}
+                value={form.installQuantity || ""}
                 onChange={onChange}
               />
               <span className="svc-multi">@</span>
@@ -586,7 +592,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 type="number"
                 step="0.01"
                 name="installRatePerPod"
-                value={form.installRatePerPod}
+                value={form.installRatePerPod || ""}
                 onChange={onChange}
               />
               <span className="svc-small">$/pod install</span>
@@ -606,11 +612,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 <input
                   className="svc-in svc-in-small"
                   type="number"
+                  min="0"
                   step="0.01"
                   name="customInstallationFee"
                   value={
                     form.customInstallationFee !== undefined
-                      ? form.customInstallationFee
+                      ? form.customInstallationFee || ""
                       : parseFloat(calc.installCost.toFixed(2))
                   }
                   onChange={onChange}
@@ -646,9 +653,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           $<input
             className="svc-in svc-in-small"
             type="number"
+            min="0"
             step="0.01"
             name="customPerVisitPrice"
-            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : parseFloat(calc.adjustedPerVisit.toFixed(2))}
+            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice || "" : parseFloat(calc.adjustedPerVisit.toFixed(2))}
             onChange={onChange}
             onBlur={handleBlur}
             style={{
@@ -682,7 +690,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               type="number"
               step="0.01"
               name="customMonthlyPrice"
-              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
+              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice || "" : parseFloat(calc.adjustedMonthly.toFixed(2))}
               onChange={onChange}
               onBlur={handleBlur}
               style={{
@@ -705,7 +713,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               type="number"
               step="0.01"
               name="customMonthlyPrice"
-              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
+              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice || "" : parseFloat(calc.adjustedMonthly.toFixed(2))}
               onChange={onChange}
               onBlur={handleBlur}
               style={{
@@ -728,7 +736,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               type="number"
               step="0.01"
               name="customMonthlyPrice"
-              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice : parseFloat(calc.adjustedMonthly.toFixed(2))}
+              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice || "" : parseFloat(calc.adjustedMonthly.toFixed(2))}
               onChange={onChange}
               onBlur={handleBlur}
               style={{
@@ -784,7 +792,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 type="number"
                 step="0.01"
                 name="customAnnualPrice"
-                value={form.customAnnualPrice !== undefined ? form.customAnnualPrice : parseFloat(calc.adjustedAnnual.toFixed(2))}
+                value={form.customAnnualPrice !== undefined ? form.customAnnualPrice || "" : parseFloat(calc.adjustedAnnual.toFixed(2))}
                 onChange={onChange}
                 onBlur={handleBlur}
                 style={{

@@ -534,29 +534,31 @@ function calculatePerItemCharge(
   const fixtureRate = isInsideBeltway ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture;
   const regionMinimum = isInsideBeltway ? form.insideBeltwayMinimum : 0;
 
-  // Base fixture charge
+  // Base fixture charge - only calculate if fixtures exist
   let baseServiceCalc = fixtureCount * fixtureRate * rateTierMultiplier;
 
   // Small facility rule: 5 fixtures or less = $50 minimum (includes trip)
+  // ✅ ONLY apply minimum charges when there are actual fixtures
   const isSmallFacility = fixtureCount <= form.smallFacilityThreshold;
   let tripChargeCalc = 0;
 
-  if (isSmallFacility) {
-    baseServiceCalc = Math.max(baseServiceCalc, form.smallFacilityMinimum); // $50 minimum includes trip
-    tripChargeCalc = 0; // Already included in minimum
-  } else {
-    // Apply regional minimum
-    baseServiceCalc = Math.max(baseServiceCalc, regionMinimum);
-
-    // Add trip charge ONLY if checkbox is enabled
-    if (form.addTripCharge) {
-      tripChargeCalc = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
-
-      // Add parking fee if inside beltway and parking needed
-      if (isInsideBeltway && form.needsParking) {
-        tripChargeCalc += form.insideBeltwayParkingFee;
-      }
+  if (fixtureCount > 0) { // ✅ NEW: Only apply minimums when fixtures exist
+    if (isSmallFacility) {
+      baseServiceCalc = Math.max(baseServiceCalc, form.smallFacilityMinimum); // $50 minimum includes trip
+      tripChargeCalc = 0; // Already included in minimum
     } else {
+      // Apply regional minimum
+      baseServiceCalc = Math.max(baseServiceCalc, regionMinimum);
+
+      // Add trip charge ONLY if checkbox is enabled
+      if (form.addTripCharge) {
+        tripChargeCalc = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
+
+        // Add parking fee if inside beltway and parking needed
+        if (isInsideBeltway && form.needsParking) {
+          tripChargeCalc += form.insideBeltwayParkingFee;
+        }
+      } else {
       tripChargeCalc = 0;
     }
   }

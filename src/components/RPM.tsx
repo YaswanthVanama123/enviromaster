@@ -148,7 +148,7 @@ function SaniCleanCalculator() {
               type="number"
               min={0}
               value={fixtures}
-              onChange={(e) => setFixtures(e.target.value)}
+              onChange={(e) => setFixtures(Number(e.target.value) || 0)}
             />
           </div>
 
@@ -159,7 +159,7 @@ function SaniCleanCalculator() {
               type="number"
               min={1}
               value={agreementMonths}
-              onChange={(e) => setAgreementMonths(e.target.value)}
+              onChange={(e) => setAgreementMonths(Number(e.target.value) || 0)}
             />
           </div>
 
@@ -181,7 +181,7 @@ function SaniCleanCalculator() {
               min={0}
               step="0.01"
               value={parkingAmt}
-              onChange={(e) => setParkingAmt(e.target.value)}
+              onChange={(e) => setParkingAmt(Number(e.target.value) || 0)}
             />
           </div>
 
@@ -200,7 +200,7 @@ function SaniCleanCalculator() {
               type="number"
               min={0}
               value={smallThreshold}
-              onChange={(e) => setSmallThreshold(e.target.value)}
+              onChange={(e) => setSmallThreshold(Number(e.target.value) || 0)}
             />
             <small style={{ color: "#4a4a4a" }}>≤ threshold → $50 visit incl. trip</small>
           </div>
@@ -430,7 +430,7 @@ function RpmWindowsCalculator() {
               min={0}
               step="0.01"
               value={parkingAmt}
-              onChange={(e) => setParkingAmt(e.target.value)}
+              onChange={(e) => setParkingAmt(Number(e.target.value) || 0)}
             />
           </div>
 
@@ -441,7 +441,7 @@ function RpmWindowsCalculator() {
               type="number"
               min={1}
               value={agreementMonths}
-              onChange={(e) => setAgreementMonths(e.target.value)}
+              onChange={(e) => setAgreementMonths(Number(e.target.value) || 0)}
             />
           </div>
         </div>
@@ -452,15 +452,15 @@ function RpmWindowsCalculator() {
         <div style={grid}>
           <div style={field}>
             <label>Small Windows</label>
-            <input style={inputStyle} type="number" min={0} value={small} onChange={(e) => setSmall(e.target.value)} />
+            <input style={inputStyle} type="number" min={0} value={small} onChange={(e) => setSmall(Number(e.target.value) || 0)} />
           </div>
           <div style={field}>
             <label>Medium Windows</label>
-            <input style={inputStyle} type="number" min={0} value={medium} onChange={(e) => setMedium(e.target.value)} />
+            <input style={inputStyle} type="number" min={0} value={medium} onChange={(e) => setMedium(Number(e.target.value) || 0)} />
           </div>
           <div style={field}>
             <label>Large / Door Windows</label>
-            <input style={inputStyle} type="number" min={0} value={large} onChange={(e) => setLarge(e.target.value)} />
+            <input style={inputStyle} type="number" min={0} value={large} onChange={(e) => setLarge(Number(e.target.value) || 0)} />
           </div>
           <div style={field}>
             <label>Include Mirrors?</label>
@@ -471,15 +471,15 @@ function RpmWindowsCalculator() {
           </div>
           <div style={field}>
             <label>Small Mirrors</label>
-            <input style={inputStyle} type="number" min={0} value={sm} onChange={(e) => setSm(e.target.value)} />
+            <input style={inputStyle} type="number" min={0} value={sm} onChange={(e) => setSm(Number(e.target.value) || 0)} />
           </div>
           <div style={field}>
             <label>Medium Mirrors</label>
-            <input style={inputStyle} type="number" min={0} value={mm} onChange={(e) => setMm(e.target.value)} />
+            <input style={inputStyle} type="number" min={0} value={mm} onChange={(e) => setMm(Number(e.target.value) || 0)} />
           </div>
           <div style={field}>
             <label>Large Mirrors</label>
-            <input style={inputStyle} type="number" min={0} value={lm} onChange={(e) => setLm(e.target.value)} />
+            <input style={inputStyle} type="number" min={0} value={lm} onChange={(e) => setLm(Number(e.target.value) || 0)} />
           </div>
         </div>
         <div style={{ fontSize: 12, color: "#4a4a4a", marginTop: 6 }}>

@@ -432,10 +432,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <div className="svc-inline">
                 <input
                   type="number"
-                  step="0.1"
                   min="0"
+                  step="0.1"
                   className="svc-in field-rate"
-                  value={state.filthyMultiplier}
+                  value={state.filthyMultiplier || ""}
                   onChange={(e) => updateField("filthyMultiplier", parseFloat(e.target.value) || 0)}
                   title="Filthy installation multiplier (from backend, editable)"
                 />
@@ -456,9 +456,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-field">
               <input
                 type="number"
-                min={0}
+                min="0"
                 className="svc-in field-rate"
-                value={state.filthyDrainCount}
+                value={state.filthyDrainCount || ""}
                 onChange={handleNumberChange("filthyDrainCount")}
               />{" "}
               <span className="svc-note">
@@ -508,11 +508,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 Plumbing (+$
                 <input
                   type="number"
+            min="0"
                   min={0}
                   step={0.01}
                   className="svc-in field-rate"
                   style={{ width: "60px", display: "inline-block", margin: "0 2px" }}
-                  value={state.plumbingAddonRate}
+                  value={state.plumbingAddonRate || ""}
                   onChange={(e) => updateField("plumbingAddonRate", parseFloat(e.target.value) || 0)}
                   title="Plumbing addon rate per drain (editable)"
                 />
@@ -520,9 +521,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {state.needsPlumbing && (
                   <input
                     type="number"
+            min="0"
                     min={0}
                     className="svc-in field-medium"
-                    value={state.plumbingDrainCount}
+                    value={state.plumbingDrainCount || ""}
                     onChange={handleNumberChange("plumbingDrainCount")}
                   />
                 )}
@@ -556,17 +558,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 </span>
                 <input
                   type="number"
+            min="0"
                   min={0}
                   step={0.01}
                   className="svc-in field-qty"
                   className="svc-in field-qty"
-                  value={state.altBaseCharge}
+                  value={state.altBaseCharge || ""}
                   onChange={(e) => updateField("altBaseCharge", parseFloat(e.target.value) || 0)}
                   title="Alt base charge (from backend)"
                 />
                 <span className="svc-note"> + $</span>
                 <input
                   type="number"
+            min="0"
                   min={0}
                   step={0.01}
                   className="svc-in field-qty"
@@ -637,6 +641,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               Grease Trap Install (min $
               <input
                 type="number"
+            min="0"
                 min={0}
                 step={0.01}
                 className="svc-in field-rate"
@@ -663,6 +668,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* QTY = user input for total standard drains */}
                 <input
                   type="number"
+            min="0"
                   min={0}
                   className="svc-in field-qty"
                   value={stdQty}
@@ -673,6 +679,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* RATE = Shows effective rate based on active pricing model */}
                 <input
                   type="number"
+            min="0"
                   min={0}
                   step={0.01}
                   className="svc-in field-rate"
@@ -728,6 +735,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   {/* QTY = INPUT (how many drains go into install program) */}
                   <input
                     type="number"
+            min="0"
                     min={0}
                     max={state.standardDrainCount}
                     className="svc-in field-qty"
@@ -739,6 +747,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   {/* RATE depends on frequency: weekly/bimonthly - EDITABLE */}
                   <input
                     type="number"
+            min="0"
                     min={0}
                     step={0.01}
                     className="svc-in field-qty"
@@ -777,6 +786,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* QTY */}
                 <input
                   type="number"
+            min="0"
                   min={0}
                   className="svc-in field-qty"
                   className="svc-in field-qty"
@@ -787,6 +797,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* RATE - EDITABLE */}
                 <input
                   type="number"
+            min="0"
                   min={0}
                   step={0.01}
                   className="svc-in field-qty"
@@ -817,6 +828,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* QTY */}
                 <input
                   type="number"
+            min="0"
                   min={0}
                   className="svc-in field-qty"
                   className="svc-in field-qty"
@@ -827,6 +839,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {/* RATE - EDITABLE */}
                 <input
                   type="number"
+            min="0"
                   min={0}
                   step={0.01}
                   className="svc-in field-qty"
@@ -884,6 +897,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <input
                 className="svc-in field-qty"
                 type="number"
+            min="0"
                 value={tripInputValue}
                 readOnly
               />
@@ -899,6 +913,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 type="number"
+            min="0"
                 step="0.01"
                 name="customWeeklyService"
                 className="svc-in weekly-total-field"
@@ -934,6 +949,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <span>$</span>
                 <input
                   type="number"
+            min="0"
                   step="0.01"
                   name="customFirstMonthPrice"
                   className="svc-in field-qty"
@@ -971,6 +987,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <span>$</span>
                 <input
                   type="number"
+            min="0"
                   step="0.01"
                   name="customMonthlyRecurring"
                   className="svc-in monthly-total-field"
@@ -1004,6 +1021,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 type="number"
+            min="0"
                 step="0.01"
                 name="customInstallationTotal"
                 className="svc-in total-field"
@@ -1098,6 +1116,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   <span style={{ marginRight: '4px' }}>$</span>
                   <input
                     type="number"
+            min="0"
                     step="0.01"
                     name="customContractTotal"
                     className="svc-in contract-total-field"
