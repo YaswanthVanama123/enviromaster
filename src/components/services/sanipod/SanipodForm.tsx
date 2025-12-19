@@ -1,5 +1,5 @@
 // src/features/services/sanipod/SanipodForm.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useSanipodCalc } from "./useSanipodCalc";
@@ -23,6 +23,68 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onChange({ target: { name, value: String(numValue) } } as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      onChange({ target: { name, value: '' } } as any);
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      onChange({ target: { name, value: '' } } as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    onChange({ target: { name, value: String(numValue) } } as any);
+  };
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -154,14 +216,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
-
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name } = e.target;
-    if (e.target.value === '' || e.target.value === null) {
-      setForm((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
 
   // Track previous values to detect actual changes (not just re-renders)
   const prevInputsRef = useRef({
@@ -429,12 +483,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             min="0"
             step="0.01"
             name="customWeeklyPodRate"
-            value={
+            value={getDisplayValue(
+              'customWeeklyPodRate',
               form.customWeeklyPodRate !== undefined
-                ? form.customWeeklyPodRate || ""
+                ? form.customWeeklyPodRate
                 : parseFloat(calc.effectiveRatePerPod.toFixed(2))
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             title="Effective rate per pod (editable)"
             style={{ backgroundColor: form.customWeeklyPodRate !== undefined ? '#fffacd' : 'white', width: "70px"}}
@@ -447,12 +503,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             min="0"
             step="0.01"
             name="customPodServiceTotal"
-            value={
+            value={getDisplayValue(
+              'customPodServiceTotal',
               form.customPodServiceTotal !== undefined
-                ? form.customPodServiceTotal || ""
+                ? form.customPodServiceTotal
                 : parseFloat(calc.adjustedPodServiceTotal.toFixed(2))
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customPodServiceTotal !== undefined ? '#fffacd' : 'white',
@@ -495,12 +553,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             min="0"
             step="0.01"
             name="customExtraBagsTotal"
-            value={
+            value={getDisplayValue(
+              'customExtraBagsTotal',
               form.customExtraBagsTotal !== undefined
-                ? form.customExtraBagsTotal || ""
+                ? form.customExtraBagsTotal
                 : parseFloat(calc.adjustedBagsTotal.toFixed(2))
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customExtraBagsTotal !== undefined ? '#fffacd' : 'white',
@@ -615,12 +675,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                   min="0"
                   step="0.01"
                   name="customInstallationFee"
-                  value={
+                  value={getDisplayValue(
+                    'customInstallationFee',
                     form.customInstallationFee !== undefined
-                      ? form.customInstallationFee || ""
+                      ? form.customInstallationFee
                       : parseFloat(calc.installCost.toFixed(2))
-                  }
-                  onChange={onChange}
+                  )}
+                  onChange={handleLocalChange}
+                  onFocus={handleFocus}
                   onBlur={handleBlur}
                   style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
                 />
@@ -656,8 +718,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             min="0"
             step="0.01"
             name="customPerVisitPrice"
-            value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice || "" : parseFloat(calc.adjustedPerVisit.toFixed(2))}
-            onChange={onChange}
+            value={getDisplayValue(
+              'customPerVisitPrice',
+              form.customPerVisitPrice !== undefined
+                ? form.customPerVisitPrice
+                : parseFloat(calc.adjustedPerVisit.toFixed(2))
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
@@ -690,8 +758,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               type="number"
               step="0.01"
               name="customMonthlyPrice"
-              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice || "" : parseFloat(calc.adjustedMonthly.toFixed(2))}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customMonthlyPrice',
+                form.customMonthlyPrice !== undefined
+                  ? form.customMonthlyPrice
+                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
@@ -713,8 +787,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               type="number"
               step="0.01"
               name="customMonthlyPrice"
-              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice || "" : parseFloat(calc.adjustedMonthly.toFixed(2))}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customMonthlyPrice',
+                form.customMonthlyPrice !== undefined
+                  ? form.customMonthlyPrice
+                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
@@ -736,8 +816,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               type="number"
               step="0.01"
               name="customMonthlyPrice"
-              value={form.customMonthlyPrice !== undefined ? form.customMonthlyPrice || "" : parseFloat(calc.adjustedMonthly.toFixed(2))}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customMonthlyPrice',
+                form.customMonthlyPrice !== undefined
+                  ? form.customMonthlyPrice
+                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
@@ -792,8 +878,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 type="number"
                 step="0.01"
                 name="customAnnualPrice"
-                value={form.customAnnualPrice !== undefined ? form.customAnnualPrice || "" : parseFloat(calc.adjustedAnnual.toFixed(2))}
-                onChange={onChange}
+                value={getDisplayValue(
+                  'customAnnualPrice',
+                  form.customAnnualPrice !== undefined
+                    ? form.customAnnualPrice
+                    : parseFloat(calc.adjustedAnnual.toFixed(2))
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',

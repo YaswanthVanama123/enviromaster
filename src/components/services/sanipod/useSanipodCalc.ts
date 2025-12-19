@@ -873,7 +873,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       chosenServiceRule,
       weeklyPodServiceRed,
       firstVisit,
-      ongoingMonthly,
+      ongoingMonthly: ongoingMonthlyCalc, // ✅ FIXED: Use adjusted monthly (with custom overrides)
       contractTotal,
       adjustedPerVisit,
       adjustedMonthly,
