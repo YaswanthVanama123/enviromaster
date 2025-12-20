@@ -8,6 +8,12 @@
   min-height: 100%;
 }
 
+/* ✅ OPTIMIZED: Prevent font loading shifts */
+@font-face {
+  font-family: "Inter";
+  font-display: swap;
+}
+
 /* Header */
 .sf__hero {
   background: #c00000;
@@ -90,6 +96,9 @@
   overflow-x: auto; /* horizontal scroll for mobile */
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  /* ✅ OPTIMIZED: Reserve space to prevent CLS */
+  min-height: 400px;
+  will-change: auto; /* Prevent unnecessary layer promotion */
 }
 
 .sf__table {
@@ -104,6 +113,8 @@
   text-align: left;
   font-size: 14px;
   border-bottom: 1px solid #f0f0f0;
+  height: 62px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
+  vertical-align: middle;
 }
 
 .sf__table thead th {
@@ -111,6 +122,7 @@
   font-weight: 600;
   color: #333;
   border-bottom: 1px solid #e0e0e0;
+  height: 50px; /* ✅ OPTIMIZED: Explicit height for header */
 }
 
 .sf__table tr:hover td {
@@ -378,6 +390,68 @@
 
 .zoho-upload-btn:disabled svg {
   color: #9ca3af !important;
+}
+
+/* ---------- Skeleton Loaders (CLS Optimization) ---------- */
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+/* ✅ OPTIMIZED: Explicit heights to prevent CLS */
+.skeleton-row {
+  animation: pulse 1.5s ease-in-out infinite;
+  height: 62px; /* Match actual row height (14px padding top + 14px padding bottom + 34px content) */
+}
+
+.skeleton-row td {
+  height: 62px; /* Explicit height to reserve space */
+  vertical-align: middle;
+}
+
+.skeleton {
+  display: inline-block;
+  height: 16px;
+  background: linear-gradient(
+    to right,
+    #f0f0f0 0%,
+    #e8e8e8 20%,
+    #f0f0f0 40%,
+    #f0f0f0 100%
+  );
+  background-size: 800px 104px;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
+
+.skeleton-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.skeleton-text {
+  height: 14px;
+  width: 100%;
+}
+
+.skeleton-actions {
+  height: 32px;
+  width: 220px;
+  border-radius: 8px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @media (max-width: 480px) {

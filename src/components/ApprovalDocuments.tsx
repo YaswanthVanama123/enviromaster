@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, lazy, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
@@ -15,8 +15,13 @@ import {
   faFileAlt, faEye, faDownload, faEnvelope, faSave, faFolder, faFolderOpen,
   faChevronDown, faChevronRight, faCheckSquare, faSquare
 } from "@fortawesome/free-solid-svg-icons";
-import EmailComposer, { type EmailData } from "./EmailComposer";
 import "./ApprovalDocuments.css";
+
+// ✅ OPTIMIZED: Lazy load EmailComposer (code splitting for better LCP)
+const EmailComposer = lazy(() => import("./EmailComposer"));
+
+// Import types separately (not lazy loaded)
+import type { EmailData } from "./EmailComposer";
 
 type FileStatus =
   | "draft"
@@ -131,6 +136,9 @@ export default function ApprovalDocuments() {
   const location = useLocation();
   const { isAuthenticated } = useAdminAuth();
 
+  // ✅ NEW: Track first mount to avoid duplicate API calls
+  const isFirstMount = useRef(true);
+
   // Detect if we're in admin context
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/approval-documents" : "/approval-documents";
@@ -146,6 +154,10 @@ export default function ApprovalDocuments() {
 
   // ---- Fetch approval documents from backend on mount ----
   useEffect(() => {
+    // ✅ OPTIMIZED: Track API call to ensure single fetch on mount
+    if (!isFirstMount.current) return;
+    isFirstMount.current = false;
+
     const fetchApprovalDocuments = async () => {
       setLoading(true);
       setError(null);
@@ -174,37 +186,21 @@ export default function ApprovalDocuments() {
     fetchApprovalDocuments();
   }, []);
 
-  // Filter and expand/collapse functionality for folder structure
+  // ✅ OPTIMIZED: Filter and expand/collapse functionality for folder structure
   const filteredAgreements = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    // ✅ FIX P1: Debug actual status values and filter for PENDING APPROVAL only
-    console.log('🔍 [APPROVAL-DEBUG] Raw agreements from backend:', {
-      totalAgreements: agreements.length,
-      sampleStatuses: agreements.flatMap(ag => ag.files.map(f => f.status)).slice(0, 10),
-      allUniqueStatuses: [...new Set(agreements.flatMap(ag => ag.files.map(f => f.status)))]
-    });
+    // ✅ PERFORMANCE: Only show documents that are PENDING approval (not already approved)
+    const approvalStatuses = ['pending_approval', 'Pending Approval'];
 
-    // ✅ UPDATED: Only show documents that are PENDING approval (not already approved)
-    const approvalStatuses = [
-      'pending_approval',
-      'Pending Approval'     // ✅ Handle both formats
-    ];
-
+    // ✅ OPTIMIZED: Single pass filtering without console logs
     let filteredList = agreements.map(agreement => {
       const approvalFiles = agreement.files.filter(file => {
-        const status = file.status?.trim(); // Don't convert to lowercase yet
+        const status = file.status?.trim();
 
-        // Check both exact matches and normalized matches
-        const isApprovalStatus = approvalStatuses.includes(status) ||
-          approvalStatuses.some(approvalStatus => {
-            const normalizedStatus = status?.toLowerCase().replace(/\s+/g, '_');
-            const normalizedApprovalStatus = approvalStatus.toLowerCase().replace(/\s+/g, '_');
-            return normalizedStatus === normalizedApprovalStatus;
-          });
-
-        console.log(`🔍 [FILE-STATUS-DEBUG] File: ${file.fileName}, Status: "${status}", IsApproval: ${isApprovalStatus}`);
-        return isApprovalStatus;
+        // Fast status check without logging
+        return approvalStatuses.includes(status) ||
+          status?.toLowerCase().replace(/\s+/g, '_') === 'pending_approval';
       });
 
       return {
@@ -212,7 +208,7 @@ export default function ApprovalDocuments() {
         files: approvalFiles,
         fileCount: approvalFiles.length
       };
-    }).filter(agreement => agreement.fileCount > 0); // Remove agreements with no approval files
+    }).filter(agreement => agreement.fileCount > 0);
 
     // Apply search filter
     if (q) {
@@ -221,18 +217,6 @@ export default function ApprovalDocuments() {
         agreement.files.some(file => file.fileName.toLowerCase().includes(q))
       );
     }
-
-    console.log(`📋 [APPROVAL-FILTER] Final filtered results (PENDING APPROVAL ONLY):`, {
-      originalCount: agreements.length,
-      filteredCount: filteredList.length,
-      totalPendingFiles: filteredList.reduce((sum, ag) => sum + ag.fileCount, 0),
-      searchQuery: q,
-      filteredAgreements: filteredList.map(ag => ({
-        title: ag.agreementTitle,
-        fileCount: ag.fileCount,
-        fileStatuses: ag.files.map(f => f.status)
-      }))
-    });
 
     return filteredList;
   }, [agreements, query]);
@@ -476,11 +460,31 @@ export default function ApprovalDocuments() {
           </thead>
           <tbody>
             {loading && (
-              <tr>
-                <td colSpan={6} className="empty">
-                  Loading approval documents…
-                </td>
-              </tr>
+              // ✅ OPTIMIZED: Skeleton loader reduces CLS by reserving space
+              <>
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={`skeleton-${idx}`} className="skeleton-row">
+                    <td>
+                      <div className="skeleton skeleton-checkbox"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '70%' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '100px' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '80px' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '140px' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-actions"></div>
+                    </td>
+                  </tr>
+                ))}
+              </>
             )}
 
             {!loading && error && (
@@ -662,20 +666,22 @@ export default function ApprovalDocuments() {
         />
       )}
 
-      {/* Email Composer Modal */}
-      <EmailComposer
-        isOpen={emailComposerOpen}
-        onClose={handleCloseEmailComposer}
-        onSend={handleSendEmail}
-        attachment={currentEmailFile ? {
-          id: currentEmailFile.id,
-          fileName: currentEmailFile.fileName,
-          downloadUrl: currentEmailFile.fileType === 'attached_pdf'
-            ? pdfApi.getPdfDownloadUrl(currentEmailFile.id) // Use generic download for attached files
-            : pdfApi.getPdfDownloadUrl(currentEmailFile.id)
-        } : undefined}
-        defaultSubject={currentEmailFile ? `${currentEmailFile.fileName} - Approval Request` : ''}
-        defaultBody={currentEmailFile ? `Hello,
+      {/* ✅ OPTIMIZED: Lazy loaded modal wrapped in Suspense (code splitting) */}
+      <Suspense fallback={null}>
+        {/* Email Composer Modal */}
+        <EmailComposer
+          isOpen={emailComposerOpen}
+          onClose={handleCloseEmailComposer}
+          onSend={handleSendEmail}
+          attachment={currentEmailFile ? {
+            id: currentEmailFile.id,
+            fileName: currentEmailFile.fileName,
+            downloadUrl: currentEmailFile.fileType === 'attached_pdf'
+              ? pdfApi.getPdfDownloadUrl(currentEmailFile.id) // Use generic download for attached files
+              : pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+          } : undefined}
+          defaultSubject={currentEmailFile ? `${currentEmailFile.fileName} - Approval Request` : ''}
+          defaultBody={currentEmailFile ? `Hello,
 
 Please review the following document for approval.
 
@@ -687,8 +693,9 @@ Status: ${STATUS_LABEL[currentEmailFile.status as FileStatus] || currentEmailFil
 Updated: ${timeAgo(currentEmailFile.updatedAt)}
 
 Best regards` : ''}
-        userEmail="" // TODO: Get from admin login context
-      />
+          userEmail="" // TODO: Get from admin login context
+        />
+      </Suspense>
     </section>
   );
 }

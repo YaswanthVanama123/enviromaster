@@ -1,5 +1,5 @@
 // src/components/ManualUploads.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faDownload, faTrash, faUpload, faCheckCircle, faTimes, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { manualUploadApi } from "../backendservice/api";
@@ -41,8 +41,16 @@ export default function ManualUploads() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
 
+  // ✅ NEW: Track first mount to avoid duplicate API calls
+  const isFirstMount = useRef(true);
+
+  // ✅ OPTIMIZED: Fetch uploads ONLY on first mount
   useEffect(() => {
-    fetchUploads();
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      console.log("📤 [MANUAL-UPLOADS] Initial load");
+      fetchUploads();
+    }
   }, []);
 
   const fetchUploads = async () => {

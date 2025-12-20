@@ -147,11 +147,19 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // Fetch dashboard data from new admin API
+  // ✅ OPTIMIZED: Fetch dashboard data ONLY when dashboard tab is active
   useEffect(() => {
+    // Skip if not on dashboard tab
+    if (activeTab !== "dashboard") {
+      console.log(`⏭️ [ADMIN-PANEL] Skipping dashboard API call - active tab is: ${activeTab}`);
+      return;
+    }
+
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
+        console.log("📊 [ADMIN-PANEL] Fetching dashboard data...");
+
         // ✅ NEW: Use the new admin dashboard API that provides everything in one call
         const dashboardData = await pdfApi.getAdminDashboardData();
 
@@ -231,7 +239,7 @@ export default function AdminPanel() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [activeTab]); // ✅ FIXED: Depend on activeTab to refetch when switching back to dashboard
 
   // Redirect to login if not authenticated
   useEffect(() => {

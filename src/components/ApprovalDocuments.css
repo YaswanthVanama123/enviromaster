@@ -8,6 +8,12 @@
   color: #222;
 }
 
+/* ✅ OPTIMIZED: Prevent font loading shifts */
+@font-face {
+  font-family: "Inter";
+  font-display: swap;
+}
+
 /* Header */
 .ad__hero {
   background: #c00000;
@@ -96,6 +102,9 @@
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  /* ✅ OPTIMIZED: Reserve space to prevent CLS */
+  min-height: 400px;
+  will-change: auto; /* Prevent unnecessary layer promotion */
 }
 
 .ad__table {
@@ -114,6 +123,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  height: 62px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
+  vertical-align: middle;
 }
 
 .ad__table thead th {
@@ -121,6 +132,7 @@
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #e0e0e0;
+  height: 54px; /* ✅ OPTIMIZED: Explicit height for header */
 }
 
 .ad__table tr:hover td {
@@ -150,6 +162,7 @@
 .agreement-header {
   background-color: #f8fafc !important;
   border-bottom: 2px solid #e2e8f0 !important;
+  height: 68px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
 }
 
 .agreement-header:hover {
@@ -160,10 +173,12 @@
   font-weight: 600;
   color: #1e293b;
   padding: 16px !important;
+  height: 68px; /* ✅ OPTIMIZED: Match parent height */
 }
 
 .file-row {
   background-color: #fff;
+  height: 62px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
 }
 
 .file-row:hover {
@@ -173,6 +188,7 @@
 .file-row td {
   border-bottom: 1px solid #f3f4f6 !important;
   color: #4b5563;
+  height: 62px; /* ✅ OPTIMIZED: Match parent height */
 }
 
 /* Statistics display */
@@ -361,6 +377,68 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
+}
+
+/* ---------- Skeleton Loaders (CLS Optimization) ---------- */
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+/* ✅ OPTIMIZED: Explicit heights to prevent CLS */
+.skeleton-row {
+  animation: pulse 1.5s ease-in-out infinite;
+  height: 62px; /* Match actual row height (14px padding top + 14px padding bottom + 34px content) */
+}
+
+.skeleton-row td {
+  height: 62px; /* Explicit height to reserve space */
+  vertical-align: middle;
+}
+
+.skeleton {
+  display: inline-block;
+  height: 16px;
+  background: linear-gradient(
+    to right,
+    #f0f0f0 0%,
+    #e8e8e8 20%,
+    #f0f0f0 40%,
+    #f0f0f0 100%
+  );
+  background-size: 800px 104px;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
+
+.skeleton-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.skeleton-text {
+  height: 14px;
+  width: 100%;
+}
+
+.skeleton-actions {
+  height: 32px;
+  width: 200px;
+  border-radius: 8px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* Responsive */

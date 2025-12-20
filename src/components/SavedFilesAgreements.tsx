@@ -1,6 +1,6 @@
 // src/components/SavedFilesAgreements.tsx
 // ✅ CORRECTED: Single document per agreement with attachedFiles array
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import type {
@@ -125,6 +125,9 @@ export default function SavedFilesAgreements() {
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
+  // ✅ NEW: Track first mount to avoid duplicate API calls
+  const isFirstMount = useRef(true);
+
   // Selection state - for individual files within agreements
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
 
@@ -201,56 +204,25 @@ export default function SavedFilesAgreements() {
     }
   };
 
-  // ✅ UPDATED: Fetch agreements AND disable individual log calls (logs should come from grouped API)
+  // ✅ OPTIMIZED: Fetch agreements without expensive debug logging
   const fetchAgreements = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`📁 [AGREEMENTS] Fetching page ${page} with search: "${search}"`);
-
       // 1. Fetch grouped files (agreements with PDFs) - backend should include logs automatically
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
         search: search.trim() || undefined,
-        includeLogs: true // ✅ Request logs to be included by backend
+        includeLogs: true
       });
-
-      console.log(`📁 [AGREEMENTS] Loaded ${groupedResponse.groups.length} agreements with PDFs`);
 
       // 2. ✅ OPTIMIZED: Use lightweight summary API for draft-only agreements
-      console.log(`📋 [DRAFT-DEBUG] Fetching customer headers summary for draft detection...`);
       const headersResponse = await pdfApi.getCustomerHeadersSummary();
-
-      console.log(`📋 [DRAFT-DEBUG] Headers API response:`, {
-        totalItems: headersResponse.items?.length || 0,
-        sampleItems: headersResponse.items?.slice(0, 3).map(h => ({
-          id: h._id,
-          status: h.status,
-          title: h.headerTitle,
-          updatedAt: h.updatedAt
-        })),
-        allStatuses: [...new Set(headersResponse.items?.map(h => h.status) || [])]
-      });
 
       // Find draft agreements that don't appear in the grouped response (no PDFs)
       const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
-      console.log(`📋 [DRAFT-DEBUG] Grouped IDs (agreements with PDFs):`, Array.from(groupedIds));
-
-      // Debug filtering step by step
       const allHeaders = headersResponse.items || [];
       const headersNotInGrouped = allHeaders.filter(header => !groupedIds.has(header._id));
       const draftHeaders = headersNotInGrouped.filter(header => header.status === 'draft');
-
-      console.log(`📋 [DRAFT-DEBUG] Filtering steps:`, {
-        totalHeaders: allHeaders.length,
-        headersNotInGrouped: headersNotInGrouped.length,
-        headersWithDraftStatus: draftHeaders.length,
-        draftHeadersDetails: draftHeaders.map(h => ({
-          id: h._id,
-          status: h.status,
-          title: h.headerTitle,
-          updatedAt: h.updatedAt
-        }))
-      });
 
       // Apply search filter if provided
       const draftOnlyHeaders = draftHeaders.filter(header =>
@@ -259,50 +231,31 @@ export default function SavedFilesAgreements() {
          header.headerTitle.toLowerCase().includes(search.trim().toLowerCase()))
       );
 
-      if (search.trim()) {
-        console.log(`📋 [DRAFT-DEBUG] Search filter "${search}" applied:`, {
-          beforeSearchFilter: draftHeaders.length,
-          afterSearchFilter: draftOnlyHeaders.length,
-          filteredOut: draftHeaders.filter(h =>
-            !(h.headerTitle && h.headerTitle.toLowerCase().includes(search.trim().toLowerCase()))
-          ).map(h => ({ id: h._id, title: h.headerTitle }))
-        });
-      }
-
       // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
       const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
         id: header._id,
         agreementTitle: header.headerTitle || `Agreement ${header._id}`,
-        agreementStatus: 'draft' as AgreementStatus, // ✅ NEW: Agreement is in draft status
-        fileCount: 0, // No PDFs yet
+        agreementStatus: 'draft' as AgreementStatus,
+        fileCount: 0,
         latestUpdate: header.updatedAt,
         statuses: [header.status],
         hasUploads: false,
-        files: [], // No files yet - this is the key issue we're fixing
-        hasVersions: false, // ✅ NEW: No versions exist yet
-        isDraftOnly: true, // ✅ NEW: Flag for draft-only agreements
-        isDeleted: header.isDeleted, // ✅ FIX: Include isDeleted property for permanent delete functionality
-        deletedAt: header.deletedAt || null, // ✅ FIX: Include deletion timestamp
-        deletedBy: header.deletedBy || null, // ✅ FIX: Include who deleted it
+        files: [],
+        hasVersions: false,
+        isDraftOnly: true,
+        isDeleted: header.isDeleted,
+        deletedAt: header.deletedAt || null,
+        deletedBy: header.deletedBy || null,
       }));
 
-      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements:`,
-        draftGroups.map(d => ({ id: d.id, title: d.agreementTitle, status: d.agreementStatus }))
-      );
-
-      // 4. ✅ DISABLED: No longer merge logs on frontend - backend should include them
+      // 4. Merge groups
       const allAgreements = [...groupedResponse.groups, ...draftGroups];
 
-      // ✅ FIX STATUS DROPDOWNS: Ensure canChangeStatus is set correctly for version PDFs
+      // ✅ OPTIMIZED: Process files without console.log in loops
       allAgreements.forEach(agreement => {
-        // ✅ FALLBACK: If backend doesn't set isLatestVersion, determine it from version numbers
+        // Determine latest versions if not set by backend
         if (agreement.files.some(file => file.isLatestVersion === undefined)) {
-          console.log(`🔧 [FALLBACK] Backend didn't set isLatestVersion for ${agreement.agreementTitle}, determining from version numbers`);
-
-          // Find the highest version number for each file type
           const versionFiles = agreement.files.filter(file => file.fileType === 'version_pdf' || file.fileType === 'main_pdf');
-
-          // Extract version numbers and find the highest one
           let highestVersionNumber = 0;
           const versionMap = new Map<number, SavedFileListItem[]>();
 
@@ -320,14 +273,13 @@ export default function SavedFilesAgreements() {
             versionMap.get(versionNumber)!.push(file);
           });
 
-          // Mark files with highest version number as latest
+          // Mark latest versions
           const latestVersionFiles = versionMap.get(highestVersionNumber) || [];
           latestVersionFiles.forEach(file => {
             file.isLatestVersion = true;
-            console.log(`✅ [FALLBACK] Marked as latest: ${file.fileName} (v${highestVersionNumber})`);
           });
 
-          // Mark all other version files as not latest
+          // Mark older versions
           versionFiles.forEach(file => {
             if (file.isLatestVersion === undefined) {
               file.isLatestVersion = false;
@@ -335,47 +287,23 @@ export default function SavedFilesAgreements() {
           });
         }
 
-        // Set canChangeStatus based on file type and version status
+        // ✅ OPTIMIZED: Set canChangeStatus without logging
         agreement.files.forEach(file => {
-          // ✅ DEBUG: Log file details for attached files
-          if (file.fileType === 'attached_pdf') {
-            console.log(`🔍 [ATTACHED-FILE-DEBUG] File: ${file.fileName}`, {
-              id: file.id,
-              fileType: file.fileType,
-              status: file.status,
-              hasPdf: file.hasPdf,
-              fileSize: file.fileSize,
-              createdAt: file.createdAt
-            });
-
-            // ✅ TEMPORARY FIX: Force hasPdf = true for attached files with fileSize > 0
-            // This works around the backend pdfBuffer issue
-            if (file.fileSize && file.fileSize > 0) {
-              console.log(`🔧 [TEMP-FIX] Forcing hasPdf = true for ${file.fileName} (fileSize: ${file.fileSize})`);
-              file.hasPdf = true;
-            }
+          // Fix hasPdf for attached files
+          if (file.fileType === 'attached_pdf' && file.fileSize && file.fileSize > 0) {
+            file.hasPdf = true;
           }
 
           if (file.fileType === 'version_pdf' || file.fileType === 'main_pdf') {
-            // Version PDFs can change status if they are the latest version
             file.canChangeStatus = file.isLatestVersion === true;
-
-            // ✅ DEBUG: Log file status dropdown eligibility
-            console.log(`🔍 [STATUS-DEBUG] File: ${file.fileName}, Type: ${file.fileType}, IsLatest: ${file.isLatestVersion}, CanChange: ${file.canChangeStatus}`);
           } else if (file.fileType === 'attached_pdf') {
-            // ✅ NEW: Manual uploads can change status (except system-controlled statuses)
             const systemControlledStatuses = ['processing', 'completed', 'failed'];
             file.canChangeStatus = !systemControlledStatuses.includes(file.status);
-
-            console.log(`🔍 [MANUAL-STATUS-DEBUG] File: ${file.fileName}, Type: ${file.fileType}, Status: ${file.status}, CanChange: ${file.canChangeStatus}, HasPdf: ${file.hasPdf}`);
           } else {
-            // Other file types (logs, attachments) cannot change status
             file.canChangeStatus = false;
           }
         });
       });
-
-      console.log(`📁 [FINAL] Total agreements: ${allAgreements.length} (${groupedResponse.groups.length} with PDFs, ${draftGroups.length} draft-only)`);
 
       setAgreements(allAgreements);
       setTotalAgreements(groupedResponse.totalGroups + draftGroups.length);
@@ -392,13 +320,31 @@ export default function SavedFilesAgreements() {
     }
   };
 
+  // ✅ FIXED: Separate initial load from search to prevent duplicate calls in admin panel
+  // Initial load - runs once on mount
   useEffect(() => {
-    // Use timeout for query changes, immediate for initial load
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      console.log(`📁 [SAVED-FILES-AGREEMENTS] Initial load (context: ${isInAdminContext ? 'admin' : 'normal'})`);
+      fetchAgreements(1, query);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only runs on mount
+
+  // Search handler - debounced, only runs when query changes after mount
+  useEffect(() => {
+    // Skip if this is the first mount (already handled above)
+    if (isFirstMount.current) return;
+
+    console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}"`);
+
+    // Debounce search to avoid excessive API calls while typing
     const timeoutId = setTimeout(() => {
       fetchAgreements(1, query);
-    }, query === "" ? 0 : 500); // No delay for empty query (initial load), 500ms delay for search
+    }, 500);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]); // Only depends on query
 
   // Selection helpers
@@ -412,17 +358,7 @@ export default function SavedFilesAgreements() {
   const selectedFileObjects = useMemo(() => {
     const allFiles: SavedFileListItem[] = [];
     agreements.forEach(agreement => allFiles.push(...agreement.files));
-    const filteredFiles = allFiles.filter(file => selectedFiles[file.id]);
-
-    // ✅ DEBUG: Log selected file objects to check fileType preservation
-    if (filteredFiles.length > 0) {
-      console.log(`🔍 [SELECTED-FILES-DEBUG] Found ${filteredFiles.length} selected files:`);
-      filteredFiles.forEach((file, index) => {
-        console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
-      });
-    }
-
-    return filteredFiles;
+    return allFiles.filter(file => selectedFiles[file.id]);
   }, [agreements, selectedFiles]);
 
   const hasSelectedFiles = selectedFileIds.length > 0;
@@ -472,12 +408,6 @@ export default function SavedFilesAgreements() {
   const handleBulkZohoUpload = () => {
     // ✅ UPDATED: Support both PDFs and TXT log files for bulk upload
     const uploadableFiles = selectedFileObjects.filter(file => file.hasPdf || file.fileType === 'version_log');
-
-    // ✅ DEBUG: Log the selected files to check fileType preservation
-    console.log(`🔍 [BULK-UPLOAD-DEBUG] Selected ${uploadableFiles.length} uploadable files (PDFs + TXT logs):`);
-    uploadableFiles.forEach((file, index) => {
-      console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'}, AgreementID: ${file.agreementId || 'undefined'})`);
-    });
 
     if (uploadableFiles.length === 0) {
       setToastMessage({

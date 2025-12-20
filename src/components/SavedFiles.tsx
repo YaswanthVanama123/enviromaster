@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, lazy, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
 import type { SavedFileListItem, SavedFileDetails, SavedFileGroup } from "../backendservice/api/pdfApi";
@@ -10,9 +10,14 @@ import {
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
   faPlus, faCheckSquare, faSquare
 } from "@fortawesome/free-solid-svg-icons";
-import EmailComposer, { type EmailData } from "./EmailComposer";
-import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
+
+// ✅ OPTIMIZED: Lazy load heavy components (code splitting for better LCP)
+const EmailComposer = lazy(() => import("./EmailComposer"));
+const ZohoUpload = lazy(() => import("./ZohoUpload"));
+
+// Import types separately (not lazy loaded)
+import type { EmailData } from "./EmailComposer";
 
 type FileStatus =
   | "saved"
@@ -77,6 +82,9 @@ export default function SavedFiles() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ✅ NEW: Track first mount to avoid duplicate API calls
+  const isFirstMount = useRef(true);
 
   // Detect if we're in admin context
   const isInAdminContext = location.pathname.includes("/admin-panel");
@@ -148,24 +156,32 @@ export default function SavedFiles() {
     }
   };
 
-  // Initial load
+  // ✅ FIXED: Separate initial load from search to prevent duplicate calls in admin panel
+  // Initial load - runs once on mount
   useEffect(() => {
-    fetchGroups(1, query);
-  }, []);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      console.log(`📁 [SAVED-FILES] Initial load (context: ${isInAdminContext ? 'admin' : 'normal'})`);
+      fetchGroups(1, query);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only runs on mount
 
-  // Handle search with debouncing
+  // Search handler - debounced, only runs when query changes after mount
   useEffect(() => {
+    // Skip if this is the first mount (already handled above)
+    if (isFirstMount.current) return;
+
+    console.log(`🔍 [SAVED-FILES] Search query changed to: "${query}"`);
+
+    // Debounce search to avoid excessive API calls while typing
     const timeoutId = setTimeout(() => {
-      if (currentPage === 1) {
-        fetchGroups(1, query);
-      } else {
-        // Reset to page 1 when searching
-        fetchGroups(1, query);
-      }
-    }, 500); // 500ms debounce
+      fetchGroups(1, query);
+    }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]); // Only depends on query
 
   // ✅ CLIENT-SIDE SORTING: Sort current page groups
   const sortedGroups = useMemo(() => {
@@ -617,11 +633,28 @@ export default function SavedFiles() {
           </thead>
           <tbody>
             {loading && (
-              <tr>
-                <td colSpan={5} className="empty">
-                  Loading files…
-                </td>
-              </tr>
+              // ✅ OPTIMIZED: Skeleton loader reduces CLS by reserving space
+              <>
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={`skeleton-${idx}`} className="skeleton-row">
+                    <td>
+                      <div className="skeleton skeleton-checkbox"></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '60%' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '80px' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-text" style={{ width: '120px' }}></div>
+                    </td>
+                    <td>
+                      <div className="skeleton skeleton-actions"></div>
+                    </td>
+                  </tr>
+                ))}
+              </>
             )}
 
             {!loading &&
@@ -811,33 +844,36 @@ export default function SavedFiles() {
         />
       )}
 
-      {/* Email Composer Modal */}
-      <EmailComposer
-        isOpen={emailComposerOpen}
-        onClose={handleCloseEmailComposer}
-        onSend={handleSendEmail}
-        attachment={currentEmailFile ? {
-          id: currentEmailFile.id,
-          fileName: currentEmailFile.title,
-          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
-        } : undefined}
-        defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
-        defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}
-        userEmail="" // TODO: Get from user login context
-      />
-
-      {/* Zoho Upload Modal */}
-      {zohoUploadOpen && currentZohoFile && (
-        <ZohoUpload
-          agreementId={currentZohoFile.agreementId || currentZohoFile.id}
-          agreementTitle={currentZohoFile.title}
-          onClose={() => {
-            setZohoUploadOpen(false);
-            setCurrentZohoFile(null);
-          }}
-          onSuccess={handleZohoUploadSuccess}
+      {/* ✅ OPTIMIZED: Lazy loaded modals wrapped in Suspense (code splitting) */}
+      <Suspense fallback={null}>
+        {/* Email Composer Modal */}
+        <EmailComposer
+          isOpen={emailComposerOpen}
+          onClose={handleCloseEmailComposer}
+          onSend={handleSendEmail}
+          attachment={currentEmailFile ? {
+            id: currentEmailFile.id,
+            fileName: currentEmailFile.title,
+            downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+          } : undefined}
+          defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
+          defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}
+          userEmail="" // TODO: Get from user login context
         />
-      )}
+
+        {/* Zoho Upload Modal */}
+        {zohoUploadOpen && currentZohoFile && (
+          <ZohoUpload
+            agreementId={currentZohoFile.agreementId || currentZohoFile.id}
+            agreementTitle={currentZohoFile.title}
+            onClose={() => {
+              setZohoUploadOpen(false);
+              setCurrentZohoFile(null);
+            }}
+            onSuccess={handleZohoUploadSuccess}
+          />
+        )}
+      </Suspense>
     </section>
   );
 }
