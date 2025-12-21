@@ -124,6 +124,11 @@ export default function ApprovalDocuments() {
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
+  // ✅ NEW: Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(20);
+
   // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
@@ -169,7 +174,13 @@ export default function ApprovalDocuments() {
         console.log("📋 [APPROVAL-DOCS] Fetched approval documents:", {
           totalGroups: data.totalGroups,
           totalFiles: data.totalFiles,
-          groups: groups.length
+          groups: groups.length,
+          sampleGroup: groups[0] ? {
+            id: groups[0].id,
+            title: groups[0].agreementTitle,
+            fileCount: groups[0].fileCount,
+            files: groups[0].files.length
+          } : null
         });
 
         setAgreements(groups);
@@ -221,10 +232,40 @@ export default function ApprovalDocuments() {
     return filteredList;
   }, [agreements, query]);
 
+  // ✅ NEW: Paginated agreements
+  const paginatedAgreements = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAgreements.slice(startIndex, endIndex);
+  }, [filteredAgreements, currentPage, itemsPerPage]);
+
+  // ✅ NEW: Update total pages when filtered list changes
+  useEffect(() => {
+    const pages = Math.ceil(filteredAgreements.length / itemsPerPage);
+    setTotalPages(pages);
+
+    console.log("📄 [APPROVAL-PAGINATION]", {
+      filteredCount: filteredAgreements.length,
+      totalPages: pages,
+      currentPage,
+      paginatedCount: paginatedAgreements.length,
+      samplePaginated: paginatedAgreements[0] ? {
+        id: paginatedAgreements[0].id,
+        title: paginatedAgreements[0].agreementTitle,
+        fileCount: paginatedAgreements[0].fileCount
+      } : null
+    });
+
+    // Reset to page 1 if current page is beyond total pages
+    if (currentPage > pages && pages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredAgreements.length, itemsPerPage, currentPage, paginatedAgreements, filteredAgreements]);
+
   // Get all files from all agreements for selection logic
   const allFiles = useMemo(() => {
-    return filteredAgreements.flatMap(agreement => agreement.files);
-  }, [filteredAgreements]);
+    return paginatedAgreements.flatMap(agreement => agreement.files);
+  }, [paginatedAgreements]);
 
   const allSelected = allFiles.length > 0 && allFiles.every((f) => selected[f.id]);
   const anySelected = Object.values(selected).some(Boolean);
@@ -405,6 +446,28 @@ export default function ApprovalDocuments() {
     setCurrentEmailFile(null);
   };
 
+  // ✅ NEW: Pagination helpers
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
+  const handlePrevPage = () => {
+    if (canGoPrev) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (canGoNext) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePageClick = (page: number) => {
+    if (page !== currentPage && page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   // Show nothing while checking auth
   if (!isAuthenticated) {
     return null;
@@ -503,7 +566,7 @@ export default function ApprovalDocuments() {
               </tr>
             )}
 
-            {!loading && !error && filteredAgreements.map((agreement) => (
+            {!loading && !error && paginatedAgreements.map((agreement) => (
               <React.Fragment key={agreement.id}>
                 {/* Agreement Header Row */}
                 <tr className="agreement-header">
@@ -648,14 +711,59 @@ export default function ApprovalDocuments() {
         </table>
       </div>
 
+      {/* ✅ NEW: Enhanced Pagination with page info and controls */}
       <div className="ad__pager">
-        <button className="ad__link" disabled>
-          Previous
-        </button>
-        <span className="ad__page">1</span>
-        <button className="ad__link" disabled>
-          Next
-        </button>
+        <div className="ad__page-info">
+          Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredAgreements.length)}-{Math.min(currentPage * itemsPerPage, filteredAgreements.length)} of {filteredAgreements.length} agreements ({totalFiles} files)
+        </div>
+
+        <div className="ad__page-controls">
+          <button
+            type="button"
+            className="ad__link"
+            disabled={!canGoPrev || loading}
+            onClick={handlePrevPage}
+          >
+            Previous
+          </button>
+
+          {/* Page numbers */}
+          <div className="ad__page-numbers">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else {
+                // Show pages around current page
+                const start = Math.max(1, currentPage - 2);
+                const end = Math.min(totalPages, start + 4);
+                pageNum = start + i;
+                if (pageNum > end) return null;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={`ad__page ${currentPage === pageNum ? 'ad__page--active' : ''}`}
+                  onClick={() => handlePageClick(pageNum)}
+                  disabled={loading}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="ad__link"
+            disabled={!canGoNext || loading}
+            onClick={handleNextPage}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {toastMessage && (

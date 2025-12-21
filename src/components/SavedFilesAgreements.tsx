@@ -750,6 +750,29 @@ export default function SavedFilesAgreements() {
     });
   };
 
+  // ✅ NEW: Pagination helpers
+  const totalPages = Math.ceil(totalAgreements / agreementsPerPage);
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
+  const handlePrevPage = () => {
+    if (canGoPrev) {
+      fetchAgreements(currentPage - 1, query);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (canGoNext) {
+      fetchAgreements(currentPage + 1, query);
+    }
+  };
+
+  const handlePageClick = (page: number) => {
+    if (page !== currentPage && page >= 1 && page <= totalPages) {
+      fetchAgreements(page, query);
+    }
+  };
+
   return (
     <section className="sf">
       <div className="sf__toolbar">
@@ -1258,10 +1281,58 @@ export default function SavedFilesAgreements() {
         })}
       </div>
 
-      {/* Pagination */}
+      {/* ✅ NEW: Enhanced Pagination with page info and controls */}
       <div className="sf__pager">
         <div className="sf__page-info">
           Showing {Math.min((currentPage - 1) * agreementsPerPage + 1, totalAgreements)}-{Math.min(currentPage * agreementsPerPage, totalAgreements)} of {totalAgreements} agreements
+        </div>
+
+        <div className="sf__page-controls">
+          <button
+            type="button"
+            className="sf__link"
+            disabled={!canGoPrev || loading}
+            onClick={handlePrevPage}
+          >
+            Previous
+          </button>
+
+          {/* Page numbers */}
+          <div className="sf__page-numbers">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else {
+                // Show pages around current page
+                const start = Math.max(1, currentPage - 2);
+                const end = Math.min(totalPages, start + 4);
+                pageNum = start + i;
+                if (pageNum > end) return null;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={`sf__page ${currentPage === pageNum ? 'sf__page--active' : ''}`}
+                  onClick={() => handlePageClick(pageNum)}
+                  disabled={loading}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="sf__link"
+            disabled={!canGoNext || loading}
+            onClick={handleNextPage}
+          >
+            Next
+          </button>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "../ServicesSection.css";
@@ -52,31 +52,68 @@ export const SanicleanForm: React.FC<
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+
   const prevDataRef = useRef<string>("");
 
-  // Handler to reset custom values to undefined if left empty
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      updateForm({ [name]: numValue });
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      updateForm({ [name]: undefined });
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (value === '' || value === null) {
-      // List of custom override fields
-      const customFields = [
-        'customBaseService',
-        'customTripCharge',
-        'customFacilityComponents',
-        'customSoapUpgrade',
-        'customExcessSoap',
-        'customMicrofiberMopping',
-        'customWarrantyFees',
-        'customPaperOverage',
-        'customWeeklyTotal',
-        'customMonthlyTotal',
-        'customContractTotal'
-      ];
 
-      if (customFields.includes(name)) {
-        updateForm({ [name]: undefined });
-      }
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      updateForm({ [name]: undefined });
+      return;
     }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    updateForm({ [name]: numValue });
   };
 
   // Calculate derived values
@@ -1197,12 +1234,14 @@ export const SanicleanForm: React.FC<
             min="0"
               step="0.01"
               name="customBaseService"
-              value={
+              value={getDisplayValue(
+                'customBaseService',
                 form.customBaseService !== undefined
-                  ? form.customBaseService.toFixed(2)
-                  : quote.breakdown.baseService.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customBaseService
+                  : quote.breakdown.baseService
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customBaseService !== undefined ? '#fffacd' : 'white',
@@ -1228,12 +1267,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customTripCharge"
-                value={
+                value={getDisplayValue(
+                  'customTripCharge',
                   form.customTripCharge !== undefined
-                    ? form.customTripCharge.toFixed(2)
-                    : quote.breakdown.tripCharge.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customTripCharge
+                    : quote.breakdown.tripCharge
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customTripCharge !== undefined ? '#fffacd' : 'white',
@@ -1260,12 +1301,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customFacilityComponents"
-                value={
+                value={getDisplayValue(
+                  'customFacilityComponents',
                   form.customFacilityComponents !== undefined
-                    ? form.customFacilityComponents.toFixed(2)
-                    : quote.breakdown.facilityComponents.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customFacilityComponents
+                    : quote.breakdown.facilityComponents
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customFacilityComponents !== undefined ? '#fffacd' : 'white',
@@ -1292,12 +1335,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customSoapUpgrade"
-                value={
+                value={getDisplayValue(
+                  'customSoapUpgrade',
                   form.customSoapUpgrade !== undefined
-                    ? form.customSoapUpgrade.toFixed(2)
-                    : quote.breakdown.soapUpgrade.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customSoapUpgrade
+                    : quote.breakdown.soapUpgrade
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customSoapUpgrade !== undefined ? '#fffacd' : 'white',
@@ -1324,12 +1369,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customExcessSoap"
-                value={
+                value={getDisplayValue(
+                  'customExcessSoap',
                   form.customExcessSoap !== undefined
-                    ? form.customExcessSoap.toFixed(2)
-                    : quote.breakdown.excessSoap.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customExcessSoap
+                    : quote.breakdown.excessSoap
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customExcessSoap !== undefined ? '#fffacd' : 'white',
@@ -1356,12 +1403,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customMicrofiberMopping"
-                value={
+                value={getDisplayValue(
+                  'customMicrofiberMopping',
                   form.customMicrofiberMopping !== undefined
-                    ? form.customMicrofiberMopping.toFixed(2)
-                    : quote.breakdown.microfiberMopping.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customMicrofiberMopping
+                    : quote.breakdown.microfiberMopping
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customMicrofiberMopping !== undefined ? '#fffacd' : 'white',
@@ -1388,12 +1437,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customWarrantyFees"
-                value={
+                value={getDisplayValue(
+                  'customWarrantyFees',
                   form.customWarrantyFees !== undefined
-                    ? form.customWarrantyFees.toFixed(2)
-                    : quote.breakdown.warrantyFees.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customWarrantyFees
+                    : quote.breakdown.warrantyFees
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customWarrantyFees !== undefined ? '#fffacd' : 'white',
@@ -1420,12 +1471,14 @@ export const SanicleanForm: React.FC<
             min="0"
                 step="0.01"
                 name="customPaperOverage"
-                value={
+                value={getDisplayValue(
+                  'customPaperOverage',
                   form.customPaperOverage !== undefined
-                    ? form.customPaperOverage.toFixed(2)
-                    : quote.breakdown.paperOverage.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customPaperOverage
+                    : quote.breakdown.paperOverage
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customPaperOverage !== undefined ? '#fffacd' : 'white',
@@ -1467,12 +1520,14 @@ export const SanicleanForm: React.FC<
             min="0"
               step="0.01"
               name="customWeeklyTotal"
-              value={
+              value={getDisplayValue(
+                'customWeeklyTotal',
                 form.customWeeklyTotal !== undefined
-                  ? form.customWeeklyTotal.toFixed(2)
-                  : quote.weeklyTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customWeeklyTotal
+                  : quote.weeklyTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customWeeklyTotal !== undefined ? '#fffacd' : 'white',
@@ -1496,12 +1551,14 @@ export const SanicleanForm: React.FC<
             min="0"
               step="0.01"
               name="customMonthlyTotal"
-              value={
+              value={getDisplayValue(
+                'customMonthlyTotal',
                 form.customMonthlyTotal !== undefined
-                  ? form.customMonthlyTotal.toFixed(2)
-                  : quote.monthlyTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customMonthlyTotal
+                  : quote.monthlyTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
@@ -1544,12 +1601,14 @@ export const SanicleanForm: React.FC<
             step="0.01"
             name="customContractTotal"
             className="svc-in"
-            value={
+            value={getDisplayValue(
+              'customContractTotal',
               form.customContractTotal !== undefined
-                ? form.customContractTotal.toFixed(2)
-                : contractTotal.toFixed(2)
-            }
-            onChange={onChange}
+                ? form.customContractTotal
+                : contractTotal
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               borderBottom: '2px solid #ff0000',

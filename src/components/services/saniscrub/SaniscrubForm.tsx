@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
@@ -31,19 +31,73 @@ export const SaniscrubForm: React.FC<
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (value === '' || value === null) {
-      setForm((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onChange({ target: { name, value: String(numValue) } } as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      onChange({ target: { name, value: '' } } as any);
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      onChange({ target: { name, value: '' } } as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    onChange({ target: { name, value: String(numValue) } } as any);
+  };
 
   // Check if SaniClean All-Inclusive is active
   const isSanicleanAllInclusive =
@@ -589,12 +643,15 @@ export const SaniscrubForm: React.FC<
             min="0"
                 step="0.01"
                 name="customInstallationFee"
-                value={
+                value={getDisplayValue(
+                  'customInstallationFee',
                   form.customInstallationFee !== undefined
-                    ? formatNumber(form.customInstallationFee)
-                    : formatNumber(calc.installOneTime)
-                }
-                onChange={onChange}
+                    ? form.customInstallationFee
+                    : calc.installOneTime
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
             <span className="svc-small"> one-time</span>
@@ -616,15 +673,15 @@ export const SaniscrubForm: React.FC<
           min="0"
             min="0"
               step="0.01"
-              value={form.customFirstMonthPrice !== undefined
-                ? formatNumber(form.customFirstMonthPrice)
-                : formatNumber(calc.firstMonthTotal)}
-              onChange={onChange}
-              onBlur={(e) => {
-                if (e.target.value === '') {
-                  setForm(prev => ({ ...prev, customFirstMonthPrice: undefined }));
-                }
-              }}
+              value={getDisplayValue(
+                'customFirstMonthPrice',
+                form.customFirstMonthPrice !== undefined
+                  ? form.customFirstMonthPrice
+                  : calc.firstMonthTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               style={{ backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white' }}
               title="Override first month calculation (clear to use auto-calculated value)"
             />
@@ -649,15 +706,15 @@ export const SaniscrubForm: React.FC<
           min="0"
             min="0"
                 step="0.01"
-                value={form.customPerVisitPrice !== undefined
-                  ? formatNumber(form.customPerVisitPrice)
-                  : formatNumber(calc.perVisitEffective)}
-                onChange={onChange}
-                onBlur={(e) => {
-                  if (e.target.value === '') {
-                    setForm(prev => ({ ...prev, customPerVisitPrice: undefined }));
-                  }
-                }}
+                value={getDisplayValue(
+                  'customPerVisitPrice',
+                  form.customPerVisitPrice !== undefined
+                    ? form.customPerVisitPrice
+                    : calc.perVisitEffective
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
                 title="Override per visit calculation (clear to use auto-calculated value)"
               />
@@ -773,12 +830,14 @@ export const SaniscrubForm: React.FC<
                 step="0.01"
                 name="customContractTotal"
                 className="svc-in"
-                value={
+                value={getDisplayValue(
+                  'customContractTotal',
                   form.customContractTotal !== undefined
-                    ? formatNumber(form.customContractTotal)
-                    : formatNumber(calc.annualTotal)
-                }
-                onChange={onChange}
+                    ? form.customContractTotal
+                    : calc.annualTotal
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   borderBottom: '2px solid #ff0000',

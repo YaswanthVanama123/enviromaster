@@ -19,6 +19,8 @@ import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
 import { useAllServicePricing } from "../backendservice/hooks";
 import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
+import { ServiceAgreement } from "./ServiceAgreement";
+import type { ServiceAgreementData } from "./ServiceAgreement/ServiceAgreement";
 
 type HeaderRow = {
   labelLeft: string;
@@ -111,6 +113,7 @@ export default function FormFilling() {
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
+  const [agreementData, setAgreementData] = useState<ServiceAgreementData | null>(null); // Service Agreement data
 
   // ✅ NEW: Version dialog state for PDF versioning
   const [showVersionDialog, setShowVersionDialog] = useState(false);
@@ -443,6 +446,7 @@ export default function FormFilling() {
         customerExecutedOn: "",
         additionalMonths: "",
       },
+      serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
     };
   };
@@ -1150,6 +1154,9 @@ export default function FormFilling() {
               }}
             />
             <ServicesDataCollector ref={servicesRef} />
+
+            {/* Service Agreement Component */}
+            <ServiceAgreement onAgreementChange={setAgreementData} />
 
             <div className="formfilling__actions">
               <button

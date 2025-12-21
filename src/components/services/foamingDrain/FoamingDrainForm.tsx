@@ -1,5 +1,5 @@
 // src/features/services/foamingDrain/FoamingDrainForm.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useFoamingDrainCalc } from "./useFoamingDrainCalc";
@@ -40,22 +40,70 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // Save form data to context for form submission
-  const prevDataRef = useRef<string>("");
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (value === '' || value === null) {
-      if (name === 'customWeeklyService' ||
-          name === 'customInstallationTotal' ||
-          name === 'customMonthlyRecurring' ||
-          name === 'customFirstMonthPrice' ||
-          name === 'customContractTotal') {
-        updateField(name as keyof FoamingDrainFormState, undefined as any);
-      }
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      updateField(name as keyof FoamingDrainFormState, numValue as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      updateField(name as keyof FoamingDrainFormState, undefined as any);
     }
   };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      updateField(name as keyof FoamingDrainFormState, undefined as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    updateField(name as keyof FoamingDrainFormState, numValue as any);
+  };
+
+  // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
 
   const breakdown = quote.breakdown;
 
@@ -873,7 +921,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
 
           {/* Weekly per visit */}
-          <div className="svc-row">
+          {/* <div className="svc-row">
             <div className="svc-label">
               <span>Weekly Subtotal</span>
             </div>
@@ -885,7 +933,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 value={formatAmount(quote.weeklyService)}
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Trip charge (locked to 0, display only) */}
           <div className="svc-row">
@@ -913,21 +961,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 type="number"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 name="customWeeklyService"
                 className="svc-in weekly-total-field"
-                value={
+                value={getDisplayValue(
+                  'customWeeklyService',
                   state.customWeeklyService !== undefined
-                    ? formatNumber(state.customWeeklyService)
-                    : formatAmount(quote.weeklyTotal)
-                }
-                onChange={(e) => {
-                  const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                  if (numVal === undefined || !isNaN(numVal)) {
-                    updateField('customWeeklyService', numVal as any);
-                  }
-                }}
+                    ? state.customWeeklyService
+                    : parseFloat(formatAmount(quote.weeklyTotal) || '0')
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: state.customWeeklyService !== undefined ? '#fffacd' : 'white',
@@ -949,21 +995,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <span>$</span>
                 <input
                   type="number"
-            min="0"
+                  min="0"
                   step="0.01"
+                  readOnly
                   name="customFirstMonthPrice"
                   className="svc-in field-qty"
-                  value={
+                  value={getDisplayValue(
+                    'customFirstMonthPrice',
                     state.customFirstMonthPrice !== undefined
-                      ? formatNumber(state.customFirstMonthPrice)
-                      : formatAmount(quote.firstMonthPrice)
-                  }
-                  onChange={(e) => {
-                    const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                    if (numVal === undefined || !isNaN(numVal)) {
-                      updateField('customFirstMonthPrice', numVal as any);
-                    }
-                  }}
+                      ? state.customFirstMonthPrice
+                      : parseFloat(formatAmount(quote.firstMonthPrice) || '0')
+                  )}
+                  onChange={handleLocalChange}
+                  onFocus={handleFocus}
                   onBlur={handleBlur}
                   style={{
                     backgroundColor: state.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -987,21 +1031,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <span>$</span>
                 <input
                   type="number"
-            min="0"
+                  min="0"
+                  readOnly
                   step="0.01"
                   name="customMonthlyRecurring"
                   className="svc-in monthly-total-field"
-                  value={
+                  value={getDisplayValue(
+                    'customMonthlyRecurring',
                     state.customMonthlyRecurring !== undefined
-                      ? formatNumber(state.customMonthlyRecurring)
-                      : formatAmount(quote.monthlyRecurring)
-                  }
-                  onChange={(e) => {
-                    const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                    if (numVal === undefined || !isNaN(numVal)) {
-                      updateField('customMonthlyRecurring', numVal as any);
-                    }
-                  }}
+                      ? state.customMonthlyRecurring
+                      : parseFloat(formatAmount(quote.monthlyRecurring) || '0')
+                  )}
+                  onChange={handleLocalChange}
+                  onFocus={handleFocus}
                   onBlur={handleBlur}
                   style={{
                     backgroundColor: state.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
@@ -1021,21 +1063,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>$</span>
               <input
                 type="number"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 name="customInstallationTotal"
                 className="svc-in total-field"
-                value={
+                value={getDisplayValue(
+                  'customInstallationTotal',
                   state.customInstallationTotal !== undefined
-                    ? formatNumber(state.customInstallationTotal)
-                    : formatAmount(quote.installation)
-                }
-                onChange={(e) => {
-                  const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                  if (numVal === undefined || !isNaN(numVal)) {
-                    updateField('customInstallationTotal', numVal as any);
-                  }
-                }}
+                    ? state.customInstallationTotal
+                    : parseFloat(formatAmount(quote.installation) || '0')
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: state.customInstallationTotal !== undefined ? '#fffacd' : 'white',
@@ -1116,7 +1156,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   <span style={{ marginRight: '4px' }}>$</span>
                   <input
                     type="number"
-            min="0"
+                    min="0"
+                    readOnly
                     step="0.01"
                     name="customContractTotal"
                     className="svc-in contract-total-field"
@@ -1124,17 +1165,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                       width: '120px',
                       backgroundColor: state.customContractTotal !== undefined ? '#fffacd' : 'white',
                     }}
-                    value={
+                    value={getDisplayValue(
+                      'customContractTotal',
                       state.customContractTotal !== undefined
-                        ? formatNumber(state.customContractTotal)
-                        : formatAmount(quote.annualRecurring)
-                    }
-                    onChange={(e) => {
-                      const numVal = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                      if (numVal === undefined || !isNaN(numVal)) {
-                        updateField('customContractTotal', numVal as any);
-                      }
-                    }}
+                        ? state.customContractTotal
+                        : parseFloat(formatAmount(quote.annualRecurring) || '0')
+                    )}
+                    onChange={handleLocalChange}
+                    onFocus={handleFocus}
                     onBlur={handleBlur}
                     title="Contract total - editable"
                   />

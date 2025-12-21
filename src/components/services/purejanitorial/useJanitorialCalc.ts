@@ -624,11 +624,14 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       billableHours
     });
 
-    // Monthly: per visit * monthly visits
-    const recurringMonthly = recurringPerVisit * monthlyVisits;
+    // ✅ Apply custom per-visit override EARLY so it cascades to monthly/contract
+    const effectivePerVisit = form.customPerVisit ?? recurringPerVisit;
 
-    // Weekly: per visit * visits per week
-    const recurringWeekly = recurringPerVisit * form.visitsPerWeek;
+    // Monthly: per visit * monthly visits (use effective per-visit)
+    const recurringMonthly = effectivePerVisit * monthlyVisits;
+
+    // Weekly: per visit * visits per week (use effective per-visit)
+    const recurringWeekly = effectivePerVisit * form.visitsPerWeek;
 
     // ✅ FIXED INSTALLATION LOGIC: Now based on dusting hours × hourly rate instead of per-place pricing
     // Calculate dusting cost per visit using hourly rate
@@ -665,14 +668,14 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     console.log(`   - Remaining Months: ${Math.max(contractMonths - 1, 0)}`);
     console.log(`   - Contract Total: $${recurringContractTotal.toFixed(2)}`);
 
-    console.log(`✅ Final Calculation - Per Visit: $${recurringPerVisit.toFixed(2)}, Contract Total: $${recurringContractTotal.toFixed(2)}`);
+    console.log(`✅ Final Calculation - Per Visit: $${effectivePerVisit.toFixed(2)}, Contract Total: $${recurringContractTotal.toFixed(2)}`);
 
-    // ✅ NEW: Apply custom overrides if set
-    const finalPerVisit = form.customPerVisit ?? recurringPerVisit;
-    const finalWeekly = recurringWeekly; // No custom override for weekly yet
+    // ✅ Apply remaining custom overrides (per-visit already applied early)
+    const finalPerVisit = effectivePerVisit; // Already includes custom override
+    const finalWeekly = recurringWeekly; // Uses effective per-visit
     const finalFirstMonth = form.customMonthly ?? firstMonth;
-    const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly;
-    const finalContractTotal = form.customContractTotal ?? recurringContractTotal;
+    const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly; // Already uses effective per-visit
+    const finalContractTotal = form.customContractTotal ?? recurringContractTotal; // Already uses effective per-visit
 
     return {
       totalHours: totalHoursBase,

@@ -1,5 +1,5 @@
 // src/features/services/rpmWindows/RpmWindowsForm.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
@@ -37,6 +37,68 @@ export const RpmWindowsForm: React.FC<
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onChange({ target: { name, value: String(numValue) } } as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      onChange({ target: { name, value: '' } } as any);
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      onChange({ target: { name, value: '' } } as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    onChange({ target: { name, value: String(numValue) } } as any);
+  };
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -156,14 +218,6 @@ export const RpmWindowsForm: React.FC<
 
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));
-
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (value === '' || value === null) {
-      setForm((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
 
   // Clear custom totals when base inputs change
   useEffect(() => {
@@ -304,12 +358,14 @@ export const RpmWindowsForm: React.FC<
             type="number"
             min="0"
             step="0.01"
-            value={
+            value={getDisplayValue(
+              'customSmallTotal',
               form.customSmallTotal !== undefined
-                ? form.customSmallTotal || ""
+                ? form.customSmallTotal
                 : (form.smallQty * calc.effSmall)
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customSmallTotal !== undefined ? '#fffacd' : 'white' }}
             title={`Calculated total (Qty × $${formatNumber(calc.effSmall)} effective rate)`}
@@ -347,12 +403,14 @@ export const RpmWindowsForm: React.FC<
             type="number"
             min="0"
             step="0.01"
-            value={
+            value={getDisplayValue(
+              'customMediumTotal',
               form.customMediumTotal !== undefined
-                ? form.customMediumTotal || ""
+                ? form.customMediumTotal
                 : (form.mediumQty * calc.effMedium)
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customMediumTotal !== undefined ? '#fffacd' : 'white' }}
             title={`Calculated total (Qty × $${formatNumber(calc.effMedium)} effective rate)`}
@@ -390,12 +448,14 @@ export const RpmWindowsForm: React.FC<
             type="number"
             min="0"
             step="0.01"
-            value={
+            value={getDisplayValue(
+              'customLargeTotal',
               form.customLargeTotal !== undefined
-                ? form.customLargeTotal || ""
+                ? form.customLargeTotal
                 : (form.largeQty * calc.effLarge)
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{ backgroundColor: form.customLargeTotal !== undefined ? '#fffacd' : 'white' }}
             title={`Calculated total (Qty × $${formatNumber(calc.effLarge)} effective rate)`}
@@ -480,8 +540,12 @@ export const RpmWindowsForm: React.FC<
             min="0"
               step="0.01"
               name="customInstallationFee"
-              value={form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customInstallationFee',
+                form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
             />
@@ -626,8 +690,12 @@ export const RpmWindowsForm: React.FC<
           min="0"
             min="0"
               step="0.01"
-              value={form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customPerVisitPrice',
+                form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
             />
@@ -644,18 +712,10 @@ export const RpmWindowsForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                name="customFirstMonthTotal"
-                type="number"
-        min="0"
-          min="0"
-            min="0"
-                step="0.01"
-                value={form.customFirstMonthTotal !== undefined
-                  ? formatNumber(form.customFirstMonthTotal)
-                  : (form.isFirstTimeInstall ? formatNumber(calc.firstMonthBillRated ?? 0) : formatNumber(calc.monthlyBillRated ?? 0))}
-                onChange={onChange}
-                onBlur={handleBlur}
-                style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
+                type="text"
+                readOnly
+                value={formatNumber(calc.firstMonthBillRated ?? 0)}
+                style={{ backgroundColor: 'white', border: 'none', width: '100px' }}
                 title={form.isFirstTimeInstall ? "First month including installation + service" : "First month (ongoing service only)"}
               />
             </div>
@@ -679,10 +739,14 @@ export const RpmWindowsForm: React.FC<
           min="0"
             min="0"
                 step="0.01"
-                value={form.customMonthlyRecurring !== undefined
-                  ? formatNumber(form.customMonthlyRecurring)
-                  : formatNumber(calc.monthlyBillRated ?? 0)}
-                onChange={onChange}
+                value={getDisplayValue(
+                  'customMonthlyRecurring',
+                  form.customMonthlyRecurring !== undefined
+                    ? form.customMonthlyRecurring
+                    : calc.monthlyBillRated ?? 0
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
                 title="Override monthly recurring calculation (clear to use auto-calculated value)"
@@ -709,10 +773,14 @@ export const RpmWindowsForm: React.FC<
           min="0"
             min="0"
                 step="0.01"
-                value={form.customPerVisitPrice !== undefined
-                  ? formatNumber(form.customPerVisitPrice)
-                  : formatNumber(calc.recurringPerVisitRated ?? 0)}
-                onChange={onChange}
+                value={getDisplayValue(
+                  'customPerVisitPrice',
+                  form.customPerVisitPrice !== undefined
+                    ? form.customPerVisitPrice
+                    : calc.recurringPerVisitRated ?? 0
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
                 title="Override per visit calculation (clear to use auto-calculated value)"
@@ -737,12 +805,16 @@ export const RpmWindowsForm: React.FC<
           min="0"
             min="0"
                 step="0.01"
-                value={form.customFirstMonthTotal !== undefined
-                  ? formatNumber(form.customFirstMonthTotal)
-                  : (form.isFirstTimeInstall
-                    ? formatNumber(calc.firstVisitTotalRated ?? 0)
-                    : formatNumber(calc.recurringPerVisitRated ?? 0))}
-                onChange={onChange}
+                value={getDisplayValue(
+                  'customFirstMonthTotal',
+                  form.customFirstMonthTotal !== undefined
+                    ? form.customFirstMonthTotal
+                    : (form.isFirstTimeInstall
+                      ? calc.firstVisitTotalRated ?? 0
+                      : calc.recurringPerVisitRated ?? 0)
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white' }}
                 title={form.isFirstTimeInstall ? "First visit including installation + service" : "First visit (service only)"}
@@ -809,8 +881,12 @@ export const RpmWindowsForm: React.FC<
           min="0"
             min="0"
                 step="0.01"
-                value={form.customAnnualPrice !== undefined ? formatNumber(form.customAnnualPrice) : formatNumber(quote.annualPrice ?? 0)}
-                onChange={onChange}
+                value={getDisplayValue(
+                  'customAnnualPrice',
+                  form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice ?? 0
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
               />

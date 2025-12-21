@@ -110,8 +110,8 @@
 .ad__table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* ✅ fixes equal width issue */
-  min-width: 780px;
+  table-layout: auto; /* ✅ FIXED: Allow columns to size based on content */
+  min-width: 1000px; /* ✅ INCREASED: More space for content */
 }
 
 .ad__table th,
@@ -120,9 +120,6 @@
   text-align: left;
   border-bottom: 1px solid #f0f0f0;
   font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   height: 62px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
   vertical-align: middle;
 }
@@ -133,36 +130,42 @@
   color: #333;
   border-bottom: 2px solid #e0e0e0;
   height: 54px; /* ✅ OPTIMIZED: Explicit height for header */
+  white-space: nowrap; /* ✅ Only prevent wrapping in headers */
 }
 
 .ad__table tr:hover td {
   background: #f9fbff;
 }
 
-/* ✅ Equal column widths for 6-column layout */
+/* ✅ FIXED: Better column widths for readable content */
 .ad__table th:nth-child(1),
-.ad__table td:nth-child(1) { width: 5%; text-align: center; }
+.ad__table td:nth-child(1) { width: 50px; text-align: center; }
 
 .ad__table th:nth-child(2),
-.ad__table td:nth-child(2) { width: 35%; }
+.ad__table td:nth-child(2) {
+  width: auto;
+  min-width: 350px;
+  max-width: none; /* ✅ Allow expansion */
+}
 
 .ad__table th:nth-child(3),
-.ad__table td:nth-child(3) { width: 12%; }
+.ad__table td:nth-child(3) { width: 120px; }
 
 .ad__table th:nth-child(4),
-.ad__table td:nth-child(4) { width: 12%; }
+.ad__table td:nth-child(4) { width: 130px; }
 
 .ad__table th:nth-child(5),
-.ad__table td:nth-child(5) { width: 16%; }
+.ad__table td:nth-child(5) { width: 200px; }
 
 .ad__table th:nth-child(6),
-.ad__table td:nth-child(6) { width: 20%; }
+.ad__table td:nth-child(6) { width: 250px; }
 
 /* ✅ NEW: Folder structure styling */
 .agreement-header {
   background-color: #f8fafc !important;
   border-bottom: 2px solid #e2e8f0 !important;
-  height: 68px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
+  height: auto; /* ✅ FIXED: Allow natural height for content */
+  min-height: 68px;
 }
 
 .agreement-header:hover {
@@ -173,12 +176,14 @@
   font-weight: 600;
   color: #1e293b;
   padding: 16px !important;
-  height: 68px; /* ✅ OPTIMIZED: Match parent height */
+  height: auto; /* ✅ FIXED: Allow natural height */
+  min-height: 68px;
 }
 
 .file-row {
   background-color: #fff;
-  height: 62px; /* ✅ OPTIMIZED: Explicit height to prevent CLS */
+  height: auto; /* ✅ FIXED: Allow natural height for content */
+  min-height: 62px;
 }
 
 .file-row:hover {
@@ -188,7 +193,8 @@
 .file-row td {
   border-bottom: 1px solid #f3f4f6 !important;
   color: #4b5563;
-  height: 62px; /* ✅ OPTIMIZED: Match parent height */
+  height: auto; /* ✅ FIXED: Allow natural height */
+  min-height: 62px;
 }
 
 /* Statistics display */
@@ -357,26 +363,89 @@
 .ad__pager {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 12px;
   margin-top: 18px;
+  padding: 16px 0;
 }
+
+.ad__page-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ad__page-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ad__page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .ad__link {
   background: none;
-  border: none;
-  color: #0056d8;
-  font-weight: 600;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  font-weight: 500;
   cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
+
+.ad__link:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.ad__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #9ca3af;
+}
+
 .ad__page {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #f2f3f5;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #374151;
+}
+
+.ad__page:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.ad__page--active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+}
+
+.ad__page--active:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.ad__page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---------- Skeleton Loaders (CLS Optimization) ---------- */

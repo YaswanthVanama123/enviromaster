@@ -741,51 +741,51 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
         calculatedContractTotal = firstMonthTotal;
         totalVisitsForContract = 1;
       } else if (freq === "weekly") {
-        // ✅ BACKEND-DRIVEN: Weekly contract calculation using backend monthlyRecurringMultiplier
+        // ✅ OVERRIDE-AWARE: Weekly contract calculation respecting monthlyRecurring override
         const backendWeeklyMeta = backendConfig?.frequencyMetadata?.weekly;
         const effectiveMonthlyVisits = backendWeeklyMeta?.monthlyRecurringMultiplier ?? monthlyVisits;
         totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + extra visits × service (from backend firstMonthExtraMultiplier)
-          // Remaining months: monthlyRecurringMultiplier × service each
+          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of recalculating
+          // First month uses firstMonthTotal, remaining months use monthlyRecurring
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * effectiveMonthlyVisits * perVisitCharge);
-          console.log(`🔧 [Carpet Weekly Contract] Backend: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × ${effectiveMonthlyVisits} = $${calculatedContractTotal.toFixed(2)}`);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+          console.log(`🔧 [Carpet Weekly Contract] Override-aware: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × $${monthlyRecurring.toFixed(2)} = $${calculatedContractTotal.toFixed(2)}`);
         } else {
-          // No installation: all months effectiveMonthlyVisits × service
-          calculatedContractTotal = contractMonths * effectiveMonthlyVisits * perVisitCharge;
+          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+          calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "biweekly") {
-        // ✅ BACKEND-DRIVEN: Biweekly contract calculation using backend monthlyRecurringMultiplier
+        // ✅ OVERRIDE-AWARE: Biweekly contract calculation respecting monthlyRecurring override
         const backendBiweeklyMeta = backendConfig?.frequencyMetadata?.biweekly;
         const effectiveMonthlyVisits = backendBiweeklyMeta?.monthlyRecurringMultiplier ?? monthlyVisits;
         totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + extra visits × service (from backend firstMonthExtraMultiplier)
-          // Remaining months: monthlyRecurringMultiplier × service each
+          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of recalculating
+          // First month uses firstMonthTotal, remaining months use monthlyRecurring
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * effectiveMonthlyVisits * perVisitCharge);
-          console.log(`🔧 [Carpet Biweekly Contract] Backend: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × ${effectiveMonthlyVisits} = $${calculatedContractTotal.toFixed(2)}`);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+          console.log(`🔧 [Carpet Biweekly Contract] Override-aware: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × $${monthlyRecurring.toFixed(2)} = $${calculatedContractTotal.toFixed(2)}`);
         } else {
-          // No installation: all months effectiveMonthlyVisits × service
-          calculatedContractTotal = contractMonths * effectiveMonthlyVisits * perVisitCharge;
+          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+          calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "monthly") {
-        // ✅ BACKEND-DRIVEN: Monthly uses cycleMonths from backend
+        // ✅ OVERRIDE-AWARE: Monthly contract calculation respecting monthlyRecurring override
         const backendMonthlyMeta = backendConfig?.frequencyMetadata?.monthly;
         const cycleMonths = backendMonthlyMeta?.cycleMonths ?? 1;
         totalVisitsForContract = Math.round(contractMonths / cycleMonths);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation only
-          // From second month onward: 1 × service each month
+          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of perVisitCharge
+          // First month: installation only, remaining months: use monthlyRecurring
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
-          // No installation: all months 1 × service
-          calculatedContractTotal = contractMonths * perVisitCharge;
+          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+          calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "bimonthly") {
         // ✅ BACKEND-DRIVEN: Bimonthly uses cycleMonths from backend
@@ -847,17 +847,17 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
           calculatedContractTotal = totalServices * perVisitCharge;
         }
       } else if (freq === "twicePerMonth") {
-        // 2×/month: Use backend monthlyVisits multiplier
+        // ✅ OVERRIDE-AWARE: 2×/month contract calculation respecting monthlyRecurring override
         totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // First month: installation + remaining visits × service
-          // Remaining months: monthlyVisits × service each
+          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of recalculating
+          // First month uses firstMonthTotal, remaining months use monthlyRecurring
           const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyVisits * perVisitCharge);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
-          // No installation: all months monthlyVisits × service
-          calculatedContractTotal = contractMonths * monthlyVisits * perVisitCharge;
+          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+          calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       }
     }

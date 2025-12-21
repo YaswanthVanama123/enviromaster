@@ -1,5 +1,5 @@
 // src/features/services/janitorial/JanitorialForm.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useJanitorialCalc } from "./useJanitorialCalc";
@@ -31,22 +31,70 @@ export const JanitorialForm: React.FC<
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // Save form data to context for form submission
-  const prevDataRef = useRef<string>("");
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (value === '' || value === null) {
-      if (name === 'customPerVisit' ||
-          name === 'customMonthly' ||
-          name === 'customOngoingMonthly' ||
-          name === 'customContractTotal') {
-        // Note: The actual clearing will be handled by the parent onChange handler
-        console.log(`Clearing custom field: ${name}`);
-      }
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onChange({ target: { name, value: String(numValue) } } as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      onChange({ target: { name, value: '' } } as any);
     }
   };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      onChange({ target: { name, value: '' } } as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    onChange({ target: { name, value: String(numValue) } } as any);
+  };
+
+  // Save form data to context for form submission
+  const prevDataRef = useRef<string>("");
 
   useEffect(() => {
     if (servicesContext) {
@@ -655,12 +703,14 @@ export const JanitorialForm: React.FC<
               step="0.01"
               name="customContractTotal"
               className="svc-in"
-              value={
+              value={getDisplayValue(
+                'customContractTotal',
                 form.customContractTotal !== undefined
-                  ? formatNumber(form.customContractTotal)
-                  : formatNumber(calc?.contractTotal || 0)
-              }
-              onChange={onChange}
+                  ? form.customContractTotal
+                  : calc?.contractTotal || 0
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 borderBottom: '2px solid #ff0000',

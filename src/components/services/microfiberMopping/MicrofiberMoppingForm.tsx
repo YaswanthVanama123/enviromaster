@@ -1,5 +1,5 @@
 // src/components/services/microfiberMopping/MicrofiberMoppingForm.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useMicrofiberMoppingCalc } from "./useMicrofiberMoppingCalc";
@@ -20,6 +20,68 @@ export const MicrofiberMoppingForm: React.FC<
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onChange({ target: { name, value: String(numValue) } } as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      onChange({ target: { name, value: '' } } as any);
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      onChange({ target: { name, value: '' } } as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    onChange({ target: { name, value: String(numValue) } } as any);
+  };
 
   // Check if SaniClean All-Inclusive is active
   const isSanicleanAllInclusive =
@@ -143,13 +205,6 @@ export const MicrofiberMoppingForm: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
-  // Handler to reset custom values to undefined if left empty
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (value === '' || value === null) {
-      setForm((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
 
   // Track previous values to detect actual changes (not just re-renders)
   const prevInputsRef = useRef({
@@ -371,12 +426,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
             step="0.01"
             name="customStandardBathroomTotal"
-            value={
+            value={getDisplayValue(
+              'customStandardBathroomTotal',
               form.customStandardBathroomTotal !== undefined
                 ? form.customStandardBathroomTotal
                 : calc.standardBathroomPrice
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customStandardBathroomTotal !== undefined ? '#fffacd' : 'white'
@@ -419,12 +476,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
             step="0.01"
             name="customHugeBathroomTotal"
-            value={
+            value={getDisplayValue(
+              'customHugeBathroomTotal',
               form.customHugeBathroomTotal !== undefined
                 ? form.customHugeBathroomTotal
                 : calc.hugeBathroomPrice
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customHugeBathroomTotal !== undefined ? '#fffacd' : 'white'
@@ -468,12 +527,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
             step="0.01"
             name="customExtraAreaTotal"
-            value={
+            value={getDisplayValue(
+              'customExtraAreaTotal',
               form.customExtraAreaTotal !== undefined
                 ? form.customExtraAreaTotal
                 : calc.extraAreaPrice
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customExtraAreaTotal !== undefined ? '#fffacd' : 'white'
@@ -540,12 +601,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
             step="0.01"
             name="customStandaloneTotal"
-            value={
+            value={getDisplayValue(
+              'customStandaloneTotal',
               form.customStandaloneTotal !== undefined
                 ? form.customStandaloneTotal
                 : calc.standaloneServicePrice
-            }
-            onChange={onChange}
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customStandaloneTotal !== undefined ? '#fffacd' : 'white'
@@ -713,12 +776,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
               step="0.01"
               name="customPerVisitPrice"
-              value={
+              value={getDisplayValue(
+                'customPerVisitPrice',
                 form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice.toFixed(2)
-                  : calc.perVisitPrice.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customPerVisitPrice
+                  : calc.perVisitPrice
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
@@ -774,12 +839,14 @@ export const MicrofiberMoppingForm: React.FC<
                 type="text"
                 step="0.01"
                 name="customMonthlyRecurring"
-                value={
+                value={getDisplayValue(
+                  'customMonthlyRecurring',
                   form.customMonthlyRecurring !== undefined
-                    ? form.customMonthlyRecurring.toFixed(2)
-                    : calc.monthlyRecurring.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customMonthlyRecurring
+                    : calc.monthlyRecurring
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
@@ -804,12 +871,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
                 step="0.01"
                 name="customFirstMonthPrice"
-                value={
+                value={getDisplayValue(
+                  'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
-                    ? form.customFirstMonthPrice.toFixed(2)
-                    : calc.firstMonthPrice.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customFirstMonthPrice
+                    : calc.firstMonthPrice
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -834,12 +903,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
                 step="0.01"
                 name="customFirstMonthPrice"
-                value={
+                value={getDisplayValue(
+                  'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
-                    ? form.customFirstMonthPrice.toFixed(2)
-                    : calc.firstMonthPrice.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customFirstMonthPrice
+                    : calc.firstMonthPrice
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -905,12 +976,14 @@ export const MicrofiberMoppingForm: React.FC<
             min="0"
                   step="0.01"
                   name="customContractTotal"
-                  value={
+                  value={getDisplayValue(
+                    'customContractTotal',
                     form.customContractTotal !== undefined
-                      ? form.customContractTotal.toFixed(2)
-                      : calc.contractTotal.toFixed(2)
-                  }
-                  onChange={onChange}
+                      ? form.customContractTotal
+                      : calc.contractTotal
+                  )}
+                  onChange={handleLocalChange}
+                  onFocus={handleFocus}
                   onBlur={handleBlur}
                   style={{
                     backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',

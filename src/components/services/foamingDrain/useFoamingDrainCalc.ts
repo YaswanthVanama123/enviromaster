@@ -586,6 +586,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       filthyInstallOneTime + greaseInstallOneTime + greenInstallOneTime;
     const installation = round2(installationRaw);
 
+    // ✅ Apply custom installation override early for dependent calculations
+    const effectiveInstallation = state.customInstallationTotal ?? installation;
+
     // ---------- 7d) FIRST VISIT LOGIC ----------
     // Filthy facility:
     //   FirstVisit = filthyInstall + weeklyInstallDrains + greaseInstall + greenInstall + weeklyPlumbing
@@ -595,19 +598,17 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     let firstVisitPrice: number;
 
     if (condition === "filthy" && filthyInstallOneTime > 0) {
+      // When there's a filthy installation, use effective installation in first visit
       firstVisitPrice =
-        filthyInstallOneTime +
+        effectiveInstallation +
         weeklyInstallDrains +
-        greaseInstallOneTime +
-        greenInstallOneTime +
-        weeklyPlumbing; // ✅ ADDED: Include plumbing in first visit
+        weeklyPlumbing; // ✅ Use effective installation
     } else {
       firstVisitPrice =
-        greaseInstallOneTime +
-        greenInstallOneTime +
+        (effectiveInstallation > 0 ? effectiveInstallation : 0) +
         weeklyStandardDrains +
         weeklyInstallDrains +
-        weeklyPlumbing; // ✅ ADDED: Include plumbing in first visit
+        weeklyPlumbing; // ✅ Use effective installation
     }
 
     firstVisitPrice = round2(firstVisitPrice);
@@ -655,8 +656,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     let normalMonth = effectiveWeeklyService * frequencyMultiplier;
     let firstMonthPrice = 0;
 
-    // First month includes installation if present
-    if (installation > 0) {
+    // First month includes installation if present (check effective installation for custom overrides)
+    if (effectiveInstallation > 0) {
       firstMonthPrice = firstVisitPrice + effectiveWeeklyService * Math.max(0, frequencyMultiplier - 1);
     } else {
       firstMonthPrice = normalMonth;
@@ -675,7 +676,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       const totalVisitsIn12Months = 6; // 12 months / 2 months per visit = 6 visits
       const contractVisitsForTerm = Math.round((contractMonths / 12) * totalVisitsIn12Months);
 
-      if (installation > 0) {
+      if (effectiveInstallation > 0) {
         // First visit includes installation, remaining visits are regular service
         const remainingVisits = Math.max(contractVisitsForTerm - 1, 0);
         contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
@@ -690,7 +691,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       const quarterlyVisits = contractMonths / 3;
       const totalVisits = Math.round(quarterlyVisits);
 
-      if (installation > 0) {
+      if (effectiveInstallation > 0) {
         const remainingVisits = Math.max(totalVisits - 1, 0);
         contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
       } else {
@@ -701,7 +702,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       const biannualVisits = contractMonths / 6;
       const totalVisits = Math.round(biannualVisits);
 
-      if (installation > 0) {
+      if (effectiveInstallation > 0) {
         const remainingVisits = Math.max(totalVisits - 1, 0);
         contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
       } else {
@@ -712,7 +713,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       const annualVisits = contractMonths / 12;
       const totalVisits = Math.round(annualVisits);
 
-      if (installation > 0) {
+      if (effectiveInstallation > 0) {
         const remainingVisits = Math.max(totalVisits - 1, 0);
         contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
       } else {

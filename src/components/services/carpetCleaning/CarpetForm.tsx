@@ -24,63 +24,73 @@ export const CarpetForm: React.FC<
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // Handler for clearing override values when they match calculated values
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const numValue = parseFloat(value);
-
-    if (isNaN(numValue)) return;
-
-    // Clear override if it matches the base backend value
-    switch (name) {
-      case 'customFirstUnitRate':
-        if (Math.abs(numValue - (form.firstUnitRate || 250)) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customAdditionalUnitRate':
-        if (Math.abs(numValue - (form.additionalUnitRate || 125)) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customPerVisitMinimum':
-        if (Math.abs(numValue - (form.perVisitMinimum || 250)) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customPerVisitPrice':
-        if (Math.abs(numValue - calc.perVisitCharge) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customMonthlyRecurring':
-        if (Math.abs(numValue - calc.monthlyTotal) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customFirstMonthPrice':
-        if (Math.abs(numValue - calc.firstMonthTotal) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customContractTotal':
-        if (Math.abs(numValue - calc.contractTotal) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-      case 'customInstallationFee':
-        if (Math.abs(numValue - calc.installOneTime) < 0.01) {
-          onChange({ target: { name, value: '' } } as any);
-        }
-        break;
-    }
-  };
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      onChange({ target: { name, value: String(numValue) } } as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      onChange({ target: { name, value: '' } } as any);
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // If empty or invalid, clear the override
+    if (value === '' || isNaN(numValue)) {
+      onChange({ target: { name, value: '' } } as any);
+      return;
+    }
+
+    // ✅ Update form state with parsed numeric value
+    // DO NOT auto-clear overrides - they persist until refresh button is clicked
+    onChange({ target: { name, value: String(numValue) } } as any);
+  };
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
@@ -181,25 +191,28 @@ export const CarpetForm: React.FC<
     if (onQuoteChange) onQuoteChange(quote);
   }, [onQuoteChange, quote]);
 
-  // Clear custom overrides when base inputs change
+  // ✅ OVERRIDE HIERARCHY: Clear downstream overrides ONLY when base quantity inputs change
+  // Do NOT clear when rate overrides change - let the calculation hierarchy handle propagation
   useEffect(() => {
     setForm((prev: any) => ({
       ...prev,
       customPerVisitPrice: undefined,
+      customInstallationFee: undefined,  // ✅ Clear installation override when base inputs change
       customMonthlyRecurring: undefined,
       customFirstMonthPrice: undefined,
       customContractTotal: undefined,
     }));
   }, [
-    form.areaSqFt,
-    form.useExactSqft,
-    form.frequency,
-    form.contractMonths,
-    form.includeInstall,
-    form.isDirtyInstall,
-    form.customFirstUnitRate,
-    form.customAdditionalUnitRate,
-    form.customPerVisitMinimum,
+    // ✅ ONLY base quantity/selection inputs trigger clearing:
+    form.areaSqFt,           // Area changed = recalculate everything
+    form.useExactSqft,       // Calculation method changed = recalculate
+    form.frequency,          // Frequency changed = recalculate monthly/contract
+    form.contractMonths,     // Contract term changed = recalculate contract
+    form.includeInstall,     // Installation added/removed = recalculate totals
+    form.isDirtyInstall,     // Installation type changed = recalculate installation fee
+    // ✅ REMOVED: customFirstUnitRate, customAdditionalUnitRate, customPerVisitMinimum
+    // These are RATE overrides - changing them should NOT clear downstream overrides
+    // Let the calculation hierarchy handle propagation naturally
     setForm,
   ]);
 
@@ -262,8 +275,14 @@ export const CarpetForm: React.FC<
               min="0"
               step="0.01"
               name="customFirstUnitRate"
-              value={form.customFirstUnitRate !== undefined ? form.customFirstUnitRate || "" : (form.firstUnitRate || 0)}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customFirstUnitRate',
+                form.customFirstUnitRate !== undefined
+                  ? form.customFirstUnitRate
+                  : form.firstUnitRate
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customFirstUnitRate !== undefined ? '#fffacd' : 'white' }}
               title="Rate for first 500 sq ft (from backend, editable)"
@@ -284,8 +303,14 @@ export const CarpetForm: React.FC<
               min="0"
               step="0.01"
               name="customAdditionalUnitRate"
-              value={form.customAdditionalUnitRate !== undefined ? form.customAdditionalUnitRate || "" : (form.additionalUnitRate || 0)}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customAdditionalUnitRate',
+                form.customAdditionalUnitRate !== undefined
+                  ? form.customAdditionalUnitRate
+                  : form.additionalUnitRate
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customAdditionalUnitRate !== undefined ? '#fffacd' : 'white' }}
               title="Rate per additional 500 sq ft block (from backend, editable)"
@@ -306,8 +331,14 @@ export const CarpetForm: React.FC<
               min="0"
               step="0.01"
               name="customPerVisitMinimum"
-              value={form.customPerVisitMinimum !== undefined ? form.customPerVisitMinimum || "" : (form.perVisitMinimum || 0)}
-              onChange={onChange}
+              value={getDisplayValue(
+                'customPerVisitMinimum',
+                form.customPerVisitMinimum !== undefined
+                  ? form.customPerVisitMinimum
+                  : form.perVisitMinimum
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customPerVisitMinimum !== undefined ? '#fffacd' : 'white' }}
               title="Minimum charge per visit (from backend, editable)"
@@ -341,12 +372,14 @@ export const CarpetForm: React.FC<
             min="0"
               step="0.01"
               name="customPerVisitPrice"
-              value={
+              value={getDisplayValue(
+                'customPerVisitPrice',
                 form.customPerVisitPrice !== undefined
-                  ? form.customPerVisitPrice || ""
+                  ? form.customPerVisitPrice
                   : calc.perVisitCharge
-              }
-              onChange={onChange}
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
               title="Per visit total (editable)"
@@ -497,15 +530,18 @@ export const CarpetForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 name="customInstallationFee"
-                value={
+                value={getDisplayValue(
+                  'customInstallationFee',
                   form.customInstallationFee !== undefined
-                    ? form.customInstallationFee.toFixed(2)
-                    : calc.installOneTime.toFixed(2)
-                }
-                onChange={onChange}
+                    ? form.customInstallationFee
+                    : calc.installOneTime
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
                 title="Installation fee total (editable)"
@@ -523,14 +559,17 @@ export const CarpetForm: React.FC<
             type="number"
             min="0"
             step="0.01"
+            readOnly
             name="customPerVisitPrice"
             className="svc-in svc-in-small"
-            value={
+            value={getDisplayValue(
+              'customPerVisitPrice',
               form.customPerVisitPrice !== undefined
-                ? form.customPerVisitPrice.toFixed(2) || ""
-                : calc.perVisitCharge.toFixed(2)
-            }
-            onChange={onChange}
+                ? form.customPerVisitPrice
+                : calc.perVisitCharge
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
@@ -553,12 +592,14 @@ export const CarpetForm: React.FC<
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2) || ""
-                  : calc.firstMonthTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customFirstMonthPrice
+                  : calc.firstMonthTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -582,12 +623,14 @@ export const CarpetForm: React.FC<
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2) || ""
-                  : calc.firstMonthTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customFirstMonthPrice
+                  : calc.firstMonthTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -607,16 +650,19 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice.toFixed(2) || ""
-                  : calc.firstMonthTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customFirstMonthPrice
+                  : calc.firstMonthTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -640,12 +686,14 @@ export const CarpetForm: React.FC<
               step="0.01"
               name="customMonthlyRecurring"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customMonthlyRecurring',
                 form.customMonthlyRecurring !== undefined
-                  ? form.customMonthlyRecurring.toFixed(2)
-                  : calc.monthlyTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customMonthlyRecurring
+                  : calc.monthlyTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
@@ -686,16 +734,19 @@ export const CarpetForm: React.FC<
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
             <input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customContractTotal"
               className="svc-in"
-              value={
+              value={getDisplayValue(
+                'customContractTotal',
                 form.customContractTotal !== undefined
-                  ? form.customContractTotal.toFixed(2) || ""
-                  : calc.contractTotal.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customContractTotal
+                  : calc.contractTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 borderBottom: '2px solid #ff0000',
