@@ -314,16 +314,24 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
 
 /** Per Worker rule:
  *  Workers × perWorkerRate (NO trip charge here - applied at visit level).
- *  Returns the labour cost only. Uses backend rate when available.
+ *  Returns the labour cost only. Uses form global rate if available, otherwise backend rate.
  *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcPerWorker(
   state: RefreshAreaCalcState,
+  formGlobalRate: number,  // ✅ NEW: Use form's global hourly rate
+  formMinimumVisit: number, // ✅ NEW: Use form's global minimum visit
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  // Use area's worker rate if set, otherwise use backend rate, otherwise fallback
-  const perWorkerRate = state.workerRate > 0 ? state.workerRate : (backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY);
-  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+  // ✅ PRIORITY: Use form global rate first, then area rate, then backend rate, then fallback
+  const perWorkerRate = formGlobalRate > 0
+    ? formGlobalRate
+    : (state.workerRate > 0 ? state.workerRate : (backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY));
+
+  // ✅ PRIORITY: Use form global minimum first, then backend, then fallback
+  const minimumVisit = formMinimumVisit > 0
+    ? formMinimumVisit
+    : (backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN);
 
   const calculatedAmount = (state.workers || 0) * perWorkerRate;
 
@@ -333,16 +341,24 @@ function calcPerWorker(
 
 /** Per Hour rule:
  *  Hours × perHourRate (NO trip charge here - applied at visit level).
- *  Returns the labour cost only. Uses backend rate when available.
+ *  Returns the labour cost only. Uses form global rate if available, otherwise backend rate.
  *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcPerHour(
   state: RefreshAreaCalcState,
+  formGlobalRate: number,  // ✅ NEW: Use form's global hourly rate
+  formMinimumVisit: number, // ✅ NEW: Use form's global minimum visit
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  // Use area's hourly rate if set, otherwise use backend rate, otherwise fallback
-  const perHourRate = state.hourlyRate > 0 ? state.hourlyRate : (backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE);
-  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+  // ✅ PRIORITY: Use form global rate first, then area rate, then backend per-hour rate, then fallback
+  const perHourRate = formGlobalRate > 0
+    ? formGlobalRate
+    : (state.hourlyRate > 0 ? state.hourlyRate : (backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE));
+
+  // ✅ PRIORITY: Use form global minimum first, then backend, then fallback
+  const minimumVisit = formMinimumVisit > 0
+    ? formMinimumVisit
+    : (backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN);
 
   const calculatedAmount = (state.hours || 0) * perHourRate;
 
@@ -357,20 +373,36 @@ function calcPerHour(
  */
 function calcSquareFootage(
   state: RefreshAreaCalcState,
+  formMinimumVisit: number, // ✅ NEW: Use form's global minimum visit
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const fixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? state.sqFtFixedFee ?? FALLBACK_SQFT_FIXED_FEE;
-  const insideRate = backendConfig?.squareFootagePricing?.insideRate ?? state.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
-  const outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? state.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
-  const minimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+  // ✅ FIXED: Use area's sq ft fixed fee if explicitly set (even if 0), otherwise use backend/fallback
+  // Check if fixed fee has been explicitly set by comparing against default
+  const fixedFee = state.sqFtFixedFee !== undefined && state.sqFtFixedFee !== null
+    ? state.sqFtFixedFee
+    : (backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE);
+
+  const insideRate = state.insideRate > 0
+    ? state.insideRate
+    : (backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE);
+
+  const outsideRate = state.outsideRate > 0
+    ? state.outsideRate
+    : (backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE);
+
+  // ✅ PRIORITY: Use form global minimum first, then backend, then fallback
+  const minimumVisit = formMinimumVisit > 0
+    ? formMinimumVisit
+    : (backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN);
 
   const insideCost = (state.insideSqFt || 0) * insideRate;
   const outsideCost = (state.outsideSqFt || 0) * outsideRate;
   const calculatedAmount = fixedFee + insideCost + outsideCost;
 
-  // Apply minimum if calculated amount is below minimum - ONLY when there's actual sq ft
-  const hasSqFt = (state.insideSqFt || 0) > 0 || (state.outsideSqFt || 0) > 0;
-  return hasSqFt ? Math.max(calculatedAmount, minimumVisit) : 0;
+  // ✅ FIXED: Apply the fixed fee calculation even when there's 0 sq ft (if pricing type is set to squareFeet)
+  // If user selected square footage pricing, they want to see the total including fixed fee
+  const hasAnyValue = (state.insideSqFt || 0) > 0 || (state.outsideSqFt || 0) > 0 || fixedFee > 0;
+  return hasAnyValue ? Math.max(calculatedAmount, minimumVisit) : 0;
 }
 
 /** Default / preset prices when no hours / sq-ft are supplied.
@@ -491,15 +523,18 @@ function calcAreaCost(
 
     case "perWorker":
       // Per worker pricing - labor only (trip added at visit level)
-      return { cost: calcPerWorker(state, backendConfig), isPackage: false };
+      // ✅ Pass form's global rates
+      return { cost: calcPerWorker(state, form.hourlyRate, form.minimumVisit, backendConfig), isPackage: false };
 
     case "perHour":
       // Per hour pricing - labor only (trip added at visit level)
-      return { cost: calcPerHour(state, backendConfig), isPackage: false };
+      // ✅ Pass form's global rates
+      return { cost: calcPerHour(state, form.hourlyRate, form.minimumVisit, backendConfig), isPackage: false };
 
     case "squareFeet":
       // Square footage pricing - service only (trip added at visit level)
-      return { cost: calcSquareFootage(state, backendConfig), isPackage: false };
+      // ✅ Pass form's global minimum visit
+      return { cost: calcSquareFootage(state, form.minimumVisit, backendConfig), isPackage: false };
 
     case "custom":
       // Custom amount - assume it's a package price (trip included)
@@ -873,12 +908,21 @@ export function useRefreshPowerScrubCalc(
         }
       }
 
+      // ✅ FIXED: Clear custom amount when kitchen size changes to prevent wrong price showing
+      const updatedArea = {
+        ...current,
+        [field]: value,
+      };
+
+      // If kitchen size is being changed and there's a custom amount set, clear it
+      if (field === 'kitchenSize' && current.customAmount > 0) {
+        updatedArea.customAmount = 0;
+        console.log(`🔧 [Refresh Power Scrub] Cleared custom amount for ${area} when kitchen size changed from ${originalValue} to ${value}`);
+      }
+
       return {
         ...prev,
-        [area]: {
-          ...current,
-          [field]: value,
-        },
+        [area]: updatedArea,
       };
     });
   };

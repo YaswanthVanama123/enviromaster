@@ -11,6 +11,8 @@ interface ServiceAgreementProps {
 }
 
 export interface ServiceAgreementData {
+  // ✅ NEW: Flag to control whether to include service agreement in PDF
+  includeInPdf: boolean;
   retainDispensers: boolean;
   disposeDispensers: boolean;
   customerContactName: string;
@@ -54,6 +56,8 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
 }) => {
   const [showAgreement, setShowAgreement] = useState(false);
   const [agreementData, setAgreementData] = useState<ServiceAgreementData>({
+    // ✅ NEW: Default to false - only include when checkbox is checked
+    includeInPdf: false,
     retainDispensers: false,
     disposeDispensers: false,
     customerContactName: '',
@@ -155,7 +159,15 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
           <input
             type="checkbox"
             checked={showAgreement}
-            onChange={(e) => setShowAgreement(e.target.checked)}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setShowAgreement(checked);
+              // ✅ Update includeInPdf flag when checkbox changes
+              setAgreementData(prev => ({
+                ...prev,
+                includeInPdf: checked
+              }));
+            }}
             style={{
               width: '20px',
               height: '20px',

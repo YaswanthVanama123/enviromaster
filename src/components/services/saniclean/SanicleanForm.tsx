@@ -424,7 +424,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
             name="fixtureCount"
-            value={form.fixtureCount}
+            value={form.fixtureCount || ""}
             readOnly
           />
         </div>
@@ -750,7 +750,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
                         name="urinalScreensQty"
-                        value={form.urinalScreensQty}
+                        value={form.urinalScreensQty || ""}
                         onChange={onChange}
                         min="0"
                         placeholder="0"
@@ -787,7 +787,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
                         name="urinalMatsQty"
-                        value={form.urinalMatsQty}
+                        value={form.urinalMatsQty || ""}
                         onChange={onChange}
                         min="0"
                         placeholder="0"
@@ -849,7 +849,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
                         name="toiletClipsQty"
-                        value={form.toiletClipsQty}
+                        value={form.toiletClipsQty || ""}
                         onChange={onChange}
                         min="0"
                         placeholder="0"
@@ -886,7 +886,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
                         name="seatCoverDispensersQty"
-                        value={form.seatCoverDispensersQty}
+                        value={form.seatCoverDispensersQty || ""}
                         onChange={onChange}
                         min="0"
                         placeholder="0"
@@ -947,7 +947,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
                       name="sanipodsQty"
-                      value={form.sanipodsQty}
+                      value={form.sanipodsQty || ""}
                       onChange={onChange}
                       min="0"
                       placeholder="0"
@@ -1013,7 +1013,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
               name="warrantyDispensers"
-              value={form.warrantyDispensers}
+              value={form.warrantyDispensers || ""}
               onChange={onChange}
               min="0"
               placeholder="0"
@@ -1100,7 +1100,7 @@ export const SanicleanForm: React.FC<
             min="0"
               name="microfiberBathrooms"
               disabled={!form.addMicrofiberMopping}
-              value={form.microfiberBathrooms}
+              value={form.microfiberBathrooms || ""}
               onChange={onChange}
             />
             <span>@</span>
@@ -1146,7 +1146,7 @@ export const SanicleanForm: React.FC<
           min="0"
             min="0"
                 name="estimatedPaperSpendPerWeek"
-                value={form.estimatedPaperSpendPerWeek}
+                value={form.estimatedPaperSpendPerWeek || ""}
                 onChange={onChange}
               />
               <span>-</span>
