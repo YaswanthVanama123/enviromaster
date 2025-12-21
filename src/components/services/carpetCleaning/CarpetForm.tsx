@@ -278,6 +278,27 @@ export const CarpetForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
+      {/* Frequency selection */}
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            {Object.entries(carpetFrequencyLabels).map(
+              ([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+      </div>
+
       {/* Pricing Configuration Rates */}
       <div className="svc-row">
         <label>First {form.unitSqFt || 500} sq ft Rate</label>
@@ -429,26 +450,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Frequency selection */}
-      <div className="svc-row">
-        <label>Frequency</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="frequency"
-            value={form.frequency}
-            onChange={onChange}
-          >
-            {Object.entries(carpetFrequencyLabels).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-      </div>
+
 
       {/* Trip & location – visible but $0 in math */}
       {/* <div className="svc-row">
