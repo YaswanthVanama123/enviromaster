@@ -601,6 +601,9 @@ export function useMicrofiberMoppingCalc(
       // Frequency settings
       defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
       allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
+
+      // Minimum charge per visit (for redline/greenline pricing)
+      minimumChargePerVisit: backendConfig?.minimumChargePerVisit ?? cfg.minimumChargePerVisit,
     };
 
     const freq: MicrofiberFrequencyKey = mapFrequency(form.frequency ?? activeConfig.defaultFrequency);
@@ -786,8 +789,8 @@ export function useMicrofiberMoppingCalc(
     const calculatedPerVisitServiceTotal =
       bathroomPrice + extraAreaPrice + standaloneTotal;
 
-    // ✅ Apply minimum charge per visit from backend config
-    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
+    // ✅ Apply minimum charge per visit from activeConfig (backend or fallback)
+    const minimumChargePerVisit = activeConfig.minimumChargePerVisit;
     const calculatedPerVisitWithMinimum = Math.max(calculatedPerVisitServiceTotal, minimumChargePerVisit);
 
     // Use custom override if set

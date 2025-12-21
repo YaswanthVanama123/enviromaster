@@ -383,6 +383,47 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         )}
 
+        {/* Combined with Sani-Clean */}
+        <div className="svc-row">
+          <div className="svc-label" />
+          <div className="svc-field">
+            <label>
+              <input
+                type="checkbox"
+                name="isCombinedWithSaniClean"
+                checked={form.isCombinedWithSaniClean}
+                onChange={onChange}
+              />{" "}
+              Combined with Sani-Clean
+            </label>
+          </div>
+        </div>
+
+        {/* Frequency */}
+        <div className="svc-row">
+          <div className="svc-label">
+            <span>Frequency</span>
+          </div>
+          <div className="svc-field">
+            <select
+              name="frequency"
+              className="svc-in"
+              value={form.frequency}
+              onChange={onChange}
+            >
+              <option value="oneTime">One Time</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
+              <option value="twicePerMonth">2× / Month</option>
+              <option value="monthly">Monthly</option>
+              <option value="bimonthly">Bi-Monthly (every 2 months)</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="biannual">Bi-Annual</option>
+              <option value="annual">Annual</option>
+            </select>
+          </div>
+        </div>
+
         {/* Pricing Method */}
         <div className="svc-row">
           <div className="svc-label">
@@ -517,30 +558,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           )}
         </div>
 
-        {/* Frequency */}
-        <div className="svc-row">
-          <div className="svc-label">
-            <span>Frequency</span>
-          </div>
-          <div className="svc-field">
-            <select
-              name="frequency"
-              className="svc-in"
-              value={form.frequency}
-              onChange={onChange}
-            >
-              <option value="oneTime">One Time</option>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
-              <option value="twicePerMonth">2× / Month</option>
-              <option value="monthly">Monthly</option>
-              <option value="bimonthly">Bi-Monthly (every 2 months)</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="biannual">Bi-Annual</option>
-              <option value="annual">Annual</option>
-            </select>
-          </div>
-        </div>
+
 
         {/* Location */}
         <div className="svc-row">
@@ -561,26 +579,12 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         </div>
 
-        {/* Combined with Sani-Clean */}
-        <div className="svc-row">
-          <div className="svc-label" />
-          <div className="svc-field">
-            <label>
-              <input
-                type="checkbox"
-                name="isCombinedWithSaniClean"
-                checked={form.isCombinedWithSaniClean}
-                onChange={onChange}
-              />{" "}
-              Combined with Sani-Clean
-            </label>
-          </div>
-        </div>
+
 
 
 
         {/* Value Proposition Info */}
-        <div className="svc-row">
+        {/* <div className="svc-row">
           <div className="svc-label">
             <span className="svc-note">Value:</span>
           </div>
@@ -590,12 +594,11 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               Bathroom goes from clean to {cfg.valueProposition.cleanlinessLevel.toLowerCase()}.
             </span>
           </div>
-        </div>
+        </div> */}
 
         {/* SUMMARY / RESULTS */}
         <div className="svc-summary">
-          {/* Service Charge */}
-          <div className="svc-row">
+          {/* <div className="svc-row">
             <div className="svc-label">
               <span>Service Charge</span>
             </div>
@@ -623,10 +626,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 title="Calculated service charge (based on quantity × rate) - editable"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Trip Charge */}
-          {!form.isCombinedWithSaniClean && (
+          {/* {!form.isCombinedWithSaniClean && (
             <div className="svc-row">
               <div className="svc-label">
                 <span>Trip Charge</span>
@@ -640,7 +643,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 />
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Per Visit Total */}
           <div className="svc-row">
@@ -782,7 +785,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   type="number"
-            min="0"
+                  readOnly
+                  min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
                   className="svc-in sm"
