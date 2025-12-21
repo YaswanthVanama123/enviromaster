@@ -637,7 +637,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />{" "}
                 Big account:{" "}
                 <span className="svc-note">
-                  weekly &lt;{backendConfig?.volumePricing?.minimumDrains ?? 10} drains → ${backendConfig?.standardPricing?.standardDrainRate ?? 10}/week, install waived
+                  weekly {backendConfig?.volumePricing?.minimumDrains ?? 10}+ drains → ${state.standardDrainRate}/week, install waived
                 </span>
               </label>
             </div>
