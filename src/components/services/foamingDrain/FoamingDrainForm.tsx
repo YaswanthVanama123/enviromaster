@@ -1078,6 +1078,36 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div> */}
 
+          {/* First Visit Total - Show for ALL frequencies except oneTime */}
+          {state.frequency !== "oneTime" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>First Visit Total</span>
+              </div>
+              <div className="svc-field svc-dollar">
+                <span>$</span>
+                <input
+                  readOnly
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  name="customFirstMonthPrice"
+                  className="svc-in sm"
+                  value={getDisplayValue(
+                    'customFirstMonthPrice',
+                    state.customFirstMonthPrice !== undefined
+                      ? state.customFirstMonthPrice
+                      : parseFloat(formatAmount(quote.firstVisitPrice) || '0')
+                  )}
+                  style={{
+                    backgroundColor: state.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
+                  }}
+                  title="First visit total"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Per Visit Total */}
           <div className="svc-row">
             <div className="svc-label">
@@ -1147,36 +1177,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
-
-          {/* First Visit Total - Show for ALL frequencies except oneTime */}
-          {state.frequency !== "oneTime" && (
-            <div className="svc-row">
-              <div className="svc-label">
-                <span>First Visit Total</span>
-              </div>
-              <div className="svc-field svc-dollar">
-                <span>$</span>
-                <input
-                  readOnly
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  name="customFirstMonthPrice"
-                  className="svc-in sm"
-                  value={getDisplayValue(
-                    'customFirstMonthPrice',
-                    state.customFirstMonthPrice !== undefined
-                      ? state.customFirstMonthPrice
-                      : parseFloat(formatAmount(quote.firstVisitPrice) || '0')
-                  )}
-                  style={{
-                    backgroundColor: state.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
-                  }}
-                  title="First visit total"
-                />
-              </div>
-            </div>
-          )}
 
 
           {/* Total Price - Show ONLY for oneTime */}

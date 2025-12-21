@@ -590,27 +590,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const effectiveInstallation = state.customInstallationTotal ?? installation;
 
     // ---------- 7d) FIRST VISIT LOGIC ----------
-    // Filthy facility:
-    //   FirstVisit = filthyInstall + weeklyInstallDrains + greaseInstall + greenInstall + weeklyPlumbing
-    //
-    // Normal facility:
-    //   FirstVisit = greaseInstall + greenInstall + weeklyStandardDrains + weeklyInstallDrains + weeklyPlumbing
-    let firstVisitPrice: number;
-
-    if (condition === "filthy" && filthyInstallOneTime > 0) {
-      // When there's a filthy installation, use effective installation in first visit
-      firstVisitPrice =
-        effectiveInstallation +
-        weeklyInstallDrains +
-        weeklyPlumbing; // ✅ Use effective installation
-    } else {
-      firstVisitPrice =
-        (effectiveInstallation > 0 ? effectiveInstallation : 0) +
-        weeklyStandardDrains +
-        weeklyInstallDrains +
-        weeklyPlumbing; // ✅ Use effective installation
-    }
-
+    // ✅ FIXED: First visit should use minimum-enforced weeklyService, not raw components
+    // First visit = Installation (one-time) + Recurring service (minimum-enforced)
+    let firstVisitPrice = effectiveInstallation + weeklyService;
     firstVisitPrice = round2(firstVisitPrice);
 
     // ---------- 8) Monthly & contract logic ----------
