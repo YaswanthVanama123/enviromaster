@@ -651,7 +651,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const frequencyMultiplier = getFrequencyMultiplier(frequency);
 
     // ✅ Apply custom override to per-visit price FIRST, before calculating monthly/contract
-    const effectiveWeeklyService = state.customWeeklyService ?? weeklyService;
+    // ⚠️ CRITICAL: Always enforce minimum charge when there's actual service, even on custom overrides
+    const customOrCalculated = state.customWeeklyService ?? weeklyService;
+    const effectiveWeeklyService = weeklyServiceRaw > 0
+      ? Math.max(customOrCalculated, minimumChargePerVisit)
+      : customOrCalculated; // If no service, don't enforce minimum (should be 0)
 
     let normalMonth = effectiveWeeklyService * frequencyMultiplier;
     let firstMonthPrice = 0;
