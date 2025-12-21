@@ -457,7 +457,7 @@ export const CarpetForm: React.FC<
       </div>
 
       {/* Trip charge display – locked at 0 */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Trip Charge</label>
         <div className="svc-row-right">
           <input
@@ -474,7 +474,7 @@ export const CarpetForm: React.FC<
             value="$0.00 / month"
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Installation options (same as SaniScrub) */}
       <div className="svc-row">
