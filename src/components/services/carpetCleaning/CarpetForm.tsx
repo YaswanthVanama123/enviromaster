@@ -657,7 +657,8 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
@@ -688,7 +689,8 @@ export const CarpetForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
@@ -744,14 +746,15 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring - Show only for weekly, biweekly, and monthly */}
-      {(form.frequency === "weekly" || form.frequency === "biweekly" || form.frequency === "monthly") && (
+      {/* Monthly Recurring - Show only for weekly, biweekly, monthly, and twicePerMonth */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly" || form.frequency === "monthly" || form.frequency === "twicePerMonth") && (
         <div className="svc-row svc-row-total">
           <label>Monthly Recurring</label>
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customMonthlyRecurring"
               className="svc-in svc-in-small"
