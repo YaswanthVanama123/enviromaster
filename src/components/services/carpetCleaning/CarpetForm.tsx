@@ -573,7 +573,82 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
+      {/* Per-Visit Total - Always show */}
+      <div className="svc-row svc-row-total">
+        <label>
+          {/* Dynamic label based on frequency */}
+          {form.frequency === "bimonthly" ||
+           form.frequency === "quarterly" ||
+           form.frequency === "biannual" ||
+           form.frequency === "annual"
+            ? "Recurring Visit Total"
+            : "Per Visit Total"}
+        </label>
+        <div className="svc-dollar">
+          $<input
+            type="number"
+            min="0"
+            step="0.01"
+            readOnly
+            name="customPerVisitPrice"
+            className="svc-in svc-in-small"
+            value={getDisplayValue(
+              'customPerVisitPrice',
+              form.customPerVisitPrice !== undefined
+                ? form.customPerVisitPrice
+                : calc.perVisitCharge
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
+              border: 'none',
+              width: '100px'
+            }}
+            title={form.frequency === "bimonthly" ||
+                   form.frequency === "quarterly" ||
+                   form.frequency === "biannual" ||
+                   form.frequency === "annual"
+                    ? "Recurring visit total - editable"
+                    : "Per visit total - editable"}
+          />
+        </div>
+      </div>
 
+            {/* Redline/Greenline Pricing Indicator */}
+      {form.areaSqFt > 0 && (
+        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+          <label></label>
+          <div className="svc-row-right">
+            {calc.perVisitCharge <= (form.customPerVisitMinimum ?? form.perVisitMinimum) ? (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing (At or Below Minimum)
+              </span>
+            ) : (
+              <span style={{
+                color: '#388e3c',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#e8f5e9',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🟢 Greenline Pricing (Above Minimum)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Total Price - Show ONLY for oneTime */}
       {form.frequency === "oneTime" && (
@@ -669,85 +744,8 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Per-Visit Total - Always show */}
-      <div className="svc-row svc-row-total">
-        <label>
-          {/* Dynamic label based on frequency */}
-          {form.frequency === "bimonthly" ||
-           form.frequency === "quarterly" ||
-           form.frequency === "biannual" ||
-           form.frequency === "annual"
-            ? "Recurring Visit Total"
-            : "Per Visit Total"}
-        </label>
-        <div className="svc-dollar">
-          $<input
-            type="number"
-            min="0"
-            step="0.01"
-            readOnly
-            name="customPerVisitPrice"
-            className="svc-in svc-in-small"
-            value={getDisplayValue(
-              'customPerVisitPrice',
-              form.customPerVisitPrice !== undefined
-                ? form.customPerVisitPrice
-                : calc.perVisitCharge
-            )}
-            onChange={handleLocalChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            style={{
-              backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
-              border: 'none',
-              width: '100px'
-            }}
-            title={form.frequency === "bimonthly" ||
-                   form.frequency === "quarterly" ||
-                   form.frequency === "biannual" ||
-                   form.frequency === "annual"
-                    ? "Recurring visit total - editable"
-                    : "Per visit total - editable"}
-          />
-        </div>
-      </div>
-
-      {/* Redline/Greenline Pricing Indicator */}
-      {form.areaSqFt > 0 && (
-        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
-          <label></label>
-          <div className="svc-row-right">
-            {calc.perVisitCharge <= (form.customPerVisitMinimum ?? form.perVisitMinimum) ? (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🔴 Redline Pricing (At or Below Minimum)
-              </span>
-            ) : (
-              <span style={{
-                color: '#388e3c',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#e8f5e9',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🟢 Greenline Pricing (Above Minimum)
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Monthly Recurring - Show only for weekly and biweekly */}
-      {(form.frequency === "weekly" || form.frequency === "biweekly") && (
+      {/* Monthly Recurring - Show only for weekly, biweekly, and monthly */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly" || form.frequency === "monthly") && (
         <div className="svc-row svc-row-total">
           <label>Monthly Recurring</label>
           <div className="svc-dollar">
