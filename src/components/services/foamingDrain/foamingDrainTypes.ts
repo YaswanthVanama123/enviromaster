@@ -133,4 +133,7 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   notes: string;
 
   breakdown: FoamingDrainBreakdown;
+
+  // Minimum charge for redline/greenline indicator
+  minimumChargePerVisit: number;
 }
