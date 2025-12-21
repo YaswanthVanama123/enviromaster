@@ -73,6 +73,9 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     waiveForAllInclusive: true,
   },
 
+  // Minimum charge per visit (for redline/greenline pricing)
+  minimumChargePerVisit: 50,
+
   // All-inclusive behavior
   allInclusiveIntegration: {
     includedInPackage: true,

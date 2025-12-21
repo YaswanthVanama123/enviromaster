@@ -23,6 +23,8 @@ export const StripWaxForm: React.FC<
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -37,8 +39,9 @@ export const StripWaxForm: React.FC<
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -62,8 +65,18 @@ export const StripWaxForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -72,15 +85,17 @@ export const StripWaxForm: React.FC<
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      onChange({ target: { name, value: '' } } as any);
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        onChange({ target: { name, value: '' } } as any);
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    onChange({ target: { name, value: String(numValue) } } as any);
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      onChange({ target: { name, value: String(numValue) } } as any);
+    }
   };
 
   // Save form data to context for form submission
@@ -403,12 +418,14 @@ export const StripWaxForm: React.FC<
             step="0.01"
             name="customPerVisit"
             className="svc-in svc-in-small"
-            value={
+            value={getDisplayValue(
+              'customPerVisit',
               form.customPerVisit !== undefined
-                ? form.customPerVisit.toFixed(2)
-                : calc.perVisit.toFixed(2)
-            }
-            onChange={onChange}
+                ? form.customPerVisit
+                : calc.perVisit
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             style={{
               backgroundColor: form.customPerVisit !== undefined ? '#fffacd' : 'white',
@@ -419,6 +436,40 @@ export const StripWaxForm: React.FC<
           />
         </div>
       </div>
+
+      {/* Redline/Greenline Pricing Indicator */}
+      {form.floorAreaSqFt > 0 && (
+        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+          <label></label>
+          <div className="svc-row-right">
+            {calc.perVisit <= form.minCharge ? (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing (At or Below Minimum)
+              </span>
+            ) : (
+              <span style={{
+                color: '#388e3c',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#e8f5e9',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🟢 Greenline Pricing (Above Minimum)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Total Price - Show ONLY for oneTime */}
       {form.frequency === "oneTime" && (
@@ -431,12 +482,14 @@ export const StripWaxForm: React.FC<
               step="0.01"
               name="customMonthly"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customMonthly',
                 form.customMonthly !== undefined
-                  ? form.customMonthly.toFixed(2)
-                  : calc.monthly.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customMonthly
+                  : calc.monthly
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
@@ -460,12 +513,14 @@ export const StripWaxForm: React.FC<
               step="0.01"
               name="customMonthly"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customMonthly',
                 form.customMonthly !== undefined
-                  ? form.customMonthly.toFixed(2)
-                  : calc.monthly.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customMonthly
+                  : calc.monthly
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
@@ -489,12 +544,14 @@ export const StripWaxForm: React.FC<
               step="0.01"
               name="customMonthly"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customMonthly',
                 form.customMonthly !== undefined
-                  ? form.customMonthly.toFixed(2)
-                  : calc.monthly.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customMonthly
+                  : calc.monthly
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
@@ -518,12 +575,14 @@ export const StripWaxForm: React.FC<
               step="0.01"
               name="customOngoingMonthly"
               className="svc-in svc-in-small"
-              value={
+              value={getDisplayValue(
+                'customOngoingMonthly',
                 form.customOngoingMonthly !== undefined
-                  ? form.customOngoingMonthly.toFixed(2)
-                  : calc.ongoingMonthly.toFixed(2)
-              }
-              onChange={onChange}
+                  ? form.customOngoingMonthly
+                  : calc.ongoingMonthly
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customOngoingMonthly !== undefined ? '#fffacd' : 'white',

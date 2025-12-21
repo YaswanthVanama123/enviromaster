@@ -786,10 +786,14 @@ export function useMicrofiberMoppingCalc(
     const calculatedPerVisitServiceTotal =
       bathroomPrice + extraAreaPrice + standaloneTotal;
 
+    // ✅ Apply minimum charge per visit from backend config
+    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
+    const calculatedPerVisitWithMinimum = Math.max(calculatedPerVisitServiceTotal, minimumChargePerVisit);
+
     // Use custom override if set
     const perVisitPrice = form.customPerVisitPrice !== undefined
       ? form.customPerVisitPrice
-      : calculatedPerVisitServiceTotal;
+      : calculatedPerVisitWithMinimum;
 
     // ----------------------------
     // 6) Monthly (4.33 weeks logic) and contract - BASE CALCULATIONS
@@ -886,6 +890,7 @@ export function useMicrofiberMoppingCalc(
       firstMonthPrice,
       contractMonths,
       contractTotal,
+      minimumChargePerVisit,
     };
 
     const quote: ServiceQuoteResult = {

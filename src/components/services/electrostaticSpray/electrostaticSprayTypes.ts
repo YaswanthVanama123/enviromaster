@@ -106,4 +106,7 @@ export interface ElectrostaticSprayCalcResult {
   // Frequency-specific UI helpers
   isVisitBasedFrequency: boolean; // True for bi-monthly/quarterly
   monthsPerVisit: number; // 2 for bi-monthly, 3 for quarterly, 1 for others
+
+  // Minimum charge for redline/greenline indicator
+  minimumChargePerVisit: number;
 }

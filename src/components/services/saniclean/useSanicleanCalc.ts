@@ -467,6 +467,9 @@ function calculateAllInclusive(
   const seatCoverDispensers = form.maleToilets;
   const sanipods = form.femaleToilets;
 
+  // All-inclusive has no explicit minimum charge (based on fixture count)
+  const minimumChargePerWeek = 0;
+
   return {
     serviceId: "saniclean",
     displayName: "SaniClean - All Inclusive Package",
@@ -519,6 +522,7 @@ function calculateAllInclusive(
       paperOverage > 0 ? `Paper overage: $${form.estimatedPaperSpendPerWeek} spend - $${paperCredit.toFixed(2)} credit = $${paperOverage.toFixed(2)}` : "",
       "All fees waived (trip, warranty)",
     ].filter(Boolean),
+    minimumChargePerWeek,
   };
 }
 
@@ -648,6 +652,11 @@ function calculatePerItemCharge(
   const seatCoverDispensers = form.maleToilets;
   const sanipods = form.femaleToilets;
 
+  // Minimum charge for redline/greenline indicator
+  const minimumChargePerWeek = isSmallFacility
+    ? form.smallFacilityMinimum
+    : regionMinimum;
+
   return {
     serviceId: "saniclean",
     displayName: "SaniClean - Per Item Charge",
@@ -700,6 +709,7 @@ function calculatePerItemCharge(
       warrantyFees > 0 ? `Warranty: ${totalDispensers} dispensers × $${form.warrantyFeePerDispenserPerWeek}/week` : "",
       microfiberMopping > 0 ? `Microfiber mopping: ${form.microfiberBathrooms} bathrooms × $${form.microfiberMoppingPerBathroom}/week` : "",
     ].filter(Boolean),
+    minimumChargePerWeek,
   };
 }
 

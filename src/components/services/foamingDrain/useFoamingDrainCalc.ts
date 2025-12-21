@@ -781,6 +781,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       notes: state.notes || "",
 
       breakdown,
+
+      // ✅ NEW: Export minimum charge for redline/greenline indicator
+      minimumChargePerVisit,
     };
 
     return quote;
@@ -935,8 +938,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           { [key]: value },
           { [key]: originalValue },
           [key as string],
-          form.drainsPerWeek || 1,
-          form.frequency || 'weekly'
+          next.drainsPerWeek || 1,
+          next.frequency || 'weekly'
         );
       }
 

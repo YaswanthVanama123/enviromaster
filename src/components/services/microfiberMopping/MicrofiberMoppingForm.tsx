@@ -23,6 +23,8 @@ export const MicrofiberMoppingForm: React.FC<
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -37,8 +39,9 @@ export const MicrofiberMoppingForm: React.FC<
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -62,8 +65,18 @@ export const MicrofiberMoppingForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -72,15 +85,17 @@ export const MicrofiberMoppingForm: React.FC<
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      onChange({ target: { name, value: '' } } as any);
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        onChange({ target: { name, value: '' } } as any);
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    onChange({ target: { name, value: String(numValue) } } as any);
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      onChange({ target: { name, value: String(numValue) } } as any);
+    }
   };
 
   // Check if SaniClean All-Inclusive is active
@@ -354,7 +369,7 @@ export const MicrofiberMoppingForm: React.FC<
             ✓ INCLUDED in SaniClean All-Inclusive Package
           </div>
           <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
-            Microfiber Mopping is already included at no additional charge ($10/bathroom waived).
+            Microfiber Mopping is already included at no additional charge (${form.includedBathroomRate.toFixed(2)}/bathroom waived).
           </div>
         </div>
       )}
@@ -793,6 +808,40 @@ export const MicrofiberMoppingForm: React.FC<
             />
           </div>
         </div>
+
+        {/* Redline/Greenline Pricing Indicator */}
+        {(form.bathroomCount > 0 || form.hugeBathroomSqFt > 0 || form.extraAreaSqFt > 0 || form.standaloneSqFt > 0) && (
+          <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+            <label></label>
+            <div className="svc-row-right">
+              {calc.perVisitPrice <= calc.minimumChargePerVisit ? (
+                <span style={{
+                  color: '#d32f2f',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  padding: '4px 8px',
+                  backgroundColor: '#ffebee',
+                  borderRadius: '4px',
+                  display: 'inline-block'
+                }}>
+                  🔴 Redline Pricing (At or Below Minimum)
+                </span>
+              ) : (
+                <span style={{
+                  color: '#388e3c',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  padding: '4px 8px',
+                  backgroundColor: '#e8f5e9',
+                  borderRadius: '4px',
+                  display: 'inline-block'
+                }}>
+                  🟢 Greenline Pricing (Above Minimum)
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Weekly approximations - shown for month-based frequencies */}
         {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&

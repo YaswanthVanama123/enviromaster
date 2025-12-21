@@ -26,6 +26,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -40,8 +42,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -65,8 +68,18 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -75,15 +88,17 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      onChange({ target: { name, value: '' } } as any);
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        onChange({ target: { name, value: '' } } as any);
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    onChange({ target: { name, value: String(numValue) } } as any);
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      onChange({ target: { name, value: String(numValue) } } as any);
+    }
   };
 
   // Save form data to context for form submission
@@ -457,8 +472,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               onChange(event);
             }}
           >
-            <option value="standalone">Standalone (auto-switch: $8 or $3+$40)</option>
-            <option value="package">Part of Package (always $8/pod)</option>
+            <option value="standalone">Standalone (auto-switch: ${form.weeklyRatePerUnit.toFixed(2)} or ${form.altWeeklyRatePerUnit.toFixed(2)}+${form.standaloneExtraWeeklyCharge.toFixed(2)})</option>
+            <option value="package">Part of Package (always ${form.weeklyRatePerUnit.toFixed(2)}/pod)</option>
           </select>
         </div>
       </div>
@@ -710,7 +725,15 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
       {/* Totals */}
       <div className="svc-row svc-row-total">
-        <label>Per Visit Service</label>
+        <label>
+          {/* Dynamic label based on frequency */}
+          {form.frequency === "bimonthly" ||
+           form.frequency === "quarterly" ||
+           form.frequency === "biannual" ||
+           form.frequency === "annual"
+            ? "Recurring Visit Total"
+            : "Per Visit Service"}
+        </label>
         <div className="svc-dollar">
           $<input
             className="svc-in svc-in-small"
@@ -732,6 +755,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               border: 'none',
               width: '100px'
             }}
+            title={form.frequency === "bimonthly" ||
+                   form.frequency === "quarterly" ||
+                   form.frequency === "biannual" ||
+                   form.frequency === "annual"
+                    ? "Recurring visit total - editable"
+                    : "Per visit service - editable"}
           />
         </div>
       </div>

@@ -39,6 +39,8 @@ export const SaniscrubForm: React.FC<
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -53,8 +55,9 @@ export const SaniscrubForm: React.FC<
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -78,8 +81,18 @@ export const SaniscrubForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -88,15 +101,17 @@ export const SaniscrubForm: React.FC<
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      onChange({ target: { name, value: '' } } as any);
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        onChange({ target: { name, value: '' } } as any);
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    onChange({ target: { name, value: String(numValue) } } as any);
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      onChange({ target: { name, value: String(numValue) } } as any);
+    }
   };
 
   // Check if SaniClean All-Inclusive is active
@@ -719,6 +734,48 @@ export const SaniscrubForm: React.FC<
                 title="Override per visit calculation (clear to use auto-calculated value)"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Redline/Greenline Pricing Indicator */}
+      {form.totalFixtures > 0 && (
+        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+          <label></label>
+          <div className="svc-row-right">
+            {(() => {
+              const currentPerVisit = form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : calc.perVisitEffective;
+              const minimum = form.frequency === "monthly" || form.frequency === "twicePerMonth"
+                ? form.minimumMonthly
+                : form.minimumBimonthly;
+              const isRedline = currentPerVisit <= minimum;
+
+              return isRedline ? (
+                <span style={{
+                  color: '#d32f2f',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  padding: '4px 8px',
+                  backgroundColor: '#ffebee',
+                  borderRadius: '4px',
+                  display: 'inline-block'
+                }}>
+                  🔴 Redline Pricing (At or Below Minimum)
+                </span>
+              ) : (
+                <span style={{
+                  color: '#388e3c',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  padding: '4px 8px',
+                  backgroundColor: '#e8f5e9',
+                  borderRadius: '4px',
+                  display: 'inline-block'
+                }}>
+                  🟢 Greenline Pricing (Above Minimum)
+                </span>
+              );
+            })()}
           </div>
         </div>
       )}

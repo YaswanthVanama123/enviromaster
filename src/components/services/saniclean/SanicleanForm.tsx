@@ -54,6 +54,8 @@ export const SanicleanForm: React.FC<
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   const prevDataRef = useRef<string>("");
 
@@ -70,8 +72,9 @@ export const SanicleanForm: React.FC<
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -95,8 +98,18 @@ export const SanicleanForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -105,15 +118,17 @@ export const SanicleanForm: React.FC<
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      updateForm({ [name]: undefined });
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        updateForm({ [name]: undefined });
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    updateForm({ [name]: numValue });
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      updateForm({ [name]: numValue });
+    }
   };
 
   // Calculate derived values
@@ -1042,7 +1057,7 @@ export const SanicleanForm: React.FC<
                 checked={form.addTripCharge}
                 onChange={onChange}
               />
-              <span>Include trip charge (+$8)</span>
+              <span>Include trip charge (+${form.location === "insideBeltway" ? form.insideBeltwayTripCharge.toFixed(2) : form.outsideBeltwayTripCharge.toFixed(2)})</span>
             </label>
           </div>
         </div>
@@ -1538,6 +1553,40 @@ export const SanicleanForm: React.FC<
           </div>
         </div>
       </div>
+
+      {/* Redline/Greenline Pricing Indicator */}
+      {fixtures > 0 && (
+        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+          <label></label>
+          <div className="svc-row-right">
+            {quote.weeklyTotal <= quote.minimumChargePerWeek ? (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing (At or Below Minimum)
+              </span>
+            ) : (
+              <span style={{
+                color: '#388e3c',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#e8f5e9',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🟢 Greenline Pricing (Above Minimum)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="svc-row">
         <label>Monthly Recurring</label>

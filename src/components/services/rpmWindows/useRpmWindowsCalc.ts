@@ -955,6 +955,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       firstMonthBillRated: finalFirstMonth,
       monthlyBillRated: form.customMonthlyRecurring ?? displayMonthlyBillWithMinimum,
       contractTotalRated: form.customContractTotal ?? finalContractTotal,
+      minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
     };
   }, [
     backendConfig, // ✅ CRITICAL: Re-calculate when backend config loads!

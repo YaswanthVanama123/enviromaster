@@ -677,6 +677,10 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly; // Already uses effective per-visit
     const finalContractTotal = form.customContractTotal ?? recurringContractTotal; // Already uses effective per-visit
 
+    const minimumChargePerVisit = form.serviceType === "oneTime"
+      ? form.minHoursPerVisit * form.shortJobHourlyRate
+      : form.minHoursPerVisit * form.baseHourlyRate;
+
     return {
       totalHours: totalHoursBase,
       perVisit: finalPerVisit,
@@ -688,6 +692,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       firstVisit: finalPerVisit,
       ongoingMonthly: finalRecurringMonthly, // ✅ Regular monthly recurring (no installation)
       contractTotal: finalContractTotal, // ✅ CORRECTED: Total contract value
+      minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
       breakdown: {
         manualHours,
         vacuumingHours,

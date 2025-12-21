@@ -323,6 +323,9 @@ export interface SanicleanQuoteResult {
 
   // Applied Rules
   appliedRules: string[];
+
+  // Minimum charge for redline/greenline indicator
+  minimumChargePerWeek: number;
 }
 
 // ✅ NEW: Enhanced frequency metadata for dual frequency calculations

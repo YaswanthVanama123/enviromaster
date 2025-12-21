@@ -479,6 +479,8 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       // Frequency-specific UI helpers
       isVisitBasedFrequency,
       monthsPerVisit,
+      // Minimum charge for redline/greenline indicator
+      minimumChargePerVisit: activeConfig.minimumChargePerVisit,
     };
   }, [
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!

@@ -33,6 +33,8 @@ export const JanitorialForm: React.FC<
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -47,8 +49,9 @@ export const JanitorialForm: React.FC<
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -72,8 +75,18 @@ export const JanitorialForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -82,15 +95,17 @@ export const JanitorialForm: React.FC<
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      onChange({ target: { name, value: '' } } as any);
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        onChange({ target: { name, value: '' } } as any);
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    onChange({ target: { name, value: String(numValue) } } as any);
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      onChange({ target: { name, value: String(numValue) } } as any);
+    }
   };
 
   // Save form data to context for form submission
@@ -504,7 +519,7 @@ export const JanitorialForm: React.FC<
             placeholder="0"
           />
           <span className="svc-small">
-            mins (Table: 0-15min=$10, 15-30min=$20, 30-60min=$50, 1-2hr=$80, 2-3hr=$100, 3-4hr=$120, 4+hr=$30/hr)
+            mins (Tiered pricing applied automatically based on time entered)
           </span>
         </div>
       </div>
@@ -561,12 +576,14 @@ export const JanitorialForm: React.FC<
               readOnly
               step="0.01"
               name="customPerVisit"
-              value={
+              value={getDisplayValue(
+                'customPerVisit',
                 form.customPerVisit !== undefined
-                  ? formatNumber(form.customPerVisit)
-                  : formatNumber(calc?.perVisit || 0)
-              }
-              onChange={onChange}
+                  ? form.customPerVisit
+                  : calc?.perVisit || 0
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
               onBlur={handleBlur}
               style={{
                 backgroundColor: form.customPerVisit !== undefined ? '#fffacd' : 'white',
@@ -578,6 +595,40 @@ export const JanitorialForm: React.FC<
           </div>
         </div>
       </div>
+
+      {/* Redline/Greenline Pricing Indicator */}
+      {(form.manualHours > 0 || form.vacuumingSqFt > 0 || form.dustingPlaces > 0) && (
+        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+          <label></label>
+          <div className="svc-row-right">
+            {(calc?.perVisit || 0) <= (calc?.minimumChargePerVisit || 0) ? (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing (At or Below Minimum)
+              </span>
+            ) : (
+              <span style={{
+                color: '#388e3c',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#e8f5e9',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🟢 Greenline Pricing (Above Minimum)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Weekly total - Only show for recurring */}
       {form.serviceType === "recurring" && (
@@ -613,15 +664,16 @@ export const JanitorialForm: React.FC<
                 className="svc-in"
                 type="number"
                 min="0"
-                readOnly
                 step="0.01"
                 name="customOngoingMonthly"
-                value={
+                value={getDisplayValue(
+                  'customOngoingMonthly',
                   form.customOngoingMonthly !== undefined
-                    ? formatNumber(form.customOngoingMonthly)
-                    : formatNumber(calc?.recurringMonthly || 0)
-                }
-                onChange={onChange}
+                    ? form.customOngoingMonthly
+                    : calc?.recurringMonthly || 0
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customOngoingMonthly !== undefined ? '#fffacd' : 'white',
@@ -648,12 +700,14 @@ export const JanitorialForm: React.FC<
               min="0"
                 step="0.01"
                 name="customMonthly"
-                value={
+                value={getDisplayValue(
+                  'customMonthly',
                   form.customMonthly !== undefined
-                    ? formatNumber(form.customMonthly)
-                    : formatNumber(calc?.firstMonth || 0)
-                }
-                onChange={onChange}
+                    ? form.customMonthly
+                    : calc?.firstMonth || 0
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 style={{
                   backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',

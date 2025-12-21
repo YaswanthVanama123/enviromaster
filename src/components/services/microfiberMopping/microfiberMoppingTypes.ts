@@ -61,6 +61,9 @@ export interface MicrofiberMoppingPricingConfig {
     waiveForAllInclusive: boolean;
   };
 
+  // Minimum charge per visit (for redline/greenline pricing)
+  minimumChargePerVisit: number;
+
   // How this behaves inside an all-inclusive package
   allInclusiveIntegration: {
     includedInPackage: boolean;
@@ -253,4 +256,7 @@ export interface MicrofiberMoppingCalcResult {
   firstMonthPrice: number;
   contractMonths: number;
   contractTotal: number;
+
+  // Minimum charge for redline/greenline indicator
+  minimumChargePerVisit: number;
 }
