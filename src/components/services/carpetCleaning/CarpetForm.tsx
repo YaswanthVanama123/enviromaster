@@ -32,6 +32,8 @@ export const CarpetForm: React.FC<
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -46,8 +48,9 @@ export const CarpetForm: React.FC<
   // ✅ Handler for starting to edit a field
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state
+    // Store current value in editing state AND original value for comparison
     setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
   // ✅ Handler for typing in a field (updates both local state AND form state)
@@ -71,8 +74,18 @@ export const CarpetForm: React.FC<
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
     // Clear editing state for this field
     setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
@@ -81,15 +94,17 @@ export const CarpetForm: React.FC<
     // Parse the value
     const numValue = parseFloat(value);
 
-    // If empty or invalid, clear the override
-    if (value === '' || isNaN(numValue)) {
-      onChange({ target: { name, value: '' } } as any);
-      return;
-    }
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        onChange({ target: { name, value: '' } } as any);
+        return;
+      }
 
-    // ✅ Update form state with parsed numeric value
-    // DO NOT auto-clear overrides - they persist until refresh button is clicked
-    onChange({ target: { name, value: String(numValue) } } as any);
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      onChange({ target: { name, value: String(numValue) } } as any);
+    }
   };
 
   // Save form data to context for form submission
@@ -265,7 +280,7 @@ export const CarpetForm: React.FC<
 
       {/* Pricing Configuration Rates */}
       <div className="svc-row">
-        <label>First 500 sq ft Rate</label>
+        <label>First {form.unitSqFt || 500} sq ft Rate</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -285,10 +300,10 @@ export const CarpetForm: React.FC<
               onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customFirstUnitRate !== undefined ? '#fffacd' : 'white' }}
-              title="Rate for first 500 sq ft (from backend, editable)"
+              title={`Rate for first ${form.unitSqFt || 500} sq ft (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ 500 sq ft (${(((form.customFirstUnitRate ?? form.firstUnitRate) || 250) / 500).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {form.unitSqFt || 500} sq ft (${(((form.customFirstUnitRate ?? form.firstUnitRate) || 250) / (form.unitSqFt || 500)).toFixed(2)}/sq ft)</span>
         </div>
       </div>
 
@@ -313,10 +328,10 @@ export const CarpetForm: React.FC<
               onFocus={handleFocus}
               onBlur={handleBlur}
               style={{ backgroundColor: form.customAdditionalUnitRate !== undefined ? '#fffacd' : 'white' }}
-              title="Rate per additional 500 sq ft block (from backend, editable)"
+              title={`Rate per additional ${form.unitSqFt || 500} sq ft block (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ 500 sq ft (${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / 500).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {form.unitSqFt || 500} sq ft (${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / (form.unitSqFt || 500)).toFixed(2)}/sq ft)</span>
         </div>
       </div>
 
@@ -362,14 +377,19 @@ export const CarpetForm: React.FC<
           />
           <span className="svc-small">sq ft</span>
           <span>@</span>
-          <span className="svc-small">calculated rate</span>
+          <span className="svc-small">
+            {form.areaSqFt > 0 && form.areaSqFt <= (form.unitSqFt || 500)
+              ? `first ${form.unitSqFt || 500} rate`
+              : `calculated rate`}
+          </span>
           <span>=</span>
           <div className="svc-dollar field-qty">
             <span>$</span>
             <input
               className="svc-in-box"
               type="number"
-            min="0"
+              readOnly
+              min="0"
               step="0.01"
               name="customPerVisitPrice"
               value={getDisplayValue(
@@ -403,8 +423,8 @@ export const CarpetForm: React.FC<
           </label>
           <small style={{ color: "#666", fontSize: "11px", marginLeft: "10px" }}>
             {form.useExactSqft
-              ? "(Excess × $0.25/sq ft)"
-              : "(Excess in 500 sq ft blocks × $125)"}
+              ? `(Excess × $${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / (form.unitSqFt || 500)).toFixed(2)}/sq ft)`
+              : `(Excess in ${form.unitSqFt || 500} sq ft blocks × $${(form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125})`}
           </small>
         </div>
       </div>
@@ -431,7 +451,7 @@ export const CarpetForm: React.FC<
       </div>
 
       {/* Trip & location – visible but $0 in math */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Location</label>
         <div className="svc-row-right">
           <select
@@ -454,7 +474,7 @@ export const CarpetForm: React.FC<
             <span>Parking (+$0)</span>
           </label>
         </div>
-      </div>
+      </div> */}
 
       {/* Trip charge display – locked at 0 */}
       {/* <div className="svc-row">
@@ -551,35 +571,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Per-Visit Total - Always show */}
-      <div className="svc-row svc-row-total">
-        <label>Per Visit Total</label>
-        <div className="svc-dollar">
-          $<input
-            type="number"
-            min="0"
-            step="0.01"
-            readOnly
-            name="customPerVisitPrice"
-            className="svc-in svc-in-small"
-            value={getDisplayValue(
-              'customPerVisitPrice',
-              form.customPerVisitPrice !== undefined
-                ? form.customPerVisitPrice
-                : calc.perVisitCharge
-            )}
-            onChange={handleLocalChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            style={{
-              backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
-              border: 'none',
-              width: '100px'
-            }}
-            title="Per visit total - editable"
-          />
-        </div>
-      </div>
+
 
       {/* Total Price - Show ONLY for oneTime */}
       {form.frequency === "oneTime" && (
@@ -671,6 +663,83 @@ export const CarpetForm: React.FC<
               }}
               title="First month total - editable"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Per-Visit Total - Always show */}
+      <div className="svc-row svc-row-total">
+        <label>
+          {/* Dynamic label based on frequency */}
+          {form.frequency === "bimonthly" ||
+           form.frequency === "quarterly" ||
+           form.frequency === "biannual" ||
+           form.frequency === "annual"
+            ? "Recurring Visit Total"
+            : "Per Visit Total"}
+        </label>
+        <div className="svc-dollar">
+          $<input
+            type="number"
+            min="0"
+            step="0.01"
+            readOnly
+            name="customPerVisitPrice"
+            className="svc-in svc-in-small"
+            value={getDisplayValue(
+              'customPerVisitPrice',
+              form.customPerVisitPrice !== undefined
+                ? form.customPerVisitPrice
+                : calc.perVisitCharge
+            )}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white',
+              border: 'none',
+              width: '100px'
+            }}
+            title={form.frequency === "bimonthly" ||
+                   form.frequency === "quarterly" ||
+                   form.frequency === "biannual" ||
+                   form.frequency === "annual"
+                    ? "Recurring visit total - editable"
+                    : "Per visit total - editable"}
+          />
+        </div>
+      </div>
+
+      {/* Redline/Greenline Pricing Indicator */}
+      {form.areaSqFt > 0 && (
+        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+          <label></label>
+          <div className="svc-row-right">
+            {calc.perVisitCharge <= (form.customPerVisitMinimum ?? form.perVisitMinimum) ? (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing (At or Below Minimum)
+              </span>
+            ) : (
+              <span style={{
+                color: '#388e3c',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#e8f5e9',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🟢 Greenline Pricing (Above Minimum)
+              </span>
+            )}
           </div>
         </div>
       )}
