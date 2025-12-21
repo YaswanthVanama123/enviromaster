@@ -773,7 +773,8 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in"
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customPerVisitPrice"
               value={getDisplayValue(
@@ -838,6 +839,7 @@ export const MicrofiberMoppingForm: React.FC<
                 className="svc-in"
                 type="text"
                 step="0.01"
+                readOnly
                 name="customMonthlyRecurring"
                 value={getDisplayValue(
                   'customMonthlyRecurring',
@@ -868,7 +870,8 @@ export const MicrofiberMoppingForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 name="customFirstMonthPrice"
                 value={getDisplayValue(
@@ -973,7 +976,8 @@ export const MicrofiberMoppingForm: React.FC<
                 <input
                   className="svc-in"
                   type="number"
-            min="0"
+                  min="0"
+                  readOnly
                   step="0.01"
                   name="customContractTotal"
                   value={getDisplayValue(

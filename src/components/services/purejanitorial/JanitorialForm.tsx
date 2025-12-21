@@ -466,7 +466,7 @@ export const JanitorialForm: React.FC<
             style={{ backgroundColor: '#f0f8ff' }}
             title="Calculated hours (auto-calculated)"
           />
-          <span className="svc-small">hrs (combined with vacuum & other tasks, priced at hourly rate)</span>
+          {/* <span className="svc-small">hrs (combined with vacuum & other tasks, priced at hourly rate)</span> */}
         </div>
       </div>
 
@@ -558,6 +558,7 @@ export const JanitorialForm: React.FC<
               className="svc-in"
               type="number"
               min="0"
+              readOnly
               step="0.01"
               name="customPerVisit"
               value={
@@ -611,7 +612,8 @@ export const JanitorialForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-              min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 name="customOngoingMonthly"
                 value={
@@ -700,6 +702,7 @@ export const JanitorialForm: React.FC<
             <input
               type="number"
               min="0"
+              readOnly
               step="0.01"
               name="customContractTotal"
               className="svc-in"

@@ -535,9 +535,8 @@ export const RpmWindowsForm: React.FC<
             <input
               className="svc-in"
               type="number"
-        min="0"
-          min="0"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               name="customInstallationFee"
               value={getDisplayValue(
@@ -686,9 +685,8 @@ export const RpmWindowsForm: React.FC<
               className="svc-in"
               name="customPerVisitPrice"
               type="number"
-        min="0"
-          min="0"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               value={getDisplayValue(
                 'customPerVisitPrice',
@@ -735,9 +733,8 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customMonthlyRecurring"
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 value={getDisplayValue(
                   'customMonthlyRecurring',
@@ -877,9 +874,8 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customAnnualPrice"
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 value={getDisplayValue(
                   'customAnnualPrice',
