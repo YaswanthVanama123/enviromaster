@@ -468,47 +468,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
-        {/* Facility condition */}
-        <div className="svc-row">
-          <div className="svc-label">
-            <span>Facility Condition</span>
-          </div>
-          <div className="svc-field">
-            <select
-              className="svc-in"
-              value={state.facilityCondition}
-              onChange={handleConditionChange}
-            >
-              <option value="normal">Normal</option>
-              <option value="filthy">Filthy (3× install)</option>
-            </select>
-          </div>
-        </div>
 
-        {/* Filthy Multiplier - Only show when filthy condition */}
-        {state.facilityCondition === "filthy" && (
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Filthy Multiplier</span>
-            </div>
-            <div className="svc-field">
-              <div className="svc-inline">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className="svc-in field-rate"
-                  value={state.filthyMultiplier || ""}
-                  onChange={(e) => updateField("filthyMultiplier", parseFloat(e.target.value) || 0)}
-                  title="Filthy installation multiplier (from backend, editable)"
-                />
-                <span className="svc-note" style={{ marginLeft: 8 }}>
-                  × weekly cost = installation fee (usually 3×)
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* How many filthy install drains (for 3× install) */}
         {/* {state.facilityCondition === "filthy" && isInstallLevelUi && (
@@ -532,7 +492,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         )} */}
 
         {/* Location / trip */}
-        <div className="svc-row">
+        {/* <div className="svc-row">
           <div className="svc-label">
             <span>Location</span>
           </div>
@@ -546,7 +506,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <option value="beltway">Inside Beltway</option>
             </select>
           </div>
-        </div>
+        </div> */}
 
         {/* Extras */}
         <div className="svc-row">
@@ -769,6 +729,15 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Pricing Model</span>
+            </div>
+            <div className="svc-field">
+              <span className="svc-red">{pricingLabel}</span>
+            </div>
+          </div>
+
           {/* Drains for Install (10+) – now a calc line */}
           {isInstallLevelUi && (
             <div>
@@ -926,15 +895,80 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
         {/* SUMMARY / RESULTS */}
         <div className="svc-summary">
+
+          {/* Facility condition */}
           <div className="svc-row">
             <div className="svc-label">
-              <span>Pricing Model</span>
+              <span>Facility Condition</span>
             </div>
             <div className="svc-field">
-              <span className="svc-red">{pricingLabel}</span>
+              <select
+                className="svc-in"
+                value={state.facilityCondition}
+                onChange={handleConditionChange}
+              >
+                <option value="normal">Normal</option>
+                <option value="filthy">Filthy (3× install)</option>
+              </select>
             </div>
           </div>
 
+          {/* Filthy Multiplier - Only show when filthy condition */}
+          {state.facilityCondition === "filthy" && (
+            <div className="svc-row">
+              <div className="svc-label">
+                <span>Filthy Multiplier</span>
+              </div>
+              <div className="svc-field">
+                <div className="svc-inline">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    className="svc-in field-rate"
+                    value={state.filthyMultiplier || ""}
+                    onChange={(e) => updateField("filthyMultiplier", parseFloat(e.target.value) || 0)}
+                    title="Filthy installation multiplier (from backend, editable)"
+                  />
+                  <span className="svc-note" style={{ marginLeft: 8 }}>
+                    × weekly cost = installation fee (usually 3×)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {/* Installation total */}
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Installation Total</span>
+            </div>
+            <div className="svc-field svc-dollar">
+              <span>$</span>
+              <input
+                type="number"
+                min="0"
+                readOnly
+                step="0.01"
+                name="customInstallationTotal"
+                className="svc-in total-field"
+                value={getDisplayValue(
+                  'customInstallationTotal',
+                  state.customInstallationTotal !== undefined
+                    ? state.customInstallationTotal
+                    : parseFloat(formatAmount(quote.installation) || '0')
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                style={{
+                  backgroundColor: state.customInstallationTotal !== undefined ? '#fffacd' : 'white',
+                }}
+                title="Installation total - editable"
+              />
+            </div>
+          </div>
           {/* Weekly per visit */}
           {/* <div className="svc-row">
             <div className="svc-label">
@@ -951,7 +985,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div> */}
 
           {/* Trip charge (locked to 0, display only) */}
-          <div className="svc-row">
+          {/* <div className="svc-row">
             <div className="svc-label">
               <span>Trip Charge</span>
             </div>
@@ -965,7 +999,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 readOnly
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Per Visit Total */}
           <div className="svc-row">
@@ -1110,36 +1144,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
-          {/* Installation total */}
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Installation Total</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                type="number"
-                min="0"
-                readOnly
-                step="0.01"
-                name="customInstallationTotal"
-                className="svc-in total-field"
-                value={getDisplayValue(
-                  'customInstallationTotal',
-                  state.customInstallationTotal !== undefined
-                    ? state.customInstallationTotal
-                    : parseFloat(formatAmount(quote.installation) || '0')
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{
-                  backgroundColor: state.customInstallationTotal !== undefined ? '#fffacd' : 'white',
-                }}
-                title="Installation total - editable"
-              />
-            </div>
-          </div>
+
 
           {/* Combined Contract Total with months dropdown and amount - HIDE for one-time */}
           {state.frequency !== "oneTime" && (
