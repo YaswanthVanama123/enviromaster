@@ -19,7 +19,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   initialData,
   onRemove,
 }) => {
-  const { form, setForm, onChange, calc, isLoadingConfig, refreshConfig } = useElectrostaticSprayCalc(initialData);
+  const { form, setForm, onChange, calc, isLoadingConfig, refreshConfig, activeConfig } = useElectrostaticSprayCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
   // Custom fields state - initialize with initialData if available
@@ -437,7 +437,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               onChange={onChange}
             >
               <option value="byRoom">By Room (${formatNumber(form.ratePerRoom)} per room)</option>
-              <option value="bySqFt">By Square Feet (${formatNumber(form.ratePerThousandSqFt)} per 1000 sq ft)</option>
+              <option value="bySqFt">By Square Feet (${formatNumber(form.ratePerThousandSqFt)} per {activeConfig.standardSprayPricing.sqFtUnit} sq ft)</option>
             </select>
           </div>
         </div>
@@ -480,10 +480,24 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   />
                   <span>=</span>
                   <input
-                    readOnly
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="customServiceCharge"
                     className="svc-in field-qty"
-                    value={formatNumber(calc.serviceCharge)}
-                    title="Total service charge"
+                    value={getDisplayValue(
+                      'customServiceCharge',
+                      form.customServiceCharge !== undefined
+                        ? form.customServiceCharge
+                        : calc.serviceCharge
+                    )}
+                    onChange={handleLocalChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    style={{
+                      backgroundColor: form.customServiceCharge !== undefined ? '#fffacd' : 'white'
+                    }}
+                    title="Total service charge - editable"
                   />
                 </div>
               </div>
@@ -520,10 +534,24 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   />
                   <span>=</span>
                   <input
-                    readOnly
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="customServiceCharge"
                     className="svc-in field-qty"
-                    value={formatNumber(calc.serviceCharge)}
-                    title="Total service charge"
+                    value={getDisplayValue(
+                      'customServiceCharge',
+                      form.customServiceCharge !== undefined
+                        ? form.customServiceCharge
+                        : calc.serviceCharge
+                    )}
+                    onChange={handleLocalChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    style={{
+                      backgroundColor: form.customServiceCharge !== undefined ? '#fffacd' : 'white'
+                    }}
+                    title="Total service charge - editable"
                   />
                 </div>
                 {/* <div className="svc-note" style={{ marginTop: '4px', fontSize: '0.85em' }}>
@@ -550,7 +578,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <div className="svc-note" style={{ marginTop: '4px', fontSize: '0.85em', color: '#666' }}>
                   {form.useExactCalculation
                     ? "Calculating for exact square feet entered"
-                    : "Using minimum tier pricing (500 sq ft → 1000 sq ft minimum, 1001 sq ft → 2000 sq ft tier)"
+                    : `Using minimum tier pricing (any amount ≤ ${activeConfig.standardSprayPricing.sqFtUnit} sq ft → ${activeConfig.standardSprayPricing.sqFtUnit} sq ft minimum, ${activeConfig.standardSprayPricing.sqFtUnit + 1} sq ft → ${activeConfig.standardSprayPricing.sqFtUnit * 2} sq ft tier, etc.)`
                   }
                 </div>
               </div>
@@ -561,7 +589,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
 
         {/* Location */}
-        <div className="svc-row">
+        {/* <div className="svc-row">
           <div className="svc-label">
             <span>Location</span>
           </div>
@@ -577,7 +605,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <option value="outsideBeltway">Outside Beltway</option>
             </select>
           </div>
-        </div>
+        </div> */}
 
 
 
@@ -607,7 +635,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <input
                 type="number"
                 min="0"
-                readOnly
                 step="0.01"
                 name="customServiceCharge"
                 className="svc-in sm"
@@ -653,9 +680,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
+                readOnly
                 type="number"
                 min="0"
-                readOnly
                 step="0.01"
                 name="customPerVisitPrice"
                 className="svc-in sm"
@@ -719,9 +746,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <div className="svc-field svc-dollar">
                 <span>$</span>
                 <input
+                  readOnly
                   type="number"
                   min="0"
-                  readOnly
                   step="0.01"
                   name="customMonthlyRecurring"
                   className="svc-in sm"
@@ -743,17 +770,18 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )}
 
-          {/* First Visit Total - Show ONLY for visit-based frequencies (not oneTime) */}
+          {/* Recurring Visit Total - Show ONLY for visit-based frequencies (not oneTime) */}
           {isVisitBasedFrequency && form.frequency !== "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
-                <span>First Visit Total</span>
+                <span>Recurring Visit Total</span>
               </div>
               <div className="svc-field svc-dollar">
                 <span>$</span>
                 <input
+                  readOnly
                   type="number"
-            min="0"
+                  min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
                   className="svc-in sm"
@@ -769,7 +797,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   style={{
                     backgroundColor: form.customFirstMonthTotal !== undefined ? '#fffacd' : 'white'
                   }}
-                  title="First visit total - editable"
+                  title="Recurring visit total - editable"
                 />
               </div>
             </div>
@@ -784,8 +812,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <div className="svc-field svc-dollar">
                 <span>$</span>
                 <input
-                  type="number"
                   readOnly
+                  type="number"
                   min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
@@ -837,9 +865,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 </select>
                 <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
                 <input
+                  readOnly
                   type="number"
                   min="0"
-                  readOnly
                   step="0.01"
                   name="customContractTotal"
                   className="svc-in sm"

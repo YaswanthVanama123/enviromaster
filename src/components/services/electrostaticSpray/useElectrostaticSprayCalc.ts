@@ -361,10 +361,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     });
   };
 
-  const calc: ElectrostaticSprayCalcResult = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Map backend config to expected format with proper fallbacks
-    const activeConfig = {
+  // ✅ Create activeConfig as separate useMemo so it can be accessed in return statement
+  const activeConfig = useMemo(() => {
+    return {
       standardSprayPricing: backendConfig?.standardSprayPricing ?? {
         sprayRatePerRoom: cfg.ratePerRoom,
         sqFtUnit: cfg.sqFtUnit,
@@ -378,6 +377,11 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       // ✅ NEW: Transform backend frequencyMetadata
       billingConversions: transformBackendFrequencyMeta(backendConfig?.frequencyMetadata),
     };
+  }, [backendConfig]);
+
+  const calc: ElectrostaticSprayCalcResult = useMemo(() => {
+    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+    // Map backend config to expected format with proper fallbacks
 
     if (!backendConfig) {
       console.warn('⚠️ [ElectrostaticSpray] Using fallback config - backend not loaded yet');
@@ -483,7 +487,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       minimumChargePerVisit: activeConfig.minimumChargePerVisit,
     };
   }, [
-    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    activeConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form,
   ]);
 
@@ -494,6 +498,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     calc,
     backendConfig,
     isLoadingConfig,
-    refreshConfig: fetchPricing
+    refreshConfig: fetchPricing,
+    activeConfig, // ✅ EXPOSE: Active config for dynamic UI text
   };
 }
