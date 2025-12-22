@@ -541,6 +541,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     type="number"
                     min="0"
+                    readOnly
                     step="0.01"
                     name="customServiceCharge"
                     className="svc-in field-qty"

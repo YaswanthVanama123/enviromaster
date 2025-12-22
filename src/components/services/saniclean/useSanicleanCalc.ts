@@ -244,7 +244,7 @@ const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number 
 // ✅ NEW: Dual frequency calculation functions
 
 /**
- * ✅ NEW: Enhanced frequency multiplier that handles both monthly and per-visit modes
+ * ✅ FIXED: Enhanced frequency multiplier that handles both monthly and per-visit modes
  */
 const getDualFrequencyMultiplier = (
   frequency: SanicleanFrequency,
@@ -256,26 +256,10 @@ const getDualFrequencyMultiplier = (
     return getFrequencyMultiplier(frequency, backendConfig);
   }
 
-  // For per-visit mode: different multipliers based on frequency intensity
-  // Higher frequency = lower per-visit price, lower frequency = higher per-visit price
-  const perVisitMultipliers: Record<string, number> = {
-    weekly: 1.0,        // Base rate (most frequent)
-    biweekly: 1.15,     // Slightly higher per visit
-    twicePerMonth: 1.2, // Higher per visit
-    monthly: 1.5,       // Even higher per visit
-    bimonthly: 2.0,     // Much higher per visit (less frequent service)
-    quarterly: 2.5,     // Very high per visit
-    biannual: 3.5,      // Extremely high per visit
-    annual: 5.0,        // Maximum per visit (least frequent)
-  };
-
-  // Try to get per-visit multiplier from backend first
-  if (backendConfig?.frequencyMetadata?.[frequency]?.perVisitMultiplier) {
-    return backendConfig.frequencyMetadata[frequency].perVisitMultiplier;
-  }
-
-  console.log(`⚠️ [SaniClean] Using fallback per-visit multiplier for frequency: ${frequency}`);
-  return perVisitMultipliers[frequency] || 1.0;
+  // ✅ FIXED: For per-visit mode, per-visit price = base price (NO multiplier!)
+  // The backend doesn't provide perVisitMultiplier because all frequencies use the SAME per-visit price
+  // Only the NUMBER of visits changes based on cycleMonths
+  return 1.0; // Always return 1.0 for per-visit mode
 };
 
 /**
@@ -291,8 +275,15 @@ const calculateVisitsInContract = (
 
   if (backendConfig?.frequencyMetadata?.[frequency]?.visitsPerYear) {
     visitsPerYear = backendConfig.frequencyMetadata[frequency].visitsPerYear;
+  } else if (backendConfig?.frequencyMetadata?.[frequency]?.cycleMonths) {
+    // ✅ FIXED: Calculate visitsPerYear from cycleMonths
+    // cycleMonths = how many months between visits
+    // visitsPerYear = 12 / cycleMonths
+    const cycleMonths = backendConfig.frequencyMetadata[frequency].cycleMonths;
+    visitsPerYear = cycleMonths > 0 ? 12 / cycleMonths : 12;
+    console.log(`✅ [SaniClean] Calculated visitsPerYear from cycleMonths for ${frequency}: 12/${cycleMonths} = ${visitsPerYear}`);
   } else {
-    // Calculate based on frequency
+    // Calculate based on frequency (fallback)
     const visitsPerYearMap: Record<string, number> = {
       weekly: 52,
       biweekly: 26,
@@ -491,9 +482,25 @@ function calculateAllInclusive(
     config
   );
 
-  const weeklyTotal = mainServiceTotal + facilityComponentsTotal;
+  // ✅ FIXED: Use frequency-adjusted per-visit total from dual frequency calculation
+  // The base weekly prices are just the starting point - dualFreqResult applies frequency multipliers
+  const calculationMode = getCalculationMode(form.mainServiceFrequency);
+
+  // In monthly mode: combinedTotal is already monthly recurring
+  // In per-visit mode: combinedTotal is the per-visit price with frequency adjustments
+  const weeklyTotal = calculationMode === "monthly"
+    ? mainServiceTotal + facilityComponentsTotal  // For monthly mode, keep base as per-visit price
+    : dualFreqResult.combinedTotal; // For per-visit mode, use frequency-adjusted price
+
   const monthlyTotal = dualFreqResult.monthlyTotal ?? dualFreqResult.combinedTotal;
   const contractTotal = dualFreqResult.contractTotal;
+
+  console.log(`🔍 [SaniClean All-Inclusive] Frequency: ${form.mainServiceFrequency}, Mode: ${calculationMode}, ContractMonths: ${form.contractMonths}`, {
+    weeklyTotal,
+    monthlyTotal,
+    contractTotal,
+    dualFreqResult
+  });
 
   // Dispenser counts for transparency
   const soapDispensers = form.sinks; // 1 soap per sink
@@ -721,9 +728,25 @@ function calculatePerItemCharge(
     config
   );
 
-  const weeklyTotal = mainServiceTotal + facilityComponentsTotal;
+  // ✅ FIXED: Use frequency-adjusted per-visit total from dual frequency calculation
+  // The base weekly prices are just the starting point - dualFreqResult applies frequency multipliers
+  const calculationMode = getCalculationMode(form.mainServiceFrequency);
+
+  // In monthly mode: combinedTotal is already monthly recurring
+  // In per-visit mode: combinedTotal is the per-visit price with frequency adjustments
+  const weeklyTotal = calculationMode === "monthly"
+    ? mainServiceTotal + facilityComponentsTotal  // For monthly mode, keep base as per-visit price
+    : dualFreqResult.combinedTotal; // For per-visit mode, use frequency-adjusted price
+
   const monthlyTotal = dualFreqResult.monthlyTotal ?? dualFreqResult.combinedTotal;
   const contractTotal = dualFreqResult.contractTotal;
+
+  console.log(`🔍 [SaniClean Per-Item] Frequency: ${form.mainServiceFrequency}, Mode: ${calculationMode}, ContractMonths: ${form.contractMonths}`, {
+    weeklyTotal,
+    monthlyTotal,
+    contractTotal,
+    dualFreqResult
+  });
 
   // Component counts
   const urinalScreens = form.urinals;
@@ -1128,19 +1151,25 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       baseQuote = calculatePerItemCharge(mappedForm, config);
     }
 
-    // ✅ Apply custom overrides with cascade (dual frequency calculations already handled in calculate functions)
-    // 1. Component overrides are already applied in calculate functions
-    // 2. Apply customWeeklyTotal override if set
+    // ✅ Apply custom overrides (dual frequency calculations already handled in calculate functions)
+    // Custom overrides allow user to manually override any calculated value
     const effectiveWeeklyTotal = mappedForm.customWeeklyTotal ?? baseQuote.weeklyTotal;
-
-    // 3. For backward compatibility with old custom overrides, still support old single-frequency cascade
-    const frequencyMultiplier = getFrequencyMultiplier(mappedForm.mainServiceFrequency, config);
-    const calculatedMonthly = frequencyMultiplier > 0 ? effectiveWeeklyTotal * frequencyMultiplier : effectiveWeeklyTotal;
-    const calculatedContract = calculatedMonthly * mappedForm.contractMonths;
-
-    // 4. Apply custom monthly/contract overrides if set (they override the cascade)
     const effectiveMonthlyTotal = mappedForm.customMonthlyTotal ?? baseQuote.monthlyTotal;
     const effectiveContractTotal = mappedForm.customContractTotal ?? baseQuote.contractTotal;
+
+    console.log(`🎯 [SaniClean Final Quote] Frequency: ${mappedForm.mainServiceFrequency}`, {
+      baseQuote_weeklyTotal: baseQuote.weeklyTotal,
+      baseQuote_monthlyTotal: baseQuote.monthlyTotal,
+      baseQuote_contractTotal: baseQuote.contractTotal,
+      effectiveWeeklyTotal,
+      effectiveMonthlyTotal,
+      effectiveContractTotal,
+      customOverrides: {
+        customWeeklyTotal: mappedForm.customWeeklyTotal,
+        customMonthlyTotal: mappedForm.customMonthlyTotal,
+        customContractTotal: mappedForm.customContractTotal
+      }
+    });
 
     return {
       ...baseQuote,

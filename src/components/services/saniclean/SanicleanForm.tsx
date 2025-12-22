@@ -304,7 +304,9 @@ export const SanicleanForm: React.FC<
     form.contractMonths && form.contractMonths >= 2 && form.contractMonths <= 36
       ? form.contractMonths
       : 12;
-  const contractTotal = quote.monthlyTotal * contractMonths;
+  // ✅ FIXED: Use quote.contractTotal from backend (calculated with correct visit counts for all frequencies)
+  // Don't recalculate here - the backend already handles bimonthly, quarterly, etc. correctly
+  const contractTotal = quote.contractTotal;
 
   return (
     <div className="svc-card">
@@ -1513,7 +1515,7 @@ export const SanicleanForm: React.FC<
       </div> */}
 
       <div className="svc-row">
-        <label>Weekly Total (Service)</label>
+        <label>Per Visit</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -1577,36 +1579,32 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      <div className="svc-row">
-        <label>Monthly Recurring</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-              readOnly
-              min="0"
-              step="0.01"
-              name="customMonthlyTotal"
-              value={getDisplayValue(
-                'customMonthlyTotal',
-                form.customMonthlyTotal !== undefined
+      {/* Monthly Recurring - Only show for weekly, biweekly, twicePerMonth, and monthly frequencies */}
+      {['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
+        <div className="svc-row">
+          <label>Monthly Recurring</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                name="customMonthlyTotal"
+                value={(form.customMonthlyTotal !== undefined
                   ? form.customMonthlyTotal
                   : quote.monthlyTotal
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
-                width: '100px'
-              }}
-              title=""
-            />
+                ).toFixed(2)}
+                style={{
+                  backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
+                  width: '100px'
+                }}
+                title=""
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="svc-row">
         <label>Contract Total</label>
