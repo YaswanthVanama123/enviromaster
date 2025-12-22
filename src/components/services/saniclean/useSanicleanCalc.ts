@@ -301,7 +301,10 @@ const calculateVisitsInContract = (
 };
 
 /**
- * ✅ NEW: Main dual frequency calculation function
+ * ✅ FIXED: Main dual frequency calculation function
+ * Main service and facility components are calculated INDEPENDENTLY:
+ * - Main service: Uses its frequency (monthly mode or per-visit mode)
+ * - Facility components: ALWAYS uses monthly mode (weekly, biweekly, or monthly)
  */
 const calculateDualFrequency = (
   mainServiceFrequency: SanicleanFrequency,
@@ -322,15 +325,18 @@ const calculateDualFrequency = (
     facilityComponentsBasePrice,
   });
 
+  // ✅ FIXED: Facility components ALWAYS use monthly mode, regardless of main service frequency
+  const facilityMultiplier = getFrequencyMultiplier(facilityComponentsFrequency, backendConfig);
+  const facilityComponentsMonthly = facilityComponentsBasePrice * facilityMultiplier;
+  const facilityContractTotal = facilityComponentsMonthly * contractMonths;
+
   if (calculationMode === "monthly") {
-    // MONTHLY MODE: Both main service and facility components convert to monthly
+    // MONTHLY MODE: Main service also uses monthly calculation
     const mainServiceMultiplier = getDualFrequencyMultiplier(mainServiceFrequency, "monthly", backendConfig);
-    const facilityMultiplier = getDualFrequencyMultiplier(facilityComponentsFrequency, "monthly", backendConfig);
 
     const mainServiceMonthly = mainServiceBasePrice * mainServiceMultiplier;
-    const facilityComponentsMonthly = facilityComponentsBasePrice * facilityMultiplier;
     const monthlyTotal = mainServiceMonthly + facilityComponentsMonthly;
-    const contractTotal = monthlyTotal * contractMonths;
+    const contractTotal = (mainServiceMonthly * contractMonths) + facilityContractTotal;
 
     console.log(`📊 [SaniClean] Monthly mode calculation:`, {
       mainServiceMonthly,
@@ -348,31 +354,30 @@ const calculateDualFrequency = (
       contractTotal,
     };
   } else {
-    // PER-VISIT MODE: Both use their own frequency multipliers for per-visit pricing
-    const mainServiceMultiplier = getDualFrequencyMultiplier(mainServiceFrequency, "perVisit", backendConfig);
-    const facilityMultiplier = getDualFrequencyMultiplier(facilityComponentsFrequency, "perVisit", backendConfig);
-
-    const mainServicePerVisit = mainServiceBasePrice * mainServiceMultiplier;
-    const facilityComponentsPerVisit = facilityComponentsBasePrice * facilityMultiplier;
-    const perVisitTotal = mainServicePerVisit + facilityComponentsPerVisit;
+    // PER-VISIT MODE: Main service uses per-visit, facility components use monthly
+    const mainServicePerVisit = mainServiceBasePrice; // No multiplier for per-visit
 
     const visitsInContract = calculateVisitsInContract(mainServiceFrequency, contractMonths, backendConfig);
-    const contractTotal = perVisitTotal * visitsInContract;
+    const mainServiceContractTotal = mainServicePerVisit * visitsInContract;
+    const contractTotal = mainServiceContractTotal + facilityContractTotal;
 
     console.log(`📊 [SaniClean] Per-visit mode calculation:`, {
       mainServicePerVisit,
-      facilityComponentsPerVisit,
-      perVisitTotal,
+      facilityComponentsMonthly,
+      perVisitTotal: mainServicePerVisit,
       visitsInContract,
+      mainServiceContractTotal,
+      facilityContractTotal,
       contractTotal,
     });
 
     return {
       calculationMode,
       mainServiceTotal: mainServicePerVisit,
-      facilityComponentsTotal: facilityComponentsPerVisit,
-      combinedTotal: perVisitTotal,
-      perVisitTotal,
+      facilityComponentsTotal: facilityComponentsMonthly,
+      combinedTotal: mainServicePerVisit, // Per-visit doesn't include facility in per-visit total
+      perVisitTotal: mainServicePerVisit,
+      monthlyTotal: facilityComponentsMonthly, // Only facility components have monthly total in per-visit mode
       contractTotal,
       visitsInContract,
     };
@@ -770,7 +775,7 @@ function calculatePerItemCharge(
     breakdown: {
       baseService,
       tripCharge,
-      facilityComponents,
+      facilityComponents: dualFreqResult.facilityComponentsTotal, // ✅ Use monthly total from dual freq calc
       soapUpgrade,
       excessSoap,
       microfiberMopping,
@@ -808,7 +813,7 @@ function calculatePerItemCharge(
       !isSmallFacility && regionMinimum > 0 ? `Regional minimum: $${regionMinimum}` : "",
       !isSmallFacility ? `Trip charge: $${tripCharge - (form.needsParking && isInsideBeltway ? form.insideBeltwayParkingFee : 0)}` : "",
       form.needsParking && isInsideBeltway && !isSmallFacility ? `Parking fee: $${form.insideBeltwayParkingFee}` : "",
-      facilityComponents > 0 ? `Facility components: $${facilityComponents.toFixed(2)}/week (monthly rates ÷ 4.33)` : "",
+      dualFreqResult.facilityComponentsTotal > 0 ? `Facility components: $${dualFreqResult.facilityComponentsTotal.toFixed(2)}/month (${form.facilityComponentsFrequency})` : "",
       warrantyFees > 0 ? `Warranty: ${totalDispensers} dispensers × $${form.warrantyFeePerDispenserPerWeek}/week` : "",
       microfiberMopping > 0 ? `Microfiber mopping: ${form.microfiberBathrooms} bathrooms × $${form.microfiberMoppingPerBathroom}/week` : "",
     ].filter(Boolean),

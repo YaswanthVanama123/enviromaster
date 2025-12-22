@@ -717,6 +717,7 @@ export const SanicleanForm: React.FC<
                   onChange={(e) => setFacilityComponentsFrequency(e.target.value as SanicleanFrequency)}
                 >
                   <option value="weekly">Weekly</option>
+                  <option value="biweekly">Bi Weekly</option>
                   <option value="monthly">Monthly</option>
                 </select>
               </div>
@@ -985,22 +986,38 @@ export const SanicleanForm: React.FC<
 
           {/* Total Facility Components (at facility frequency) - Only show if any components are enabled */}
           {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
-            <div className="svc-row">
-              <label>Total Facility Components (at {form.facilityComponentsFrequency} frequency)</label>
-              <div className="svc-row-right">
-                <input
-                  className="svc-in-box"
-                  type="text"
-                  readOnly
-                  value={formatMoney(
-                    (form.addUrinalComponents ? (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) : 0) +
-                    (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
-                    (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0)
-                  )}
-                  title={`Component rates treated as ${form.facilityComponentsFrequency} rates - no conversion applied`}
-                />
+            <>
+              <div className="svc-row">
+                <label>Total Facility Components (at {form.facilityComponentsFrequency} frequency)</label>
+                <div className="svc-row-right">
+                  <input
+                    className="svc-in-box"
+                    type="text"
+                    readOnly
+                    value={formatMoney(
+                      (form.addUrinalComponents ? (form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly) : 0) +
+                      (form.addMaleToiletComponents ? (form.toiletClipsQty * form.toiletClipsMonthly + form.seatCoverDispensersQty * form.seatCoverDispenserMonthly) : 0) +
+                      (form.addFemaleToiletComponents ? form.sanipodsQty * form.sanipodServiceMonthly : 0)
+                    )}
+                    title={`Component rates treated as ${form.facilityComponentsFrequency} rates - no conversion applied`}
+                  />
+                </div>
               </div>
-            </div>
+
+              {/* Facility Component Monthly Total - Shows the monthly recurring cost */}
+              <div className="svc-row">
+                <label>Facility Component Monthly Total</label>
+                <div className="svc-row-right">
+                  <input
+                    className="svc-in-box"
+                    type="text"
+                    readOnly
+                    value={formatMoney(quote.breakdown.facilityComponents)}
+                    title="Facility components monthly recurring cost (includes frequency multiplier)"
+                  />
+                </div>
+              </div>
+            </>
           )}
         </>
       )}
@@ -1051,7 +1068,7 @@ export const SanicleanForm: React.FC<
       )}
 
       {/* Trip Charge - Only for Per Item Charge and not for small facilities */}
-      {!isAllInclusive && fixtures > form.smallFacilityThreshold && (
+      {/* {!isAllInclusive && fixtures > form.smallFacilityThreshold && (
         <div className="svc-row">
           <label>Trip Charge</label>
           <div className="svc-row-right">
@@ -1066,7 +1083,7 @@ export const SanicleanForm: React.FC<
             </label>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* MICROFIBER MOPPING */}
       <div className="svc-h-sub" style={{ marginTop: 10 }}>
@@ -1304,6 +1321,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
+                readOnly
                 min="0"
                 step="0.01"
                 name="customFacilityComponents"
