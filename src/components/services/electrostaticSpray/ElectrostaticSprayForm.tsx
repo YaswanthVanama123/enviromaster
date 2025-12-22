@@ -171,6 +171,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         // Red/Green Line pricing data
         perVisitBase: calc.serviceCharge,  // Raw service charge before trip/minimum
         perVisit: calc.perVisit,  // Final price after minimum
+        minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
         pricingMethod: {
           isDisplay: true,

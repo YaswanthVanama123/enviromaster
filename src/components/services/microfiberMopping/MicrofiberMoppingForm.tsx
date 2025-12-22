@@ -130,6 +130,7 @@ export const MicrofiberMoppingForm: React.FC<
         // Red/Green Line pricing data
         perVisitBase: calc.totalCost,  // Raw total cost
         perVisit: calc.perVisitPrice,  // Final per-visit price
+        minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
         frequency: {
           isDisplay: true,

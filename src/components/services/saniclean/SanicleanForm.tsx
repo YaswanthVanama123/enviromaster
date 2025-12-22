@@ -205,6 +205,7 @@ export const SanicleanForm: React.FC<
         // Red/Green Line pricing data (weekly pricing)
         perVisitBase: quote.breakdown.baseService,  // Raw base service weekly
         perVisit: quote.weeklyTotal,  // Final weekly total
+        minimumChargePerWeek: quote.minimumChargePerWeek,  // Minimum threshold from quote
 
         pricingMode: {
           isDisplay: true,

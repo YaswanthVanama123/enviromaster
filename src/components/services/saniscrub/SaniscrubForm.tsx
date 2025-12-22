@@ -168,6 +168,7 @@ export const SaniscrubForm: React.FC<
         // Red/Green Line pricing data
         perVisitBase: calc.basePerVisitCost,  // Raw per-visit cost before minimum/trip
         perVisit: calc.perVisitEffective,  // Final per-visit price after minimum/trip
+        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,  // Minimum threshold
 
         frequency: {
           isDisplay: true,

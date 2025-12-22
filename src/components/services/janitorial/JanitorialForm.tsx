@@ -49,6 +49,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         // Red/Green Line pricing data
         perVisitBase: calc.baseServiceCost + calc.vacuumingCost + calc.dustingCost + calc.tripCharge,  // Raw price before minimum
         perVisit: calc.perVisit,  // Final price after minimum
+        perVisitMinimum: form.perVisitMinimum,  // Minimum threshold
 
         // Service type as text field
         serviceType: {

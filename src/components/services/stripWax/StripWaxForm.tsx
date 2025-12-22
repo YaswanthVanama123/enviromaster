@@ -150,6 +150,7 @@ export const StripWaxForm: React.FC<
         // Red/Green Line pricing data
         rawPrice: calc.rawPrice,  // Raw price before minimum
         perVisit: calc.perVisit,  // Final price after minimum
+        minCharge: form.minCharge,  // Minimum threshold
 
         frequency: {
           isDisplay: true,

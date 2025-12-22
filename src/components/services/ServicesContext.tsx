@@ -47,6 +47,12 @@ interface ServicesContextValue {
   // ✅ NEW: Red/Green Line Pricing Totals
   getTotalOriginalPerVisit: () => number; // Sum of raw per-visit prices (before minimums)
   getTotalMinimumPerVisit: () => number; // Sum of actual per-visit prices (after minimums)
+
+  // ✅ NEW: Global trip charge and parking charge
+  globalTripCharge: number; // Trip charge per visit
+  setGlobalTripCharge: (charge: number) => void;
+  globalParkingCharge: number; // Parking charge per visit
+  setGlobalParkingCharge: (charge: number) => void;
 }
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(
@@ -62,8 +68,12 @@ export const ServicesProvider: React.FC<{
 }) => {
   const [servicesState, setServicesState] = useState<ServicesState>({});
 
-  // ✅ NEW: Global contract months state (default: 12 months)
-  const [globalContractMonths, setGlobalContractMonths] = useState<number>(12);
+  // ✅ NEW: Global contract months state (default: 36 months)
+  const [globalContractMonths, setGlobalContractMonths] = useState<number>(36);
+
+  // ✅ NEW: Global trip charge and parking charge state (default: 0)
+  const [globalTripCharge, setGlobalTripCharge] = useState<number>(0);
+  const [globalParkingCharge, setGlobalParkingCharge] = useState<number>(0);
 
   const updateSaniclean = useCallback(
     (update: Partial<ServicesState["saniclean"]>) => {
@@ -123,11 +133,28 @@ export const ServicesProvider: React.FC<{
       }
     });
 
+    // ✅ Add global trip charge and parking charge to the contract total
+    // These are per-visit charges, so multiply by estimated visits in contract period
+    // Assuming weekly frequency: contract months × 4.33 weeks/month
+    const estimatedVisitsInContract = globalContractMonths * 4.33;
+    const tripChargeContractTotal = globalTripCharge * estimatedVisitsInContract;
+    const parkingChargeContractTotal = globalParkingCharge * estimatedVisitsInContract;
+
+    totalAmount += tripChargeContractTotal;
+    totalAmount += parkingChargeContractTotal;
+
+    if (tripChargeContractTotal > 0) {
+      console.log(`📊 [TOTAL CALC] Global Trip Charge (${estimatedVisitsInContract.toFixed(0)} visits): $${tripChargeContractTotal.toFixed(2)}`);
+    }
+    if (parkingChargeContractTotal > 0) {
+      console.log(`📊 [TOTAL CALC] Global Parking Charge (${estimatedVisitsInContract.toFixed(0)} visits): $${parkingChargeContractTotal.toFixed(2)}`);
+    }
+
     console.log(`📊 [TOTAL CALC] Total Agreement Amount: $${totalAmount.toFixed(2)}`);
     return totalAmount;
-  }, [servicesState]);
+  }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge]);
 
-  // ✅ NEW: Helper function to calculate total original per-visit (raw prices before minimums)
+  // ✅ NEW: Helper function to calculate total original per-visit (actual charged prices)
   const getTotalOriginalPerVisit = useCallback((): number => {
     let totalOriginal = 0;
 
@@ -138,27 +165,27 @@ export const ServicesProvider: React.FC<{
       if (serviceData?.isActive) {
         let originalPerVisit = 0;
 
-        // Try different field names for raw per-visit price (before minimum)
-        if (typeof serviceData.perVisitBase === 'number') {
-          // Carpet uses perVisitBase
-          originalPerVisit = serviceData.perVisitBase;
-        } else if (typeof serviceData.rawPrice === 'number') {
-          // Strip & Wax uses rawPrice
-          originalPerVisit = serviceData.rawPrice;
-        } else if (serviceData.calc?.perVisitBase && typeof serviceData.calc.perVisitBase === 'number') {
-          // Some services store in calc object
-          originalPerVisit = serviceData.calc.perVisitBase;
-        } else if (serviceData.calc?.rawPrice && typeof serviceData.calc.rawPrice === 'number') {
-          originalPerVisit = serviceData.calc.rawPrice;
-        } else if (serviceData.totals?.perVisit?.base && typeof serviceData.totals.perVisit.base === 'number') {
-          // SaniClean-style nested structure
-          originalPerVisit = serviceData.totals.perVisit.base;
+        // Get the ACTUAL per-visit price being charged (not raw before minimum)
+        // This is the price after minimum has been applied
+
+        if (typeof serviceData.perVisitCharge === 'number') {
+          // Carpet uses perVisitCharge (after minimum)
+          originalPerVisit = serviceData.perVisitCharge;
         } else if (typeof serviceData.perVisit === 'number') {
-          // Fallback: if no raw price found, use actual perVisit
+          // Most services use perVisit (after minimum)
           originalPerVisit = serviceData.perVisit;
+        } else if (serviceData.calc?.perVisit && typeof serviceData.calc.perVisit === 'number') {
+          // Some services store in calc object
+          originalPerVisit = serviceData.calc.perVisit;
         } else if (serviceData.totals?.perVisit?.total && typeof serviceData.totals.perVisit.total === 'number') {
           // SaniClean uses totals.perVisit.total
           originalPerVisit = serviceData.totals.perVisit.total;
+        } else if (serviceData.totals?.perVisit?.amount && typeof serviceData.totals.perVisit.amount === 'number') {
+          // RPM Windows, Janitorial, SaniScrub, FoamingDrain use totals.perVisit.amount
+          originalPerVisit = serviceData.totals.perVisit.amount;
+        } else if (typeof serviceData.perVisitPrice === 'number') {
+          // Some services use perVisitPrice
+          originalPerVisit = serviceData.perVisitPrice;
         }
 
         if (originalPerVisit > 0) {
@@ -168,11 +195,22 @@ export const ServicesProvider: React.FC<{
       }
     });
 
+    // ✅ Add global trip charge and parking charge to the original total
+    totalOriginal += globalTripCharge;
+    totalOriginal += globalParkingCharge;
+
+    if (globalTripCharge > 0) {
+      console.log(`📊 [ORIGINAL CALC] Global Trip Charge: $${globalTripCharge.toFixed(2)}`);
+    }
+    if (globalParkingCharge > 0) {
+      console.log(`📊 [ORIGINAL CALC] Global Parking Charge: $${globalParkingCharge.toFixed(2)}`);
+    }
+
     console.log(`📊 [ORIGINAL CALC] Total Original Per Visit: $${totalOriginal.toFixed(2)}`);
     return totalOriginal;
-  }, [servicesState]);
+  }, [servicesState, globalTripCharge, globalParkingCharge]);
 
-  // ✅ NEW: Helper function to calculate total minimum per-visit (actual prices after minimums)
+  // ✅ NEW: Helper function to calculate total minimum per-visit (sum of minimum thresholds)
   const getTotalMinimumPerVisit = useCallback((): number => {
     let totalMinimum = 0;
 
@@ -181,34 +219,48 @@ export const ServicesProvider: React.FC<{
 
       // Check if service is active
       if (serviceData?.isActive) {
-        let minimumPerVisit = 0;
+        let minimumThreshold = 0;
 
-        // Try different field names for actual per-visit price (after minimum)
-        if (typeof serviceData.perVisitCharge === 'number') {
-          // Carpet uses perVisitCharge
-          minimumPerVisit = serviceData.perVisitCharge;
-        } else if (typeof serviceData.perVisit === 'number') {
-          // Most services use perVisit
-          minimumPerVisit = serviceData.perVisit;
-        } else if (serviceData.calc?.perVisit && typeof serviceData.calc.perVisit === 'number') {
-          // Some services store in calc object
-          minimumPerVisit = serviceData.calc.perVisit;
-        } else if (serviceData.totals?.perVisit?.total && typeof serviceData.totals.perVisit.total === 'number') {
-          // SaniClean uses totals.perVisit.total
-          minimumPerVisit = serviceData.totals.perVisit.total;
-        } else if (typeof serviceData.perVisitPrice === 'number') {
-          // Some services use perVisitPrice
-          minimumPerVisit = serviceData.perVisitPrice;
+        // Try to find the minimum price threshold configuration for each service
+        // Different services store this in different fields
+
+        // Top-level minimum charge per visit (most common)
+        if (typeof serviceData.minimumChargePerVisit === 'number') {
+          minimumThreshold = serviceData.minimumChargePerVisit;
+        }
+        // Direct minimum field
+        else if (typeof serviceData.perVisitMinimum === 'number') {
+          minimumThreshold = serviceData.perVisitMinimum;
+        }
+        // Calc object with minimum
+        else if (serviceData.calc?.minimumChargePerVisit && typeof serviceData.calc.minimumChargePerVisit === 'number') {
+          minimumThreshold = serviceData.calc.minimumChargePerVisit;
+        }
+        // Minimum charge per week (SaniClean)
+        else if (serviceData.totals?.minimumChargePerWeek && typeof serviceData.totals.minimumChargePerWeek === 'number') {
+          minimumThreshold = serviceData.totals.minimumChargePerWeek;
+        }
+        // Minimum visit (Refresh Power Scrub)
+        else if (typeof serviceData.minimumVisit === 'number') {
+          minimumThreshold = serviceData.minimumVisit;
+        }
+        // Form-level minimum
+        else if (typeof serviceData.minCharge === 'number') {
+          minimumThreshold = serviceData.minCharge;
+        }
+        // Config minimum
+        else if (serviceData.config?.minimumChargePerVisit && typeof serviceData.config.minimumChargePerVisit === 'number') {
+          minimumThreshold = serviceData.config.minimumChargePerVisit;
         }
 
-        if (minimumPerVisit > 0) {
-          totalMinimum += minimumPerVisit;
-          console.log(`📊 [MINIMUM CALC] ${serviceName}: $${minimumPerVisit.toFixed(2)}`);
+        if (minimumThreshold > 0) {
+          totalMinimum += minimumThreshold;
+          console.log(`📊 [MINIMUM THRESHOLD CALC] ${serviceName}: $${minimumThreshold.toFixed(2)}`);
         }
       }
     });
 
-    console.log(`📊 [MINIMUM CALC] Total Minimum Per Visit: $${totalMinimum.toFixed(2)}`);
+    console.log(`📊 [MINIMUM THRESHOLD CALC] Total Minimum Thresholds: $${totalMinimum.toFixed(2)}`);
     return totalMinimum;
   }, [servicesState]);
 
@@ -244,8 +296,13 @@ export const ServicesProvider: React.FC<{
       // ✅ NEW: Red/Green Line Pricing Totals
       getTotalOriginalPerVisit,
       getTotalMinimumPerVisit,
+      // ✅ NEW: Global trip charge and parking charge
+      globalTripCharge,
+      setGlobalTripCharge,
+      globalParkingCharge,
+      setGlobalParkingCharge,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalPerVisit, getTotalMinimumPerVisit]); // ✅ Keep dependencies - callbacks are stable
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalPerVisit, getTotalMinimumPerVisit, globalTripCharge, globalParkingCharge]); // ✅ Keep dependencies - callbacks are stable
 
   return (
     <ServicesContext.Provider value={value}>

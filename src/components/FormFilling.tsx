@@ -110,29 +110,78 @@ function ContractSummary() {
     getTotalAgreementAmount,
     getTotalOriginalPerVisit,
     getTotalMinimumPerVisit,
+    globalTripCharge,
+    setGlobalTripCharge,
+    globalParkingCharge,
+    setGlobalParkingCharge,
   } = useServicesContext();
 
   const totalAmount = getTotalAgreementAmount();
   const totalOriginal = getTotalOriginalPerVisit();
   const totalMinimum = getTotalMinimumPerVisit();
 
+  const [pricingIndicator, setpricingIndicator] = useState<'red' | 'green' | 'neutral'>('neutral');
+  const [amountToGreenLine, setAmountToGreenLine] = useState(0);
+  const [greenLineThreshold, setGreenLineThreshold] = useState(0);
+  const [isMonthsDropdownOpen, setIsMonthsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ✅ Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsMonthsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // ✅ Calculate pricing indicator (Red/Green Line)
-  const greenLineThreshold = totalMinimum * 1.30; // 30% above minimum
-  let pricingIndicator: 'red' | 'green' | 'neutral' = 'neutral';
+  useEffect(() => {
+    const threshold = totalMinimum * 1.30; // 30% above minimum
+    let indicator: 'red' | 'green' | 'neutral' = 'neutral';
+    let amountNeeded = 0;
 
-  if (totalOriginal < totalMinimum) {
-    // Original is less than minimum - RED LINE (charging minimum, unprofitable)
-    pricingIndicator = 'red';
-  } else if (totalOriginal >= greenLineThreshold) {
-    // Original is 30%+ above minimum - GREEN LINE (profitable)
-    pricingIndicator = 'green';
-  }
+    if (totalOriginal <= totalMinimum) {
+      // Original is less than OR EQUAL to minimum - RED LINE (charging minimum, unprofitable)
+      indicator = 'red';
+      amountNeeded = threshold - totalOriginal;
+    } else if (totalOriginal >= threshold) {
+      // Original is 30%+ above minimum - GREEN LINE (profitable)
+      indicator = 'green';
+    } else {
+      // In between: show how much more to reach green line
+      indicator = 'neutral';
+      amountNeeded = threshold - totalOriginal;
+    }
 
-  const handleContractMonthsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    // Clamp between 2 and 36 months
-    if (!isNaN(value) && value >= 2 && value <= 36) {
-      setGlobalContractMonths(value);
+    setGreenLineThreshold(threshold);
+    setpricingIndicator(indicator);
+    setAmountToGreenLine(amountNeeded);
+  }, [totalOriginal, totalMinimum]);
+
+  const handleContractMonthsChange = (months: number) => {
+    setGlobalContractMonths(months);
+    setIsMonthsDropdownOpen(false);
+  };
+
+  const handleTripChargeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value) && value >= 0) {
+      setGlobalTripCharge(value);
+    } else if (e.target.value === '') {
+      setGlobalTripCharge(0);
+    }
+  };
+
+  const handleParkingChargeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value) && value >= 0) {
+      setGlobalParkingCharge(value);
+    } else if (e.target.value === '') {
+      setGlobalParkingCharge(0);
     }
   };
 
@@ -142,20 +191,96 @@ function ContractSummary() {
         <h2>Contract Summary</h2>
       </div>
       <div className="contract-summary-content">
-        <div className="contract-field-group">
+        {/* ✅ Contract Months Custom Dropdown */}
+        <div className="contract-field-group" ref={dropdownRef}>
           <label htmlFor="global-contract-months" className="contract-label">
-            Contract Months
-            <span className="contract-label-hint">(2-36 months)</span>
+            Contract Duration
+            <span className="contract-label-hint">Select term length</span>
           </label>
-          <input
-            id="global-contract-months"
-            type="number"
-            min="2"
-            max="36"
-            value={globalContractMonths}
-            onChange={handleContractMonthsChange}
-            className="contract-input"
-          />
+          <div className="custom-dropdown">
+            <button
+              type="button"
+              className="custom-dropdown-trigger"
+              onClick={() => setIsMonthsDropdownOpen(!isMonthsDropdownOpen)}
+              aria-expanded={isMonthsDropdownOpen}
+            >
+              <span className="dropdown-value">{globalContractMonths} Months</span>
+              <svg
+                className={`dropdown-arrow ${isMonthsDropdownOpen ? 'open' : ''}`}
+                width="12"
+                height="8"
+                viewBox="0 0 12 8"
+                fill="none"
+              >
+                <path
+                  d="M1 1L6 6L11 1"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            {isMonthsDropdownOpen && (
+              <div className="custom-dropdown-menu">
+                <div className="dropdown-options">
+                  {Array.from({ length: 35 }, (_, i) => i + 2).map((months) => (
+                    <button
+                      key={months}
+                      type="button"
+                      className={`dropdown-option ${globalContractMonths === months ? 'selected' : ''}`}
+                      onClick={() => handleContractMonthsChange(months)}
+                    >
+                      {months} {months === 1 ? 'Month' : 'Months'}
+                      {months === 36 && <span className="recommended-badge">⭐ Recommended</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ✅ NEW: Trip Charge Input */}
+        <div className="contract-field-group">
+          <label htmlFor="global-trip-charge" className="contract-label">
+            Trip Charge (per visit)
+            <span className="contract-label-hint">Added to per-visit & contract total</span>
+          </label>
+          <div className="contract-input-with-prefix">
+            <span className="input-prefix">$</span>
+            <input
+              id="global-trip-charge"
+              type="number"
+              min="0"
+              step="0.01"
+              value={globalTripCharge || ''}
+              onChange={handleTripChargeChange}
+              className="contract-input"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        {/* ✅ NEW: Parking Charge Input */}
+        <div className="contract-field-group">
+          <label htmlFor="global-parking-charge" className="contract-label">
+            Parking Charge (per visit)
+            <span className="contract-label-hint">Added to per-visit & contract total</span>
+          </label>
+          <div className="contract-input-with-prefix">
+            <span className="input-prefix">$</span>
+            <input
+              id="global-parking-charge"
+              type="number"
+              min="0"
+              step="0.01"
+              value={globalParkingCharge || ''}
+              onChange={handleParkingChargeChange}
+              className="contract-input"
+              placeholder="0.00"
+            />
+          </div>
         </div>
 
         {/* ✅ NEW: Red/Green Line Pricing Display */}
@@ -191,6 +316,18 @@ function ContractSummary() {
                     </span>
                   </>
                 )}
+              </div>
+            )}
+            {/* Show amount needed to reach green line for red and neutral states */}
+            {pricingIndicator !== 'green' && amountToGreenLine > 0 && (
+              <div className="green-line-target">
+                <span className="target-icon">🎯</span>
+                <span className="target-text">
+                  Add <strong>${amountToGreenLine.toFixed(2)}</strong> to reach Green Line
+                </span>
+                <span className="target-value">
+                  (Target: ${greenLineThreshold.toFixed(2)})
+                </span>
               </div>
             )}
           </div>

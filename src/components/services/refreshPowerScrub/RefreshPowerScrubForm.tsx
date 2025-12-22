@@ -150,6 +150,7 @@ export const RefreshPowerScrubForm: React.FC<
         // Red/Green Line pricing data
         perVisitBase: totalPerVisitCost,  // Raw cost (sum of all areas)
         perVisit: Math.max(totalPerVisitCost, form.minimumVisit || 0),  // Final per-visit price after minimum
+        minimumVisit: form.minimumVisit,  // Minimum threshold
 
         // Global service information
         serviceInfo: {

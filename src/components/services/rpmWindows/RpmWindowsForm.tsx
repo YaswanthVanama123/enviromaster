@@ -130,6 +130,7 @@ export const RpmWindowsForm: React.FC<
         // Red/Green Line pricing data
         perVisitBase: calc.subtotal,  // Raw subtotal before minimum
         perVisit: calc.perVisit,  // Final per-visit price after minimum
+        minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
         windows: [
           ...(form.smallQty > 0 ? [{

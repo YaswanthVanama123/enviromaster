@@ -153,6 +153,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         // Red/Green Line pricing data (weekly pricing)
         perVisitBase: breakdown.weeklyService,  // Weekly service total
         perVisit: breakdown.weeklyTotal,  // Weekly total including all charges
+        minimumChargePerVisit: quote.minimumChargePerVisit,  // Minimum threshold
 
         frequency: {
           isDisplay: true,

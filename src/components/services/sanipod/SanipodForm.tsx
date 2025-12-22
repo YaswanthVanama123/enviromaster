@@ -164,6 +164,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         // Red/Green Line pricing data
         perVisitBase: form.podQuantity * effectiveRate,  // Raw pod price
         perVisit: calc.perVisit,  // Final per-visit price
+        minimumChargePerVisit: 0,  // No minimum for SaniPod (standalone service)
 
         service: {
           isDisplay: true,

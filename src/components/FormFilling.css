@@ -189,6 +189,185 @@
   border-color: #bdbdbd;
 }
 
+/* ✅ NEW: Custom Dropdown Styling (collapsible with fixed-height scrollable menu) */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+/* Dropdown Trigger Button */
+.custom-dropdown-trigger {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.custom-dropdown-trigger:hover {
+  border-color: #ff4500;
+  background-color: #fff5f0;
+}
+
+.custom-dropdown-trigger:focus {
+  outline: none;
+  border-color: #ff4500;
+  box-shadow: 0 0 0 3px rgba(255, 69, 0, 0.1);
+}
+
+.dropdown-value {
+  flex: 1;
+  font-weight: 600;
+}
+
+/* Animated Arrow */
+.dropdown-arrow {
+  width: 12px;
+  height: 8px;
+  transition: transform 0.3s ease;
+  color: #666;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu (opens below) */
+.custom-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border: 2px solid #ff4500;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollable Options Container */
+.dropdown-options {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #ff4500 #f5f5f5;
+}
+
+.dropdown-options::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dropdown-options::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.dropdown-options::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ff4500 0%, #ff6b35 100%);
+  border-radius: 4px;
+}
+
+.dropdown-options::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #cc3700 0%, #cc5529 100%);
+}
+
+/* Individual Option Buttons */
+.dropdown-option {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  background: #ffffff;
+  color: #2c3e50;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.dropdown-option:hover {
+  background-color: #fff5f0;
+  color: #ff4500;
+  transform: translateX(4px);
+}
+
+.dropdown-option.selected {
+  background: linear-gradient(135deg, #ff4500 0%, #ff6b35 100%);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 69, 0, 0.3);
+}
+
+.dropdown-option.selected:hover {
+  transform: translateX(0);
+  background: linear-gradient(135deg, #ff6b35 0%, #ff4500 100%);
+}
+
+/* Recommended Badge */
+.recommended-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffc107;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.dropdown-option.selected .recommended-badge {
+  color: #ffffff;
+}
+
+/* ✅ NEW: Input with prefix ($ sign) styling */
+.contract-input-with-prefix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #666;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.contract-input-with-prefix .contract-input {
+  padding-left: 32px;
+  width: 100%;
+}
+
 .contract-total-display {
   padding: 12px 16px;
   font-size: 24px;
@@ -290,6 +469,40 @@
   margin-left: auto;
 }
 
+/* ✅ NEW: Green Line Target Display */
+.green-line-target {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fef9e7;
+  border: 2px solid #f9e79f;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #7d6608;
+}
+
+.target-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.target-text {
+  flex: 1;
+}
+
+.target-text strong {
+  color: #d68910;
+  font-size: 15px;
+}
+
+.target-value {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .contract-summary-content {
@@ -311,5 +524,16 @@
   .indicator-description {
     margin-left: 0;
     margin-top: 4px;
+  }
+
+  /* Green line target responsive */
+  .green-line-target {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .target-value {
+    margin-left: 0;
   }
 }

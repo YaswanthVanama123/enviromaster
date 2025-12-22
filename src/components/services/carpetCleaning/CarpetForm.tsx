@@ -122,6 +122,7 @@ export const CarpetForm: React.FC<
         // Red/Green Line pricing data
         perVisitBase: calc.perVisitBase,  // Raw price before minimum
         perVisitCharge: calc.perVisitCharge,  // Final price after minimum
+        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,  // Minimum threshold
 
         frequency: {
           isDisplay: true,

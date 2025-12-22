@@ -30,6 +30,7 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
         // Red/Green Line pricing data
         perVisitBase: (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate),  // Raw price
         perVisit: quote.perVisitTotal,  // Final price (same as raw for grease trap)
+        minimumChargePerVisit: 0,  // No minimum for grease trap
 
         frequency: {
           label: "Frequency",
