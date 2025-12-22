@@ -112,9 +112,6 @@ const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext
   });
 };
 
-// ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads across React Strict Mode remounts
-let hasInitiallyLoaded = false;
-
 export default function ApprovalDocuments() {
   // ✅ UPDATED: Use grouped structure for approval documents
   const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
@@ -140,6 +137,10 @@ export default function ApprovalDocuments() {
   const [totalFiles, setTotalFiles] = useState(0);
   const [totalAgreements, setTotalAgreements] = useState(0);
 
+  // ✅ FIX: Use ref instead of module-level flag to prevent React Strict Mode duplicate calls
+  // This ref is scoped to each component instance, so it resets when navigating away
+  const hasLoadedRef = useRef(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAdminAuth();
@@ -159,14 +160,16 @@ export default function ApprovalDocuments() {
 
   // ---- Fetch approval documents from backend on mount ----
   useEffect(() => {
-    // ✅ CRITICAL FIX: Use module-level flag to prevent React Strict Mode duplicate calls
-    if (!hasInitiallyLoaded) {
-      hasInitiallyLoaded = true;
+    // ✅ FIX: Use ref instead of module-level flag - resets on each mount
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
 
       const fetchApprovalDocuments = async () => {
         setLoading(true);
         setError(null);
         try {
+          console.log("📋 [APPROVAL-DOCS] Fetching approval documents...");
+
           // ✅ NEW: Use approval documents grouped API
           const data = await pdfApi.getApprovalDocumentsGrouped();
           const groups = data.groups || [];
@@ -187,7 +190,7 @@ export default function ApprovalDocuments() {
           setTotalAgreements(data.totalGroups || 0);
           setTotalFiles(data.totalFiles || 0);
         } catch (err) {
-          console.error("Error fetching approval documents:", err);
+          console.error("❌ [APPROVAL-DOCS] Error fetching approval documents:", err);
           setError("Unable to load approval documents. Please try again.");
         } finally {
           setLoading(false);
@@ -196,7 +199,7 @@ export default function ApprovalDocuments() {
 
       fetchApprovalDocuments();
     } else {
-      console.log('⏭️ [APPROVAL-DOCS] Skipping duplicate initial load (React Strict Mode remount)');
+      console.log('⏭️ [APPROVAL-DOCS] Skipping duplicate call (React Strict Mode)');
     }
   }, []);
 

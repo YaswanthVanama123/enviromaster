@@ -1087,7 +1087,7 @@ export default function SavedFilesAgreements() {
                 Clear Selection
               </button>
 
-              <button
+              {/* <button
                 type="button"
                 className="sf__btn sf__btn--primary zoho-upload-btn"
                 onClick={handleBulkZohoUpload}
@@ -1095,7 +1095,7 @@ export default function SavedFilesAgreements() {
               >
                 <FontAwesomeIcon icon={faUpload} style={{ marginRight: '6px' }} />
                 Upload to Zoho ({selectedFileObjects.filter(f => f.hasPdf || f.fileType === 'version_log').length})
-              </button>
+              </button> */}
             </>
           )}
 
