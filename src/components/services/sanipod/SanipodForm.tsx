@@ -730,6 +730,48 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div> */}
 
+      {/* First Visit Total - for debugging partial installation */}
+      {!isVisitBasedFrequency && (
+        <div className="svc-row svc-row-total">
+          <label>First Visit Total</label>
+          <div className="svc-dollar">
+            <span className="svc-dollar">
+              $  {parseFloat(calc.firstVisit.toFixed(2))}
+            </span>
+          </div>
+        </div>
+      )}
+
+            {/* First Visit Total for visit-based (not oneTime) */}
+      {isVisitBasedFrequency && form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>First Visit Total</label>
+          <div className="svc-dollar">
+            $<input
+              className="svc-in svc-in-small"
+              type="number"
+              readOnly
+              step="0.01"
+              name="customMonthlyPrice"
+              value={getDisplayValue(
+                'customMonthlyPrice',
+                form.customMonthlyPrice !== undefined
+                  ? form.customMonthlyPrice
+                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Totals */}
       <div className="svc-row svc-row-total">
         <label>
@@ -773,17 +815,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* First Visit Total - for debugging partial installation */}
-      {!isVisitBasedFrequency && (
-        <div className="svc-row svc-row-total">
-          <label>First Visit Total</label>
-          <div className="svc-dollar">
-            <span className="svc-dollar">
-              ${parseFloat(calc.firstVisit.toFixed(2))}
-            </span>
-          </div>
-        </div>
-      )}
+
 
       {/* First Month Total - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
       {!isVisitBasedFrequency && (
@@ -844,35 +876,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       )}
 
-      {/* First Visit Total for visit-based (not oneTime) */}
-      {isVisitBasedFrequency && form.frequency !== "oneTime" && (
-        <div className="svc-row svc-row-total">
-          <label>First Visit Total</label>
-          <div className="svc-dollar">
-            $<input
-              className="svc-in svc-in-small"
-              type="number"
-              readOnly
-              step="0.01"
-              name="customMonthlyPrice"
-              value={getDisplayValue(
-                'customMonthlyPrice',
-                form.customMonthlyPrice !== undefined
-                  ? form.customMonthlyPrice
-                  : parseFloat(calc.adjustedMonthly.toFixed(2))
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customMonthlyPrice !== undefined ? '#fffacd' : 'white',
-                border: 'none',
-                width: '100px'
-              }}
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* Monthly Recurring - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
       {!isVisitBasedFrequency && (
