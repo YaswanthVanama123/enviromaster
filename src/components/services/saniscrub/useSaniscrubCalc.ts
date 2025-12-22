@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { SaniscrubFormState, SaniscrubFrequency } from "./saniscrubTypes";
@@ -237,17 +237,39 @@ function buildActiveConfig(backendConfig: BackendSaniscrubConfig | null) {
 }
 
 export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
-  const [form, setForm] = useState<SaniscrubFormState>({
-    ...DEFAULT_FORM,
-    ...initial,
+  // Get services context for fallback pricing data AND global contract months
+  const servicesContext = useServicesContextOptional();
+
+  const [form, setForm] = useState<SaniscrubFormState>(() => {
+    // ✅ Calculate if service is initially active (has fixtures)
+    const initialFixtureCount = initial?.fixtureCount || 0;
+    const isInitiallyActive = initialFixtureCount > 0;
+
+    // ✅ Only use global contract months if service starts active AND no initial value provided
+    const defaultContractMonths = initial?.contractMonths
+      ? initial.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : DEFAULT_FORM.contractMonths;
+
+    console.log(`📅 [SANISCRUB-INIT] Initializing contract months:`, {
+      initialFixtureCount,
+      isInitiallyActive,
+      globalContractMonths: servicesContext?.globalContractMonths,
+      defaultContractMonths,
+      hasInitialValue: !!initial?.contractMonths
+    });
+
+    return {
+      ...DEFAULT_FORM,
+      ...initial,
+      contractMonths: defaultContractMonths,
+    };
   });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendSaniscrubConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data from the actual backend structure
   const updateFormWithConfig = (activeConfig: any) => {
@@ -398,6 +420,43 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // ✅ Sync global contract months to service (unless service has explicitly overridden it)
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef(form.fixtureCount > 0);
+
+  useEffect(() => {
+    const isServiceActive = form.fixtureCount > 0;
+    const wasActive = wasActiveRef.current;
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      // Service just became active - adopt global contract months
+      console.log(`📅 [SANISCRUB-CONTRACT] Service just became active, adopting global contract months`);
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        const globalMonths = servicesContext.globalContractMonths;
+        console.log(`📅 [SANISCRUB-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => ({ ...prev, contractMonths: globalMonths }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      // Service is already active - sync with global if it changes
+      const globalMonths = servicesContext.globalContractMonths;
+      if (form.contractMonths !== globalMonths) {
+        console.log(`📅 [SANISCRUB-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => ({ ...prev, contractMonths: globalMonths }));
+      }
+    }
+
+    // Update the ref for next render
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.fixtureCount, servicesContext]);
+
+  // ✅ Track when user manually changes contract months (this sets the override flag)
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({ ...prev, contractMonths: months }));
+    console.log(`📅 [SANISCRUB-CONTRACT] User override: ${months} months`);
+  }, []);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
@@ -1146,5 +1205,6 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     },
     refreshConfig: fetchPricing,
     isLoadingConfig,
+    setContractMonths, // ✅ NEW: Contract months with override support
   };
 }

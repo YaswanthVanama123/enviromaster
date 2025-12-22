@@ -400,6 +400,46 @@ function calculateAllInclusive(
   config: BackendSanicleanConfig | SanicleanPricingConfig
 ): SanicleanQuoteResult {
   const fixtureCount = form.fixtureCount;
+
+  // ✅ FIX: Return complete $0 quote structure if service is inactive (no fixtures)
+  if (fixtureCount === 0) {
+    console.log('📊 [SaniClean] Service is inactive (0 fixtures), returning $0 totals');
+    return {
+      serviceId: "saniclean",
+      displayName: "SaniClean",
+      pricingMode: "all_inclusive",
+      weeklyTotal: 0,
+      monthlyTotal: 0,
+      contractTotal: 0,
+      breakdown: {
+        baseService: 0,
+        tripCharge: 0,
+        facilityComponents: 0,
+        soapUpgrade: 0,
+        excessSoap: 0,
+        microfiberMopping: 0,
+        warrantyFees: 0,
+        paperOverage: 0,
+      },
+      dispenserCounts: {
+        soapDispensers: 0,
+        airFresheners: 0,
+        totalDispensers: 0,
+      },
+      componentCounts: {
+        urinalScreens: 0,
+        urinalMats: 0,
+        toiletClips: 0,
+        seatCoverDispensers: 0,
+        sanipods: 0,
+      },
+      included: [],
+      excluded: [],
+      appliedRules: ["Service is inactive - no fixtures entered"],
+      minimumChargePerWeek: 0,
+    };
+  }
+
   const rateTierMultiplier = form.rateTier === "greenRate" ? form.greenRateMultiplier : form.redRateMultiplier;
 
   // Base Service: Uses backend pricePerFixture
@@ -532,6 +572,46 @@ function calculatePerItemCharge(
   config: BackendSanicleanConfig | SanicleanPricingConfig
 ): SanicleanQuoteResult {
   const fixtureCount = form.fixtureCount;
+
+  // ✅ FIX: Return complete $0 quote structure if service is inactive (no fixtures)
+  if (fixtureCount === 0) {
+    console.log('📊 [SaniClean] Service is inactive (0 fixtures), returning $0 totals');
+    return {
+      serviceId: "saniclean",
+      displayName: "SaniClean",
+      pricingMode: "per_item_charge",
+      weeklyTotal: 0,
+      monthlyTotal: 0,
+      contractTotal: 0,
+      breakdown: {
+        baseService: 0,
+        tripCharge: 0,
+        facilityComponents: 0,
+        soapUpgrade: 0,
+        excessSoap: 0,
+        microfiberMopping: 0,
+        warrantyFees: 0,
+        paperOverage: 0,
+      },
+      dispenserCounts: {
+        soapDispensers: 0,
+        airFresheners: 0,
+        totalDispensers: 0,
+      },
+      componentCounts: {
+        urinalScreens: 0,
+        urinalMats: 0,
+        toiletClips: 0,
+        seatCoverDispensers: 0,
+        sanipods: 0,
+      },
+      included: [],
+      excluded: [],
+      appliedRules: ["Service is inactive - no fixtures entered"],
+      minimumChargePerWeek: 0,
+    };
+  }
+
   const rateTierMultiplier = form.rateTier === "greenRate" ? form.greenRateMultiplier : form.redRateMultiplier;
 
   // Geographic rates
@@ -714,18 +794,39 @@ function calculatePerItemCharge(
 }
 
 export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
-  const [form, setForm] = useState<SanicleanFormState>(() =>
-    recomputeFixtureCount({
+  // Get services context for fallback pricing data AND global contract months
+  const servicesContext = useServicesContextOptional();
+
+  const [form, setForm] = useState<SanicleanFormState>(() => {
+    // ✅ FIX: Only use global contract months if service starts with fixtures (is active)
+    const initialFixtureCount = (initial?.sinks || 0) + (initial?.urinals || 0) +
+                                 (initial?.maleToilets || 0) + (initial?.femaleToilets || 0);
+    const isInitiallyActive = initialFixtureCount > 0;
+
+    // ✅ NEW: Use global contract months as default if available, no initial value provided, AND service is active
+    const defaultContractMonths = initial?.contractMonths
+      ? initial.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : 12;
+
+    console.log(`📅 [SANICLEAN-INIT] Initializing contract months:`, {
+      initialFixtureCount,
+      isInitiallyActive,
+      globalContractMonths: servicesContext?.globalContractMonths,
+      defaultContractMonths,
+      hasInitialValue: !!initial?.contractMonths
+    });
+
+    return recomputeFixtureCount({
       ...DEFAULT_FORM,
       ...initial,
-    })
-  );
+      contractMonths: defaultContractMonths, // ✅ NEW: Use global only if service is initially active
+    });
+  });
 
   const [backendConfig, setBackendConfig] = useState<BackendSanicleanConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Fetch configuration from backend
   const fetchPricing = async () => {
@@ -958,6 +1059,55 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     });
   }, [form.fixtureCount]);
 
+  // ✅ NEW: Sync global contract months to service (unless service has explicitly overridden it)
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef(form.fixtureCount > 0); // Track if service was previously active
+
+  useEffect(() => {
+    const isServiceActive = form.fixtureCount > 0;
+    const wasActive = wasActiveRef.current;
+
+    // ✅ FIX: Detect transition from inactive to active
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      // Service just became active - adopt global contract months
+      console.log(`📅 [SANICLEAN-CONTRACT] Service just became active, adopting global contract months`);
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        const globalMonths = servicesContext.globalContractMonths;
+        console.log(`📅 [SANICLEAN-CONTRACT] Syncing global contract months: ${globalMonths} (service just activated with ${form.fixtureCount} fixtures)`);
+        setForm(prev => ({
+          ...prev,
+          contractMonths: globalMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      // Service is already active - sync with global if it changes
+      const globalMonths = servicesContext.globalContractMonths;
+      if (form.contractMonths !== globalMonths) {
+        console.log(`📅 [SANICLEAN-CONTRACT] Syncing global contract months: ${globalMonths} (service is active with ${form.fixtureCount} fixtures)`);
+        setForm(prev => ({
+          ...prev,
+          contractMonths: globalMonths,
+        }));
+      }
+    }
+    // ✅ IMPORTANT: If service is inactive, do NOT sync global months
+
+    // Update the ref for next render
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.fixtureCount, servicesContext]);
+
+  // ✅ NEW: Track when user manually changes contract months (this sets the override flag)
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({
+      ...prev,
+      contractMonths: months,
+    }));
+    console.log(`📅 [SANICLEAN-CONTRACT] User override: ${months} months`);
+  }, []);
+
   // Calculate quote based on pricing mode
   const quote: SanicleanQuoteResult = useMemo(() => {
     const config = backendConfig || SANICLEAN_CONFIG;
@@ -1162,5 +1312,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     // ✅ NEW: Dual frequency functions
     setMainServiceFrequency,
     setFacilityComponentsFrequency,
+    // ✅ NEW: Contract months with override support
+    setContractMonths,
   };
 }

@@ -1,5 +1,5 @@
 // src/components/services/janitorial/useJanitorialCalc.ts
-import { useState, useEffect, useMemo, ChangeEvent, useCallback } from "react";
+import { useState, useEffect, useMemo, ChangeEvent, useCallback, useRef } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
@@ -81,11 +81,33 @@ const DEFAULT_FORM: JanitorialFormState = {
 
 // Main hook
 export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
+  // ✅ Add refs for tracking override and active state
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef<boolean>(false);
+
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
   // State
-  const [form, setForm] = useState<JanitorialFormState>(() => ({
-    ...DEFAULT_FORM,
-    ...initial
-  }));
+  const [form, setForm] = useState<JanitorialFormState>(() => {
+    const baseForm = {
+      ...DEFAULT_FORM,
+      ...initial
+    };
+
+    // ✅ Initialize with global months ONLY if service starts with inputs
+    const isInitiallyActive = (initial?.baseHours || 0) > 0;
+    const defaultContractMonths = initial?.contractMonths
+      ? initial.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : 12;
+
+    return {
+      ...baseForm,
+      contractMonths: defaultContractMonths,
+    };
+  });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
@@ -116,9 +138,6 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
   }, [form.baseHours, form.frequency]);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data
   const updateFormWithConfig = (config: BackendJanitorialConfig) => {
@@ -232,6 +251,40 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+  useEffect(() => {
+    const isServiceActive = (form.baseHours || 0) > 0;
+    const wasActive = wasActiveRef.current;
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      if (form.contractMonths !== servicesContext.globalContractMonths) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    }
+
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.baseHours, servicesContext]);
+
+  // ✅ Add setContractMonths function
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({
+      ...prev,
+      contractMonths: months,
+    }));
+  }, []);
 
   // Form handlers
   const updateField = <K extends keyof JanitorialFormState>(
@@ -404,5 +457,6 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     backendConfig,
     isLoadingConfig,
     refreshConfig: fetchPricing,
+    setContractMonths,
   };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type { CarpetFormState, CarpetFrequency } from "./carpetTypes";
@@ -132,17 +132,36 @@ function clampContractMonths(value: unknown): number {
 }
 
 export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
-  const [form, setForm] = useState<CarpetFormState>({
-    ...DEFAULT_FORM,
-    ...initial,
+  // ✅ Add refs for tracking override and active state
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef<boolean>(false);
+
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  const [form, setForm] = useState<CarpetFormState>(() => {
+    const baseForm = {
+      ...DEFAULT_FORM,
+      ...initial,
+    };
+
+    // ✅ Initialize with global months ONLY if service starts with inputs
+    const isInitiallyActive = (initial?.areaSqFt || 0) > 0;
+    const defaultContractMonths = initial?.contractMonths
+      ? initial.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : 12;
+
+    return {
+      ...baseForm,
+      contractMonths: defaultContractMonths,
+    };
   });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendCarpetConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data
   const updateFormWithConfig = (config: BackendCarpetConfig) => {
@@ -291,6 +310,31 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+  useEffect(() => {
+    const isServiceActive = (form.areaSqFt || 0) > 0;
+    const wasActive = wasActiveRef.current;
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      if (form.contractMonths !== servicesContext.globalContractMonths) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    }
+
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.areaSqFt, servicesContext]);
+
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -316,6 +360,15 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
   }, [form.sqFt, form.frequency]);
+
+  // ✅ Add setContractMonths function
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({
+      ...prev,
+      contractMonths: months,
+    }));
+  }, []);
 
   const onChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -952,5 +1005,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     },
     refreshConfig: fetchPricing,
     isLoadingConfig,
+    setContractMonths,
   };
 }

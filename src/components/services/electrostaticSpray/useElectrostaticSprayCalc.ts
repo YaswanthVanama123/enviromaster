@@ -1,6 +1,6 @@
 // src/components/services/electrostaticSpray/useElectrostaticSprayCalc.ts
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import type {
   ElectrostaticSprayFormState,
@@ -124,16 +124,35 @@ const DEFAULT_FORM_STATE: ElectrostaticSprayFormState = {
 };
 
 export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSprayFormState>) {
-  const [form, setForm] = useState<ElectrostaticSprayFormState>({
-    ...DEFAULT_FORM_STATE,
-    ...initialData,
+  // ✅ Add refs for tracking override and active state
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef<boolean>(false);
+
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  const [form, setForm] = useState<ElectrostaticSprayFormState>(() => {
+    const baseForm = {
+      ...DEFAULT_FORM_STATE,
+      ...initialData,
+    };
+
+    // ✅ Initialize with global months ONLY if service starts with inputs
+    const isInitiallyActive = (initialData?.roomCount || 0) > 0 || (initialData?.squareFeet || 0) > 0;
+    const defaultContractMonths = initialData?.contractMonths
+      ? initialData.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : cfg.minContractMonths;
+
+    return {
+      ...baseForm,
+      contractMonths: defaultContractMonths,
+    };
   });
 
   const [backendConfig, setBackendConfig] = useState<BackendElectrostaticSprayConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Fetch pricing config from backend
   const fetchPricing = async () => {
@@ -252,6 +271,31 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+  useEffect(() => {
+    const isServiceActive = (form.roomCount || 0) > 0 || (form.squareFeet || 0) > 0;
+    const wasActive = wasActiveRef.current;
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      if (form.contractMonths !== servicesContext.globalContractMonths) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    }
+
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.roomCount, form.squareFeet, servicesContext]);
+
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -277,6 +321,15 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
   }, [form.roomCount, form.squareFeet, form.frequency]);
+
+  // ✅ Add setContractMonths function
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({
+      ...prev,
+      contractMonths: months,
+    }));
+  }, []);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, type } = e.target;
@@ -500,5 +553,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     isLoadingConfig,
     refreshConfig: fetchPricing,
     activeConfig, // ✅ EXPOSE: Active config for dynamic UI text
+    setContractMonths,
   };
 }

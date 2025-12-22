@@ -1,5 +1,5 @@
 // src/features/services/foamingDrain/useFoamingDrainCalc.ts
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { FOAMING_DRAIN_CONFIG as cfg } from "./foamingDrainConfig";
 import type {
   FoamingDrainFormState,
@@ -170,18 +170,45 @@ function round2(n: number): number {
 }
 
 export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>) {
-  const [state, setState] = useState<FoamingDrainFormState>({
-    ...DEFAULT_FOAMING_DRAIN_FORM_STATE,
-    ...initialData,
-    serviceId: "foamingDrain",
+  // Get services context for fallback pricing data AND global contract months
+  const servicesContext = useServicesContextOptional();
+
+  const [state, setState] = useState<FoamingDrainFormState>(() => {
+    // ✅ Calculate if service is initially active (has drains)
+    const initialDrainCount = (initialData?.standardDrainCount || 0) +
+                               (initialData?.installDrainCount || 0) +
+                               (initialData?.filthyDrainCount || 0) +
+                               (initialData?.greaseTrapCount || 0) +
+                               (initialData?.greenDrainCount || 0) +
+                               (initialData?.plumbingDrainCount || 0);
+    const isInitiallyActive = initialDrainCount > 0;
+
+    // ✅ Only use global contract months if service starts active AND no initial value provided
+    const defaultContractMonths = initialData?.contractMonths
+      ? initialData.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : DEFAULT_FOAMING_DRAIN_FORM_STATE.contractMonths;
+
+    console.log(`📅 [FOAMING-DRAIN-INIT] Initializing contract months:`, {
+      initialDrainCount,
+      isInitiallyActive,
+      globalContractMonths: servicesContext?.globalContractMonths,
+      defaultContractMonths,
+      hasInitialValue: !!initialData?.contractMonths
+    });
+
+    return {
+      ...DEFAULT_FOAMING_DRAIN_FORM_STATE,
+      ...initialData,
+      serviceId: "foamingDrain",
+      contractMonths: defaultContractMonths,
+    };
   });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendFoamingDrainConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update state with config data from the actual backend structure
   const updateStateWithConfig = (config: BackendFoamingDrainConfig) => {
@@ -339,6 +366,53 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // ✅ Sync global contract months to service (unless service has explicitly overridden it)
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef(() => {
+    const drainCount = state.standardDrainCount + state.installDrainCount +
+                       state.filthyDrainCount + state.greaseTrapCount +
+                       state.greenDrainCount + state.plumbingDrainCount;
+    return drainCount > 0;
+  });
+
+  useEffect(() => {
+    const drainCount = state.standardDrainCount + state.installDrainCount +
+                       state.filthyDrainCount + state.greaseTrapCount +
+                       state.greenDrainCount + state.plumbingDrainCount;
+    const isServiceActive = drainCount > 0;
+    const wasActive = wasActiveRef.current();
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      // Service just became active - adopt global contract months
+      console.log(`📅 [FOAMING-DRAIN-CONTRACT] Service just became active, adopting global contract months`);
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        const globalMonths = servicesContext.globalContractMonths;
+        console.log(`📅 [FOAMING-DRAIN-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setState(prev => ({ ...prev, contractMonths: globalMonths }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      // Service is already active - sync with global if it changes
+      const globalMonths = servicesContext.globalContractMonths;
+      if (state.contractMonths !== globalMonths) {
+        console.log(`📅 [FOAMING-DRAIN-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setState(prev => ({ ...prev, contractMonths: globalMonths }));
+      }
+    }
+
+    // Update the ref for next render
+    wasActiveRef.current = () => isServiceActive;
+  }, [servicesContext?.globalContractMonths, state.contractMonths,
+      state.standardDrainCount, state.installDrainCount, state.filthyDrainCount,
+      state.greaseTrapCount, state.greenDrainCount, state.plumbingDrainCount, servicesContext]);
+
+  // ✅ Track when user manually changes contract months (this sets the override flag)
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setState(prev => ({ ...prev, contractMonths: months }));
+    console.log(`📅 [FOAMING-DRAIN-CONTRACT] User override: ${months} months`);
+  }, []);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
@@ -948,5 +1022,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     refreshConfig: fetchPricing,
     isLoadingConfig,
     backendConfig, // ✅ EXPOSE: Backend config for dynamic thresholds
+    setContractMonths, // ✅ NEW: Contract months with override support
   };
 }

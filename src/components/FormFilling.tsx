@@ -9,7 +9,7 @@ import "./FormFilling.css";
 import { ServicesSection } from "./services/ServicesSection";
 import ServicesDataCollector from "./services/ServicesDataCollector";
 import type{ ServicesDataHandle } from "./services/ServicesDataCollector";
-import { ServicesProvider } from "./services/ServicesContext";
+import { ServicesProvider, useServicesContext } from "./services/ServicesContext";
 import ConfirmationModal from "./ConfirmationModal";
 import { VersionDialog } from "./VersionDialog";
 import { Toast } from "./admin/Toast";
@@ -100,6 +100,52 @@ type LocationState = {
 const CUSTOMER_FALLBACK_ID = "6918cecbf0b2846a9c562fd6";
 // admin template for "new" forms (read-only template to prefill)
 const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
+
+// ✅ NEW: Contract Summary Component
+// Displays global contract months and total agreement amount
+function ContractSummary() {
+  const { globalContractMonths, setGlobalContractMonths, getTotalAgreementAmount } = useServicesContext();
+  const totalAmount = getTotalAgreementAmount();
+
+  const handleContractMonthsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    // Clamp between 2 and 36 months
+    if (!isNaN(value) && value >= 2 && value <= 36) {
+      setGlobalContractMonths(value);
+    }
+  };
+
+  return (
+    <div className="contract-summary-section">
+      <div className="contract-summary-header">
+        <h2>Contract Summary</h2>
+      </div>
+      <div className="contract-summary-content">
+        <div className="contract-field-group">
+          <label htmlFor="global-contract-months" className="contract-label">
+            Contract Months
+            <span className="contract-label-hint">(2-36 months)</span>
+          </label>
+          <input
+            id="global-contract-months"
+            type="number"
+            min="2"
+            max="36"
+            value={globalContractMonths}
+            onChange={handleContractMonthsChange}
+            className="contract-input"
+          />
+        </div>
+        <div className="contract-field-group">
+          <label className="contract-label">Total Agreement Amount</label>
+          <div className="contract-total-display">
+            ${totalAmount.toFixed(2)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function FormFilling() {
   const location = useLocation();
@@ -1156,6 +1202,9 @@ export default function FormFilling() {
               }}
             />
             <ServicesDataCollector ref={servicesRef} />
+
+            {/* ✅ NEW: Contract Summary - Global contract months and total agreement amount */}
+            <ContractSummary />
 
             {/* Service Agreement Component */}
             <ServiceAgreement

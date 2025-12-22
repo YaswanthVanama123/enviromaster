@@ -1,5 +1,5 @@
 // src/features/services/refreshPowerScrub/useRefreshPowerScrubCalc.ts
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type {
   RefreshAreaCalcState,
   RefreshAreaKey,
@@ -548,6 +548,13 @@ function calcAreaCost(
 export function useRefreshPowerScrubCalc(
   initial?: Partial<RefreshPowerScrubFormState>
 ) {
+  // ✅ Add refs for tracking override and active state
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef<boolean>(false);
+
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
   const [form, setForm] = useState<RefreshPowerScrubFormState>(() => {
     // Merge defaults with any initial data.
     const base: RefreshPowerScrubFormState = {
@@ -575,6 +582,16 @@ export function useRefreshPowerScrubCalc(
     if (initial?.minimumVisit != null) {
       base.minimumVisit = initial.minimumVisit;
     }
+
+    // ✅ Initialize with global months ONLY if service starts with inputs
+    const isInitiallyActive = AREA_KEYS.some(area => (initial as any)?.[area]?.enabled);
+    const defaultContractMonths = initial?.contractMonths
+      ? initial.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : 12;
+
+    base.contractMonths = defaultContractMonths;
 
     return base;
   });
@@ -610,9 +627,6 @@ export function useRefreshPowerScrubCalc(
 
   // ✅ Loading state for refresh button
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data
   const updateFormWithConfig = (config: BackendRefreshPowerScrubConfig) => {
@@ -821,6 +835,31 @@ export function useRefreshPowerScrubCalc(
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+  useEffect(() => {
+    const isServiceActive = AREA_KEYS.some(area => form[area].enabled);
+    const wasActive = wasActiveRef.current;
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      if (form.contractMonths !== servicesContext.globalContractMonths) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    }
+
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.dumpster.enabled, form.patio.enabled, form.walkway.enabled, form.foh.enabled, form.boh.enabled, form.other.enabled, servicesContext]);
+
   /** Toggle whether a column is included */
   const toggleAreaEnabled = (area: RefreshAreaKey, enabled: boolean) => {
     setForm((prev) => {
@@ -983,6 +1022,7 @@ export function useRefreshPowerScrubCalc(
   };
 
   const setContractMonths = (months: number) => {
+    hasContractMonthsOverride.current = true;
     const originalValue = form.contractMonths;
 
     setForm((prev) => ({

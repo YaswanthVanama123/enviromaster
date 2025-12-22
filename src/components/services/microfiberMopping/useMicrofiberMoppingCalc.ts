@@ -236,23 +236,47 @@ export function useMicrofiberMoppingCalc(
   quote: ServiceQuoteResult;
   calc: MicrofiberMoppingCalcResult;
 } {
+  // Get services context for fallback pricing data AND global contract months
+  const servicesContext = useServicesContextOptional();
+
   const [form, setForm] = useState<MicrofiberMoppingFormState>(() => {
     const maybe = (initialData as any) || {};
     const initialForm =
       maybe && typeof maybe === "object" && "form" in maybe ? maybe.form : maybe;
 
+    // ✅ Calculate if service is initially active (has inputs)
+    const initialInputCount = (initialForm?.bathroomCount || 0) +
+                               (initialForm?.hugeBathroomSqFt || 0) +
+                               (initialForm?.extraAreaSqFt || 0) +
+                               (initialForm?.standaloneSqFt || 0) +
+                               (initialForm?.chemicalGallons || 0);
+    const isInitiallyActive = initialInputCount > 0;
+
+    // ✅ Only use global contract months if service starts active AND no initial value provided
+    const defaultContractMonths = initialForm?.contractTermMonths
+      ? initialForm.contractTermMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : DEFAULT_FORM.contractTermMonths;
+
+    console.log(`📅 [MICROFIBER-INIT] Initializing contract months:`, {
+      initialInputCount,
+      isInitiallyActive,
+      globalContractMonths: servicesContext?.globalContractMonths,
+      defaultContractMonths,
+      hasInitialValue: !!initialForm?.contractTermMonths
+    });
+
     return {
       ...DEFAULT_FORM,
       ...(initialForm as Partial<MicrofiberMoppingFormState>),
+      contractTermMonths: defaultContractMonths,
     };
   });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendMicrofiberConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data
   const updateFormWithConfig = (config: BackendMicrofiberConfig) => {
@@ -396,6 +420,51 @@ export function useMicrofiberMoppingCalc(
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // ✅ Sync global contract months to service (unless service has explicitly overridden it)
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef(() => {
+    const inputCount = form.bathroomCount + form.hugeBathroomSqFt +
+                       form.extraAreaSqFt + form.standaloneSqFt + form.chemicalGallons;
+    return inputCount > 0;
+  });
+
+  useEffect(() => {
+    const inputCount = form.bathroomCount + form.hugeBathroomSqFt +
+                       form.extraAreaSqFt + form.standaloneSqFt + form.chemicalGallons;
+    const isServiceActive = inputCount > 0;
+    const wasActive = wasActiveRef.current();
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      // Service just became active - adopt global contract months
+      console.log(`📅 [MICROFIBER-CONTRACT] Service just became active, adopting global contract months`);
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        const globalMonths = servicesContext.globalContractMonths;
+        console.log(`📅 [MICROFIBER-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => ({ ...prev, contractTermMonths: globalMonths }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      // Service is already active - sync with global if it changes
+      const globalMonths = servicesContext.globalContractMonths;
+      if (form.contractTermMonths !== globalMonths) {
+        console.log(`📅 [MICROFIBER-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => ({ ...prev, contractTermMonths: globalMonths }));
+      }
+    }
+
+    // Update the ref for next render
+    wasActiveRef.current = () => isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractTermMonths,
+      form.bathroomCount, form.hugeBathroomSqFt, form.extraAreaSqFt,
+      form.standaloneSqFt, form.chemicalGallons, servicesContext]);
+
+  // ✅ Track when user manually changes contract months (this sets the override flag)
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({ ...prev, contractTermMonths: months }));
+    console.log(`📅 [MICROFIBER-CONTRACT] User override: ${months} months`);
+  }, []);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
@@ -940,5 +1009,6 @@ export function useMicrofiberMoppingCalc(
                            cfg.standalonePricing.standaloneMinimum,
       },
     },
+    setContractMonths, // ✅ NEW: Contract months with override support
   };
 }

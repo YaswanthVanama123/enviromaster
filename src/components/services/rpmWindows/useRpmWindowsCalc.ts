@@ -1,5 +1,5 @@
 // src/features/services/rpmWindows/useRpmWindowsCalc.ts
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import type {
@@ -85,6 +85,10 @@ function mapFrequency(v: string): RpmFrequencyKey {
 }
 
 export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
+  // ✅ Add refs for tracking override and active state
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef<boolean>(false);
+
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
 
@@ -100,9 +104,24 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
   });
 
   // ✅ Initialize form state (will be updated when backend config loads)
-  const [form, setForm] = useState<RpmWindowsFormState>({
-    ...DEFAULT_FORM,
-    ...initial,
+  const [form, setForm] = useState<RpmWindowsFormState>(() => {
+    const baseForm = {
+      ...DEFAULT_FORM,
+      ...initial,
+    };
+
+    // ✅ Initialize with global months ONLY if service starts with inputs
+    const isInitiallyActive = (initial?.smallQty || 0) + (initial?.mediumQty || 0) + (initial?.largeQty || 0) > 0;
+    const defaultContractMonths = initial?.contractMonths
+      ? initial.contractMonths
+      : (isInitiallyActive && servicesContext?.globalContractMonths)
+        ? servicesContext.globalContractMonths
+        : 12;
+
+    return {
+      ...baseForm,
+      contractMonths: defaultContractMonths,
+    };
   });
 
   // ✅ Loading state for refresh button
@@ -287,6 +306,31 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+  useEffect(() => {
+    const isServiceActive = (form.smallQty || 0) + (form.mediumQty || 0) + (form.largeQty || 0) > 0;
+    const wasActive = wasActiveRef.current;
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      if (form.contractMonths !== servicesContext.globalContractMonths) {
+        setForm(prev => ({
+          ...prev,
+          contractMonths: servicesContext.globalContractMonths,
+        }));
+      }
+    }
+
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.smallQty, form.mediumQty, form.largeQty, servicesContext]);
+
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -369,6 +413,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       tripCharge: baseWeeklyRates.trip * freqMult,
     }));
   }, [form.frequency, backendConfig, baseWeeklyRates]); // Run when frequency, backend config, or base rates change
+
+  // ✅ Add setContractMonths function
+  const setContractMonths = useCallback((months: number) => {
+    hasContractMonthsOverride.current = true;
+    setForm(prev => ({
+      ...prev,
+      contractMonths: months,
+    }));
+  }, []);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, checked } = e.target as any;
@@ -1002,5 +1055,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
     quote,
     refreshConfig: fetchPricing,
     isLoadingConfig,
+    setContractMonths,
   };
 }
