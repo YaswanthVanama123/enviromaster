@@ -1169,7 +1169,25 @@ export default function FormFilling() {
                 className="formfilling__draftBtn"
                 onClick={handleDraft}
                 disabled={isSaving}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  opacity: isSaving ? 0.7 : 1,
+                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                }}
               >
+                {isSaving && (
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid #fff',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.6s linear infinite'
+                  }} />
+                )}
                 {isSaving ? "Saving..." : "Save as Draft"}
               </button>
               <button
@@ -1177,8 +1195,26 @@ export default function FormFilling() {
                 className="formfilling__saveBtn"
                 onClick={() => setShowSaveModal(true)}
                 disabled={isSaving}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  opacity: isSaving ? 0.7 : 1,
+                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                }}
               >
-                Save & Generate PDF
+                {isSaving && (
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid #fff',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.6s linear infinite'
+                  }} />
+                )}
+                {isSaving ? "Saving..." : "Save & Generate PDF"}
               </button>
             </div>
           </>

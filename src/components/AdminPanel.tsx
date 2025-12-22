@@ -82,6 +82,9 @@ export default function AdminPanel() {
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // ✅ NEW: All documents for pie chart filtering (not just recent)
+  const [allDocuments, setAllDocuments] = useState<Document[]>([]);
+
   // ✅ NEW: Dashboard statistics from admin API
   const [dashboardStats, setDashboardStats] = useState({
     manualUploads: 0,
@@ -89,8 +92,17 @@ export default function AdminPanel() {
     totalDocuments: 0
   });
 
+  // ✅ NEW: Document status counts from backend
+  const [documentStatusCounts, setDocumentStatusCounts] = useState({
+    approved_admin: 0,
+    pending_approval: 0,
+    approved_salesman: 0,
+    saved: 0,
+    draft: 0
+  });
+
   // Pie chart states
-  const [pieTimeFilter, setPieTimeFilter] = useState("This Week");
+  const [pieTimeFilter, setPieTimeFilter] = useState("This Month");
   const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
   const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -175,6 +187,22 @@ export default function AdminPanel() {
 
         setDocuments(mapped);
 
+        // ✅ NEW: Fetch ALL documents for pie chart (not limited to recent)
+        const allDocsResponse = await pdfApi.getCustomerHeadersSummary();
+        const allDocsMapped: Document[] = (allDocsResponse.items || []).map((item: any) => ({
+          id: item._id || item.id,
+          name: item.headerTitle || "Untitled Document",
+          uploadedOn: new Date(item.updatedAt).toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          }),
+          status: item.status || "draft",
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
+        setAllDocuments(allDocsMapped);
+        console.log("📊 [ADMIN-PANEL] Loaded all documents for pie chart:", allDocsMapped.length);
+
         // ✅ NEW: Also fetch grouped recent documents for folder view
         const groupedData = await pdfApi.getSavedFilesGrouped(1, 10); // Get first 10 groups for recent view
         setRecentAgreements(groupedData.groups || []);
@@ -182,6 +210,33 @@ export default function AdminPanel() {
         // ✅ Set all statistics from the dashboard API response
         setUploadCount(dashboardData.stats.manualUploads);
         setDashboardStats(dashboardData.stats);
+
+        // ✅ NEW: Set document status counts if provided by backend
+        if (dashboardData.documentStatus) {
+          console.log("📊 [ADMIN-PANEL] Document status from backend:", dashboardData.documentStatus);
+          setDocumentStatusCounts(dashboardData.documentStatus);
+        } else {
+          console.warn("⚠️ [ADMIN-PANEL] No documentStatus provided by backend, will calculate from all documents");
+          // Fallback: Calculate from all documents
+          const statusCounts = {
+            approved_admin: 0,
+            pending_approval: 0,
+            approved_salesman: 0,
+            saved: 0,
+            draft: 0
+          };
+
+          allDocsMapped.forEach((doc: Document) => {
+            if (doc.status === 'approved_admin') statusCounts.approved_admin++;
+            else if (doc.status === 'pending_approval') statusCounts.pending_approval++;
+            else if (doc.status === 'approved_salesman') statusCounts.approved_salesman++;
+            else if (doc.status === 'saved') statusCounts.saved++;
+            else if (doc.status === 'draft') statusCounts.draft++;
+          });
+
+          console.log("📊 [ADMIN-PANEL] Calculated status counts from all documents:", statusCounts);
+          setDocumentStatusCounts(statusCounts);
+        }
 
         // Set last upload date from the most recent document
         if (dashboardData.recentDocuments.length > 0) {
@@ -380,45 +435,55 @@ export default function AdminPanel() {
 
   // Calculate pie chart data based on time filter
   const getPieChartData = () => {
+    // ✅ FIXED: All filters now use date-based filtering on allDocuments for consistency
     const today = new Date();
-    let filteredDocs = [...documents];
+    let filteredDocs = [...allDocuments];
 
     if (pieTimeFilter === "This Week") {
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - today.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
 
-      filteredDocs = documents.filter((doc) => {
+      filteredDocs = allDocuments.filter((doc) => {
         const docDate = new Date(doc.createdAt || doc.updatedAt);
         return docDate >= startOfWeek;
       });
     } else if (pieTimeFilter === "This Month") {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      startOfMonth.setHours(0, 0, 0, 0);
 
-      filteredDocs = documents.filter((doc) => {
+      filteredDocs = allDocuments.filter((doc) => {
         const docDate = new Date(doc.createdAt || doc.updatedAt);
         return docDate >= startOfMonth;
       });
     } else if (pieTimeFilter === "This Year") {
       const startOfYear = new Date(today.getFullYear(), 0, 1);
+      startOfYear.setHours(0, 0, 0, 0);
 
-      filteredDocs = documents.filter((doc) => {
+      filteredDocs = allDocuments.filter((doc) => {
         const docDate = new Date(doc.createdAt || doc.updatedAt);
         return docDate >= startOfYear;
       });
     } else if (pieTimeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
-      filteredDocs = documents.filter((doc) => {
+      const startDate = new Date(selectedDateFrom);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(selectedDateTo);
+      endDate.setHours(23, 59, 59, 999);
+
+      filteredDocs = allDocuments.filter((doc) => {
         const docDate = new Date(doc.createdAt || doc.updatedAt);
-        return docDate >= selectedDateFrom && docDate <= selectedDateTo;
+        return docDate >= startDate && docDate <= endDate;
       });
     }
 
-    // Count statuses
+    // Count statuses from filtered documents
     const done = filteredDocs.filter((d) => d.status === "approved_admin").length;
     const pending = filteredDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
     const saved = filteredDocs.filter((d) => d.status === "saved").length;
     const drafts = filteredDocs.filter((d) => d.status === "draft").length;
     const total = done + pending + saved + drafts;
+
+    console.log(`📊 [PIE CHART] Filter: ${pieTimeFilter}, Filtered: ${filteredDocs.length} docs, Total: ${total}, Done: ${done}, Pending: ${pending}, Saved: ${saved}, Drafts: ${drafts}`);
 
     return {
       done,
@@ -594,12 +659,72 @@ export default function AdminPanel() {
                       </tr>
                     </thead>
                     <tbody>
+                      {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
                       {loading ? (
-                        <tr>
-                          <td colSpan={5} className="table-empty">
-                            Loading documents...
-                          </td>
-                        </tr>
+                        <>
+                          {Array.from({ length: 4 }).map((_, idx) => (
+                            <tr key={`skeleton-${idx}`}>
+                              <td>
+                                <div style={{
+                                  height: '16px',
+                                  background: '#e5e7eb',
+                                  borderRadius: '4px',
+                                  width: '70%',
+                                  animation: 'pulse 1.5s ease-in-out infinite'
+                                }} />
+                              </td>
+                              <td>
+                                <div style={{
+                                  height: '16px',
+                                  background: '#e5e7eb',
+                                  borderRadius: '4px',
+                                  width: '80px',
+                                  animation: 'pulse 1.5s ease-in-out infinite'
+                                }} />
+                              </td>
+                              <td>
+                                <div style={{
+                                  height: '16px',
+                                  background: '#e5e7eb',
+                                  borderRadius: '4px',
+                                  width: '100px',
+                                  animation: 'pulse 1.5s ease-in-out infinite'
+                                }} />
+                              </td>
+                              <td>
+                                <div style={{
+                                  height: '20px',
+                                  background: '#e5e7eb',
+                                  borderRadius: '12px',
+                                  width: '80px',
+                                  animation: 'pulse 1.5s ease-in-out infinite'
+                                }} />
+                              </td>
+                              <td>
+                                <div style={{
+                                  display: 'flex',
+                                  gap: '8px',
+                                  justifyContent: 'center'
+                                }}>
+                                  <div style={{
+                                    width: '30px',
+                                    height: '30px',
+                                    background: '#e5e7eb',
+                                    borderRadius: '4px',
+                                    animation: 'pulse 1.5s ease-in-out infinite'
+                                  }} />
+                                  <div style={{
+                                    width: '30px',
+                                    height: '30px',
+                                    background: '#e5e7eb',
+                                    borderRadius: '4px',
+                                    animation: 'pulse 1.5s ease-in-out infinite'
+                                  }} />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </>
                       ) : recentAgreements.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="table-empty">

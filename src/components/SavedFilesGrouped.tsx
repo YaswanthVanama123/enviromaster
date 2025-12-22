@@ -846,10 +846,85 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
       </div>
 
       <div className="sf__groups">
+        {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
         {loading && (
-          <div className="sf__loading">
-            Loading agreements...
-          </div>
+          <>
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <div
+                key={`skeleton-${idx}`}
+                style={{
+                  background: '#fff',
+                  border: '1px solid #e6e6e6',
+                  borderRadius: '10px',
+                  marginBottom: '8px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                  padding: '16px',
+                  animation: 'pulse 1.5s ease-in-out infinite'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* Checkbox skeleton */}
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    background: '#e5e7eb',
+                    borderRadius: '4px'
+                  }} />
+
+                  {/* Arrow skeleton */}
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    background: '#e5e7eb',
+                    borderRadius: '4px'
+                  }} />
+
+                  {/* Folder icon skeleton */}
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    background: '#fef3c7',
+                    borderRadius: '4px'
+                  }} />
+
+                  {/* Title skeleton */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      height: '16px',
+                      background: '#e5e7eb',
+                      borderRadius: '4px',
+                      width: '60%',
+                      marginBottom: '8px'
+                    }} />
+                    <div style={{
+                      height: '12px',
+                      background: '#f3f4f6',
+                      borderRadius: '4px',
+                      width: '40%'
+                    }} />
+                  </div>
+
+                  {/* Action buttons skeleton */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{
+                      width: '70px',
+                      height: '28px',
+                      background: mode === 'trash' ? '#10b981' : '#f3f4f6',
+                      borderRadius: '6px'
+                    }} />
+                    {mode === 'trash' && (
+                      <div style={{
+                        width: '70px',
+                        height: '28px',
+                        background: '#fef2f2',
+                        borderRadius: '6px'
+                      }} />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
         )}
 
         {!loading && error && (

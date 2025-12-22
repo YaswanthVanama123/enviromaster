@@ -251,18 +251,42 @@
   background: #fff;
   font-weight: 500;
   font-size: 13.5px;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
   /* ✅ FIX: Show dropdown arrow for select elements */
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path fill='gray' d='M0 0l5 6 5-6z'/></svg>");
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%23374151' d='M0 0l6 8 6-8z'/></svg>");
   background-repeat: no-repeat;
   background-position: right 8px center;
-  padding-right: 30px; /* Make space for dropdown arrow */
+  padding-right: 32px; /* Make space for dropdown arrow */
+  pointer-events: auto;
+  user-select: none;
 }
+
+.pill:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
 .pill:focus {
-  border-color: #0056d8;
+  border-color: #3b82f6;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pill:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #d0d0d0;
 }
 
 /* Status-specific pill colors */
@@ -271,6 +295,8 @@
   border-color: #0ea5e9;
   color: #075985;
   font-weight: 600;
+  /* ✅ FIX: Update background image color to match text */
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%23075985' d='M0 0l6 8 6-8z'/></svg>");
 }
 
 .pill--draft {
@@ -278,6 +304,7 @@
   border-color: #9ca3af;
   color: #4b5563;
   font-weight: 600;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%234b5563' d='M0 0l6 8 6-8z'/></svg>");
 }
 
 .pill--pending_approval {
@@ -285,6 +312,7 @@
   border-color: #f59e0b;
   color: #92400e;
   font-weight: 600;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%2392400e' d='M0 0l6 8 6-8z'/></svg>");
 }
 
 .pill--approved_salesman,
@@ -293,6 +321,7 @@
   border-color: #10b981;
   color: #065f46;
   font-weight: 600;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%23065f46' d='M0 0l6 8 6-8z'/></svg>");
 }
 
 .pill--approved_admin,
@@ -301,6 +330,7 @@
   border-color: #22c55e;
   color: #14532d;
   font-weight: 600;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%2314532d' d='M0 0l6 8 6-8z'/></svg>");
 }
 
 .pill--unknown {
@@ -308,6 +338,56 @@
   border-color: #f87171;
   color: #7f1d1d;
   font-weight: 600;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path fill='%237f1d1d' d='M0 0l6 8 6-8z'/></svg>");
+}
+
+/* Status Badges (non-interactive) */
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.status-badge--saved {
+  background: #e0f2fe;
+  border-color: #0ea5e9;
+  color: #075985;
+}
+
+.status-badge--draft {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #4b5563;
+}
+
+.status-badge--pending_approval {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.status-badge--approved_salesman,
+.status-badge--approved_by_salesman {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+
+.status-badge--approved_admin,
+.status-badge--approved_by_admin {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #14532d;
+}
+
+.status-badge--unknown {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #7f1d1d;
 }
 
 /* Row actions */
@@ -316,6 +396,12 @@
   justify-content: flex-start;
   gap: 8px;
 }
+
+/* File status dropdown in table */
+.file-status-dropdown {
+  min-width: 180px;
+}
+
 .iconbtn {
   width: 32px;
   height: 32px;

@@ -74,41 +74,43 @@ const getStatusClassName = (status: string) => {
     .replace(/[^a-z0-9_]/g, '');
 };
 
-// ✅ FIX P1: Context-aware status dropdown filtering - handle actual status formats
+// ✅ FIX: Simplified status dropdown - show appropriate statuses for approval workflow
 const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext: boolean = false) => {
+  // ✅ FIXED: Remove duplicate status entries
   const approvalStatuses = [
-    { value: 'Pending Approval', label: 'Pending Approval' },
     { value: 'pending_approval', label: 'Pending Approval' },
-    { value: 'Approved by Salesman', label: 'Approved by Salesman' },
     { value: 'approved_salesman', label: 'Approved by Salesman' },
-    { value: 'Approved by Admin', label: 'Approved by Admin' },
     { value: 'approved_admin', label: 'Approved by Admin' },
-    { value: 'Draft', label: 'Draft' },
-    { value: 'draft', label: 'Draft' }
+    // { value: 'draft', label: 'Draft' }
   ];
 
+  // ✅ FIXED: Normalize current status for matching (handle case variations)
+  const normalizedCurrent = currentStatus?.toLowerCase().replace(/\s+/g, '_');
+
   return approvalStatuses.filter(status => {
+    const normalizedStatus = status.value.toLowerCase().replace(/\s+/g, '_');
+
     // Always allow current status to stay
-    if (status.value === currentStatus) return true;
+    if (normalizedStatus === normalizedCurrent) return true;
 
-    // ✅ CONTEXT-BASED FILTERING: Filter approval statuses based on admin context
-    // In normal approval documents view: hide admin approval options
-    if (!isInAdminContext && (
-      status.value === 'Approved by Admin' ||
-      status.value === 'approved_admin'
-    )) {
-      return false;
+    // ✅ SIMPLIFIED: In admin panel, show admin approval options
+    if (isInAdminContext) {
+      // Admin can approve as admin, send back to pending, or draft
+      const adminAllowedStatuses = [
+        'approved_admin',
+        'pending_approval',
+        'draft'
+      ];
+      return adminAllowedStatuses.includes(status.value);
+    } else {
+      // Non-admin users (salesmen) can only use salesman approval
+      const salesmanAllowedStatuses = [
+        'approved_salesman',
+        'pending_approval',
+        'draft'
+      ];
+      return salesmanAllowedStatuses.includes(status.value);
     }
-
-    // In admin panel approval documents view: hide salesman approval options
-    if (isInAdminContext && (
-      status.value === 'Approved by Salesman' ||
-      status.value === 'approved_salesman'
-    )) {
-      return false;
-    }
-
-    return true;
   });
 };
 
@@ -607,11 +609,11 @@ export default function ApprovalDocuments() {
                   </td>
                   <td>Agreement</td>
                   <td>{timeAgo(agreement.latestUpdate)}</td>
-                  <td>
-                    <span className={`pill pill--${agreement.agreementStatus}`}>
+                  {/* <td>
+                    <span className={`status-badge status-badge--${getStatusClassName(agreement.agreementStatus)}`}>
                       {STATUS_LABEL[agreement.agreementStatus as FileStatus] || agreement.agreementStatus}
                     </span>
-                  </td>
+                  </td> */}
                   <td></td>
                 </tr>
 
@@ -658,7 +660,7 @@ export default function ApprovalDocuments() {
                     <td>{timeAgo(file.updatedAt)}</td>
                     <td>
                       <select
-                        className={`pill pill--${getStatusClassName(file.status)}`}
+                        className="dropdown"
                         value={file.status}
                         onChange={(e) => changeFileStatus(file, e.target.value)}
                         disabled={savingStatusId === file.id}
@@ -696,7 +698,7 @@ export default function ApprovalDocuments() {
                           type="button"
                           onClick={() => handleEmail(file)}
                           disabled={!file.hasPdf}
-                        >
+                        > 
                           <FontAwesomeIcon icon={faEnvelope} />
                         </button>
                         <button
