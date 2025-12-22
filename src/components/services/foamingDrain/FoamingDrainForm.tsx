@@ -382,7 +382,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
   const stdQty = stdServiceQty;
   const stdTotal = breakdown.weeklyStandardDrains;
-  const stdRate = stdQty > 0 ? stdTotal / stdQty : 0;
+
+  // Use the count that's visible in the input field
+  const stdQtyForRateCalc = isInstallLevelUi
+    ? Math.max(state.standardDrainCount - state.installDrainCount, 0)
+    : state.standardDrainCount;
+
+  // ✅ FIXED: Calculate rate for display
+  // When all-inclusive: show the base rate even though total is $0
+  // Otherwise: calculate from actual pricing
+  let stdRate = state.standardDrainRate; // Default to base rate
+  if (!state.isAllInclusive && stdQtyForRateCalc > 0 && stdTotal > 0) {
+    stdRate = stdTotal / stdQtyForRateCalc;
+  }
 
   const greaseQty = state.greaseTrapCount;
   const greaseTotal = breakdown.weeklyGreaseTraps;
@@ -634,6 +646,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   onChange={(e) => {
                     const checked = e.target.checked && canUseBigAlt;
                     updateField("useBigAccountTenWeekly", checked);
+                    // Clear small alt when enabling big account
                     if (checked && state.useSmallAltPricingWeekly) {
                       updateField("useSmallAltPricingWeekly", false);
                     }
@@ -709,13 +722,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
             <div className="svc-field">
               <div className="svc-inline">
-                {/* QTY = ACTIVE (non-install) DRAINS */}
-                {/* QTY = user input for total standard drains */}
+                {/* QTY = ALWAYS show actual standardDrainCount for input */}
                 <input
                   type="number"
                   min="0"
                   className="svc-in field-qty"
-                  value={stdQty || ""}
+                  value={state.standardDrainCount || ""}
                   onChange={handleNumberChange("standardDrainCount")}
                 />
 
@@ -745,7 +757,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   }}
                 />
                 <span>=</span>
-                {/* TOTAL = AUTO (read-only) */}
+                {/* TOTAL = Shows calculated total (0 when all-inclusive) */}
                 <input
                   readOnly
                   className="svc-in-box weekly-total-field"

@@ -664,9 +664,33 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const effectiveInstallation = state.customInstallationTotal ?? installation;
 
     // ---------- 7d) FIRST VISIT LOGIC ----------
-    // ✅ FIXED: First visit should use minimum-enforced weeklyService, not raw components
-    // First visit = Installation (one-time) + Recurring service (minimum-enforced)
-    let firstVisitPrice = effectiveInstallation + weeklyService;
+    // ✅ FIXED: First visit = Installation + Services that don't have installation fees
+    // Services WITH installation fees (being installed on first visit):
+    //   - Filthy standard drains (if filthy condition)
+    //   - Grease traps (if grease install is enabled)
+    //   - Green drains (always have install fee)
+    // Services WITHOUT installation fees (serviced on first visit):
+    //   - Install drains (recurring cost, no install fee)
+    //   - Plumbing (add-on service)
+    //   - Standard drains (if normal condition - no filthy install)
+    //   - Grease traps (if grease install is NOT enabled)
+
+    let firstVisitServiceRaw = weeklyInstallDrains + weeklyPlumbing;
+
+    // Add standard drains if normal condition (no filthy install)
+    if (condition === "normal") {
+      firstVisitServiceRaw += weeklyStandardDrains;
+    }
+
+    // Add grease traps if grease install is NOT enabled
+    if (!state.chargeGreaseTrapInstall) {
+      firstVisitServiceRaw += weeklyGreaseTraps;
+    }
+
+    // Green drains ALWAYS have installation fee, so never add to first visit service
+
+    const firstVisitService = round2(firstVisitServiceRaw);
+    let firstVisitPrice = effectiveInstallation + firstVisitService;
     firstVisitPrice = round2(firstVisitPrice);
 
     // ---------- 8) Monthly & contract logic ----------
