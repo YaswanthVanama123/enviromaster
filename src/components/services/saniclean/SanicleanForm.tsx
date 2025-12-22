@@ -1236,6 +1236,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in"
               type="number"
+              readOnly
               min="0"
               step="0.01"
               name="customBaseService"
@@ -1252,7 +1253,7 @@ export const SanicleanForm: React.FC<
                 backgroundColor: form.customBaseService !== undefined ? '#fffacd' : 'white',
                 width: '100px'
               }}
-              title="Base service charge - editable"
+              title=""
             />
           </div>
         </div>
@@ -1301,8 +1302,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="0.01"
                 name="customFacilityComponents"
                 value={getDisplayValue(
@@ -1520,6 +1520,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in"
               type="number"
+              readOnly
               min="0"
               step="0.01"
               name="customWeeklyTotal"
@@ -1536,7 +1537,7 @@ export const SanicleanForm: React.FC<
                 backgroundColor: form.customWeeklyTotal !== undefined ? '#fffacd' : 'white',
                 width: '100px'
               }}
-              title="Weekly total - editable"
+              title=""
             />
           </div>
         </div>
@@ -1584,8 +1585,8 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in"
               type="number"
-          min="0"
-            min="0"
+              readOnly
+              min="0"
               step="0.01"
               name="customMonthlyTotal"
               value={getDisplayValue(
@@ -1601,7 +1602,7 @@ export const SanicleanForm: React.FC<
                 backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
                 width: '100px'
               }}
-              title="Monthly total - editable"
+              title=""
             />
           </div>
         </div>
