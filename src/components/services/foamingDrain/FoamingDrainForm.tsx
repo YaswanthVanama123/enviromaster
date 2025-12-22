@@ -662,7 +662,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         </div>
 
         {/* All-inclusive */}
-        <div className="svc-row">
+        {/* <div className="svc-row">
           <div className="svc-label" />
           <div className="svc-field">
             <label>
@@ -676,7 +676,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               All-Inclusive (drains included, trip waived)
             </label>
           </div>
-        </div>
+        </div> */}
 
         {/* Optional grease trap install */}
         <div className="svc-row">
