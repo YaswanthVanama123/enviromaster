@@ -210,7 +210,7 @@ export const SanicleanForm: React.FC<
           isDisplay: true,
           label: "Pricing Mode",
           type: "text" as const,
-          value: form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge",
+          value: form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Fixture Charge",
         },
 
         location: {
@@ -390,33 +390,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* ✅ NEW: Facility Components Frequency (only show for per-item-charge) */}
-      {form.pricingMode === "per_item_charge" && (
-        <div className="svc-row">
-          <label>
-            Facility Components Frequency
-            <small style={{ display: 'block', fontSize: '11px', color: '#666', fontWeight: 'normal' }}>
-              Independent of main service frequency
-            </small>
-          </label>
-          <div className="svc-row-right">
-            <select
-              className="svc-in"
-              name="facilityComponentsFrequency"
-              value={form.facilityComponentsFrequency}
-              onChange={(e) => setFacilityComponentsFrequency(e.target.value as SanicleanFrequency)}
-            >
-              {Object.entries(sanicleanFrequencyLabels).map(
-                ([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-        </div>
-      )}
+
 
       {/* Total Restroom Fixtures */}
       <div className="svc-row">
@@ -435,7 +409,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* Location - Only show for Per Item Charge */}
-      {form.pricingMode === "per_item_charge" && (
+      {/* {form.pricingMode === "per_item_charge" && (
         <div className="svc-row">
           <label>Location</label>
           <div className="svc-row-right">
@@ -450,10 +424,10 @@ export const SanicleanForm: React.FC<
             </select>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Parking - Only for inside beltway in per item mode */}
-      {form.pricingMode === "per_item_charge" && form.location === "insideBeltway" && (
+      {/* {form.pricingMode === "per_item_charge" && form.location === "insideBeltway" && (
         <div className="svc-row">
           <label>Parking</label>
           <div className="svc-row-right">
@@ -468,7 +442,7 @@ export const SanicleanForm: React.FC<
             </label>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* FIXTURE BREAKDOWN */}
       <div className="svc-h-sub" style={{ marginTop: 10 }}>
@@ -723,6 +697,29 @@ export const SanicleanForm: React.FC<
           <div className="svc-h-sub" style={{ marginTop: 10 }}>
             FACILITY COMPONENTS (Monthly Charges)
           </div>
+
+          {/* ✅ NEW: Facility Components Frequency (only show for per-item-charge) */}
+          {form.pricingMode === "per_item_charge" && (
+            <div className="svc-row">
+              <label>
+                Facility Components Frequency
+                <small style={{ display: 'block', fontSize: '11px', color: '#666', fontWeight: 'normal' }}>
+                  Independent of main service frequency
+                </small>
+              </label>
+              <div className="svc-row-right">
+                <select
+                  className="svc-in"
+                  name="facilityComponentsFrequency"
+                  value={form.facilityComponentsFrequency}
+                  onChange={(e) => setFacilityComponentsFrequency(e.target.value as SanicleanFrequency)}
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Urinal Components - Only show checkbox if urinals > 0 */}
           {form.urinals > 0 && (
@@ -1006,6 +1003,8 @@ export const SanicleanForm: React.FC<
         </>
       )}
 
+      
+
       {/* Warranty - Only for Per Item Charge and only when there are sinks (dispensers) */}
       {!isAllInclusive && form.sinks > 0 && (
         <div className="svc-row">
@@ -1189,7 +1188,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* Rate Tier */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Rate Tier</label>
         <div className="svc-row-right">
           <select
@@ -1202,24 +1201,12 @@ export const SanicleanForm: React.FC<
             <option value="greenRate">Green</option>
           </select>
         </div>
-      </div>
+      </div> */}
 
-      {/* Notes */}
-      <div className="svc-row">
-        <label>Notes</label>
-        <div className="svc-row-right">
-          <textarea
-            className="svc-in"
-            name="notes"
-            value={form.notes}
-            onChange={onChange}
-            rows={3}
-          />
-        </div>
-      </div>
+
 
       {/* PRICING SUMMARY */}
-      <div className="svc-h-sub" style={{ marginTop: 16 }}>
+      {/* <div className="svc-h-sub" style={{ marginTop: 16 }}>
         PRICING SUMMARY
       </div>
 
@@ -1233,7 +1220,7 @@ export const SanicleanForm: React.FC<
             value={form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge"}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* PRICE BREAKDOWN - Individual editable components */}
       <div className="svc-h-sub" style={{ marginTop: 16 }}>
@@ -1249,8 +1236,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               step="0.01"
               name="customBaseService"
               value={getDisplayValue(
@@ -1273,7 +1259,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* Trip Charge */}
-      {form.pricingMode === "per_item_charge" && (
+      {/* {form.pricingMode === "per_item_charge" && (
         <div className="svc-row">
           <label>Trip Charge</label>
           <div className="svc-row-right">
@@ -1282,8 +1268,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="0.01"
                 name="customTripCharge"
                 value={getDisplayValue(
@@ -1304,7 +1289,7 @@ export const SanicleanForm: React.FC<
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Facility Components */}
       {form.pricingMode === "per_item_charge" && quote.breakdown.facilityComponents > 0 && (
@@ -1511,7 +1496,7 @@ export const SanicleanForm: React.FC<
       )}
 
       {/* PRICING SUMMARY */}
-      <div className="svc-h-sub" style={{ marginTop: 16 }}>
+      {/* <div className="svc-h-sub" style={{ marginTop: 16 }}>
         PRICING SUMMARY
       </div>
 
@@ -1525,18 +1510,17 @@ export const SanicleanForm: React.FC<
             value={form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge"}
           />
         </div>
-      </div>
+      </div> */}
 
       <div className="svc-row">
-        <label>Weekly Total (Service + All Add-Ons)</label>
+        <label>Weekly Total (Service)</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
             <input
               className="svc-in"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               step="0.01"
               name="customWeeklyTotal"
               value={getDisplayValue(
@@ -1649,7 +1633,6 @@ export const SanicleanForm: React.FC<
           <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
           <input
             type="number"
-          min="0"
             min="0"
             step="0.01"
             name="customContractTotal"
@@ -1675,6 +1658,20 @@ export const SanicleanForm: React.FC<
               width: '100px'
             }}
             title="Contract total - editable"
+          />
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div className="svc-row">
+        <label>Notes</label>
+        <div className="svc-row-right">
+          <textarea
+            className="svc-in"
+            name="notes"
+            value={form.notes}
+            onChange={onChange}
+            rows={3}
           />
         </div>
       </div>
