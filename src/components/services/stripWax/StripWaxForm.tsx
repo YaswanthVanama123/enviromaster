@@ -147,6 +147,10 @@ export const StripWaxForm: React.FC<
         displayName: "Strip & Wax",
         isActive: true,
 
+        // Red/Green Line pricing data
+        rawPrice: calc.rawPrice,  // Raw price before minimum
+        perVisit: calc.perVisit,  // Final price after minimum
+
         frequency: {
           isDisplay: true,
           label: "Frequency",

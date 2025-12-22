@@ -46,6 +46,10 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         displayName: "Pure Janitorial",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: calc.baseServiceCost + calc.vacuumingCost + calc.dustingCost + calc.tripCharge,  // Raw price before minimum
+        perVisit: calc.perVisit,  // Final price after minimum
+
         // Service type as text field
         serviceType: {
           label: "Service Type",

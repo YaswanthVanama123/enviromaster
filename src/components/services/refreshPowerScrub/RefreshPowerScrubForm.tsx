@@ -137,10 +137,19 @@ export const RefreshPowerScrubForm: React.FC<
     if (servicesContext) {
       const isActive = AREA_ORDER.some(key => form[key]?.enabled);
 
+      // Calculate total per-visit cost across all enabled areas
+      const totalPerVisitCost = AREA_ORDER
+        .filter(key => form[key]?.enabled)
+        .reduce((sum, key) => sum + (areaTotals[key] || 0), 0);
+
       const data = isActive ? {
         serviceId: "refreshPowerScrub",
         displayName: "Refresh Power Scrub",
         isActive: true,
+
+        // Red/Green Line pricing data
+        perVisitBase: totalPerVisitCost,  // Raw cost (sum of all areas)
+        perVisit: Math.max(totalPerVisitCost, form.minimumVisit || 0),  // Final per-visit price after minimum
 
         // Global service information
         serviceInfo: {

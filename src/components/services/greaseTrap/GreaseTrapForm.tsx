@@ -27,6 +27,10 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
         displayName: "Grease Trap",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate),  // Raw price
+        perVisit: quote.perVisitTotal,  // Final price (same as raw for grease trap)
+
         frequency: {
           label: "Frequency",
           type: "text" as const,

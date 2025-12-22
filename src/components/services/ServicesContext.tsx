@@ -43,6 +43,10 @@ interface ServicesContextValue {
   globalContractMonths: number; // Global contract months (2-36)
   setGlobalContractMonths: (months: number) => void;
   getTotalAgreementAmount: () => number; // Sum of all service contract totals
+
+  // ✅ NEW: Red/Green Line Pricing Totals
+  getTotalOriginalPerVisit: () => number; // Sum of raw per-visit prices (before minimums)
+  getTotalMinimumPerVisit: () => number; // Sum of actual per-visit prices (after minimums)
 }
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(
@@ -123,6 +127,91 @@ export const ServicesProvider: React.FC<{
     return totalAmount;
   }, [servicesState]);
 
+  // ✅ NEW: Helper function to calculate total original per-visit (raw prices before minimums)
+  const getTotalOriginalPerVisit = useCallback((): number => {
+    let totalOriginal = 0;
+
+    Object.keys(servicesState).forEach((serviceName) => {
+      const serviceData = servicesState[serviceName as keyof ServicesState];
+
+      // Check if service is active
+      if (serviceData?.isActive) {
+        let originalPerVisit = 0;
+
+        // Try different field names for raw per-visit price (before minimum)
+        if (typeof serviceData.perVisitBase === 'number') {
+          // Carpet uses perVisitBase
+          originalPerVisit = serviceData.perVisitBase;
+        } else if (typeof serviceData.rawPrice === 'number') {
+          // Strip & Wax uses rawPrice
+          originalPerVisit = serviceData.rawPrice;
+        } else if (serviceData.calc?.perVisitBase && typeof serviceData.calc.perVisitBase === 'number') {
+          // Some services store in calc object
+          originalPerVisit = serviceData.calc.perVisitBase;
+        } else if (serviceData.calc?.rawPrice && typeof serviceData.calc.rawPrice === 'number') {
+          originalPerVisit = serviceData.calc.rawPrice;
+        } else if (serviceData.totals?.perVisit?.base && typeof serviceData.totals.perVisit.base === 'number') {
+          // SaniClean-style nested structure
+          originalPerVisit = serviceData.totals.perVisit.base;
+        } else if (typeof serviceData.perVisit === 'number') {
+          // Fallback: if no raw price found, use actual perVisit
+          originalPerVisit = serviceData.perVisit;
+        } else if (serviceData.totals?.perVisit?.total && typeof serviceData.totals.perVisit.total === 'number') {
+          // SaniClean uses totals.perVisit.total
+          originalPerVisit = serviceData.totals.perVisit.total;
+        }
+
+        if (originalPerVisit > 0) {
+          totalOriginal += originalPerVisit;
+          console.log(`📊 [ORIGINAL CALC] ${serviceName}: $${originalPerVisit.toFixed(2)}`);
+        }
+      }
+    });
+
+    console.log(`📊 [ORIGINAL CALC] Total Original Per Visit: $${totalOriginal.toFixed(2)}`);
+    return totalOriginal;
+  }, [servicesState]);
+
+  // ✅ NEW: Helper function to calculate total minimum per-visit (actual prices after minimums)
+  const getTotalMinimumPerVisit = useCallback((): number => {
+    let totalMinimum = 0;
+
+    Object.keys(servicesState).forEach((serviceName) => {
+      const serviceData = servicesState[serviceName as keyof ServicesState];
+
+      // Check if service is active
+      if (serviceData?.isActive) {
+        let minimumPerVisit = 0;
+
+        // Try different field names for actual per-visit price (after minimum)
+        if (typeof serviceData.perVisitCharge === 'number') {
+          // Carpet uses perVisitCharge
+          minimumPerVisit = serviceData.perVisitCharge;
+        } else if (typeof serviceData.perVisit === 'number') {
+          // Most services use perVisit
+          minimumPerVisit = serviceData.perVisit;
+        } else if (serviceData.calc?.perVisit && typeof serviceData.calc.perVisit === 'number') {
+          // Some services store in calc object
+          minimumPerVisit = serviceData.calc.perVisit;
+        } else if (serviceData.totals?.perVisit?.total && typeof serviceData.totals.perVisit.total === 'number') {
+          // SaniClean uses totals.perVisit.total
+          minimumPerVisit = serviceData.totals.perVisit.total;
+        } else if (typeof serviceData.perVisitPrice === 'number') {
+          // Some services use perVisitPrice
+          minimumPerVisit = serviceData.perVisitPrice;
+        }
+
+        if (minimumPerVisit > 0) {
+          totalMinimum += minimumPerVisit;
+          console.log(`📊 [MINIMUM CALC] ${serviceName}: $${minimumPerVisit.toFixed(2)}`);
+        }
+      }
+    });
+
+    console.log(`📊 [MINIMUM CALC] Total Minimum Per Visit: $${totalMinimum.toFixed(2)}`);
+    return totalMinimum;
+  }, [servicesState]);
+
   const value = useMemo<ServicesContextValue>(() => {
     // Computed: Is SaniClean in all-inclusive mode?
     // Access the structured data format
@@ -152,8 +241,11 @@ export const ServicesProvider: React.FC<{
       globalContractMonths,
       setGlobalContractMonths,
       getTotalAgreementAmount,
+      // ✅ NEW: Red/Green Line Pricing Totals
+      getTotalOriginalPerVisit,
+      getTotalMinimumPerVisit,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount]); // ✅ Keep dependencies - callbacks are stable
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalPerVisit, getTotalMinimumPerVisit]); // ✅ Keep dependencies - callbacks are stable
 
   return (
     <ServicesContext.Provider value={value}>

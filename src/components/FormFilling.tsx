@@ -104,8 +104,29 @@ const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 // ✅ NEW: Contract Summary Component
 // Displays global contract months and total agreement amount
 function ContractSummary() {
-  const { globalContractMonths, setGlobalContractMonths, getTotalAgreementAmount } = useServicesContext();
+  const {
+    globalContractMonths,
+    setGlobalContractMonths,
+    getTotalAgreementAmount,
+    getTotalOriginalPerVisit,
+    getTotalMinimumPerVisit,
+  } = useServicesContext();
+
   const totalAmount = getTotalAgreementAmount();
+  const totalOriginal = getTotalOriginalPerVisit();
+  const totalMinimum = getTotalMinimumPerVisit();
+
+  // ✅ Calculate pricing indicator (Red/Green Line)
+  const greenLineThreshold = totalMinimum * 1.30; // 30% above minimum
+  let pricingIndicator: 'red' | 'green' | 'neutral' = 'neutral';
+
+  if (totalOriginal < totalMinimum) {
+    // Original is less than minimum - RED LINE (charging minimum, unprofitable)
+    pricingIndicator = 'red';
+  } else if (totalOriginal >= greenLineThreshold) {
+    // Original is 30%+ above minimum - GREEN LINE (profitable)
+    pricingIndicator = 'green';
+  }
 
   const handleContractMonthsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -136,6 +157,45 @@ function ContractSummary() {
             className="contract-input"
           />
         </div>
+
+        {/* ✅ NEW: Red/Green Line Pricing Display */}
+        <div className="contract-field-group">
+          <label className="contract-label">Per-Visit Pricing</label>
+          <div className="pricing-indicator-container">
+            <div className="pricing-values">
+              <div className="pricing-row">
+                <span className="pricing-label">Original:</span>
+                <span className="pricing-value">${totalOriginal.toFixed(2)}</span>
+              </div>
+              <div className="pricing-row">
+                <span className="pricing-label">Minimum:</span>
+                <span className="pricing-value">${totalMinimum.toFixed(2)}</span>
+              </div>
+            </div>
+            {pricingIndicator !== 'neutral' && (
+              <div className={`pricing-indicator ${pricingIndicator}-line`}>
+                {pricingIndicator === 'red' ? (
+                  <>
+                    <span className="indicator-icon">⚠️</span>
+                    <span className="indicator-text">Red Line Pricing</span>
+                    <span className="indicator-description">
+                      Charging minimum - unprofitable
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="indicator-icon">✓</span>
+                    <span className="indicator-text">Green Line Pricing</span>
+                    <span className="indicator-description">
+                      30%+ above minimum - profitable
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="contract-field-group">
           <label className="contract-label">Total Agreement Amount</label>
           <div className="contract-total-display">

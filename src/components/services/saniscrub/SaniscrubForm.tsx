@@ -165,6 +165,10 @@ export const SaniscrubForm: React.FC<
         displayName: "SaniScrub",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: calc.basePerVisitCost,  // Raw per-visit cost before minimum/trip
+        perVisit: calc.perVisitEffective,  // Final per-visit price after minimum/trip
+
         frequency: {
           isDisplay: true,
           label: "Frequency",

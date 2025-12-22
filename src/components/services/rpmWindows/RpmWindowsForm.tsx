@@ -126,6 +126,11 @@ export const RpmWindowsForm: React.FC<
         serviceId: "rpmWindows",
         displayName: "RPM Window",
         isActive: true,
+
+        // Red/Green Line pricing data
+        perVisitBase: calc.subtotal,  // Raw subtotal before minimum
+        perVisit: calc.perVisit,  // Final per-visit price after minimum
+
         windows: [
           ...(form.smallQty > 0 ? [{
             isDisplay: true,

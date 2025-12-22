@@ -200,6 +200,96 @@
   text-align: center;
 }
 
+/* ✅ NEW: Red/Green Line Pricing Indicator Styles */
+.pricing-indicator-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.pricing-values {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.pricing-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.pricing-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.pricing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pricing-indicator.red-line {
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  color: #dc2626;
+}
+
+.pricing-indicator.green-line {
+  background: #f0fdf4;
+  border: 2px solid #bbf7d0;
+  color: #16a34a;
+}
+
+.indicator-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.indicator-text {
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.indicator-description {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-left: auto;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .contract-summary-content {
@@ -209,5 +299,17 @@
   .contract-summary-section {
     margin: 16px;
     padding: 16px;
+  }
+
+  /* Pricing indicator responsive */
+  .pricing-indicator {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .indicator-description {
+    margin-left: 0;
+    margin-top: 4px;
   }
 }

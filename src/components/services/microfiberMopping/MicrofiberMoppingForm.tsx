@@ -127,6 +127,10 @@ export const MicrofiberMoppingForm: React.FC<
         displayName: "Microfiber Mopping",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: calc.totalCost,  // Raw total cost
+        perVisit: calc.perVisitPrice,  // Final per-visit price
+
         frequency: {
           isDisplay: true,
           label: "Frequency",

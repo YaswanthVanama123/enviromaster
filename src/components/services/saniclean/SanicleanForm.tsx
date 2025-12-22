@@ -202,6 +202,10 @@ export const SanicleanForm: React.FC<
         displayName: "SaniClean",
         isActive: true,
 
+        // Red/Green Line pricing data (weekly pricing)
+        perVisitBase: quote.breakdown.baseService,  // Raw base service weekly
+        perVisit: quote.weeklyTotal,  // Final weekly total
+
         pricingMode: {
           isDisplay: true,
           label: "Pricing Mode",

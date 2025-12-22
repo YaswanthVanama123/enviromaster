@@ -161,6 +161,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         displayName: "SaniPod",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: form.podQuantity * effectiveRate,  // Raw pod price
+        perVisit: calc.perVisit,  // Final per-visit price
+
         service: {
           isDisplay: true,
           label: "SaniPods",

@@ -119,6 +119,10 @@ export const CarpetForm: React.FC<
         displayName: "Carpet Cleaning",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: calc.perVisitBase,  // Raw price before minimum
+        perVisitCharge: calc.perVisitCharge,  // Final price after minimum
+
         frequency: {
           isDisplay: true,
           label: "Frequency",

@@ -683,6 +683,43 @@ export function useMicrofiberMoppingCalc(
     const { actualWeeksPerYear, actualWeeksPerMonth } = activeConfig.billingConversions;
     const isAllInclusive = !!form.isAllInclusive;
 
+    // ✅ EARLY RETURN: If service is inactive (no inputs), return $0 for everything
+    const bathroomCount = Number(form.bathroomCount) || 0;
+    const hugeBathroomSqFt = Number(form.hugeBathroomSqFt) || 0;
+    const extraAreaSqFt = Number(form.extraAreaSqFt) || 0;
+    const standaloneSqFt = Number(form.standaloneSqFt) || 0;
+    const chemicalGallons = Number(form.chemicalGallons) || 0;
+
+    const isServiceInactive = bathroomCount === 0 && hugeBathroomSqFt === 0 &&
+                              extraAreaSqFt === 0 && standaloneSqFt === 0 &&
+                              chemicalGallons === 0;
+
+    if (isServiceInactive) {
+      console.log('📊 [Microfiber Mopping] Service is inactive (no inputs), returning $0 totals');
+      return {
+        calc: {
+          bathroomPrice: 0,
+          extraAreaPrice: 0,
+          standaloneTotal: 0,
+          chemicalSupplyMonthly: 0,
+          perVisitPrice: 0,
+          monthlyRecurring: 0,
+          firstMonthPrice: 0,
+          contractTotal: 0,
+          minimumChargePerVisit: 0,
+          isVisitBasedFrequency: false,
+          monthsPerVisit: 1,
+        },
+        quote: {
+          serviceId: "microfiberMopping",
+          displayName: "Microfiber Mopping",
+          perVisit: 0,
+          monthly: 0,
+          annual: 0,
+        },
+      };
+    }
+
     // ----------------------------
     // 1) Bathrooms (included with Sani) - BASE CALCULATIONS
     // ----------------------------

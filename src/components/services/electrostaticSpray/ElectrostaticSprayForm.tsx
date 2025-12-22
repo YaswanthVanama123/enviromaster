@@ -168,6 +168,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         displayName: "Electrostatic Spray",
         isActive: true,
 
+        // Red/Green Line pricing data
+        perVisitBase: calc.serviceCharge,  // Raw service charge before trip/minimum
+        perVisit: calc.perVisit,  // Final price after minimum
+
         pricingMethod: {
           isDisplay: true,
           label: "Pricing Method",

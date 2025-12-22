@@ -150,6 +150,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         displayName: "Foaming Drain",
         isActive: true,
 
+        // Red/Green Line pricing data (weekly pricing)
+        perVisitBase: breakdown.weeklyService,  // Weekly service total
+        perVisit: breakdown.weeklyTotal,  // Weekly total including all charges
+
         frequency: {
           isDisplay: true,
           label: "Frequency",
