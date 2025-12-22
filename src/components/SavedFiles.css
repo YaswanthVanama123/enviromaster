@@ -256,6 +256,7 @@
   gap: 12px;
   margin-top: 18px;
   padding: 16px 0;
+  min-height: 60px; /* ✅ CLS Prevention: Reserve space */
 }
 
 .sf__page-info {
@@ -335,6 +336,32 @@
 .sf__page:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ---------- CLS Prevention: Reserve space for loading content ---------- */
+/* ✅ Stats section: Fixed height to prevent layout shift */
+.sf__stats {
+  min-height: 24px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ✅ Groups/table container: Min-height to prevent content jump */
+.sf__groups {
+  min-height: 400px; /* Reserve space for content area */
+}
+
+/* ✅ Loading/Error/Empty states: Fixed height to prevent shift */
+.sf__loading,
+.sf__error,
+.sf__empty {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ---------- Responsive ---------- */

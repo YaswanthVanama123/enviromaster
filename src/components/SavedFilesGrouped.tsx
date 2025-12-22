@@ -1,6 +1,6 @@
 // src/components/SavedFilesGrouped.tsx
 // ✅ NEW: Folder-like grouped view with checkboxes and bulk actions
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi } from "../backendservice/api";
 import type { SavedFileListItem, SavedFileGroup } from "../backendservice/api/pdfApi";
@@ -47,6 +47,13 @@ interface SavedFilesGroupedProps {
   mode?: 'normal' | 'trash';
 }
 
+// ✅ CRITICAL FIX: Module-level flags per mode to prevent duplicate initial loads
+// Separate flag for each mode since component is used in both normal and trash views
+const hasInitiallyLoadedByMode: Record<string, boolean> = {
+  normal: false,
+  trash: false
+};
+
 export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGroupedProps) {
   const [groups, setGroups] = useState<SavedFileGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -58,6 +65,9 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // ✅ PERFORMANCE: Prevent duplicate concurrent API calls
+  const isFetchingRef = useRef(false);
 
   // ✅ NEW: Selection state for checkboxes
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
@@ -98,84 +108,137 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
   // Fetch grouped files
-  // ✅ OPTIMIZED: Use lightweight data loading with on-demand detailed fetching
+  // ✅ OPTIMIZED: Single API call with duplicate prevention
   // ✅ NEW: Support both normal and trash modes
-  const fetchGroups = async (page = 1, search = "") => {
+  const fetchGroups = useCallback(async (page = 1, search = "") => {
+    // ✅ CRITICAL FIX: Check flag AND loading state to prevent race conditions
+    if (isFetchingRef.current || loading) {
+      console.log('⏭️ [SAVED-FILES-GROUPED] Skipping duplicate call - already fetching or loading');
+      return;
+    }
+
+    // Set flag immediately (synchronous) before any async operations
+    isFetchingRef.current = true;
+
     setLoading(true);
     setError(null);
+
     try {
       const isTrashMode = mode === 'trash';
       console.log(`📁 [SAVED-FILES-GROUPED] Fetching ${isTrashMode ? 'TRASH' : 'NORMAL'} items - page ${page} with search: "${search}"`);
 
-      // 1. Fetch grouped files (agreements with PDFs) - already optimized
-      const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
+      // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
+      const requestParams = {
         search: search.trim() || undefined,
-        // ✅ NEW: Filter based on mode (trash shows deleted, normal shows non-deleted)
-        isDeleted: isTrashMode
+        includeLogs: true,
+        includeDrafts: !isTrashMode, // ✅ Only include drafts in normal mode, not trash
+        isDeleted: isTrashMode // ✅ Filter based on mode (trash shows deleted, normal shows non-deleted)
+      };
+
+      console.log(`📡 [SAVED-FILES-GROUPED] Request params:`, requestParams);
+
+      const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, requestParams);
+
+      console.log(`📁 [SAVED-FILES-GROUPED] Response:`, {
+        groupsCount: groupedResponse.groups.length,
+        totalGroups: groupedResponse.totalGroups,
+        sampleGroup: groupedResponse.groups[0] ? {
+          id: groupedResponse.groups[0].id,
+          title: groupedResponse.groups[0].agreementTitle,
+          fileCount: groupedResponse.groups[0].fileCount,
+          isDeleted: groupedResponse.groups[0].isDeleted,
+          files: groupedResponse.groups[0].files.map(f => ({
+            id: f.id,
+            fileName: f.fileName,
+            fileType: f.fileType,
+            isDeleted: (f as any).isDeleted
+          }))
+        } : null
       });
 
-      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${groupedResponse.groups.length} groups with PDFs`);
+      // ✅ REMOVED: Second API call to getCustomerHeadersSummary()
+      // Backend now returns draft agreements in the grouped response
 
-      // 2. ✅ OPTIMIZED: Use lightweight summary API instead of full customer headers
-      // This avoids loading heavy payload data for all agreements upfront
-      const headersSummaryResponse = await pdfApi.getCustomerHeadersSummary();
+      const allGroups = groupedResponse.groups;
 
-      // Find draft agreements that don't appear in the grouped response (no PDFs)
-      const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
-      const draftOnlyHeaders = headersSummaryResponse.items.filter(header =>
-        !groupedIds.has(header._id) &&
-        header.status === 'draft' &&
-        // ✅ NEW: Filter based on mode and deleted status
-        (isTrashMode ? header.isDeleted === true : header.isDeleted !== true) &&
-        // Apply search filter if provided
-        (!search.trim() ||
-         (header.headerTitle &&
-          header.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
-      );
-
-      // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
-      const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
-        id: header._id,
-        agreementTitle: header.headerTitle || `Agreement ${header._id}`,
-        fileCount: 0, // No PDFs yet
-        latestUpdate: header.updatedAt,
-        statuses: [header.status],
-        hasUploads: false,
-        files: [], // No files yet - detailed data loaded on-demand
-        isDeleted: header.isDeleted, // ✅ FIX: Include isDeleted property for permanent delete functionality
-        deletedAt: header.deletedAt || null, // ✅ FIX: Include deletion timestamp
-        deletedBy: header.deletedBy || null, // ✅ FIX: Include who deleted it
-      }));
-
-      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements using lightweight API`);
-
-      // 4. ✅ OPTIMIZED: Merge grouped files with lightweight draft-only agreements
-      const allGroups = [...groupedResponse.groups, ...draftGroups];
+      if (isTrashMode && allGroups.length === 0) {
+        console.warn('⚠️ [TRASH MODE] No deleted items found. This could mean:');
+        console.warn('  1. No files have been deleted yet');
+        console.warn('  2. Files were not properly marked as isDeleted=true in database');
+        console.warn('  3. Backend filter is not working correctly');
+      }
 
       setGroups(allGroups);
-      setTotalGroups(groupedResponse.totalGroups + draftGroups.length);
-      setTotalFiles(groupedResponse.total);
+      setTotalGroups(groupedResponse.totalGroups);
+      setTotalFiles(allGroups.reduce((sum, group) => sum + group.fileCount, 0));
       setCurrentPage(page);
+
+      console.log(`✅ [SAVED-FILES-GROUPED] Loaded ${allGroups.length} groups, ${groupedResponse.totalGroups} total`);
     } catch (err) {
-      console.error("Error fetching grouped saved files:", err);
+      console.error("❌ Error fetching grouped saved files:", err);
       setError("Unable to load files. Please try again.");
       setGroups([]);
       setTotalGroups(0);
       setTotalFiles(0);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;  // ✅ Reset fetching flag
     }
-  };
+  }, [mode, groupsPerPage, loading]); // ✅ Dependencies for useCallback
 
+  // ✅ FIXED: Separate initial load from search to prevent duplicate calls
+  // ✅ FIXED: Use mode-specific flag to allow both normal and trash views to load independently
   useEffect(() => {
-    fetchGroups(1, query);
+    if (!hasInitiallyLoadedByMode[mode]) {
+      hasInitiallyLoadedByMode[mode] = true;
+      console.log(`📁 [SAVED-FILES-GROUPED] Initial load (mode: ${mode})`);
+      fetchGroups(1, query);
+    } else {
+      console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping duplicate initial load for ${mode} mode (React Strict Mode remount)`);
+    }
+
+    // ✅ CRITICAL FIX: Reset flags on unmount so next mount (tab navigation) loads fresh
+    return () => {
+      // Use setTimeout to distinguish between React Strict Mode unmount (immediate remount)
+      // and real navigation unmount (no remount). Strict Mode remounts within ~10ms.
+      const timeoutId = setTimeout(() => {
+        hasInitiallyLoadedByMode[mode] = false;
+        isFirstSearchRenderByMode.current[mode] = true;
+        console.log(`🔄 [SAVED-FILES-GROUPED] Flags reset for ${mode} mode after unmount (navigating away)`);
+      }, 50); // 50ms delay - Strict Mode remounts happen much faster
+
+      // If component remounts (Strict Mode), clear the timeout
+      return () => clearTimeout(timeoutId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ CRITICAL FIX: Track if this is the first render of search effect per mode to prevent duplicate call on page refresh
+  // Use an object to track first render status for each mode separately
+  const isFirstSearchRenderByMode = useRef<Record<string, boolean>>({
+    normal: true,
+    trash: true
+  });
+
+  // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
+    // Skip if the initial load hasn't happened yet for this mode
+    if (!hasInitiallyLoadedByMode[mode]) return;
+
+    // ✅ FIX: Skip on first render for this mode to prevent duplicate call when page refreshes
+    if (isFirstSearchRenderByMode.current[mode]) {
+      isFirstSearchRenderByMode.current[mode] = false;
+      console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping search effect on first render for ${mode} mode`);
+      return;
+    }
+
+    console.log(`🔍 [SAVED-FILES-GROUPED] Search query changed to: "${query}" (mode: ${mode})`);
+
     const timeoutId = setTimeout(() => {
       fetchGroups(1, query);
     }, 500);
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   // ✅ NEW: Selection helpers and computed values

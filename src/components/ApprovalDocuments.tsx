@@ -112,6 +112,9 @@ const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext
   });
 };
 
+// ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads across React Strict Mode remounts
+let hasInitiallyLoaded = false;
+
 export default function ApprovalDocuments() {
   // ✅ UPDATED: Use grouped structure for approval documents
   const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
@@ -141,9 +144,6 @@ export default function ApprovalDocuments() {
   const location = useLocation();
   const { isAuthenticated } = useAdminAuth();
 
-  // ✅ NEW: Track first mount to avoid duplicate API calls
-  const isFirstMount = useRef(true);
-
   // Detect if we're in admin context
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/approval-documents" : "/approval-documents";
@@ -159,42 +159,45 @@ export default function ApprovalDocuments() {
 
   // ---- Fetch approval documents from backend on mount ----
   useEffect(() => {
-    // ✅ OPTIMIZED: Track API call to ensure single fetch on mount
-    if (!isFirstMount.current) return;
-    isFirstMount.current = false;
+    // ✅ CRITICAL FIX: Use module-level flag to prevent React Strict Mode duplicate calls
+    if (!hasInitiallyLoaded) {
+      hasInitiallyLoaded = true;
 
-    const fetchApprovalDocuments = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // ✅ NEW: Use approval documents grouped API
-        const data = await pdfApi.getApprovalDocumentsGrouped();
-        const groups = data.groups || [];
+      const fetchApprovalDocuments = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          // ✅ NEW: Use approval documents grouped API
+          const data = await pdfApi.getApprovalDocumentsGrouped();
+          const groups = data.groups || [];
 
-        console.log("📋 [APPROVAL-DOCS] Fetched approval documents:", {
-          totalGroups: data.totalGroups,
-          totalFiles: data.totalFiles,
-          groups: groups.length,
-          sampleGroup: groups[0] ? {
-            id: groups[0].id,
-            title: groups[0].agreementTitle,
-            fileCount: groups[0].fileCount,
-            files: groups[0].files.length
-          } : null
-        });
+          console.log("📋 [APPROVAL-DOCS] Fetched approval documents:", {
+            totalGroups: data.totalGroups,
+            totalFiles: data.totalFiles,
+            groups: groups.length,
+            sampleGroup: groups[0] ? {
+              id: groups[0].id,
+              title: groups[0].agreementTitle,
+              fileCount: groups[0].fileCount,
+              files: groups[0].files.length
+            } : null
+          });
 
-        setAgreements(groups);
-        setTotalAgreements(data.totalGroups || 0);
-        setTotalFiles(data.totalFiles || 0);
-      } catch (err) {
-        console.error("Error fetching approval documents:", err);
-        setError("Unable to load approval documents. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+          setAgreements(groups);
+          setTotalAgreements(data.totalGroups || 0);
+          setTotalFiles(data.totalFiles || 0);
+        } catch (err) {
+          console.error("Error fetching approval documents:", err);
+          setError("Unable to load approval documents. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchApprovalDocuments();
+      fetchApprovalDocuments();
+    } else {
+      console.log('⏭️ [APPROVAL-DOCS] Skipping duplicate initial load (React Strict Mode remount)');
+    }
   }, []);
 
   // ✅ OPTIMIZED: Filter and expand/collapse functionality for folder structure

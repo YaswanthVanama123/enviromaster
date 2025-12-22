@@ -1,6 +1,7 @@
 // src/components/ServiceAgreement/ServiceAgreement.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import './ServiceAgreement.css';
+import logo from "../../assets/em-logo.png";
 
 interface ServiceAgreementProps {
   /** Optional callback so the parent form can capture the agreement fields. */
@@ -183,9 +184,9 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         <div className="sa-page" role="group" aria-label="Service Agreement">
           <header className="sa-header">
             <div className="sa-logo" aria-label="Enviro-Master logo">
-              {logoSrc ? (
-                <img className="sa-logo-img" src={logoSrc} alt={logoAlt ?? 'EM'} />
-              ) : (
+           
+                <img src={logo} alt="Enviro-Master Logo" className="cua2__logo-img" />
+           
                 <svg className="sa-logo-fallback" viewBox="0 0 160 80" aria-hidden="true">
                   <rect x="0" y="0" width="160" height="80" fill="#ffffff" />
                   <g transform="translate(0,10)">
@@ -195,7 +196,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
                   </g>
                   <text x="102" y="48" fontFamily="Arial, Helvetica, sans-serif" fontSize="44" fontWeight="700" fill="#111">EM</text>
                 </svg>
-              )}
+        
             </div>
 
             <div

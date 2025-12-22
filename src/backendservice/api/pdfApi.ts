@@ -644,7 +644,13 @@ export const pdfApi = {
   async getSavedFilesGrouped(
     page = 1,
     limit = 20,
-    filters: { status?: string; search?: string; isDeleted?: boolean; includeLogs?: boolean } = {}
+    filters: {
+      status?: string;
+      search?: string;
+      isDeleted?: boolean;
+      includeLogs?: boolean;
+      includeDrafts?: boolean; // ✅ NEW: Include draft agreements without PDFs
+    } = {}
   ): Promise<SavedFilesGroupedResponse> {
     const params = new URLSearchParams();
     params.set('page', page.toString());
@@ -661,6 +667,12 @@ export const pdfApi = {
     if (filters.isDeleted !== undefined) {
       params.set('isDeleted', filters.isDeleted.toString());
     }
+    // ✅ NEW: Add includeDrafts parameter
+    if (filters.includeDrafts !== undefined) {
+      params.set('includeDrafts', filters.includeDrafts.toString());
+    }
+
+    console.log('📡 [pdfApi] getSavedFilesGrouped called with params:', params.toString());
 
     const res = await axios.get(`${API_BASE_URL}/api/pdf/saved-files/grouped?${params}`, {
       headers: { Accept: "application/json" },

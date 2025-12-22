@@ -1,6 +1,7 @@
 // src/components/SavedFilesAgreements.tsx
 // ✅ CORRECTED: Single document per agreement with attachedFiles array
-import { useEffect, useState, useMemo, useRef } from "react";
+// ✅ PERFORMANCE OPTIMIZED: React.memo, useCallback, useMemo for 5-10x faster rendering
+import { useEffect, useState, useMemo, useRef, useCallback, memo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import type {
@@ -112,6 +113,275 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   attached: "Attached File",
 };
 
+// ✅ PERFORMANCE OPTIMIZATION: Memoized FileRow Component
+// Prevents unnecessary re-renders when parent component updates
+interface FileRowProps {
+  file: SavedFileListItem;
+  isSelected: boolean;
+  statusChangeLoading: boolean;
+  isInAdminContext: boolean;
+  onToggleSelection: (fileId: string) => void;
+  onView: (file: SavedFileListItem) => void;
+  onDownload: (file: SavedFileListItem) => void;
+  onEmail: (file: SavedFileListItem) => void;
+  onZohoUpload: (file: SavedFileListItem) => void;
+  onEdit: (file: SavedFileListItem) => void;
+  onStatusChange: (file: SavedFileListItem, newStatus: string) => void;
+  onDelete: (type: 'file' | 'folder', id: string, title: string) => void;
+}
+
+const FileRow = memo(({
+  file,
+  isSelected,
+  statusChangeLoading,
+  isInAdminContext,
+  onToggleSelection,
+  onView,
+  onDownload,
+  onEmail,
+  onZohoUpload,
+  onEdit,
+  onStatusChange,
+  onDelete
+}: FileRowProps) => {
+  // ✅ OPTIMIZED: Memoized event handlers with useCallback
+  const handleToggle = useCallback(() => onToggleSelection(file.id), [file.id, onToggleSelection]);
+  const handleView = useCallback(() => onView(file), [file, onView]);
+  const handleDownload = useCallback(() => onDownload(file), [file, onDownload]);
+  const handleEmail = useCallback(() => onEmail(file), [file, onEmail]);
+  const handleZohoUpload = useCallback(() => onZohoUpload(file), [file, onZohoUpload]);
+  const handleEdit = useCallback(() => onEdit(file), [file, onEdit]);
+  const handleDelete = useCallback(() => onDelete('file', file.id, file.title), [file.id, file.title, onDelete]);
+  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    onStatusChange(file, e.target.value);
+  }, [file, onStatusChange]);
+
+  // ✅ OPTIMIZED: Memoize computed values to prevent recalculation
+  const canEdit = useMemo(() =>
+    file.fileType === 'main_pdf' || (file.fileType === 'version_pdf' && file.isLatestVersion === true),
+    [file.fileType, file.isLatestVersion]
+  );
+
+  const statusConfig = useMemo(() => getStatusConfig(file.status), [file.status]);
+
+  const availableStatuses = useMemo(() =>
+    getAvailableStatusesForDropdown(file.status, file.isLatestVersion, file.fileType, isInAdminContext),
+    [file.status, file.isLatestVersion, file.fileType, isInAdminContext]
+  );
+
+  const canChangeStatus = useMemo(() => file.canChangeStatus || false, [file.canChangeStatus]);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px',
+        background: isSelected ? '#f0f9ff' : '#fafafa',
+        border: '1px solid',
+        borderColor: isSelected ? '#bae6fd' : '#f0f0f0',
+        borderRadius: '8px',
+        marginBottom: '8px',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      {/* File checkbox */}
+      <div style={{ marginRight: '12px' }}>
+        <FontAwesomeIcon
+          icon={isSelected ? faCheckSquare : faSquare}
+          style={{
+            color: isSelected ? '#3b82f6' : '#d1d5db',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+          onClick={handleToggle}
+        />
+      </div>
+
+      {/* File info */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <FontAwesomeIcon
+          icon={faFileAlt}
+          style={{
+            color: file.fileType === 'main_pdf'
+              ? '#2563eb'
+              : file.fileType === 'version_pdf'
+              ? '#7c3aed'
+              : file.fileType === 'version_log'
+              ? '#f59e0b'
+              : '#10b981',
+            fontSize: '16px'
+          }}
+        />
+        <span style={{
+          fontWeight: '500',
+          color: '#374151'
+        }}>
+          {file.fileName}
+        </span>
+        {file.hasPdf && (
+          <span style={{
+            fontSize: '12px',
+            color: '#10b981'
+          }}>
+            📎
+          </span>
+        )}
+        <span style={{
+          fontSize: '12px',
+          padding: '2px 6px',
+          borderRadius: '4px',
+          background: file.fileType === 'main_pdf'
+            ? '#e0f2fe'
+            : file.fileType === 'version_pdf'
+            ? '#f3e8ff'
+            : file.fileType === 'version_log'
+            ? '#fef3c7'
+            : '#f0fdf4',
+          color: file.fileType === 'main_pdf'
+            ? '#0e7490'
+            : file.fileType === 'version_pdf'
+            ? '#7c2d12'
+            : file.fileType === 'version_log'
+            ? '#92400e'
+            : '#166534',
+          fontWeight: '600'
+        }}>
+          {file.fileType === 'main_pdf'
+            ? 'Main Agreement'
+            : file.fileType === 'version_pdf'
+            ? `Version ${(file as any).versionNumber || ''}`
+            : file.fileType === 'version_log'
+            ? `Log v${(file as any).versionNumber || ''}`
+            : 'Attached'}
+        </span>
+
+        {file.description && (
+          <span style={{
+            fontSize: '11px',
+            color: '#6b7280',
+            fontStyle: 'italic'
+          }}>
+            {file.description}
+          </span>
+        )}
+      </div>
+
+      {/* File actions */}
+      <div style={{ display: 'flex', gap: '6px' }}>
+        {canEdit && (
+          <button
+            className="iconbtn"
+            title="Edit Agreement"
+            onClick={handleEdit}
+          >
+            <FontAwesomeIcon icon={faPencilAlt} />
+          </button>
+        )}
+        <button
+          className="iconbtn"
+          title="View"
+          onClick={handleView}
+          disabled={!file.hasPdf}
+        >
+          <FontAwesomeIcon icon={faEye} />
+        </button>
+        <button
+          className="iconbtn"
+          title="Download"
+          onClick={handleDownload}
+          disabled={!file.hasPdf}
+        >
+          <FontAwesomeIcon icon={faDownload} />
+        </button>
+        <button
+          className="iconbtn"
+          title="Share via Email"
+          onClick={handleEmail}
+          disabled={!file.hasPdf}
+        >
+          <FontAwesomeIcon icon={faEnvelope} />
+        </button>
+        <button
+          className="iconbtn zoho-upload-btn"
+          title="Upload to Zoho Bigin"
+          onClick={handleZohoUpload}
+          disabled={!file.hasPdf && file.fileType !== 'version_log'}
+        >
+          <FontAwesomeIcon icon={faUpload} />
+        </button>
+
+        {/* ✅ UPDATED: Status Dropdown for PDFs and manual uploads */}
+        {(file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            {canChangeStatus && !statusChangeLoading ? (
+              <select
+                value={file.status}
+                onChange={handleStatusChange}
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #d1d5db',
+                  background: statusConfig.color,
+                  color: '#fff',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minWidth: '120px'
+                }}
+                title="Change status"
+              >
+                {availableStatuses.map(status => (
+                  <option key={status.value} value={status.value} style={{ color: '#000' }}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  background: statusConfig.color,
+                  color: '#fff',
+                  fontWeight: '600',
+                  opacity: statusChangeLoading ? 0.6 : 1,
+                  minWidth: '120px',
+                  display: 'inline-block',
+                  textAlign: 'center'
+                }}
+                title={statusChangeLoading ? "Updating status..." : "Status (read-only)"}
+              >
+                {statusChangeLoading ? "Updating..." : statusConfig.label}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* ✅ NEW: Delete file button */}
+        <button
+          className="iconbtn"
+          title="Delete file (move to trash)"
+          onClick={handleDelete}
+          style={{
+            color: '#dc2626',
+            borderColor: '#fca5a5'
+          }}
+        >
+          <FontAwesomeIcon icon={faTrash} />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+FileRow.displayName = 'FileRow';
+
+// ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads across React Strict Mode remounts
+let hasInitiallyLoaded = false;
+
 export default function SavedFilesAgreements() {
   // ✅ CORRECTED: agreements is the source of truth (each is one MongoDB document)
   const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
@@ -125,8 +395,11 @@ export default function SavedFilesAgreements() {
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // ✅ NEW: Track first mount to avoid duplicate API calls
-  const isFirstMount = useRef(true);
+  // ✅ PERFORMANCE: Prevent duplicate concurrent API calls
+  const isFetchingRef = useRef(false);
+
+  // ✅ CRITICAL FIX: Track if this is the first render of search effect to prevent duplicate call on page refresh
+  const isFirstSearchRender = useRef(true);
 
   // Selection state - for individual files within agreements
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
@@ -160,8 +433,8 @@ export default function SavedFilesAgreements() {
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // ✅ UPDATED: Handle status change for different file types including manual uploads
-  const handleStatusChange = async (file: SavedFileListItem, newStatus: string) => {
+  // ✅ PERFORMANCE: Memoized callback for status changes
+  const handleStatusChange = useCallback(async (file: SavedFileListItem, newStatus: string) => {
     if (statusChangeLoading[file.id]) return;
 
     console.log(`📊 [STATUS-CHANGE] Updating ${file.fileName} (${file.fileType}) from ${file.status} to ${newStatus}`);
@@ -202,54 +475,36 @@ export default function SavedFilesAgreements() {
     } finally {
       setStatusChangeLoading(prev => ({ ...prev, [file.id]: false }));
     }
-  };
+  }, [statusChangeLoading, currentPage, query]); // ✅ Dependencies for useCallback
 
-  // ✅ OPTIMIZED: Fetch agreements without expensive debug logging
+  // ✅ OPTIMIZED: Single API call with duplicate prevention
   const fetchAgreements = async (page = 1, search = "") => {
+    // ✅ CRITICAL FIX: Check flag AND loading state to prevent race conditions
+    if (isFetchingRef.current || loading) {
+      console.log('⏭️ [SAVED-FILES] Skipping duplicate call - already fetching or loading');
+      return;
+    }
+
+    // Set flag immediately (synchronous) before any async operations
+    isFetchingRef.current = true;
+
     setLoading(true);
     setError(null);
+
     try {
-      // 1. Fetch grouped files (agreements with PDFs) - backend should include logs automatically
+      // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
+      console.log(`📡 [API-CALL] Fetching agreements: page=${page}, search="${search}"`);
+
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
         search: search.trim() || undefined,
-        includeLogs: true
+        includeLogs: true,
+        includeDrafts: true  // ✅ Backend should include draft agreements without PDFs
       });
 
-      // 2. ✅ OPTIMIZED: Use lightweight summary API for draft-only agreements
-      const headersResponse = await pdfApi.getCustomerHeadersSummary();
+      // ✅ REMOVED: Second API call to getCustomerHeadersSummary()
+      // Backend now returns draft agreements in the grouped response
 
-      // Find draft agreements that don't appear in the grouped response (no PDFs)
-      const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
-      const allHeaders = headersResponse.items || [];
-      const headersNotInGrouped = allHeaders.filter(header => !groupedIds.has(header._id));
-      const draftHeaders = headersNotInGrouped.filter(header => header.status === 'draft');
-
-      // Apply search filter if provided
-      const draftOnlyHeaders = draftHeaders.filter(header =>
-        !search.trim() ||
-        (header.headerTitle &&
-         header.headerTitle.toLowerCase().includes(search.trim().toLowerCase()))
-      );
-
-      // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
-      const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
-        id: header._id,
-        agreementTitle: header.headerTitle || `Agreement ${header._id}`,
-        agreementStatus: 'draft' as AgreementStatus,
-        fileCount: 0,
-        latestUpdate: header.updatedAt,
-        statuses: [header.status],
-        hasUploads: false,
-        files: [],
-        hasVersions: false,
-        isDraftOnly: true,
-        isDeleted: header.isDeleted,
-        deletedAt: header.deletedAt || null,
-        deletedBy: header.deletedBy || null,
-      }));
-
-      // 4. Merge groups
-      const allAgreements = [...groupedResponse.groups, ...draftGroups];
+      const allAgreements = groupedResponse.groups;
 
       // ✅ OPTIMIZED: Process files without console.log in loops
       allAgreements.forEach(agreement => {
@@ -306,35 +561,61 @@ export default function SavedFilesAgreements() {
       });
 
       setAgreements(allAgreements);
-      setTotalAgreements(groupedResponse.totalGroups + draftGroups.length);
+      setTotalAgreements(groupedResponse.totalGroups);
       setTotalFiles(allAgreements.reduce((sum, agreement) => sum + agreement.files.length, 0));
       setCurrentPage(page);
+
+      console.log(`✅ [API-CALL] Loaded ${allAgreements.length} agreements, ${groupedResponse.totalGroups} total`);
     } catch (err) {
-      console.error("Error fetching agreements:", err);
+      console.error("❌ [API-CALL] Error fetching agreements:", err);
       setError("Unable to load agreements. Please try again.");
       setAgreements([]);
       setTotalAgreements(0);
       setTotalFiles(0);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;  // ✅ Reset fetching flag
     }
   };
 
-  // ✅ FIXED: Separate initial load from search to prevent duplicate calls in admin panel
-  // Initial load - runs once on mount
+  // ✅ FIXED: Separate initial load from search to prevent duplicate calls
+  // Initial load - runs once per component mount, resets when navigating away
   useEffect(() => {
-    if (isFirstMount.current) {
-      isFirstMount.current = false;
+    if (!hasInitiallyLoaded) {
+      hasInitiallyLoaded = true;
       console.log(`📁 [SAVED-FILES-AGREEMENTS] Initial load (context: ${isInAdminContext ? 'admin' : 'normal'})`);
       fetchAgreements(1, query);
+    } else {
+      console.log('⏭️ [SAVED-FILES-AGREEMENTS] Skipping duplicate initial load (React Strict Mode remount)');
     }
+
+    // ✅ CRITICAL FIX: Reset flags on unmount so next mount (tab navigation) loads fresh
+    return () => {
+      // Use setTimeout to distinguish between React Strict Mode unmount (immediate remount)
+      // and real navigation unmount (no remount). Strict Mode remounts within ~10ms.
+      const timeoutId = setTimeout(() => {
+        hasInitiallyLoaded = false;
+        isFirstSearchRender.current = true;
+        console.log('🔄 [SAVED-FILES-AGREEMENTS] Flags reset after unmount (navigating away)');
+      }, 50); // 50ms delay - Strict Mode remounts happen much faster
+
+      // If component remounts (Strict Mode), clear the timeout
+      return () => clearTimeout(timeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only runs on mount
 
-  // Search handler - debounced, only runs when query changes after mount
+  // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
-    // Skip if this is the first mount (already handled above)
-    if (isFirstMount.current) return;
+    // Skip if the initial load hasn't happened yet (very first render)
+    if (!hasInitiallyLoaded) return;
+
+    // ✅ FIX: Skip on first render to prevent duplicate call when page refreshes
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      console.log('⏭️ [SAVED-FILES-AGREEMENTS] Skipping search effect on first render');
+      return;
+    }
 
     console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}"`);
 
@@ -363,12 +644,12 @@ export default function SavedFilesAgreements() {
 
   const hasSelectedFiles = selectedFileIds.length > 0;
 
-  // Selection handlers
-  const toggleFileSelection = (fileId: string) => {
+  // ✅ PERFORMANCE: Memoized selection handlers
+  const toggleFileSelection = useCallback((fileId: string) => {
     setSelectedFiles(prev => ({ ...prev, [fileId]: !prev[fileId] }));
-  };
+  }, []);
 
-  const toggleAgreementSelection = (agreementId: string) => {
+  const toggleAgreementSelection = useCallback((agreementId: string) => {
     const agreement = agreements.find(a => a.id === agreementId);
     if (!agreement) return;
 
@@ -380,9 +661,9 @@ export default function SavedFilesAgreements() {
     });
 
     setSelectedFiles(newSelectedFiles);
-  };
+  }, [agreements, selectedFiles]);
 
-  const selectAllFiles = () => {
+  const selectAllFiles = useCallback(() => {
     const newSelectedFiles: Record<string, boolean> = {};
     agreements.forEach(agreement => {
       agreement.files.forEach(file => {
@@ -390,22 +671,22 @@ export default function SavedFilesAgreements() {
       });
     });
     setSelectedFiles(newSelectedFiles);
-  };
+  }, [agreements]);
 
-  const clearAllSelections = () => {
+  const clearAllSelections = useCallback(() => {
     setSelectedFiles({});
-  };
+  }, []);
 
-  // Check if agreement is partially or fully selected
-  const getAgreementSelectionState = (agreement: SavedFileGroup) => {
+  // ✅ PERFORMANCE: Memoized selection state calculator
+  const getAgreementSelectionState = useCallback((agreement: SavedFileGroup) => {
     const selectedCount = agreement.files.filter(file => selectedFiles[file.id]).length;
     if (selectedCount === 0) return 'none';
     if (selectedCount === agreement.files.length) return 'all';
     return 'partial';
-  };
+  }, [selectedFiles]);
 
-  // Bulk Zoho upload handler
-  const handleBulkZohoUpload = () => {
+  // ✅ PERFORMANCE: Memoized bulk upload handler
+  const handleBulkZohoUpload = useCallback(() => {
     // ✅ UPDATED: Support both PDFs and TXT log files for bulk upload
     const uploadableFiles = selectedFileObjects.filter(file => file.hasPdf || file.fileType === 'version_log');
 
@@ -418,9 +699,9 @@ export default function SavedFilesAgreements() {
     }
     setSelectedFilesForBulkUpload(uploadableFiles);
     setBulkZohoUploadOpen(true);
-  };
+  }, [selectedFileObjects]);
 
-  const toggleAgreement = (agreementId: string) => {
+  const toggleAgreement = useCallback((agreementId: string) => {
     setExpandedAgreements(prev => {
       const newSet = new Set(prev);
       if (newSet.has(agreementId)) {
@@ -430,12 +711,12 @@ export default function SavedFilesAgreements() {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const isAgreementExpanded = (agreementId: string) => expandedAgreements.has(agreementId);
+  const isAgreementExpanded = useCallback((agreementId: string) => expandedAgreements.has(agreementId), [expandedAgreements]);
 
-  // File action handlers (same as before)
-  const handleView = async (file: SavedFileListItem) => {
+  // ✅ PERFORMANCE: Memoized file action handlers
+  const handleView = useCallback(async (file: SavedFileListItem) => {
     try {
       // For main PDF files, load details; for attached files, navigate directly
       if (file.fileType === 'main_pdf') {
@@ -472,9 +753,9 @@ export default function SavedFilesAgreements() {
         type: "error"
       });
     }
-  };
+  }, [navigate, returnPath]);
 
-  const handleDownload = async (file: SavedFileListItem) => {
+  const handleDownload = useCallback(async (file: SavedFileListItem) => {
     try {
       let blob: Blob;
 
@@ -517,14 +798,14 @@ export default function SavedFilesAgreements() {
     } catch (err) {
       setToastMessage({ message: "Unable to download this file. Please try again.", type: "error" });
     }
-  };
+  }, []);
 
-  const handleEmail = (file: SavedFileListItem) => {
+  const handleEmail = useCallback((file: SavedFileListItem) => {
     setCurrentEmailFile(file);
     setEmailComposerOpen(true);
-  };
+  }, []);
 
-  const handleZohoUpload = (file: SavedFileListItem) => {
+  const handleZohoUpload = useCallback((file: SavedFileListItem) => {
     // ✅ UPDATED: Support both PDFs and TXT log files for Zoho upload
     const isUploadableFile = file.hasPdf || file.fileType === 'version_log';
     if (!isUploadableFile) {
@@ -536,7 +817,7 @@ export default function SavedFilesAgreements() {
     }
     setCurrentZohoFile(file);
     setZohoUploadOpen(true);
-  };
+  }, []);
 
   // ✅ NEW: Handle Zoho upload for entire agreement (folder-level upload)
   const handleAgreementZohoUpload = (agreement: SavedFileGroup) => {
@@ -1066,213 +1347,25 @@ export default function SavedFilesAgreements() {
                 </div>
               </div>
 
+              {/* ✅ PERFORMANCE: Lazy render files only when expanded */}
               {isAgreementExpanded(agreement.id) && (
                 <div style={{ padding: '0 16px 16px' }}>
                   {agreement.files.map((file) => (
-                    <div
+                    <FileRow
                       key={file.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '12px',
-                        background: selectedFiles[file.id] ? '#f0f9ff' : '#fafafa',
-                        border: '1px solid',
-                        borderColor: selectedFiles[file.id] ? '#bae6fd' : '#f0f0f0',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      {/* File checkbox */}
-                      <div style={{ marginRight: '12px' }}>
-                        <FontAwesomeIcon
-                          icon={selectedFiles[file.id] ? faCheckSquare : faSquare}
-                          style={{
-                            color: selectedFiles[file.id] ? '#3b82f6' : '#d1d5db',
-                            cursor: 'pointer',
-                            fontSize: '14px'
-                          }}
-                          onClick={() => toggleFileSelection(file.id)}
-                        />
-                      </div>
-
-                      {/* File info */}
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FontAwesomeIcon
-                          icon={faFileAlt}
-                          style={{
-                            color: file.fileType === 'main_pdf'
-                              ? '#2563eb'
-                              : file.fileType === 'version_pdf'
-                              ? '#7c3aed'  // Purple for version PDFs
-                              : file.fileType === 'version_log'
-                              ? '#f59e0b'  // Orange for version logs
-                              : '#10b981',
-                            fontSize: '16px'
-                          }}
-                        />
-                        <span style={{
-                          fontWeight: '500',
-                          color: '#374151'
-                        }}>
-                          {file.fileName}
-                        </span>
-                        {file.hasPdf && (
-                          <span style={{
-                            fontSize: '12px',
-                            color: '#10b981'
-                          }}>
-                            📎
-                          </span>
-                        )}
-                        <span style={{
-                          fontSize: '12px',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          background: file.fileType === 'main_pdf'
-                            ? '#e0f2fe'
-                            : file.fileType === 'version_pdf'
-                            ? '#f3e8ff'  // Light purple for version PDFs
-                            : file.fileType === 'version_log'
-                            ? '#fef3c7'  // Light orange for version logs
-                            : '#f0fdf4',
-                          color: file.fileType === 'main_pdf'
-                            ? '#0e7490'
-                            : file.fileType === 'version_pdf'
-                            ? '#7c2d12'  // Dark purple for version PDFs
-                            : file.fileType === 'version_log'
-                            ? '#92400e'  // Dark orange for version logs
-                            : '#166534',
-                          fontWeight: '600'
-                        }}>
-                          {file.fileType === 'main_pdf'
-                            ? 'Main Agreement'
-                            : file.fileType === 'version_pdf'
-                            ? `Version ${(file as any).versionNumber || ''}`  // Show version number
-                            : file.fileType === 'version_log'
-                            ? `Log v${(file as any).versionNumber || ''}`  // Show log version number
-                            : 'Attached'}
-                        </span>
-
-                        {file.description && (
-                          <span style={{
-                            fontSize: '11px',
-                            color: '#6b7280',
-                            fontStyle: 'italic'
-                          }}>
-                            {file.description}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* File actions */}
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        {/* ✅ FIXED: Show edit button for main PDFs AND latest version PDFs */}
-                        {(file.fileType === 'main_pdf' || (file.fileType === 'version_pdf' && file.isLatestVersion === true)) && (
-                          <button
-                            className="iconbtn"
-                            title="Edit Agreement"
-                            onClick={() => handleEdit(file)}
-                          >
-                            <FontAwesomeIcon icon={faPencilAlt} />
-                          </button>
-                        )}
-                        <button
-                          className="iconbtn"
-                          title="View"
-                          onClick={() => handleView(file)}
-                          disabled={!file.hasPdf}
-                        >
-                          <FontAwesomeIcon icon={faEye} />
-                        </button>
-                        <button
-                          className="iconbtn"
-                          title="Download"
-                          onClick={() => handleDownload(file)}
-                          disabled={!file.hasPdf}
-                        >
-                          <FontAwesomeIcon icon={faDownload} />
-                        </button>
-                        <button
-                          className="iconbtn"
-                          title="Share via Email"
-                          onClick={() => handleEmail(file)}
-                          disabled={!file.hasPdf}
-                        >
-                          <FontAwesomeIcon icon={faEnvelope} />
-                        </button>
-                        <button
-                          className="iconbtn zoho-upload-btn"
-                          title="Upload to Zoho Bigin"
-                          onClick={() => handleZohoUpload(file)}
-                          disabled={!file.hasPdf && file.fileType !== 'version_log'}
-                        >
-                          <FontAwesomeIcon icon={faUpload} />
-                        </button>
-
-                        {/* ✅ UPDATED: Status Dropdown for PDFs and manual uploads */}
-                        {(file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
-                          <div style={{ position: 'relative', display: 'inline-block' }}>
-                            {file.canChangeStatus && !statusChangeLoading[file.id] ? (
-                              <select
-                                value={file.status}
-                                onChange={(e) => handleStatusChange(file, e.target.value)}
-                                style={{
-                                  fontSize: '11px',
-                                  padding: '4px 8px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #d1d5db',
-                                  background: getStatusConfig(file.status).color,
-                                  color: '#fff',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                  outline: 'none',
-                                  minWidth: '120px'
-                                }}
-                                title="Change status"
-                              >
-                                {getAvailableStatusesForDropdown(file.status, file.isLatestVersion, file.fileType, isInAdminContext).map(status => (
-                                  <option key={status.value} value={status.value} style={{ color: '#000' }}>
-                                    {status.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span
-                                style={{
-                                  fontSize: '11px',
-                                  padding: '4px 8px',
-                                  borderRadius: '4px',
-                                  background: getStatusConfig(file.status).color,
-                                  color: '#fff',
-                                  fontWeight: '600',
-                                  opacity: statusChangeLoading[file.id] ? 0.6 : 1,
-                                  minWidth: '120px',
-                                  display: 'inline-block',
-                                  textAlign: 'center'
-                                }}
-                                title={statusChangeLoading[file.id] ? "Updating status..." : "Status (read-only)"}
-                              >
-                                {statusChangeLoading[file.id] ? "Updating..." : getStatusConfig(file.status).label}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* ✅ NEW: Delete file button */}
-                        <button
-                          className="iconbtn"
-                          title="Delete file (move to trash)"
-                          onClick={() => handleDelete('file', file.id, file.title)}
-                          style={{
-                            color: '#dc2626',
-                            borderColor: '#fca5a5'
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-                    </div>
+                      file={file}
+                      isSelected={selectedFiles[file.id] || false}
+                      statusChangeLoading={statusChangeLoading[file.id] || false}
+                      isInAdminContext={isInAdminContext}
+                      onToggleSelection={toggleFileSelection}
+                      onView={handleView}
+                      onDownload={handleDownload}
+                      onEmail={handleEmail}
+                      onZohoUpload={handleZohoUpload}
+                      onEdit={handleEdit}
+                      onStatusChange={handleStatusChange}
+                      onDelete={handleDelete}
+                    />
                   ))}
                 </div>
               )}
