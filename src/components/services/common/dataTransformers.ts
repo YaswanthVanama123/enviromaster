@@ -51,18 +51,24 @@ export function transformRpmWindowsData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract quantities from windows array
+  // Extract quantities from windows array (✅ FIXED: Extract both quantities AND rates)
   if (structuredData.windows && Array.isArray(structuredData.windows)) {
     structuredData.windows.forEach((window: any) => {
       if (window.label === "Small Windows") {
         formState.smallQty = window.qty || 0;
-        formState.smallWindowRate = window.rate || 0;
+        if (window.rate !== undefined && window.rate !== null) {
+          formState.smallWindowRate = window.rate; // ✅ Preserve saved rate
+        }
       } else if (window.label === "Medium Windows") {
         formState.mediumQty = window.qty || 0;
-        formState.mediumWindowRate = window.rate || 0;
+        if (window.rate !== undefined && window.rate !== null) {
+          formState.mediumWindowRate = window.rate; // ✅ Preserve saved rate
+        }
       } else if (window.label === "Large Windows") {
         formState.largeQty = window.qty || 0;
-        formState.largeWindowRate = window.rate || 0;
+        if (window.rate !== undefined && window.rate !== null) {
+          formState.largeWindowRate = window.rate; // ✅ Preserve saved rate
+        }
       }
     });
   }
@@ -151,17 +157,29 @@ export function transformSanicleanData(structuredData: any): any {
     formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
   }
 
-  // Extract fixture breakdown
+  // Extract fixture breakdown (✅ FIXED: Extract both quantities AND rates)
   if (structuredData.fixtureBreakdown && Array.isArray(structuredData.fixtureBreakdown)) {
     structuredData.fixtureBreakdown.forEach((fixture: any) => {
       if (fixture.label === "Sinks") {
         formState.sinks = fixture.qty || 0;
+        if (fixture.rate !== undefined && fixture.rate !== null) {
+          formState.sinkRate = fixture.rate; // ✅ Preserve saved rate
+        }
       } else if (fixture.label === "Urinals") {
         formState.urinals = fixture.qty || 0;
+        if (fixture.rate !== undefined && fixture.rate !== null) {
+          formState.urinalRate = fixture.rate; // ✅ Preserve saved rate
+        }
       } else if (fixture.label === "Male Toilets") {
         formState.maleToilets = fixture.qty || 0;
+        if (fixture.rate !== undefined && fixture.rate !== null) {
+          formState.maleToiletRate = fixture.rate; // ✅ Preserve saved rate
+        }
       } else if (fixture.label === "Female Toilets") {
         formState.femaleToilets = fixture.qty || 0;
+        if (fixture.rate !== undefined && fixture.rate !== null) {
+          formState.femaleToiletRate = fixture.rate; // ✅ Preserve saved rate
+        }
       }
     });
   }
@@ -502,14 +520,20 @@ export function transformSaniscrubData(structuredData: any): any {
     formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
   }
 
-  // Extract restroom fixtures
+  // Extract restroom fixtures (✅ FIXED: Extract both qty AND rate)
   if (structuredData.restroomFixtures) {
     formState.fixtureCount = structuredData.restroomFixtures.qty || 0;
+    if (structuredData.restroomFixtures.rate !== undefined && structuredData.restroomFixtures.rate !== null) {
+      formState.fixtureRate = structuredData.restroomFixtures.rate; // ✅ Preserve saved rate
+    }
   }
 
-  // Extract non-bathroom area
+  // Extract non-bathroom area (✅ FIXED: Extract both qty AND rate)
   if (structuredData.nonBathroomArea) {
     formState.nonBathroomSqFt = structuredData.nonBathroomArea.qty || 0;
+    if (structuredData.nonBathroomArea.rate !== undefined && structuredData.nonBathroomArea.rate !== null) {
+      formState.nonBathroomRate = structuredData.nonBathroomArea.rate; // ✅ Preserve saved rate
+    }
   }
 
   // Extract contract months
@@ -585,10 +609,13 @@ export function transformSanipodData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract service (sanipods)
+  // Extract service (sanipods) (✅ FIXED: Extract rate as well)
   if (structuredData.service) {
     formState.podQuantity = structuredData.service.qty || 0;
-    // Note: Don't extract rate here as it's calculated from totals
+    // ✅ Extract rate if available (for recurring service rate per pod)
+    if (structuredData.service.rate !== undefined && structuredData.service.rate !== null) {
+      formState.recurringPerPod = structuredData.service.rate; // ✅ Preserve saved rate
+    }
   }
 
   // Extract extra bags
@@ -632,9 +659,12 @@ export function transformGreaseTrapData(structuredData: any): any {
     formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
   }
 
-  // Extract service (grease traps)
+  // Extract service (grease traps) (✅ FIXED: Extract both qty AND rate)
   if (structuredData.service) {
     formState.numberOfTraps = structuredData.service.qty || 0;
+    if (structuredData.service.rate !== undefined && structuredData.service.rate !== null) {
+      formState.perTrapWeeklyRate = structuredData.service.rate; // ✅ Preserve saved rate
+    }
   }
 
   // Extract contract months

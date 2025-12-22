@@ -82,6 +82,7 @@ export type FormPayload = {
     products: { id: string; label: string }[];
     dispensers: { id: string; label: string }[];
   };
+  serviceAgreement?: any; // ✅ Service agreement data (using any to avoid circular dependency)
 };
 
 type LocationState = {
@@ -327,6 +328,7 @@ export default function FormFilling() {
               fromBackend.agreement?.additionalMonths ?? "",
           },
           customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
+          serviceAgreement: fromBackend.serviceAgreement, // ✅ Include service agreement data for editing
         };
 
         setPayload(cleanPayload);
@@ -1156,7 +1158,10 @@ export default function FormFilling() {
             <ServicesDataCollector ref={servicesRef} />
 
             {/* Service Agreement Component */}
-            <ServiceAgreement onAgreementChange={setAgreementData} />
+            <ServiceAgreement
+              onAgreementChange={setAgreementData}
+              initialData={payload.serviceAgreement} // ✅ Pass loaded service agreement data for editing
+            />
 
             <div className="formfilling__actions">
               <button
