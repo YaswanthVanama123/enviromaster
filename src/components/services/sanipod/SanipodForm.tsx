@@ -520,6 +520,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small field-qty"
             type="number"
             min="0"
+            readOnly
             step="0.01"
             name="customPodServiceTotal"
             value={getDisplayValue(
@@ -569,6 +570,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <input
             className="svc-in svc-in-small field-qty"
             type="number"
+            readOnly
             min="0"
             step="0.01"
             name="customExtraBagsTotal"
@@ -692,6 +694,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                   className="svc-in svc-in-small"
                   type="number"
                   min="0"
+                  readOnly
                   step="0.01"
                   name="customInstallationFee"
                   value={getDisplayValue(
@@ -712,7 +715,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       )}
 
       {/* Rate category */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
           <select
@@ -725,7 +728,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             <option value="greenRate">Green (+30%)</option>
           </select>
         </div>
-      </div>
+      </div> */}
 
       {/* Totals */}
       <div className="svc-row svc-row-total">
@@ -743,6 +746,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small"
             type="number"
             min="0"
+            readOnly
             step="0.01"
             name="customPerVisitPrice"
             value={getDisplayValue(
@@ -789,6 +793,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             $<input
               className="svc-in svc-in-small"
               type="number"
+              readOnly
               step="0.01"
               name="customMonthlyPrice"
               value={getDisplayValue(
