@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
@@ -344,7 +344,8 @@ function ContractSummary() {
   );
 }
 
-export default function FormFilling() {
+// ✅ NEW: Helper component to access ServicesContext inside FormFilling
+function FormFillingContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id: urlId } = useParams<{ id: string }>();
@@ -364,8 +365,57 @@ export default function FormFilling() {
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
 
-  // Fetch all service pricing data for context provider
-  const { pricingData } = useAllServicePricing();
+  // ✅ NEW: Access ServicesContext for pricing calculations
+  const {
+    getTotalOriginalPerVisit,
+    getTotalMinimumPerVisit,
+  } = useServicesContext();
+
+  // ✅ NEW: Calculate pricing status (Red/Green Line) for approval workflow
+  const calculatePricingStatus = useCallback((): 'red' | 'green' | 'neutral' => {
+    const totalOriginal = getTotalOriginalPerVisit();
+    const totalMinimum = getTotalMinimumPerVisit();
+    const threshold = totalMinimum * 1.30; // 30% above minimum
+
+    console.log(`💰 [PRICING-CALC] Values:`, {
+      totalOriginal,
+      totalMinimum,
+      threshold,
+      comparison: {
+        'isRedLine (orig <= min)': totalOriginal <= totalMinimum,
+        'isGreenLine (orig >= threshold)': totalOriginal >= threshold,
+        'difference': totalOriginal - totalMinimum,
+        'percentAboveMin': totalMinimum > 0 ? ((totalOriginal - totalMinimum) / totalMinimum * 100).toFixed(2) + '%' : 'N/A'
+      }
+    });
+
+    if (totalOriginal <= totalMinimum) {
+      // Red Line: at or below minimum (unprofitable)
+      console.log(`🔴 [PRICING-CALC] Result: RED LINE (${totalOriginal} <= ${totalMinimum})`);
+      return 'red';
+    } else if (totalOriginal >= threshold) {
+      // Green Line: 30%+ above minimum (profitable)
+      console.log(`🟢 [PRICING-CALC] Result: GREEN LINE (${totalOriginal} >= ${threshold})`);
+      return 'green';
+    } else {
+      // Neutral: between minimum and green line threshold
+      console.log(`🟡 [PRICING-CALC] Result: NEUTRAL (${totalMinimum} < ${totalOriginal} < ${threshold})`);
+      return 'neutral';
+    }
+  }, [getTotalOriginalPerVisit, getTotalMinimumPerVisit]);
+
+  // ✅ NEW: Determine document status based on pricing
+  const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
+    const pricingStatus = calculatePricingStatus();
+
+    const status = (pricingStatus === 'red' || pricingStatus === 'neutral')
+      ? 'pending_approval'
+      : 'saved';
+
+    console.log(`📋 [STATUS-CALC] Pricing: ${pricingStatus} → Document Status: ${status}`);
+
+    return status;
+  }, [calculatePricingStatus]);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const hasChanges = hasPriceChanges();
@@ -717,9 +767,13 @@ export default function FormFilling() {
 
     setIsSaving(true);
 
+    // ✅ NEW: Log pricing status for debugging
+    const pricingStatus = calculatePricingStatus();
+    console.log(`💾 [DRAFT] Pricing status: ${pricingStatus} (Red/Green Line check - drafts always use "draft" status)`);
+
     const payloadToSend = {
       ...collectFormData(), // Collect current data from all child components
-      status: "draft",
+      status: "draft", // Drafts are always "draft" regardless of pricing
       // ✅ NEW: Include version context for backend to update correct version status
       versionContext: locationState.editingVersionId ? {
         editingVersionId: locationState.editingVersionId,
@@ -850,15 +904,37 @@ export default function FormFilling() {
     console.log("💾 [SAVE] Starting save process for agreement:", documentId);
 
     try {
+      // ✅ NEW: Determine status based on Red/Green Line pricing
+      const documentStatus = getDocumentStatus();
+      const pricingStatus = calculatePricingStatus();
+
+      console.log(`💰 [PRICING-CHECK] Pricing: ${pricingStatus.toUpperCase()}, Status: ${documentStatus}`);
+      if (documentStatus === 'pending_approval') {
+        console.log(`⚠️ [APPROVAL-REQUIRED] Red Line pricing detected - document will require approval`);
+      } else {
+        console.log(`✅ [AUTO-APPROVED] Green Line pricing - document auto-approved`);
+      }
+
       // 1. ✅ FIXED: Always update the main agreement data first
       const payloadToSend = {
         ...collectFormData(),
-        status: "saved",
+        status: documentStatus, // ✅ NEW: Dynamic status based on pricing
       };
 
+      console.log(`📤 [UPDATE-PAYLOAD] Sending to backend:`, {
+        status: payloadToSend.status,
+        headerTitle: payloadToSend.headerTitle,
+        documentId,
+        fullPayload: payloadToSend
+      });
+
       // Update the agreement data (no PDF generation yet)
-      await pdfApi.updateCustomerHeader(documentId, payloadToSend);
-      console.log("✅ [SAVE] Agreement data updated successfully");
+      const updateResponse = await pdfApi.updateCustomerHeader(documentId, payloadToSend);
+      console.log("✅ [SAVE] Agreement data updated successfully:", {
+        response: updateResponse,
+        sentStatus: payloadToSend.status,
+        responseStatus: updateResponse?.data?.status || updateResponse?.status
+      });
 
       // 2. ✅ NEW: Check version status for PDF generation
       setIsCheckingVersions(true);
@@ -933,10 +1009,21 @@ export default function FormFilling() {
         }
       }
 
-      setToastMessage({
-        message: "First version (v1) created successfully!",
-        type: "success"
-      });
+      // ✅ NEW: Show appropriate message based on approval status
+      const documentStatus = getDocumentStatus();
+      const pricingStatus = calculatePricingStatus();
+
+      if (documentStatus === 'pending_approval') {
+        setToastMessage({
+          message: `PDF created successfully! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval before finalization.`,
+          type: "warning"
+        });
+      } else {
+        setToastMessage({
+          message: "First version (v1) created and approved successfully! ✅ Green Line pricing.",
+          type: "success"
+        });
+      }
 
       // Redirect to saved PDFs
       setTimeout(() => {
@@ -956,9 +1043,20 @@ export default function FormFilling() {
 
   // Normal save handler (for new documents - also creates v1 in new system)
   const handleNormalSave = async () => {
+    // ✅ NEW: Determine status based on Red/Green Line pricing
+    const documentStatus = getDocumentStatus();
+    const pricingStatus = calculatePricingStatus();
+
+    console.log(`💰 [NEW-DOC-PRICING] Pricing: ${pricingStatus.toUpperCase()}, Status: ${documentStatus}`);
+    if (documentStatus === 'pending_approval') {
+      console.log(`⚠️ [NEW-DOC-APPROVAL] Red/Neutral Line pricing - document will require approval`);
+    } else {
+      console.log(`✅ [NEW-DOC-APPROVED] Green Line pricing - document auto-approved`);
+    }
+
     const payloadToSend = {
       ...collectFormData(), // Collect current data from all child components
-      status: "saved",
+      status: documentStatus, // ✅ NEW: Dynamic status based on pricing
     };
 
     // Log the complete payload being sent to backend
@@ -1031,7 +1129,18 @@ export default function FormFilling() {
           }
         }
 
-        setToastMessage({ message: "Agreement created and first version (v1) generated successfully!", type: "success" });
+        // ✅ NEW: Show appropriate message based on approval status
+        if (documentStatus === 'pending_approval') {
+          setToastMessage({
+            message: `Agreement created! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval before finalization.`,
+            type: "warning"
+          });
+        } else {
+          setToastMessage({
+            message: "Agreement created and approved successfully! ✅ Green Line pricing.",
+            type: "success"
+          });
+        }
 
         // Redirect to saved PDFs
         setTimeout(() => {
@@ -1091,12 +1200,25 @@ export default function FormFilling() {
         }
       }
 
-      setToastMessage({
-        message: replaceRecent
-          ? `Current version replaced successfully!`
-          : `Version ${result.version?.versionNumber} created successfully!`,
-        type: "success"
-      });
+      // ✅ NEW: Show approval-aware messages based on pricing status
+      const documentStatus = getDocumentStatus();
+      const pricingStatus = calculatePricingStatus();
+
+      if (documentStatus === 'pending_approval') {
+        setToastMessage({
+          message: replaceRecent
+            ? `Current version replaced! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval.`
+            : `Version ${result.version?.versionNumber} created! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval.`,
+          type: "warning"
+        });
+      } else {
+        setToastMessage({
+          message: replaceRecent
+            ? `Current version replaced and approved successfully! ✅ Green Line pricing.`
+            : `Version ${result.version?.versionNumber} created and approved successfully! ✅ Green Line pricing.`,
+          type: "success"
+        });
+      }
 
       setShowVersionDialog(false);
       setVersionStatus(null);
@@ -1339,21 +1461,20 @@ export default function FormFilling() {
   });
 
   return (
-    <ServicesProvider backendPricingData={pricingData}>
-      <div className={`center-align ${isInEditMode ? 'edit-mode-container' : ''}`}>
-        {isInEditMode && (
-          <div className="edit-mode-header">
-            <button
-              type="button"
-              className="edit-back-button"
-              onClick={handleBack}
-              title="Go back"
-            >
-              <FontAwesomeIcon icon={faArrowLeft} />
-              <span>Back</span>
-            </button>
-          </div>
-        )}
+    <div className={`center-align ${isInEditMode ? 'edit-mode-container' : ''}`}>
+      {isInEditMode && (
+        <div className="edit-mode-header">
+          <button
+            type="button"
+            className="edit-back-button"
+            onClick={handleBack}
+            title="Go back"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} />
+            <span>Back</span>
+          </button>
+        </div>
+      )}
 
         {loading && !payload && (
           <div className="formfilling__loading">Loading…</div>
@@ -1496,6 +1617,17 @@ export default function FormFilling() {
           />
         )}
       </div>
+  );
+}
+
+// ✅ Export the main component as default (with ServicesProvider wrapper)
+export default function FormFilling() {
+  // Fetch all service pricing data for context provider
+  const { pricingData } = useAllServicePricing();
+
+  return (
+    <ServicesProvider backendPricingData={pricingData}>
+      <FormFillingContent />
     </ServicesProvider>
   );
 }

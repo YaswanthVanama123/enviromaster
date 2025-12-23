@@ -17,6 +17,8 @@ import { zohoApi } from "../backendservice/api";
 import type { ZohoCompany, ZohoUploadStatus, ZohoPipelineOptions } from "../backendservice/api";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
+import { matchCompanyName, getMatchTypeLabel, getMatchTypeColor } from "../utils/fuzzyMatch";
+import type { MatchType } from "../utils/fuzzyMatch";
 import "./ZohoUpload.css";
 
 interface ZohoUploadProps {
@@ -30,6 +32,12 @@ interface ZohoUploadProps {
 
 type UploadStep = 'loading' | 'first-time' | 'update' | 'uploading' | 'success' | 'error';
 
+// ✅ NEW: Company with match information for enhanced search
+interface CompanyWithMatch extends ZohoCompany {
+  matchType?: MatchType;
+  matchScore?: number;
+}
+
 export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   agreementId,
   agreementTitle,
@@ -40,7 +48,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   // State management
   const [step, setStep] = useState<UploadStep>('loading');
   const [uploadStatus, setUploadStatus] = useState<ZohoUploadStatus | null>(null);
-  const [companies, setCompanies] = useState<ZohoCompany[]>([]);
+  const [allCompanies, setAllCompanies] = useState<ZohoCompany[]>([]); // ✅ NEW: Store all companies fetched from backend
+  const [companies, setCompanies] = useState<CompanyWithMatch[]>([]); // ✅ Filtered/sorted companies to display
   const [pipelineOptions, setPipelineOptions] = useState<ZohoPipelineOptions | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateCompany, setShowCreateCompany] = useState(false);
@@ -234,7 +243,14 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           throw new Error(companiesResult.error || 'Failed to load companies');
         }
 
-        setCompanies(companiesResult.companies || []);
+        // ✅ NEW: Store ALL companies from backend for client-side filtering
+        const allCompaniesData = companiesResult.companies || [];
+        setAllCompanies(allCompaniesData);
+
+        // ✅ Initially show all companies (no search term yet)
+        setCompanies(allCompaniesData);
+
+        console.log(`✅ Loaded ${allCompaniesData.length} companies for client-side search`);
 
         // Set default deal name for bulk upload
         const defaultDealName = bulkFiles.length === 1
@@ -265,7 +281,15 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           throw new Error(companiesResult.error || 'Failed to load companies');
         }
 
-        setCompanies(companiesResult.companies || []);
+        // ✅ NEW: Store ALL companies from backend for client-side filtering
+        const allCompaniesData = companiesResult.companies || [];
+        setAllCompanies(allCompaniesData);
+
+        // ✅ Initially show all companies (no search term yet)
+        setCompanies(allCompaniesData);
+
+        console.log(`✅ Loaded ${allCompaniesData.length} companies for client-side search`);
+
         // ✅ FIX: Don't load pipeline options here - wait for company selection
 
         // Generate default deal name
@@ -335,32 +359,65 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     return `${cleanTitle} - EnviroMaster Services`;
   };
 
-  const searchCompanies = useCallback(async (search: string) => {
+  // ✅ NEW: Client-side search filtering using fuzzy matching
+  const filterCompanies = useCallback((search: string) => {
     if (!search.trim()) {
-      // Load default companies
-      const result = await zohoApi.getCompanies(1);
-      setCompanies(result.companies || []);
+      // No search term - show all companies without match information
+      setCompanies(allCompanies);
       return;
     }
 
-    try {
-      const result = await zohoApi.getCompanies(1, search);
-      setCompanies(result.companies || []);
-    } catch (err) {
-      console.error('Failed to search companies:', err);
-      setToastMessage({ message: 'Failed to search companies', type: 'error' });
-    }
-  }, []);
+    console.log(`🔍 [CLIENT-SEARCH] Filtering ${allCompanies.length} companies for: "${search}"`);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (step === 'first-time') {
-        searchCompanies(searchTerm);
+    // Apply fuzzy matching to all companies
+    const companiesWithMatch: CompanyWithMatch[] = allCompanies.map(company => {
+      const matchResult = matchCompanyName(company.name, search);
+      return {
+        ...company,
+        matchType: matchResult.matchType,
+        matchScore: matchResult.score
+      };
+    });
+
+    // Filter out companies with no match (below fuzzy threshold)
+    const matchedCompanies = companiesWithMatch.filter(c => c.matchType !== 'none');
+
+    // Sort by match quality (exact > partial > fuzzy, then by score)
+    const sortedCompanies = matchedCompanies.sort((a, b) => {
+      const matchTypePriority: Record<MatchType, number> = {
+        exact: 4,
+        partial: 3,
+        fuzzy: 2,
+        none: 1
+      };
+
+      const priorityA = matchTypePriority[a.matchType || 'none'];
+      const priorityB = matchTypePriority[b.matchType || 'none'];
+
+      if (priorityA !== priorityB) {
+        return priorityB - priorityA; // Higher priority first
       }
-    }, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, searchCompanies, step]);
+      // Within same match type, sort by score (higher score first)
+      return (b.matchScore || 0) - (a.matchScore || 0);
+    });
+
+    console.log(`✅ [CLIENT-SEARCH] Found ${sortedCompanies.length} matches:`, {
+      exact: sortedCompanies.filter(c => c.matchType === 'exact').length,
+      partial: sortedCompanies.filter(c => c.matchType === 'partial').length,
+      fuzzy: sortedCompanies.filter(c => c.matchType === 'fuzzy').length,
+      total: sortedCompanies.length
+    });
+
+    setCompanies(sortedCompanies);
+  }, [allCompanies]);
+
+  // ✅ NEW: Instant client-side filtering (no debounce needed - it's fast!)
+  useEffect(() => {
+    if (step === 'first-time') {
+      filterCompanies(searchTerm);
+    }
+  }, [searchTerm, filterCompanies, step]);
 
   const handleCreateCompany = async () => {
     if (!newCompany.name.trim()) {
@@ -374,7 +431,11 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
       if (result.success && result.company) {
         setSelectedCompany(result.company);
+
+        // ✅ NEW: Add to both allCompanies (for search) and companies (for display)
+        setAllCompanies(prev => [result.company!, ...prev]);
         setCompanies(prev => [result.company!, ...prev]);
+
         setShowCreateCompany(false);
         setNewCompany({ name: '', phone: '', email: '', website: '', address: '' });
         setToastMessage({ message: 'Company created successfully', type: 'success' });
@@ -886,7 +947,27 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                       className={`zoho-upload__company ${selectedCompany?.id === company.id ? 'selected' : ''}`}
                       onClick={() => setSelectedCompany(company)}
                     >
-                      <div className="company-name">{company.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <div className="company-name">{company.name}</div>
+                        {/* ✅ NEW: Show match type indicator when searching */}
+                        {searchTerm && company.matchType && company.matchType !== 'none' && (
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              backgroundColor: getMatchTypeColor(company.matchType),
+                              color: '#ffffff',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}
+                            title={`Match score: ${(company.matchScore || 0).toFixed(2)}`}
+                          >
+                            {getMatchTypeLabel(company.matchType)}
+                          </span>
+                        )}
+                      </div>
                       {company.phone && <div className="company-info">{company.phone}</div>}
                       {company.email && <div className="company-info">{company.email}</div>}
                     </div>
