@@ -392,25 +392,44 @@ export const RefreshPowerScrubForm: React.FC<
                     Patio Service (Base)
                   </div>
                   <div className="rps-inline" style={{ marginBottom: '6px' }}>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      min="0"
+                      value={area.presetQuantity || 1}
+                      onChange={(e) => setAreaField(areaKey, "presetQuantity", e.target.value)}
+                      style={{ width: '50px' }}
+                      title="Quantity - editable"
+                    />
+                    <span>@</span>
                     <span>$</span>
                     <input
                       className="rps-line rps-num"
                       type="number"
-                  min="0"
-                    min="0"
-            min="0"
                       min="0"
                       step="0.01"
-                      value={area.customAmount > 0 ? area.customAmount : getPatioStandalone()}
+                      value={area.presetRate || getPatioStandalone()}
+                      onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
+                      style={{ width: '80px' }}
+                      title="Patio base rate - editable"
+                    />
+                    <span>=</span>
+                    <span>$</span>
+                    <input
+                      className="rps-line rps-num"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0;
                         setAreaField(areaKey, "customAmount", value.toString());
                       }}
                       style={{
-                        width: '80px',
+                        width: '90px',
                         backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
                       }}
-                      title={`Patio base price - editable (default: $${getPatioStandalone()})`}
+                      title={`Patio base total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))})`}
                     />
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -423,9 +442,6 @@ export const RefreshPowerScrubForm: React.FC<
                     <input
                       className="rps-line rps-num"
                       type="number"
-                  min="0"
-                    min="0"
-            min="0"
                       min="0"
                       step="0.01"
                       value={getPatioUpsell()}
@@ -441,66 +457,159 @@ export const RefreshPowerScrubForm: React.FC<
                     fontWeight: 'bold',
                     color: '#0066cc'
                   }}>
-                    Total: ${(area.customAmount > 0 ? area.customAmount : getPatioStandalone()) + (area.includePatioAddon ? getPatioUpsell() : 0)}
+                    Total: ${formatAmount((area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))) + (area.includePatioAddon ? getPatioUpsell() : 0))}
                   </div>
                 </div>
               </div>
             )}
             {areaKey === "boh" && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <select
-                  className="rps-line"
-                  value={area.kitchenSize}
-                  onChange={(e) => setAreaField(areaKey, "kitchenSize", e.target.value)}
-                  style={{ width: '160px' }}
-                >
-                  <option value="smallMedium">Small/Medium Kitchen</option>
-                  <option value="large">Large Kitchen</option>
-                </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Small/Medium Kitchen Calculation */}
                 <div className="rps-inline">
-                  <span className="rps-label">Price:</span>
+                  <span className="rps-label" style={{ fontSize: '11px' }}>S/M:</span>
+                  <input
+                    className="rps-line rps-num"
+                    type="number"
+                    min="0"
+                    value={form.boh.kitchenSize === "smallMedium" ? (area.presetQuantity || 1) : 0}
+                    onChange={(e) => {
+                      setAreaField(areaKey, "presetQuantity", e.target.value);
+                      setAreaField(areaKey, "kitchenSize", "smallMedium");
+                    }}
+                    style={{ width: '50px' }}
+                    title="Small/Medium quantity - editable"
+                  />
+                  <span>@</span>
                   <span>$</span>
                   <input
                     className="rps-line rps-num"
                     type="number"
-                  min="0"
                     min="0"
-            min="0"
                     step="0.01"
-                    value={area.customAmount > 0 ? area.customAmount : (area.kitchenSize === "large" ? getKitchenLarge() : getKitchenSmallMed())}
+                    value={form.boh.kitchenSize === "smallMedium" ? (area.presetRate || getKitchenSmallMed()) : getKitchenSmallMed()}
+                    onChange={(e) => {
+                      setAreaField(areaKey, "presetRate", e.target.value);
+                      setAreaField(areaKey, "kitchenSize", "smallMedium");
+                    }}
+                    style={{ width: '80px' }}
+                    title="Small/Medium Kitchen rate - editable"
+                  />
+                  <span>=</span>
+                  <span>$</span>
+                  <input
+                    className="rps-line rps-num"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.boh.kitchenSize === "smallMedium" ?
+                      (area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getKitchenSmallMed()))) :
+                      0}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value) || 0;
                       setAreaField(areaKey, "customAmount", value.toString());
+                      setAreaField(areaKey, "kitchenSize", "smallMedium");
                     }}
                     style={{
-                      width: '100px',
-                      backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
+                      width: '90px',
+                      backgroundColor: area.customAmount > 0 && form.boh.kitchenSize === "smallMedium" ? '#fffacd' : 'white'
                     }}
-                    title={`Kitchen price - editable (default: $${area.kitchenSize === "large" ? getKitchenLarge() : getKitchenSmallMed()})`}
+                    title={`Small/Medium Kitchen total - editable (default: $${formatAmount(getKitchenSmallMed())})`}
+                  />
+                </div>
+                {/* Large Kitchen Calculation */}
+                <div className="rps-inline">
+                  <span className="rps-label" style={{ fontSize: '11px' }}>Large:</span>
+                  <input
+                    className="rps-line rps-num"
+                    type="number"
+                    min="0"
+                    value={form.boh.kitchenSize === "large" ? (area.presetQuantity || 1) : 0}
+                    onChange={(e) => {
+                      setAreaField(areaKey, "presetQuantity", e.target.value);
+                      setAreaField(areaKey, "kitchenSize", "large");
+                    }}
+                    style={{ width: '50px' }}
+                    title="Large quantity - editable"
+                  />
+                  <span>@</span>
+                  <span>$</span>
+                  <input
+                    className="rps-line rps-num"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.boh.kitchenSize === "large" ? (area.presetRate || getKitchenLarge()) : getKitchenLarge()}
+                    onChange={(e) => {
+                      setAreaField(areaKey, "presetRate", e.target.value);
+                      setAreaField(areaKey, "kitchenSize", "large");
+                    }}
+                    style={{ width: '80px' }}
+                    title="Large Kitchen rate - editable"
+                  />
+                  <span>=</span>
+                  <span>$</span>
+                  <input
+                    className="rps-line rps-num"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.boh.kitchenSize === "large" ?
+                      (area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getKitchenLarge()))) :
+                      0}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setAreaField(areaKey, "customAmount", value.toString());
+                      setAreaField(areaKey, "kitchenSize", "large");
+                    }}
+                    style={{
+                      width: '90px',
+                      backgroundColor: area.customAmount > 0 && form.boh.kitchenSize === "large" ? '#fffacd' : 'white'
+                    }}
+                    title={`Large Kitchen total - editable (default: $${formatAmount(getKitchenLarge())})`}
                   />
                 </div>
               </div>
             )}
             {areaKey !== "patio" && areaKey !== "boh" && (
               <div className="rps-inline">
-                <span className="rps-label">Price:</span>
+                <input
+                  className="rps-line rps-num"
+                  type="number"
+                  min="0"
+                  value={area.presetQuantity || 1}
+                  onChange={(e) => setAreaField(areaKey, "presetQuantity", e.target.value)}
+                  style={{ width: '50px' }}
+                  title="Quantity - editable"
+                />
+                <span>@</span>
                 <span>$</span>
                 <input
                   className="rps-line rps-num"
                   type="number"
                   min="0"
-            min="0"
                   step="0.01"
-                  value={area.customAmount > 0 ? area.customAmount : getPresetAmount(areaKey)}
+                  value={area.presetRate || getPresetAmount(areaKey)}
+                  onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
+                  style={{ width: '80px' }}
+                  title="Rate - editable"
+                />
+                <span>=</span>
+                <span>$</span>
+                <input
+                  className="rps-line rps-num"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPresetAmount(areaKey)))}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value) || 0;
                     setAreaField(areaKey, "customAmount", value.toString());
                   }}
                   style={{
-                    width: '100px',
+                    width: '90px',
                     backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
                   }}
-                  title={`Preset package price - editable (default: $${formatAmount(getPresetAmount(areaKey))})`}
+                  title={`Total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate || getPresetAmount(areaKey)))})`}
                 />
               </div>
             )}

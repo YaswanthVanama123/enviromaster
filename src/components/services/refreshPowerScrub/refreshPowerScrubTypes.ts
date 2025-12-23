@@ -47,6 +47,10 @@ export interface RefreshAreaCalcState {
   /** Custom manual amount */
   customAmount: number;
 
+  /** Preset package calculation fields */
+  presetQuantity: number; // Quantity for preset calculations
+  presetRate: number; // Rate per unit for preset calculations
+
   /** BOH specific */
   kitchenSize: RefreshKitchenSize;
 

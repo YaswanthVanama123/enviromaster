@@ -220,6 +220,8 @@ function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null
     outsideRate: backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE,
     sqFtFixedFee: backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE,
     customAmount: 0,
+    presetQuantity: 1, // Default quantity for preset calculations
+    presetRate: 0, // Will be populated from backend config based on area
     kitchenSize: "smallMedium",
     patioMode: "standalone",
     includePatioAddon: false,
@@ -246,8 +248,8 @@ function createDefaultForm(backendConfig?: BackendRefreshPowerScrubConfig | null
     // Global contract settings
     contractMonths: 12,
 
-    // Columns (Dumpster on by default)
-    dumpster: { ...defaultArea, enabled: true },
+    // Columns (All unchecked by default)
+    dumpster: { ...defaultArea },
     patio: { ...defaultArea },
     walkway: { ...defaultArea },
     foh: { ...defaultArea },
@@ -269,6 +271,8 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   outsideRate: FALLBACK_SQFT_OUTSIDE_RATE, // $0.40/sq ft default
   sqFtFixedFee: FALLBACK_SQFT_FIXED_FEE, // $200 fixed fee default
   customAmount: 0,
+  presetQuantity: 1, // Default quantity for preset calculations
+  presetRate: 0, // Will be populated from backend config based on area
   kitchenSize: "smallMedium",
   patioMode: "standalone",
   includePatioAddon: false, // Default to no add-on
@@ -290,8 +294,8 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   // Global contract settings
   contractMonths: 12,
 
-  // Columns (Dumpster on by default)
-  dumpster: { ...DEFAULT_AREA, enabled: true },
+  // Columns (All unchecked by default)
+  dumpster: { ...DEFAULT_AREA },
   patio: { ...DEFAULT_AREA },
   walkway: { ...DEFAULT_AREA },
   foh: { ...DEFAULT_AREA },
@@ -310,23 +314,27 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "sqFtFixedFee",
   "customAmount",
   "contractMonths",
+  "presetQuantity",
+  "presetRate",
 ];
 
 /** Per Worker rule:
  *  Workers × perWorkerRate (NO trip charge here - applied at visit level).
- *  Returns the labour cost only. Uses form global rate if available, otherwise backend rate.
+ *  Returns the labour cost only. Uses area rate first, then form global rate, then backend rate.
  *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcPerWorker(
   state: RefreshAreaCalcState,
-  formGlobalRate: number,  // ✅ NEW: Use form's global hourly rate
-  formMinimumVisit: number, // ✅ NEW: Use form's global minimum visit
+  formGlobalRate: number,  // ✅ Use form's global hourly rate as fallback
+  formMinimumVisit: number, // ✅ Use form's global minimum visit
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  // ✅ PRIORITY: Use form global rate first, then area rate, then backend rate, then fallback
-  const perWorkerRate = formGlobalRate > 0
-    ? formGlobalRate
-    : (state.workerRate > 0 ? state.workerRate : (backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY));
+  // ✅ PRIORITY: Use area rate first (user edited this field), then form global rate, then backend rate, then fallback
+  const perWorkerRate = state.workerRate > 0
+    ? state.workerRate
+    : (formGlobalRate > 0
+        ? formGlobalRate
+        : (backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY));
 
   // ✅ PRIORITY: Use form global minimum first, then backend, then fallback
   const minimumVisit = formMinimumVisit > 0
@@ -341,19 +349,21 @@ function calcPerWorker(
 
 /** Per Hour rule:
  *  Hours × perHourRate (NO trip charge here - applied at visit level).
- *  Returns the labour cost only. Uses form global rate if available, otherwise backend rate.
+ *  Returns the labour cost only. Uses area rate first, then form global rate, then backend rate.
  *  Applies minimum visit amount if calculated amount is below minimum.
  */
 function calcPerHour(
   state: RefreshAreaCalcState,
-  formGlobalRate: number,  // ✅ NEW: Use form's global hourly rate
-  formMinimumVisit: number, // ✅ NEW: Use form's global minimum visit
+  formGlobalRate: number,  // ✅ Use form's global hourly rate as fallback
+  formMinimumVisit: number, // ✅ Use form's global minimum visit
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  // ✅ PRIORITY: Use form global rate first, then area rate, then backend per-hour rate, then fallback
-  const perHourRate = formGlobalRate > 0
-    ? formGlobalRate
-    : (state.hourlyRate > 0 ? state.hourlyRate : (backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE));
+  // ✅ PRIORITY: Use area rate first (user edited this field), then form global rate, then backend per-hour rate, then fallback
+  const perHourRate = state.hourlyRate > 0
+    ? state.hourlyRate
+    : (formGlobalRate > 0
+        ? formGlobalRate
+        : (backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE));
 
   // ✅ PRIORITY: Use form global minimum first, then backend, then fallback
   const minimumVisit = formMinimumVisit > 0
@@ -407,6 +417,7 @@ function calcSquareFootage(
 
 /** Default / preset prices when no hours / sq-ft are supplied.
  *  These are PACKAGE prices that already include trip charge.
+ *  ✅ NEW: Uses presetQuantity and presetRate when available, falls back to area defaults.
  */
 function calcPresetPackage(
   area: RefreshAreaKey,
@@ -464,37 +475,45 @@ function calcPresetPackage(
     },
   };
 
+  // ✅ Get default rate for this area from backend config
+  let defaultRate: number;
+
   switch (area) {
     case "dumpster":
-      // Dumpster — charge the minimum visit (includes trip + minimal labour).
-      return config.coreRates.minimumVisit;
-
+      defaultRate = config.coreRates.minimumVisit;
+      break;
     case "patio":
-      // Patio — Always start with base $800 service + optional $500 add-on
-      const basePatioPrice = config.areaSpecificPricing.patio.standalone; // $800
-
-      // Add the $500 add-on if selected
-      const addonPrice = state.includePatioAddon ? config.areaSpecificPricing.patio.upsell : 0; // $500 if selected
-
-      return basePatioPrice + addonPrice; // $800 base + $500 addon = $1300 total
-
+      // For patio, use base rate only (addon is added separately below)
+      defaultRate = config.areaSpecificPricing.patio.standalone;
+      break;
     case "foh":
-      // Front of house — package price from backend config.
-      return config.areaSpecificPricing.frontOfHouse;
-
+      defaultRate = config.areaSpecificPricing.frontOfHouse;
+      break;
     case "boh":
-      // Back of house — kitchen size pricing from backend config.
-      return state.kitchenSize === "large"
+      defaultRate = state.kitchenSize === "large"
         ? config.areaSpecificPricing.kitchen.large
         : config.areaSpecificPricing.kitchen.smallMedium;
-
+      break;
     case "walkway":
     case "other":
     default:
-      // These are usually custom, so by default $0 until you
-      // either enter hours or square-footage.
-      return 0;
+      defaultRate = 0;
+      break;
   }
+
+  // ✅ Use custom quantity and rate when available, otherwise use defaults
+  const quantity = (state.presetQuantity && state.presetQuantity > 0) ? state.presetQuantity : 1;
+  const rate = (state.presetRate && state.presetRate > 0) ? state.presetRate : defaultRate;
+
+  // ✅ Calculate base amount
+  let baseAmount = quantity * rate;
+
+  // ✅ For patio, add the addon separately (after qty × rate calculation)
+  if (area === "patio" && state.includePatioAddon) {
+    baseAmount += config.areaSpecificPricing.patio.upsell;
+  }
+
+  return baseAmount;
 }
 
 /** Decide which rule applies to this column and whether it's a package price.
@@ -947,16 +966,39 @@ export function useRefreshPowerScrubCalc(
         }
       }
 
-      // ✅ FIXED: Clear custom amount when kitchen size changes to prevent wrong price showing
+      // ✅ FIXED: Clear custom amount when kitchen size OR pricing type changes to prevent wrong price showing
       const updatedArea = {
         ...current,
         [field]: value,
       };
 
-      // If kitchen size is being changed and there's a custom amount set, clear it
-      if (field === 'kitchenSize' && current.customAmount > 0) {
+      // If kitchen size is being changed, clear preset values and custom amount
+      if (field === 'kitchenSize') {
         updatedArea.customAmount = 0;
-        console.log(`🔧 [Refresh Power Scrub] Cleared custom amount for ${area} when kitchen size changed from ${originalValue} to ${value}`);
+        updatedArea.presetQuantity = 1;  // Reset to default quantity
+        updatedArea.presetRate = 0;  // Reset to allow recalculation from backend
+        console.log(`🔧 [Refresh Power Scrub] Cleared custom values for ${area} when kitchen size changed from ${originalValue} to ${value}`);
+      }
+
+      // ✅ NEW: If pricing type is being changed, clear ALL pricing-related fields
+      if (field === 'pricingType') {
+        updatedArea.customAmount = 0;
+        // Clear preset fields
+        updatedArea.presetQuantity = 1;
+        updatedArea.presetRate = 0;
+        // Clear per-worker fields
+        updatedArea.workers = 2;
+        updatedArea.workerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+        // Clear per-hour fields
+        updatedArea.hours = 0;
+        updatedArea.hourlyRate = backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
+        // Clear square footage fields
+        updatedArea.insideSqFt = 0;
+        updatedArea.outsideSqFt = 0;
+        updatedArea.insideRate = backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
+        updatedArea.outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
+        updatedArea.sqFtFixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE;
+        console.log(`🔧 [Refresh Power Scrub] Cleared all pricing fields for ${area} when pricing type changed from ${originalValue} to ${value}`);
       }
 
       return {
@@ -1055,29 +1097,27 @@ export function useRefreshPowerScrubCalc(
       const { cost, isPackage } = calcAreaCost(area, form, backendConfig);
       totals[area] = cost;
 
-      // Calculate monthly total based on area's frequency label
+      // Calculate monthly total based on area's frequency label OR global frequency
       let monthlyRecurring = 0;
-      const frequencyLabel = form[area].frequencyLabel?.toLowerCase();
+      const areaFrequencyLabel = form[area].frequencyLabel?.toLowerCase();
+
+      // ✅ FIXED: Use area frequency label if set, otherwise use global frequency
+      const effectiveFrequency = areaFrequencyLabel || form.frequency.toLowerCase();
 
       // ✅ Use backend billing multipliers with fallbacks
-      if (frequencyLabel) {
-        const multiplier = getBillingMultiplier(frequencyLabel, backendConfig);
-        monthlyRecurring = cost * multiplier;
-      } else {
-        monthlyRecurring = cost; // Default to monthly
-      }
+      const multiplier = getBillingMultiplier(effectiveFrequency, backendConfig);
+      monthlyRecurring = cost * multiplier;
 
       monthlyTotals[area] = monthlyRecurring;
 
       // Calculate contract total - handle special frequencies
-      // Note: frequencyLabel already declared above, reusing it here
-      if (frequencyLabel === "quarterly") {
+      if (effectiveFrequency === "quarterly") {
         const quarterlyVisits = (form[area].contractMonths || 12) / 3;
         contractTotals[area] = cost * quarterlyVisits;
-      } else if (frequencyLabel === "bi-annual") {
+      } else if (effectiveFrequency === "bi-annual" || effectiveFrequency === "biannual") {
         const biannualVisits = (form[area].contractMonths || 12) / 6;
         contractTotals[area] = cost * biannualVisits;
-      } else if (frequencyLabel === "annual") {
+      } else if (effectiveFrequency === "annual") {
         const annualVisits = (form[area].contractMonths || 12) / 12;
         contractTotals[area] = cost * annualVisits;
       } else {
