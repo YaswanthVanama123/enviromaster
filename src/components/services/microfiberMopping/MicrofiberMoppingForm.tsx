@@ -412,6 +412,29 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
+      {/* Frequency */}
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            <option value="oneTime">One Time</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-weekly</option>
+            <option value="twicePerMonth">2× / Month</option>
+            <option value="monthly">Monthly</option>
+            <option value="bimonthly">Every 2 Months</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="biannual">Bi-Annual</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+      </div>
+
       {/* Standard bathrooms */}
       <div className="svc-row">
         <label>Standard Bathrooms</label>
@@ -445,6 +468,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
+            readOnly
             step="1"
             name="customStandardBathroomTotal"
             value={getDisplayValue(
@@ -494,6 +518,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            readOnly
             min="0"
             step="1"
             name="customHugeBathroomTotal"
@@ -547,6 +572,7 @@ export const MicrofiberMoppingForm: React.FC<
           <input
             className="svc-in-box field-qty"
             type="number"
+            readOnly
             min="0"
             step="1"
             name="customExtraAreaTotal"
@@ -622,6 +648,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
+            readOnly
             step="1"
             name="customStandaloneTotal"
             value={getDisplayValue(
@@ -763,28 +790,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div> */}
 
-      {/* Frequency */}
-      <div className="svc-row">
-        <label>Frequency</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="frequency"
-            value={form.frequency}
-            onChange={onChange}
-          >
-            <option value="oneTime">One Time</option>
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Bi-weekly</option>
-            <option value="twicePerMonth">2× / Month</option>
-            <option value="monthly">Monthly</option>
-            <option value="bimonthly">Every 2 Months</option>
-            <option value="quarterly">Quarterly</option>
-            <option value="biannual">Bi-Annual</option>
-            <option value="annual">Annual</option>
-          </select>
-        </div>
-      </div>
+
 
       {/* Summary block */}
       <div className="svc-summary">
@@ -960,7 +966,8 @@ export const MicrofiberMoppingForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-            min="0"
+                min="0"
+                readOnly
                 step="1"
                 name="customFirstMonthPrice"
                 value={getDisplayValue(
@@ -1034,7 +1041,6 @@ export const MicrofiberMoppingForm: React.FC<
                   className="svc-in"
                   type="number"
                   min="0"
-                  readOnly
                   step="1"
                   name="customContractTotal"
                   value={getDisplayValue(
