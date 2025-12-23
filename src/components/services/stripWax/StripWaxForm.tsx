@@ -424,6 +424,7 @@ export const StripWaxForm: React.FC<
           $<input
             type="number"
             min="0"
+            readOnly
             step="1"
             name="customPerVisit"
             className="svc-in svc-in-small"
@@ -447,14 +448,16 @@ export const StripWaxForm: React.FC<
       </div>
 
             {/* First Visit Total - Show for visit-based (not oneTime) */}
-      {isVisitBasedFrequency && form.frequency !== "oneTime" && (
+      {isVisitBasedFrequency && form.frequency !== "oneTime" || form.frequency === "quarterly" ||
+    form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" && (
         <div className="svc-row svc-row-total">
           <label>First Visit Total</label>
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
               step="1"
+              readOnly
               name="customMonthly"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -562,7 +565,8 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="1"
               name="customMonthly"
               className="svc-in svc-in-small"
@@ -593,7 +597,8 @@ export const StripWaxForm: React.FC<
           <div className="svc-dollar">
             $<input
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="1"
               name="customOngoingMonthly"
               className="svc-in svc-in-small"
