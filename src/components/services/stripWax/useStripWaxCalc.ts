@@ -335,6 +335,15 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
             setBackendConfig(config);
             updateFormWithConfig(activeConfig);
 
+            // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
+            setForm(prev => ({
+              ...prev,
+              customPerVisit: undefined,
+              customMonthly: undefined,
+              customOngoingMonthly: undefined,
+              customContractTotal: undefined,
+            }));
+
             console.log('✅ Strip Wax FALLBACK CONFIG loaded from context');
             return;
           }
@@ -361,6 +370,15 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
       setBackendConfig(config);
       updateFormWithConfig(activeConfig);
 
+      // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
+      setForm(prev => ({
+        ...prev,
+        customPerVisit: undefined,
+        customMonthly: undefined,
+        customOngoingMonthly: undefined,
+        customContractTotal: undefined,
+      }));
+
       console.log('✅ Strip Wax ACTIVE CONFIG loaded from backend successfully');
     } catch (error) {
       console.error('❌ Failed to fetch Strip Wax config from backend:', error);
@@ -377,6 +395,16 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>) {
 
           setBackendConfig(config);
           updateFormWithConfig(activeConfig);
+
+          // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
+          setForm(prev => ({
+            ...prev,
+            customPerVisit: undefined,
+            customMonthly: undefined,
+            customOngoingMonthly: undefined,
+            customContractTotal: undefined,
+          }));
+
           return;
         }
       }

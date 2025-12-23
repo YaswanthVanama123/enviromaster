@@ -308,6 +308,29 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
+      {/* Service variant selection */}
+      <div className="svc-row">
+        <label>Service Type</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="serviceVariant"
+            value={form.serviceVariant}
+            onChange={onChange}
+          >
+            {(
+              Object.keys(variantOptions) as Array<
+                keyof typeof variantOptions
+              >
+            ).map((k) => (
+              <option key={k} value={k}>
+                {variantOptions[k].label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Floor area row */}
       <div className="svc-row">
         <label>Floor Area</label>
@@ -374,31 +397,10 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Service variant selection */}
-      <div className="svc-row">
-        <label>Service Type</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="serviceVariant"
-            value={form.serviceVariant}
-            onChange={onChange}
-          >
-            {(
-              Object.keys(variantOptions) as Array<
-                keyof typeof variantOptions
-              >
-            ).map((k) => (
-              <option key={k} value={k}>
-                {variantOptions[k].label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+
 
       {/* Rate category */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Rate Category</label>
         <div className="svc-row-right">
           <select
@@ -411,7 +413,7 @@ export const StripWaxForm: React.FC<
             <option value="greenRate">Green (+30%)</option>
           </select>
         </div>
-      </div>
+      </div> */}
 
       {/* Totals */}
       <div className="svc-row svc-row-total">
@@ -441,6 +443,37 @@ export const StripWaxForm: React.FC<
           />
         </div>
       </div>
+
+            {/* First Visit Total - Show for visit-based (not oneTime) */}
+      {isVisitBasedFrequency && form.frequency !== "oneTime" && (
+        <div className="svc-row svc-row-total">
+          <label>First Visit Total</label>
+          <div className="svc-dollar">
+            $<input
+              type="number"
+            min="0"
+              step="0.01"
+              name="customMonthly"
+              className="svc-in svc-in-small"
+              value={getDisplayValue(
+                'customMonthly',
+                form.customMonthly !== undefined
+                  ? form.customMonthly
+                  : calc.monthly
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
+                border: 'none',
+                width: '100px'
+              }}
+              title="First visit total - editable"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Redline/Greenline Pricing Indicator */}
       {form.floorAreaSqFt > 0 && (
@@ -476,6 +509,17 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
+      {/* Recurring Visit Total – Show for bimonthly, quarterly, biannual, annual */}
+      {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
+        form.frequency === "biannual" || form.frequency === "annual") && (
+        <div className="svc-row svc-row-total">
+          <label>Recurring Visit Total</label>
+          <div className="svc-dollar">
+            ${calc.perVisit.toFixed(2)}
+          </div>
+        </div>
+      )}
+
       {/* Total Price - Show ONLY for oneTime */}
       {form.frequency === "oneTime" && (
         <div className="svc-row svc-row-total">
@@ -507,36 +551,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* First Visit Total - Show for visit-based (not oneTime) */}
-      {isVisitBasedFrequency && form.frequency !== "oneTime" && (
-        <div className="svc-row svc-row-total">
-          <label>First Visit Total</label>
-          <div className="svc-dollar">
-            $<input
-              type="number"
-            min="0"
-              step="0.01"
-              name="customMonthly"
-              className="svc-in svc-in-small"
-              value={getDisplayValue(
-                'customMonthly',
-                form.customMonthly !== undefined
-                  ? form.customMonthly
-                  : calc.monthly
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
-                border: 'none',
-                width: '100px'
-              }}
-              title="First visit total - editable"
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* First Month Total - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
       {!isVisitBasedFrequency && (
