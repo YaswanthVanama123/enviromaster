@@ -401,6 +401,7 @@ export const RpmWindowsForm: React.FC<
             name="customSmallTotal"
             type="number"
             min="0"
+            readOnly
             step="0.01"
             value={getDisplayValue(
               'customSmallTotal',
@@ -445,6 +446,7 @@ export const RpmWindowsForm: React.FC<
             className="svc-in-box field-qty"
             name="customMediumTotal"
             type="number"
+            readOnly
             min="0"
             step="0.01"
             value={getDisplayValue(
@@ -489,6 +491,7 @@ export const RpmWindowsForm: React.FC<
           <input
             className="svc-in-box field-qty"
             name="customLargeTotal"
+            readOnly
             type="number"
             min="0"
             step="0.01"
@@ -842,9 +845,8 @@ export const RpmWindowsForm: React.FC<
                 className="svc-in"
                 name="customFirstMonthTotal"
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 value={getDisplayValue(
                   'customFirstMonthTotal',
@@ -919,7 +921,6 @@ export const RpmWindowsForm: React.FC<
                 name="customAnnualPrice"
                 type="number"
                 min="0"
-                readOnly
                 step="0.01"
                 value={getDisplayValue(
                   'customAnnualPrice',
