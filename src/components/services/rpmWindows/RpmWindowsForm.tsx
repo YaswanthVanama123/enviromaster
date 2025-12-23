@@ -601,42 +601,34 @@ export const RpmWindowsForm: React.FC<
 
       {/* Installation Multipliers */}
       <div className="svc-row">
-        <label>Install Multiplier (Dirty)</label>
+        <label>Install Multipliers</label>
         <div className="svc-row-right">
-          <div className="svc-dollar">
-            <input
-              name="installMultiplierFirstTime"
-              type="number"
+          <span className="svc-small">Dirty (</span>
+          <input
+            name="installMultiplierFirstTime"
+            type="number"
             min="0"
-              step="0.1"
-              value={form.installMultiplierFirstTime}
-              onChange={onChange}
-              style={{ backgroundColor: form.installMultiplierFirstTime !== 3 ? '#fffacd' : 'white' }}
-              title="Multiplier for dirty/first-time installations (typically 3×)"
-            />
-            <span>×</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="svc-row">
-        <label>Install Multiplier (Clean)</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <input
-              name="installMultiplierClean"
-              type="number"
-        min="0"
-          min="0"
+            step="0.1"
+            className="svc-in multiplier-field"
+            value={form.installMultiplierFirstTime}
+            onChange={onChange}
+            style={{ backgroundColor: form.installMultiplierFirstTime !== 3 ? '#fffacd' : 'white', display: 'inline', width: '60px' }}
+            title="Multiplier for dirty/first-time installations (typically 3×)"
+          />
+          <span className="svc-small">×)</span>
+          <span className="svc-small" style={{ marginLeft: '12px' }}>Clean (</span>
+          <input
+            name="installMultiplierClean"
+            type="number"
             min="0"
-              step="0.1"
-              value={form.installMultiplierClean}
-              onChange={onChange}
-              style={{ backgroundColor: form.installMultiplierClean !== 1 ? '#fffacd' : 'white' }}
-              title="Multiplier for clean installations (typically 1×)"
-            />
-            <span>×</span>
-          </div>
+            step="0.1"
+            className="svc-in multiplier-field"
+            value={form.installMultiplierClean}
+            onChange={onChange}
+            style={{ backgroundColor: form.installMultiplierClean !== 1 ? '#fffacd' : 'white', display: 'inline', width: '60px' }}
+            title="Multiplier for clean installations (typically 1×)"
+          />
+          <span className="svc-small">×)</span>
         </div>
       </div>
 
@@ -703,35 +695,47 @@ export const RpmWindowsForm: React.FC<
 
 
 
-      {/* Total Per Visit – HIDE for 2×/month and monthly */}
-      {form.frequency !== "twicePerMonth" && form.frequency !== "monthly" && (
+      {/* Per Visit Price – Show for ALL frequencies */}
+      <div className="svc-row svc-row-charge">
+        <label>Per Visit Price</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              name="customPerVisitPrice"
+              type="number"
+              min="0"
+              readOnly
+              step="0.01"
+              value={getDisplayValue(
+                'customPerVisitPrice',
+                form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Recurring Visit Total – Show for bimonthly, quarterly, biannual, annual */}
+      {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
+        form.frequency === "biannual" || form.frequency === "annual") && (
         <div className="svc-row svc-row-charge">
-          <label>
-            {form.frequency === "bimonthly" ||
-             form.frequency === "quarterly" ||
-             form.frequency === "biannual" ||
-             form.frequency === "annual"
-              ? "Recurring Visit Total"
-              : "Per Visit Price"}
-          </label>
+          <label>Recurring Visit Total</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
               <input
                 className="svc-in"
-                name="customPerVisitPrice"
-                type="number"
-                min="0"
+                type="text"
                 readOnly
-                step="0.01"
-                value={getDisplayValue(
-                  'customPerVisitPrice',
-                  form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
+                value={formatNumber(calc.recurringPerVisitRated ?? 0)}
+                style={{ backgroundColor: 'white' }}
+                title="Cost per recurring visit (after first visit)"
               />
             </div>
           </div>
