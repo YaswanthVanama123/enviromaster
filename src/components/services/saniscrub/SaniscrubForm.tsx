@@ -879,10 +879,21 @@ export const SaniscrubForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="text"
-                readOnly
-                value={calc.perVisitEffective.toFixed(2)}
-                title="Total price for one-time service"
+                name="customFirstMonthPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={getDisplayValue(
+                  'customFirstMonthPrice',
+                  form.customFirstMonthPrice !== undefined
+                    ? form.customFirstMonthPrice
+                    : calc.firstMonthTotal
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white' }}
+                title="Total price for one-time service (includes installation if selected)"
               />
             </div>
           </div>

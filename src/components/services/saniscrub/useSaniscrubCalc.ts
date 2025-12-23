@@ -900,11 +900,11 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
     if (serviceActive) {
       if (freq === "oneTime") {
-        // One-Time: Installation Cost only if included, otherwise Service Cost × 1
+        // ✅ FIXED: One-Time = Installation ONLY if included, otherwise Service Cost
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only
+          calculatedFirstMonthTotal = installOneTime; // Installation only (no service cost)
         } else {
-          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip; // Service cost × 1
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip; // Service cost only
         }
       } else if (freq === "weekly") {
         // Weekly: First month = Installation + (monthlyVisits - 1) × Service Cost
