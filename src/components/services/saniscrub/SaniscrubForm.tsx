@@ -695,6 +695,23 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
+                  {/* Per-Visit Effective (no install, no trip) */}
+      <div className="svc-row svc-row-charge">
+        <label>Per-Visit Total</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="text"
+              readOnly
+              value={calc.perVisitEffective.toFixed(2)}
+            />
+          </div>
+        </div>
+      </div>
+
+
       {/* First month/visit total = install-only first visit + (monthlyVisits − 1) × normal service */}
       <div className="svc-row svc-row-charge">
         <label>{calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total"}</label>
@@ -705,8 +722,6 @@ export const SaniscrubForm: React.FC<
               className="svc-in"
               name="customFirstMonthPrice"
               type="number"
-        min="0"
-          min="0"
             min="0"
               step="0.01"
               value={getDisplayValue(
@@ -725,8 +740,11 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
+
+
+
       {/* Per Visit Price Override – Show for 2×/month to annually */}
-      {(form.frequency === "twicePerMonth" || form.frequency === "monthly" ||
+      {/* {(form.frequency === "twicePerMonth" || form.frequency === "monthly" ||
         form.frequency === "bimonthly" || form.frequency === "quarterly" ||
         form.frequency === "biannual" || form.frequency === "annual") && (
         <div className="svc-row svc-row-charge">
@@ -738,9 +756,7 @@ export const SaniscrubForm: React.FC<
                 className="svc-in"
                 name="customPerVisitPrice"
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
                 step="0.01"
                 value={getDisplayValue(
                   'customPerVisitPrice',
@@ -757,7 +773,7 @@ export const SaniscrubForm: React.FC<
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Redline/Greenline Pricing Indicator */}
       {form.totalFixtures > 0 && (
@@ -975,21 +991,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Per-Visit Effective (no install, no trip) */}
-      <div className="svc-row svc-row-charge">
-        <label>Per-Visit Total</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.perVisitEffective.toFixed(2)}
-            />
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 };
