@@ -875,13 +875,23 @@ export function useRefreshPowerScrubCalc(
     }
   };
 
-  // Fetch on mount
+  // Fetch on mount ONLY if no initial data (new service)
   useEffect(() => {
+    // Skip fetching if we have initial data (editing existing service with saved prices)
+    if (initial) {
+      console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Skipping price fetch - using saved historical prices from initial data');
+      return;
+    }
+
+    console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Fetching current prices - new service or no initial data');
     fetchPricing();
   }, []); // Run once on mount
 
-  // Also fetch when services context becomes available
+  // Also fetch when services context becomes available (but NOT in edit mode)
   useEffect(() => {
+    // Skip if we have initial data (editing existing service)
+    if (initial) return;
+
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }

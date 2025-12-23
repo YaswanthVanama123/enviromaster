@@ -329,14 +329,24 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }
   };
 
-  // ✅ Fetch pricing configuration on mount
+  // ✅ Fetch pricing configuration on mount ONLY if no initial data (new service)
   useEffect(() => {
+    // Skip fetching if we have initial data (editing existing service with saved prices)
+    if (initial) {
+      console.log('📋 [CARPET-PRICING] Skipping price fetch - using saved historical prices from initial data');
+      return;
+    }
+
+    console.log('📋 [CARPET-PRICING] Fetching current prices - new service or no initial data');
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available
+  // Also fetch when services context becomes available (but NOT in edit mode)
   useEffect(() => {
+    // Skip if we have initial data (editing existing service)
+    if (initial) return;
+
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }

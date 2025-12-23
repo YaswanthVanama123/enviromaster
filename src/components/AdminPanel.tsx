@@ -9,6 +9,7 @@ import SavedFilesAgreements from "./SavedFilesAgreements"; // ✅ UPDATED: Use n
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
+import EmailTemplateManager from "./admin/EmailTemplateManager";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt,
@@ -22,11 +23,12 @@ import {
   faDollarSign,
   faFolder,
   faFolderOpen,
-  faChevronRight
+  faChevronRight,
+  faEnvelope
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
-type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details" | "email-template";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -68,7 +70,7 @@ export default function AdminPanel() {
   const getActiveTabFromUrl = (): TabType => {
     if (!tab) return "dashboard";
 
-    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details"];
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details", "email-template"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
 
@@ -428,6 +430,8 @@ export default function AdminPanel() {
         return "Manual Uploads";
       case "pricing-details":
         return "Pricing Details";
+      case "email-template":
+        return "Email Template";
       default:
         return "Dashboard";
     }
@@ -593,6 +597,13 @@ export default function AdminPanel() {
         >
           <FontAwesomeIcon icon={faDollarSign} size="lg" />
           Pricing Details
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "email-template" ? "active" : ""}`}
+          onClick={() => handleTabChange("email-template")}
+        >
+          <FontAwesomeIcon icon={faEnvelope} size="lg" />
+          Email Template
         </button>
       </nav>
 
@@ -1041,6 +1052,12 @@ export default function AdminPanel() {
               modalType={modalType}
               itemId={itemId}
             />
+          </div>
+        )}
+
+        {activeTab === "email-template" && (
+          <div className="tab-content-full">
+            <EmailTemplateManager />
           </div>
         )}
       </main>

@@ -441,14 +441,24 @@ export function useMicrofiberMoppingCalc(
     }
   };
 
-  // ✅ Fetch pricing configuration on mount
+  // ✅ Fetch pricing configuration on mount ONLY if no initialData (new service)
   useEffect(() => {
+    // Skip fetching if we have initialData (editing existing service with saved prices)
+    if (initialData) {
+      console.log('📋 [MICROFIBER-PRICING] Skipping price fetch - using saved historical prices from initialData');
+      return;
+    }
+
+    console.log('📋 [MICROFIBER-PRICING] Fetching current prices - new service or no initial data');
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available
+  // Also fetch when services context becomes available (but NOT in edit mode)
   useEffect(() => {
+    // Skip if we have initialData (editing existing service)
+    if (initialData) return;
+
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
