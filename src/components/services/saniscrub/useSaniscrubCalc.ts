@@ -780,7 +780,16 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       // ✅ ONLY apply minimum when there are actual fixtures
       fixtureBaseAmount = fixtureCount > 0 ? Math.max(rawAmount, minimumAmount) : 0;
 
-      if (freq === "monthly") {
+      // ✅ FIXED: Calculate fixtureMonthly and fixturePerVisit based on frequency
+      if (freq === "oneTime") {
+        // One-time: Just the base amount
+        fixtureMonthly = 0; // No monthly recurring for one-time
+        fixturePerVisit = fixtureBaseAmount;
+      } else if (freq === "weekly" || freq === "biweekly") {
+        // Weekly/Biweekly: Base amount is per-visit, monthly is base × visits per month
+        fixturePerVisit = fixtureBaseAmount;
+        fixtureMonthly = fixtureBaseAmount * monthlyVisits; // ✅ MULTIPLY by frequency
+      } else if (freq === "monthly") {
         // Monthly: Base amount is the monthly amount
         fixtureMonthly = fixtureBaseAmount;
         fixturePerVisit = fixtureBaseAmount;
@@ -789,17 +798,17 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         fixtureMonthly = fixtureBaseAmount; // Show base amount in display
         fixturePerVisit = fixtureBaseAmount / 2; // Each visit is half the monthly
       } else if (freq === "bimonthly") {
-        // Bimonthly: Base amount represents monthly value
-        fixtureMonthly = fixtureBaseAmount;
-        fixturePerVisit = fixtureBaseAmount; // Each visit (every 2 months) costs the base amount
-      } else if (freq === "quarterly") {
-        // Quarterly: Base amount represents monthly value
-        fixtureMonthly = fixtureBaseAmount;
-        fixturePerVisit = fixtureBaseAmount; // Each visit (quarterly) costs the base amount
-      } else {
-        // For biannual, annual: use base amount as per-visit cost
-        fixtureMonthly = fixtureBaseAmount;
+        // Bimonthly: Base amount represents per-visit cost
         fixturePerVisit = fixtureBaseAmount;
+        fixtureMonthly = fixtureBaseAmount * monthlyVisits; // ✅ base × 0.5
+      } else if (freq === "quarterly") {
+        // Quarterly: Base amount represents per-visit cost
+        fixturePerVisit = fixtureBaseAmount;
+        fixtureMonthly = fixtureBaseAmount * monthlyVisits; // ✅ base × 0.333
+      } else {
+        // For biannual, annual: base amount as per-visit cost
+        fixturePerVisit = fixtureBaseAmount;
+        fixtureMonthly = fixtureBaseAmount * monthlyVisits; // ✅ MULTIPLY by frequency
       }
     }
 

@@ -364,6 +364,27 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
+      {/* Frequency selection */}
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            {Object.entries(saniscrubFrequencyLabels).map(
+              ([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              )
+            )}
+          </select>
+        </div>
+      </div>
+
       {/* Restroom fixtures with editable rate */}
       <div className="svc-row">
         <label>Restroom Fixtures</label>
@@ -543,29 +564,10 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Frequency selection */}
-      <div className="svc-row">
-        <label>Frequency</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="frequency"
-            value={form.frequency}
-            onChange={onChange}
-          >
-            {Object.entries(saniscrubFrequencyLabels).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-      </div>
+
 
       {/* Trip & location – still visible for UI, but math is locked to $0 */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Location</label>
         <div className="svc-row-right">
           <select
@@ -588,10 +590,10 @@ export const SaniscrubForm: React.FC<
             <span>Parking (+$0)</span>
           </label>
         </div>
-      </div>
+      </div> */}
 
       {/* Trip charge numeric display – locked to $0 */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Trip Charge</label>
         <div className="svc-row-right">
           <input
@@ -608,7 +610,7 @@ export const SaniscrubForm: React.FC<
             value="$0.00 / month"
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Install (3× dirty / 1× clean) with editable multipliers */}
       <div className="svc-row svc-row-install">
