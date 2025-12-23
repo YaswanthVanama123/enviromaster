@@ -417,7 +417,7 @@ export const JanitorialForm: React.FC<
             className="svc-in svc-in-small"
             type="number"
             min={0}
-            step={0.25}
+            step={1}
             name="vacuumingHours"
             value={form.vacuumingHours || ""}
             onChange={onChange}
@@ -494,7 +494,7 @@ export const JanitorialForm: React.FC<
             className="svc-in svc-in-small"
             type="number"
             min={0}
-            step={0.25}
+            step={1}
             name="manualHours"
             value={form.manualHours || ""}
             onChange={onChange}

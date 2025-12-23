@@ -306,7 +306,7 @@ export const MicrofiberMoppingForm: React.FC<
   ]);
 
   const extraAreaRatePerSqFt =
-    form.extraAreaRatePerUnit /
+    (Number(form.extraAreaRatePerUnit) || 0) /
     cfg.extraAreaPricing.extraAreaSqFtUnit;
 
   const isBathroomDisabled =
@@ -434,7 +434,7 @@ export const MicrofiberMoppingForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               name="includedBathroomRate"
               value={form.includedBathroomRate || ""}
               onChange={onChange}
@@ -445,7 +445,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customStandardBathroomTotal"
             value={getDisplayValue(
               'customStandardBathroomTotal',
@@ -483,7 +483,7 @@ export const MicrofiberMoppingForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               name="hugeBathroomRatePerSqFt"
               value={form.hugeBathroomRatePerSqFt || ""}
               onChange={onChange}
@@ -495,7 +495,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customHugeBathroomTotal"
             value={getDisplayValue(
               'customHugeBathroomTotal',
@@ -532,11 +532,13 @@ export const MicrofiberMoppingForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-            min="0"
-              step="0.01"
+              min="0"
+              step="1"
               name="extraAreaRatePerUnit"
-              value={extraAreaRatePerSqFt.toFixed(4)}
-              onChange={onChange}
+              value={getDisplayValue('extraAreaRatePerUnit', form.extraAreaRatePerUnit)}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               title="Rate per 400 sq ft unit (from backend)"
             />
           </div>
@@ -546,7 +548,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customExtraAreaTotal"
             value={getDisplayValue(
               'customExtraAreaTotal',
@@ -582,8 +584,8 @@ export const MicrofiberMoppingForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactExtraAreaSqft
-              ? `(${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${activeConfig.extraAreaPricing.singleLargeAreaRate} first + $${form.extraAreaRatePerUnit.toFixed(2)} per extra)`
-              : `(Direct: $${activeConfig.extraAreaPricing.singleLargeAreaRate} for first ${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${(form.extraAreaRatePerUnit / activeConfig.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
+              ? `(${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${activeConfig.extraAreaPricing.singleLargeAreaRate} first + $${(Number(form.extraAreaRatePerUnit) || 0).toFixed(2)} per extra)`
+              : `(Direct: $${activeConfig.extraAreaPricing.singleLargeAreaRate} for first ${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${((Number(form.extraAreaRatePerUnit) || 0) / activeConfig.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
           </span>
         </div>
       </div>
@@ -608,7 +610,7 @@ export const MicrofiberMoppingForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               name="standaloneRatePerUnit"
               value={form.standaloneRatePerUnit || ""}
               onChange={onChange}
@@ -620,7 +622,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customStandaloneTotal"
             value={getDisplayValue(
               'customStandaloneTotal',
@@ -734,7 +736,7 @@ export const MicrofiberMoppingForm: React.FC<
               className="svc-in field-qty"
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               name="dailyChemicalPerGallon"
               value={form.dailyChemicalPerGallon}
               onChange={onChange}
@@ -745,7 +747,7 @@ export const MicrofiberMoppingForm: React.FC<
             className="svc-in-box field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customChemicalTotal"
             value={
               form.customChemicalTotal !== undefined
@@ -796,7 +798,7 @@ export const MicrofiberMoppingForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customPerVisitPrice"
               value={getDisplayValue(
                 'customPerVisitPrice',
@@ -893,7 +895,7 @@ export const MicrofiberMoppingForm: React.FC<
               <input
                 className="svc-in"
                 type="text"
-                step="0.01"
+                step="1"
                 readOnly
                 name="customMonthlyRecurring"
                 value={getDisplayValue(
@@ -927,7 +929,7 @@ export const MicrofiberMoppingForm: React.FC<
                 type="number"
                 min="0"
                 readOnly
-                step="0.01"
+                step="1"
                 name="customFirstMonthPrice"
                 value={getDisplayValue(
                   'customFirstMonthPrice',
@@ -959,7 +961,7 @@ export const MicrofiberMoppingForm: React.FC<
                 className="svc-in"
                 type="number"
             min="0"
-                step="0.01"
+                step="1"
                 name="customFirstMonthPrice"
                 value={getDisplayValue(
                   'customFirstMonthPrice',
@@ -1033,7 +1035,7 @@ export const MicrofiberMoppingForm: React.FC<
                   type="number"
                   min="0"
                   readOnly
-                  step="0.01"
+                  step="1"
                   name="customContractTotal"
                   value={getDisplayValue(
                     'customContractTotal',

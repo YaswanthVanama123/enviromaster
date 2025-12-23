@@ -316,7 +316,7 @@ export const CarpetForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               name="customFirstUnitRate"
               value={getDisplayValue(
                 'customFirstUnitRate',
@@ -344,7 +344,7 @@ export const CarpetForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               name="customAdditionalUnitRate"
               value={getDisplayValue(
                 'customAdditionalUnitRate',
@@ -372,7 +372,7 @@ export const CarpetForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               name="customPerVisitMinimum"
               value={getDisplayValue(
                 'customPerVisitMinimum',
@@ -418,7 +418,7 @@ export const CarpetForm: React.FC<
               type="number"
               readOnly
               min="0"
-              step="0.01"
+              step="1"
               name="customPerVisitPrice"
               value={getDisplayValue(
                 'customPerVisitPrice',
@@ -536,7 +536,7 @@ export const CarpetForm: React.FC<
                   className="svc-in"
                   type="number"
                   min="0"
-                  step={0.1}
+                  step={1}
                   name={form.isDirtyInstall ? "installMultiplierDirty" : "installMultiplierClean"}
                   value={form.isDirtyInstall ? (form.installMultiplierDirty || "") : (form.installMultiplierClean || "")}
                   onChange={onChange}
@@ -561,7 +561,7 @@ export const CarpetForm: React.FC<
                 type="number"
                 min="0"
                 readOnly
-                step="0.01"
+                step="1"
                 name="customInstallationFee"
                 value={getDisplayValue(
                   'customInstallationFee',
@@ -595,7 +595,7 @@ export const CarpetForm: React.FC<
           $<input
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             readOnly
             name="customPerVisitPrice"
             className="svc-in svc-in-small"
@@ -666,7 +666,7 @@ export const CarpetForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -698,7 +698,7 @@ export const CarpetForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -730,7 +730,7 @@ export const CarpetForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customFirstMonthPrice"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -762,7 +762,7 @@ export const CarpetForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customMonthlyRecurring"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -815,7 +815,7 @@ export const CarpetForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customContractTotal"
               className="svc-in"
               value={getDisplayValue(

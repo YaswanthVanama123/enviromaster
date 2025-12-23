@@ -424,7 +424,7 @@ export const StripWaxForm: React.FC<
           $<input
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customPerVisit"
             className="svc-in svc-in-small"
             value={getDisplayValue(
@@ -454,7 +454,7 @@ export const StripWaxForm: React.FC<
             $<input
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               name="customMonthly"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -530,7 +530,7 @@ export const StripWaxForm: React.FC<
             $<input
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               name="customMonthly"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -563,7 +563,7 @@ export const StripWaxForm: React.FC<
             $<input
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               name="customMonthly"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -594,7 +594,7 @@ export const StripWaxForm: React.FC<
             $<input
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               name="customOngoingMonthly"
               className="svc-in svc-in-small"
               value={getDisplayValue(
@@ -646,7 +646,7 @@ export const StripWaxForm: React.FC<
             <input
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               name="customContractTotal"
               className="svc-in"
               value={getDisplayValue(

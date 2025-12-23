@@ -410,7 +410,7 @@ export const RefreshPowerScrubForm: React.FC<
                       className="rps-line rps-num"
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       value={area.presetRate || getPatioStandalone()}
                       onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
                       style={{ width: '80px' }}
@@ -422,7 +422,7 @@ export const RefreshPowerScrubForm: React.FC<
                       className="rps-line rps-num"
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0;
@@ -446,7 +446,7 @@ export const RefreshPowerScrubForm: React.FC<
                       className="rps-line rps-num"
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       value={getPatioUpsell()}
                       onChange={() => {}} // For now keep static, can be made editable later if needed
                       disabled
@@ -488,7 +488,7 @@ export const RefreshPowerScrubForm: React.FC<
                     className="rps-line rps-num"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={form.boh.kitchenSize === "smallMedium" ? (area.presetRate || getKitchenSmallMed()) : getKitchenSmallMed()}
                     onChange={(e) => {
                       setAreaField(areaKey, "presetRate", e.target.value);
@@ -503,7 +503,7 @@ export const RefreshPowerScrubForm: React.FC<
                     className="rps-line rps-num"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={form.boh.kitchenSize === "smallMedium" ?
                       (area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getKitchenSmallMed()))) :
                       0}
@@ -540,7 +540,7 @@ export const RefreshPowerScrubForm: React.FC<
                     className="rps-line rps-num"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={form.boh.kitchenSize === "large" ? (area.presetRate || getKitchenLarge()) : getKitchenLarge()}
                     onChange={(e) => {
                       setAreaField(areaKey, "presetRate", e.target.value);
@@ -555,7 +555,7 @@ export const RefreshPowerScrubForm: React.FC<
                     className="rps-line rps-num"
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={form.boh.kitchenSize === "large" ?
                       (area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getKitchenLarge()))) :
                       0}
@@ -590,7 +590,7 @@ export const RefreshPowerScrubForm: React.FC<
                   className="rps-line rps-num"
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   value={area.presetRate || getPresetAmount(areaKey)}
                   onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
                   style={{ width: '80px' }}
@@ -602,7 +602,7 @@ export const RefreshPowerScrubForm: React.FC<
                   className="rps-line rps-num"
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1"
                   value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPresetAmount(areaKey)))}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value) || 0;
@@ -636,7 +636,7 @@ export const RefreshPowerScrubForm: React.FC<
               className="rps-line rps-num"
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               value={area.workerRate || ""}
               onChange={(e) => setAreaField(areaKey, "workerRate", e.target.value)}
               style={{ width: '80px' }}
@@ -663,7 +663,7 @@ export const RefreshPowerScrubForm: React.FC<
               className="rps-line rps-num"
               type="number"
             min="0"
-              step="0.01"
+              step="1"
               value={area.hourlyRate}
               onChange={(e) => setAreaField(areaKey, "hourlyRate", e.target.value)}
               style={{ width: '80px' }}
@@ -683,7 +683,7 @@ export const RefreshPowerScrubForm: React.FC<
                 className="rps-line rps-num"
                 type="number"
             min="0"
-                step="0.01"
+                step="1"
                 value={area.sqFtFixedFee}
                 onChange={(e) => setAreaField(areaKey, "sqFtFixedFee", e.target.value)}
                 style={{ width: '80px' }}
@@ -695,7 +695,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
-            min="0"
+                min="0"
                 value={area.insideSqFt}
                 onChange={(e) => setAreaField(areaKey, "insideSqFt", e.target.value)}
                 style={{ width: '80px' }}
@@ -704,8 +704,8 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
-            min="0"
-                step="0.01"
+                min="0"
+                step="0.1"
                 value={area.insideRate}
                 onChange={(e) => setAreaField(areaKey, "insideRate", e.target.value)}
                 style={{ width: '60px' }}
@@ -728,7 +728,7 @@ export const RefreshPowerScrubForm: React.FC<
                 className="rps-line rps-num"
                 type="number"
             min="0"
-                step="0.01"
+                step="0.1"
                 value={area.outsideRate}
                 onChange={(e) => setAreaField(areaKey, "outsideRate", e.target.value)}
                 style={{ width: '60px' }}

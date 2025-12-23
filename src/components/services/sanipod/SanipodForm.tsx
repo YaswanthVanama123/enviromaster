@@ -503,7 +503,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customWeeklyPodRate"
             value={getDisplayValue(
               'customWeeklyPodRate',
@@ -524,7 +524,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             min="0"
             readOnly
-            step="0.01"
+            step="1"
             name="customPodServiceTotal"
             value={getDisplayValue(
               'customPodServiceTotal',
@@ -563,7 +563,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="extraBagPrice"
             value={form.extraBagPrice || ""}
             onChange={onChange}
@@ -575,7 +575,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             readOnly
             min="0"
-            step="0.01"
+            step="1"
             name="customExtraBagsTotal"
             value={getDisplayValue(
               'customExtraBagsTotal',
@@ -613,7 +613,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="tripChargePerVisit"
             value={form.tripChargePerVisit}
             disabled
@@ -646,7 +646,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="installRatePerPod"
             value={form.installRatePerPod || ""}
             onChange={onChange}
@@ -674,7 +674,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               <input
                 className="svc-in svc-in-small"
                 type="number"
-                step="0.01"
+                step="1"
                 name="installRatePerPod"
                 value={form.installRatePerPod || ""}
                 onChange={onChange}
@@ -698,7 +698,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                   type="number"
                   min="0"
                   readOnly
-                  step="0.01"
+                  step="1"
                   name="customInstallationFee"
                   value={getDisplayValue(
                     'customInstallationFee',
@@ -754,7 +754,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               className="svc-in svc-in-small"
               type="number"
               readOnly
-              step="0.01"
+              step="1"
               name="customMonthlyPrice"
               value={getDisplayValue(
                 'customMonthlyPrice',
@@ -792,7 +792,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             type="number"
             min="0"
             readOnly
-            step="0.01"
+            step="1"
             name="customPerVisitPrice"
             value={getDisplayValue(
               'customPerVisitPrice',
@@ -829,7 +829,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               className="svc-in svc-in-small"
               type="number"
               readOnly
-              step="0.01"
+              step="1"
               name="customMonthlyPrice"
               value={getDisplayValue(
                 'customMonthlyPrice',
@@ -858,7 +858,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             $<input
               className="svc-in svc-in-small"
               type="number"
-              step="0.01"
+              step="1"
               name="customMonthlyPrice"
               value={getDisplayValue(
                 'customMonthlyPrice',
@@ -922,7 +922,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               $<input
                 className="svc-in svc-in-small"
                 type="number"
-                step="0.01"
+                step="1"
                 name="customAnnualPrice"
                 value={getDisplayValue(
                   'customAnnualPrice',

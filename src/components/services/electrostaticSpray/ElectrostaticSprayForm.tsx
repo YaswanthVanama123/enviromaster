@@ -478,7 +478,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     type="number"
                     min="0"
                     name="ratePerRoom"
-                    step={0.01}
+                    step="1"
                     className="svc-in field-rate"
                     value={form.ratePerRoom || ""}
                     onChange={onChange}
@@ -533,7 +533,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     type="number"
                     min="0"
                     name="ratePerThousandSqFt"
-                    step={0.01}
+                    step={1}
                     className="svc-in field-rate"
                     value={form.ratePerThousandSqFt || ""}
                     onChange={onChange}

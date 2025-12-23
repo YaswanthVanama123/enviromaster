@@ -135,16 +135,17 @@ export const SaniscrubForm: React.FC<
     // - Bi-monthly → Bi-monthly rate
     // - Quarterly → Quarterly rate
     // - Bi-annual, Annual → Quarterly rate
+    // ✅ FIXED: Convert to number to handle string values from editing
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
         form.frequency === "monthly") {
-      return form.fixtureRateMonthly; // Use monthly rate
+      return Number(form.fixtureRateMonthly) || 0; // Use monthly rate
     }
     if (form.frequency === "bimonthly") {
-      return form.fixtureRateBimonthly; // Use bi-monthly rate
+      return Number(form.fixtureRateBimonthly) || 0; // Use bi-monthly rate
     }
     // quarterly, biannual, annual use quarterly rate
-    return form.fixtureRateQuarterly;
+    return Number(form.fixtureRateQuarterly) || 0;
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
@@ -403,13 +404,13 @@ export const SaniscrubForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
-        min="0"
-          min="0"
             min="0"
-            step="0.01"
+            step="1"
             name={fixtureRateFieldName}
-            value={displayFixtureRate.toFixed(2)}
-            onChange={onChange}
+            value={getDisplayValue(fixtureRateFieldName, displayFixtureRate)}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
           />
           <span>=</span>
           <input
@@ -437,7 +438,7 @@ export const SaniscrubForm: React.FC<
         min="0"
           min="0"
             min="0"
-              step="0.01"
+              step="1"
               name="minimumMonthly"
               value={form.minimumMonthly.toFixed(2)}
               onChange={onChange}
@@ -451,7 +452,7 @@ export const SaniscrubForm: React.FC<
         min="0"
           min="0"
             min="0"
-              step="0.01"
+              step="1"
               name="minimumBimonthly"
               value={form.minimumBimonthly.toFixed(2)}
               onChange={onChange}
@@ -464,7 +465,7 @@ export const SaniscrubForm: React.FC<
         min="0"
           min="0"
             min="0"
-              step="0.01"
+              step="1"
               name="twoTimesPerMonthDiscount"
               value={form.twoTimesPerMonthDiscount.toFixed(2)}
               onChange={onChange}
@@ -485,7 +486,7 @@ export const SaniscrubForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step={0.01}
+              step={1}
               name="nonBathroomFirstUnitRate"
               value={form.nonBathroomFirstUnitRate || ""}
               onChange={onChange}
@@ -505,7 +506,7 @@ export const SaniscrubForm: React.FC<
               className="svc-in field-qty"
               type="number"
               min="0"
-              step={0.01}
+              step={1}
               name="nonBathroomAdditionalUnitRate"
               value={form.nonBathroomAdditionalUnitRate || ""}
               onChange={onChange}
@@ -678,7 +679,7 @@ export const SaniscrubForm: React.FC<
                 type="number"
                 min="0"
                 readOnly
-                step="0.01"
+                step="1"
                 name="customInstallationFee"
                 value={getDisplayValue(
                   'customInstallationFee',
@@ -725,13 +726,14 @@ export const SaniscrubForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
-              value={getDisplayValue(
-                'customFirstMonthPrice',
-                form.customFirstMonthPrice !== undefined
-                  ? form.customFirstMonthPrice
-                  : calc.firstMonthTotal
-              )}
+              step="1"
+              value={
+                editingValues['customFirstMonthPrice'] !== undefined
+                  ? editingValues['customFirstMonthPrice']
+                  : (form.customFirstMonthPrice !== undefined
+                      ? form.customFirstMonthPrice.toFixed(2)
+                      : calc.firstMonthTotal.toFixed(2))
+              }
               onChange={handleLocalChange}
               onFocus={handleFocus}
               onBlur={handleBlur}
@@ -759,7 +761,7 @@ export const SaniscrubForm: React.FC<
                 name="customPerVisitPrice"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={getDisplayValue(
                   'customPerVisitPrice',
                   form.customPerVisitPrice !== undefined
@@ -833,7 +835,7 @@ export const SaniscrubForm: React.FC<
                 type="number"
                 min="0"
                 readOnly
-                step="0.01"
+                step="1"
                 value={form.customMonthlyRecurring !== undefined
                   ? formatNumber(form.customMonthlyRecurring)
                   : formatNumber(calc.monthlyTotal)}
@@ -883,7 +885,7 @@ export const SaniscrubForm: React.FC<
                 name="customFirstMonthPrice"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={getDisplayValue(
                   'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
@@ -973,7 +975,7 @@ export const SaniscrubForm: React.FC<
         min="0"
           min="0"
             min="0"
-                step="0.01"
+                step="1"
                 name="customContractTotal"
                 className="svc-in"
                 value={getDisplayValue(

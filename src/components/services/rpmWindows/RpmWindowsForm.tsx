@@ -391,7 +391,7 @@ export const RpmWindowsForm: React.FC<
             name="smallWindowRate"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             value={form.smallWindowRate || ""}
             onChange={onChange}
             title="Base weekly rate (from backend)"
@@ -403,7 +403,7 @@ export const RpmWindowsForm: React.FC<
             type="number"
             min="0"
             readOnly
-            step="0.01"
+            step="1"
             value={getDisplayValue(
               'customSmallTotal',
               form.customSmallTotal !== undefined
@@ -437,7 +437,7 @@ export const RpmWindowsForm: React.FC<
             name="mediumWindowRate"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             value={form.mediumWindowRate || ""}
             onChange={onChange}
             title="Base weekly rate (from backend)"
@@ -449,7 +449,7 @@ export const RpmWindowsForm: React.FC<
             type="number"
             readOnly
             min="0"
-            step="0.01"
+            step="1"
             value={getDisplayValue(
               'customMediumTotal',
               form.customMediumTotal !== undefined
@@ -483,7 +483,7 @@ export const RpmWindowsForm: React.FC<
             name="largeWindowRate"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             value={form.largeWindowRate || ""}
             onChange={onChange}
             title="Base weekly rate (from backend)"
@@ -495,7 +495,7 @@ export const RpmWindowsForm: React.FC<
             readOnly
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             value={getDisplayValue(
               'customLargeTotal',
               form.customLargeTotal !== undefined
@@ -612,7 +612,7 @@ export const RpmWindowsForm: React.FC<
             name="installMultiplierFirstTime"
             type="number"
             min="0"
-            step="0.1"
+            step="1"
             className="svc-in multiplier-field"
             value={form.installMultiplierFirstTime}
             onChange={onChange}
@@ -625,7 +625,7 @@ export const RpmWindowsForm: React.FC<
             name="installMultiplierClean"
             type="number"
             min="0"
-            step="0.1"
+            step="1"
             className="svc-in multiplier-field"
             value={form.installMultiplierClean}
             onChange={onChange}
@@ -666,7 +666,7 @@ export const RpmWindowsForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               name="customInstallationFee"
               value={getDisplayValue(
                 'customInstallationFee',
@@ -711,7 +711,7 @@ export const RpmWindowsForm: React.FC<
               type="number"
               min="0"
               readOnly
-              step="0.01"
+              step="1"
               value={getDisplayValue(
                 'customPerVisitPrice',
                 form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
@@ -815,7 +815,7 @@ export const RpmWindowsForm: React.FC<
                 type="number"
                 min="0"
                 readOnly
-                step="0.01"
+                step="1"
                 value={getDisplayValue(
                   'customMonthlyRecurring',
                   form.customMonthlyRecurring !== undefined
@@ -848,7 +848,7 @@ export const RpmWindowsForm: React.FC<
                 type="number"
                 min="0"
                 readOnly
-                step="0.01"
+                step="1"
                 value={getDisplayValue(
                   'customFirstMonthTotal',
                   form.customFirstMonthTotal !== undefined
@@ -922,7 +922,7 @@ export const RpmWindowsForm: React.FC<
                 name="customAnnualPrice"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 value={getDisplayValue(
                   'customAnnualPrice',
                   form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice ?? 0

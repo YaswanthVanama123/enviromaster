@@ -472,7 +472,7 @@ export const SanicleanForm: React.FC<
             type="number"
           min="0"
             min="0"
-            step="0.01"
+            step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
                   (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
@@ -510,7 +510,7 @@ export const SanicleanForm: React.FC<
             type="number"
           min="0"
             min="0"
-            step="0.01"
+            step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
                   (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
@@ -548,7 +548,7 @@ export const SanicleanForm: React.FC<
             type="number"
           min="0"
             min="0"
-            step="0.01"
+            step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
                   (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
@@ -586,7 +586,7 @@ export const SanicleanForm: React.FC<
             type="number"
           min="0"
             min="0"
-            step="0.01"
+            step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
                   (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
@@ -637,7 +637,7 @@ export const SanicleanForm: React.FC<
             className="svc-in field-qty"
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="luxuryUpgradePerDispenser"
             value={form.luxuryUpgradePerDispenser || ""}
             onChange={onChange}
@@ -679,7 +679,7 @@ export const SanicleanForm: React.FC<
               type="number"
           min="0"
             min="0"
-              step="0.01"
+              step="1"
               name={form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate"}
               value={extraSoapRatePerGallon}
               onChange={onChange}
@@ -769,7 +769,7 @@ export const SanicleanForm: React.FC<
                         type="number"
           min="0"
             min="0"
-                        step="0.01"
+                        step="1"
                         name="urinalScreenMonthly"
                         value={form.urinalScreenMonthly}
                         onChange={onChange}
@@ -806,7 +806,7 @@ export const SanicleanForm: React.FC<
                         type="number"
           min="0"
             min="0"
-                        step="0.01"
+                        step="1"
                         name="urinalMatMonthly"
                         value={form.urinalMatMonthly}
                         onChange={onChange}
@@ -868,7 +868,7 @@ export const SanicleanForm: React.FC<
                         type="number"
           min="0"
             min="0"
-                        step="0.01"
+                        step="1"
                         name="toiletClipsMonthly"
                         value={form.toiletClipsMonthly}
                         onChange={onChange}
@@ -905,7 +905,7 @@ export const SanicleanForm: React.FC<
                         type="number"
           min="0"
             min="0"
-                        step="0.01"
+                        step="1"
                         name="seatCoverDispenserMonthly"
                         value={form.seatCoverDispenserMonthly}
                         onChange={onChange}
@@ -966,7 +966,7 @@ export const SanicleanForm: React.FC<
                       type="number"
           min="0"
             min="0"
-                      step="0.01"
+                      step="1"
                       name="sanipodServiceMonthly"
                       value={form.sanipodServiceMonthly}
                       onChange={onChange}
@@ -1050,7 +1050,7 @@ export const SanicleanForm: React.FC<
               type="number"
           min="0"
             min="0"
-              step="0.01"
+              step="1"
               name="warrantyFeePerDispenserPerWeek"
               value={form.warrantyFeePerDispenserPerWeek}
               onChange={onChange}
@@ -1134,7 +1134,7 @@ export const SanicleanForm: React.FC<
               type="number"
           min="0"
             min="0"
-              step="0.01"
+              step="1"
               name="microfiberMoppingPerBathroom"
               value={form.addMicrofiberMopping ? form.microfiberMoppingPerBathroom : 0}
               onChange={onChange}
@@ -1260,7 +1260,7 @@ export const SanicleanForm: React.FC<
               type="number"
               readOnly
               min="0"
-              step="0.01"
+              step="1"
               name="customBaseService"
               value={getDisplayValue(
                 'customBaseService',
@@ -1292,7 +1292,7 @@ export const SanicleanForm: React.FC<
                 className="svc-in"
                 type="number"
                 min="0"
-                step="0.01"
+                step="1"
                 name="customTripCharge"
                 value={getDisplayValue(
                   'customTripCharge',
@@ -1326,7 +1326,7 @@ export const SanicleanForm: React.FC<
                 type="number"
                 readOnly
                 min="0"
-                step="0.01"
+                step="1"
                 name="customFacilityComponents"
                 value={getDisplayValue(
                   'customFacilityComponents',
@@ -1360,7 +1360,7 @@ export const SanicleanForm: React.FC<
                 type="number"
           min="0"
             min="0"
-                step="0.01"
+                step="1"
                 name="customSoapUpgrade"
                 value={getDisplayValue(
                   'customSoapUpgrade',
@@ -1394,7 +1394,7 @@ export const SanicleanForm: React.FC<
                 type="number"
           min="0"
             min="0"
-                step="0.01"
+                step="1"
                 name="customExcessSoap"
                 value={getDisplayValue(
                   'customExcessSoap',
@@ -1428,7 +1428,7 @@ export const SanicleanForm: React.FC<
                 type="number"
           min="0"
             min="0"
-                step="0.01"
+                step="1"
                 name="customMicrofiberMopping"
                 value={getDisplayValue(
                   'customMicrofiberMopping',
@@ -1462,7 +1462,7 @@ export const SanicleanForm: React.FC<
                 type="number"
           min="0"
             min="0"
-                step="0.01"
+                step="1"
                 name="customWarrantyFees"
                 value={getDisplayValue(
                   'customWarrantyFees',
@@ -1496,7 +1496,7 @@ export const SanicleanForm: React.FC<
                 type="number"
           min="0"
             min="0"
-                step="0.01"
+                step="1"
                 name="customPaperOverage"
                 value={getDisplayValue(
                   'customPaperOverage',
@@ -1545,7 +1545,7 @@ export const SanicleanForm: React.FC<
               type="number"
               readOnly
               min="0"
-              step="0.01"
+              step="1"
               name="customWeeklyTotal"
               value={getDisplayValue(
                 'customWeeklyTotal',
@@ -1654,7 +1654,7 @@ export const SanicleanForm: React.FC<
           <input
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             name="customContractTotal"
             className="svc-in"
             value={getDisplayValue(
