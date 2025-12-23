@@ -801,8 +801,9 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring – Show only for weekly and biweekly */}
-      {(form.frequency === "weekly" || form.frequency === "biweekly") && (
+      {/* Monthly Recurring – Show for weekly, biweekly, 2×/month, and monthly */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly" ||
+        form.frequency === "twicePerMonth" || form.frequency === "monthly") && (
         <div className="svc-row svc-row-charge">
           <label>Monthly Recurring</label>
           <div className="svc-row-right">
@@ -827,6 +828,45 @@ export const SaniscrubForm: React.FC<
                 }}
                 style={{ backgroundColor: form.customMonthlyRecurring !== undefined ? '#fffacd' : 'white' }}
                 title="Override monthly recurring calculation (clear to use auto-calculated value)"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recurring Visit Total – Show for bimonthly, quarterly, biannual, and annual */}
+      {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
+        form.frequency === "biannual" || form.frequency === "annual") && (
+        <div className="svc-row svc-row-charge">
+          <label>Recurring Visit Total</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.perVisitEffective.toFixed(2)}
+                title="Cost per recurring visit (after first visit)"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Total Price – Show only for one-time */}
+      {form.frequency === "oneTime" && (
+        <div className="svc-row svc-row-charge">
+          <label>Total Price</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={calc.perVisitEffective.toFixed(2)}
+                title="Total price for one-time service"
               />
             </div>
           </div>
