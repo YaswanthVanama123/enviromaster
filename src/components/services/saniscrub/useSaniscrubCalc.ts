@@ -751,21 +751,21 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       let minimumAmount = 0;
 
       if (freq === "monthly") {
-        baseRate = activeConfig.fixtureRates.monthly;
-        minimumAmount = activeConfig.minimums.monthly;
+        baseRate = form.fixtureRateMonthly; // ✅ USE FORM VALUE (can be edited by user)
+        minimumAmount = form.minimumMonthly; // ✅ USE FORM VALUE (can be edited by user)
       } else if (freq === "bimonthly") {
-        baseRate = activeConfig.fixtureRates.bimonthly;
-        minimumAmount = activeConfig.minimums.bimonthly;
+        baseRate = form.fixtureRateBimonthly; // ✅ USE FORM VALUE
+        minimumAmount = form.minimumBimonthly; // ✅ USE FORM VALUE
       } else if (freq === "quarterly") {
-        baseRate = activeConfig.fixtureRates.quarterly;
+        baseRate = form.fixtureRateQuarterly; // ✅ USE FORM VALUE
         minimumAmount = activeConfig.minimums.quarterly;
       } else if (freq === "twicePerMonth") {
         // 2x/month uses monthly rate as base
-        baseRate = activeConfig.fixtureRates.monthly;
-        minimumAmount = activeConfig.minimums.monthly;
+        baseRate = form.fixtureRateMonthly; // ✅ USE FORM VALUE
+        minimumAmount = form.minimumMonthly; // ✅ USE FORM VALUE
       } else {
         // For other frequencies (biannual, annual), use quarterly rate as fallback
-        baseRate = activeConfig.fixtureRates.quarterly;
+        baseRate = form.fixtureRateQuarterly; // ✅ USE FORM VALUE
         minimumAmount = activeConfig.minimums.quarterly;
       }
 
@@ -805,23 +805,23 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     if (nonBathSqFt > 0) {
       // Rule: $250 for up to 500 sq ft, then +$125 for each additional 500 sq ft block
       // Example: 3000 sq ft = 6 units = $250 + 5×$125 = $875
-      // ✅ FIXED: Use backend config values instead of hardcoded values
+      // ✅ FIXED: Use FORM values (editable by user) instead of backend config
 
       if (nonBathSqFt <= activeConfig.nonBathroomUnitSqFt) {
-        // Up to 500 sq ft: use backend first unit rate
-        nonBathroomPerVisit = activeConfig.nonBathroomFirstUnitRate;
+        // Up to 500 sq ft: use form value (editable by user)
+        nonBathroomPerVisit = form.nonBathroomFirstUnitRate;
       } else {
         // Over 500 sq ft: choose calculation method
         const extraSqFt = nonBathSqFt - activeConfig.nonBathroomUnitSqFt;
 
         if (form.useExactNonBathroomSqft) {
           // EXACT SQFT: extra sq ft × rate per sq ft
-          const ratePerSqFt = activeConfig.nonBathroomAdditionalUnitRate / activeConfig.nonBathroomUnitSqFt;
-          nonBathroomPerVisit = activeConfig.nonBathroomFirstUnitRate + (extraSqFt * ratePerSqFt);
+          const ratePerSqFt = form.nonBathroomAdditionalUnitRate / activeConfig.nonBathroomUnitSqFt;
+          nonBathroomPerVisit = form.nonBathroomFirstUnitRate + (extraSqFt * ratePerSqFt);
         } else {
           // BLOCK PRICING: number of additional 500 sq ft blocks × rate
           const additionalBlocks = Math.ceil(extraSqFt / activeConfig.nonBathroomUnitSqFt);
-          nonBathroomPerVisit = activeConfig.nonBathroomFirstUnitRate + (additionalBlocks * activeConfig.nonBathroomAdditionalUnitRate);
+          nonBathroomPerVisit = form.nonBathroomFirstUnitRate + (additionalBlocks * form.nonBathroomAdditionalUnitRate);
         }
       }
 
@@ -843,7 +843,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       // 2x/month: Double the monthly base, then subtract discount if combined with SaniClean
       adjustedFixtureMonthly = fixtureMonthly * 2;
       if (form.hasSaniClean) {
-        adjustedFixtureMonthly = Math.max(0, adjustedFixtureMonthly - activeConfig.twoTimesPerMonthDiscountFlat); // Backend discount amount
+        adjustedFixtureMonthly = Math.max(0, adjustedFixtureMonthly - form.twoTimesPerMonthDiscount); // ✅ USE FORM VALUE (editable by user)
       }
     }
     // Note: bimonthly and quarterly rates already use their correct base rates (35/40)
@@ -951,12 +951,12 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
 
           // Apply SaniClean discount
           if (form.hasSaniClean) {
-            calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - activeConfig.twoTimesPerMonthDiscountFlat);
+            calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - form.twoTimesPerMonthDiscount); // ✅ USE FORM VALUE
           }
         } else {
           calculatedFirstMonthTotal = monthlyVisits * (basePerVisitCost + perVisitTrip);
           if (form.hasSaniClean) {
-            calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - activeConfig.twoTimesPerMonthDiscountFlat);
+            calculatedFirstMonthTotal = Math.max(0, calculatedFirstMonthTotal - form.twoTimesPerMonthDiscount); // ✅ USE FORM VALUE
           }
         }
       }
@@ -1078,14 +1078,14 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
           const remainingMonths = Math.max(contractMonths - 1, 0);
           let monthlyRecurringWithDiscount = monthlyVisits * (basePerVisitCost + perVisitTrip);
           if (form.hasSaniClean) {
-            monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - activeConfig.twoTimesPerMonthDiscountFlat);
+            monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - form.twoTimesPerMonthDiscount); // ✅ USE FORM VALUE
           }
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurringWithDiscount);
         } else {
           // No installation: all months monthlyVisits × service with discount
           let monthlyRecurringWithDiscount = monthlyVisits * (basePerVisitCost + perVisitTrip);
           if (form.hasSaniClean) {
-            monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - activeConfig.twoTimesPerMonthDiscountFlat);
+            monthlyRecurringWithDiscount = Math.max(0, monthlyRecurringWithDiscount - form.twoTimesPerMonthDiscount); // ✅ USE FORM VALUE
           }
           calculatedContractTotal = contractMonths * monthlyRecurringWithDiscount;
         }
@@ -1151,11 +1151,17 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     form.isDirtyInstall,
     form.contractMonths,
     form.customInstallationFee,
-    // ✅ NEW: Watch form pricing rates (editable from UI)
+    // ✅ NEW: Watch ALL form pricing rates (editable from UI)
+    form.fixtureRateMonthly,      // ✅ CRITICAL: Re-calculate when fixture rates change
+    form.fixtureRateBimonthly,    // ✅ CRITICAL: Re-calculate when fixture rates change
+    form.fixtureRateQuarterly,    // ✅ CRITICAL: Re-calculate when fixture rates change
+    form.minimumMonthly,          // ✅ CRITICAL: Re-calculate when minimums change
+    form.minimumBimonthly,        // ✅ CRITICAL: Re-calculate when minimums change
     form.nonBathroomFirstUnitRate,
     form.nonBathroomAdditionalUnitRate,
     form.installMultiplierDirty,  // ✅ Added: Watch multiplier changes
     form.installMultiplierClean,  // ✅ Added: Watch multiplier changes
+    form.twoTimesPerMonthDiscount, // ✅ CRITICAL: Re-calculate when discount changes
     // ✅ NEW: Watch custom override fields
     form.customPerVisitPrice,
     form.customMonthlyRecurring,

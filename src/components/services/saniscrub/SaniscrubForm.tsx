@@ -440,7 +440,7 @@ export const SaniscrubForm: React.FC<
 
       {/* Non-bathroom SaniScrub pricing configuration */}
       <div className="svc-row">
-        <label>First 500 sq ft Rate</label>
+        <label>First {calc.nonBathroomUnitSqFt} sq ft Rate</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
@@ -452,10 +452,10 @@ export const SaniscrubForm: React.FC<
               name="nonBathroomFirstUnitRate"
               value={form.nonBathroomFirstUnitRate || ""}
               onChange={onChange}
-              title="Rate for first 500 sq ft (from backend, editable)"
+              title={`Rate for first ${calc.nonBathroomUnitSqFt} sq ft (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ 500 sq ft (${((form.nonBathroomFirstUnitRate || 250) / 500).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {calc.nonBathroomUnitSqFt} sq ft (${((form.nonBathroomFirstUnitRate || 250) / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)</span>
         </div>
       </div>
 
@@ -472,10 +472,10 @@ export const SaniscrubForm: React.FC<
               name="nonBathroomAdditionalUnitRate"
               value={form.nonBathroomAdditionalUnitRate || ""}
               onChange={onChange}
-              title="Rate per additional 500 sq ft block (from backend, editable)"
+              title={`Rate per additional ${calc.nonBathroomUnitSqFt} sq ft block (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ 500 sq ft (${((form.nonBathroomAdditionalUnitRate || 125) / 500).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {calc.nonBathroomUnitSqFt} sq ft (${((form.nonBathroomAdditionalUnitRate || 125) / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)</span>
         </div>
       </div>
 
@@ -523,7 +523,7 @@ export const SaniscrubForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactNonBathroomSqft
-              ? `(Exact: $${form.nonBathroomFirstUnitRate} + extra sq ft × $${((form.nonBathroomAdditionalUnitRate || 125) / 500).toFixed(2)}/sq ft)`
+              ? `(Exact: $${form.nonBathroomFirstUnitRate} + extra sq ft × $${((form.nonBathroomAdditionalUnitRate || 125) / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)`
               : `(Block: $${form.nonBathroomFirstUnitRate} + blocks × $${form.nonBathroomAdditionalUnitRate})`}
           </span>
         </div>
