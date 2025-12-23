@@ -303,7 +303,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
     const filesWithPdf = selectedFileObjects.filter(file => file.hasPdf);
     if (filesWithPdf.length === 0) {
       setToastMessage({
-        message: "Please select files with PDFs to upload to Zoho.",
+        message: "Please select files with PDFs to upload to bigin.",
         type: "error"
       });
       return;
@@ -771,7 +771,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                 disabled={selectedFileObjects.filter(f => f.hasPdf).length === 0}
               >
                 <FontAwesomeIcon icon={faUpload} style={{ marginRight: '6px' }} />
-                Upload to Zoho ({selectedFileObjects.filter(f => f.hasPdf).length})
+                Upload to Bigin ({selectedFileObjects.filter(f => f.hasPdf).length})
               </button>
             </>
           )}
@@ -1035,7 +1035,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                         fontSize: '11px',
                         fontWeight: '600'
                       }}>
-                        📤 Zoho
+                        📤 Bigin
                       </span>
                     )}
                   </div>
@@ -1303,7 +1303,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                               )}
                               <button
                                 className="iconbtn zoho-upload-btn"
-                                title="Upload to Zoho Bigin"
+                                title="Upload to Bigin"
                                 onClick={() => handleZohoUpload(file)}
                                 disabled={!file.hasPdf}
                               >

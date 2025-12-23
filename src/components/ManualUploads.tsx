@@ -177,7 +177,7 @@ export default function ManualUploads() {
     <div className="manual-uploads">
       <div className="manual-uploads-header">
         <h2>Manual Uploads</h2>
-        <p className="subtitle">Upload PDFs manually to Zoho CRM and Bigin</p>
+        <p className="subtitle">Upload PDFs manually to Bigin</p>
       </div>
 
       {/* Upload Section */}
@@ -282,7 +282,7 @@ export default function ManualUploads() {
                   <th>Size</th>
                   <th>Status</th>
                   <th>Uploaded</th>
-                  <th>Zoho Status</th>
+                  <th>Bigin Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>

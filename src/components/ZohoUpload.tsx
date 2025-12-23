@@ -829,7 +829,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           <FontAwesomeIcon icon={faUpload} />
           {bulkFiles && bulkFiles.length > 0
             ? `Upload ${bulkFiles.length} Files to Zoho Bigin`
-            : 'First-time Upload to Zoho Bigin'
+            : 'First-time Upload to Bigin'
           }
         </h3>
         <p>
@@ -913,7 +913,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
         {selectedFiles.size === 0 && (
           <div style={{ color: '#f44336', fontSize: '14px', marginTop: '8px' }}>
-            ⚠️ Please select at least one file to upload to Zoho.
+            ⚠️ Please select at least one file to upload to Bigin.
           </div>
         )}
       </div>
@@ -1251,7 +1251,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
         {selectedFiles.size === 0 && (
           <div style={{ color: '#f44336', fontSize: '14px', marginTop: '8px' }}>
-            ⚠️ Please select at least one file to upload to Zoho.
+            ⚠️ Please select at least one file to upload to Bigin.
           </div>
         )}
       </div>
@@ -1362,7 +1362,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
               ? `Upload ${selectedFiles.size} Selected Files to Zoho`
               : selectedFiles.has(agreementId)
                 ? 'Upload Selected File to Zoho'
-                : 'Upload to Zoho (No File Selected)'
+                : 'Upload to Bigin (No File Selected)'
             }
           </button>
         </div>
@@ -1406,7 +1406,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       <div className="zoho-upload__overlay" onClick={onClose} />
       <div className="zoho-upload__modal">
         <div className="zoho-upload__modal-header">
-          <h2>Upload to Zoho Bigin</h2>
+          <h2>Upload to Bigin</h2>
           <button className="zoho-upload__close" onClick={onClose}>
             <FontAwesomeIcon icon={faTimes} />
           </button>

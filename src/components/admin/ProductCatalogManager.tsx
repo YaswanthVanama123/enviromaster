@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { Product, ProductFamily } from "../../backendservice/types/productCatalog.types";
 import { Toast } from "./Toast";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faExclamationTriangle, faTrash, faLightbulb, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 
 // Utility function to truncate text
 const truncateText = (text: string | undefined, maxLength: number): string => {
@@ -18,6 +20,19 @@ const validateProductKey = (key: string): string => {
   // Remove spaces, slashes, and other invalid characters
   // Allow only letters, numbers, hyphens, and underscores
   return key.replace(/[^a-zA-Z0-9\-_]/g, '').toLowerCase();
+};
+
+// ✅ NEW: Utility function to generate product key from product name
+const generateProductKeyFromName = (name: string): string => {
+  if (!name) return '';
+
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 };
 
 interface ProductCatalogManagerProps {
@@ -45,6 +60,8 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [customKindSelected, setCustomKindSelected] = useState(false); // Track if custom kind is selected
+  const [customUomSelected, setCustomUomSelected] = useState(false); // Track if custom UOM is selected
 
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     key: "",
@@ -77,7 +94,18 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       }
     } else if (modalType === 'create' && itemId) {
       // Find family by key
-      const family = catalog.families.find(f => f.key === itemId);
+      let family = catalog.families.find(f => f.key === itemId);
+
+      // ✅ FIX: If not found and itemId is 'miscellaneous', use the placeholder
+      if (!family && itemId === 'miscellaneous') {
+        family = {
+          key: 'miscellaneous',
+          label: 'Miscellaneous',
+          sortOrder: 9999,
+          products: []
+        } as ProductFamily;
+      }
+
       if (family) {
         handleAddProduct(family);
       }
@@ -165,7 +193,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     });
 
     if (result.success) {
-      setSuccessMessage("✓ Product updated successfully!");
+      setSuccessMessage("Product updated successfully!");
       setIsEditMode(false);
       closeModal();
 
@@ -185,6 +213,8 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
 
   const handleAddProduct = (family: ProductFamily) => {
     setCreatingProduct(family);
+    setCustomKindSelected(false); // Reset custom kind selection
+    setCustomUomSelected(false); // Reset custom UOM selection
     setNewProduct({
       key: "",
       name: "",
@@ -198,13 +228,25 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
 
   const handleSaveNewProduct = async () => {
     if (!creatingProduct || !catalog || !newProduct.key || !newProduct.name) {
-      setWarningMessage("⚠ Please fill in required fields: Key and Name");
+      setWarningMessage("Please fill in required fields: Key and Name");
       return;
     }
 
     setSaving(true);
     const updatedCatalog = JSON.parse(JSON.stringify(catalog));
-    const family = updatedCatalog.families.find((f: ProductFamily) => f.key === creatingProduct.key);
+    let family = updatedCatalog.families.find((f: ProductFamily) => f.key === creatingProduct.key);
+
+    // If miscellaneous family doesn't exist yet, create it
+    if (!family && creatingProduct.key === 'miscellaneous') {
+      const newMiscFamily: ProductFamily = {
+        key: 'miscellaneous',
+        label: 'Miscellaneous',
+        sortOrder: 9999,
+        products: []
+      };
+      updatedCatalog.families.push(newMiscFamily);
+      family = newMiscFamily;
+    }
 
     if (family) {
       family.products.push(newProduct as Product);
@@ -216,7 +258,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     });
 
     if (result.success) {
-      setSuccessMessage("✓ Product added successfully!");
+      setSuccessMessage("Product added successfully!");
       closeModal();
 
       // Update the selectedFamily to show the new product immediately
@@ -251,7 +293,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     });
 
     if (result.success) {
-      setSuccessMessage(`✓ Product "${deletingProduct.name}" deleted successfully!`);
+      setSuccessMessage(`Product "${deletingProduct.name}" deleted successfully!`);
       closeModal();
 
       // Update the selectedFamily to remove the deleted product immediately
@@ -274,6 +316,77 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       p.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
+  // ✅ NEW: Ensure Miscellaneous category always exists
+  const ensureMiscellaneousFamily = () => {
+    if (!catalog) return null;
+
+    const miscFamily = catalog.families.find(f => f.key === 'miscellaneous');
+    if (miscFamily) {
+      return null; // Already exists
+    }
+
+    // Return a placeholder miscellaneous family
+    return {
+      key: 'miscellaneous',
+      label: 'Miscellaneous',
+      sortOrder: 9999, // Ensure it appears last
+      products: []
+    } as ProductFamily;
+  };
+
+  const miscellaneousFamily = ensureMiscellaneousFamily();
+
+  // ✅ NEW: Add miscellaneous family to filtered families if it doesn't exist and matches search
+  const displayFamilies = React.useMemo(() => {
+    if (!filteredFamilies) return [];
+
+    const families = [...filteredFamilies];
+
+    // Add miscellaneous if it's a placeholder and matches search criteria
+    if (miscellaneousFamily && !families.find(f => f.key === 'miscellaneous')) {
+      const matchesSearch = searchTerm === '' ||
+        miscellaneousFamily.label.toLowerCase().includes(searchTerm.toLowerCase());
+
+      if (matchesSearch) {
+        families.push(miscellaneousFamily);
+      }
+    }
+
+    return families.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [filteredFamilies, miscellaneousFamily, searchTerm]);
+
+  // Extract all unique kinds from all products in the catalog for the dropdown
+  const allKinds = React.useMemo(() => {
+    if (!catalog) return [];
+
+    const kindsSet = new Set<string>();
+    catalog.families.forEach(family => {
+      family.products.forEach(product => {
+        if (product.kind && product.kind.trim() !== '') {
+          kindsSet.add(product.kind.trim());
+        }
+      });
+    });
+
+    return Array.from(kindsSet).sort(); // Return sorted array of unique kinds
+  }, [catalog]);
+
+  // Extract all unique UOMs from all products in the catalog for the dropdown
+  const allUoms = React.useMemo(() => {
+    if (!catalog) return [];
+
+    const uomsSet = new Set<string>();
+    catalog.families.forEach(family => {
+      family.products.forEach(product => {
+        if (product.basePrice?.uom && product.basePrice.uom.trim() !== '') {
+          uomsSet.add(product.basePrice.uom.trim());
+        }
+      });
+    });
+
+    return Array.from(uomsSet).sort(); // Return sorted array of unique UOMs
+  }, [catalog]);
 
   if (loading) {
     return <div style={styles.loading}>Loading product catalog...</div>;
@@ -309,7 +422,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       </div>
 
       <div style={styles.familyGrid}>
-        {filteredFamilies?.map((family) => (
+        {displayFamilies?.map((family) => (
           <div
             key={family.key}
             style={{
@@ -528,7 +641,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                     style={styles.deleteButton}
                     onClick={() => setDeletingProduct(editingProduct)}
                   >
-                    🗑️ Delete Product
+                    <FontAwesomeIcon icon={faTrash} /> Delete Product
                   </button>
                   <div style={{ flex: 1 }}></div>
                   <button
@@ -703,21 +816,56 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                 <input
                   type="text"
                   value={newProduct.name}
-                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    // ✅ AUTO-FILL: Generate product key from name
+                    const generatedKey = generateProductKeyFromName(name);
+                    setNewProduct({ ...newProduct, name, key: generatedKey });
+                  }}
                   style={styles.formInput}
                   placeholder="e.g., Standard Hand Soap 1000ml"
                 />
+                <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  <FontAwesomeIcon icon={faLightbulb} /> Product key will be automatically generated from the name
+                </small>
               </div>
 
               <div style={styles.formGroup}>
                 <label style={styles.formLabel}>Kind</label>
-                <input
-                  type="text"
-                  value={newProduct.kind || ""}
-                  onChange={(e) => setNewProduct({ ...newProduct, kind: e.target.value })}
+                <select
+                  value={customKindSelected ? 'CUSTOM' : (newProduct.kind || '')}
+                  onChange={(e) => {
+                    if (e.target.value === 'CUSTOM') {
+                      setCustomKindSelected(true);
+                      setNewProduct({ ...newProduct, kind: '' });
+                    } else {
+                      setCustomKindSelected(false);
+                      setNewProduct({ ...newProduct, kind: e.target.value });
+                    }
+                  }}
                   style={styles.formInput}
-                  placeholder="e.g., liquid, foam, gel"
-                />
+                >
+                  <option value="">Select kind...</option>
+                  {allKinds.map(kind => (
+                    <option key={kind} value={kind}>{kind}</option>
+                  ))}
+                  <option value="CUSTOM">Custom (Enter manually)</option>
+                </select>
+                {customKindSelected && (
+                  <>
+                    <input
+                      type="text"
+                      value={newProduct.kind || ""}
+                      onChange={(e) => setNewProduct({ ...newProduct, kind: e.target.value })}
+                      style={{...styles.formInput, marginTop: '8px'}}
+                      placeholder="Enter custom kind (e.g., liquid, foam, gel)"
+                      autoFocus
+                    />
+                    <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      <FontAwesomeIcon icon={faLightbulb} /> Enter a custom kind for this product
+                    </small>
+                  </>
+                )}
               </div>
 
               <div style={styles.formGroup}>
@@ -736,16 +884,49 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
 
               <div style={styles.formGroup}>
                 <label style={styles.formLabel}>Unit of Measure</label>
-                <input
-                  type="text"
-                  value={newProduct.basePrice?.uom || ""}
-                  onChange={(e) => setNewProduct({
-                    ...newProduct,
-                    basePrice: { ...newProduct.basePrice!, uom: e.target.value }
-                  })}
+                <select
+                  value={customUomSelected ? 'CUSTOM' : (newProduct.basePrice?.uom || '')}
+                  onChange={(e) => {
+                    if (e.target.value === 'CUSTOM') {
+                      setCustomUomSelected(true);
+                      setNewProduct({
+                        ...newProduct,
+                        basePrice: { ...newProduct.basePrice!, uom: '' }
+                      });
+                    } else {
+                      setCustomUomSelected(false);
+                      setNewProduct({
+                        ...newProduct,
+                        basePrice: { ...newProduct.basePrice!, uom: e.target.value }
+                      });
+                    }
+                  }}
                   style={styles.formInput}
-                  placeholder="e.g., per unit, per case"
-                />
+                >
+                  <option value="">Select UOM...</option>
+                  {allUoms.map(uom => (
+                    <option key={uom} value={uom}>{uom}</option>
+                  ))}
+                  <option value="CUSTOM">Custom (Enter manually)</option>
+                </select>
+                {customUomSelected && (
+                  <>
+                    <input
+                      type="text"
+                      value={newProduct.basePrice?.uom || ""}
+                      onChange={(e) => setNewProduct({
+                        ...newProduct,
+                        basePrice: { ...newProduct.basePrice!, uom: e.target.value }
+                      })}
+                      style={{...styles.formInput, marginTop: '8px'}}
+                      placeholder="e.g., per unit, per case, per gallon"
+                      autoFocus
+                    />
+                    <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                      <FontAwesomeIcon icon={faLightbulb} /> Enter a custom unit of measure
+                    </small>
+                  </>
+                )}
               </div>
 
               <div style={styles.formGroup}>
@@ -826,7 +1007,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
         <div style={styles.modal}>
           <div style={styles.confirmationModal}>
             <div style={styles.confirmationHeader}>
-              <h3 style={styles.confirmationTitle}>⚠️ Confirm Delete</h3>
+              <h3 style={styles.confirmationTitle}><FontAwesomeIcon icon={faExclamationTriangle} /> Confirm Delete</h3>
             </div>
 
             <div style={styles.confirmationBody}>
@@ -845,7 +1026,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                 </div>
               </div>
               <p style={styles.warningText}>
-                ⚠️ This action cannot be undone!
+                <FontAwesomeIcon icon={faExclamationTriangle} /> This action cannot be undone!
               </p>
             </div>
 

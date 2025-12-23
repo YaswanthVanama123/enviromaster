@@ -4,6 +4,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback, memo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
+import { emailTemplateApi } from "../backendservice/api/emailTemplateApi";
 import type {
   SavedFileListItem,
   SavedFileGroup,
@@ -347,7 +348,7 @@ const FileRow = memo(({
         </button>
         <button
           className="iconbtn zoho-upload-btn"
-          title="Upload to Zoho Bigin"
+          title="Upload to Bigin"
           onClick={handleZohoUpload}
           disabled={!file.hasPdf && file.fileType !== 'version_log'}
         >
@@ -450,6 +451,7 @@ export default function SavedFilesAgreements() {
   // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
+  const [defaultEmailTemplate, setDefaultEmailTemplate] = useState<{ subject: string; body: string } | null>(null);
 
   // Zoho upload state
   const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
@@ -684,6 +686,28 @@ export default function SavedFilesAgreements() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]); // Only depends on query
 
+  // Load default email template on mount
+  useEffect(() => {
+    const loadEmailTemplate = async () => {
+      try {
+        const template = await emailTemplateApi.getActiveTemplate();
+        setDefaultEmailTemplate({
+          subject: template.subject,
+          body: template.body
+        });
+        console.log('📧 [EMAIL-TEMPLATE] Loaded default email template');
+      } catch (error) {
+        console.error('❌ [EMAIL-TEMPLATE] Failed to load template:', error);
+        // Use fallback template if API fails
+        setDefaultEmailTemplate({
+          subject: 'Document from EnviroMaster NVA',
+          body: `Hello,\n\nPlease find the attached document.\n\nBest regards,\nEnviroMaster NVA Team`
+        });
+      }
+    };
+    loadEmailTemplate();
+  }, []);
+
   // Selection helpers
   const selectedFileIds = useMemo(() =>
     Object.entries(selectedFiles)
@@ -748,7 +772,7 @@ export default function SavedFilesAgreements() {
 
     if (uploadableFiles.length === 0) {
       setToastMessage({
-        message: "Please select files (PDFs or TXT logs) to upload to Zoho.",
+        message: "Please select files (PDFs or TXT logs) to upload to bigin.",
         type: "error"
       });
       return;
@@ -1362,7 +1386,7 @@ export default function SavedFilesAgreements() {
                         fontSize: '11px',
                         fontWeight: '600'
                       }}>
-                        📤 Zoho
+                        📤 Bigin
                       </span>
                     )}
                     {/* ✅ NEW: Agreement Status Badge (show draft for agreements without PDFs) */}
@@ -1407,7 +1431,7 @@ export default function SavedFilesAgreements() {
                     title={`Upload ${agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length} files to Zoho Bigin`}
                   >
                     <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
-                    Zoho
+                    Bigin
                   </button>
 
                   {/* Add File Button */}
@@ -1588,13 +1612,23 @@ export default function SavedFilesAgreements() {
         onClose={() => setEmailComposerOpen(false)}
         onSend={async (emailData: EmailData) => {
           if (!currentEmailFile) return;
+
+          // Determine document type based on file type
+          let documentType: 'agreement' | 'version' | 'manual-upload' = 'agreement';
+          if (currentEmailFile.type === 'version') {
+            documentType = 'version';
+          } else if (currentEmailFile.type === 'manual-upload') {
+            documentType = 'manual-upload';
+          }
+
           await emailApi.sendEmailWithPdfById({
             to: emailData.to,
-            from: emailData.from,
             subject: emailData.subject,
             body: emailData.body,
             documentId: currentEmailFile.id,
-            fileName: currentEmailFile.title
+            fileName: currentEmailFile.title,
+            documentType: documentType,
+            watermark: emailData.attachment?.watermark || false
           });
           setToastMessage({
             message: "Email sent successfully with PDF attachment!",
@@ -1606,11 +1640,12 @@ export default function SavedFilesAgreements() {
         attachment={currentEmailFile ? {
           id: currentEmailFile.id,
           fileName: currentEmailFile.title,
-          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+          documentType: currentEmailFile.type === 'version' ? 'version' :
+                        currentEmailFile.type === 'manual-upload' ? 'manual-upload' : 'agreement',
+          watermark: currentEmailFile.type === 'version' ? (watermarkStates.get(currentEmailFile.id) || false) : false
         } : undefined}
-        defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
-        defaultBody={currentEmailFile ? `Hello,\n\nPlease find the document attached.\n\nDocument: ${currentEmailFile.title}\n\nBest regards` : ''}
-        userEmail=""
+        defaultSubject={defaultEmailTemplate?.subject || (currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : '')}
+        defaultBody={defaultEmailTemplate?.body || (currentEmailFile ? `Hello,\n\nPlease find the document attached.\n\nDocument: ${currentEmailFile.title}\n\nBest regards` : '')}
       />
 
       {/* Zoho Upload Modal */}

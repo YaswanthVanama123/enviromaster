@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faPaperPlane, faFileAlt, faUser, faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faPaperPlane, faFileAlt, faEnvelope } from '@fortawesome/free-solid-svg-icons';
 import { Toast } from './admin/Toast';
 import type { ToastType } from './admin/Toast';
 import './EmailComposer.css';
@@ -8,13 +8,12 @@ import './EmailComposer.css';
 export interface EmailAttachment {
   id: string;
   fileName: string;
-  downloadUrl: string;
-  blob?: Blob;
+  documentType?: 'agreement' | 'version' | 'manual-upload';
+  watermark?: boolean;
 }
 
 export interface EmailData {
   to: string;
-  from: string;
   subject: string;
   body: string;
   attachment?: EmailAttachment;
@@ -27,7 +26,6 @@ export interface EmailComposerProps {
   attachment?: EmailAttachment;
   defaultSubject?: string;
   defaultBody?: string;
-  userEmail?: string; // Auto-populated from login
 }
 
 export const EmailComposer: React.FC<EmailComposerProps> = ({
@@ -36,59 +34,28 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
   onSend,
   attachment,
   defaultSubject = '',
-  defaultBody = '',
-  userEmail = ''
+  defaultBody = ''
 }) => {
   const [formData, setFormData] = useState<EmailData>({
     to: '',
-    from: '',
     subject: '',
     body: ''
   });
 
   const [sending, setSending] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
-  const [loadingPdf, setLoadingPdf] = useState(false);
 
   // Auto-populate form when modal opens
   useEffect(() => {
     if (isOpen) {
       setFormData({
         to: '',
-        from: userEmail || '',
         subject: defaultSubject,
         body: defaultBody,
         attachment: attachment
       });
-
-      // Load PDF blob for attachment if provided
-      if (attachment?.downloadUrl) {
-        loadPdfBlob(attachment.downloadUrl);
-      }
     }
-  }, [isOpen, attachment, defaultSubject, defaultBody, userEmail]);
-
-  const loadPdfBlob = async (url: string) => {
-    try {
-      setLoadingPdf(true);
-      const response = await fetch(url);
-      if (response.ok) {
-        const blob = await response.blob();
-        setPdfBlob(blob);
-      } else {
-        throw new Error(`Failed to load PDF: ${response.statusText}`);
-      }
-    } catch (error) {
-      console.error('Error loading PDF:', error);
-      setToastMessage({
-        message: 'Failed to load PDF attachment',
-        type: 'error'
-      });
-    } finally {
-      setLoadingPdf(false);
-    }
-  };
+  }, [isOpen, attachment, defaultSubject, defaultBody]);
 
   const handleInputChange = (field: keyof EmailData, value: string) => {
     setFormData(prev => ({
@@ -107,14 +74,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
       return;
     }
 
-    if (!formData.from.trim()) {
-      setToastMessage({
-        message: 'Please enter a sender email address',
-        type: 'error'
-      });
-      return;
-    }
-
     if (!formData.subject.trim()) {
       setToastMessage({
         message: 'Please enter an email subject',
@@ -126,16 +85,9 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
     try {
       setSending(true);
 
-      // Prepare email data with blob if available
-      const emailDataToSend: EmailData = {
-        ...formData,
-        attachment: attachment && pdfBlob ? {
-          ...attachment,
-          blob: pdfBlob
-        } : attachment
-      };
-
-      await onSend(emailDataToSend);
+      // Pass email data to parent component
+      // Backend will load and attach the PDF automatically
+      await onSend(formData);
 
       setToastMessage({
         message: 'Email sent successfully!',
@@ -161,11 +113,9 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
   const handleClose = () => {
     setFormData({
       to: '',
-      from: '',
       subject: '',
       body: ''
     });
-    setPdfBlob(null);
     setToastMessage(null);
     onClose();
   };
@@ -190,21 +140,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
         </div>
 
         <div className="email-composer-body">
-          {/* From Field */}
-          <div className="email-composer-field">
-            <label>
-              <FontAwesomeIcon icon={faUser} />
-              From:
-            </label>
-            <input
-              type="email"
-              value={formData.from}
-              onChange={(e) => handleInputChange('from', e.target.value)}
-              placeholder="your-email@enviromasternva.com"
-              disabled={sending}
-            />
-          </div>
-
           {/* To Field */}
           <div className="email-composer-field">
             <label>
@@ -237,12 +172,9 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
             <div className="email-composer-attachment">
               <FontAwesomeIcon icon={faFileAlt} />
               <span>Attachment: {attachment.fileName}</span>
-              {loadingPdf && <span className="loading-pdf">Loading...</span>}
-              {pdfBlob && !loadingPdf && (
-                <span className="attachment-size">
-                  ({(pdfBlob.size / 1024 / 1024).toFixed(1)} MB) ✅
-                </span>
-              )}
+              <span className="attachment-ready">
+                (Ready to send)
+              </span>
             </div>
           )}
 
@@ -270,14 +202,14 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
           <button
             className="email-composer-btn email-composer-btn--send"
             onClick={handleSend}
-            disabled={sending || loadingPdf || !pdfBlob}
+            disabled={sending}
           >
             {sending ? (
               <>Sending...</>
             ) : (
               <>
                 <FontAwesomeIcon icon={faPaperPlane} />
-                Send Email with PDF
+                {attachment ? 'Send Email with PDF' : 'Send Email'}
               </>
             )}
           </button>

@@ -63,24 +63,27 @@ export const emailApi = {
 
   /**
    * Send email with PDF attachment using document ID
+   * Backend will load and attach the PDF automatically
    */
   async sendEmailWithPdfById(emailData: {
     to: string;
-    from: string;
     subject: string;
     body: string;
     documentId: string;
     fileName: string;
+    documentType?: 'agreement' | 'version' | 'manual-upload';
+    watermark?: boolean;
   }): Promise<EmailSendResponse> {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/email/send-with-pdf/${emailData.documentId}`,
+        `${API_BASE_URL}/api/email/send`,
         {
           to: emailData.to,
-          from: emailData.from,
           subject: emailData.subject,
           body: emailData.body,
-          fileName: emailData.fileName,
+          documentId: emailData.documentId,
+          documentType: emailData.documentType,
+          watermark: emailData.watermark
         },
         {
           headers: {
@@ -92,6 +95,41 @@ export const emailApi = {
       return response.data;
     } catch (error) {
       console.error('Error sending email with PDF:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Verify email configuration
+   */
+  async verifyConfig(): Promise<any> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/email/verify-config`);
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying email config:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Send test email
+   */
+  async sendTestEmail(to: string): Promise<EmailSendResponse> {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/email/send-test`,
+        { to },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error sending test email:', error);
       throw error;
     }
   }

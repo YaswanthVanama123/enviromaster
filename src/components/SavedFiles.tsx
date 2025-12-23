@@ -436,7 +436,7 @@ export default function SavedFiles() {
     fetchGroups(currentPage, query);
 
     setToastMessage({
-      message: "Successfully uploaded to Zoho Bigin!",
+      message: "Successfully uploaded to Bigin!",
       type: "success"
     });
   };
@@ -742,7 +742,7 @@ export default function SavedFiles() {
                       </button>
                       <button
                         className="iconbtn zoho-upload-btn"
-                        title="Upload to Zoho Bigin"
+                        title="Upload to Bigin"
                         type="button"
                         onClick={() => handleZohoUpload(f)}
                         disabled={!f.hasPdf}
