@@ -53,6 +53,12 @@ interface ServicesContextValue {
   setGlobalTripCharge: (charge: number) => void;
   globalParkingCharge: number; // Parking charge per visit
   setGlobalParkingCharge: (charge: number) => void;
+
+  // ✅ NEW: Frequency for trip and parking charges
+  globalTripChargeFrequency: number; // How many times per month (default: 4 for weekly)
+  setGlobalTripChargeFrequency: (frequency: number) => void;
+  globalParkingChargeFrequency: number; // How many times per month (default: 4 for weekly)
+  setGlobalParkingChargeFrequency: (frequency: number) => void;
 }
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(
@@ -74,6 +80,10 @@ export const ServicesProvider: React.FC<{
   // ✅ NEW: Global trip charge and parking charge state (default: 0)
   const [globalTripCharge, setGlobalTripCharge] = useState<number>(0);
   const [globalParkingCharge, setGlobalParkingCharge] = useState<number>(0);
+
+  // ✅ NEW: Frequency state for trip and parking charges (default: 4 for weekly)
+  const [globalTripChargeFrequency, setGlobalTripChargeFrequency] = useState<number>(4);
+  const [globalParkingChargeFrequency, setGlobalParkingChargeFrequency] = useState<number>(4);
 
   const updateSaniclean = useCallback(
     (update: Partial<ServicesState["saniclean"]>) => {
@@ -134,25 +144,49 @@ export const ServicesProvider: React.FC<{
     });
 
     // ✅ Add global trip charge and parking charge to the contract total
-    // These are per-visit charges, so multiply by estimated visits in contract period
-    // Assuming weekly frequency: contract months × 4.33 weeks/month
-    const estimatedVisitsInContract = globalContractMonths * 4.33;
-    const tripChargeContractTotal = globalTripCharge * estimatedVisitsInContract;
-    const parkingChargeContractTotal = globalParkingCharge * estimatedVisitsInContract;
+    // These are per-visit charges, so multiply by frequency and contract months
+    // Special handling for one-time charges (frequency = 0)
+    const tripChargeContractTotal = globalTripChargeFrequency === 0
+      ? globalTripCharge // One-time charge - no multiplication
+      : globalTripCharge * globalTripChargeFrequency * globalContractMonths;
+
+    const parkingChargeContractTotal = globalParkingChargeFrequency === 0
+      ? globalParkingCharge // One-time charge - no multiplication
+      : globalParkingCharge * globalParkingChargeFrequency * globalContractMonths;
 
     totalAmount += tripChargeContractTotal;
     totalAmount += parkingChargeContractTotal;
 
     if (tripChargeContractTotal > 0) {
-      console.log(`📊 [TOTAL CALC] Global Trip Charge (${estimatedVisitsInContract.toFixed(0)} visits): $${tripChargeContractTotal.toFixed(2)}`);
+      const freqLabel = globalTripChargeFrequency === 0 ? 'One-time' :
+                       globalTripChargeFrequency === 4 ? 'Weekly' :
+                       globalTripChargeFrequency === 2 ? 'Bi-weekly' :
+                       globalTripChargeFrequency === 1 ? 'Monthly' :
+                       globalTripChargeFrequency === 0.5 ? 'Every 2 months' :
+                       globalTripChargeFrequency === 0.33 ? 'Quarterly' :
+                       globalTripChargeFrequency === 0.17 ? 'Bi-annually' :
+                       globalTripChargeFrequency === 0.08 ? 'Annually' :
+                       `${globalTripChargeFrequency}×/mo`;
+
+      console.log(`📊 [TOTAL CALC] Global Trip Charge ($${globalTripCharge} - ${freqLabel}): $${tripChargeContractTotal.toFixed(2)}`);
     }
     if (parkingChargeContractTotal > 0) {
-      console.log(`📊 [TOTAL CALC] Global Parking Charge (${estimatedVisitsInContract.toFixed(0)} visits): $${parkingChargeContractTotal.toFixed(2)}`);
+      const freqLabel = globalParkingChargeFrequency === 0 ? 'One-time' :
+                       globalParkingChargeFrequency === 4 ? 'Weekly' :
+                       globalParkingChargeFrequency === 2 ? 'Bi-weekly' :
+                       globalParkingChargeFrequency === 1 ? 'Monthly' :
+                       globalParkingChargeFrequency === 0.5 ? 'Every 2 months' :
+                       globalParkingChargeFrequency === 0.33 ? 'Quarterly' :
+                       globalParkingChargeFrequency === 0.17 ? 'Bi-annually' :
+                       globalParkingChargeFrequency === 0.08 ? 'Annually' :
+                       `${globalParkingChargeFrequency}×/mo`;
+
+      console.log(`📊 [TOTAL CALC] Global Parking Charge ($${globalParkingCharge} - ${freqLabel}): $${parkingChargeContractTotal.toFixed(2)}`);
     }
 
     console.log(`📊 [TOTAL CALC] Total Agreement Amount: $${totalAmount.toFixed(2)}`);
     return totalAmount;
-  }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge]);
+  }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
   // ✅ NEW: Helper function to calculate total original per-visit (actual charged prices)
   const getTotalOriginalPerVisit = useCallback((): number => {
@@ -301,8 +335,13 @@ export const ServicesProvider: React.FC<{
       setGlobalTripCharge,
       globalParkingCharge,
       setGlobalParkingCharge,
+      // ✅ NEW: Frequency for trip and parking charges
+      globalTripChargeFrequency,
+      setGlobalTripChargeFrequency,
+      globalParkingChargeFrequency,
+      setGlobalParkingChargeFrequency,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalPerVisit, getTotalMinimumPerVisit, globalTripCharge, globalParkingCharge]); // ✅ Keep dependencies - callbacks are stable
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalPerVisit, getTotalMinimumPerVisit, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); // ✅ Keep dependencies - callbacks are stable
 
   return (
     <ServicesContext.Provider value={value}>

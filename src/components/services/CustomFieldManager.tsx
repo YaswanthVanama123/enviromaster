@@ -100,40 +100,63 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
             {/* Calc field */}
             {field.type === "calc" && (
               <div className="svc-inline--tight">
+                {/* ✅ Quantity input */}
                 <input
                   type="text"
                   className="svc-in sm"
                   value={field.calcValues?.left || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const left = e.target.value;
+                    const middle = field.calcValues?.middle || "";
+
+                    // ✅ AUTO-CALCULATE: Total = Quantity × Rate
+                    const qty = parseFloat(left) || 0;
+                    const rate = parseFloat(middle) || 0;
+                    const calculatedTotal = qty * rate;
+                    const right = calculatedTotal > 0 ? calculatedTotal.toFixed(2) : "";
+
                     handleUpdateField(field.id, {
-                      calcValues: { ...field.calcValues!, left: e.target.value },
-                    })
-                  }
-                  placeholder="0"
+                      calcValues: { left, middle, right },
+                    });
+                  }}
+                  placeholder="Qty"
                 />
                 <span>@</span>
+                {/* ✅ Rate input */}
                 <input
                   type="text"
                   className="svc-in sm"
                   value={field.calcValues?.middle || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const middle = e.target.value;
+                    const left = field.calcValues?.left || "";
+
+                    // ✅ AUTO-CALCULATE: Total = Quantity × Rate
+                    const qty = parseFloat(left) || 0;
+                    const rate = parseFloat(middle) || 0;
+                    const calculatedTotal = qty * rate;
+                    const right = calculatedTotal > 0 ? calculatedTotal.toFixed(2) : "";
+
                     handleUpdateField(field.id, {
-                      calcValues: { ...field.calcValues!, middle: e.target.value },
-                    })
-                  }
-                  placeholder="0.00"
+                      calcValues: { left, middle, right },
+                    });
+                  }}
+                  placeholder="Rate"
                 />
                 <span>=</span>
+                {/* ✅ Total input - READ ONLY, auto-calculated */}
                 <input
                   type="text"
                   className="svc-in sm"
                   value={field.calcValues?.right || ""}
-                  onChange={(e) =>
-                    handleUpdateField(field.id, {
-                      calcValues: { ...field.calcValues!, right: e.target.value },
-                    })
-                  }
-                  placeholder="0.00"
+                  readOnly
+                  style={{
+                    backgroundColor: '#f3f4f6',
+                    cursor: 'not-allowed',
+                    fontWeight: '600'
+                  }}
+                  placeholder="Total"
+                  title="Auto-calculated: Quantity × Rate"
                 />
               </div>
             )}

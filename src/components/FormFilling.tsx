@@ -1,7 +1,16 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowLeft,
+  faChartLine,
+  faCalendarDays,
+  faCar,
+  faSquareParking,
+  faExclamationTriangle,
+  faCheckCircle,
+  faBullseye
+} from "@fortawesome/free-solid-svg-icons";
 import CustomerSection from "./CustomerSection";
 import ProductsSection from "./products/ProductsSection";
 import type { ProductsSectionHandle } from "./products/ProductsSection";
@@ -114,6 +123,10 @@ function ContractSummary() {
     setGlobalTripCharge,
     globalParkingCharge,
     setGlobalParkingCharge,
+    globalTripChargeFrequency,
+    setGlobalTripChargeFrequency,
+    globalParkingChargeFrequency,
+    setGlobalParkingChargeFrequency,
   } = useServicesContext();
 
   const totalAmount = getTotalAgreementAmount();
@@ -124,13 +137,23 @@ function ContractSummary() {
   const [amountToGreenLine, setAmountToGreenLine] = useState(0);
   const [greenLineThreshold, setGreenLineThreshold] = useState(0);
   const [isMonthsDropdownOpen, setIsMonthsDropdownOpen] = useState(false);
+  const [isTripFreqDropdownOpen, setIsTripFreqDropdownOpen] = useState(false);
+  const [isParkingFreqDropdownOpen, setIsParkingFreqDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tripFreqDropdownRef = useRef<HTMLDivElement>(null);
+  const parkingFreqDropdownRef = useRef<HTMLDivElement>(null);
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsMonthsDropdownOpen(false);
+      }
+      if (tripFreqDropdownRef.current && !tripFreqDropdownRef.current.contains(event.target as Node)) {
+        setIsTripFreqDropdownOpen(false);
+      }
+      if (parkingFreqDropdownRef.current && !parkingFreqDropdownRef.current.contains(event.target as Node)) {
+        setIsParkingFreqDropdownOpen(false);
       }
     };
 
@@ -190,154 +213,391 @@ function ContractSummary() {
       <div className="contract-summary-header">
         <h2>Contract Summary</h2>
       </div>
-      <div className="contract-summary-content">
-        {/* ✅ Contract Months Custom Dropdown */}
-        <div className="contract-field-group" ref={dropdownRef}>
-          <label htmlFor="global-contract-months" className="contract-label">
-            Contract Duration
-            <span className="contract-label-hint">Select term length</span>
-          </label>
-          <div className="custom-dropdown">
-            <button
-              type="button"
-              className="custom-dropdown-trigger"
-              onClick={() => setIsMonthsDropdownOpen(!isMonthsDropdownOpen)}
-              aria-expanded={isMonthsDropdownOpen}
-            >
-              <span className="dropdown-value">{globalContractMonths} Months</span>
-              <svg
-                className={`dropdown-arrow ${isMonthsDropdownOpen ? 'open' : ''}`}
-                width="12"
-                height="8"
-                viewBox="0 0 12 8"
-                fill="none"
-              >
-                <path
-                  d="M1 1L6 6L11 1"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            {isMonthsDropdownOpen && (
-              <div className="custom-dropdown-menu">
-                <div className="dropdown-options">
-                  {Array.from({ length: 35 }, (_, i) => i + 2).map((months) => (
-                    <button
-                      key={months}
-                      type="button"
-                      className={`dropdown-option ${globalContractMonths === months ? 'selected' : ''}`}
-                      onClick={() => handleContractMonthsChange(months)}
-                    >
-                      {months} {months === 1 ? 'Month' : 'Months'}
-                      {months === 36 && <span className="recommended-badge">⭐ Recommended</span>}
-                    </button>
-                  ))}
+
+      {/* ✅ NEW: Prominent Red/Green Line Status Banner at Top */}
+      {pricingIndicator !== 'neutral' && (
+        <div className={`pricing-status-banner ${pricingIndicator}-line-banner`}>
+          <div className="status-banner-content">
+            {pricingIndicator === 'red' ? (
+              <>
+                <span className="status-icon">
+                  <FontAwesomeIcon icon={faExclamationTriangle} />
+                </span>
+                <div className="status-info">
+                  <div className="status-title">Red Line Pricing</div>
+                  <div className="status-subtitle">At or below minimum - requires approval</div>
                 </div>
-              </div>
+                <div className="status-values">
+                  <div className="status-value-item">
+                    <span className="value-label">Current</span>
+                    <span className="value-amount">${totalOriginal.toFixed(2)}</span>
+                  </div>
+                  <div className="status-divider">≤</div>
+                  <div className="status-value-item">
+                    <span className="value-label">Minimum</span>
+                    <span className="value-amount">${totalMinimum.toFixed(2)}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="status-icon">
+                  <FontAwesomeIcon icon={faCheckCircle} />
+                </span>
+                <div className="status-info">
+                  <div className="status-title">Green Line Pricing</div>
+                  <div className="status-subtitle">30%+ above minimum - auto approved</div>
+                </div>
+                <div className="status-values">
+                  <div className="status-value-item">
+                    <span className="value-label">Current</span>
+                    <span className="value-amount">${totalOriginal.toFixed(2)}</span>
+                  </div>
+                  <div className="status-divider">≥</div>
+                  <div className="status-value-item">
+                    <span className="value-label">Target</span>
+                    <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
+      )}
 
-        {/* ✅ NEW: Trip Charge Input */}
-        <div className="contract-field-group">
-          <label htmlFor="global-trip-charge" className="contract-label">
-            Trip Charge (per visit)
-            <span className="contract-label-hint">Added to per-visit & contract total</span>
-          </label>
-          <div className="contract-input-with-prefix">
-            <span className="input-prefix">$</span>
-            <input
-              id="global-trip-charge"
-              type="number"
-              min="0"
-              step="0.01"
-              value={globalTripCharge || ''}
-              onChange={handleTripChargeChange}
-              className="contract-input"
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-
-        {/* ✅ NEW: Parking Charge Input */}
-        <div className="contract-field-group">
-          <label htmlFor="global-parking-charge" className="contract-label">
-            Parking Charge (per visit)
-            <span className="contract-label-hint">Added to per-visit & contract total</span>
-          </label>
-          <div className="contract-input-with-prefix">
-            <span className="input-prefix">$</span>
-            <input
-              id="global-parking-charge"
-              type="number"
-              min="0"
-              step="0.01"
-              value={globalParkingCharge || ''}
-              onChange={handleParkingChargeChange}
-              className="contract-input"
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-
-        {/* ✅ NEW: Red/Green Line Pricing Display */}
-        <div className="contract-field-group">
-          <label className="contract-label">Per-Visit Pricing</label>
-          <div className="pricing-indicator-container">
-            <div className="pricing-values">
-              <div className="pricing-row">
-                <span className="pricing-label">Original:</span>
-                <span className="pricing-value">${totalOriginal.toFixed(2)}</span>
-              </div>
-              <div className="pricing-row">
-                <span className="pricing-label">Minimum:</span>
-                <span className="pricing-value">${totalMinimum.toFixed(2)}</span>
+      {/* ✅ NEW: Show target for neutral state */}
+      {pricingIndicator === 'neutral' && amountToGreenLine > 0 && (
+        <div className="pricing-status-banner neutral-line-banner">
+          <div className="status-banner-content">
+            <span className="status-icon">
+              <FontAwesomeIcon icon={faBullseye} />
+            </span>
+            <div className="status-info">
+              <div className="status-title">Near Green Line</div>
+              <div className="status-subtitle">
+                Add <strong>${amountToGreenLine.toFixed(2)}</strong> to reach profitable pricing
               </div>
             </div>
-            {pricingIndicator !== 'neutral' && (
-              <div className={`pricing-indicator ${pricingIndicator}-line`}>
-                {pricingIndicator === 'red' ? (
-                  <>
-                    <span className="indicator-icon">⚠️</span>
-                    <span className="indicator-text">Red Line Pricing</span>
-                    <span className="indicator-description">
-                      Charging minimum - unprofitable
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="indicator-icon">✓</span>
-                    <span className="indicator-text">Green Line Pricing</span>
-                    <span className="indicator-description">
-                      30%+ above minimum - profitable
-                    </span>
-                  </>
+            <div className="status-values">
+              <div className="status-value-item">
+                <span className="value-label">Current</span>
+                <span className="value-amount">${totalOriginal.toFixed(2)}</span>
+              </div>
+              <div className="status-divider">→</div>
+              <div className="status-value-item">
+                <span className="value-label">Target</span>
+                <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="contract-summary-grid">
+        {/* ✅ Left Column: Contract Details */}
+        <div className="contract-card">
+          <h3 className="card-title">Contract Details</h3>
+
+          {/* Contract Duration */}
+          <div className="contract-field-group" ref={dropdownRef}>
+            <label htmlFor="global-contract-months" className="contract-label">
+              <span className="label-icon">
+                <FontAwesomeIcon icon={faCalendarDays} />
+              </span>
+              Contract Duration
+            </label>
+            <div className="custom-dropdown">
+              <button
+                type="button"
+                className="custom-dropdown-trigger"
+                onClick={() => setIsMonthsDropdownOpen(!isMonthsDropdownOpen)}
+                aria-expanded={isMonthsDropdownOpen}
+              >
+                <span className="dropdown-value">{globalContractMonths} Months</span>
+                <svg
+                  className={`dropdown-arrow ${isMonthsDropdownOpen ? 'open' : ''}`}
+                  width="12"
+                  height="8"
+                  viewBox="0 0 12 8"
+                  fill="none"
+                >
+                  <path
+                    d="M1 1L6 6L11 1"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              {isMonthsDropdownOpen && (
+                <div className="custom-dropdown-menu">
+                  <div className="dropdown-options">
+                    {Array.from({ length: 35 }, (_, i) => i + 2).map((months) => (
+                      <button
+                        key={months}
+                        type="button"
+                        className={`dropdown-option ${globalContractMonths === months ? 'selected' : ''}`}
+                        onClick={() => handleContractMonthsChange(months)}
+                      >
+                        {months} {months === 1 ? 'Month' : 'Months'}
+                        {months === 36 && <span className="recommended-badge">⭐ Recommended</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Trip Charge */}
+          <div className="contract-field-group">
+            <label htmlFor="global-trip-charge" className="contract-label">
+              <span className="label-icon">
+                <FontAwesomeIcon icon={faCar} />
+              </span>
+              Trip Charge <span className="label-hint">(per visit)</span>
+            </label>
+            <div className="charge-input-row">
+              <div className="contract-input-with-prefix">
+                <span className="input-prefix">$</span>
+                <input
+                  id="global-trip-charge"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={globalTripCharge || ''}
+                  onChange={handleTripChargeChange}
+                  className="contract-input"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="frequency-dropdown-wrapper" ref={tripFreqDropdownRef}>
+                <button
+                  type="button"
+                  className="frequency-dropdown-trigger"
+                  onClick={() => setIsTripFreqDropdownOpen(!isTripFreqDropdownOpen)}
+                  aria-expanded={isTripFreqDropdownOpen}
+                >
+                  <span className="frequency-value">
+                    {globalTripChargeFrequency === 0 ? 'One-time' :
+                     globalTripChargeFrequency === 4 ? 'Weekly' :
+                     globalTripChargeFrequency === 2 ? 'Bi-weekly' :
+                     globalTripChargeFrequency === 1 ? 'Monthly' :
+                     globalTripChargeFrequency === 0.5 ? 'Every 2 Mo' :
+                     globalTripChargeFrequency === 0.33 ? 'Quarterly' :
+                     globalTripChargeFrequency === 0.17 ? 'Bi-annually' :
+                     globalTripChargeFrequency === 0.08 ? 'Annually' : `${globalTripChargeFrequency}×`}
+                  </span>
+                  <svg
+                    className={`dropdown-arrow ${isTripFreqDropdownOpen ? 'open' : ''}`}
+                    width="10"
+                    height="6"
+                    viewBox="0 0 12 8"
+                    fill="none"
+                  >
+                    <path
+                      d="M1 1L6 6L11 1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                {isTripFreqDropdownOpen && (
+                  <div className="frequency-dropdown-menu">
+                    <div className="frequency-options">
+                      {[
+                        { value: 0, label: 'One-time', description: 'Single charge' },
+                        { value: 4, label: 'Weekly', description: '4× per month' },
+                        { value: 2, label: 'Bi-weekly', description: '2× per month' },
+                        { value: 1, label: 'Monthly', description: '1× per month' },
+                        { value: 0.5, label: 'Every 2 Months', description: '6× per year' },
+                        { value: 0.33, label: 'Quarterly', description: '4× per year' },
+                        { value: 0.17, label: 'Bi-annually', description: '2× per year' },
+                        { value: 0.08, label: 'Annually', description: '1× per year' },
+                      ].map((freq) => (
+                        <button
+                          key={freq.value}
+                          type="button"
+                          className={`frequency-option ${globalTripChargeFrequency === freq.value ? 'selected' : ''}`}
+                          onClick={() => {
+                            setGlobalTripChargeFrequency(freq.value);
+                            setIsTripFreqDropdownOpen(false);
+                          }}
+                        >
+                          <span className="freq-label">{freq.label}</span>
+                          <span className="freq-description">{freq.description}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
-            {/* Show amount needed to reach green line for red and neutral states */}
-            {pricingIndicator !== 'green' && amountToGreenLine > 0 && (
-              <div className="green-line-target">
-                <span className="target-icon">🎯</span>
-                <span className="target-text">
-                  Add <strong>${amountToGreenLine.toFixed(2)}</strong> to reach Green Line
-                </span>
-                <span className="target-value">
-                  (Target: ${greenLineThreshold.toFixed(2)})
-                </span>
+            </div>
+          </div>
+
+          {/* Parking Charge */}
+          <div className="contract-field-group">
+            <label htmlFor="global-parking-charge" className="contract-label">
+              <span className="label-icon">
+                <FontAwesomeIcon icon={faSquareParking} />
+              </span>
+              Parking Charge <span className="label-hint">(per visit)</span>
+            </label>
+            <div className="charge-input-row">
+              <div className="contract-input-with-prefix">
+                <span className="input-prefix">$</span>
+                <input
+                  id="global-parking-charge"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={globalParkingCharge || ''}
+                  onChange={handleParkingChargeChange}
+                  className="contract-input"
+                  placeholder="0.00"
+                />
               </div>
-            )}
+              <div className="frequency-dropdown-wrapper" ref={parkingFreqDropdownRef}>
+                <button
+                  type="button"
+                  className="frequency-dropdown-trigger"
+                  onClick={() => setIsParkingFreqDropdownOpen(!isParkingFreqDropdownOpen)}
+                  aria-expanded={isParkingFreqDropdownOpen}
+                >
+                  <span className="frequency-value">
+                    {globalParkingChargeFrequency === 0 ? 'One-time' :
+                     globalParkingChargeFrequency === 4 ? 'Weekly' :
+                     globalParkingChargeFrequency === 2 ? 'Bi-weekly' :
+                     globalParkingChargeFrequency === 1 ? 'Monthly' :
+                     globalParkingChargeFrequency === 0.5 ? 'Every 2 Mo' :
+                     globalParkingChargeFrequency === 0.33 ? 'Quarterly' :
+                     globalParkingChargeFrequency === 0.17 ? 'Bi-annually' :
+                     globalParkingChargeFrequency === 0.08 ? 'Annually' : `${globalParkingChargeFrequency}×`}
+                  </span>
+                  <svg
+                    className={`dropdown-arrow ${isParkingFreqDropdownOpen ? 'open' : ''}`}
+                    width="10"
+                    height="6"
+                    viewBox="0 0 12 8"
+                    fill="none"
+                  >
+                    <path
+                      d="M1 1L6 6L11 1"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                {isParkingFreqDropdownOpen && (
+                  <div className="frequency-dropdown-menu">
+                    <div className="frequency-options">
+                      {[
+                        { value: 0, label: 'One-time', description: 'Single charge' },
+                        { value: 4, label: 'Weekly', description: '4× per month' },
+                        { value: 2, label: 'Bi-weekly', description: '2× per month' },
+                        { value: 1, label: 'Monthly', description: '1× per month' },
+                        { value: 0.5, label: 'Every 2 Months', description: '6× per year' },
+                        { value: 0.33, label: 'Quarterly', description: '4× per year' },
+                        { value: 0.17, label: 'Bi-annually', description: '2× per year' },
+                        { value: 0.08, label: 'Annually', description: '1× per year' },
+                      ].map((freq) => (
+                        <button
+                          key={freq.value}
+                          type="button"
+                          className={`frequency-option ${globalParkingChargeFrequency === freq.value ? 'selected' : ''}`}
+                          onClick={() => {
+                            setGlobalParkingChargeFrequency(freq.value);
+                            setIsParkingFreqDropdownOpen(false);
+                          }}
+                        >
+                          <span className="freq-label">{freq.label}</span>
+                          <span className="freq-description">{freq.description}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="contract-field-group">
-          <label className="contract-label">Total Agreement Amount</label>
-          <div className="contract-total-display">
-            ${totalAmount.toFixed(2)}
+        {/* ✅ Right Column: Pricing Breakdown */}
+        <div className="contract-card">
+          <h3 className="card-title">Pricing Breakdown</h3>
+
+          <div className="pricing-breakdown">
+            <div className="breakdown-row">
+              <span className="breakdown-label">Original Per Visit</span>
+              <span className="breakdown-value original">${totalOriginal.toFixed(2)}</span>
+            </div>
+            <div className="breakdown-row">
+              <span className="breakdown-label">Minimum Threshold</span>
+              <span className="breakdown-value minimum">${totalMinimum.toFixed(2)}</span>
+            </div>
+            <div className="breakdown-row">
+              <span className="breakdown-label">Green Line Target (30%)</span>
+              <span className="breakdown-value target">${greenLineThreshold.toFixed(2)}</span>
+            </div>
+
+            {/* Show profit margin */}
+            <div className="breakdown-divider"></div>
+            <div className="breakdown-row highlight">
+              <span className="breakdown-label">Profit Margin</span>
+              <span className={`breakdown-value profit ${pricingIndicator}`}>
+                {totalMinimum > 0
+                  ? `${(((totalOriginal - totalMinimum) / totalMinimum) * 100).toFixed(1)}%`
+                  : '0%'
+                }
+              </span>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* ✅ Total Agreement Amount - Full Width at Bottom */}
+      <div className="contract-total-section">
+        <div className="total-label">Total Agreement Amount</div>
+        <div className="total-amount">${totalAmount.toFixed(2)}</div>
+        <div className="total-breakdown">
+          ${totalOriginal.toFixed(2)} × {globalContractMonths} months
+          {(globalTripCharge > 0 || globalParkingCharge > 0) && (
+            <span className="charges-included">
+              {globalTripCharge > 0 && (() => {
+                const freqLabel = globalTripChargeFrequency === 0 ? 'One-time' :
+                                 globalTripChargeFrequency === 4 ? 'Weekly' :
+                                 globalTripChargeFrequency === 2 ? 'Bi-weekly' :
+                                 globalTripChargeFrequency === 1 ? 'Monthly' :
+                                 globalTripChargeFrequency === 0.5 ? 'Every 2 Mo' :
+                                 globalTripChargeFrequency === 0.33 ? 'Quarterly' :
+                                 globalTripChargeFrequency === 0.17 ? 'Bi-annually' :
+                                 globalTripChargeFrequency === 0.08 ? 'Annually' :
+                                 `${globalTripChargeFrequency}×/mo`;
+                return globalTripChargeFrequency === 0
+                  ? ` + Trip ($${globalTripCharge.toFixed(2)} - ${freqLabel})`
+                  : ` + Trip ($${globalTripCharge.toFixed(2)} × ${freqLabel})`;
+              })()}
+              {globalParkingCharge > 0 && (() => {
+                const freqLabel = globalParkingChargeFrequency === 0 ? 'One-time' :
+                                 globalParkingChargeFrequency === 4 ? 'Weekly' :
+                                 globalParkingChargeFrequency === 2 ? 'Bi-weekly' :
+                                 globalParkingChargeFrequency === 1 ? 'Monthly' :
+                                 globalParkingChargeFrequency === 0.5 ? 'Every 2 Mo' :
+                                 globalParkingChargeFrequency === 0.33 ? 'Quarterly' :
+                                 globalParkingChargeFrequency === 0.17 ? 'Bi-annually' :
+                                 globalParkingChargeFrequency === 0.08 ? 'Annually' :
+                                 `${globalParkingChargeFrequency}×/mo`;
+                return globalParkingChargeFrequency === 0
+                  ? ` + Parking ($${globalParkingCharge.toFixed(2)} - ${freqLabel})`
+                  : ` + Parking ($${globalParkingCharge.toFixed(2)} × ${freqLabel})`;
+              })()}
+            </span>
+          )}
         </div>
       </div>
     </div>

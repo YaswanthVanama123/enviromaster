@@ -64,6 +64,12 @@ const PRICING_TYPES = [
 export const RefreshPowerScrubForm: React.FC<
   ServiceInitialData<RefreshPowerScrubFormState>
 > = ({ initialData, onRemove }) => {
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
   const {
     form,
     setHourlyRate,
@@ -80,15 +86,12 @@ export const RefreshPowerScrubForm: React.FC<
     refreshConfig,
     isLoadingConfig,
     backendConfig, // ✅ Get backend config for auto-populated rates
-  } = useRefreshPowerScrubCalc(initialData);
+  } = useRefreshPowerScrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
-  const [customFields, setCustomFields] = useState<CustomField[]>(
-    initialData?.customFields || []
-  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ Helper functions to get backend rates with fallbacks

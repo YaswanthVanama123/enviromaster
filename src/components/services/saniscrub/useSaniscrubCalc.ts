@@ -236,9 +236,41 @@ function buildActiveConfig(backendConfig: BackendSaniscrubConfig | null) {
   return activeConfig;
 }
 
-export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
+export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFields?: any[]) {
   // Get services context for fallback pricing data AND global contract months
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [SANISCRUB-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [SANISCRUB-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
 
   const [form, setForm] = useState<SaniscrubFormState>(() => {
     // ✅ Calculate if service is initially active (has fixtures)
@@ -1108,9 +1140,21 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     }
 
     // ✅ NEW: Apply custom override if set
-    const contractTotal = form.customContractTotal !== undefined
+    const contractTotalBeforeCustomFields = form.customContractTotal !== undefined
       ? form.customContractTotal
       : calculatedContractTotal;
+
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const contractTotal = contractTotalBeforeCustomFields + customFieldsTotal;
+
+    console.log(`📊 [SANISCRUB-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: contractTotalBeforeCustomFields.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalContractTotal: contractTotal.toFixed(2)
+    });
 
     // UI Values
     const monthlyTotal = form.customMonthlyRecurring !== undefined
@@ -1182,6 +1226,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
     form.customMonthlyRecurring,
     form.customFirstMonthPrice,
     form.customContractTotal,
+    // ✅ NEW: Re-calculate when custom fields change
+    calcFieldsTotal,
+    dollarFieldsTotal,
   ]);
 
   const quote: ServiceQuoteResult = useMemo(

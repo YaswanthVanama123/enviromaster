@@ -27,6 +27,12 @@ const sanicleanFrequencyLabels: Record<string, string> = {
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData, onRemove }) => {
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
   const {
     form,
     quote,
@@ -42,14 +48,10 @@ export const SanicleanForm: React.FC<
     // ✅ NEW: Dual frequency setters
     setMainServiceFrequency,
     setFacilityComponentsFrequency,
-  } = useSanicleanCalc(initialData);
+  } = useSanicleanCalc(initialData, customFields);
 
   const servicesContext = useServicesContextOptional();
 
-  // Custom fields state
-  const [customFields, setCustomFields] = useState<CustomField[]>(
-    initialData?.customFields || []
-  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

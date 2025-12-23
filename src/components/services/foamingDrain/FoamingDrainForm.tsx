@@ -30,14 +30,15 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   initialData,
   onRemove,
 }) => {
-  const { state, quote, updateField, reset, refreshConfig, isLoadingConfig, backendConfig } =
-    useFoamingDrainCalc(initialData);
-  const servicesContext = useServicesContextOptional();
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
+  const { state, quote, updateField, reset, refreshConfig, isLoadingConfig, backendConfig } =
+    useFoamingDrainCalc(initialData, customFields);
+  const servicesContext = useServicesContextOptional();
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

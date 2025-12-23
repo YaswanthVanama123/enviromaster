@@ -821,9 +821,41 @@ function calculatePerItemCharge(
   };
 }
 
-export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
+export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFields?: any[]) {
   // Get services context for fallback pricing data AND global contract months
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [SANICLEAN-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [SANICLEAN-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
 
   const [form, setForm] = useState<SanicleanFormState>(() => {
     // ✅ FIX: Only use global contract months if service starts with fixtures (is active)
@@ -1160,7 +1192,19 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
     // Custom overrides allow user to manually override any calculated value
     const effectiveWeeklyTotal = mappedForm.customWeeklyTotal ?? baseQuote.weeklyTotal;
     const effectiveMonthlyTotal = mappedForm.customMonthlyTotal ?? baseQuote.monthlyTotal;
-    const effectiveContractTotal = mappedForm.customContractTotal ?? baseQuote.contractTotal;
+    const contractTotalBeforeCustomFields = mappedForm.customContractTotal ?? baseQuote.contractTotal;
+
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const effectiveContractTotal = contractTotalBeforeCustomFields + customFieldsTotal;
+
+    console.log(`📊 [SANICLEAN-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: contractTotalBeforeCustomFields.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalContractTotal: effectiveContractTotal.toFixed(2)
+    });
 
     console.log(`🎯 [SaniClean Final Quote] Frequency: ${mappedForm.mainServiceFrequency}`, {
       baseQuote_weeklyTotal: baseQuote.weeklyTotal,
@@ -1180,9 +1224,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>) {
       ...baseQuote,
       weeklyTotal: effectiveWeeklyTotal,
       monthlyTotal: effectiveMonthlyTotal,
-      contractTotal: effectiveContractTotal,
+      contractTotal: effectiveContractTotal, // ✅ UPDATED: Total contract value with custom fields
     };
-  }, [form, backendConfig]);
+  }, [form, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 
   // Form update helpers
   const updateForm = (updates: Partial<SanicleanFormState>) => {

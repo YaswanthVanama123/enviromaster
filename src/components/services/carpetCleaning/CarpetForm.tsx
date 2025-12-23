@@ -21,13 +21,15 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData);
-  const servicesContext = useServicesContextOptional();
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
+  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData, customFields);
+  const servicesContext = useServicesContextOptional();
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

@@ -15,13 +15,15 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
   onRemove,
 }) => {
-  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useSanipodCalc(initialData);
-  const servicesContext = useServicesContextOptional();
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
+  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useSanipodCalc(initialData, customFields);
+  const servicesContext = useServicesContextOptional();
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

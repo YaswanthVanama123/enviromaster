@@ -12,13 +12,15 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
 > = ({ initialData, onRemove }) => {
-  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useStripWaxCalc(initialData);
-  const servicesContext = useServicesContextOptional();
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
+  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useStripWaxCalc(initialData, customFields);
+  const servicesContext = useServicesContextOptional();
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

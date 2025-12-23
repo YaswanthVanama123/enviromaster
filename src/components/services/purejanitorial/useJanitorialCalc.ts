@@ -243,7 +243,42 @@ function transformTieredPricing(backendTiers: any[] | undefined): TieredPricingT
   return transformedTiers.length > 0 ? transformedTiers : null;
 }
 
-export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
+export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, customFields?: any[]) {
+  // Get services context for fallback pricing data
+  const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [JANITORIAL-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [JANITORIAL-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
+
   const [form, setForm] = useState<JanitorialFormState>({
     ...DEFAULT_FORM_STATE,
     ...initialData,
@@ -252,9 +287,6 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
-  // Get services context for fallback pricing data
-  const servicesContext = useServicesContextOptional();
 
   // Helper function to update form with config data from new backend structure
   const updateFormWithConfig = (config: BackendJanitorialConfig) => {
@@ -677,6 +709,18 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly; // Already uses effective per-visit
     const finalContractTotal = form.customContractTotal ?? recurringContractTotal; // Already uses effective per-visit
 
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const contractTotalWithCustomFields = finalContractTotal + customFieldsTotal;
+
+    console.log(`📊 [JANITORIAL-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: finalContractTotal.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalContractTotal: contractTotalWithCustomFields.toFixed(2)
+    });
+
     const minimumChargePerVisit = form.serviceType === "oneTime"
       ? form.minHoursPerVisit * form.shortJobHourlyRate
       : form.minHoursPerVisit * form.baseHourlyRate;
@@ -688,10 +732,10 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       monthly: finalFirstMonth, // ✅ FIRST month (includes installation if applicable)
       firstMonth: finalFirstMonth, // ✅ First month total (regular + installation)
       recurringMonthly: finalRecurringMonthly, // ✅ Ongoing monthly (just regular, no installation)
-      annual: finalContractTotal, // ✅ CORRECTED: Uses proper first month + remaining months calculation
+      annual: contractTotalWithCustomFields, // ✅ UPDATED: Uses contract total with custom fields
       firstVisit: finalPerVisit,
       ongoingMonthly: finalRecurringMonthly, // ✅ Regular monthly recurring (no installation)
-      contractTotal: finalContractTotal, // ✅ CORRECTED: Total contract value
+      contractTotal: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
       minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
       breakdown: {
         manualHours,
@@ -709,6 +753,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
   }, [
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
     form,
+    // ✅ NEW: Re-calculate when custom fields change
+    calcFieldsTotal,
+    dollarFieldsTotal,
   ]);
 
   return {

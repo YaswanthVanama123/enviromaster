@@ -19,6 +19,12 @@ const formatNumber = (num: number | undefined): string => {
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
 > = ({ initialData, onRemove }) => {
+  // Custom fields state - initialize with initialData if available
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    initialData?.customFields || []
+  );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
   const {
     form,
     setForm,
@@ -29,13 +35,8 @@ export const RpmWindowsForm: React.FC<
     quote,
     refreshConfig,
     isLoadingConfig,
-  } = useRpmWindowsCalc(initialData);
+  } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
-  // Custom fields state - initialize with initialData if available
-  const [customFields, setCustomFields] = useState<CustomField[]>(
-    initialData?.customFields || []
-  );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

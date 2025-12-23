@@ -22,13 +22,14 @@ const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 export const JanitorialForm: React.FC<
   ServiceInitialData<JanitorialFormState>
 > = ({ initialData, onRemove }) => {
-  const { form, onChange, calc, refreshConfig, isLoadingConfig } = useJanitorialCalc(initialData);
-  const servicesContext = useServicesContextOptional();
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
+  const { form, onChange, calc, refreshConfig, isLoadingConfig } = useJanitorialCalc(initialData, customFields);
+  const servicesContext = useServicesContextOptional();
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

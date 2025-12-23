@@ -565,7 +565,8 @@ function calcAreaCost(
 }
 
 export function useRefreshPowerScrubCalc(
-  initial?: Partial<RefreshPowerScrubFormState>
+  initial?: Partial<RefreshPowerScrubFormState>,
+  customFields?: any[]
 ) {
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
@@ -573,6 +574,38 @@ export function useRefreshPowerScrubCalc(
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [REFRESH-POWER-SCRUB-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [REFRESH-POWER-SCRUB-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
 
   const [form, setForm] = useState<RefreshPowerScrubFormState>(() => {
     // Merge defaults with any initial data.
@@ -1172,6 +1205,18 @@ export function useRefreshPowerScrubCalc(
       contractTotal = monthlyRecurring * (form.contractMonths || 12);
     }
 
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
+
+    console.log(`📊 [REFRESH-POWER-SCRUB-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: contractTotal.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalContractTotal: contractTotalWithCustomFields.toFixed(2)
+    });
+
     const details: string[] = [];
     AREA_KEYS.forEach((area) => {
       const amount = areaTotals[area];
@@ -1214,12 +1259,12 @@ export function useRefreshPowerScrubCalc(
       serviceId: "refreshPowerScrub",
       displayName: "Refresh Power Scrub",
       perVisitPrice: rounded,
-      annualPrice: contractTotal,
+      annualPrice: contractTotalWithCustomFields, // ✅ UPDATED: Uses contract total with custom fields
       detailsBreakdown: details,
       monthlyRecurring,
-      contractTotal,
+      contractTotal: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
     };
-  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig]);
+  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 
   const setNotes = (notes: string) => {
     setForm((prev) => ({

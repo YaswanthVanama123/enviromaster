@@ -326,13 +326,45 @@ const DEFAULT_FORM_STATE: SanipodFormState = {
   isStandalone: true, // Default to standalone
 };
 
-export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
+export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFields?: any[]) {
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [SANIPOD-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [SANIPOD-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
 
   const [form, setForm] = useState<SanipodFormState>(() => {
     const baseForm = {
@@ -890,12 +922,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     // Adjusted annual/contract total
     const ongoingMonthlyCalc = weeksPerMonthCalc * adjustedPerVisit;
 
-    let adjustedAnnual: number;
+    let adjustedAnnualBeforeCustomFields: number;
     if (form.customAnnualPrice !== undefined) {
-      adjustedAnnual = form.customAnnualPrice;
+      adjustedAnnualBeforeCustomFields = form.customAnnualPrice;
     } else if (selectedFrequency === "oneTime") {
       // For oneTime: just the first visit
-      adjustedAnnual = adjustedFirstVisitTotal;
+      adjustedAnnualBeforeCustomFields = adjustedFirstVisitTotal;
     } else if (isVisitBasedFrequency) {
       // For quarterly, biannual, annual, bimonthly: use annual multipliers
       const visitsPerYear = activeConfig.annualFrequencies[selectedFrequency];
@@ -904,33 +936,48 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
       if (form.isNewInstall && installQty > 0) {
         // First visit is install, remaining visits are service
         const serviceVisits = Math.max(totalVisits - 1, 0);
-        adjustedAnnual = adjustedFirstVisitTotal + (serviceVisits * adjustedPerVisit);
+        adjustedAnnualBeforeCustomFields = adjustedFirstVisitTotal + (serviceVisits * adjustedPerVisit);
       } else {
         // No install, all visits are service
-        adjustedAnnual = totalVisits * adjustedPerVisit;
+        adjustedAnnualBeforeCustomFields = totalVisits * adjustedPerVisit;
       }
     } else {
       // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
       if (contractMonths <= 0) {
-        adjustedAnnual = 0;
+        adjustedAnnualBeforeCustomFields = 0;
       } else {
-        adjustedAnnual = adjustedMonthly + Math.max(contractMonths - 1, 0) * ongoingMonthlyCalc;
+        adjustedAnnualBeforeCustomFields = adjustedMonthly + Math.max(contractMonths - 1, 0) * ongoingMonthlyCalc;
       }
     }
+
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const adjustedAnnual = adjustedAnnualBeforeCustomFields + customFieldsTotal;
+    const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
+
+    console.log(`📊 [SANIPOD-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: contractTotal.toFixed(2),
+      adjustedBeforeCustomFields: adjustedAnnualBeforeCustomFields.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalAdjustedAnnual: adjustedAnnual.toFixed(2),
+      finalContractTotal: contractTotalWithCustomFields.toFixed(2)
+    });
 
     return {
       perVisit,
       monthly: firstMonth,
-      annual: contractTotal,
+      annual: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
       installCost,
       chosenServiceRule,
       weeklyPodServiceRed,
       firstVisit,
       ongoingMonthly: ongoingMonthlyCalc, // ✅ FIXED: Use adjusted monthly (with custom overrides)
-      contractTotal,
+      contractTotal: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
       adjustedPerVisit,
       adjustedMonthly,
-      adjustedAnnual,
+      adjustedAnnual, // ✅ UPDATED: Includes custom fields
       adjustedPodServiceTotal,
       adjustedBagsTotal,
       effectiveRatePerPod,
@@ -960,6 +1007,9 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>) {
     form.customPerVisitPrice,
     form.customMonthlyPrice,
     form.customAnnualPrice,
+    // ✅ NEW: Re-calculate when custom fields change
+    calcFieldsTotal,
+    dollarFieldsTotal,
   ]);
 
   return {

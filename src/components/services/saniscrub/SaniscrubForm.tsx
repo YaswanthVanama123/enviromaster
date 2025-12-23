@@ -28,13 +28,15 @@ const formatNumber = (num: number): string => {
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData);
-  const servicesContext = useServicesContextOptional();
-
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
+
+  // ✅ UPDATED: Pass customFields to calculation hook
+  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData, customFields);
+  const servicesContext = useServicesContextOptional();
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

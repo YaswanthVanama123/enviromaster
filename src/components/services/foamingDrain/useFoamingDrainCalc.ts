@@ -169,9 +169,41 @@ function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
-export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>) {
+export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>, customFields?: any[]) {
   // Get services context for fallback pricing data AND global contract months
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [FOAMING-DRAIN-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [FOAMING-DRAIN-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
 
   const [state, setState] = useState<FoamingDrainFormState>(() => {
     // ✅ Calculate if service is initially active (has drains)
@@ -810,11 +842,23 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     const contractTotal = round2(contractTotalRaw);
 
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
+
+    console.log(`📊 [FOAMING-DRAIN-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: contractTotal.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalContractTotal: contractTotalWithCustomFields.toFixed(2)
+    });
+
     // For compatibility with ServiceQuoteResult:
     // - monthlyRecurring  → Normal recurring month (NormalMonth)
     // - annualRecurring   → TOTAL CONTRACT for contractMonths
     const calculatedMonthlyRecurring = normalMonth;
-    const calculatedContractTotal = contractTotal;
+    const calculatedContractTotal = contractTotalWithCustomFields;  // ✅ UPDATED: Use contract total with custom fields
 
     // ---------- 9) Breakdown ----------
     const breakdown: FoamingDrainBreakdown = {
@@ -909,6 +953,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.customMonthlyRecurring,
     state.customFirstMonthPrice,
     state.customContractTotal,
+    // ✅ NEW: Re-calculate when custom fields change
+    calcFieldsTotal,
+    dollarFieldsTotal,
   ]);
 
   const updateField = <K extends keyof FoamingDrainFormState>(

@@ -131,13 +131,45 @@ function clampContractMonths(value: unknown): number {
   return num;
 }
 
-export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
+export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?: any[]) {
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+  const calcFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "calc" && field.calcValues?.right) {
+        const fieldTotal = parseFloat(field.calcValues.right) || 0;
+        return sum + fieldTotal;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [CARPET-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
+    return total;
+  }, [customFields]);
+
+  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+  const dollarFieldsTotal = useMemo(() => {
+    if (!customFields || customFields.length === 0) return 0;
+
+    const total = customFields.reduce((sum, field) => {
+      if (field.type === "dollar" && field.value) {
+        const fieldValue = parseFloat(field.value) || 0;
+        return sum + fieldValue;
+      }
+      return sum;
+    }, 0);
+
+    console.log(`💰 [CARPET-DOLLAR-FIELDS] Custom dollar fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "dollar").length} dollar fields)`);
+    return total;
+  }, [customFields]);
 
   const [form, setForm] = useState<CarpetFormState>(() => {
     const baseForm = {
@@ -920,6 +952,18 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       ? form.customContractTotal
       : calculatedContractTotal;
 
+    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
+
+    console.log(`📊 [CARPET-CONTRACT] Contract calculation breakdown:`, {
+      baseContractTotal: contractTotal.toFixed(2),
+      calcFieldsTotal: calcFieldsTotal.toFixed(2),
+      dollarFieldsTotal: dollarFieldsTotal.toFixed(2),
+      totalCustomFields: customFieldsTotal.toFixed(2),
+      finalContractTotal: contractTotalWithCustomFields.toFixed(2)
+    });
+
     // Per-Visit Effective = normal per-visit service price (no install, no trip)
     const perVisitEffective = perVisitCharge;
 
@@ -927,7 +971,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
       perVisitBase,
       perVisitCharge,
       monthlyTotal: monthlyRecurring,
-      contractTotal,
+      contractTotal: contractTotalWithCustomFields,  // ✅ UPDATED: Return contract total with custom fields added
       visitsPerYear,
       visitsPerMonth,
       perVisitTrip,
@@ -965,6 +1009,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>) {
     form.customFirstMonthPrice,
     form.customContractTotal,
     form.customInstallationFee,
+    // ✅ NEW: Re-calculate when custom fields change
+    calcFieldsTotal,
+    dollarFieldsTotal,
   ]);
 
   const quote: ServiceQuoteResult = useMemo(
