@@ -49,10 +49,16 @@ export interface RefreshAreaCalcState {
 
   /** Preset package calculation fields */
   presetQuantity: number; // Quantity for preset calculations
-  presetRate: number; // Rate per unit for preset calculations
+  presetRate: number | undefined | null; // Rate per unit (undefined = use backend default, null = user cleared it)
 
-  /** BOH specific */
-  kitchenSize: RefreshKitchenSize;
+  /** BOH specific - allows BOTH small/medium AND large simultaneously */
+  kitchenSize: RefreshKitchenSize; // For backward compatibility, tracks which was last edited
+  smallMediumQuantity: number; // Quantity of small/medium kitchens
+  smallMediumRate: number | undefined | null; // Rate for small/medium (undefined = backend default, null = cleared)
+  smallMediumCustomAmount: number; // Custom override for small/medium total
+  largeQuantity: number; // Quantity of large kitchens
+  largeRate: number | undefined | null; // Rate for large (undefined = backend default, null = cleared)
+  largeCustomAmount: number; // Custom override for large total
 
   /** Patio specific */
   patioMode: RefreshPatioMode;

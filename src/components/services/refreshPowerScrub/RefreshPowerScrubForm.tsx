@@ -282,10 +282,36 @@ export const RefreshPowerScrubForm: React.FC<
                 };
                 console.log(`🔄 [Patio SAVE DEBUG] Saving includePatioAddon:`, serviceData.includePatioAddon);
               } else if (key === 'boh') {
-                serviceData.plan = {
+                // ✅ NEW: Save both small/medium AND large kitchen details
+                serviceData.smallMediumQuantity = {
                   isDisplay: true,
-                  value: area.kitchenSize === 'large' ? 'Large' : 'Small/Medium',
+                  value: area.smallMediumQuantity || 0,
                   type: "text"
+                };
+                serviceData.smallMediumRate = {
+                  isDisplay: true,
+                  value: area.smallMediumRate ?? 0,
+                  type: "text"
+                };
+                serviceData.smallMediumTotal = {
+                  isDisplay: true,
+                  value: area.smallMediumCustomAmount > 0 ? area.smallMediumCustomAmount : ((area.smallMediumQuantity || 0) * (area.smallMediumRate ?? 0)),
+                  type: "calc"
+                };
+                serviceData.largeQuantity = {
+                  isDisplay: true,
+                  value: area.largeQuantity || 0,
+                  type: "text"
+                };
+                serviceData.largeRate = {
+                  isDisplay: true,
+                  value: area.largeRate ?? 0,
+                  type: "text"
+                };
+                serviceData.largeTotal = {
+                  isDisplay: true,
+                  value: area.largeCustomAmount > 0 ? area.largeCustomAmount : ((area.largeQuantity || 0) * (area.largeRate ?? 0)),
+                  type: "calc"
                 };
               }
             }
@@ -411,7 +437,7 @@ export const RefreshPowerScrubForm: React.FC<
                       type="number"
                       min="0"
                       step="1"
-                      value={area.presetRate || getPatioStandalone()}
+                      value={area.presetRate === null ? '' : (area.presetRate ?? getPatioStandalone())}
                       onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
                       style={{ width: '80px' }}
                       title="Patio base rate - editable"
@@ -423,7 +449,7 @@ export const RefreshPowerScrubForm: React.FC<
                       type="number"
                       min="0"
                       step="1"
-                      value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))}
+                      value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPatioStandalone())))}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0;
                         setAreaField(areaKey, "customAmount", value.toString());
@@ -432,7 +458,7 @@ export const RefreshPowerScrubForm: React.FC<
                         width: '90px',
                         backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
                       }}
-                      title={`Patio base total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))})`}
+                      title={`Patio base total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPatioStandalone())))})`}
                     />
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -460,25 +486,22 @@ export const RefreshPowerScrubForm: React.FC<
                     fontWeight: 'bold',
                     color: '#0066cc'
                   }}>
-                    Total: ${formatAmount((area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPatioStandalone()))) + (area.includePatioAddon ? getPatioUpsell() : 0))}
+                    Total: ${formatAmount((area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPatioStandalone())))) + (area.includePatioAddon ? getPatioUpsell() : 0))}
                   </div>
                 </div>
               </div>
             )}
             {areaKey === "boh" && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* Small/Medium Kitchen Calculation */}
+                {/* ✅ NEW: Small/Medium Kitchen Row - Always visible, independent */}
                 <div className="rps-inline">
                   <span className="rps-label" style={{ fontSize: '11px' }}>S/M:</span>
                   <input
                     className="rps-line rps-num"
                     type="number"
                     min="0"
-                    value={form.boh.kitchenSize === "smallMedium" ? (area.presetQuantity || 1) : 0}
-                    onChange={(e) => {
-                      setAreaField(areaKey, "presetQuantity", e.target.value);
-                      setAreaField(areaKey, "kitchenSize", "smallMedium");
-                    }}
+                    value={area.smallMediumQuantity || 0}
+                    onChange={(e) => setAreaField(areaKey, "smallMediumQuantity", e.target.value)}
                     style={{ width: '50px' }}
                     title="Small/Medium quantity - editable"
                   />
@@ -489,11 +512,8 @@ export const RefreshPowerScrubForm: React.FC<
                     type="number"
                     min="0"
                     step="1"
-                    value={form.boh.kitchenSize === "smallMedium" ? (area.presetRate || getKitchenSmallMed()) : getKitchenSmallMed()}
-                    onChange={(e) => {
-                      setAreaField(areaKey, "presetRate", e.target.value);
-                      setAreaField(areaKey, "kitchenSize", "smallMedium");
-                    }}
+                    value={area.smallMediumRate === null ? '' : (area.smallMediumRate ?? getKitchenSmallMed())}
+                    onChange={(e) => setAreaField(areaKey, "smallMediumRate", e.target.value)}
                     style={{ width: '80px' }}
                     title="Small/Medium Kitchen rate - editable"
                   />
@@ -504,33 +524,27 @@ export const RefreshPowerScrubForm: React.FC<
                     type="number"
                     min="0"
                     step="1"
-                    value={form.boh.kitchenSize === "smallMedium" ?
-                      (area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getKitchenSmallMed()))) :
-                      0}
+                    value={area.smallMediumCustomAmount > 0 ? area.smallMediumCustomAmount : ((area.smallMediumQuantity || 0) * (area.smallMediumRate === null ? 0 : (area.smallMediumRate ?? getKitchenSmallMed())))}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value) || 0;
-                      setAreaField(areaKey, "customAmount", value.toString());
-                      setAreaField(areaKey, "kitchenSize", "smallMedium");
+                      setAreaField(areaKey, "smallMediumCustomAmount", value.toString());
                     }}
                     style={{
                       width: '90px',
-                      backgroundColor: area.customAmount > 0 && form.boh.kitchenSize === "smallMedium" ? '#fffacd' : 'white'
+                      backgroundColor: area.smallMediumCustomAmount > 0 ? '#fffacd' : 'white'
                     }}
-                    title={`Small/Medium Kitchen total - editable (default: $${formatAmount(getKitchenSmallMed())})`}
+                    title={`Small/Medium Kitchen total - editable (default: $${formatAmount((area.smallMediumQuantity || 0) * (area.smallMediumRate === null ? 0 : (area.smallMediumRate ?? getKitchenSmallMed())))})`}
                   />
                 </div>
-                {/* Large Kitchen Calculation */}
+                {/* ✅ NEW: Large Kitchen Row - Always visible, independent */}
                 <div className="rps-inline">
                   <span className="rps-label" style={{ fontSize: '11px' }}>Large:</span>
                   <input
                     className="rps-line rps-num"
                     type="number"
                     min="0"
-                    value={form.boh.kitchenSize === "large" ? (area.presetQuantity || 1) : 0}
-                    onChange={(e) => {
-                      setAreaField(areaKey, "presetQuantity", e.target.value);
-                      setAreaField(areaKey, "kitchenSize", "large");
-                    }}
+                    value={area.largeQuantity || 0}
+                    onChange={(e) => setAreaField(areaKey, "largeQuantity", e.target.value)}
                     style={{ width: '50px' }}
                     title="Large quantity - editable"
                   />
@@ -541,11 +555,8 @@ export const RefreshPowerScrubForm: React.FC<
                     type="number"
                     min="0"
                     step="1"
-                    value={form.boh.kitchenSize === "large" ? (area.presetRate || getKitchenLarge()) : getKitchenLarge()}
-                    onChange={(e) => {
-                      setAreaField(areaKey, "presetRate", e.target.value);
-                      setAreaField(areaKey, "kitchenSize", "large");
-                    }}
+                    value={area.largeRate === null ? '' : (area.largeRate ?? getKitchenLarge())}
+                    onChange={(e) => setAreaField(areaKey, "largeRate", e.target.value)}
                     style={{ width: '80px' }}
                     title="Large Kitchen rate - editable"
                   />
@@ -556,19 +567,16 @@ export const RefreshPowerScrubForm: React.FC<
                     type="number"
                     min="0"
                     step="1"
-                    value={form.boh.kitchenSize === "large" ?
-                      (area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getKitchenLarge()))) :
-                      0}
+                    value={area.largeCustomAmount > 0 ? area.largeCustomAmount : ((area.largeQuantity || 0) * (area.largeRate ?? getKitchenLarge()))}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value) || 0;
-                      setAreaField(areaKey, "customAmount", value.toString());
-                      setAreaField(areaKey, "kitchenSize", "large");
+                      setAreaField(areaKey, "largeCustomAmount", value.toString());
                     }}
                     style={{
                       width: '90px',
-                      backgroundColor: area.customAmount > 0 && form.boh.kitchenSize === "large" ? '#fffacd' : 'white'
+                      backgroundColor: area.largeCustomAmount > 0 ? '#fffacd' : 'white'
                     }}
-                    title={`Large Kitchen total - editable (default: $${formatAmount(getKitchenLarge())})`}
+                    title={`Large Kitchen total - editable (default: $${formatAmount((area.largeQuantity || 0) * (area.largeRate ?? getKitchenLarge()))})`}
                   />
                 </div>
               </div>
@@ -591,7 +599,7 @@ export const RefreshPowerScrubForm: React.FC<
                   type="number"
                   min="0"
                   step="1"
-                  value={area.presetRate || getPresetAmount(areaKey)}
+                  value={area.presetRate === null ? '' : (area.presetRate ?? getPresetAmount(areaKey))}
                   onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
                   style={{ width: '80px' }}
                   title="Rate - editable"
@@ -603,7 +611,7 @@ export const RefreshPowerScrubForm: React.FC<
                   type="number"
                   min="0"
                   step="1"
-                  value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate || getPresetAmount(areaKey)))}
+                  value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate ?? getPresetAmount(areaKey)))}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value) || 0;
                     setAreaField(areaKey, "customAmount", value.toString());
@@ -612,7 +620,7 @@ export const RefreshPowerScrubForm: React.FC<
                     width: '90px',
                     backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
                   }}
-                  title={`Total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate || getPresetAmount(areaKey)))})`}
+                  title={`Total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate ?? getPresetAmount(areaKey)))})`}
                 />
               </div>
             )}

@@ -221,8 +221,14 @@ function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null
     sqFtFixedFee: backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE,
     customAmount: 0,
     presetQuantity: 1, // Default quantity for preset calculations
-    presetRate: 0, // Will be populated from backend config based on area
+    presetRate: undefined, // ✅ FIXED: Use undefined so ?? operator falls back to backend defaults
     kitchenSize: "smallMedium",
+    smallMediumQuantity: 0, // ✅ NEW: Separate tracking for small/medium kitchens
+    smallMediumRate: undefined, // ✅ NEW: Use undefined to fall back to backend default
+    smallMediumCustomAmount: 0, // ✅ NEW: Custom override for small/medium
+    largeQuantity: 0, // ✅ NEW: Separate tracking for large kitchens
+    largeRate: undefined, // ✅ NEW: Use undefined to fall back to backend default
+    largeCustomAmount: 0, // ✅ NEW: Custom override for large
     patioMode: "standalone",
     includePatioAddon: false,
     frequencyLabel: "",
@@ -272,8 +278,14 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   sqFtFixedFee: FALLBACK_SQFT_FIXED_FEE, // $200 fixed fee default
   customAmount: 0,
   presetQuantity: 1, // Default quantity for preset calculations
-  presetRate: 0, // Will be populated from backend config based on area
+  presetRate: undefined, // ✅ FIXED: Use undefined so ?? operator falls back to backend defaults
   kitchenSize: "smallMedium",
+  smallMediumQuantity: 0, // ✅ NEW: Separate tracking for small/medium kitchens
+  smallMediumRate: undefined, // ✅ NEW: Use undefined to fall back to backend default
+  smallMediumCustomAmount: 0, // ✅ NEW: Custom override for small/medium
+  largeQuantity: 0, // ✅ NEW: Separate tracking for large kitchens
+  largeRate: undefined, // ✅ NEW: Use undefined to fall back to backend default
+  largeCustomAmount: 0, // ✅ NEW: Custom override for large
   patioMode: "standalone",
   includePatioAddon: false, // Default to no add-on
   frequencyLabel: "",
@@ -307,6 +319,7 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "workers",
   "hours",
   "hourlyRate",
+  "workerRate",
   "insideSqFt",
   "outsideSqFt",
   "insideRate",
@@ -316,6 +329,12 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "contractMonths",
   "presetQuantity",
   "presetRate",
+  "smallMediumQuantity", // ✅ NEW: BOH small/medium fields
+  "smallMediumRate",
+  "smallMediumCustomAmount",
+  "largeQuantity", // ✅ NEW: BOH large fields
+  "largeRate",
+  "largeCustomAmount",
 ];
 
 /** Per Worker rule:
@@ -490,10 +509,22 @@ function calcPresetPackage(
       defaultRate = config.areaSpecificPricing.frontOfHouse;
       break;
     case "boh":
-      defaultRate = state.kitchenSize === "large"
-        ? config.areaSpecificPricing.kitchen.large
-        : config.areaSpecificPricing.kitchen.smallMedium;
-      break;
+      // ✅ NEW: Calculate BOTH small/medium AND large kitchens, sum them together
+      const smallMediumQty = state.smallMediumQuantity || 0;
+      // ✅ Handle null (user cleared) vs undefined (use default)
+      const smallMediumRate = state.smallMediumRate === null ? 0 : (state.smallMediumRate ?? config.areaSpecificPricing.kitchen.smallMedium);
+      const smallMediumTotal = state.smallMediumCustomAmount > 0
+        ? state.smallMediumCustomAmount
+        : (smallMediumQty * smallMediumRate);
+
+      const largeQty = state.largeQuantity || 0;
+      // ✅ Handle null (user cleared) vs undefined (use default)
+      const largeRate = state.largeRate === null ? 0 : (state.largeRate ?? config.areaSpecificPricing.kitchen.large);
+      const largeTotal = state.largeCustomAmount > 0
+        ? state.largeCustomAmount
+        : (largeQty * largeRate);
+
+      return smallMediumTotal + largeTotal;
     case "walkway":
     case "other":
     default:
@@ -503,7 +534,8 @@ function calcPresetPackage(
 
   // ✅ Use custom quantity and rate when available, otherwise use defaults
   const quantity = (state.presetQuantity && state.presetQuantity > 0) ? state.presetQuantity : 1;
-  const rate = (state.presetRate && state.presetRate > 0) ? state.presetRate : defaultRate;
+  // ✅ Handle null (user cleared) vs undefined (use default)
+  const rate = state.presetRate === null ? 0 : (state.presetRate ?? defaultRate);
 
   // ✅ Calculate base amount
   let baseAmount = quantity * rate;
@@ -966,14 +998,22 @@ export function useRefreshPowerScrubCalc(
       let originalValue: any = current[field];
 
       if (numericAreaFields.includes(field)) {
-        const n = parseFloat(raw);
-        value = Number.isFinite(n) ? n : 0;
+        // ✅ FIXED: Distinguish between "never set" (undefined) and "user cleared" (null)
+        if (raw === '' || raw === null) {
+          value = null; // User explicitly cleared the field - show empty
+        } else if (raw === undefined) {
+          value = undefined; // Never been set - use backend default
+        } else {
+          const n = parseFloat(raw);
+          value = Number.isFinite(n) ? n : null;
+        }
         originalValue = typeof originalValue === 'number' ? originalValue : 0;
 
-        // ✅ Log price override for numeric pricing fields
-        if (value !== originalValue && value > 0 &&
+        // ✅ Log price override for numeric pricing fields (only if value is a valid number)
+        if (value !== undefined && value !== null && value !== originalValue && value > 0 &&
             ['workers', 'hours', 'hourlyRate', 'workerRate', 'insideSqFt', 'outsideSqFt',
-             'insideRate', 'outsideRate', 'sqFtFixedFee', 'customAmount'].includes(field as string)) {
+             'insideRate', 'outsideRate', 'sqFtFixedFee', 'customAmount', 'presetRate',
+             'smallMediumRate', 'largeRate'].includes(field as string)) {
 
           // Convert area key to readable name
           const areaName = area === 'boh' ? 'Back of House' :
