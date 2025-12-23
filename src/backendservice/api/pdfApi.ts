@@ -562,11 +562,14 @@ export const pdfApi = {
   },
 
   /**
-   * ✅ NEW: Download version PDF as blob
+   * ✅ NEW: Download version PDF as blob (with optional watermark)
+   * @param versionId Version PDF ID
+   * @param watermark Optional watermark flag (true = add DRAFT watermark, false = normal PDF)
    */
-  async downloadVersionPdf(versionId: string): Promise<Blob> {
+  async downloadVersionPdf(versionId: string, watermark = false): Promise<Blob> {
+    const watermarkParam = watermark ? '?watermark=true' : '';
     const res = await axios.get(
-      `${API_BASE_URL}/api/versions/${versionId}/download`,
+      `${API_BASE_URL}/api/versions/${versionId}/download${watermarkParam}`,
       {
         responseType: "blob",
       }
@@ -592,6 +595,16 @@ export const pdfApi = {
    */
   getPdfDownloadUrl(documentId: string): string {
     return `${API_BASE_URL}/api/pdf/viewer/download/${documentId}`;
+  },
+
+  /**
+   * ✅ NEW: Get version PDF view URL (with optional watermark)
+   * @param versionId Version PDF ID
+   * @param watermark Optional watermark flag (true = add DRAFT watermark, false = normal PDF)
+   */
+  getVersionPdfViewUrl(versionId: string, watermark = false): string {
+    const watermarkParam = watermark ? '?watermark=true' : '';
+    return `${API_BASE_URL}/api/versions/version/${versionId}/view${watermarkParam}`;
   },
 
   // ---- NEW SAVED-FILES API (Lazy Loading) ----

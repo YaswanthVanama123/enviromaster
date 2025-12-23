@@ -120,13 +120,15 @@ interface FileRowProps {
   isSelected: boolean;
   statusChangeLoading: boolean;
   isInAdminContext: boolean;
+  watermarkEnabled: boolean; // ✅ NEW: Current watermark state for this file
   onToggleSelection: (fileId: string) => void;
-  onView: (file: SavedFileListItem) => void;
-  onDownload: (file: SavedFileListItem) => void;
+  onView: (file: SavedFileListItem, watermark: boolean) => void; // ✅ UPDATED: Added watermark parameter
+  onDownload: (file: SavedFileListItem, watermark: boolean) => void; // ✅ UPDATED: Added watermark parameter
   onEmail: (file: SavedFileListItem) => void;
   onZohoUpload: (file: SavedFileListItem) => void;
   onEdit: (file: SavedFileListItem) => void;
   onStatusChange: (file: SavedFileListItem, newStatus: string) => void;
+  onWatermarkToggle: (fileId: string, checked: boolean) => void; // ✅ NEW: Handle watermark toggle
   onDelete: (type: 'file' | 'folder', id: string, title: string) => void;
 }
 
@@ -135,6 +137,7 @@ const FileRow = memo(({
   isSelected,
   statusChangeLoading,
   isInAdminContext,
+  watermarkEnabled, // ✅ NEW
   onToggleSelection,
   onView,
   onDownload,
@@ -142,12 +145,13 @@ const FileRow = memo(({
   onZohoUpload,
   onEdit,
   onStatusChange,
+  onWatermarkToggle, // ✅ NEW
   onDelete
 }: FileRowProps) => {
   // ✅ OPTIMIZED: Memoized event handlers with useCallback
   const handleToggle = useCallback(() => onToggleSelection(file.id), [file.id, onToggleSelection]);
-  const handleView = useCallback(() => onView(file), [file, onView]);
-  const handleDownload = useCallback(() => onDownload(file), [file, onDownload]);
+  const handleView = useCallback(() => onView(file, watermarkEnabled), [file, watermarkEnabled, onView]); // ✅ UPDATED
+  const handleDownload = useCallback(() => onDownload(file, watermarkEnabled), [file, watermarkEnabled, onDownload]); // ✅ UPDATED
   const handleEmail = useCallback(() => onEmail(file), [file, onEmail]);
   const handleZohoUpload = useCallback(() => onZohoUpload(file), [file, onZohoUpload]);
   const handleEdit = useCallback(() => onEdit(file), [file, onEdit]);
@@ -155,6 +159,9 @@ const FileRow = memo(({
   const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     onStatusChange(file, e.target.value);
   }, [file, onStatusChange]);
+  const handleWatermarkToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onWatermarkToggle(file.id, e.target.checked);
+  }, [file.id, onWatermarkToggle]); // ✅ NEW
 
   // ✅ OPTIMIZED: Memoize computed values to prevent recalculation
   const canEdit = useMemo(() =>
@@ -266,6 +273,42 @@ const FileRow = memo(({
           </span>
         )}
       </div>
+
+      {/* ✅ NEW: Watermark toggle (only for version PDFs) */}
+      {file.fileType === 'version_pdf' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          background: watermarkEnabled ? 'rgba(59, 130, 246, 0.1)' : '#f3f4f6',
+          border: `1px solid ${watermarkEnabled ? '#60a5fa' : '#d1d5db'}`,
+          borderRadius: '6px',
+          marginRight: '12px',
+          transition: 'all 0.2s'
+        }}>
+          <input
+            type="checkbox"
+            checked={watermarkEnabled}
+            onChange={handleWatermarkToggle}
+            style={{
+              width: '14px',
+              height: '14px',
+              cursor: 'pointer',
+              accentColor: '#3b82f6'
+            }}
+          />
+          <span style={{
+            fontSize: '11px',
+            fontWeight: '500',
+            color: watermarkEnabled ? '#2563eb' : '#6b7280',
+            whiteSpace: 'nowrap',
+            userSelect: 'none'
+          }}>
+            {watermarkEnabled ? '💧 Draft' : '✨ Normal'}
+          </span>
+        </div>
+      )}
 
       {/* File actions */}
       <div style={{ display: 'flex', gap: '6px' }}>
@@ -428,10 +471,23 @@ export default function SavedFilesAgreements() {
   // ✅ NEW: Status change state
   const [statusChangeLoading, setStatusChangeLoading] = useState<Record<string, boolean>>({});
 
+  // ✅ NEW: Watermark state for each file (only applies to version PDFs)
+  const [fileWatermarkStates, setFileWatermarkStates] = useState<Map<string, boolean>>(new Map());
+
   const navigate = useNavigate();
   const location = useLocation();
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
+
+  // ✅ NEW: Watermark toggle handler
+  const handleWatermarkToggle = useCallback((fileId: string, checked: boolean) => {
+    setFileWatermarkStates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(fileId, checked);
+      return newMap;
+    });
+    console.log(`💧 [WATERMARK] Toggled watermark for file ${fileId}: ${checked}`);
+  }, []);
 
   // ✅ PERFORMANCE: Memoized callback for status changes
   const handleStatusChange = useCallback(async (file: SavedFileListItem, newStatus: string) => {
@@ -716,7 +772,7 @@ export default function SavedFilesAgreements() {
   const isAgreementExpanded = useCallback((agreementId: string) => expandedAgreements.has(agreementId), [expandedAgreements]);
 
   // ✅ PERFORMANCE: Memoized file action handlers
-  const handleView = useCallback(async (file: SavedFileListItem) => {
+  const handleView = useCallback(async (file: SavedFileListItem, watermark: boolean) => {
     try {
       // For main PDF files, load details; for attached files, navigate directly
       if (file.fileType === 'main_pdf') {
@@ -737,13 +793,14 @@ export default function SavedFilesAgreements() {
         documentType = 'attached-file';
       }
 
-      console.log(`📄 [VIEW] Navigating to PDF viewer: ${file.id} (type: ${documentType})`);
+      console.log(`📄 [VIEW] Navigating to PDF viewer: ${file.id} (type: ${documentType}, watermark: ${watermark})`);
 
       navigate("/pdf-viewer", {
         state: {
           documentId: file.id,
           fileName: file.title,
           documentType: documentType, // ✅ Updated: Specify document type for correct API
+          watermark: watermark, // ✅ NEW: Pass watermark state to PDFViewer
           originalReturnPath: returnPath,
         },
       });
@@ -755,7 +812,7 @@ export default function SavedFilesAgreements() {
     }
   }, [navigate, returnPath]);
 
-  const handleDownload = useCallback(async (file: SavedFileListItem) => {
+  const handleDownload = useCallback(async (file: SavedFileListItem, watermark: boolean) => {
     try {
       let blob: Blob;
 
@@ -763,8 +820,9 @@ export default function SavedFilesAgreements() {
       if (file.fileType === 'main_pdf') {
         blob = await pdfApi.downloadPdf(file.id);
       } else if (file.fileType === 'version_pdf') {
-        // ✅ FIX: Use version PDF API for version PDFs
-        blob = await pdfApi.downloadVersionPdf(file.id);
+        // ✅ FIX: Use version PDF API for version PDFs with watermark parameter
+        console.log(`📥 [DOWNLOAD] Downloading version PDF ${file.id} with watermark: ${watermark}`);
+        blob = await pdfApi.downloadVersionPdf(file.id, watermark); // ✅ NEW: Pass watermark flag
       } else if (file.fileType === 'version_log') {
         // ✅ Download version log files using version log API
         blob = await pdfApi.downloadVersionLog(file.id);
@@ -788,7 +846,13 @@ export default function SavedFilesAgreements() {
         // For PDFs, add .pdf extension if not present
         const extension = '.pdf';
         const baseFileName = file.fileName || "EnviroMaster_Document";
-        safeName = baseFileName.endsWith('.pdf') ? baseFileName : baseFileName.replace(/[^\w\-]+/g, "_") + extension;
+        // ✅ NEW: Add _DRAFT suffix if watermark is enabled for version PDFs
+        if (file.fileType === 'version_pdf' && watermark) {
+          const nameWithoutExt = baseFileName.replace('.pdf', '');
+          safeName = nameWithoutExt + '_DRAFT' + extension;
+        } else {
+          safeName = baseFileName.endsWith('.pdf') ? baseFileName : baseFileName.replace(/[^\w\-]+/g, "_") + extension;
+        }
       }
       a.download = safeName;
       document.body.appendChild(a);
@@ -1436,6 +1500,7 @@ export default function SavedFilesAgreements() {
                       isSelected={selectedFiles[file.id] || false}
                       statusChangeLoading={statusChangeLoading[file.id] || false}
                       isInAdminContext={isInAdminContext}
+                      watermarkEnabled={fileWatermarkStates.get(file.id) || false} // ✅ NEW: Pass watermark state
                       onToggleSelection={toggleFileSelection}
                       onView={handleView}
                       onDownload={handleDownload}
@@ -1443,6 +1508,7 @@ export default function SavedFilesAgreements() {
                       onZohoUpload={handleZohoUpload}
                       onEdit={handleEdit}
                       onStatusChange={handleStatusChange}
+                      onWatermarkToggle={handleWatermarkToggle} // ✅ NEW: Pass watermark toggle handler
                       onDelete={handleDelete}
                     />
                   ))}

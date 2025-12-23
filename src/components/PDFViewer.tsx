@@ -13,6 +13,7 @@ type LocationState = {
   documentId?: string;
   fileName?: string;
   documentType?: DocumentType; // ✅ NEW: Specify document type for correct API selection
+  watermark?: boolean; // ✅ NEW: Initial watermark preference from file list
   fromEdit?: boolean; // Added to track if coming from edit
   originalReturnPath?: string; // Added to track original source
   originalReturnState?: any; // Added to track original state
@@ -25,6 +26,7 @@ export default function PDFViewer() {
     documentId,
     fileName,
     documentType, // ✅ NEW: Get document type from navigation state
+    watermark: initialWatermark = false, // ✅ NEW: Get initial watermark preference
     fromEdit = false,
     originalReturnPath,
     originalReturnState
@@ -36,6 +38,8 @@ export default function PDFViewer() {
   const [errorDetails, setErrorDetails] = useState<any>(null); // ✅ NEW: Store detailed error info
   const [downloading, setDownloading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+  // ✅ NEW: Watermark toggle state (only for version PDFs) - initialize with value from file list
+  const [showWatermark, setShowWatermark] = useState(initialWatermark);
 
   useEffect(() => {
     if (!documentId) {
@@ -69,9 +73,9 @@ export default function PDFViewer() {
           blob = await pdfApi.downloadPdf(documentId);
           detectedType = 'agreement';
         } else if (documentType === 'version') {
-          // Use version API
-          console.log(`📝 [PDF-VIEWER] Using version API for document ${documentId}`);
-          blob = await pdfApi.downloadVersionPdf(documentId); // ✅ FIX: Use pdfApi instead of versionApi
+          // Use version API with watermark parameter
+          console.log(`📝 [PDF-VIEWER] Using version API for document ${documentId} with watermark=${showWatermark}`);
+          blob = await pdfApi.downloadVersionPdf(documentId, showWatermark); // ✅ NEW: Pass watermark flag
           detectedType = 'version';
         } else {
           // 🔍 AUTO-DETECTION: Try different APIs until one works
@@ -86,9 +90,9 @@ export default function PDFViewer() {
           } catch (agreementErr: any) {
             if (agreementErr.response?.status === 404) {
               try {
-                // Try version API
-                console.log(`🔍 [PDF-VIEWER] Trying version API...`);
-                blob = await pdfApi.downloadVersionPdf(documentId); // ✅ FIX: Use pdfApi instead of versionApi
+                // Try version API with watermark parameter
+                console.log(`🔍 [PDF-VIEWER] Trying version API with watermark=${showWatermark}...`);
+                blob = await pdfApi.downloadVersionPdf(documentId, showWatermark); // ✅ NEW: Pass watermark flag
                 detectedType = 'version';
                 console.log(`✅ [PDF-VIEWER] Auto-detected as version document`);
               } catch (versionErr: any) {
@@ -158,7 +162,7 @@ export default function PDFViewer() {
         window.URL.revokeObjectURL(pdfUrl);
       }
     };
-  }, [documentId]);
+  }, [documentId, showWatermark]); // ✅ NEW: Refetch when watermark toggles
 
   const handleEdit = async () => {
     // Pass original navigation context to edit form
@@ -202,8 +206,8 @@ export default function PDFViewer() {
       let blob: Blob;
 
       if (documentType === 'version') {
-        // Use version API for version PDFs
-        blob = await pdfApi.downloadVersionPdf(documentId); // ✅ FIX: Use pdfApi instead of versionApi
+        // Use version API for version PDFs with watermark parameter
+        blob = await pdfApi.downloadVersionPdf(documentId, showWatermark); // ✅ NEW: Pass watermark flag
       } else if (documentType === 'manual-upload') {
         // Use manual upload API
         blob = await manualUploadApi.downloadFile(documentId);
@@ -358,6 +362,23 @@ export default function PDFViewer() {
           <h2 className="pdf-viewer__title">{fileName || "Document"}</h2>
         </div>
         <div className="pdf-viewer__toolbar-right">
+          {/* ✅ NEW: Watermark toggle (only for version PDFs) */}
+          {documentType === 'version' && (
+            <div className="pdf-viewer__watermark-toggle">
+              <label htmlFor="watermark-checkbox" className="watermark-toggle-label">
+                <input
+                  id="watermark-checkbox"
+                  type="checkbox"
+                  checked={showWatermark}
+                  onChange={(e) => setShowWatermark(e.target.checked)}
+                  className="watermark-checkbox"
+                />
+                <span className="watermark-label-text">
+                  {showWatermark ? "💧 Draft Watermark" : "✨ Normal View"}
+                </span>
+              </label>
+            </div>
+          )}
           <button
             onClick={handleEdit}
             className="pdf-viewer__btn pdf-viewer__btn--edit"
