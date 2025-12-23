@@ -750,21 +750,26 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
       let baseRate = 0;
       let minimumAmount = 0;
 
-      if (freq === "monthly") {
+      // ✅ UPDATED: Rate selection based on frequency
+      // - One-time, Weekly, Bi-weekly, 2×/month, Monthly → Monthly rate
+      // - Bi-monthly → Bi-monthly rate
+      // - Quarterly → Quarterly rate
+      // - Bi-annual, Annual → Quarterly rate
+      if (freq === "oneTime" || freq === "weekly" || freq === "biweekly" ||
+          freq === "twicePerMonth" || freq === "monthly") {
+        // One-time, weekly, bi-weekly, 2×/month, monthly: use monthly rate
         baseRate = form.fixtureRateMonthly; // ✅ USE FORM VALUE (can be edited by user)
         minimumAmount = form.minimumMonthly; // ✅ USE FORM VALUE (can be edited by user)
       } else if (freq === "bimonthly") {
+        // Bi-monthly: use its own rate
         baseRate = form.fixtureRateBimonthly; // ✅ USE FORM VALUE
         minimumAmount = form.minimumBimonthly; // ✅ USE FORM VALUE
       } else if (freq === "quarterly") {
+        // Quarterly: use its own rate
         baseRate = form.fixtureRateQuarterly; // ✅ USE FORM VALUE
         minimumAmount = activeConfig.minimums.quarterly;
-      } else if (freq === "twicePerMonth") {
-        // 2x/month uses monthly rate as base
-        baseRate = form.fixtureRateMonthly; // ✅ USE FORM VALUE
-        minimumAmount = form.minimumMonthly; // ✅ USE FORM VALUE
       } else {
-        // For other frequencies (biannual, annual), use quarterly rate as fallback
+        // Bi-annual, Annual: use quarterly rate
         baseRate = form.fixtureRateQuarterly; // ✅ USE FORM VALUE
         minimumAmount = activeConfig.minimums.quarterly;
       }

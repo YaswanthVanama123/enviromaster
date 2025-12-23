@@ -128,14 +128,21 @@ export const SaniscrubForm: React.FC<
 
   // Headline per-fixture rate for the UI row
   const displayFixtureRate = (() => {
-    // ✅ FIXED: Use backend rates from form state instead of hardcoded values
-    if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
-      return form.fixtureRateMonthly; // Use backend monthly rate
+    // ✅ UPDATED: Rate selection based on frequency (matches calculation logic)
+    // - One-time, Weekly, Bi-weekly, 2×/month, Monthly → Monthly rate
+    // - Bi-monthly → Bi-monthly rate
+    // - Quarterly → Quarterly rate
+    // - Bi-annual, Annual → Quarterly rate
+    if (form.frequency === "oneTime" || form.frequency === "weekly" ||
+        form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
+        form.frequency === "monthly") {
+      return form.fixtureRateMonthly; // Use monthly rate
     }
     if (form.frequency === "bimonthly") {
-      return form.fixtureRateBimonthly; // Use backend bimonthly rate
+      return form.fixtureRateBimonthly; // Use bi-monthly rate
     }
-    return form.fixtureRateQuarterly; // Use backend quarterly rate (for quarterly, biannual, annual)
+    // quarterly, biannual, annual use quarterly rate
+    return form.fixtureRateQuarterly;
   })();
 
   // For the "= ___" box in the Restroom Fixtures row:
@@ -256,13 +263,20 @@ export const SaniscrubForm: React.FC<
 
   //Get the corresponding rate field name for onChange
   const fixtureRateFieldName = (() => {
-    if (form.frequency === "monthly" || form.frequency === "twicePerMonth") {
+    // ✅ UPDATED: Rate field selection based on frequency (matches calculation logic)
+    // - One-time, Weekly, Bi-weekly, 2×/month, Monthly → Monthly rate field
+    // - Bi-monthly → Bi-monthly rate field
+    // - Quarterly → Quarterly rate field
+    // - Bi-annual, Annual → Quarterly rate field
+    if (form.frequency === "oneTime" || form.frequency === "weekly" ||
+        form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
+        form.frequency === "monthly") {
       return "fixtureRateMonthly";
     }
     if (form.frequency === "bimonthly") {
       return "fixtureRateBimonthly";
     }
-    return "fixtureRateQuarterly";
+    return "fixtureRateQuarterly"; // quarterly, biannual, annual
   })();
 
   return (
