@@ -570,32 +570,6 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div> */}
 
-      {/* Install Fee + First Visit */}
-      <div className="svc-row svc-row-charge">
-        <label>Installation + First Visit</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-              min="0"
-              readOnly
-              step="0.01"
-              name="customInstallationFee"
-              value={getDisplayValue(
-                'customInstallationFee',
-                form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Install Type */}
       <div className="svc-row">
         <label>Install Type</label>
@@ -621,6 +595,10 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
+
+
+
+
       {/* Installation Multipliers */}
       <div className="svc-row">
         <label>Install Multiplier (Dirty)</label>
@@ -629,8 +607,6 @@ export const RpmWindowsForm: React.FC<
             <input
               name="installMultiplierFirstTime"
               type="number"
-        min="0"
-          min="0"
             min="0"
               step="0.1"
               value={form.installMultiplierFirstTime}
@@ -682,8 +658,35 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div> */}
 
+
+            {/* Install Fee + First Visit */}
+      <div className="svc-row svc-row-charge">
+        <label>Installation + First Visit</label>
+        <div className="svc-row-right">
+          <div className="svc-dollar">
+            <span>$</span>
+            <input
+              className="svc-in"
+              type="number"
+              min="0"
+              readOnly
+              step="0.01"
+              name="customInstallationFee"
+              value={getDisplayValue(
+                'customInstallationFee',
+                form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{ backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white' }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Mirror */}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Mirror Cleaning</label>
         <div className="svc-row-right">
           <label className="svc-inline">
@@ -696,40 +699,44 @@ export const RpmWindowsForm: React.FC<
             <span>Include mirrors</span>
           </label>
         </div>
-      </div>
+      </div> */}
 
-      {/* Total Per Visit */}
-      <div className="svc-row svc-row-charge">
-        <label>
-          {form.frequency === "bimonthly" ||
-           form.frequency === "quarterly" ||
-           form.frequency === "biannual" ||
-           form.frequency === "annual"
-            ? "Recurring Visit Total"
-            : "Per Visit Price"}
-        </label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              name="customPerVisitPrice"
-              type="number"
-              min="0"
-              readOnly
-              step="0.01"
-              value={getDisplayValue(
-                'customPerVisitPrice',
-                form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
-            />
+
+
+      {/* Total Per Visit – HIDE for 2×/month and monthly */}
+      {form.frequency !== "twicePerMonth" && form.frequency !== "monthly" && (
+        <div className="svc-row svc-row-charge">
+          <label>
+            {form.frequency === "bimonthly" ||
+             form.frequency === "quarterly" ||
+             form.frequency === "biannual" ||
+             form.frequency === "annual"
+              ? "Recurring Visit Total"
+              : "Per Visit Price"}
+          </label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                name="customPerVisitPrice"
+                type="number"
+                min="0"
+                readOnly
+                step="0.01"
+                value={getDisplayValue(
+                  'customPerVisitPrice',
+                  form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Redline/Greenline Pricing Indicator */}
       {(form.smallQty > 0 || form.mediumQty > 0 || form.largeQty > 0) && (
@@ -786,8 +793,9 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring – Show only for weekly and biweekly */}
-      {(form.frequency === "weekly" || form.frequency === "biweekly") && (
+      {/* Monthly Recurring – Show for weekly, biweekly, 2×/month, and monthly */}
+      {(form.frequency === "weekly" || form.frequency === "biweekly" ||
+        form.frequency === "twicePerMonth" || form.frequency === "monthly") && (
         <div className="svc-row svc-row-charge">
           <label>Monthly Recurring</label>
           <div className="svc-row-right">
@@ -817,39 +825,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Per Visit – Show for 2×/month to annually */}
-      {(form.frequency === "twicePerMonth" || form.frequency === "monthly" ||
-        form.frequency === "bimonthly" || form.frequency === "quarterly" ||
-        form.frequency === "biannual" || form.frequency === "annual") && (
-        <div className="svc-row svc-row-charge">
-          <label>Per Visit</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                name="customPerVisitPrice"
-                type="number"
-        min="0"
-          min="0"
-            min="0"
-                step="0.01"
-                value={getDisplayValue(
-                  'customPerVisitPrice',
-                  form.customPerVisitPrice !== undefined
-                    ? form.customPerVisitPrice
-                    : calc.recurringPerVisitRated ?? 0
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
-                title="Override per visit calculation (clear to use auto-calculated value)"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* First Visit Total – SHOW ONLY for oneTime, quarterly, biannual, annual, bimonthly */}
       {(form.frequency === "oneTime" || form.frequency === "quarterly" || form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly") && (
