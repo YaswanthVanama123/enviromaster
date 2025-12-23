@@ -1076,8 +1076,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>) {
         totalVisitsForContract = totalServices;
 
         if (form.includeInstall && installOneTime > 0) {
-          // If installation included, total = installation only (per rule)
-          calculatedContractTotal = installOneTime;
+          // ✅ FIXED: First service = installation, remaining services = normal service
+          const remainingServices = Math.max(totalServices - 1, 0);
+          calculatedContractTotal = installOneTime + (remainingServices * (basePerVisitCost + perVisitTrip));
         } else {
           // No installation: service cost
           calculatedContractTotal = totalServices * (basePerVisitCost + perVisitTrip);
