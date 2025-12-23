@@ -774,9 +774,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
       ? (form.installMultiplierFirstTime ?? activeConfig.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime)
       : (form.installMultiplierClean ?? activeConfig.installMultiplierClean ?? cfg.installMultiplierClean);
 
+    // ✅ FIXED: Apply minimum BEFORE installation calculation
+    // - When service < minimum: installation = minimum × multiplier
+    // - When service ≥ minimum: installation = service × multiplier
+    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? activeConfig.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
+    const weeklyWindowsWithMinimum = hasWindows ? Math.max(weeklyWindows, minimumChargePerVisit) : 0;
+
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
-        ? weeklyWindows * installMultiplier
+        ? weeklyWindowsWithMinimum * installMultiplier  // ✅ Use minimum-applied amount
         : 0;
 
     const installOneTime = installOneTimeBase * (rateCfg?.multiplier ?? 1);
@@ -918,7 +924,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>) {
 
     // ✅ NEW: Apply minimum charge per visit from backend ONLY when there are windows
     // CRITICAL: Apply minimum to EFFECTIVE per-visit (which includes custom override)
-    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? activeConfig.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
+    // Note: minimumChargePerVisit is already defined earlier for installation calculation
     const recurringPerVisitWithMinimum = hasWindows ? Math.max(effectivePerVisit, minimumChargePerVisit) : 0;
 
     // ✅ RECALCULATE MONTHLY VALUES with minimum charge applied

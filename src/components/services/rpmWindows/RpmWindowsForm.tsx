@@ -349,6 +349,29 @@ export const RpmWindowsForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
+      {/* Frequency */}
+      <div className="svc-row">
+        <label>Frequency</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            name="frequency"
+            value={form.frequency}
+            onChange={onChange}
+          >
+            <option value="oneTime">One Time</option>
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi-Weekly</option>
+            <option value="twicePerMonth">2× / Month</option>
+            <option value="monthly">Monthly</option>
+            <option value="bimonthly">Every 2 Months</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="biannual">Bi-Annual</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+      </div>
+
       {/* Small */}
       <div className="svc-row">
         <label>Small Windows</label>
@@ -641,28 +664,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Frequency */}
-      <div className="svc-row">
-        <label>Frequency</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="frequency"
-            value={form.frequency}
-            onChange={onChange}
-          >
-            <option value="oneTime">One Time</option>
-            <option value="weekly">Weekly</option>
-            <option value="biweekly">Bi-Weekly</option>
-            <option value="twicePerMonth">2× / Month</option>
-            <option value="monthly">Monthly</option>
-            <option value="bimonthly">Every 2 Months</option>
-            <option value="quarterly">Quarterly</option>
-            <option value="biannual">Bi-Annual</option>
-            <option value="annual">Annual</option>
-          </select>
-        </div>
-      </div>
+
 
       {/* Rate Category */}
       {/* <div className="svc-row">
