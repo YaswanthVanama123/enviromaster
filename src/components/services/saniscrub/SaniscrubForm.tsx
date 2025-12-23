@@ -674,9 +674,8 @@ export const SaniscrubForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 name="customInstallationFee"
                 value={getDisplayValue(
@@ -722,7 +721,8 @@ export const SaniscrubForm: React.FC<
               className="svc-in"
               name="customFirstMonthPrice"
               type="number"
-            min="0"
+              min="0"
+              readOnly
               step="0.01"
               value={getDisplayValue(
                 'customFirstMonthPrice',
@@ -829,9 +829,8 @@ export const SaniscrubForm: React.FC<
                 className="svc-in"
                 name="customMonthlyRecurring"
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
+                readOnly
                 step="0.01"
                 value={form.customMonthlyRecurring !== undefined
                   ? formatNumber(form.customMonthlyRecurring)
