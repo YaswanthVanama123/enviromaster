@@ -491,7 +491,7 @@ export const SanicleanForm: React.FC<
       </div>
 
       {/* Location - Only show for Per Item Charge */}
-      {/* {form.pricingMode === "per_item_charge" && (
+       {form.pricingMode === "per_item_charge" && (
         <div className="svc-row">
           <label>Location</label>
           <div className="svc-row-right">
@@ -506,7 +506,7 @@ export const SanicleanForm: React.FC<
             </select>
           </div>
         </div>
-      )} */}
+      )} 
 
       {/* Parking - Only for inside beltway in per item mode */}
       {/* {form.pricingMode === "per_item_charge" && form.location === "insideBeltway" && (
