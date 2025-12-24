@@ -243,7 +243,6 @@ export interface SanipodFormState {
   /** Custom override for extra bags total */
   customExtraBagsTotal?: number;
 
-  frequency: SanipodFrequencyKey;
   rateCategory: SanipodRateCategory;
 
   /** Contract length in months (2–36). */
@@ -251,6 +250,7 @@ export interface SanipodFormState {
 
   /** Is this a standalone service (not part of package)? If false, always use $8/pod. */
   isStandalone: boolean;
+  notes?: string;
 }
 
 export interface SanipodCalcResult {
@@ -298,6 +298,9 @@ export interface SanipodCalcResult {
 
   /** Effective rate per pod */
   effectiveRatePerPod: number;
+
+  /** ✅ NEW: Minimum charge per visit (for standalone: $40, for package: no minimum) */
+  minimumChargePerVisit: number;
 }
 
 const DEFAULT_FORM_STATE: SanipodFormState = {
@@ -438,14 +441,14 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       }
 
       // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ SaniPod document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendSanipodConfig;
+      const document = Array.isArray(response.data) ? response.data[0] : response.data;
+ 
+       if (!document.config) {
+         console.warn('⚠️ SaniPod document has no config property');
+         return;
+       }
+ 
+       const config = document.config as BackendSanipodConfig;
 
       // ✅ Build active config from backend structure
       const activeConfig = buildActiveConfig(config);
@@ -455,7 +458,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       updateFormWithConfig(activeConfig);
 
       console.log('✅ SaniPod FULL CONFIG loaded from backend successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to fetch SaniPod config from backend:', error);
       console.error('❌ Error details:', {
         message: error.message,
@@ -582,7 +585,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       const next: SanipodFormState = { ...prev };
 
       if (type === "checkbox") {
-        next[name as keyof SanipodFormState] = t.checked;
+        (next as any)[name] = t.checked;
       } else if (
         name === "customInstallationFee" ||
         name === "customPerVisitPrice" ||
@@ -604,10 +607,10 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       } else if (type === "number") {
         const raw = t.value;
         const num = raw === "" ? 0 : parseFloat(raw);
-        next[name as keyof SanipodFormState] =
+        (next as any)[name] =
           Number.isFinite(num) && num >= 0 ? num : 0;
       } else {
-        next[name as keyof SanipodFormState] = t.value;
+        (next as any)[name] = t.value;
       }
 
       // Special handling for frequency
@@ -744,7 +747,21 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       : "perPod3Plus40";
 
     // Apply rate category to service portion only.
-    const weeklyService = weeklyServiceRed * rateCfg.multiplier;
+    const weeklyServiceBeforeMinimum = weeklyServiceRed * rateCfg.multiplier;
+
+    // ✅ NEW: Apply minimum charge for standalone service
+    // The weeklyMinimumPrice ($40) should be enforced regardless of which option is chosen
+    const weeklyService = form.isStandalone
+      ? Math.max(weeklyServiceBeforeMinimum, form.standaloneExtraWeeklyCharge)
+      : weeklyServiceBeforeMinimum;
+
+    console.log(`💰 [SANIPOD-MINIMUM] Applying minimum charge check:`, {
+      isStandalone: form.isStandalone,
+      beforeMinimum: weeklyServiceBeforeMinimum.toFixed(2),
+      minimum: form.standaloneExtraWeeklyCharge,
+      afterMinimum: weeklyService.toFixed(2),
+      minimumApplied: form.isStandalone && weeklyServiceBeforeMinimum < form.standaloneExtraWeeklyCharge
+    });
 
     // ---------- PER VISIT (SERVICE ONLY) ----------
     const perVisitService = weeklyService;
@@ -877,9 +894,22 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       : bagLineAmount;
 
     // Adjusted per visit (uses adjusted totals and rate multiplier)
-    const adjustedPerVisit = form.customPerVisitPrice !== undefined
+    const adjustedPerVisitBeforeMinimum = form.customPerVisitPrice !== undefined
       ? form.customPerVisitPrice
       : (adjustedPodServiceTotal + (form.extraBagsRecurring ? adjustedBagsTotal : 0)) * rateCfg.multiplier;
+
+    // ✅ FIXED: Apply $40 minimum for standalone service (same logic as base perVisit)
+    const adjustedPerVisit = form.isStandalone
+      ? Math.max(adjustedPerVisitBeforeMinimum, form.standaloneExtraWeeklyCharge)
+      : adjustedPerVisitBeforeMinimum;
+
+    console.log(`💰 [SANIPOD-ADJUSTED-MINIMUM] Applying minimum to adjusted per visit:`, {
+      isStandalone: form.isStandalone,
+      beforeMinimum: adjustedPerVisitBeforeMinimum.toFixed(2),
+      minimum: form.standaloneExtraWeeklyCharge,
+      afterMinimum: adjustedPerVisit.toFixed(2),
+      minimumApplied: form.isStandalone && adjustedPerVisitBeforeMinimum < form.standaloneExtraWeeklyCharge
+    });
 
     // ========== ADJUSTED FIRST VISIT WITH PARTIAL INSTALLATION ==========
     // If installing some pods, first visit = install + service for NON-installed pods only
@@ -991,6 +1021,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       adjustedPodServiceTotal,
       adjustedBagsTotal,
       effectiveRatePerPod,
+      // ✅ NEW: Minimum charge per visit ($40 when standalone, $0 when part of package)
+      minimumChargePerVisit: form.isStandalone ? form.standaloneExtraWeeklyCharge : 0,
     };
   }, [
     backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!

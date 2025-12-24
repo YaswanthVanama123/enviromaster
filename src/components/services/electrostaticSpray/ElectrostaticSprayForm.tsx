@@ -170,6 +170,22 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         displayName: "Electrostatic Spray",
         isActive: true,
 
+        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
+        // This ensures edited values are saved to backend, not just backend defaults
+        ratePerRoom: form.ratePerRoom,  // Note: This form doesn't use customRatePerRoom, it directly edits ratePerRoom
+        ratePerThousandSqFt: form.ratePerThousandSqFt,  // Same here
+        tripChargePerVisit: form.tripChargePerVisit,  // Same here
+
+        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+        pricingMethod: form.pricingMethod,
+        roomCount: form.roomCount,
+        squareFeet: form.squareFeet,
+        useExactCalculation: form.useExactCalculation,
+        frequency: form.frequency,
+        contractMonths: form.contractMonths,
+        isCombinedWithSaniClean: form.isCombinedWithSaniClean,
+        location: form.location,
+
         // Red/Green Line pricing data
         perVisitBase: calc.serviceCharge,  // Raw service charge before trip/minimum
         perVisit: calc.perVisit,  // Final price after minimum

@@ -127,18 +127,26 @@ export const ServicesProvider: React.FC<{
         // ✅ FIX: Contract total can be in multiple locations depending on service structure
         let contractTotal = 0;
 
-        // Try direct contractTotal field (for simpler services)
+        // Priority 1: Try direct contractTotal field (for SaniClean, RefreshPowerScrub)
         if (typeof serviceData.contractTotal === 'number') {
           contractTotal = serviceData.contractTotal;
+          console.log(`📊 [TOTAL CALC] ${serviceName} found contractTotal: $${contractTotal.toFixed(2)}`);
         }
-        // Try nested totals.contract.amount structure (for SaniClean and similar services)
+        // Priority 2: Try nested totals.contract.amount structure (for SaniPod, Janitorial)
         else if (serviceData.totals?.contract?.amount && typeof serviceData.totals.contract.amount === 'number') {
           contractTotal = serviceData.totals.contract.amount;
+          console.log(`📊 [TOTAL CALC] ${serviceName} found totals.contract.amount: $${contractTotal.toFixed(2)}`);
+        }
+        // Priority 3: Try totals.annual.amount (for RPM Windows and similar services)
+        else if (serviceData.totals?.annual?.amount && typeof serviceData.totals.annual.amount === 'number') {
+          contractTotal = serviceData.totals.annual.amount;
+          console.log(`📊 [TOTAL CALC] ${serviceName} found totals.annual.amount: $${contractTotal.toFixed(2)}`);
         }
 
         if (contractTotal > 0) {
           totalAmount += contractTotal;
-          console.log(`📊 [TOTAL CALC] ${serviceName}: $${contractTotal.toFixed(2)}`);
+        } else {
+          console.warn(`⚠️ [TOTAL CALC] ${serviceName} is active but no contract total found. Service data keys:`, Object.keys(serviceData));
         }
       }
     });
@@ -258,31 +266,39 @@ export const ServicesProvider: React.FC<{
         // Try to find the minimum price threshold configuration for each service
         // Different services store this in different fields
 
-        // Top-level minimum charge per visit (most common)
+        // Priority 1: Top-level minimum charge per visit (most common)
         if (typeof serviceData.minimumChargePerVisit === 'number') {
           minimumThreshold = serviceData.minimumChargePerVisit;
         }
-        // Direct minimum field
+        // Priority 2: SaniScrub uses perVisitMinimum
         else if (typeof serviceData.perVisitMinimum === 'number') {
           minimumThreshold = serviceData.perVisitMinimum;
         }
-        // Calc object with minimum
+        // Priority 3: SaniClean uses minimumChargePerWeek
+        else if (typeof serviceData.minimumChargePerWeek === 'number') {
+          minimumThreshold = serviceData.minimumChargePerWeek;
+        }
+        // Priority 4: Direct minimum field
+        else if (typeof serviceData.perVisitMinimum === 'number') {
+          minimumThreshold = serviceData.perVisitMinimum;
+        }
+        // Priority 5: Calc object with minimum
         else if (serviceData.calc?.minimumChargePerVisit && typeof serviceData.calc.minimumChargePerVisit === 'number') {
           minimumThreshold = serviceData.calc.minimumChargePerVisit;
         }
-        // Minimum charge per week (SaniClean)
+        // Priority 6: Totals minimum charge per week (SaniClean)
         else if (serviceData.totals?.minimumChargePerWeek && typeof serviceData.totals.minimumChargePerWeek === 'number') {
           minimumThreshold = serviceData.totals.minimumChargePerWeek;
         }
-        // Minimum visit (Refresh Power Scrub)
+        // Priority 7: Minimum visit (Refresh Power Scrub)
         else if (typeof serviceData.minimumVisit === 'number') {
           minimumThreshold = serviceData.minimumVisit;
         }
-        // Form-level minimum
+        // Priority 8: Form-level minimum
         else if (typeof serviceData.minCharge === 'number') {
           minimumThreshold = serviceData.minCharge;
         }
-        // Config minimum
+        // Priority 9: Config minimum
         else if (serviceData.config?.minimumChargePerVisit && typeof serviceData.config.minimumChargePerVisit === 'number') {
           minimumThreshold = serviceData.config.minimumChargePerVisit;
         }
@@ -290,6 +306,8 @@ export const ServicesProvider: React.FC<{
         if (minimumThreshold > 0) {
           totalMinimum += minimumThreshold;
           console.log(`📊 [MINIMUM THRESHOLD CALC] ${serviceName}: $${minimumThreshold.toFixed(2)}`);
+        } else {
+          console.warn(`⚠️ [MINIMUM THRESHOLD CALC] ${serviceName} is active but no minimum found. Available fields:`, Object.keys(serviceData));
         }
       }
     });

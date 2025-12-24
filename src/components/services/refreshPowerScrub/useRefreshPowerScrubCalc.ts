@@ -947,17 +947,41 @@ export function useRefreshPowerScrubCalc(
 
     if (justBecameActive) {
       if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
-        setForm(prev => ({
-          ...prev,
-          contractMonths: servicesContext.globalContractMonths,
-        }));
+        const globalMonths = servicesContext.globalContractMonths;
+        console.log(`📅 [REFRESH-POWER-SCRUB-CONTRACT] Service just became active, syncing global contract months: ${globalMonths}`);
+        setForm(prev => {
+          const updated = {
+            ...prev,
+            contractMonths: globalMonths,
+          };
+          // ✅ FIXED: Update contract months for ALL areas
+          AREA_KEYS.forEach(area => {
+            updated[area] = {
+              ...updated[area],
+              contractMonths: globalMonths,
+            };
+          });
+          return updated;
+        });
       }
     } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
-      if (form.contractMonths !== servicesContext.globalContractMonths) {
-        setForm(prev => ({
-          ...prev,
-          contractMonths: servicesContext.globalContractMonths,
-        }));
+      const globalMonths = servicesContext.globalContractMonths;
+      if (form.contractMonths !== globalMonths) {
+        console.log(`📅 [REFRESH-POWER-SCRUB-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => {
+          const updated = {
+            ...prev,
+            contractMonths: globalMonths,
+          };
+          // ✅ FIXED: Update contract months for ALL areas
+          AREA_KEYS.forEach(area => {
+            updated[area] = {
+              ...updated[area],
+              contractMonths: globalMonths,
+            };
+          });
+          return updated;
+        });
       }
     }
 

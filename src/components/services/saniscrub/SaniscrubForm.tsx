@@ -27,7 +27,7 @@ const formatNumber = (num: number): string => {
 };
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
-> = ({ initialData, onQuoteChange, onRemove }) => {
+> = ({ initialData, onRemove }) => {
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
@@ -121,9 +121,6 @@ export const SaniscrubForm: React.FC<
     servicesContext?.isSanicleanAllInclusive ?? false;
 
   // Push quote up whenever it changes
-  React.useEffect(() => {
-    if (onQuoteChange) onQuoteChange(quote);
-  }, [onQuoteChange, quote]);
 
   // Save form data to context for form submission
   const prevDataRef = React.useRef<string>("");
@@ -176,9 +173,9 @@ export const SaniscrubForm: React.FC<
         isActive: true,
 
         // Red/Green Line pricing data
-        perVisitBase: calc.basePerVisitCost,  // Raw per-visit cost before minimum/trip
+        perVisitBase: calc.perVisitEffective,  // Raw per-visit cost before minimum/trip
         perVisit: calc.perVisitEffective,  // Final per-visit price after minimum/trip
-        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,  // Minimum threshold
+        perVisitMinimum: form.perVisitMinimum,  // Minimum threshold
 
         frequency: {
           isDisplay: true,
@@ -247,6 +244,12 @@ export const SaniscrubForm: React.FC<
             type: "dollar" as const,
             months: form.contractMonths,
             amount: calc.contractTotal,
+          },
+          minimum: {
+            isDisplay: true,
+            label: "Minimum",
+            type: "dollar" as const,
+            amount: form.perVisitMinimum,
           },
         },
 
@@ -639,9 +642,7 @@ export const SaniscrubForm: React.FC<
             <input
               className="svc-in multiplier-field"
               type="number"
-        min="0"
-          min="0"
-            min="0"
+              min="0"
               step="0.1"
               name="installMultiplierDirty"
               value={form.installMultiplierDirty % 1 === 0 ? form.installMultiplierDirty.toString() : form.installMultiplierDirty.toFixed(1)}
@@ -654,8 +655,6 @@ export const SaniscrubForm: React.FC<
           <input
             className="svc-in multiplier-field"
             type="number"
-        min="0"
-          min="0"
             min="0"
             step="0.1"
             name="installMultiplierClean"
@@ -690,6 +689,9 @@ export const SaniscrubForm: React.FC<
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
+                style={{
+                  backgroundColor: form.customInstallationFee !== undefined ? '#fffacd' : 'white'
+                }}
               />
             </div>
             <span className="svc-small"> one-time</span>
@@ -780,7 +782,7 @@ export const SaniscrubForm: React.FC<
       )} */}
 
       {/* Redline/Greenline Pricing Indicator */}
-      {form.totalFixtures > 0 && (
+      {form.fixtureCount > 0 && (
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
@@ -972,9 +974,7 @@ export const SaniscrubForm: React.FC<
               <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
               <input
                 type="number"
-        min="0"
-          min="0"
-            min="0"
+                min="0"
                 step="1"
                 name="customContractTotal"
                 className="svc-in"

@@ -286,10 +286,16 @@ export const SanicleanForm: React.FC<
             amount: quote.contractTotal,
           },
         },
-
-        notes: form.notes || "",
-        customFields: customFields,
-      } : null;
+        contractTotal: {
+          isDisplay: true,
+          label: "Contract Total",
+          type: "dollar" as const,
+          amount: quote.contractTotal,
+        },
+ 
+         notes: form.notes || "",
+         customFields: customFields,
+       } : null;
 
       const dataStr = JSON.stringify(data);
 
@@ -404,7 +410,6 @@ export const SanicleanForm: React.FC<
           <input
             className="svc-in"
             type="number"
-          min="0"
             min="0"
             name="fixtureCount"
             value={form.fixtureCount || ""}
@@ -470,7 +475,6 @@ export const SanicleanForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
-          min="0"
             min="0"
             step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
@@ -508,7 +512,6 @@ export const SanicleanForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
-          min="0"
             min="0"
             step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
@@ -546,7 +549,6 @@ export const SanicleanForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
-          min="0"
             min="0"
             step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
@@ -584,7 +586,6 @@ export const SanicleanForm: React.FC<
           <input
             className="svc-in field-qty"
             type="number"
-          min="0"
             min="0"
             step="1"
             name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
@@ -677,8 +678,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               step="1"
               name={form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate"}
               value={extraSoapRatePerGallon}
@@ -754,12 +754,10 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         name="urinalScreensQty"
                         value={form.urinalScreensQty || ""}
                         onChange={onChange}
-                        min="0"
                         placeholder="0"
                         title="Number of urinal screens (manually entered by salesman)"
                       />
@@ -767,8 +765,7 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         step="1"
                         name="urinalScreenMonthly"
                         value={form.urinalScreenMonthly}
@@ -791,12 +788,10 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         name="urinalMatsQty"
                         value={form.urinalMatsQty || ""}
                         onChange={onChange}
-                        min="0"
                         placeholder="0"
                         title="Number of urinal mats (manually entered by salesman)"
                       />
@@ -804,8 +799,7 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         step="1"
                         name="urinalMatMonthly"
                         value={form.urinalMatMonthly}
@@ -853,12 +847,10 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         name="toiletClipsQty"
                         value={form.toiletClipsQty || ""}
                         onChange={onChange}
-                        min="0"
                         placeholder="0"
                         title="Number of toilet clips (manually entered by salesman)"
                       />
@@ -866,8 +858,7 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         step="1"
                         name="toiletClipsMonthly"
                         value={form.toiletClipsMonthly}
@@ -890,12 +881,10 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         name="seatCoverDispensersQty"
                         value={form.seatCoverDispensersQty || ""}
                         onChange={onChange}
-                        min="0"
                         placeholder="0"
                         title="Number of seat cover dispensers (manually entered by salesman)"
                       />
@@ -903,8 +892,7 @@ export const SanicleanForm: React.FC<
                       <input
                         className="svc-in field-qty"
                         type="number"
-          min="0"
-            min="0"
+                        min="0"
                         step="1"
                         name="seatCoverDispenserMonthly"
                         value={form.seatCoverDispenserMonthly}
@@ -951,12 +939,10 @@ export const SanicleanForm: React.FC<
                     <input
                       className="svc-in field-qty"
                       type="number"
-          min="0"
-            min="0"
+                      min="0"
                       name="sanipodsQty"
                       value={form.sanipodsQty || ""}
                       onChange={onChange}
-                      min="0"
                       placeholder="0"
                       title="Number of SaniPods (manually entered by salesman)"
                     />
@@ -964,8 +950,7 @@ export const SanicleanForm: React.FC<
                     <input
                       className="svc-in field-qty"
                       type="number"
-          min="0"
-            min="0"
+                      min="0"
                       step="1"
                       name="sanipodServiceMonthly"
                       value={form.sanipodServiceMonthly}
@@ -1035,12 +1020,10 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               name="warrantyDispensers"
               value={form.warrantyDispensers || ""}
               onChange={onChange}
-              min="0"
               placeholder="0"
               title="Number of dispensers for warranty (manually entered by salesman)"
             />
@@ -1048,8 +1031,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               step="1"
               name="warrantyFeePerDispenserPerWeek"
               value={form.warrantyFeePerDispenserPerWeek}
@@ -1121,8 +1103,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               name="microfiberBathrooms"
               disabled={!form.addMicrofiberMopping}
               value={form.microfiberBathrooms || ""}
@@ -1132,8 +1113,7 @@ export const SanicleanForm: React.FC<
             <input
               className="svc-in field-qty"
               type="number"
-          min="0"
-            min="0"
+              min="0"
               step="1"
               name="microfiberMoppingPerBathroom"
               value={form.addMicrofiberMopping ? form.microfiberMoppingPerBathroom : 0}
@@ -1168,8 +1148,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 name="estimatedPaperSpendPerWeek"
                 value={form.estimatedPaperSpendPerWeek || ""}
                 onChange={onChange}
@@ -1358,8 +1337,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="1"
                 name="customSoapUpgrade"
                 value={getDisplayValue(
@@ -1392,8 +1370,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="1"
                 name="customExcessSoap"
                 value={getDisplayValue(
@@ -1426,8 +1403,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="1"
                 name="customMicrofiberMopping"
                 value={getDisplayValue(
@@ -1460,8 +1436,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="1"
                 name="customWarrantyFees"
                 value={getDisplayValue(
@@ -1494,8 +1469,7 @@ export const SanicleanForm: React.FC<
               <input
                 className="svc-in"
                 type="number"
-          min="0"
-            min="0"
+                min="0"
                 step="1"
                 name="customPaperOverage"
                 value={getDisplayValue(

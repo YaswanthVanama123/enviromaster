@@ -211,11 +211,39 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
   // Handler to remove a service
   const handleRemoveService = (serviceId: string) => {
+    // Remove from visible services list
     setVisibleServices((prev) => {
       const next = new Set(prev);
       next.delete(serviceId);
       return next;
     });
+
+    // ✅ FIXED: Clear service data from context for BOTH the service ID and all aliases
+    // This ensures the service is completely removed from context regardless of which ID is used
+    if (servicesContext) {
+      console.log(`🗑️ [ServicesSection] Removing service data from context: ${serviceId}`);
+
+      // Clear the main service ID
+      servicesContext.updateService(serviceId as any, null);
+
+      // ✅ CRITICAL: Also clear all known aliases to ensure complete removal
+      // Map of service aliases (both directions)
+      const aliasMap: Record<string, string[]> = {
+        'carpetCleaning': ['carpetclean'],
+        'carpetclean': ['carpetCleaning'],
+        'pureJanitorial': ['janitorial'],
+        'janitorial': ['pureJanitorial'],
+        'stripWax': ['stripwax'],
+        'stripwax': ['stripWax'],
+      };
+
+      // Clear all aliases for this service
+      const aliases = aliasMap[serviceId] || [];
+      aliases.forEach(aliasId => {
+        console.log(`🗑️ [ServicesSection] Also removing alias from context: ${aliasId}`);
+        servicesContext.updateService(aliasId as any, null);
+      });
+    }
   };
 
   // Handler to update a custom service

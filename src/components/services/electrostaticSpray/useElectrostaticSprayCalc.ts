@@ -96,11 +96,23 @@ function transformBackendFrequencyMeta(backendMeta: BackendElectrostaticSprayCon
 
 /**
  * Helper function to update form state with backend config data
+ * @param config - Backend configuration object
+ * @param setForm - React setState function
+ * @param initialData - Initial data (if in edit mode)
+ * @param forceUpdate - If true, force update even in edit mode (for refresh button)
  */
-function updateFormWithConfig(config: BackendElectrostaticSprayConfig, setForm: any, initialData?: any) {
+function updateFormWithConfig(config: BackendElectrostaticSprayConfig, setForm: any, initialData?: any, forceUpdate: boolean = false) {
+  // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
+  // Only update on manual refresh (when user explicitly clicks refresh button)
+  if (initialData && !forceUpdate) {
+    console.log('📋 [ELECTROSTATIC-SPRAY] Edit mode: Skipping form update to preserve loaded values');
+    return; // Don't overwrite loaded values in edit mode
+  }
+
+  console.log('📋 [ELECTROSTATIC-SPRAY] Updating form with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
   setForm((prev: any) => ({
     ...prev,
-    // ✅ Extract from nested backend structure
+    // ✅ Map backend config properties to form properties
     ratePerRoom: config.standardSprayPricing?.sprayRatePerRoom ?? prev.ratePerRoom,
     ratePerThousandSqFt: config.standardSprayPricing?.sprayRatePerSqFtUnit ?? prev.ratePerThousandSqFt,
     tripChargePerVisit: config.tripCharges?.standard ?? prev.tripChargePerVisit,
@@ -127,6 +139,13 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
+  const isEditMode = useRef(!!initialData); // ✅ NEW: Track if we're in edit mode (has initial data)
+  const isInitialMount = useRef(true); // ✅ NEW: Track if this is initial mount or manual refresh
+
+  // ✅ NEW: Track baseline values for logging (set ONCE on mount)
+  // Baseline = backend default for new documents, or loaded/saved value for edit mode
+  const baselineValues = useRef<Record<string, number>>({});
+  const baselineInitialized = useRef(false);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
@@ -187,7 +206,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   // Fetch pricing config from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
       // First try to get active service config
@@ -204,17 +223,20 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
             console.log('✅ [ElectrostaticSpray] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
             setBackendConfig(config);
-            updateFormWithConfig(config, setForm, initialData);
+            updateFormWithConfig(config, setForm, initialData, forceRefresh);
 
-            // ✅ Clear all custom overrides when refreshing config
-            setForm((prev: any) => ({
-              ...prev,
-              customServiceCharge: undefined,
-              customPerVisitPrice: undefined,
-              customMonthlyRecurring: undefined,
-              customContractTotal: undefined,
-              customFirstMonthTotal: undefined,
-            }));
+            // ✅ FIXED: Only clear custom overrides on manual refresh
+            if (forceRefresh) {
+              console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
+              setForm((prev: any) => ({
+                ...prev,
+                customServiceCharge: undefined,
+                customPerVisitPrice: undefined,
+                customMonthlyRecurring: undefined,
+                customContractTotal: undefined,
+                customFirstMonthTotal: undefined,
+              }));
+            }
 
             console.log('✅ ElectrostaticSpray FALLBACK CONFIG loaded from context:', {
               standardSprayPricing: config.standardSprayPricing,
@@ -241,17 +263,20 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-      updateFormWithConfig(config, setForm, initialData);
+      updateFormWithConfig(config, setForm, initialData, forceRefresh);
 
-      // ✅ Clear all custom overrides when refreshing config
-      setForm((prev: any) => ({
-        ...prev,
-        customServiceCharge: undefined,
-        customPerVisitPrice: undefined,
-        customMonthlyRecurring: undefined,
-        customContractTotal: undefined,
-        customFirstMonthTotal: undefined,
-      }));
+      // ✅ FIXED: Only clear custom overrides on manual refresh
+      if (forceRefresh) {
+        console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
+        setForm((prev: any) => ({
+          ...prev,
+          customServiceCharge: undefined,
+          customPerVisitPrice: undefined,
+          customMonthlyRecurring: undefined,
+          customContractTotal: undefined,
+          customFirstMonthTotal: undefined,
+        }));
+      }
 
       console.log('✅ ElectrostaticSpray ACTIVE CONFIG loaded from backend:', {
         standardSprayPricing: config.standardSprayPricing,
@@ -268,17 +293,20 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
           console.log('✅ [ElectrostaticSpray] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
           setBackendConfig(config);
-          updateFormWithConfig(config, setForm, initialData);
+          updateFormWithConfig(config, setForm, initialData, forceRefresh);
 
-          // ✅ Clear all custom overrides when refreshing config
-          setForm((prev: any) => ({
-            ...prev,
-            customServiceCharge: undefined,
-            customPerVisitPrice: undefined,
-            customMonthlyRecurring: undefined,
-            customContractTotal: undefined,
-            customFirstMonthTotal: undefined,
-          }));
+          // ✅ FIXED: Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
+            setForm((prev: any) => ({
+              ...prev,
+              customServiceCharge: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customContractTotal: undefined,
+              customFirstMonthTotal: undefined,
+            }));
+          }
 
           return;
         }
@@ -290,24 +318,71 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     }
   };
 
-  // Fetch config on mount ONLY if no initialData (new service)
+  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
   useEffect(() => {
-    // Skip fetching if we have initialData (editing existing service with saved prices)
-    if (initialData) {
-      console.log('📋 [ELECTROSTATIC-SPRAY-PRICING] Skipping price fetch - using saved historical prices from initialData');
-      return;
-    }
-
-    console.log('📋 [ELECTROSTATIC-SPRAY-PRICING] Fetching current prices - new service or no initial data');
-    fetchPricing();
+    // Always fetch backend config to enable override detection in edit mode
+    console.log('📋 [ELECTROSTATIC-SPRAY-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
+    fetchPricing(false); // false = don't force update in edit mode
+    isInitialMount.current = false; // Mark that initial mount is complete
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
   useEffect(() => {
-    // Skip if we have initialData (editing existing service)
-    if (initialData) return;
+    if (!backendConfig) return;
 
+    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+    if (!baselineInitialized.current) {
+      baselineInitialized.current = true;
+
+      // Baseline = loaded/saved value (edit mode) OR backend default (new document)
+      baselineValues.current = {
+        ratePerRoom: initialData?.ratePerRoom ?? backendConfig.standardSprayPricing?.sprayRatePerRoom ?? cfg.ratePerRoom,
+        ratePerThousandSqFt: initialData?.ratePerThousandSqFt ?? backendConfig.standardSprayPricing?.sprayRatePerSqFtUnit ?? cfg.ratePerThousandSqFt,
+        tripChargePerVisit: initialData?.tripChargePerVisit ?? backendConfig.tripCharges?.standard ?? cfg.tripCharges.standard,
+      };
+
+      console.log('✅ [ELECTROSTATIC-BASELINE] Initialized baseline values for logging:', {
+        ratePerRoom: baselineValues.current.ratePerRoom,
+        ratePerThousandSqFt: baselineValues.current.ratePerThousandSqFt,
+        tripChargePerVisit: baselineValues.current.tripChargePerVisit,
+        note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
+      });
+    }
+
+    // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only)
+    if (!initialData) return;
+
+    console.log('🔍 [ELECTROSTATIC-SPRAY-PRICING] Detecting price overrides for yellow highlighting...');
+
+    // Compare saved values against backend defaults
+    const hasRatePerRoomOverride = initialData.ratePerRoom !== undefined &&
+                                   initialData.ratePerRoom !== backendConfig.standardSprayPricing?.sprayRatePerRoom;
+    const hasRatePerSqFtOverride = initialData.ratePerThousandSqFt !== undefined &&
+                                    initialData.ratePerThousandSqFt !== backendConfig.standardSprayPricing?.sprayRatePerSqFtUnit;
+    const hasTripChargeOverride = initialData.tripChargePerVisit !== undefined &&
+                                   initialData.tripChargePerVisit !== backendConfig.tripCharges?.standard;
+
+    if (hasRatePerRoomOverride || hasRatePerSqFtOverride || hasTripChargeOverride) {
+      setForm(prev => ({
+        ...prev,
+        // Set custom override fields to enable yellow highlighting (if applicable)
+        // Note: Electrostatic Spray may not have custom override UI for these base rates yet
+      }));
+
+      console.log('✅ [ELECTROSTATIC-SPRAY-PRICING] Detected price overrides:', {
+        ratePerRoom: hasRatePerRoomOverride ? initialData.ratePerRoom : 'matches backend',
+        ratePerSqFt: hasRatePerSqFtOverride ? initialData.ratePerThousandSqFt : 'matches backend',
+        tripCharge: hasTripChargeOverride ? initialData.tripChargePerVisit : 'matches backend',
+      });
+    } else {
+      console.log('ℹ️ [ELECTROSTATIC-SPRAY-PRICING] No price overrides detected - using backend defaults');
+    }
+  }, [backendConfig, initialData]);
+
+  // Also fetch when services context becomes available (for fallback pricing)
+  useEffect(() => {
+    // Fetch from context if backend config not loaded yet (even in edit mode, for override detection)
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
@@ -410,22 +485,51 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         next[name as keyof ElectrostaticSprayFormState] = target.value;
       }
 
-      // ✅ Log price override for numeric pricing fields
-      const pricingFields = [
-        'ratePerRoom', 'ratePerThousandSqFt', 'tripChargePerVisit',
+      // ✅ FIXED: Log ALL price changes for numeric pricing fields
+      const baseEditableFields = [
+        'ratePerRoom', 'ratePerThousandSqFt', 'tripChargePerVisit'
+      ];
+
+      const customOverrideFields = [
         'customServiceCharge', 'customPerVisitPrice', 'customMonthlyRecurring',
         'customContractTotal', 'customFirstMonthTotal'
       ];
 
-      if (pricingFields.includes(name)) {
-        const newValue = next[name as keyof ElectrostaticSprayFormState] as number | undefined;
-        const oldValue = originalValue as number | undefined;
+      const allPricingFields = [...baseEditableFields, ...customOverrideFields];
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(name, oldValue, newValue);
+      if (allPricingFields.includes(name)) {
+        const newValue = next[name as keyof ElectrostaticSprayFormState] as number | undefined;
+
+        // ✅ NEW: Use baseline value instead of previous form value
+        // Baseline = backend default (new documents) or loaded value (edit mode)
+        let baselineValue = baselineValues.current[name];
+
+        // For custom fields, get baseline from the corresponding base field
+        if (baselineValue === undefined && name.startsWith('custom')) {
+          const baseFieldMap: Record<string, string> = {
+            'customServiceCharge': 'ratePerRoom',
+            'customPerVisitPrice': 'ratePerRoom',
+          };
+
+          const baseFieldName = baseFieldMap[name];
+          if (baseFieldName) {
+            baselineValue = baselineValues.current[baseFieldName];
+          }
+        }
+
+        // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
+        // This ensures Map replaces previous entry with updated value still comparing to baseline
+        // Example: First change 20→15 logs "20→15", second change 15→10 REPLACES with "20→10"
+        if (newValue !== undefined && baselineValue !== undefined &&
+            typeof newValue === 'number' && typeof baselineValue === 'number' &&
+            newValue !== baselineValue) {
+          console.log(`📝 [ELECTROSTATIC-BASELINE-LOG] Logging change for ${name}:`, {
+            baseline: baselineValue,
+            newValue,
+            change: newValue - baselineValue,
+            note: 'Always comparing to baseline (not previous value)'
+          });
+          addServiceFieldChange(name, baselineValue, newValue);
         }
       }
 
@@ -608,7 +712,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     calc,
     backendConfig,
     isLoadingConfig,
-    refreshConfig: fetchPricing,
+    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
     activeConfig, // ✅ EXPOSE: Active config for dynamic UI text
     setContractMonths,
   };

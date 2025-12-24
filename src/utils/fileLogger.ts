@@ -31,7 +31,7 @@ interface LogData {
 
 // Global logging state
 class FileLogger {
-  private changes: Map<string, FieldChange> = new Map();
+  private changes: Map<string, FieldChange> = new Map(); // ✅ Use Map to keep only ONE change per field
   private sessionId: string;
 
   constructor() {
@@ -39,7 +39,7 @@ class FileLogger {
     console.log('📝 [FILE-LOGGER] Initialized with session:', this.sessionId);
   }
 
-  // Add or update a change
+  // Add or update a change (replaces previous change for same field)
   addChange(change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>): void {
     const changeAmount = change.newValue - change.originalValue;
     const changePercentage = change.originalValue !== 0
@@ -53,31 +53,46 @@ class FileLogger {
       timestamp: new Date().toISOString()
     };
 
-    // Use composite key to allow multiple fields per product
+    // ✅ Use Map key to keep only ONE change per field
+    // Key format: "productKey_fieldType" (e.g., "carpetCleaning_customFirstUnitRate")
     const key = `${change.productKey}_${change.fieldType}`;
+    const existingChange = this.changes.get(key);
+
+    if (existingChange) {
+      console.log(`🔄 [FILE-LOGGER] REPLACING change for ${change.productName} - ${change.fieldDisplayName}:`, {
+        oldChange: `${existingChange.originalValue} → ${existingChange.newValue}`,
+        newChange: `${change.originalValue} → ${change.newValue}`,
+        note: 'Keeping baseline originalValue'
+      });
+    }
+
     this.changes.set(key, fullChange);
 
-    console.log(`📝 [FILE-LOGGER] Added change: ${change.productName} - ${change.fieldType}`, {
+    console.log(`📝 [FILE-LOGGER] ${existingChange ? 'Updated' : 'Added'} change: ${change.productName} - ${change.fieldType}`, {
       from: change.originalValue,
       to: change.newValue,
       change: changeAmount,
       changePercent: changePercentage.toFixed(2) + '%'
     });
 
-    console.log(`📝 [FILE-LOGGER] Total changes collected: ${this.changes.size}`);
+    console.log(`📝 [FILE-LOGGER] Total unique fields changed: ${this.changes.size}`);
   }
 
   // Remove a specific change
   removeChange(productKey: string, fieldType: string): void {
     const key = `${productKey}_${fieldType}`;
-    if (this.changes.delete(key)) {
+    const removed = this.changes.delete(key);
+
+    if (removed) {
       console.log(`🗑️ [FILE-LOGGER] Removed change: ${productKey} - ${fieldType}`);
+    } else {
+      console.log(`⚠️ [FILE-LOGGER] No change found to remove: ${productKey} - ${fieldType}`);
     }
   }
 
   // Get all changes as array
   getChanges(): FieldChange[] {
-    return Array.from(this.changes.values());
+    return Array.from(this.changes.values()); // Convert Map to Array
   }
 
   // Check if there are changes
@@ -88,7 +103,7 @@ class FileLogger {
   // Clear all changes
   clearChanges(): void {
     console.log(`🧹 [FILE-LOGGER] Clearing ${this.changes.size} changes`);
-    this.changes.clear();
+    this.changes = new Map();
   }
 
   // Get changes count
@@ -112,7 +127,7 @@ class FileLogger {
       };
     }
 
-    console.log(`📦 [FILE-LOGGER] Creating/updating log in Logs collection with ${changes.length} changes for version ${logData.versionNumber}`);
+    console.log(`📦 [FILE-LOGGER] Creating log with ${changes.length} unique field changes for version ${logData.versionNumber}`);
 
     if (options.overwriteExisting) {
       console.log(`🔄 [FILE-LOGGER] Overwrite mode enabled - reason: ${options.overwriteReason}`);
@@ -128,7 +143,7 @@ class FileLogger {
         overwriteReason: options.overwriteReason,
       });
 
-      console.log(`✅ [FILE-LOGGER] Log created in Logs collection:`, {
+      console.log(`✅ [FILE-LOGGER] Log created:`, {
         logId: result.log?.logId,
         fileName: result.log?.fileName,
         totalChanges: result.log?.totalChanges,
@@ -142,7 +157,7 @@ class FileLogger {
       return result;
 
     } catch (error) {
-      console.error('❌ [FILE-LOGGER] Failed to create log in Logs collection:', error);
+      console.error('❌ [FILE-LOGGER] Failed to create log:', error);
       throw error;
     }
   }
@@ -156,7 +171,7 @@ class FileLogger {
         key,
         product: change.productName,
         field: change.fieldType,
-        change: change.changeAmount
+        change: `${change.originalValue} → ${change.newValue} (${change.changeAmount >= 0 ? '+' : ''}${change.changeAmount})`
       }))
     });
   }
@@ -209,7 +224,7 @@ export const getAllVersionLogsForTesting = async (params?: {
     const { pdfApi } = await import('../backendservice/api/pdfApi');
     const result = await pdfApi.getAllVersionLogs(params);
 
-    console.log('📋 [ALL-VERSION-LOGS] Results from Logs collection:', {
+    console.log('📋 [ALL-VERSION-LOGS] Results:', {
       totalLogs: result.pagination.totalLogs,
       currentPage: result.pagination.currentPage,
       totalPages: result.pagination.totalPages,
@@ -230,7 +245,7 @@ export const getAllVersionLogsForTesting = async (params?: {
 
     return result;
   } catch (error) {
-    console.error('❌ Failed to fetch all version logs from Logs collection:', error);
+    console.error('❌ Failed to fetch all version logs:', error);
     return null;
   }
 };
@@ -403,6 +418,15 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customPerVisitPrice': 'Custom Per Visit Price',
     'customMonthlyRecurring': 'Custom Monthly Recurring',
     'customFirstMonthTotal': 'Custom First Month Total',
+
+    // Service fields - Carpet Cleaning
+    'firstUnitRate': 'First 500 sq ft Rate',
+    'additionalUnitRate': 'Additional 500 sq ft Rate',
+    'perVisitMinimum': 'Per Visit Minimum',
+    'customFirstUnitRate': 'Custom First Unit Rate',
+    'customAdditionalUnitRate': 'Custom Additional Unit Rate',
+    'customPerVisitMinimum': 'Custom Per Visit Minimum',
+    'customInstallationFee': 'Custom Installation Fee',
 
     // Service fields - Janitorial
     'recurringServiceRate': 'Recurring Service Rate',

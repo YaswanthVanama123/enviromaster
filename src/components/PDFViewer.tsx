@@ -7,7 +7,7 @@ import { manualUploadApi } from "../backendservice/api/manualUploadApi";
 import { versionApi } from "../backendservice/api/versionApi";
 import "./PDFViewer.css";
 
-type DocumentType = 'agreement' | 'manual-upload' | 'attached-file' | 'version';
+type DocumentType = 'agreement' | 'manual-upload' | 'attached-file' | 'version' | 'version-log';
 
 type LocationState = {
   documentId?: string;
@@ -40,6 +40,9 @@ export default function PDFViewer() {
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   // ✅ NEW: Watermark toggle state (only for version PDFs) - initialize with value from file list
   const [showWatermark, setShowWatermark] = useState(initialWatermark);
+  // ✅ NEW: Text content state for log files (TXT)
+  const [textContent, setTextContent] = useState<string | null>(null);
+  const isLogFile = documentType === 'version-log';
 
   useEffect(() => {
     if (!documentId) {
@@ -51,7 +54,17 @@ export default function PDFViewer() {
     const fetchPDF = async () => {
       try {
         setLoading(true);
-        console.log(`📄 [PDF-VIEWER] Fetching PDF for document: ${documentId}, type: ${documentType || 'auto-detect'}`);
+        console.log(`📄 [PDF-VIEWER] Fetching document: ${documentId}, type: ${documentType || 'auto-detect'}`);
+
+        // ✅ NEW: Handle log files (TXT) separately
+        if (documentType === 'version-log') {
+          console.log(`📝 [PDF-VIEWER] Fetching log file (TXT) for document ${documentId}`);
+          const blob = await pdfApi.downloadVersionLog(documentId);
+          const text = await blob.text();
+          setTextContent(text);
+          console.log(`✅ [PDF-VIEWER] Log file loaded successfully`);
+          return;
+        }
 
         // 🎯 SMART API SELECTION: Use correct endpoint based on document type
         let blob: Blob;
@@ -202,6 +215,22 @@ export default function PDFViewer() {
     try {
       setDownloading(true);
 
+      // ✅ NEW: Handle log files (TXT) separately
+      if (documentType === 'version-log') {
+        const blob = await pdfApi.downloadVersionLog(documentId);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const safeName = (fileName || "Version_Changes").replace(/[^\w\-]+/g, "_") + ".txt";
+        a.download = safeName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        setToastMessage({ message: "Log file downloaded successfully!", type: "success" });
+        return;
+      }
+
       // ✅ FIXED: Use correct API based on document type for downloading
       let blob: Blob;
 
@@ -233,8 +262,8 @@ export default function PDFViewer() {
       window.URL.revokeObjectURL(url);
       setToastMessage({ message: "PDF downloaded successfully!", type: "success" });
     } catch (err) {
-      console.error("Error downloading PDF:", err);
-      setToastMessage({ message: "Failed to download PDF. Please try again.", type: "error" });
+      console.error("Error downloading file:", err);
+      setToastMessage({ message: "Failed to download file. Please try again.", type: "error" });
     } finally {
       setDownloading(false);
     }
@@ -294,18 +323,18 @@ export default function PDFViewer() {
       <div className="pdf-viewer">
         <div className="pdf-viewer__loading">
           <div className="spinner"></div>
-          <p>Loading PDF...</p>
+          <p>Loading {isLogFile ? 'log file' : 'PDF'}...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !pdfUrl) {
+  if (error || (!pdfUrl && !textContent)) {
     return (
       <div className="pdf-viewer">
         <div className="pdf-viewer__error">
-          <h2>⚠️ PDF Viewing Error</h2>
-          <p className="error-message">{error || "Unable to load PDF"}</p>
+          <h2>⚠️ {isLogFile ? 'Log File' : 'PDF'} Viewing Error</h2>
+          <p className="error-message">{error || `Unable to load ${isLogFile ? 'log file' : 'PDF'}`}</p>
 
           {/* ✅ NEW: Show detailed suggestions if available */}
           {errorDetails?.suggestions && (
@@ -379,18 +408,21 @@ export default function PDFViewer() {
               </label>
             </div>
           )}
-          <button
-            onClick={handleEdit}
-            className="pdf-viewer__btn pdf-viewer__btn--edit"
-            title="Edit Document"
-          >
-            ✏️ Edit
-          </button>
+          {/* ✅ UPDATED: Hide Edit button for log files */}
+          {!isLogFile && (
+            <button
+              onClick={handleEdit}
+              className="pdf-viewer__btn pdf-viewer__btn--edit"
+              title="Edit Document"
+            >
+              ✏️ Edit
+            </button>
+          )}
           <button
             onClick={handleDownload}
             className="pdf-viewer__btn pdf-viewer__btn--download"
             disabled={downloading}
-            title="Download PDF"
+            title={isLogFile ? "Download Log File" : "Download PDF"}
           >
             {downloading ? "⏳ Downloading..." : "⬇️ Download"}
           </button>
@@ -398,11 +430,30 @@ export default function PDFViewer() {
       </div>
 
       <div className="pdf-viewer__container">
-        <iframe
-          src={pdfUrl}
-          className="pdf-viewer__iframe"
-          title="PDF Viewer"
-        />
+        {/* ✅ NEW: Show text content for log files (TXT) */}
+        {isLogFile && textContent ? (
+          <pre className="pdf-viewer__text-content" style={{
+            padding: '20px',
+            backgroundColor: '#1e1e1e',
+            color: '#d4d4d4',
+            fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+            fontSize: '13px',
+            lineHeight: '1.5',
+            overflow: 'auto',
+            height: '100%',
+            margin: 0,
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word'
+          }}>
+            {textContent}
+          </pre>
+        ) : (
+          <iframe
+            src={pdfUrl}
+            className="pdf-viewer__iframe"
+            title="PDF Viewer"
+          />
+        )}
       </div>
 
       {toastMessage && (

@@ -1078,23 +1078,24 @@ function FormFillingContent() {
         if (currentHasChanges) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [DRAFT-SAVE] Creating/updating log file with ${currentChangesCount} changes for draft update`);
+            console.log(`📝 [DRAFT-SAVE] Creating NEW log file with ${currentChangesCount} changes for draft save`);
 
-            // ✅ NEW: For drafts, always overwrite existing logs to maintain single log per agreement
+            // ✅ FIXED: Create NEW log file per draft save (don't overwrite)
+            // Each time a salesman makes changes and clicks "Save as Draft", a new log is created
             await createVersionLogFile({
               agreementId: documentId,
               versionId: locationState.editingVersionId || documentId, // Use version ID if editing a version, otherwise agreement ID
-              versionNumber: locationState.editingVersionId ? undefined : 1, // Version number not needed when overwriting version logs
+              versionNumber: locationState.editingVersionId ? undefined : 1, // Version number will be looked up or defaulted
               salespersonId: 'salesperson_001', // TODO: Get from auth context
               salespersonName: 'Sales Person', // TODO: Get from auth context
               saveAction: 'save_draft',
               documentTitle,
             }, {
-              overwriteExisting: true,
-              overwriteReason: locationState.editingVersionId ? 'version_update' : 'draft_update'
+              overwriteExisting: false, // ✅ FIXED: Create new log, don't overwrite
+              overwriteReason: undefined // Not overwriting, so no reason needed
             });
 
-            console.log(`✅ [DRAFT-SAVE] Successfully created log file and cleared changes`);
+            console.log(`✅ [DRAFT-SAVE] Successfully created NEW log file and cleared changes`);
           } catch (logError) {
             console.error('❌ [DRAFT-SAVE] Failed to create log file:', logError);
             // Don't fail the draft save if logging fails
@@ -1114,9 +1115,9 @@ function FormFillingContent() {
         if (currentHasChanges && newId) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
-            console.log(`📝 [DRAFT-CREATE] Creating/updating log file with ${currentChangesCount} changes for new draft`);
+            console.log(`📝 [DRAFT-CREATE] Creating NEW log file with ${currentChangesCount} changes for new draft`);
 
-            // ✅ NEW: For new drafts, overwrite any existing logs to maintain single log per agreement
+            // ✅ FIXED: Create NEW log file (don't overwrite) - even for first draft
             await createVersionLogFile({
               agreementId: newId,
               versionId: newId, // For drafts, use agreement ID as version ID
@@ -1126,11 +1127,11 @@ function FormFillingContent() {
               saveAction: 'save_draft',
               documentTitle,
             }, {
-              overwriteExisting: true,
-              overwriteReason: 'draft_update'
+              overwriteExisting: false, // ✅ FIXED: Create new log, don't overwrite
+              overwriteReason: undefined // Not overwriting, so no reason needed
             });
 
-            console.log(`✅ [DRAFT-CREATE] Successfully created log file and cleared changes`);
+            console.log(`✅ [DRAFT-CREATE] Successfully created NEW log file and cleared changes`);
           } catch (logError) {
             console.error('❌ [DRAFT-CREATE] Failed to create log file:', logError);
             // Don't fail the draft save if logging fails

@@ -1,4 +1,5 @@
 // src/features/services/common/serviceTypes.ts
+import type { CustomField } from "../CustomFieldManager";
 
 export type ServiceId =
   | "saniclean"
@@ -10,11 +11,15 @@ export type ServiceId =
   | "sanipod";
 
 export type BillingFrequency =
+  | "oneTime"
   | "weekly"
   | "biweekly"
+  | "twicePerMonth"
   | "monthly"
   | "bimonthly"
-  | "quarterly";
+  | "quarterly"
+  | "biannual"
+  | "annual";
 
 export interface BaseServiceFormState {
   frequency: BillingFrequency;
@@ -40,6 +45,6 @@ export interface ServiceMeta {
 
 // Optional prop for prefill
 export interface ServiceInitialData<T> {
-  initialData?: Partial<T>;
+  initialData?: Partial<T> & { customFields?: CustomField[] };
   onRemove?: () => void;
 }

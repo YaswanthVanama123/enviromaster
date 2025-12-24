@@ -121,10 +121,27 @@ export const CarpetForm: React.FC<
         displayName: "Carpet Cleaning",
         isActive: true,
 
+        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
+        // This ensures edited values are saved to backend, not just backend defaults
+        firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate,
+        additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate,
+        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,
+        installMultiplierDirty: form.installMultiplierDirty,
+        installMultiplierClean: form.installMultiplierClean,
+        unitSqFt: form.unitSqFt,
+        useExactSqft: form.useExactSqft,
+
+        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+        areaSqFt: form.areaSqFt,
+        frequency: form.frequency,
+        contractMonths: form.contractMonths,
+        includeInstall: form.includeInstall,
+        isDirtyInstall: form.isDirtyInstall,
+        location: form.location,
+
         // Red/Green Line pricing data
         perVisitBase: calc.perVisitBase,  // Raw price before minimum
         perVisitCharge: calc.perVisitCharge,  // Final price after minimum
-        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,  // Minimum threshold
 
         frequency: {
           isDisplay: true,
@@ -145,7 +162,7 @@ export const CarpetForm: React.FC<
           label: "Carpet Area",
           type: "calc" as const,
           qty: form.areaSqFt,
-          rate: form.firstUnitRate,
+          rate: form.customFirstUnitRate ?? form.firstUnitRate,  // ✅ FIXED: Use effective value for PDF
           total: calc.perVisitCharge,
           unit: "sq ft",
         },
@@ -203,6 +220,12 @@ export const CarpetForm: React.FC<
 
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
+        console.log('🔧 [CarpetForm] Sending data to context with pricing fields:', {
+          firstUnitRate: data?.firstUnitRate,
+          additionalUnitRate: data?.additionalUnitRate,
+          perVisitMinimum: data?.perVisitMinimum,
+          fullData: JSON.stringify(data, null, 2)
+        });
         servicesContext.updateService("carpetclean", data);
       }
     }

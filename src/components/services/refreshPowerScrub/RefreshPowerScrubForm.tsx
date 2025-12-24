@@ -353,7 +353,17 @@ export const RefreshPowerScrubForm: React.FC<
             type: "dollar" as const,
             amount: parseFloat(formatNumber(quote.perVisitPrice)),
           },
+          contract: {
+            isDisplay: true,
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: quote.contractTotal,
+          },
         },
+
+        // ✅ Also add direct contractTotal field for compatibility with ServicesContext
+        contractTotal: quote.contractTotal,
 
         notes: form.notes || "",
         customFields: customFields,

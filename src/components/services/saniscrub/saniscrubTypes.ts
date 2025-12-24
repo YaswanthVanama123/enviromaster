@@ -117,4 +117,6 @@ export interface SaniscrubFormState extends BaseServiceFormState {
   customMonthlyRecurring?: number;
   customFirstMonthPrice?: number;
   customContractTotal?: number;
+  customPerVisitMinimum?: number;
+  perVisitMinimum?: number;
 }

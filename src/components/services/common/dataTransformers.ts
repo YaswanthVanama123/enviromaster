@@ -247,6 +247,8 @@ export function transformFoamingDrainData(structuredData: any): any {
 export function transformCarpetCleanData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
+  console.log('🔄 [transformCarpetCleanData] Received structured data:', JSON.stringify(structuredData, null, 2));
+
   const formState: any = {
     notes: structuredData.notes || "",
   };
@@ -270,11 +272,49 @@ export function transformCarpetCleanData(structuredData: any): any {
     formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
   }
 
+  // ✅ FIXED: Extract top-level editable pricing fields (saved from form)
+  // These are the baseline pricing values that should be loaded in edit mode
+  if (structuredData.firstUnitRate !== undefined) {
+    console.log('🔄 [transformCarpetCleanData] Extracting firstUnitRate:', structuredData.firstUnitRate);
+    formState.firstUnitRate = structuredData.firstUnitRate;
+  }
+  if (structuredData.additionalUnitRate !== undefined) {
+    console.log('🔄 [transformCarpetCleanData] Extracting additionalUnitRate:', structuredData.additionalUnitRate);
+    formState.additionalUnitRate = structuredData.additionalUnitRate;
+  }
+  if (structuredData.perVisitMinimum !== undefined) {
+    console.log('🔄 [transformCarpetCleanData] Extracting perVisitMinimum:', structuredData.perVisitMinimum);
+    formState.perVisitMinimum = structuredData.perVisitMinimum;
+  }
+  if (structuredData.installMultiplierDirty !== undefined) {
+    formState.installMultiplierDirty = structuredData.installMultiplierDirty;
+  }
+  if (structuredData.installMultiplierClean !== undefined) {
+    formState.installMultiplierClean = structuredData.installMultiplierClean;
+  }
+  if (structuredData.unitSqFt !== undefined) {
+    formState.unitSqFt = structuredData.unitSqFt;
+  }
+  if (structuredData.useExactSqft !== undefined) {
+    formState.useExactSqft = structuredData.useExactSqft;
+  }
+
   // Extract service (carpet area)
   if (structuredData.service) {
     formState.areaSqFt = structuredData.service.qty || 0;
-    formState.firstUnitRate = structuredData.service.rate || 0;
+    // ✅ FALLBACK: Only use service.rate if top-level firstUnitRate not already set
+    if (formState.firstUnitRate === undefined && structuredData.service.rate !== undefined) {
+      console.log('🔄 [transformCarpetCleanData] Using fallback firstUnitRate from service.rate:', structuredData.service.rate);
+      formState.firstUnitRate = structuredData.service.rate;
+    }
   }
+
+  console.log('🔄 [transformCarpetCleanData] Final formState with pricing fields:', {
+    firstUnitRate: formState.firstUnitRate,
+    additionalUnitRate: formState.additionalUnitRate,
+    perVisitMinimum: formState.perVisitMinimum,
+    areaSqFt: formState.areaSqFt,
+  });
 
   // Extract installation data
   if (structuredData.installation) {
@@ -957,45 +997,87 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract pricing method
-  if (structuredData.pricingMethod) {
+  // ✅ FIXED: Extract top-level editable pricing fields (saved from form)
+  // These are the baseline pricing values that should be loaded in edit mode
+  if (structuredData.ratePerRoom !== undefined) {
+    formState.ratePerRoom = structuredData.ratePerRoom;
+  }
+  if (structuredData.ratePerThousandSqFt !== undefined) {
+    formState.ratePerThousandSqFt = structuredData.ratePerThousandSqFt;
+  }
+  if (structuredData.tripChargePerVisit !== undefined) {
+    formState.tripChargePerVisit = structuredData.tripChargePerVisit;
+  }
+
+  // ✅ FIXED: Extract top-level quantity/selection inputs (saved from form)
+  if (structuredData.pricingMethod !== undefined) {
+    formState.pricingMethod = structuredData.pricingMethod;
+  }
+  if (structuredData.roomCount !== undefined) {
+    formState.roomCount = structuredData.roomCount;
+  }
+  if (structuredData.squareFeet !== undefined) {
+    formState.squareFeet = structuredData.squareFeet;
+  }
+  if (structuredData.useExactCalculation !== undefined) {
+    formState.useExactCalculation = structuredData.useExactCalculation;
+  }
+  if (structuredData.isCombinedWithSaniClean !== undefined) {
+    formState.isCombinedWithSaniClean = structuredData.isCombinedWithSaniClean;
+  }
+
+  // ✅ FALLBACK: Extract from structured fields (for backward compatibility)
+  // Only use these if top-level fields not already set
+
+  // Extract pricing method (fallback)
+  if (formState.pricingMethod === undefined && structuredData.pricingMethod) {
     formState.pricingMethod = structuredData.pricingMethod.value?.includes("Room") ? "byRoom" : "bySqFt";
   }
 
-  // Extract service data
+  // Extract service data (fallback)
   if (structuredData.service) {
     if (formState.pricingMethod === "byRoom") {
-      formState.roomCount = structuredData.service.qty || 0;
-      if (structuredData.service.rate != null) {
+      if (formState.roomCount === undefined) {
+        formState.roomCount = structuredData.service.qty || 0;
+      }
+      if (formState.ratePerRoom === undefined && structuredData.service.rate != null) {
         formState.ratePerRoom = structuredData.service.rate;
       }
     } else {
-      formState.squareFeet = structuredData.service.qty || 0;
-      if (structuredData.service.rate != null) {
+      if (formState.squareFeet === undefined) {
+        formState.squareFeet = structuredData.service.qty || 0;
+      }
+      if (formState.ratePerThousandSqFt === undefined && structuredData.service.rate != null) {
         formState.ratePerThousandSqFt = structuredData.service.rate;
       }
     }
   }
 
-  // Extract frequency
+  // Extract frequency (fallback)
   if (structuredData.frequency) {
     formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
   }
 
-  // Extract location
+  // Extract location (fallback)
   if (structuredData.location) {
-    const loc = structuredData.location.value?.toLowerCase();
-    formState.location = loc?.includes("inside") ? "insideBeltway" :
-                        loc?.includes("outside") ? "outsideBeltway" : "standard";
+    if (typeof structuredData.location === 'string') {
+      // Top-level direct value
+      formState.location = structuredData.location;
+    } else if (structuredData.location.value) {
+      // Structured field
+      const loc = structuredData.location.value?.toLowerCase();
+      formState.location = loc?.includes("inside") ? "insideBeltway" :
+                          loc?.includes("outside") ? "outsideBeltway" : "standard";
+    }
   }
 
-  // Extract combined flag
-  if (structuredData.combinedService) {
+  // Extract combined flag (fallback)
+  if (formState.isCombinedWithSaniClean === undefined && structuredData.combinedService) {
     formState.isCombinedWithSaniClean = structuredData.combinedService.value?.includes("Sani-Clean");
   }
 
-  // Extract trip charge if present
-  if (structuredData.tripCharge) {
+  // Extract trip charge if present (fallback)
+  if (formState.tripChargePerVisit === undefined && structuredData.tripCharge) {
     formState.tripChargePerVisit = structuredData.tripCharge.amount || 0;
   }
 

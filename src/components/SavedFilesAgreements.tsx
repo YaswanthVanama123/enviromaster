@@ -326,7 +326,7 @@ const FileRow = memo(({
           className="iconbtn"
           title="View"
           onClick={handleView}
-          disabled={!file.hasPdf}
+          disabled={!file.hasPdf && file.fileType !== 'version_log'}
         >
           <FontAwesomeIcon icon={faEye} />
         </button>
@@ -334,7 +334,7 @@ const FileRow = memo(({
           className="iconbtn"
           title="Download"
           onClick={handleDownload}
-          disabled={!file.hasPdf}
+          disabled={!file.hasPdf && file.fileType !== 'version_log'}
         >
           <FontAwesomeIcon icon={faDownload} />
         </button>
@@ -342,7 +342,7 @@ const FileRow = memo(({
           className="iconbtn"
           title="Share via Email"
           onClick={handleEmail}
-          disabled={!file.hasPdf}
+          disabled={!file.hasPdf && file.fileType !== 'version_log'}
         >
           <FontAwesomeIcon icon={faEnvelope} />
         </button>

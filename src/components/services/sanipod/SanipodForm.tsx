@@ -107,8 +107,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const prevDataRef = useRef<string>("");
 
   // Calculate effective rate per pod for payload
-  const effectiveRate = form.podQuantity > 0 && calc.monthlyTotal > 0
-    ? calc.monthlyTotal / form.podQuantity
+  const effectiveRate = form.podQuantity > 0 && calc.monthly > 0
+    ? calc.monthly / form.podQuantity
     : calc.effectiveRatePerPod || 0;
 
   // Determine if frequency is visit-based (not monthly billing)
@@ -166,7 +166,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         // Red/Green Line pricing data
         perVisitBase: form.podQuantity * effectiveRate,  // Raw pod price
         perVisit: calc.perVisit,  // Final per-visit price
-        minimumChargePerVisit: 0,  // No minimum for SaniPod (standalone service)
+        minimumChargePerVisit: calc.minimumChargePerVisit,  // ✅ NEW: Minimum threshold
 
         service: {
           isDisplay: true,

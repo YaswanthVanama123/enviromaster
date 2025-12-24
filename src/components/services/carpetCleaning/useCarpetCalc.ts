@@ -135,6 +135,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
+  const isEditMode = useRef(!!initial); // ✅ NEW: Track if we're in edit mode (has initial data)
+
+  // ✅ NEW: Track baseline values for logging (set ONCE on mount)
+  // Baseline = backend default for new documents, or loaded/saved value for edit mode
+  const baselineValues = useRef<Record<string, number>>({});
+  const baselineInitialized = useRef(false);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
@@ -196,7 +202,15 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   // Helper function to update form with config data
-  const updateFormWithConfig = (config: BackendCarpetConfig) => {
+  const updateFormWithConfig = (config: BackendCarpetConfig, forceUpdate: boolean = false) => {
+    // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
+    // Only update on manual refresh (when user explicitly clicks refresh button)
+    if (initial && !forceUpdate) {
+      console.log('📋 [CARPET] Edit mode: Skipping form update to preserve loaded values');
+      return; // Don't overwrite loaded values in edit mode
+    }
+
+    console.log('📋 [CARPET] Updating form with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
     setForm((prev) => ({
       ...prev,
       // ✅ Map backend config properties to form properties
@@ -210,7 +224,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
   };
 
   // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
       // First try to get active service config
@@ -227,20 +241,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
             console.log('✅ [Carpet Cleaning] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendCarpetConfig;
             setBackendConfig(config);
-            updateFormWithConfig(config);
+            updateFormWithConfig(config, forceRefresh);
 
-            // ✅ FIXED: Clear all custom overrides when refresh button clicked
-            setForm(prev => ({
-              ...prev,
-              customFirstUnitRate: undefined,
-              customAdditionalUnitRate: undefined,
-              customPerVisitMinimum: undefined,
-              customPerVisitPrice: undefined,
-              customMonthlyRecurring: undefined,
-              customFirstMonthPrice: undefined,
-              customContractTotal: undefined,
-              customInstallationFee: undefined,
-            }));
+            // ✅ FIXED: Only clear custom overrides on manual refresh
+            if (forceRefresh) {
+              console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
+              setForm(prev => ({
+                ...prev,
+                customFirstUnitRate: undefined,
+                customAdditionalUnitRate: undefined,
+                customPerVisitMinimum: undefined,
+                customPerVisitPrice: undefined,
+                customMonthlyRecurring: undefined,
+                customFirstMonthPrice: undefined,
+                customContractTotal: undefined,
+                customInstallationFee: undefined,
+              }));
+            }
 
             console.log('✅ Carpet Cleaning FALLBACK CONFIG loaded from context:', {
               baseSqFtUnit: config.baseSqFtUnit,
@@ -270,20 +287,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-      updateFormWithConfig(config);
+      updateFormWithConfig(config, forceRefresh);
 
-      // ✅ FIXED: Clear all custom overrides when refresh button clicked
-      setForm(prev => ({
-        ...prev,
-        customFirstUnitRate: undefined,
-        customAdditionalUnitRate: undefined,
-        customPerVisitMinimum: undefined,
-        customPerVisitPrice: undefined,
-        customMonthlyRecurring: undefined,
-        customFirstMonthPrice: undefined,
-        customContractTotal: undefined,
-        customInstallationFee: undefined,
-      }));
+      // ✅ FIXED: Only clear custom overrides on manual refresh
+      if (forceRefresh) {
+        console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
+        setForm(prev => ({
+          ...prev,
+          customFirstUnitRate: undefined,
+          customAdditionalUnitRate: undefined,
+          customPerVisitMinimum: undefined,
+          customPerVisitPrice: undefined,
+          customMonthlyRecurring: undefined,
+          customFirstMonthPrice: undefined,
+          customContractTotal: undefined,
+          customInstallationFee: undefined,
+        }));
+      }
 
       console.log('✅ Carpet Cleaning ACTIVE CONFIG loaded from backend:', {
         baseSqFtUnit: config.baseSqFtUnit,
@@ -304,20 +324,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           console.log('✅ [Carpet Cleaning] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendCarpetConfig;
           setBackendConfig(config);
-          updateFormWithConfig(config);
+          updateFormWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Clear all custom overrides when refresh button clicked
-          setForm(prev => ({
-            ...prev,
-            customFirstUnitRate: undefined,
-            customAdditionalUnitRate: undefined,
-            customPerVisitMinimum: undefined,
-            customPerVisitPrice: undefined,
-            customMonthlyRecurring: undefined,
-            customFirstMonthPrice: undefined,
-            customContractTotal: undefined,
-            customInstallationFee: undefined,
-          }));
+          // ✅ FIXED: Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              customFirstUnitRate: undefined,
+              customAdditionalUnitRate: undefined,
+              customPerVisitMinimum: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+              customInstallationFee: undefined,
+            }));
+          }
 
           return;
         }
@@ -329,24 +352,74 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }
   };
 
-  // ✅ Fetch pricing configuration on mount ONLY if no initial data (new service)
+  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
   useEffect(() => {
-    // Skip fetching if we have initial data (editing existing service with saved prices)
-    if (initial) {
-      console.log('📋 [CARPET-PRICING] Skipping price fetch - using saved historical prices from initial data');
-      return;
-    }
-
-    console.log('📋 [CARPET-PRICING] Fetching current prices - new service or no initial data');
-    fetchPricing();
+    // Always fetch backend config to enable override detection in edit mode
+    console.log('📋 [CARPET-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
+    fetchPricing(false); // false = don't force update in edit mode
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
   useEffect(() => {
-    // Skip if we have initial data (editing existing service)
-    if (initial) return;
+    if (!backendConfig) return;
 
+    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+    if (!baselineInitialized.current) {
+      baselineInitialized.current = true;
+
+      // Baseline = loaded/saved value (edit mode) OR backend default (new document)
+      baselineValues.current = {
+        firstUnitRate: initial?.firstUnitRate ?? backendConfig.basePrice,
+        additionalUnitRate: initial?.additionalUnitRate ?? backendConfig.additionalUnitPrice,
+        perVisitMinimum: initial?.perVisitMinimum ?? backendConfig.minimumChargePerVisit,
+        installMultiplierDirty: initial?.installMultiplierDirty ?? backendConfig.installationMultipliers?.dirtyInstallMultiplier,
+        installMultiplierClean: initial?.installMultiplierClean ?? backendConfig.installationMultipliers?.cleanInstallMultiplier,
+      };
+
+      console.log('✅ [CARPET-BASELINE] Initialized baseline values for logging:', {
+        firstUnitRate: baselineValues.current.firstUnitRate,
+        additionalUnitRate: baselineValues.current.additionalUnitRate,
+        perVisitMinimum: baselineValues.current.perVisitMinimum,
+        note: initial ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
+      });
+
+      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+      if (initial) {
+        console.log('🔍 [CARPET-PRICING] Detecting price overrides for yellow highlighting...');
+
+        // Compare saved values against backend defaults
+        const hasFirstUnitRateOverride = initial.firstUnitRate !== undefined &&
+                                          initial.firstUnitRate !== backendConfig.basePrice;
+        const hasAdditionalUnitRateOverride = initial.additionalUnitRate !== undefined &&
+                                               initial.additionalUnitRate !== backendConfig.additionalUnitPrice;
+        const hasPerVisitMinimumOverride = initial.perVisitMinimum !== undefined &&
+                                            initial.perVisitMinimum !== backendConfig.minimumChargePerVisit;
+
+        if (hasFirstUnitRateOverride || hasAdditionalUnitRateOverride || hasPerVisitMinimumOverride) {
+          setForm(prev => ({
+            ...prev,
+            // Set custom override fields to enable yellow highlighting
+            customFirstUnitRate: hasFirstUnitRateOverride ? initial.firstUnitRate : prev.customFirstUnitRate,
+            customAdditionalUnitRate: hasAdditionalUnitRateOverride ? initial.additionalUnitRate : prev.customAdditionalUnitRate,
+            customPerVisitMinimum: hasPerVisitMinimumOverride ? initial.perVisitMinimum : prev.customPerVisitMinimum,
+          }));
+
+          console.log('✅ [CARPET-PRICING] Set custom override fields for yellow highlighting:', {
+            customFirstUnitRate: hasFirstUnitRateOverride ? initial.firstUnitRate : 'none',
+            customAdditionalUnitRate: hasAdditionalUnitRateOverride ? initial.additionalUnitRate : 'none',
+            customPerVisitMinimum: hasPerVisitMinimumOverride ? initial.perVisitMinimum : 'none',
+          });
+        } else {
+          console.log('ℹ️ [CARPET-PRICING] No price overrides detected - using backend defaults');
+        }
+      }
+    }
+  }, [backendConfig, initial]);
+
+  // Also fetch when services context becomes available (for fallback pricing)
+  useEffect(() => {
+    // Fetch from context if backend config not loaded yet (even in edit mode, for override detection)
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
@@ -434,7 +507,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
         }
 
-        // ✅ NEW: Handle editable rate fields
+        // ✅ Handle editable rate fields (logging happens below)
         case "unitSqFt":
         case "firstUnitRate":
         case "additionalUnitRate":
@@ -442,14 +515,18 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         case "installMultiplierDirty":
         case "installMultiplierClean": {
           const num = parseFloat(String(value));
-          newFormState = {
-            ...prev,
-            [name]: Number.isFinite(num) && num >= 0 ? num : 0,
-          };
+          if (Number.isFinite(num) && num >= 0) {
+            newFormState = {
+              ...prev,
+              [name]: num,
+            };
+          } else {
+            newFormState = prev;
+          }
           break;
         }
 
-        // ✅ NEW: Handle custom override fields for rates
+        // ✅ Handle custom override fields (logging happens below)
         case "customFirstUnitRate":
         case "customAdditionalUnitRate":
         case "customPerVisitMinimum":
@@ -512,24 +589,56 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
       }
 
-      // ✅ Log price override for numeric pricing fields
-      const pricingFields = [
+      // ✅ FIXED: Log ALL price changes for numeric pricing fields
+      // Log changes to BASE editable fields (these are what the user actually types)
+      const baseEditableFields = [
         'unitSqFt', 'firstUnitRate', 'additionalUnitRate', 'perVisitMinimum',
-        'installMultiplierDirty', 'installMultiplierClean',
+        'installMultiplierDirty', 'installMultiplierClean'
+      ];
+
+      // Log changes to CUSTOM OVERRIDE fields (set programmatically)
+      const customOverrideFields = [
         'customFirstUnitRate', 'customAdditionalUnitRate', 'customPerVisitMinimum',
         'customPerVisitPrice', 'customMonthlyRecurring', 'customFirstMonthPrice',
         'customContractTotal', 'customInstallationFee'
       ];
 
-      if (pricingFields.includes(name)) {
-        const newValue = newFormState[name as keyof CarpetFormState] as number | undefined;
-        const oldValue = originalValue as number | undefined;
+      const allPricingFields = [...baseEditableFields, ...customOverrideFields];
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(name, oldValue, newValue);
+      if (allPricingFields.includes(name)) {
+        const newValue = newFormState[name as keyof CarpetFormState] as number | undefined;
+
+        // ✅ NEW: Use baseline value instead of previous form value
+        // Baseline = backend default (new documents) or loaded value (edit mode)
+        let baselineValue = baselineValues.current[name];
+
+        // For custom fields, get baseline from the corresponding base field
+        if (baselineValue === undefined && name.startsWith('custom')) {
+          const baseFieldMap: Record<string, string> = {
+            'customFirstUnitRate': 'firstUnitRate',
+            'customAdditionalUnitRate': 'additionalUnitRate',
+            'customPerVisitMinimum': 'perVisitMinimum',
+          };
+
+          const baseFieldName = baseFieldMap[name];
+          if (baseFieldName) {
+            baselineValue = baselineValues.current[baseFieldName];
+          }
+        }
+
+        // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
+        // This ensures Map replaces previous entry with updated value still comparing to baseline
+        // Example: First change 300→30 logs "300→30", second change 30→3 REPLACES with "300→3"
+        if (newValue !== undefined && baselineValue !== undefined &&
+            typeof newValue === 'number' && typeof baselineValue === 'number' &&
+            newValue !== baselineValue) {
+          console.log(`📝 [CARPET-BASELINE-LOG] Logging change for ${name}:`, {
+            baseline: baselineValue,
+            newValue,
+            change: newValue - baselineValue,
+            note: 'Always comparing to baseline (not previous value)'
+          });
+          addServiceFieldChange(name, baselineValue, newValue);
         }
       }
 
@@ -1060,7 +1169,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       monthsPerVisit,
       totalVisitsForContract,
     },
-    refreshConfig: fetchPricing,
+    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
     isLoadingConfig,
     setContractMonths,
   };
