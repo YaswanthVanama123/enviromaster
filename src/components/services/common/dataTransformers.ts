@@ -51,7 +51,6 @@ export function transformRpmWindowsData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-
   // Extract quantities from windows array (✅ FIXED: Extract both quantities AND rates)
   if (structuredData.windows && Array.isArray(structuredData.windows)) {
     structuredData.windows.forEach((window: any) => {
@@ -142,23 +141,95 @@ export function transformSanicleanData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract pricing mode
-  if (structuredData.pricingMode) {
-    if (structuredData.pricingMode.value?.includes("All Inclusive")) {
-      formState.pricingMode = "all_inclusive";
-    } else if (structuredData.pricingMode.value?.includes("Geographic")) {
-      formState.pricingMode = "geographic_standard";
-    } else {
-      formState.pricingMode = "auto";
+  // Extract pricing mode (fallback for older structured field formats)
+  if (formState.pricingMode === undefined && structuredData.pricingMode) {
+    const value = structuredData.pricingMode.value || structuredData.pricingMode;
+    if (typeof value === "string") {
+      if (value.includes("All Inclusive")) formState.pricingMode = "all_inclusive";
+      else formState.pricingMode = "per_item_charge";
     }
   }
 
-  // Extract location
-  if (structuredData.location) {
-    formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
+  // Extract location (fallback for older structured field formats)
+  if (formState.location === undefined && structuredData.location) {
+    const value = structuredData.location.value || structuredData.location;
+    if (typeof value === "string") {
+      formState.location = value.includes("Inside") ? "insideBeltway" : value.includes("Outside") ? "outsideBeltway" : value;
+    }
+  }
+  // Extract direct saved fields for edit mode (top-level values saved from the form)
+  if (structuredData.mainServiceFrequency !== undefined) {
+    formState.mainServiceFrequency = structuredData.mainServiceFrequency;
+  }
+  if (structuredData.facilityComponentsFrequency !== undefined) {
+    formState.facilityComponentsFrequency = structuredData.facilityComponentsFrequency;
+  }
+  if (structuredData.frequency !== undefined) {
+    formState.frequency = structuredData.frequency;
+  }
+  if (structuredData.facilityComponentFrequency !== undefined) {
+    formState.facilityComponentFrequency = structuredData.facilityComponentFrequency;
+  }
+  if (structuredData.contractMonths !== undefined) {
+    formState.contractMonths = structuredData.contractMonths;
+  }
+  if (structuredData.rateTier !== undefined) {
+    formState.rateTier = structuredData.rateTier;
   }
 
-  // Extract fixture breakdown (✅ FIXED: Extract both quantities AND rates)
+  const pricingFields = [
+    "allInclusiveWeeklyRatePerFixture",
+    "luxuryUpgradePerDispenser",
+    "excessStandardSoapRate",
+    "excessLuxurySoapRate",
+    "paperCreditPerFixture",
+    "microfiberMoppingPerBathroom",
+    "insideBeltwayRatePerFixture",
+    "insideBeltwayMinimum",
+    "insideBeltwayTripCharge",
+    "insideBeltwayParkingFee",
+    "outsideBeltwayRatePerFixture",
+    "outsideBeltwayTripCharge",
+    "smallFacilityThreshold",
+    "smallFacilityMinimum",
+    "urinalScreenMonthly",
+    "urinalMatMonthly",
+    "toiletClipsMonthly",
+    "seatCoverDispenserMonthly",
+    "sanipodServiceMonthly",
+    "warrantyFeePerDispenserPerWeek",
+    "weeklyToMonthlyMultiplier",
+    "weeklyToAnnualMultiplier",
+    "redRateMultiplier",
+    "greenRateMultiplier",
+  ];
+
+  pricingFields.forEach((field) => {
+    if (structuredData[field] !== undefined) {
+      formState[field] = structuredData[field];
+    }
+  });
+
+  const customOverrideFields = [
+    "customBaseService",
+    "customTripCharge",
+    "customFacilityComponents",
+    "customSoapUpgrade",
+    "customExcessSoap",
+    "customMicrofiberMopping",
+    "customWarrantyFees",
+    "customPaperOverage",
+    "customWeeklyTotal",
+    "customMonthlyTotal",
+    "customContractTotal",
+  ];
+
+  customOverrideFields.forEach((field) => {
+    if (structuredData[field] !== undefined) {
+      formState[field] = structuredData[field];
+    }
+  });
+  // Extract fixture breakdown (quantities + rates)
   if (structuredData.fixtureBreakdown && Array.isArray(structuredData.fixtureBreakdown)) {
     structuredData.fixtureBreakdown.forEach((fixture: any) => {
       if (fixture.label === "Sinks") {
@@ -183,6 +254,22 @@ export function transformSanicleanData(structuredData: any): any {
         }
       }
     });
+  }
+
+  const fixtureRateFallback =
+    formState.sinkRate ??
+    formState.urinalRate ??
+    formState.maleToiletRate ??
+    formState.femaleToiletRate;
+
+  if (fixtureRateFallback !== undefined) {
+    if (formState.pricingMode === "all_inclusive" && formState.allInclusiveWeeklyRatePerFixture === undefined) {
+      formState.allInclusiveWeeklyRatePerFixture = fixtureRateFallback;
+    } else if (formState.location === "outsideBeltway" && formState.outsideBeltwayRatePerFixture === undefined) {
+      formState.outsideBeltwayRatePerFixture = fixtureRateFallback;
+    } else if (formState.insideBeltwayRatePerFixture === undefined) {
+      formState.insideBeltwayRatePerFixture = fixtureRateFallback;
+    }
   }
 
   // Extract soap type
@@ -1424,3 +1511,4 @@ export function transformServiceData(serviceId: string, structuredData: any): an
       return undefined;
   }
 }
+

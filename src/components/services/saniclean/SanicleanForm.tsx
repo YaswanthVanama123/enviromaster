@@ -38,6 +38,7 @@ export const SanicleanForm: React.FC<
     quote,
     fetchPricing,
     isLoadingConfig,
+    pricingOverrides,
     updateForm,
     setPricingMode,
     setLocation,
@@ -60,6 +61,18 @@ export const SanicleanForm: React.FC<
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   const prevDataRef = useRef<string>("");
+
+  const getOverrideStyle = (
+    isOverride: boolean,
+    baseStyle?: React.CSSProperties
+  ): React.CSSProperties => ({
+    ...(baseStyle || {}),
+    backgroundColor: isOverride ? "#fffacd" : (baseStyle?.backgroundColor ?? "white"),
+  });
+
+  const hasPricingOverride = (fieldName: string): boolean => {
+    return Boolean((pricingOverrides as Record<string, boolean> | undefined)?.[fieldName]);
+  };
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -138,6 +151,12 @@ export const SanicleanForm: React.FC<
   const soapDispensers = form.sinks; // 1 soap dispenser per sink
 
   const isAllInclusive = form.pricingMode === "all_inclusive";
+  const fixtureRateFieldName = isAllInclusive
+    ? "allInclusiveWeeklyRatePerFixture"
+    : (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture");
+  const fixtureRateOverride = hasPricingOverride(fixtureRateFieldName);
+  const excessSoapRateFieldName = form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate";
+  const excessSoapRateOverride = hasPricingOverride(excessSoapRateFieldName);
 
   // Debug logging
   console.log('🔍 [SaniClean Debug]', {
@@ -203,6 +222,59 @@ export const SanicleanForm: React.FC<
         serviceId: "saniclean",
         displayName: "SaniClean",
         isActive: true,
+
+        // Persist key form state + editable pricing config so edit mode reloads saved values (not current backend defaults)
+        pricingMode: form.pricingMode,
+        location: form.location,
+        rateTier: form.rateTier,
+        mainServiceFrequency: form.mainServiceFrequency,
+        facilityComponentsFrequency: form.facilityComponentsFrequency,
+        frequency: form.frequency, // backward-compat field
+        facilityComponentFrequency: form.facilityComponentFrequency, // backward-compat field
+        contractMonths: form.contractMonths,
+
+        // Editable pricing config (backend-driven rates)
+        allInclusiveWeeklyRatePerFixture: form.allInclusiveWeeklyRatePerFixture,
+        luxuryUpgradePerDispenser: form.luxuryUpgradePerDispenser,
+        excessStandardSoapRate: form.excessStandardSoapRate,
+        excessLuxurySoapRate: form.excessLuxurySoapRate,
+        paperCreditPerFixture: form.paperCreditPerFixture,
+        microfiberMoppingPerBathroom: form.microfiberMoppingPerBathroom,
+
+        insideBeltwayRatePerFixture: form.insideBeltwayRatePerFixture,
+        insideBeltwayMinimum: form.insideBeltwayMinimum,
+        insideBeltwayTripCharge: form.insideBeltwayTripCharge,
+        insideBeltwayParkingFee: form.insideBeltwayParkingFee,
+        outsideBeltwayRatePerFixture: form.outsideBeltwayRatePerFixture,
+        outsideBeltwayTripCharge: form.outsideBeltwayTripCharge,
+
+        smallFacilityThreshold: form.smallFacilityThreshold,
+        smallFacilityMinimum: form.smallFacilityMinimum,
+
+        urinalScreenMonthly: form.urinalScreenMonthly,
+        urinalMatMonthly: form.urinalMatMonthly,
+        toiletClipsMonthly: form.toiletClipsMonthly,
+        seatCoverDispenserMonthly: form.seatCoverDispenserMonthly,
+        sanipodServiceMonthly: form.sanipodServiceMonthly,
+
+        warrantyFeePerDispenserPerWeek: form.warrantyFeePerDispenserPerWeek,
+        weeklyToMonthlyMultiplier: form.weeklyToMonthlyMultiplier,
+        weeklyToAnnualMultiplier: form.weeklyToAnnualMultiplier,
+        redRateMultiplier: form.redRateMultiplier,
+        greenRateMultiplier: form.greenRateMultiplier,
+
+        // Custom override fields
+        customBaseService: form.customBaseService,
+        customTripCharge: form.customTripCharge,
+        customFacilityComponents: form.customFacilityComponents,
+        customSoapUpgrade: form.customSoapUpgrade,
+        customExcessSoap: form.customExcessSoap,
+        customMicrofiberMopping: form.customMicrofiberMopping,
+        customWarrantyFees: form.customWarrantyFees,
+        customPaperOverage: form.customPaperOverage,
+        customWeeklyTotal: form.customWeeklyTotal,
+        customMonthlyTotal: form.customMonthlyTotal,
+        customContractTotal: form.customContractTotal,
 
         // Red/Green Line pricing data (weekly pricing)
         perVisitBase: quote.breakdown.baseService,  // Raw base service weekly
@@ -326,7 +398,7 @@ export const SanicleanForm: React.FC<
           <button
             type="button"
             className="svc-mini"
-            onClick={fetchPricing}
+            onClick={() => fetchPricing(true)}
             disabled={isLoadingConfig}
             title="Refresh config from database"
           >
@@ -477,12 +549,12 @@ export const SanicleanForm: React.FC<
             type="number"
             min="0"
             step="1"
-            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
-                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={fixtureRateFieldName}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
             onChange={onChange}
             title="Rate per sink - editable"
+            style={getOverrideStyle(fixtureRateOverride)}
           />
           <span>=</span>
           <input
@@ -514,12 +586,12 @@ export const SanicleanForm: React.FC<
             type="number"
             min="0"
             step="1"
-            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
-                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={fixtureRateFieldName}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
             onChange={onChange}
             title="Rate per urinal - editable"
+            style={getOverrideStyle(fixtureRateOverride)}
           />
           <span>=</span>
           <input
@@ -551,12 +623,12 @@ export const SanicleanForm: React.FC<
             type="number"
             min="0"
             step="1"
-            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
-                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={fixtureRateFieldName}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
             onChange={onChange}
             title="Rate per male toilet - editable"
+            style={getOverrideStyle(fixtureRateOverride)}
           />
           <span>=</span>
           <input
@@ -588,12 +660,12 @@ export const SanicleanForm: React.FC<
             type="number"
             min="0"
             step="1"
-            name={isAllInclusive ? "allInclusiveWeeklyRatePerFixture" :
-                  (form.location === "insideBeltway" ? "insideBeltwayRatePerFixture" : "outsideBeltwayRatePerFixture")}
+            name={fixtureRateFieldName}
             value={isAllInclusive ? form.allInclusiveWeeklyRatePerFixture :
                   (form.location === "insideBeltway" ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture)}
             onChange={onChange}
             title="Rate per female toilet - editable"
+            style={getOverrideStyle(fixtureRateOverride)}
           />
           <span>=</span>
           <input
@@ -644,8 +716,11 @@ export const SanicleanForm: React.FC<
             onChange={onChange}
             disabled={form.soapType !== "luxury"}
             style={{
-              backgroundColor: form.soapType !== "luxury" ? '#f5f5f5' : 'white',
-              color: form.soapType !== "luxury" ? '#999' : 'black'
+              ...getOverrideStyle(
+                hasPricingOverride("luxuryUpgradePerDispenser"),
+                { backgroundColor: form.soapType !== "luxury" ? "#f5f5f5" : "white" }
+              ),
+              color: form.soapType !== "luxury" ? "#999" : "black"
             }}
             title={form.soapType === "luxury"
               ? "Luxury soap upgrade rate per dispenser per week - editable"
@@ -684,6 +759,7 @@ export const SanicleanForm: React.FC<
               value={extraSoapRatePerGallon}
               onChange={onChange}
               title={`Excess ${form.soapType} soap rate per gallon - editable`}
+              style={getOverrideStyle(excessSoapRateOverride)}
             />
             <span>=</span>
             <input
@@ -771,6 +847,7 @@ export const SanicleanForm: React.FC<
                         value={form.urinalScreenMonthly}
                         onChange={onChange}
                         title="Urinal screen rate per month - editable"
+                        style={getOverrideStyle(hasPricingOverride("urinalScreenMonthly"))}
                       />
                       <span>=</span>
                       <input
@@ -805,6 +882,7 @@ export const SanicleanForm: React.FC<
                         value={form.urinalMatMonthly}
                         onChange={onChange}
                         title="Urinal mat rate per month - editable"
+                        style={getOverrideStyle(hasPricingOverride("urinalMatMonthly"))}
                       />
                       <span>=</span>
                       <input
@@ -864,6 +942,7 @@ export const SanicleanForm: React.FC<
                         value={form.toiletClipsMonthly}
                         onChange={onChange}
                         title="Toilet clips rate per month - editable"
+                        style={getOverrideStyle(hasPricingOverride("toiletClipsMonthly"))}
                       />
                       <span>=</span>
                       <input
@@ -898,6 +977,7 @@ export const SanicleanForm: React.FC<
                         value={form.seatCoverDispenserMonthly}
                         onChange={onChange}
                         title="Seat cover dispenser rate per month - editable"
+                        style={getOverrideStyle(hasPricingOverride("seatCoverDispenserMonthly"))}
                       />
                       <span>=</span>
                       <input
@@ -956,6 +1036,7 @@ export const SanicleanForm: React.FC<
                       value={form.sanipodServiceMonthly}
                       onChange={onChange}
                       title="SaniPod service rate per month - editable"
+                      style={getOverrideStyle(hasPricingOverride("sanipodServiceMonthly"))}
                     />
                     <span>=</span>
                     <input
@@ -1037,6 +1118,7 @@ export const SanicleanForm: React.FC<
               value={form.warrantyFeePerDispenserPerWeek}
               onChange={onChange}
               title="Warranty rate per dispenser per week - editable"
+              style={getOverrideStyle(hasPricingOverride("warrantyFeePerDispenserPerWeek"))}
             />
             <span>=</span>
             <input
@@ -1119,6 +1201,7 @@ export const SanicleanForm: React.FC<
               value={form.addMicrofiberMopping ? form.microfiberMoppingPerBathroom : 0}
               onChange={onChange}
               title="Microfiber mopping rate per bathroom per week - editable"
+              style={getOverrideStyle(hasPricingOverride("microfiberMoppingPerBathroom"))}
             />
             <span>=</span>
             <input

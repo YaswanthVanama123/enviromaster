@@ -838,6 +838,9 @@ function calculatePerItemCharge(
 export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFields?: any[]) {
   // Get services context for fallback pricing data AND global contract months
   const servicesContext = useServicesContextOptional();
+  const isEditMode = useRef(!!initial);
+  const baselineValues = useRef<Record<string, number>>({});
+  const baselineInitialized = useRef(false);
 
   // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
   const calcFieldsTotal = useMemo(() => {
@@ -903,7 +906,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   // Fetch configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
       console.log('🔄 [SaniClean] Fetching configuration...');
@@ -921,23 +924,25 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
             console.log('✅ [SaniClean] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendSanicleanConfig;
             setBackendConfig(config);
-            updateFormWithConfig(config);
+            updateFormWithConfig(config, forceRefresh);
 
             // ✅ Clear all custom overrides when refreshing config
-            setForm(prev => ({
-              ...prev,
-              customBaseService: undefined,
-              customTripCharge: undefined,
-              customFacilityComponents: undefined,
-              customSoapUpgrade: undefined,
-              customExcessSoap: undefined,
-              customMicrofiberMopping: undefined,
-              customWarrantyFees: undefined,
-              customPaperOverage: undefined,
-              customWeeklyTotal: undefined,
-              customMonthlyTotal: undefined,
-              customContractTotal: undefined,
-            }));
+            if (forceRefresh) {
+              setForm(prev => ({
+                ...prev,
+                customBaseService: undefined,
+                customTripCharge: undefined,
+                customFacilityComponents: undefined,
+                customSoapUpgrade: undefined,
+                customExcessSoap: undefined,
+                customMicrofiberMopping: undefined,
+                customWarrantyFees: undefined,
+                customPaperOverage: undefined,
+                customWeeklyTotal: undefined,
+                customMonthlyTotal: undefined,
+                customContractTotal: undefined,
+              }));
+            }
 
             return;
           }
@@ -957,23 +962,25 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       setBackendConfig(config);
 
       console.log('📊 [SaniClean] Active backend config received:', config);
-      updateFormWithConfig(config);
+      updateFormWithConfig(config, forceRefresh);
 
       // ✅ Clear all custom overrides when refreshing config
-      setForm(prev => ({
-        ...prev,
-        customBaseService: undefined,
-        customTripCharge: undefined,
-        customFacilityComponents: undefined,
-        customSoapUpgrade: undefined,
-        customExcessSoap: undefined,
-        customMicrofiberMopping: undefined,
-        customWarrantyFees: undefined,
-        customPaperOverage: undefined,
-        customWeeklyTotal: undefined,
-        customMonthlyTotal: undefined,
-        customContractTotal: undefined,
-      }));
+      if (forceRefresh) {
+        setForm(prev => ({
+          ...prev,
+          customBaseService: undefined,
+          customTripCharge: undefined,
+          customFacilityComponents: undefined,
+          customSoapUpgrade: undefined,
+          customExcessSoap: undefined,
+          customMicrofiberMopping: undefined,
+          customWarrantyFees: undefined,
+          customPaperOverage: undefined,
+          customWeeklyTotal: undefined,
+          customMonthlyTotal: undefined,
+          customContractTotal: undefined,
+        }));
+      }
 
     } catch (error) {
       console.error('❌ [SaniClean] Failed to fetch config from backend:', error);
@@ -997,23 +1004,25 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
           console.log('✅ [SaniClean] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendSanicleanConfig;
           setBackendConfig(config);
-          updateFormWithConfig(config);
+          updateFormWithConfig(config, forceRefresh);
 
           // ✅ Clear all custom overrides when refreshing config
-          setForm(prev => ({
-            ...prev,
-            customBaseService: undefined,
-            customTripCharge: undefined,
-            customFacilityComponents: undefined,
-            customSoapUpgrade: undefined,
-            customExcessSoap: undefined,
-            customMicrofiberMopping: undefined,
-            customWarrantyFees: undefined,
-            customPaperOverage: undefined,
-            customWeeklyTotal: undefined,
-            customMonthlyTotal: undefined,
-            customContractTotal: undefined,
-          }));
+          if (forceRefresh) {
+            setForm(prev => ({
+              ...prev,
+              customBaseService: undefined,
+              customTripCharge: undefined,
+              customFacilityComponents: undefined,
+              customSoapUpgrade: undefined,
+              customExcessSoap: undefined,
+              customMicrofiberMopping: undefined,
+              customWarrantyFees: undefined,
+              customPaperOverage: undefined,
+              customWeeklyTotal: undefined,
+              customMonthlyTotal: undefined,
+              customContractTotal: undefined,
+            }));
+          }
 
           return;
         }
@@ -1026,7 +1035,11 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   };
 
   // Helper function to update form with config data from the actual backend structure
-  const updateFormWithConfig = (config: BackendSanicleanConfig) => {
+  const updateFormWithConfig = (config: BackendSanicleanConfig, forceUpdate: boolean = false) => {
+    if (isEditMode.current && !forceUpdate) {
+      console.log('ÐY"< [SANICLEAN] Edit mode: skipping auto-overwrite from backend');
+      return;
+    }
     setForm((prev) => ({
       ...prev,
       // ✅ Extract from nested backend structure
@@ -1095,27 +1108,145 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     }));
   };
 
-  // Fetch on mount ONLY if no initial data (new service)
+  // Fetch on mount (used for baseline/override detection)
   useEffect(() => {
-    // Skip fetching if we have initial data (editing existing service with saved prices)
-    if (initial) {
-      console.log('📋 [SANICLEAN-PRICING] Skipping price fetch - using saved historical prices from initial data');
-      return;
-    }
-
-    console.log('📋 [SANICLEAN-PRICING] Fetching current prices - new service or no initial data');
-    fetchPricing();
+    console.log('�Y"< [SANICLEAN-PRICING] Fetching backend prices for baseline/override detection');
+    fetchPricing(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+  // Also fetch when services context becomes available (for fallback pricing)
   useEffect(() => {
-    // Skip if we have initial data (editing existing service)
-    if (initial) return;
-
     if (servicesContext?.backendPricingData && !backendConfig) {
-      fetchPricing();
+      fetchPricing(false);
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  useEffect(() => {
+    if (baselineInitialized.current) return;
+    if (!backendConfig) return;
+
+    baselineInitialized.current = true;
+
+    const urinalScreenMonthlyDefault =
+      typeof backendConfig.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number'
+        ? Number(backendConfig.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice)
+        : backendConfig.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'included'
+          ? Number(backendConfig.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice)
+          : undefined;
+
+    const seatCoverDispenserMonthlyDefault =
+      typeof backendConfig.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'number'
+        ? Number(backendConfig.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice)
+        : backendConfig.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'included'
+          ? Number(backendConfig.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice)
+          : undefined;
+
+    const setBaseline = (field: keyof SanicleanFormState, value: unknown) => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        (baselineValues.current as any)[field] = value;
+      }
+    };
+
+    // Baseline = loaded/saved value (edit mode) OR backend default (new document)
+    setBaseline('allInclusiveWeeklyRatePerFixture', (initial?.allInclusiveWeeklyRatePerFixture ?? backendConfig.allInclusivePricing?.pricePerFixture));
+    setBaseline('luxuryUpgradePerDispenser', (initial?.luxuryUpgradePerDispenser ?? backendConfig.soapUpgrades?.standardToLuxuryPerDispenserPerWeek));
+    setBaseline('excessStandardSoapRate', (initial?.excessStandardSoapRate ?? backendConfig.soapUpgrades?.excessUsageCharges?.standardSoapPerGallon));
+    setBaseline('excessLuxurySoapRate', (initial?.excessLuxurySoapRate ?? backendConfig.soapUpgrades?.excessUsageCharges?.luxurySoapPerGallon));
+    setBaseline('paperCreditPerFixture', (initial?.paperCreditPerFixture ?? backendConfig.paperCredit?.creditPerFixturePerWeek));
+    setBaseline('microfiberMoppingPerBathroom', (initial?.microfiberMoppingPerBathroom ?? backendConfig.microfiberMoppingIncludedWithSaniClean?.pricePerBathroom));
+
+    setBaseline('insideBeltwayRatePerFixture', (initial?.insideBeltwayRatePerFixture ?? backendConfig.standardALaCartePricing?.insideBeltway?.pricePerFixture));
+    setBaseline('insideBeltwayMinimum', (initial?.insideBeltwayMinimum ?? backendConfig.standardALaCartePricing?.insideBeltway?.minimumPrice));
+    setBaseline('insideBeltwayTripCharge', (initial?.insideBeltwayTripCharge ?? backendConfig.standardALaCartePricing?.insideBeltway?.tripCharge));
+    setBaseline('insideBeltwayParkingFee', (initial?.insideBeltwayParkingFee ?? backendConfig.standardALaCartePricing?.insideBeltway?.parkingFeeAddOn));
+    setBaseline('outsideBeltwayRatePerFixture', (initial?.outsideBeltwayRatePerFixture ?? backendConfig.standardALaCartePricing?.outsideBeltway?.pricePerFixture));
+    setBaseline('outsideBeltwayTripCharge', (initial?.outsideBeltwayTripCharge ?? backendConfig.standardALaCartePricing?.outsideBeltway?.tripCharge));
+
+    setBaseline('smallFacilityThreshold', (initial?.smallFacilityThreshold ?? backendConfig.smallBathroomMinimums?.minimumFixturesThreshold));
+    setBaseline('smallFacilityMinimum', (initial?.smallFacilityMinimum ?? backendConfig.smallBathroomMinimums?.minimumPriceUnderThreshold));
+
+    setBaseline('urinalMatMonthly', (initial?.urinalMatMonthly ?? backendConfig.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice));
+    setBaseline('urinalScreenMonthly', (initial?.urinalScreenMonthly ?? urinalScreenMonthlyDefault));
+    setBaseline('toiletClipsMonthly', (initial?.toiletClipsMonthly ?? backendConfig.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice));
+    setBaseline('seatCoverDispenserMonthly', (initial?.seatCoverDispenserMonthly ?? seatCoverDispenserMonthlyDefault));
+    setBaseline('sanipodServiceMonthly', (initial?.sanipodServiceMonthly ?? backendConfig.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod));
+
+    setBaseline('warrantyFeePerDispenserPerWeek', (initial?.warrantyFeePerDispenserPerWeek ?? backendConfig.warrantyFees?.soapDispenserWarrantyFeePerWeek ?? backendConfig.warrantyFees?.airFreshenerDispenserWarrantyFeePerWeek));
+    setBaseline('weeklyToMonthlyMultiplier', (initial?.weeklyToMonthlyMultiplier ?? backendConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier));
+
+    console.log('�o. [SANICLEAN-BASELINE] Initialized baseline values for logging:', baselineValues.current);
+  }, [backendConfig, initial]);
+
+  const pricingOverrides = useMemo(() => {
+    if (!backendConfig) return {};
+
+    const urinalScreenMonthlyDefault = typeof backendConfig.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number'
+      ? Number(backendConfig.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice)
+      : backendConfig.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'included'
+        ? Number(backendConfig.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice)
+        : undefined;
+
+    const seatCoverDispenserMonthlyDefault = typeof backendConfig.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'number'
+      ? Number(backendConfig.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice)
+      : backendConfig.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'included'
+        ? Number(backendConfig.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice)
+        : undefined;
+
+    const isOverride = (current: number, backendDefault: unknown) =>
+      typeof backendDefault === 'number' && Number.isFinite(backendDefault) && current !== backendDefault;
+
+    return {
+      allInclusiveWeeklyRatePerFixture: isOverride(form.allInclusiveWeeklyRatePerFixture, backendConfig.allInclusivePricing?.pricePerFixture),
+      luxuryUpgradePerDispenser: isOverride(form.luxuryUpgradePerDispenser, backendConfig.soapUpgrades?.standardToLuxuryPerDispenserPerWeek),
+      excessStandardSoapRate: isOverride(form.excessStandardSoapRate, backendConfig.soapUpgrades?.excessUsageCharges?.standardSoapPerGallon),
+      excessLuxurySoapRate: isOverride(form.excessLuxurySoapRate, backendConfig.soapUpgrades?.excessUsageCharges?.luxurySoapPerGallon),
+      paperCreditPerFixture: isOverride(form.paperCreditPerFixture, backendConfig.paperCredit?.creditPerFixturePerWeek),
+      microfiberMoppingPerBathroom: isOverride(form.microfiberMoppingPerBathroom, backendConfig.microfiberMoppingIncludedWithSaniClean?.pricePerBathroom),
+
+      insideBeltwayRatePerFixture: isOverride(form.insideBeltwayRatePerFixture, backendConfig.standardALaCartePricing?.insideBeltway?.pricePerFixture),
+      insideBeltwayMinimum: isOverride(form.insideBeltwayMinimum, backendConfig.standardALaCartePricing?.insideBeltway?.minimumPrice),
+      insideBeltwayTripCharge: isOverride(form.insideBeltwayTripCharge, backendConfig.standardALaCartePricing?.insideBeltway?.tripCharge),
+      insideBeltwayParkingFee: isOverride(form.insideBeltwayParkingFee, backendConfig.standardALaCartePricing?.insideBeltway?.parkingFeeAddOn),
+      outsideBeltwayRatePerFixture: isOverride(form.outsideBeltwayRatePerFixture, backendConfig.standardALaCartePricing?.outsideBeltway?.pricePerFixture),
+      outsideBeltwayTripCharge: isOverride(form.outsideBeltwayTripCharge, backendConfig.standardALaCartePricing?.outsideBeltway?.tripCharge),
+
+      smallFacilityThreshold: isOverride(form.smallFacilityThreshold, backendConfig.smallBathroomMinimums?.minimumFixturesThreshold),
+      smallFacilityMinimum: isOverride(form.smallFacilityMinimum, backendConfig.smallBathroomMinimums?.minimumPriceUnderThreshold),
+
+      urinalMatMonthly: isOverride(form.urinalMatMonthly, backendConfig.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice),
+      urinalScreenMonthly: isOverride(form.urinalScreenMonthly, urinalScreenMonthlyDefault),
+      toiletClipsMonthly: isOverride(form.toiletClipsMonthly, backendConfig.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice),
+      seatCoverDispenserMonthly: isOverride(form.seatCoverDispenserMonthly, seatCoverDispenserMonthlyDefault),
+      sanipodServiceMonthly: isOverride(form.sanipodServiceMonthly, backendConfig.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod),
+
+      warrantyFeePerDispenserPerWeek: isOverride(form.warrantyFeePerDispenserPerWeek, backendConfig.warrantyFees?.soapDispenserWarrantyFeePerWeek ?? backendConfig.warrantyFees?.airFreshenerDispenserWarrantyFeePerWeek),
+      weeklyToMonthlyMultiplier: isOverride(form.weeklyToMonthlyMultiplier, backendConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier),
+    };
+  }, [
+    backendConfig,
+    form.allInclusiveWeeklyRatePerFixture,
+    form.luxuryUpgradePerDispenser,
+    form.excessStandardSoapRate,
+    form.excessLuxurySoapRate,
+    form.paperCreditPerFixture,
+    form.microfiberMoppingPerBathroom,
+    form.insideBeltwayRatePerFixture,
+    form.insideBeltwayMinimum,
+    form.insideBeltwayTripCharge,
+    form.insideBeltwayParkingFee,
+    form.outsideBeltwayRatePerFixture,
+    form.outsideBeltwayTripCharge,
+    form.smallFacilityThreshold,
+    form.smallFacilityMinimum,
+    form.urinalMatMonthly,
+    form.urinalScreenMonthly,
+    form.toiletClipsMonthly,
+    form.seatCoverDispenserMonthly,
+    form.sanipodServiceMonthly,
+    form.warrantyFeePerDispenserPerWeek,
+    form.weeklyToMonthlyMultiplier,
+  ]);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
@@ -1343,12 +1474,12 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
         if (pricingFields.includes(fieldName)) {
           const newValue = updates[fieldName as keyof SanicleanFormState] as number | undefined;
           const oldValue = originalValues[fieldName] as number | undefined;
-
+          const baselineValue = (baselineValues.current as any)[fieldName] as number | undefined ?? oldValue;
           // Handle undefined values (when cleared) - don't log clearing to undefined
-          if (newValue !== undefined && oldValue !== undefined &&
-              typeof newValue === 'number' && typeof oldValue === 'number' &&
-              newValue !== oldValue && newValue > 0) {
-            addServiceFieldChange(fieldName, oldValue, newValue);
+          if (newValue !== undefined && baselineValue !== undefined &&
+              typeof newValue === 'number' && typeof baselineValue === 'number' &&
+              newValue !== baselineValue && newValue > 0) {
+            addServiceFieldChange(fieldName, baselineValue, newValue);
           }
         }
       });
@@ -1403,6 +1534,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     quote,
     backendConfig,
     isLoadingConfig,
+    pricingOverrides,
     fetchPricing,
     updateForm,
     setField,
