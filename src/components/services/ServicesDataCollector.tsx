@@ -78,7 +78,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         refreshPowerScrub: state.refreshPowerScrub || null,
         sanipod: state.sanipod || null,
         carpetclean: state.carpetclean || null,
-        janitorial: state.janitorial || null,
+        janitorial: state.pureJanitorial || null,
         stripwax: state.stripwax || null,
         greaseTrap: state.greaseTrap || null,
         electrostaticSpray: state.electrostaticSpray || null,

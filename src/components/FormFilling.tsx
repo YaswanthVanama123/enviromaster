@@ -946,10 +946,11 @@ function FormFillingContent() {
   // Helper function to collect all current form data
   const collectFormData = () => {
     // Get products data from ProductsSection ref
-    const productsData = productsRef.current?.getData() || {
+    const productsData = productsRef.current?.getData() as any || {
       smallProducts: [],
       dispensers: [],
       bigProducts: [],
+      customColumns: { products: [], dispensers: [] },
     };
 
     console.log("📦 Products data from ProductsSection:", productsData);
@@ -971,7 +972,7 @@ function FormFillingContent() {
       refreshPowerScrub: null,
       sanipod: null,
       carpetclean: null,
-      janitorial: null,
+      pureJanitorial: null,
       stripwax: null,
     };
 
@@ -993,7 +994,8 @@ function FormFillingContent() {
       headerRows: payload?.headerRows || [],
       products: {
         ...productsForBackend,
-        customColumns: productsData.customColumns || { products: [], dispensers: [] }, // Include custom columns inside products
+        smallProducts: productsData.smallProducts,
+        bigProducts: productsData.bigProducts,
       },
       services: servicesData,
       agreement: payload?.agreement || {
@@ -1003,6 +1005,7 @@ function FormFillingContent() {
       },
       serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
+      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
     };
   };
 

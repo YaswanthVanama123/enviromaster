@@ -19,7 +19,7 @@ export interface ServicesState {
   refreshPowerScrub?: any;
   sanipod?: any;
   carpetclean?: any;
-  janitorial?: any;
+  pureJanitorial?: any;
   stripwax?: any;
   greaseTrap?: any;
   electrostaticSpray?: any;
