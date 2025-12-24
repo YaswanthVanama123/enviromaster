@@ -79,7 +79,24 @@ export interface JanitorialFormState extends BaseServiceFormState {
   beltwayTripCharge: number;
   paidParkingTripCharge: number;
 
-  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  // ========== CUSTOM RATE OVERRIDES (for edit mode yellow highlighting) ==========
+  // These fields are set when loaded values differ from backend defaults
+  customRecurringServiceRate?: number;
+  customOneTimeServiceRate?: number;
+  customVacuumingRatePerHour?: number;
+  customDustingRatePerHour?: number;
+  customDailyMultiplier?: number;
+  customWeeklyMultiplier?: number;
+  customBiweeklyMultiplier?: number;
+  customMonthlyMultiplier?: number;
+  customOneTimeMultiplier?: number;
+  customPerVisitMinimum?: number;
+  customRecurringContractMinimum?: number;
+  customStandardTripCharge?: number;
+  customBeltwayTripCharge?: number;
+  customPaidParkingTripCharge?: number;
+
+  // ========== CUSTOM TOTAL OVERRIDES (user can manually set totals) ==========
   customPerVisitTotal?: number;
   customMonthlyTotal?: number;
   customAnnualTotal?: number;

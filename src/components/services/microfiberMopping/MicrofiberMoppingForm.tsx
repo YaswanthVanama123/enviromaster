@@ -106,18 +106,12 @@ export const MicrofiberMoppingForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
-  // Calculate effective rates for each service type
-  const bathroomRate = form.bathroomCount > 0 && calc.standardBathroomPrice > 0
-    ? calc.standardBathroomPrice / form.bathroomCount
-    : form.includedBathroomRate;
-
-  const hugeBathroomRate = form.hugeBathroomSqFt > 0 && calc.hugeBathroomPrice > 0
-    ? calc.hugeBathroomPrice / form.hugeBathroomSqFt
-    : form.hugeBathroomRatePerSqFt;
-
-  const extraAreaRate = form.extraAreaSqFt > 0 && calc.extraAreaPrice > 0
-    ? calc.extraAreaPrice / form.extraAreaSqFt
-    : form.extraAreaRatePerUnit;
+  // ✅ FIXED: Use ACTUAL rates (not calculated from total/qty)
+  // Always use the effective rate (custom override if set, otherwise base rate)
+  // NEVER calculate rate from total/qty as this loses the actual rate value
+  const bathroomRate = form.customIncludedBathroomRate ?? form.includedBathroomRate;
+  const hugeBathroomRate = form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt;
+  const extraAreaRate = form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit;
 
   useEffect(() => {
     if (servicesContext) {
@@ -128,12 +122,36 @@ export const MicrofiberMoppingForm: React.FC<
         displayName: "Microfiber Mopping",
         isActive: true,
 
+        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
+        // This ensures edited values are saved to backend, not just backend defaults
+        includedBathroomRate: form.customIncludedBathroomRate ?? form.includedBathroomRate,
+        hugeBathroomRatePerSqFt: form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt,
+        extraAreaRatePerUnit: form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit,
+        standaloneRatePerUnit: form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit,
+        dailyChemicalPerGallon: form.customDailyChemicalPerGallon ?? form.dailyChemicalPerGallon,
+
+        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+        bathroomCount: form.bathroomCount,
+        isHugeBathroom: form.isHugeBathroom,
+        hugeBathroomSqFt: form.hugeBathroomSqFt,
+        extraAreaSqFt: form.extraAreaSqFt,
+        useExactExtraAreaSqft: form.useExactExtraAreaSqft,
+        standaloneSqFt: form.standaloneSqFt,
+        useExactStandaloneSqft: form.useExactStandaloneSqft,
+        chemicalGallons: form.chemicalGallons,
+        frequency: form.frequency,
+        contractTermMonths: form.contractTermMonths,
+        hasExistingSaniService: form.hasExistingSaniService,
+        isAllInclusive: form.isAllInclusive,
+        location: form.location,
+        needsParking: form.needsParking,
+
         // Red/Green Line pricing data
-        perVisitBase: calc.totalCost,  // Raw total cost
+        perVisitBase: calc.perVisitPrice,  // Per-visit price
         perVisit: calc.perVisitPrice,  // Final per-visit price
         minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
-        frequency: {
+        frequencyDisplay: {
           isDisplay: true,
           label: "Frequency",
           type: "text" as const,
@@ -174,7 +192,7 @@ export const MicrofiberMoppingForm: React.FC<
             label: "Standalone Service",
             type: "calc" as const,
             qty: form.standaloneSqFt,
-            rate: form.standaloneRatePerUnit,
+            rate: form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit,
             total: calc.standaloneServicePrice,
             unit: "sq ft",
           }] : []),
@@ -183,7 +201,7 @@ export const MicrofiberMoppingForm: React.FC<
             label: "Chemical Supply",
             type: "calc" as const,
             qty: form.chemicalGallons,
-            rate: form.dailyChemicalPerGallon,
+            rate: form.customDailyChemicalPerGallon ?? form.dailyChemicalPerGallon,
             total: calc.chemicalSupplyMonthly,
             unit: "gallons",
           }] : []),
@@ -239,6 +257,11 @@ export const MicrofiberMoppingForm: React.FC<
     extraAreaRatePerUnit: form.extraAreaRatePerUnit,
     standaloneRatePerUnit: form.standaloneRatePerUnit,
     dailyChemicalPerGallon: form.dailyChemicalPerGallon,
+    customIncludedBathroomRate: form.customIncludedBathroomRate,
+    customHugeBathroomRatePerSqFt: form.customHugeBathroomRatePerSqFt,
+    customExtraAreaRatePerUnit: form.customExtraAreaRatePerUnit,
+    customStandaloneRatePerUnit: form.customStandaloneRatePerUnit,
+    customDailyChemicalPerGallon: form.customDailyChemicalPerGallon,
     frequency: form.frequency,
     contractTermMonths: form.contractTermMonths,
   });
@@ -257,6 +280,11 @@ export const MicrofiberMoppingForm: React.FC<
       prev.extraAreaRatePerUnit !== form.extraAreaRatePerUnit ||
       prev.standaloneRatePerUnit !== form.standaloneRatePerUnit ||
       prev.dailyChemicalPerGallon !== form.dailyChemicalPerGallon ||
+      prev.customIncludedBathroomRate !== form.customIncludedBathroomRate ||
+      prev.customHugeBathroomRatePerSqFt !== form.customHugeBathroomRatePerSqFt ||
+      prev.customExtraAreaRatePerUnit !== form.customExtraAreaRatePerUnit ||
+      prev.customStandaloneRatePerUnit !== form.customStandaloneRatePerUnit ||
+      prev.customDailyChemicalPerGallon !== form.customDailyChemicalPerGallon ||
       prev.frequency !== form.frequency ||
       prev.contractTermMonths !== form.contractTermMonths;
 
@@ -285,6 +313,11 @@ export const MicrofiberMoppingForm: React.FC<
         extraAreaRatePerUnit: form.extraAreaRatePerUnit,
         standaloneRatePerUnit: form.standaloneRatePerUnit,
         dailyChemicalPerGallon: form.dailyChemicalPerGallon,
+        customIncludedBathroomRate: form.customIncludedBathroomRate,
+        customHugeBathroomRatePerSqFt: form.customHugeBathroomRatePerSqFt,
+        customExtraAreaRatePerUnit: form.customExtraAreaRatePerUnit,
+        customStandaloneRatePerUnit: form.customStandaloneRatePerUnit,
+        customDailyChemicalPerGallon: form.customDailyChemicalPerGallon,
         frequency: form.frequency,
         contractTermMonths: form.contractTermMonths,
       };
@@ -300,6 +333,11 @@ export const MicrofiberMoppingForm: React.FC<
     form.extraAreaRatePerUnit,
     form.standaloneRatePerUnit,
     form.dailyChemicalPerGallon,
+    form.customIncludedBathroomRate,
+    form.customHugeBathroomRatePerSqFt,
+    form.customExtraAreaRatePerUnit,
+    form.customStandaloneRatePerUnit,
+    form.customDailyChemicalPerGallon,
     form.frequency,
     form.contractTermMonths,
     setForm,
@@ -375,7 +413,7 @@ export const MicrofiberMoppingForm: React.FC<
             ✓ INCLUDED in SaniClean All-Inclusive Package
           </div>
           <div style={{ fontSize: "13px", color: "#555", marginTop: "4px" }}>
-            Microfiber Mopping is already included at no additional charge (${form.includedBathroomRate.toFixed(2)}/bathroom waived).
+            Microfiber Mopping is already included at no additional charge (${(form.customIncludedBathroomRate ?? form.includedBathroomRate).toFixed(2)}/bathroom waived).
           </div>
         </div>
       )}
@@ -458,9 +496,20 @@ export const MicrofiberMoppingForm: React.FC<
               type="number"
               min="0"
               step="1"
-              name="includedBathroomRate"
-              value={form.includedBathroomRate || ""}
-              onChange={onChange}
+              name="customIncludedBathroomRate"
+              value={getDisplayValue(
+                'customIncludedBathroomRate',
+                form.customIncludedBathroomRate !== undefined
+                  ? form.customIncludedBathroomRate
+                  : form.includedBathroomRate
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customIncludedBathroomRate !== undefined ? '#fffacd' : 'white'
+              }}
+              title="Bathroom rate (editable with yellow highlight if overridden)"
             />
           </div>
           <span>=</span>
@@ -508,9 +557,20 @@ export const MicrofiberMoppingForm: React.FC<
               type="number"
               min="0"
               step="1"
-              name="hugeBathroomRatePerSqFt"
-              value={form.hugeBathroomRatePerSqFt || ""}
-              onChange={onChange}
+              name="customHugeBathroomRatePerSqFt"
+              value={getDisplayValue(
+                'customHugeBathroomRatePerSqFt',
+                form.customHugeBathroomRatePerSqFt !== undefined
+                  ? form.customHugeBathroomRatePerSqFt
+                  : form.hugeBathroomRatePerSqFt
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customHugeBathroomRatePerSqFt !== undefined ? '#fffacd' : 'white'
+              }}
+              title="Huge bathroom rate per sq ft (editable with yellow highlight if overridden)"
             />
           </div>
           {/* <span className="svc-small">per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span> */}
@@ -559,12 +619,20 @@ export const MicrofiberMoppingForm: React.FC<
               type="number"
               min="0"
               step="1"
-              name="extraAreaRatePerUnit"
-              value={getDisplayValue('extraAreaRatePerUnit', form.extraAreaRatePerUnit)}
+              name="customExtraAreaRatePerUnit"
+              value={getDisplayValue(
+                'customExtraAreaRatePerUnit',
+                form.customExtraAreaRatePerUnit !== undefined
+                  ? form.customExtraAreaRatePerUnit
+                  : form.extraAreaRatePerUnit
+              )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              title="Rate per 400 sq ft unit (from backend)"
+              style={{
+                backgroundColor: form.customExtraAreaRatePerUnit !== undefined ? '#fffacd' : 'white'
+              }}
+              title="Rate per 400 sq ft unit (editable with yellow highlight if overridden)"
             />
           </div>
           {/* <span className="svc-small">per {cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft</span> */}
@@ -610,8 +678,8 @@ export const MicrofiberMoppingForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactExtraAreaSqft
-              ? `(${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${activeConfig.extraAreaPricing.singleLargeAreaRate} first + $${(Number(form.extraAreaRatePerUnit) || 0).toFixed(2)} per extra)`
-              : `(Direct: $${activeConfig.extraAreaPricing.singleLargeAreaRate} for first ${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${((Number(form.extraAreaRatePerUnit) || 0) / activeConfig.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
+              ? `(${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft units: $${activeConfig.extraAreaPricing.singleLargeAreaRate} first + $${(form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit).toFixed(2)} per extra)`
+              : `(Direct: $${activeConfig.extraAreaPricing.singleLargeAreaRate} for first ${activeConfig.extraAreaPricing.extraAreaSqFtUnit} sq ft + area × $${((form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit) / activeConfig.extraAreaPricing.extraAreaSqFtUnit).toFixed(4)}/sq ft)`}
           </span>
         </div>
       </div>
@@ -637,9 +705,20 @@ export const MicrofiberMoppingForm: React.FC<
               type="number"
               min="0"
               step="1"
-              name="standaloneRatePerUnit"
-              value={form.standaloneRatePerUnit || ""}
-              onChange={onChange}
+              name="customStandaloneRatePerUnit"
+              value={getDisplayValue(
+                'customStandaloneRatePerUnit',
+                form.customStandaloneRatePerUnit !== undefined
+                  ? form.customStandaloneRatePerUnit
+                  : form.standaloneRatePerUnit
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{
+                backgroundColor: form.customStandaloneRatePerUnit !== undefined ? '#fffacd' : 'white'
+              }}
+              title="Standalone rate per 200 sq ft (editable with yellow highlight if overridden)"
             />
           </div>
           {/* <span className="svc-small">per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span> */}
@@ -682,8 +761,8 @@ export const MicrofiberMoppingForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactStandaloneSqft
-              ? `(${activeConfig.standalonePricing.standaloneSqFtUnit} sq ft units: $${activeConfig.standalonePricing.standaloneMinimum} first + $${form.standaloneRatePerUnit.toFixed(2)} per extra)`
-              : `(Direct: $${activeConfig.standalonePricing.standaloneMinimum} for first ${activeConfig.standalonePricing.standaloneSqFtUnit} sq ft + area × $${(form.standaloneRatePerUnit / activeConfig.standalonePricing.standaloneSqFtUnit).toFixed(4)}/sq ft)`}
+              ? `(${activeConfig.standalonePricing.standaloneSqFtUnit} sq ft units: $${activeConfig.standalonePricing.standaloneMinimum} first + $${(form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit).toFixed(2)} per extra)`
+              : `(Direct: $${activeConfig.standalonePricing.standaloneMinimum} for first ${activeConfig.standalonePricing.standaloneSqFtUnit} sq ft + area × $${((form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit) / activeConfig.standalonePricing.standaloneSqFtUnit).toFixed(4)}/sq ft)`}
           </span>
         </div>
       </div>

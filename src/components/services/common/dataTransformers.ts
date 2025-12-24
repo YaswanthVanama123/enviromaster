@@ -700,54 +700,157 @@ export function transformSaniscrubData(structuredData: any): any {
 export function transformMicrofiberMoppingData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
+  console.log('🔄 [transformMicrofiberMoppingData] Processing structured data:', structuredData);
+
   const formState: any = {
     notes: structuredData.notes || "",
   };
 
-  // Extract frequency
-  if (structuredData.frequency) {
-    formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
+  // ✅ STEP 1: Extract top-level direct fields (saved from form) - PRIORITY
+  // These are the actual saved rate values (including custom overrides)
+  if (structuredData.includedBathroomRate !== undefined) {
+    formState.includedBathroomRate = structuredData.includedBathroomRate;
+    console.log('🔄 [Microfiber] Extracted includedBathroomRate:', structuredData.includedBathroomRate);
+  }
+  if (structuredData.hugeBathroomRatePerSqFt !== undefined) {
+    formState.hugeBathroomRatePerSqFt = structuredData.hugeBathroomRatePerSqFt;
+    console.log('🔄 [Microfiber] Extracted hugeBathroomRatePerSqFt:', structuredData.hugeBathroomRatePerSqFt);
+  }
+  if (structuredData.extraAreaRatePerUnit !== undefined) {
+    formState.extraAreaRatePerUnit = structuredData.extraAreaRatePerUnit;
+    console.log('🔄 [Microfiber] Extracted extraAreaRatePerUnit:', structuredData.extraAreaRatePerUnit);
+  }
+  if (structuredData.standaloneRatePerUnit !== undefined) {
+    formState.standaloneRatePerUnit = structuredData.standaloneRatePerUnit;
+    console.log('🔄 [Microfiber] Extracted standaloneRatePerUnit:', structuredData.standaloneRatePerUnit);
+  }
+  if (structuredData.dailyChemicalPerGallon !== undefined) {
+    formState.dailyChemicalPerGallon = structuredData.dailyChemicalPerGallon;
+    console.log('🔄 [Microfiber] Extracted dailyChemicalPerGallon:', structuredData.dailyChemicalPerGallon);
   }
 
-  // Extract service breakdown
+  // ✅ STEP 2: Extract quantity inputs from top-level OR serviceBreakdown
+  // Quantities from top-level (saved in useEffect)
+  if (structuredData.bathroomCount !== undefined) {
+    formState.bathroomCount = structuredData.bathroomCount;
+  }
+  if (structuredData.hugeBathroomSqFt !== undefined) {
+    formState.hugeBathroomSqFt = structuredData.hugeBathroomSqFt;
+  }
+  if (structuredData.extraAreaSqFt !== undefined) {
+    formState.extraAreaSqFt = structuredData.extraAreaSqFt;
+  }
+  if (structuredData.standaloneSqFt !== undefined) {
+    formState.standaloneSqFt = structuredData.standaloneSqFt;
+  }
+  if (structuredData.chemicalGallons !== undefined) {
+    formState.chemicalGallons = structuredData.chemicalGallons;
+  }
+
+  // ✅ STEP 3: Extract frequency
+  if (structuredData.frequency !== undefined && typeof structuredData.frequency === 'string') {
+    formState.frequency = structuredData.frequency;
+  } else if (structuredData.frequencyDisplay?.value) {
+    // Fallback to display field
+    formState.frequency = structuredData.frequencyDisplay.value.toLowerCase() || "weekly";
+  }
+
+  // ✅ STEP 4: Extract boolean flags
+  if (structuredData.hasExistingSaniService !== undefined) {
+    formState.hasExistingSaniService = structuredData.hasExistingSaniService;
+  }
+  if (structuredData.isAllInclusive !== undefined) {
+    formState.isAllInclusive = structuredData.isAllInclusive;
+  }
+  if (structuredData.isHugeBathroom !== undefined) {
+    formState.isHugeBathroom = structuredData.isHugeBathroom;
+  }
+  if (structuredData.useExactExtraAreaSqft !== undefined) {
+    formState.useExactExtraAreaSqft = structuredData.useExactExtraAreaSqft;
+  }
+  if (structuredData.useExactStandaloneSqft !== undefined) {
+    formState.useExactStandaloneSqft = structuredData.useExactStandaloneSqft;
+  }
+
+  // ✅ STEP 5: Extract location and parking
+  if (structuredData.location !== undefined) {
+    formState.location = structuredData.location;
+  }
+  if (structuredData.needsParking !== undefined) {
+    formState.needsParking = structuredData.needsParking;
+  }
+
+  // ✅ STEP 6: FALLBACK - Extract from serviceBreakdown (for backward compatibility)
+  // Only use these if top-level fields not already set
   if (structuredData.serviceBreakdown && Array.isArray(structuredData.serviceBreakdown)) {
     structuredData.serviceBreakdown.forEach((item: any) => {
       if (item.label === "Bathrooms") {
-        formState.bathroomCount = item.qty || 0;
-        if (item.rate != null) {
+        if (formState.bathroomCount === undefined) {
+          formState.bathroomCount = item.qty || 0;
+        }
+        if (formState.includedBathroomRate === undefined && item.rate !== undefined) {
           formState.includedBathroomRate = item.rate;
+          console.log('🔄 [Microfiber] Using fallback includedBathroomRate from serviceBreakdown:', item.rate);
         }
       } else if (item.label === "Huge Bathrooms") {
-        formState.hugeBathroomSqFt = item.qty || 0;
-        if (item.rate != null) {
+        if (formState.hugeBathroomSqFt === undefined) {
+          formState.hugeBathroomSqFt = item.qty || 0;
+        }
+        if (formState.hugeBathroomRatePerSqFt === undefined && item.rate !== undefined) {
           formState.hugeBathroomRatePerSqFt = item.rate;
+          console.log('🔄 [Microfiber] Using fallback hugeBathroomRatePerSqFt from serviceBreakdown:', item.rate);
         }
       } else if (item.label === "Extra Area") {
-        formState.extraAreaSqFt = item.qty || 0;
-        if (item.rate != null) {
+        if (formState.extraAreaSqFt === undefined) {
+          formState.extraAreaSqFt = item.qty || 0;
+        }
+        if (formState.extraAreaRatePerUnit === undefined && item.rate !== undefined) {
           formState.extraAreaRatePerUnit = item.rate;
+          console.log('🔄 [Microfiber] Using fallback extraAreaRatePerUnit from serviceBreakdown:', item.rate);
         }
       } else if (item.label === "Standalone Service") {
-        formState.standaloneSqFt = item.qty || 0;
-        if (item.rate != null) {
+        if (formState.standaloneSqFt === undefined) {
+          formState.standaloneSqFt = item.qty || 0;
+        }
+        if (formState.standaloneRatePerUnit === undefined && item.rate !== undefined) {
           formState.standaloneRatePerUnit = item.rate;
+          console.log('🔄 [Microfiber] Using fallback standaloneRatePerUnit from serviceBreakdown:', item.rate);
         }
       } else if (item.label === "Chemical Supply") {
-        formState.chemicalGallons = item.qty || 0;
-        if (item.rate != null) {
+        if (formState.chemicalGallons === undefined) {
+          formState.chemicalGallons = item.qty || 0;
+        }
+        if (formState.dailyChemicalPerGallon === undefined && item.rate !== undefined) {
           formState.dailyChemicalPerGallon = item.rate;
+          console.log('🔄 [Microfiber] Using fallback dailyChemicalPerGallon from serviceBreakdown:', item.rate);
         }
       }
     });
   }
 
-  // Extract contract months
-  if (structuredData.totals && structuredData.totals.contract) {
+  // ✅ STEP 7: Extract contract months
+  if (structuredData.contractMonths !== undefined) {
+    formState.contractMonths = structuredData.contractMonths;
+  } else if (structuredData.totals?.contract) {
+    // Fallback to totals.contract.months
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
   // Extract custom fields
   formState.customFields = extractCustomFields(structuredData);
+
+  console.log('🔄 [transformMicrofiberMoppingData] Final form state:', {
+    bathroomCount: formState.bathroomCount,
+    includedBathroomRate: formState.includedBathroomRate,
+    hugeBathroomSqFt: formState.hugeBathroomSqFt,
+    hugeBathroomRatePerSqFt: formState.hugeBathroomRatePerSqFt,
+    extraAreaSqFt: formState.extraAreaSqFt,
+    extraAreaRatePerUnit: formState.extraAreaRatePerUnit,
+    standaloneSqFt: formState.standaloneSqFt,
+    standaloneRatePerUnit: formState.standaloneRatePerUnit,
+    chemicalGallons: formState.chemicalGallons,
+    dailyChemicalPerGallon: formState.dailyChemicalPerGallon,
+  });
 
   return formState;
 }

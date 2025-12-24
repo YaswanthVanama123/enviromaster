@@ -1,5 +1,7 @@
 // src/components/services/janitorial/JanitorialForm.tsx
 import React, { useState, useEffect, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useJanitorialCalc } from "./useJanitorialCalc";
 import type { JanitorialFormState } from "./janitorialTypes";
 import type { ServiceInitialData, CustomField } from "../common/serviceTypes";
@@ -25,11 +27,88 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
   onRemove
 }) => {
   // Get calculation hook
-  const { form, onChange, calc, quote, refreshConfig, isLoadingConfig } = useJanitorialCalc(initialData);
+  const { form, onChange, calc, quote, refreshConfig, isLoadingConfig, updateField } = useJanitorialCalc(initialData);
 
   // Custom fields state (for user-added fields)
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
+  // ✅ NEW: Track original values when focusing to detect actual changes
+  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
+
+  // ✅ Helper to get display value (local state while editing, or calculated value)
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+    // If currently editing, show the raw input
+    if (editingValues[fieldName] !== undefined) {
+      return editingValues[fieldName];
+    }
+    // Otherwise show the calculated/override value
+    return calculatedValue !== undefined ? String(calculatedValue) : '';
+  };
+
+  // ✅ Handler for starting to edit a field
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Store current value in editing state AND original value for comparison
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+    setOriginalValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handler for typing in a field (updates both local state AND form state)
+  const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Update local state for display (allows free editing)
+    setEditingValues(prev => ({ ...prev, [name]: value }));
+
+    // Also parse and update form state immediately (triggers calculations)
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      updateField(name as keyof JanitorialFormState, numValue as any);
+    } else if (value === '') {
+      // If field is cleared, update form to clear the override
+      updateField(name as keyof JanitorialFormState, undefined as any);
+    }
+  };
+
+  // ✅ Handler for finishing editing (blur) - parse and update form only
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    // Get the original value when we started editing
+    const originalValue = originalValues[name];
+
+    // Clear editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Clear original value
+    setOriginalValues(prev => {
+      const newState = { ...prev };
+      delete newState[name];
+      return newState;
+    });
+
+    // Parse the value
+    const numValue = parseFloat(value);
+
+    // ✅ FIXED: Only update if value actually changed
+    if (originalValue !== value) {
+      // If empty or invalid, clear the override
+      if (value === '' || isNaN(numValue)) {
+        updateField(name as keyof JanitorialFormState, undefined as any);
+        return;
+      }
+
+      // ✅ Update form state with parsed numeric value ONLY if changed
+      updateField(name as keyof JanitorialFormState, numValue as any);
+    }
+  };
 
   // Services context integration (CRITICAL - like other services)
   const servicesContext = useServicesContextOptional();
@@ -39,17 +118,46 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
   useEffect(() => {
     if (servicesContext) {
       // Determine if service is active (has meaningful data)
-      const isActive = form.baseHours > 0 && (form.recurringServiceRate > 0 || form.oneTimeServiceRate > 0);
+      // ✅ FIXED: Only check if there are meaningful quantities, not rates (rates come from backend config)
+      const isActive = form.baseHours > 0;
 
       const data = isActive ? {
         serviceId: "janitorial" as const,
         displayName: "Pure Janitorial",
         isActive: true,
 
+        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
+        // This ensures edited values are saved to backend, not just backend defaults
+        recurringServiceRate: form.customRecurringServiceRate ?? form.recurringServiceRate,
+        oneTimeServiceRate: form.customOneTimeServiceRate ?? form.oneTimeServiceRate,
+        vacuumingRatePerHour: form.customVacuumingRatePerHour ?? form.vacuumingRatePerHour,
+        dustingRatePerHour: form.customDustingRatePerHour ?? form.dustingRatePerHour,
+        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,
+        recurringContractMinimum: form.customRecurringContractMinimum ?? form.recurringContractMinimum,
+        standardTripCharge: form.customStandardTripCharge ?? form.standardTripCharge,
+        beltwayTripCharge: form.customBeltwayTripCharge ?? form.beltwayTripCharge,
+        paidParkingTripCharge: form.customPaidParkingTripCharge ?? form.paidParkingTripCharge,
+        dailyMultiplier: form.customDailyMultiplier ?? form.dailyMultiplier,
+        weeklyMultiplier: form.customWeeklyMultiplier ?? form.weeklyMultiplier,
+        biweeklyMultiplier: form.customBiweeklyMultiplier ?? form.biweeklyMultiplier,
+        monthlyMultiplier: form.customMonthlyMultiplier ?? form.monthlyMultiplier,
+        oneTimeMultiplier: form.customOneTimeMultiplier ?? form.oneTimeMultiplier,
+
+        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+        baseHours: form.baseHours,
+        vacuumingHours: form.vacuumingHours,
+        dustingHours: form.dustingHours,
+        parkingCost: form.parkingCost,
+        contractMonths: form.contractMonths,
+        serviceTypeRaw: form.serviceType,
+        frequencyRaw: form.frequency,
+        locationRaw: form.location,
+        needsParking: form.needsParking,
+
         // Red/Green Line pricing data
         perVisitBase: calc.baseServiceCost + calc.vacuumingCost + calc.dustingCost + calc.tripCharge,  // Raw price before minimum
         perVisit: calc.perVisit,  // Final price after minimum
-        perVisitMinimum: form.perVisitMinimum,  // Minimum threshold
+        // perVisitMinimum already set above with effective value (line 135)
 
         // Service type as text field
         serviceType: {
@@ -188,14 +296,28 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
     <ServiceCard
       title="Pure Janitorial"
       headerActions={
-        <button
-          type="button"
-          className="svc-mini svc-mini--neg"
-          title="Remove service"
-          onClick={onRemove}
-        >
-          –
-        </button>
+        <>
+          <button
+            type="button"
+            className="svc-mini"
+            onClick={refreshConfig}
+            disabled={isLoadingConfig}
+            title="Refresh config from database"
+          >
+            <FontAwesomeIcon
+              icon={isLoadingConfig ? faSpinner : faSync}
+              spin={isLoadingConfig}
+            />
+          </button>
+          <button
+            type="button"
+            className="svc-mini svc-mini--neg"
+            title="Remove service"
+            onClick={onRemove}
+          >
+            –
+          </button>
+        </>
       }
     >
       <div className="svc-form">
@@ -231,18 +353,32 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
               />
               <span>@</span>
               <input
-                name={form.serviceType === "recurringService" ? "recurringServiceRate" : "oneTimeServiceRate"}
+                name={form.serviceType === "recurringService" ? "customRecurringServiceRate" : "customOneTimeServiceRate"}
                 className="svc-in sm"
                 type="number"
                 min="0"
-                value={(form.serviceType === "recurringService" ? form.recurringServiceRate : form.oneTimeServiceRate) || ""}
-                onChange={onChange}
+                step="0.01"
+                value={getDisplayValue(
+                  form.serviceType === "recurringService" ? 'customRecurringServiceRate' : 'customOneTimeServiceRate',
+                  form.serviceType === "recurringService"
+                    ? (form.customRecurringServiceRate !== undefined ? form.customRecurringServiceRate : form.recurringServiceRate)
+                    : (form.customOneTimeServiceRate !== undefined ? form.customOneTimeServiceRate : form.oneTimeServiceRate)
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                title={form.serviceType === "recurringService" ? "Recurring service rate (editable with yellow highlight if overridden)" : "One-time service rate (editable with yellow highlight if overridden)"}
+                style={{
+                  backgroundColor: form.serviceType === "recurringService"
+                    ? (form.customRecurringServiceRate !== undefined ? '#fffacd' : 'white')
+                    : (form.customOneTimeServiceRate !== undefined ? '#fffacd' : 'white')
+                }}
               />
               <span>=</span>
               <input
                 className="svc-in sm"
                 type="number"
-            min="0"
+                min="0"
                 value={calc.baseServiceCost.toFixed(2)}
                 readOnly
                 style={{ backgroundColor: "#f5f5f5" }}
@@ -251,41 +387,95 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Vacuuming */}
+        {/* Vacuuming - Calculation Row */}
         <div className="svc-row">
           <label>Vacuuming</label>
           <div className="svc-row-right">
-            <input
-              name="vacuumingHours"
-              className="svc-in"
-              type="text"
-              value={`${form.vacuumingHours} hours`}
-              onChange={(e) => {
-                const hours = parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                onChange({
-                  target: { name: "vacuumingHours", value: hours.toString() }
-                } as any);
-              }}
-            />
+            <div className="svc-inline svc-inline--tight">
+              <input
+                name="vacuumingHours"
+                className="svc-in sm"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.vacuumingHours || ""}
+                onChange={onChange}
+              />
+              <span>hrs @</span>
+              <input
+                name="customVacuumingRatePerHour"
+                className="svc-in sm"
+                type="number"
+                min="0"
+                step="0.01"
+                value={getDisplayValue(
+                  'customVacuumingRatePerHour',
+                  form.customVacuumingRatePerHour !== undefined ? form.customVacuumingRatePerHour : form.vacuumingRatePerHour
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                title="Vacuuming rate per hour (editable with yellow highlight if overridden)"
+                style={{
+                  backgroundColor: form.customVacuumingRatePerHour !== undefined ? '#fffacd' : 'white'
+                }}
+              />
+              <span>=</span>
+              <input
+                className="svc-in sm"
+                type="number"
+                min="0"
+                value={calc.vacuumingCost.toFixed(2)}
+                readOnly
+                style={{ backgroundColor: "#f5f5f5" }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Dusting */}
+        {/* Dusting - Calculation Row */}
         <div className="svc-row">
           <label>Dusting</label>
           <div className="svc-row-right">
-            <input
-              name="dustingHours"
-              className="svc-in"
-              type="text"
-              value={`${form.dustingHours} places`}
-              onChange={(e) => {
-                const places = parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                onChange({
-                  target: { name: "dustingHours", value: places.toString() }
-                } as any);
-              }}
-            />
+            <div className="svc-inline svc-inline--tight">
+              <input
+                name="dustingHours"
+                className="svc-in sm"
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.dustingHours || ""}
+                onChange={onChange}
+              />
+              <span>places @</span>
+              <input
+                name="customDustingRatePerHour"
+                className="svc-in sm"
+                type="number"
+                min="0"
+                step="0.01"
+                value={getDisplayValue(
+                  'customDustingRatePerHour',
+                  form.customDustingRatePerHour !== undefined ? form.customDustingRatePerHour : form.dustingRatePerHour
+                )}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                title="Dusting rate per place (editable with yellow highlight if overridden)"
+                style={{
+                  backgroundColor: form.customDustingRatePerHour !== undefined ? '#fffacd' : 'white'
+                }}
+              />
+              <span>=</span>
+              <input
+                className="svc-in sm"
+                type="number"
+                min="0"
+                value={calc.dustingCost.toFixed(2)}
+                readOnly
+                style={{ backgroundColor: "#f5f5f5" }}
+              />
+            </div>
           </div>
         </div>
 

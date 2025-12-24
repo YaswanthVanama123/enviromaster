@@ -216,7 +216,14 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   standaloneRatePerUnit: number;        // $10 per 200 sq ft
   dailyChemicalPerGallon: number;       // $27.34 per gallon
 
-  // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
+  // ========== CUSTOM RATE OVERRIDES (for yellow highlighting in edit mode) ==========
+  customIncludedBathroomRate?: number;
+  customHugeBathroomRatePerSqFt?: number;
+  customExtraAreaRatePerUnit?: number;
+  customStandaloneRatePerUnit?: number;
+  customDailyChemicalPerGallon?: number;
+
+  // ========== CUSTOM TOTAL OVERRIDES (user can manually set totals) ==========
   customStandardBathroomTotal?: number;
   customHugeBathroomTotal?: number;
   customExtraAreaTotal?: number;
