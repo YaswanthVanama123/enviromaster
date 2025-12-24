@@ -122,6 +122,11 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   vacuumingDefaultHours: cfg.vacuumingDefaultHours,
   redRateMultiplier: cfg.rateCategories.redRate.multiplier,
   greenRateMultiplier: cfg.rateCategories.greenRate.multiplier,
+
+  // ✅ NEW: Custom pricing overrides (for yellow highlighting)
+  customBaseHourlyRate: undefined,
+  customShortJobHourlyRate: undefined,
+  customMinHoursPerVisit: undefined,
 };
 
 /**
@@ -280,9 +285,24 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     return total;
   }, [customFields]);
 
-  const [form, setForm] = useState<JanitorialFormState>({
-    ...DEFAULT_FORM_STATE,
-    ...initialData,
+  const [form, setForm] = useState<JanitorialFormState>(() => {
+    const initialForm = { ...DEFAULT_FORM_STATE, ...initialData };
+
+    // Set custom flags for initial data that differ from defaults
+    const pricingFields: (keyof JanitorialFormState)[] = ['baseHourlyRate', 'shortJobHourlyRate', 'minHoursPerVisit', 'weeksPerMonth', 'dustingPlacesPerHour', 'dustingPricePerPlace', 'vacuumingDefaultHours'];
+
+    if (initialData) {
+      for (const field of pricingFields) {
+        const customField = `custom${field.charAt(0).toUpperCase() + field.slice(1)}` as keyof JanitorialFormState;
+        const initialValue = initialData[field];
+        const defaultValue = DEFAULT_FORM_STATE[field];
+        if (initialValue !== undefined && initialValue !== defaultValue) {
+          (initialForm as any)[customField] = initialValue;
+        }
+      }
+    }
+
+    return initialForm;
   });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
@@ -335,14 +355,14 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
             updateFormWithConfig(config);
 
             console.log('✅ Pure Janitorial FALLBACK CONFIG loaded from context:', {
-              baseHourlyRate: config.baseHourlyRate,
-              shortJobHourlyRate: config.shortJobHourlyRate,
-              minHoursPerVisit: config.minHoursPerVisit,
-              weeksPerMonth: config.weeksPerMonth,
-              dustingPlacesPerHour: config.dustingPlacesPerHour,
-              dustingPricePerPlace: config.dustingPricePerPlace,
-              vacuumingDefaultHours: config.vacuumingDefaultHours,
-              tieredPricing: config.tieredPricing,
+              baseHourlyRate: config.standardHourlyPricing?.standardHourlyRate,
+              shortJobHourlyRate: config.shortJobHourlyPricing?.shortJobHourlyRate,
+              minHoursPerVisit: config.standardHourlyPricing?.minimumHoursPerTrip,
+              weeksPerMonth: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier,
+              dustingPlacesPerHour: config.dusting?.itemsPerHour,
+              dustingPricePerPlace: config.dusting?.pricePerItem,
+              vacuumingDefaultHours: config.vacuuming?.estimatedTimeHoursPerJob,
+              tieredPricing: config.smoothBreakdownPricingTable,
             });
             return;
           }

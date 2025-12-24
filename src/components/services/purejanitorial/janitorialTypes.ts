@@ -107,6 +107,11 @@ export interface JanitorialFormState {
   redRateMultiplier: number;            // red rate multiplier
   greenRateMultiplier: number;          // green rate multiplier
 
+  // ========== CUSTOM PRICING OVERRIDES (for yellow highlighting) ==========
+  customBaseHourlyRate?: number;        // Custom override for base hourly rate
+  customShortJobHourlyRate?: number;    // Custom override for short job hourly rate
+  customMinHoursPerVisit?: number;      // Custom override for minimum hours per visit
+
   // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
   customPerVisit?: number;
   customFirstVisit?: number;
