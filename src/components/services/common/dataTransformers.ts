@@ -207,34 +207,144 @@ export function transformFoamingDrainData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract frequency
-  if (structuredData.frequency) {
-    formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
+  // ✅ STEP 1: Extract top-level direct fields (saved from form)
+  if (structuredData.frequency !== undefined && typeof structuredData.frequency === 'string') {
+    formState.frequency = structuredData.frequency;
+  }
+  if (structuredData.installFrequency !== undefined && typeof structuredData.installFrequency === 'string') {
+    formState.installFrequency = structuredData.installFrequency;
+  }
+  if (structuredData.location !== undefined && typeof structuredData.location === 'string') {
+    formState.location = structuredData.location;
+  }
+  if (structuredData.contractMonths !== undefined) {
+    formState.contractMonths = structuredData.contractMonths;
+  }
+  if (structuredData.facilityCondition !== undefined) {
+    formState.facilityCondition = structuredData.facilityCondition;
   }
 
-  // Extract location
-  if (structuredData.location) {
-    formState.location = structuredData.location.value?.includes("Inside") ? "beltway" : "standard";
+  // ✅ Extract top-level pricing fields (custom overrides or base values)
+  if (structuredData.standardDrainRate !== undefined) {
+    formState.standardDrainRate = structuredData.standardDrainRate;
+  }
+  if (structuredData.altBaseCharge !== undefined) {
+    formState.altBaseCharge = structuredData.altBaseCharge;
+  }
+  if (structuredData.altExtraPerDrain !== undefined) {
+    formState.altExtraPerDrain = structuredData.altExtraPerDrain;
+  }
+  if (structuredData.volumeWeeklyRate !== undefined) {
+    formState.volumeWeeklyRate = structuredData.volumeWeeklyRate;
+  }
+  if (structuredData.volumeBimonthlyRate !== undefined) {
+    formState.volumeBimonthlyRate = structuredData.volumeBimonthlyRate;
+  }
+  if (structuredData.greaseWeeklyRate !== undefined) {
+    formState.greaseWeeklyRate = structuredData.greaseWeeklyRate;
+  }
+  if (structuredData.greaseInstallRate !== undefined) {
+    formState.greaseInstallRate = structuredData.greaseInstallRate;
+  }
+  if (structuredData.greenWeeklyRate !== undefined) {
+    formState.greenWeeklyRate = structuredData.greenWeeklyRate;
+  }
+  if (structuredData.greenInstallRate !== undefined) {
+    formState.greenInstallRate = structuredData.greenInstallRate;
+  }
+  if (structuredData.plumbingAddonRate !== undefined) {
+    formState.plumbingAddonRate = structuredData.plumbingAddonRate;
+  }
+  if (structuredData.filthyMultiplier !== undefined) {
+    formState.filthyMultiplier = structuredData.filthyMultiplier;
   }
 
-  // Extract drain breakdown
+  // ✅ Extract quantity inputs
+  if (structuredData.standardDrainCount !== undefined) {
+    formState.standardDrainCount = structuredData.standardDrainCount;
+  }
+  if (structuredData.installDrainCount !== undefined) {
+    formState.installDrainCount = structuredData.installDrainCount;
+  }
+  if (structuredData.greaseTrapCount !== undefined) {
+    formState.greaseTrapCount = structuredData.greaseTrapCount;
+  }
+  if (structuredData.greenDrainCount !== undefined) {
+    formState.greenDrainCount = structuredData.greenDrainCount;
+  }
+  if (structuredData.plumbingDrainCount !== undefined) {
+    formState.plumbingDrainCount = structuredData.plumbingDrainCount;
+  }
+  if (structuredData.filthyDrainCount !== undefined) {
+    formState.filthyDrainCount = structuredData.filthyDrainCount;
+  }
+
+  // ✅ Extract boolean flags
+  if (structuredData.useSmallAltPricingWeekly !== undefined) {
+    formState.useSmallAltPricingWeekly = structuredData.useSmallAltPricingWeekly;
+  }
+  if (structuredData.useBigAccountTenWeekly !== undefined) {
+    formState.useBigAccountTenWeekly = structuredData.useBigAccountTenWeekly;
+  }
+  if (structuredData.isAllInclusive !== undefined) {
+    formState.isAllInclusive = structuredData.isAllInclusive;
+  }
+  if (structuredData.chargeGreaseTrapInstall !== undefined) {
+    formState.chargeGreaseTrapInstall = structuredData.chargeGreaseTrapInstall;
+  }
+  if (structuredData.needsPlumbing !== undefined) {
+    formState.needsPlumbing = structuredData.needsPlumbing;
+  }
+
+  // ✅ STEP 2: FALLBACK - Extract from display fields (for backward compatibility with renamed fields)
+  if (formState.frequency === undefined && structuredData.frequencyDisplay?.value) {
+    formState.frequency = structuredData.frequencyDisplay.value.toLowerCase();
+  }
+  if (formState.installFrequency === undefined && structuredData.installFrequencyDisplay?.value) {
+    formState.installFrequency = structuredData.installFrequencyDisplay.value.toLowerCase();
+  }
+  if (formState.location === undefined && structuredData.locationDisplay?.value) {
+    formState.location = structuredData.locationDisplay.value.includes("Inside") ? "beltway" : "standard";
+  }
+
+  // ✅ STEP 3: FALLBACK - Extract from old structured format (for very old documents)
+  if (formState.frequency === undefined && structuredData.frequency?.value) {
+    formState.frequency = structuredData.frequency.value.toLowerCase() || "weekly";
+  }
+  if (formState.location === undefined && structuredData.location?.value) {
+    formState.location = structuredData.location.value.includes("Inside") ? "beltway" : "standard";
+  }
+
+  // ✅ STEP 4: FALLBACK - Extract from drain breakdown (for old documents without top-level pricing)
   if (structuredData.drainBreakdown && Array.isArray(structuredData.drainBreakdown)) {
     structuredData.drainBreakdown.forEach((drain: any) => {
       if (drain.label === "Standard Drains") {
-        formState.standardDrainCount = drain.qty || 0;
-        formState.standardDrainRate = drain.rate || 0;
+        if (formState.standardDrainCount === undefined) {
+          formState.standardDrainCount = drain.qty || 0;
+        }
+        if (formState.standardDrainRate === undefined && drain.rate !== undefined) {
+          formState.standardDrainRate = drain.rate;
+        }
       } else if (drain.label === "Grease Trap Drains") {
-        formState.greaseTrapCount = drain.qty || 0;
-        formState.greaseWeeklyRate = drain.rate || 0;
+        if (formState.greaseTrapCount === undefined) {
+          formState.greaseTrapCount = drain.qty || 0;
+        }
+        if (formState.greaseWeeklyRate === undefined && drain.rate !== undefined) {
+          formState.greaseWeeklyRate = drain.rate;
+        }
       } else if (drain.label === "Green Drains") {
-        formState.greenDrainCount = drain.qty || 0;
-        formState.greenWeeklyRate = drain.rate || 0;
+        if (formState.greenDrainCount === undefined) {
+          formState.greenDrainCount = drain.qty || 0;
+        }
+        if (formState.greenWeeklyRate === undefined && drain.rate !== undefined) {
+          formState.greenWeeklyRate = drain.rate;
+        }
       }
     });
   }
 
-  // Extract contract months
-  if (structuredData.totals && structuredData.totals.contract) {
+  // ✅ STEP 5: FALLBACK - Extract contract months from totals (if not already set)
+  if (formState.contractMonths === undefined && structuredData.totals?.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
@@ -1025,13 +1135,27 @@ export function transformElectrostaticSprayData(structuredData: any): any {
   if (structuredData.isCombinedWithSaniClean !== undefined) {
     formState.isCombinedWithSaniClean = structuredData.isCombinedWithSaniClean;
   }
+  if (structuredData.frequency !== undefined) {
+    formState.frequency = structuredData.frequency;
+  }
+  if (structuredData.contractMonths !== undefined) {
+    formState.contractMonths = structuredData.contractMonths;
+  }
+  if (structuredData.location !== undefined) {
+    formState.location = structuredData.location;
+  }
 
   // ✅ FALLBACK: Extract from structured fields (for backward compatibility)
   // Only use these if top-level fields not already set
 
-  // Extract pricing method (fallback)
-  if (formState.pricingMethod === undefined && structuredData.pricingMethod) {
-    formState.pricingMethod = structuredData.pricingMethod.value?.includes("Room") ? "byRoom" : "bySqFt";
+  // Extract pricing method (fallback) - check both new and old field names
+  if (formState.pricingMethod === undefined) {
+    if (structuredData.pricingMethodDisplay?.value) {
+      formState.pricingMethod = structuredData.pricingMethodDisplay.value.includes("Room") ? "byRoom" : "bySqFt";
+    } else if (structuredData.pricingMethod?.value) {
+      // Old format for backward compatibility
+      formState.pricingMethod = structuredData.pricingMethod.value.includes("Room") ? "byRoom" : "bySqFt";
+    }
   }
 
   // Extract service data (fallback)
@@ -1053,21 +1177,32 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     }
   }
 
-  // Extract frequency (fallback)
-  if (structuredData.frequency) {
-    formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
+  // Extract frequency (fallback) - check both new and old field names
+  if (formState.frequency === undefined) {
+    if (structuredData.frequencyDisplay?.value) {
+      formState.frequency = structuredData.frequencyDisplay.value.toLowerCase();
+    } else if (structuredData.frequency?.value) {
+      // Old format for backward compatibility
+      formState.frequency = structuredData.frequency.value.toLowerCase() || "weekly";
+    }
   }
 
-  // Extract location (fallback)
-  if (structuredData.location) {
-    if (typeof structuredData.location === 'string') {
-      // Top-level direct value
-      formState.location = structuredData.location;
-    } else if (structuredData.location.value) {
-      // Structured field
-      const loc = structuredData.location.value?.toLowerCase();
-      formState.location = loc?.includes("inside") ? "insideBeltway" :
-                          loc?.includes("outside") ? "outsideBeltway" : "standard";
+  // Extract location (fallback) - check both new and old field names
+  if (formState.location === undefined) {
+    if (structuredData.locationDisplay?.value) {
+      const loc = structuredData.locationDisplay.value.toLowerCase();
+      formState.location = loc.includes("inside") ? "insideBeltway" :
+                          loc.includes("outside") ? "outsideBeltway" : "standard";
+    } else if (structuredData.location) {
+      if (typeof structuredData.location === 'string') {
+        // Top-level direct value (already handled above, but keep for safety)
+        formState.location = structuredData.location;
+      } else if (structuredData.location.value) {
+        // Old structured field format
+        const loc = structuredData.location.value.toLowerCase();
+        formState.location = loc.includes("inside") ? "insideBeltway" :
+                            loc.includes("outside") ? "outsideBeltway" : "standard";
+      }
     }
   }
 

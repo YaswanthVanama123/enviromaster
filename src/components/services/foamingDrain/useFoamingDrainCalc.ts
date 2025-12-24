@@ -242,8 +242,21 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   const [backendConfig, setBackendConfig] = useState<BackendFoamingDrainConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
+  // ✅ Add refs for tracking baseline values and edit mode
+  const isEditMode = useRef(!!initialData);
+  const baselineValues = useRef<Record<string, number>>({});
+  const baselineInitialized = useRef(false);
+
   // Helper function to update state with config data from the actual backend structure
-  const updateStateWithConfig = (config: BackendFoamingDrainConfig) => {
+  const updateStateWithConfig = (config: BackendFoamingDrainConfig, forceUpdate: boolean = false) => {
+    // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
+    // Only update on manual refresh (when user explicitly clicks refresh button)
+    if (initialData && !forceUpdate) {
+      console.log('📋 [FOAMING-DRAIN] Edit mode: Skipping form update to preserve loaded values');
+      return; // Don't overwrite loaded values in edit mode
+    }
+
+    console.log('📋 [FOAMING-DRAIN] Updating state with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
     setState((prev) => ({
       ...prev,
       // ✅ Extract from nested backend structure
@@ -262,7 +275,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   };
 
   // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
       const response = await serviceConfigApi.getActive("foamingDrain");
@@ -279,17 +292,33 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             console.log('✅ [Foaming Drain] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendFoamingDrainConfig;
             setBackendConfig(config);
-            updateStateWithConfig(config);
+            updateStateWithConfig(config, forceRefresh);
 
-            // ✅ Clear all custom overrides when refreshing config
-            setState(prev => ({
-              ...prev,
-              customWeeklyService: undefined,
-              customInstallationTotal: undefined,
-              customMonthlyRecurring: undefined,
-              customFirstMonthPrice: undefined,
-              customContractTotal: undefined,
-            }));
+            // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
+            if (forceRefresh) {
+              console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
+              setState(prev => ({
+                ...prev,
+                // Clear custom RATE overrides
+                customRatePerDrain: undefined,
+                customAltBaseCharge: undefined,
+                customAltExtraPerDrain: undefined,
+                customVolumeWeeklyRate: undefined,
+                customVolumeBimonthlyRate: undefined,
+                customGreaseWeeklyRate: undefined,
+                customGreaseInstallRate: undefined,
+                customGreenWeeklyRate: undefined,
+                customGreenInstallRate: undefined,
+                customPlumbingAddonRate: undefined,
+                customFilthyMultiplier: undefined,
+                // Clear custom TOTAL overrides
+                customWeeklyService: undefined,
+                customInstallationTotal: undefined,
+                customMonthlyRecurring: undefined,
+                customFirstMonthPrice: undefined,
+                customContractTotal: undefined,
+              }));
+            }
 
             console.log('✅ Foaming Drain FALLBACK CONFIG loaded from context:', {
               standardPricing: config.standardPricing,
@@ -323,17 +352,33 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-      updateStateWithConfig(config);
+      updateStateWithConfig(config, forceRefresh);
 
-      // ✅ Clear all custom overrides when refreshing config
-      setState(prev => ({
-        ...prev,
-        customWeeklyService: undefined,
-        customInstallationTotal: undefined,
-        customMonthlyRecurring: undefined,
-        customFirstMonthPrice: undefined,
-        customContractTotal: undefined,
-      }));
+      // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
+      if (forceRefresh) {
+        console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
+        setState(prev => ({
+          ...prev,
+          // Clear custom RATE overrides
+          customRatePerDrain: undefined,
+          customAltBaseCharge: undefined,
+          customAltExtraPerDrain: undefined,
+          customVolumeWeeklyRate: undefined,
+          customVolumeBimonthlyRate: undefined,
+          customGreaseWeeklyRate: undefined,
+          customGreaseInstallRate: undefined,
+          customGreenWeeklyRate: undefined,
+          customGreenInstallRate: undefined,
+          customPlumbingAddonRate: undefined,
+          customFilthyMultiplier: undefined,
+          // Clear custom TOTAL overrides
+          customWeeklyService: undefined,
+          customInstallationTotal: undefined,
+          customMonthlyRecurring: undefined,
+          customFirstMonthPrice: undefined,
+          customContractTotal: undefined,
+        }));
+      }
 
       console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
         standardPricing: config.standardPricing,
@@ -364,17 +409,33 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           console.log('✅ [Foaming Drain] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendFoamingDrainConfig;
           setBackendConfig(config);
-          updateStateWithConfig(config);
+          updateStateWithConfig(config, forceRefresh);
 
-          // ✅ Clear all custom overrides when refreshing config
-          setState(prev => ({
-            ...prev,
-            customWeeklyService: undefined,
-            customInstallationTotal: undefined,
-            customMonthlyRecurring: undefined,
-            customFirstMonthPrice: undefined,
-            customContractTotal: undefined,
-          }));
+          // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
+          if (forceRefresh) {
+            console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
+            setState(prev => ({
+              ...prev,
+              // Clear custom RATE overrides
+              customRatePerDrain: undefined,
+              customAltBaseCharge: undefined,
+              customAltExtraPerDrain: undefined,
+              customVolumeWeeklyRate: undefined,
+              customVolumeBimonthlyRate: undefined,
+              customGreaseWeeklyRate: undefined,
+              customGreaseInstallRate: undefined,
+              customGreenWeeklyRate: undefined,
+              customGreenInstallRate: undefined,
+              customPlumbingAddonRate: undefined,
+              customFilthyMultiplier: undefined,
+              // Clear custom TOTAL overrides
+              customWeeklyService: undefined,
+              customInstallationTotal: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+            }));
+          }
 
           return;
         }
@@ -386,24 +447,127 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }
   };
 
-  // ✅ Fetch pricing configuration on mount ONLY if no initialData (new service)
+  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
   useEffect(() => {
-    // Skip fetching if we have initialData (editing existing service with saved prices)
-    if (initialData) {
-      console.log('📋 [FOAMING-DRAIN-PRICING] Skipping price fetch - using saved historical prices from initialData');
-      return;
-    }
-
-    console.log('📋 [FOAMING-DRAIN-PRICING] Fetching current prices - new service or no initial data');
-    fetchPricing();
+    // Always fetch backend config to enable override detection in edit mode
+    console.log('📋 [FOAMING-DRAIN-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
+    fetchPricing(false); // false = don't force update in edit mode
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
   useEffect(() => {
-    // Skip if we have initialData (editing existing service)
-    if (initialData) return;
+    if (!backendConfig) return;
 
+    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+    if (!baselineInitialized.current) {
+      baselineInitialized.current = true;
+
+      // Baseline = loaded/saved value (edit mode) OR backend default (new document) OR current state (fallback)
+      baselineValues.current = {
+        standardDrainRate: initialData?.standardDrainRate ?? backendConfig.standardPricing?.standardDrainRate ?? state.standardDrainRate,
+        altBaseCharge: initialData?.altBaseCharge ?? backendConfig.standardPricing?.alternateBaseCharge ?? state.altBaseCharge,
+        altExtraPerDrain: initialData?.altExtraPerDrain ?? backendConfig.standardPricing?.alternateExtraPerDrain ?? state.altExtraPerDrain,
+        volumeWeeklyRate: initialData?.volumeWeeklyRate ?? backendConfig.volumePricing?.weeklyRatePerDrain ?? state.volumeWeeklyRate,
+        volumeBimonthlyRate: initialData?.volumeBimonthlyRate ?? backendConfig.volumePricing?.bimonthlyRatePerDrain ?? state.volumeBimonthlyRate,
+        greaseWeeklyRate: initialData?.greaseWeeklyRate ?? backendConfig.greaseTrapPricing?.weeklyRatePerTrap ?? state.greaseWeeklyRate,
+        greaseInstallRate: initialData?.greaseInstallRate ?? backendConfig.greaseTrapPricing?.installPerTrap ?? state.greaseInstallRate,
+        greenWeeklyRate: initialData?.greenWeeklyRate ?? backendConfig.greenDrainPricing?.weeklyRatePerDrain ?? state.greenWeeklyRate,
+        greenInstallRate: initialData?.greenInstallRate ?? backendConfig.greenDrainPricing?.installPerDrain ?? state.greenInstallRate,
+        plumbingAddonRate: initialData?.plumbingAddonRate ?? backendConfig.addOns?.plumbingWeeklyAddonPerDrain ?? state.plumbingAddonRate,
+        filthyMultiplier: initialData?.filthyMultiplier ?? backendConfig.installationMultipliers?.filthyMultiplier ?? state.filthyMultiplier,
+      };
+
+      console.log('✅ [FOAMING-DRAIN-BASELINE] Initialized baseline values for logging (ALL fields):', {
+        standardDrainRate: baselineValues.current.standardDrainRate,
+        altBaseCharge: baselineValues.current.altBaseCharge,
+        altExtraPerDrain: baselineValues.current.altExtraPerDrain,
+        volumeWeeklyRate: baselineValues.current.volumeWeeklyRate,
+        volumeBimonthlyRate: baselineValues.current.volumeBimonthlyRate,
+        greaseWeeklyRate: baselineValues.current.greaseWeeklyRate,
+        greaseInstallRate: baselineValues.current.greaseInstallRate,
+        greenWeeklyRate: baselineValues.current.greenWeeklyRate,
+        greenInstallRate: baselineValues.current.greenInstallRate,
+        plumbingAddonRate: baselineValues.current.plumbingAddonRate,
+        filthyMultiplier: baselineValues.current.filthyMultiplier,
+        note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
+      });
+
+      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+      if (initialData) {
+        console.log('🔍 [FOAMING-DRAIN-PRICING] Detecting price overrides for yellow highlighting...');
+
+        // ✅ FIXED: Compare ALL rate fields against backend defaults (not just 3)
+        const overrides = {
+          customRatePerDrain: (initialData.standardDrainRate !== undefined &&
+                               initialData.standardDrainRate !== backendConfig.standardPricing?.standardDrainRate)
+                               ? initialData.standardDrainRate : undefined,
+
+          customAltBaseCharge: (initialData.altBaseCharge !== undefined &&
+                                initialData.altBaseCharge !== backendConfig.standardPricing?.alternateBaseCharge)
+                                ? initialData.altBaseCharge : undefined,
+
+          customAltExtraPerDrain: (initialData.altExtraPerDrain !== undefined &&
+                                   initialData.altExtraPerDrain !== backendConfig.standardPricing?.alternateExtraPerDrain)
+                                   ? initialData.altExtraPerDrain : undefined,
+
+          customVolumeWeeklyRate: (initialData.volumeWeeklyRate !== undefined &&
+                                   initialData.volumeWeeklyRate !== backendConfig.volumePricing?.weeklyRatePerDrain)
+                                   ? initialData.volumeWeeklyRate : undefined,
+
+          customVolumeBimonthlyRate: (initialData.volumeBimonthlyRate !== undefined &&
+                                      initialData.volumeBimonthlyRate !== backendConfig.volumePricing?.bimonthlyRatePerDrain)
+                                      ? initialData.volumeBimonthlyRate : undefined,
+
+          customGreaseWeeklyRate: (initialData.greaseWeeklyRate !== undefined &&
+                                   initialData.greaseWeeklyRate !== backendConfig.greaseTrapPricing?.weeklyRatePerTrap)
+                                   ? initialData.greaseWeeklyRate : undefined,
+
+          customGreaseInstallRate: (initialData.greaseInstallRate !== undefined &&
+                                    initialData.greaseInstallRate !== backendConfig.greaseTrapPricing?.installPerTrap)
+                                    ? initialData.greaseInstallRate : undefined,
+
+          customGreenWeeklyRate: (initialData.greenWeeklyRate !== undefined &&
+                                  initialData.greenWeeklyRate !== backendConfig.greenDrainPricing?.weeklyRatePerDrain)
+                                  ? initialData.greenWeeklyRate : undefined,
+
+          customGreenInstallRate: (initialData.greenInstallRate !== undefined &&
+                                   initialData.greenInstallRate !== backendConfig.greenDrainPricing?.installPerDrain)
+                                   ? initialData.greenInstallRate : undefined,
+
+          customPlumbingAddonRate: (initialData.plumbingAddonRate !== undefined &&
+                                    initialData.plumbingAddonRate !== backendConfig.addOns?.plumbingWeeklyAddonPerDrain)
+                                    ? initialData.plumbingAddonRate : undefined,
+
+          customFilthyMultiplier: (initialData.filthyMultiplier !== undefined &&
+                                   initialData.filthyMultiplier !== backendConfig.installationMultipliers?.filthyMultiplier)
+                                   ? initialData.filthyMultiplier : undefined,
+        };
+
+        // Only set overrides that are actually different
+        const hasAnyOverrides = Object.values(overrides).some(v => v !== undefined);
+
+        if (hasAnyOverrides) {
+          setState(prev => ({
+            ...prev,
+            ...overrides, // Spread all override fields
+          }));
+
+          console.log('✅ [FOAMING-DRAIN-PRICING] Set custom override fields for yellow highlighting:',
+            Object.fromEntries(
+              Object.entries(overrides).filter(([_, value]) => value !== undefined)
+            )
+          );
+        } else {
+          console.log('ℹ️ [FOAMING-DRAIN-PRICING] No price overrides detected - using backend defaults');
+        }
+      }
+    }
+  }, [backendConfig, initialData]);
+
+  // Also fetch when services context becomes available (for fallback pricing)
+  useEffect(() => {
+    // Fetch from context if backend config not loaded yet (even in edit mode, for override detection)
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
@@ -575,11 +739,38 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       }
     }
 
+    // ========== EFFECTIVE VALUES (use custom overrides if set, otherwise base values) ==========
+    const effectiveStandardDrainRate = state.customRatePerDrain ?? state.standardDrainRate;
+    const effectiveAltBaseCharge = state.customAltBaseCharge ?? state.altBaseCharge;
+    const effectiveAltExtraPerDrain = state.customAltExtraPerDrain ?? state.altExtraPerDrain;
+    const effectiveVolumeWeeklyRate = state.customVolumeWeeklyRate ?? state.volumeWeeklyRate;
+    const effectiveVolumeBimonthlyRate = state.customVolumeBimonthlyRate ?? state.volumeBimonthlyRate;
+    const effectiveGreaseWeeklyRate = state.customGreaseWeeklyRate ?? state.greaseWeeklyRate;
+    const effectiveGreaseInstallRate = state.customGreaseInstallRate ?? state.greaseInstallRate;
+    const effectiveGreenWeeklyRate = state.customGreenWeeklyRate ?? state.greenWeeklyRate;
+    const effectiveGreenInstallRate = state.customGreenInstallRate ?? state.greenInstallRate;
+    const effectivePlumbingAddonRate = state.customPlumbingAddonRate ?? state.plumbingAddonRate;
+    const effectiveFilthyMultiplier = state.customFilthyMultiplier ?? state.filthyMultiplier;
+
+    console.log('🔧 [FOAMING-DRAIN-CALC] Using effective values:', {
+      effectiveStandardDrainRate,
+      effectiveAltBaseCharge,
+      effectiveAltExtraPerDrain,
+      effectiveVolumeWeeklyRate,
+      effectiveVolumeBimonthlyRate,
+      effectiveGreaseWeeklyRate,
+      effectiveGreaseInstallRate,
+      effectiveGreenWeeklyRate,
+      effectiveGreenInstallRate,
+      effectivePlumbingAddonRate,
+      effectiveFilthyMultiplier,
+    });
+
     // ---------- 2) Standard drain pricing ----------
-    const tenTotal = standardDrainsActive * state.standardDrainRate;  // ✅ USE FORM VALUE (from backend)
+    const tenTotal = standardDrainsActive * effectiveStandardDrainRate;  // ✅ USE EFFECTIVE VALUE
     const altTotal =
       standardDrainsActive > 0
-        ? state.altBaseCharge + state.altExtraPerDrain * standardDrainsActive  // ✅ USE FORM VALUES
+        ? effectiveAltBaseCharge + effectiveAltExtraPerDrain * standardDrainsActive  // ✅ USE EFFECTIVE VALUES
         : 0;
 
     let usedSmallAlt = false;
@@ -626,8 +817,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       // ✅ UPDATED: Use correct backend pricing structure for install frequencies
       const perDrainRate =
         state.installFrequency === "bimonthly"
-          ? state.volumeBimonthlyRate  // ✅ USE FORM VALUE (from backend volumePricing.bimonthlyRatePerDrain)
-          : state.volumeWeeklyRate;    // ✅ USE FORM VALUE (from backend volumePricing.weeklyRatePerDrain)
+          ? effectiveVolumeBimonthlyRate  // ✅ USE EFFECTIVE VALUE (custom override if set)
+          : effectiveVolumeWeeklyRate;    // ✅ USE EFFECTIVE VALUE (custom override if set)
 
       weeklyInstallDrains = perDrainRate * installDrains;
     }
@@ -635,14 +826,14 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     // ---------- 4) Plumbing add-on ----------
     const weeklyPlumbing =
       state.needsPlumbing && plumbingDrains > 0
-        ? plumbingDrains * state.plumbingAddonRate  // ✅ USE FORM VALUE (from backend)
+        ? plumbingDrains * effectivePlumbingAddonRate  // ✅ USE EFFECTIVE VALUE
         : 0;
 
     // ---------- 5) Grease & green weekly service ----------
     const weeklyGreaseTraps =
-      greaseTraps > 0 ? greaseTraps * state.greaseWeeklyRate : 0;  // ✅ USE FORM VALUE
+      greaseTraps > 0 ? greaseTraps * effectiveGreaseWeeklyRate : 0;  // ✅ USE EFFECTIVE VALUE
     const weeklyGreenDrains =
-      greenDrains > 0 ? greenDrains * state.greenWeeklyRate : 0;  // ✅ USE FORM VALUE
+      greenDrains > 0 ? greenDrains * effectiveGreenWeeklyRate : 0;  // ✅ USE EFFECTIVE VALUE
 
     // ---------- 6) Total weekly service (no trip) ----------
     const weeklyServiceRaw =
@@ -678,25 +869,25 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       if (useAltPricing) {
         // Alt weekly for those filthy drains: $20 + $4/drain
         weeklyFilthyCost =
-          state.altBaseCharge + state.altExtraPerDrain * filthyDrainCount;  // ✅ USE FORM VALUES
+          effectiveAltBaseCharge + effectiveAltExtraPerDrain * filthyDrainCount;  // ✅ USE EFFECTIVE VALUES
       } else {
         // Standard pricing: standardDrainRate × filthyDrains
-        weeklyFilthyCost = state.standardDrainRate * filthyDrainCount;  // ✅ USE FORM VALUE
+        weeklyFilthyCost = effectiveStandardDrainRate * filthyDrainCount;  // ✅ USE EFFECTIVE VALUE
       }
 
       filthyInstallOneTime =
-        weeklyFilthyCost * state.filthyMultiplier; // ✅ USE FORM VALUE (from backend, ×3)
+        weeklyFilthyCost * effectiveFilthyMultiplier; // ✅ USE EFFECTIVE VALUE (custom override if set, usually ×3)
     }
 
     // 7b) Grease traps install – $300 × #traps (one-time)
     const greaseInstallOneTime =
       state.chargeGreaseTrapInstall && greaseTraps > 0
-        ? state.greaseInstallRate * greaseTraps  // ✅ USE FORM VALUE (from backend)
+        ? effectiveGreaseInstallRate * greaseTraps  // ✅ USE EFFECTIVE VALUE
         : 0;
 
     // 7c) Green drains install – $100 × #drains (one-time)
     const greenInstallOneTime =
-      greenDrains > 0 ? state.greenInstallRate * greenDrains : 0;  // ✅ USE FORM VALUE
+      greenDrains > 0 ? effectiveGreenInstallRate * greenDrains : 0;  // ✅ USE EFFECTIVE VALUE
 
     const installationRaw =
       filthyInstallOneTime + greaseInstallOneTime + greenInstallOneTime;
@@ -957,7 +1148,19 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.greenInstallRate,
     state.plumbingAddonRate,
     state.filthyMultiplier,
-    // ✅ Custom override fields
+    // ✅ CRITICAL: Custom RATE override fields (must be in dependencies for calculations to update!)
+    state.customRatePerDrain,
+    state.customAltBaseCharge,
+    state.customAltExtraPerDrain,
+    state.customVolumeWeeklyRate,
+    state.customVolumeBimonthlyRate,
+    state.customGreaseWeeklyRate,
+    state.customGreaseInstallRate,
+    state.customGreenWeeklyRate,
+    state.customGreenInstallRate,
+    state.customPlumbingAddonRate,
+    state.customFilthyMultiplier,
+    // ✅ Custom TOTAL override fields
     state.customWeeklyService,
     state.customInstallationTotal,
     state.customMonthlyRecurring,
@@ -1043,23 +1246,89 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customContractTotal = undefined;
       }
 
-      // ✅ Log price override for numeric pricing fields
-      const pricingFields = [
+      // ✅ FIXED: Log ALL price changes for numeric pricing fields
+      // Log changes to BASE editable fields (these are what the user actually types)
+      const baseEditableFields = [
         'standardDrainRate', 'altBaseCharge', 'altExtraPerDrain',
         'volumeWeeklyRate', 'volumeBimonthlyRate', 'greaseWeeklyRate', 'greaseInstallRate',
-        'greenWeeklyRate', 'greenInstallRate', 'plumbingAddonRate', 'filthyMultiplier',
-        'customWeeklyService', 'customInstallationTotal', 'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
+        'greenWeeklyRate', 'greenInstallRate', 'plumbingAddonRate', 'filthyMultiplier'
       ];
 
-      if (pricingFields.includes(key as string)) {
-        const newValue = value as number | undefined;
-        const oldValue = originalValue as number | undefined;
+      // ✅ CRITICAL: Log changes to CUSTOM RATE OVERRIDE fields (set by user editing in UI)
+      const customRateOverrideFields = [
+        'customRatePerDrain', 'customAltBaseCharge', 'customAltExtraPerDrain',
+        'customVolumeWeeklyRate', 'customVolumeBimonthlyRate',
+        'customGreaseWeeklyRate', 'customGreaseInstallRate',
+        'customGreenWeeklyRate', 'customGreenInstallRate',
+        'customPlumbingAddonRate', 'customFilthyMultiplier'
+      ];
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(key as string, oldValue, newValue);
+      // Log changes to CUSTOM TOTAL override fields (set programmatically)
+      const customTotalOverrideFields = [
+        'customWeeklyService', 'customInstallationTotal', 'customMonthlyRecurring',
+        'customFirstMonthPrice', 'customContractTotal'
+      ];
+
+      const allPricingFields = [...baseEditableFields, ...customRateOverrideFields, ...customTotalOverrideFields];
+
+      // ✅ EXPLICIT: Map custom field names to base field names for baseline lookup
+      const customToBaseFieldMap: Record<string, string> = {
+        'customRatePerDrain': 'standardDrainRate',
+        'customAltBaseCharge': 'altBaseCharge',
+        'customAltExtraPerDrain': 'altExtraPerDrain',
+        'customVolumeWeeklyRate': 'volumeWeeklyRate',
+        'customVolumeBimonthlyRate': 'volumeBimonthlyRate',
+        'customGreaseWeeklyRate': 'greaseWeeklyRate',
+        'customGreaseInstallRate': 'greaseInstallRate',
+        'customGreenWeeklyRate': 'greenWeeklyRate',
+        'customGreenInstallRate': 'greenInstallRate',
+        'customPlumbingAddonRate': 'plumbingAddonRate',
+        'customFilthyMultiplier': 'filthyMultiplier',
+        'customWeeklyService': 'standardDrainRate',
+        'customInstallationTotal': 'filthyMultiplier',
+        'customFirstMonthPrice': 'standardDrainRate',
+        'customMonthlyRecurring': 'standardDrainRate',
+        'customContractTotal': 'standardDrainRate',
+      };
+
+      if (allPricingFields.includes(key as string)) {
+        const newValue = value as number | undefined;
+        const keyStr = key as string;
+
+        // ✅ FIXED: Always use base field name for baseline lookup
+        const baseFieldForLookup = customToBaseFieldMap[keyStr] || keyStr;
+        const baselineValue = baselineValues.current[baseFieldForLookup];
+
+        console.log(`🔍 [FOAMING-DRAIN-LOGGING] Field: ${keyStr}`, {
+          newValue,
+          baseFieldForLookup,
+          baselineValue,
+          isCustomField: keyStr.startsWith('custom'),
+        });
+
+        // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
+        // This ensures Map replaces previous entry with updated value still comparing to baseline
+        // Example: First change 10→15 logs "10→15", second change 15→20 REPLACES with "10→20"
+        if (newValue !== undefined && baselineValue !== undefined &&
+            typeof newValue === 'number' && typeof baselineValue === 'number' &&
+            newValue !== baselineValue) {
+          console.log(`📝 [FOAMING-DRAIN-BASELINE-LOG] Logging change for ${keyStr}:`, {
+            baseline: baselineValue,
+            newValue,
+            change: newValue - baselineValue,
+            changePercent: ((newValue - baselineValue) / baselineValue * 100).toFixed(1) + '%'
+          });
+          addServiceFieldChange(keyStr, baselineValue, newValue);
+        } else {
+          console.log(`⚠️ [FOAMING-DRAIN-LOGGING] NOT logging for ${keyStr}:`, {
+            reason: newValue === undefined ? 'newValue is undefined' :
+                    baselineValue === undefined ? 'baselineValue is undefined' :
+                    typeof newValue !== 'number' ? `newValue is ${typeof newValue}, not number` :
+                    typeof baselineValue !== 'number' ? `baselineValue is ${typeof baselineValue}, not number` :
+                    'values are equal',
+            newValue,
+            baselineValue,
+          });
         }
       }
 
@@ -1100,7 +1369,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     quote,
     updateField,
     reset,
-    refreshConfig: fetchPricing,
+    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
     isLoadingConfig,
     backendConfig, // ✅ EXPOSE: Backend config for dynamic thresholds
     setContractMonths, // ✅ NEW: Contract months with override support

@@ -81,7 +81,12 @@ export interface ElectrostaticSprayFormState {
   ratePerThousandSqFt: number;
   tripChargePerVisit: number;
 
-  // Custom overrides
+  // Custom overrides for rates (enables yellow highlighting)
+  customRatePerRoom?: number;
+  customRatePerThousandSqFt?: number;
+  customTripChargePerVisit?: number;
+
+  // Custom overrides for totals
   customServiceCharge?: number;
   customPerVisitPrice?: number;
   customMonthlyRecurring?: number;

@@ -80,6 +80,22 @@ export interface FoamingDrainFormState {
   customMonthlyRecurring?: number;
   customFirstMonthPrice?: number;
   customContractTotal?: number;
+
+  // ✅ NEW: Custom override fields for rate highlighting
+  customRatePerDrain?: number;
+  customAltBaseCharge?: number;
+  customAltExtraPerDrain?: number;
+  customVolumeWeeklyRate?: number;
+  customVolumeBimonthlyRate?: number;
+  customGreaseWeeklyRate?: number;
+  customGreaseInstallRate?: number;
+  customGreenWeeklyRate?: number;
+  customGreenInstallRate?: number;
+  customPlumbingAddonRate?: number;
+  customFilthyMultiplier?: number;
+
+  // ✅ NEW: Custom fields from CustomFieldManager
+  customFields?: any[];
 }
 
 export interface FoamingDrainBreakdown {

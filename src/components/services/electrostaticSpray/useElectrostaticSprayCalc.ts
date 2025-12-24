@@ -230,6 +230,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
               console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
               setForm((prev: any) => ({
                 ...prev,
+                customRatePerRoom: undefined,
+                customRatePerThousandSqFt: undefined,
+                customTripChargePerVisit: undefined,
                 customServiceCharge: undefined,
                 customPerVisitPrice: undefined,
                 customMonthlyRecurring: undefined,
@@ -270,6 +273,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
         setForm((prev: any) => ({
           ...prev,
+          customRatePerRoom: undefined,
+          customRatePerThousandSqFt: undefined,
+          customTripChargePerVisit: undefined,
           customServiceCharge: undefined,
           customPerVisitPrice: undefined,
           customMonthlyRecurring: undefined,
@@ -300,6 +306,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
             console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
             setForm((prev: any) => ({
               ...prev,
+              customRatePerRoom: undefined,
+              customRatePerThousandSqFt: undefined,
+              customTripChargePerVisit: undefined,
               customServiceCharge: undefined,
               customPerVisitPrice: undefined,
               customMonthlyRecurring: undefined,
@@ -348,35 +357,37 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         tripChargePerVisit: baselineValues.current.tripChargePerVisit,
         note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
-    }
 
-    // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only)
-    if (!initialData) return;
+      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+      if (initialData) {
+        console.log('🔍 [ELECTROSTATIC-SPRAY-PRICING] Detecting price overrides for yellow highlighting...');
 
-    console.log('🔍 [ELECTROSTATIC-SPRAY-PRICING] Detecting price overrides for yellow highlighting...');
+        // Compare saved values against backend defaults
+        const hasRatePerRoomOverride = initialData.ratePerRoom !== undefined &&
+                                       initialData.ratePerRoom !== backendConfig.standardSprayPricing?.sprayRatePerRoom;
+        const hasRatePerSqFtOverride = initialData.ratePerThousandSqFt !== undefined &&
+                                        initialData.ratePerThousandSqFt !== backendConfig.standardSprayPricing?.sprayRatePerSqFtUnit;
+        const hasTripChargeOverride = initialData.tripChargePerVisit !== undefined &&
+                                       initialData.tripChargePerVisit !== backendConfig.tripCharges?.standard;
 
-    // Compare saved values against backend defaults
-    const hasRatePerRoomOverride = initialData.ratePerRoom !== undefined &&
-                                   initialData.ratePerRoom !== backendConfig.standardSprayPricing?.sprayRatePerRoom;
-    const hasRatePerSqFtOverride = initialData.ratePerThousandSqFt !== undefined &&
-                                    initialData.ratePerThousandSqFt !== backendConfig.standardSprayPricing?.sprayRatePerSqFtUnit;
-    const hasTripChargeOverride = initialData.tripChargePerVisit !== undefined &&
-                                   initialData.tripChargePerVisit !== backendConfig.tripCharges?.standard;
+        if (hasRatePerRoomOverride || hasRatePerSqFtOverride || hasTripChargeOverride) {
+          setForm(prev => ({
+            ...prev,
+            // Set custom override fields to enable yellow highlighting
+            customRatePerRoom: hasRatePerRoomOverride ? initialData.ratePerRoom : prev.customRatePerRoom,
+            customRatePerThousandSqFt: hasRatePerSqFtOverride ? initialData.ratePerThousandSqFt : prev.customRatePerThousandSqFt,
+            customTripChargePerVisit: hasTripChargeOverride ? initialData.tripChargePerVisit : prev.customTripChargePerVisit,
+          }));
 
-    if (hasRatePerRoomOverride || hasRatePerSqFtOverride || hasTripChargeOverride) {
-      setForm(prev => ({
-        ...prev,
-        // Set custom override fields to enable yellow highlighting (if applicable)
-        // Note: Electrostatic Spray may not have custom override UI for these base rates yet
-      }));
-
-      console.log('✅ [ELECTROSTATIC-SPRAY-PRICING] Detected price overrides:', {
-        ratePerRoom: hasRatePerRoomOverride ? initialData.ratePerRoom : 'matches backend',
-        ratePerSqFt: hasRatePerSqFtOverride ? initialData.ratePerThousandSqFt : 'matches backend',
-        tripCharge: hasTripChargeOverride ? initialData.tripChargePerVisit : 'matches backend',
-      });
-    } else {
-      console.log('ℹ️ [ELECTROSTATIC-SPRAY-PRICING] No price overrides detected - using backend defaults');
+          console.log('✅ [ELECTROSTATIC-SPRAY-PRICING] Set custom override fields for yellow highlighting:', {
+            customRatePerRoom: hasRatePerRoomOverride ? initialData.ratePerRoom : 'none',
+            customRatePerThousandSqFt: hasRatePerSqFtOverride ? initialData.ratePerThousandSqFt : 'none',
+            customTripChargePerVisit: hasTripChargeOverride ? initialData.tripChargePerVisit : 'none',
+          });
+        } else {
+          console.log('ℹ️ [ELECTROSTATIC-SPRAY-PRICING] No price overrides detected - using backend defaults');
+        }
+      }
     }
   }, [backendConfig, initialData]);
 
@@ -462,6 +473,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         next[name as keyof ElectrostaticSprayFormState] = target.checked;
       } else if (
         // Handle custom override fields - allow clearing by setting to undefined
+        name === "customRatePerRoom" ||
+        name === "customRatePerThousandSqFt" ||
+        name === "customTripChargePerVisit" ||
         name === "customServiceCharge" ||
         name === "customPerVisitPrice" ||
         name === "customMonthlyRecurring" ||
@@ -491,6 +505,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       ];
 
       const customOverrideFields = [
+        'customRatePerRoom', 'customRatePerThousandSqFt', 'customTripChargePerVisit',
         'customServiceCharge', 'customPerVisitPrice', 'customMonthlyRecurring',
         'customContractTotal', 'customFirstMonthTotal'
       ];
@@ -507,6 +522,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         // For custom fields, get baseline from the corresponding base field
         if (baselineValue === undefined && name.startsWith('custom')) {
           const baseFieldMap: Record<string, string> = {
+            'customRatePerRoom': 'ratePerRoom',
+            'customRatePerThousandSqFt': 'ratePerThousandSqFt',
+            'customTripChargePerVisit': 'tripChargePerVisit',
             'customServiceCharge': 'ratePerRoom',
             'customPerVisitPrice': 'ratePerRoom',
           };
@@ -596,9 +614,13 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     let effectiveRate = 0;
     let pricingMethodUsed = form.pricingMethod;
 
+    // ✅ Use custom override rates if set, otherwise use base rates
+    const effectiveRatePerRoom = form.customRatePerRoom ?? form.ratePerRoom;
+    const effectiveRatePerThousandSqFt = form.customRatePerThousandSqFt ?? form.ratePerThousandSqFt;
+
     if (form.pricingMethod === "byRoom") {
-      calculatedServiceCharge = form.roomCount * form.ratePerRoom;
-      effectiveRate = form.ratePerRoom;
+      calculatedServiceCharge = form.roomCount * effectiveRatePerRoom;
+      effectiveRate = effectiveRatePerRoom;
     } else {
       // By square feet
       let calculateForSqFt = form.squareFeet;
@@ -616,8 +638,8 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       }
 
       const units = calculateForSqFt / activeConfig.standardSprayPricing.sqFtUnit; // Convert to 1000 sq ft units
-      calculatedServiceCharge = units * form.ratePerThousandSqFt;
-      effectiveRate = form.ratePerThousandSqFt;
+      calculatedServiceCharge = units * effectiveRatePerThousandSqFt;
+      effectiveRate = effectiveRatePerThousandSqFt;
     }
 
     // Apply minimum charge if needed - ONLY when there's actual service
@@ -634,7 +656,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     const serviceCharge = form.customServiceCharge ?? calculatedServiceCharge;
 
     // Trip charge (0 if combined with Sani-Clean, otherwise use editable rate)
-    const tripCharge = form.isCombinedWithSaniClean ? 0 : form.tripChargePerVisit;
+    // ✅ Use custom override trip charge if set
+    const effectiveTripChargePerVisit = form.customTripChargePerVisit ?? form.tripChargePerVisit;
+    const tripCharge = form.isCombinedWithSaniClean ? 0 : effectiveTripChargePerVisit;
 
     // Per visit total
     const perVisit = form.customPerVisitPrice ?? (serviceCharge + tripCharge);

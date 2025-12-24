@@ -171,10 +171,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         isActive: true,
 
         // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-        // This ensures edited values are saved to backend, not just backend defaults
-        ratePerRoom: form.ratePerRoom,  // Note: This form doesn't use customRatePerRoom, it directly edits ratePerRoom
-        ratePerThousandSqFt: form.ratePerThousandSqFt,  // Same here
-        tripChargePerVisit: form.tripChargePerVisit,  // Same here
+        // This ensures edited values are saved to backend and used in PDF generation
+        ratePerRoom: form.customRatePerRoom ?? form.ratePerRoom,
+        ratePerThousandSqFt: form.customRatePerThousandSqFt ?? form.ratePerThousandSqFt,
+        tripChargePerVisit: form.customTripChargePerVisit ?? form.tripChargePerVisit,
 
         // ✅ NEW: Save quantity inputs for proper loading in edit mode
         pricingMethod: form.pricingMethod,
@@ -191,14 +191,15 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         perVisit: calc.perVisit,  // Final price after minimum
         minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
-        pricingMethod: {
+        // ✅ FIXED: Display fields with different names to avoid overwriting saved values
+        pricingMethodDisplay: {
           isDisplay: true,
           label: "Pricing Method",
           type: "text" as const,
           value: form.pricingMethod === "byRoom" ? "By Room" : "By Square Feet",
         },
 
-        frequency: {
+        frequencyDisplay: {
           isDisplay: true,
           label: "Frequency",
           type: "text" as const,
@@ -207,7 +208,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             : String(form.frequency || 'Weekly'),
         },
 
-        location: {
+        locationDisplay: {
           isDisplay: true,
           label: "Location",
           type: "text" as const,
@@ -308,6 +309,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
+      customRatePerRoom: undefined,
+      customRatePerThousandSqFt: undefined,
+      customTripChargePerVisit: undefined,
       customServiceCharge: undefined,
       customPerVisitPrice: undefined,
       customMonthlyRecurring: undefined,
@@ -317,9 +321,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   }, [
     form.roomCount,
     form.squareFeet,
-    form.ratePerRoom,
-    form.ratePerThousandSqFt,
-    form.tripChargePerVisit,
     form.pricingMethod,
     form.useExactCalculation,
     form.frequency,
@@ -493,13 +494,20 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     type="number"
                     min="0"
-                    name="ratePerRoom"
+                    name="customRatePerRoom"
                     step="1"
                     className="svc-in field-rate"
-                    value={form.ratePerRoom || ""}
-                    onChange={onChange}
+                    value={getDisplayValue(
+                      'customRatePerRoom',
+                      form.customRatePerRoom !== undefined
+                        ? form.customRatePerRoom
+                        : form.ratePerRoom
+                    )}
+                    onChange={handleLocalChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    style={{ backgroundColor: form.customRatePerRoom !== undefined ? '#fffacd' : 'white' }}
                     title="Rate per room (editable - changes calculation)"
-                    style={{ backgroundColor: '#f8f9fa', borderColor: '#28a745' }}
                   />
                   <span>=</span>
                   <input
@@ -548,13 +556,20 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <input
                     type="number"
                     min="0"
-                    name="ratePerThousandSqFt"
+                    name="customRatePerThousandSqFt"
                     step={1}
                     className="svc-in field-rate"
-                    value={form.ratePerThousandSqFt || ""}
-                    onChange={onChange}
+                    value={getDisplayValue(
+                      'customRatePerThousandSqFt',
+                      form.customRatePerThousandSqFt !== undefined
+                        ? form.customRatePerThousandSqFt
+                        : form.ratePerThousandSqFt
+                    )}
+                    onChange={handleLocalChange}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    style={{ backgroundColor: form.customRatePerThousandSqFt !== undefined ? '#fffacd' : 'white' }}
                     title="Rate per 1000 sq ft (editable - changes calculation)"
-                    style={{ backgroundColor: '#f8f9fa', borderColor: '#28a745' }}
                   />
                   <span>=</span>
                   <input
