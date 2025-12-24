@@ -211,37 +211,36 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
   // Handler to remove a service
   const handleRemoveService = (serviceId: string) => {
-    // Remove from visible services list
+    // ✅ CRITICAL FIX: Map of service aliases (both directions)
+    const aliasMap: Record<string, string[]> = {
+      'carpetCleaning': ['carpetclean'],
+      'carpetclean': ['carpetCleaning'],
+      'pureJanitorial': ['janitorial'],
+      'janitorial': ['pureJanitorial'],
+      'stripWax': ['stripwax'],
+      'stripwax': ['stripWax'],
+    };
+
+    // Get all aliases for this service
+    const aliases = aliasMap[serviceId] || [];
+    const allIdsToRemove = [serviceId, ...aliases];
+
+    // ✅ FIXED: Remove BOTH the service ID and all aliases from visible services Set
     setVisibleServices((prev) => {
       const next = new Set(prev);
-      next.delete(serviceId);
+      allIdsToRemove.forEach(id => {
+        next.delete(id);
+        console.log(`🗑️ [ServicesSection] Removing from visible services: ${id}`);
+      });
       return next;
     });
 
     // ✅ FIXED: Clear service data from context for BOTH the service ID and all aliases
     // This ensures the service is completely removed from context regardless of which ID is used
     if (servicesContext) {
-      console.log(`🗑️ [ServicesSection] Removing service data from context: ${serviceId}`);
-
-      // Clear the main service ID
-      servicesContext.updateService(serviceId as any, null);
-
-      // ✅ CRITICAL: Also clear all known aliases to ensure complete removal
-      // Map of service aliases (both directions)
-      const aliasMap: Record<string, string[]> = {
-        'carpetCleaning': ['carpetclean'],
-        'carpetclean': ['carpetCleaning'],
-        'pureJanitorial': ['janitorial'],
-        'janitorial': ['pureJanitorial'],
-        'stripWax': ['stripwax'],
-        'stripwax': ['stripWax'],
-      };
-
-      // Clear all aliases for this service
-      const aliases = aliasMap[serviceId] || [];
-      aliases.forEach(aliasId => {
-        console.log(`🗑️ [ServicesSection] Also removing alias from context: ${aliasId}`);
-        servicesContext.updateService(aliasId as any, null);
+      allIdsToRemove.forEach(id => {
+        console.log(`🗑️ [ServicesSection] Removing service data from context: ${id}`);
+        servicesContext.updateService(id as any, null);
       });
     }
   };
