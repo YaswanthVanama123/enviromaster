@@ -121,6 +121,11 @@ export const JanitorialForm: React.FC<
         displayName: "Pure Janitorial",
         isActive: true,
 
+        // ✅ NEW: Red/Green Line pricing data
+        rawPrice: calc.breakdown.basePrice,  // Raw price before minimum
+        perVisit: calc.perVisit,  // Final price after minimum
+        minCharge: calc.minimumChargePerVisit || 0,  // Minimum threshold
+
         serviceType: {
           isDisplay: true,
           label: "Service Type",
@@ -351,9 +356,9 @@ export const JanitorialForm: React.FC<
               <option value={6}>6 visits per week</option>
               <option value={7}>7 visits per week (daily)</option>
             </select>
-            <span className="svc-small">
+            {/* <span className="svc-small">
               Monthly visits: {formatNumber((form.weeksPerMonth || 0) * (form.visitsPerWeek || 0))}
-            </span>
+            </span> */}
           </div>
         </div>
       )}
@@ -657,31 +662,27 @@ export const JanitorialForm: React.FC<
       {/* Recurring monthly total - Only show for recurring */}
       {form.serviceType === "recurring" && (
         <div className="svc-row svc-row-charge">
-          <label>Monthly Recurring ({formatNumber((form.weeksPerMonth || 0) * (form.visitsPerWeek || 0))} visits/month)</label>
+          <label>Monthly Recurring</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                readOnly
                 name="customOngoingMonthly"
-                value={getDisplayValue(
-                  'customOngoingMonthly',
-                  form.customOngoingMonthly !== undefined
+                value={(() => {
+                  const val = form.customOngoingMonthly !== undefined
                     ? form.customOngoingMonthly
-                    : calc?.recurringMonthly || 0
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
+                    : calc?.recurringMonthly || 0;
+                  return val.toFixed(2);
+                })()}
                 style={{
                   backgroundColor: form.customOngoingMonthly !== undefined ? '#fffacd' : 'white',
                   border: 'none',
                   width: '100px'
                 }}
-                title="Monthly recurring - editable"
+                title="Monthly recurring (fixed 2 decimals)"
               />
             </div>
           </div>
@@ -755,21 +756,16 @@ export const JanitorialForm: React.FC<
             </select>
             <span style={{ fontSize: '18px', fontWeight: 'bold', marginLeft: '10px' }}>$</span>
             <input
-              type="number"
-              min="0"
+              type="text"
               readOnly
-              step="0.01"
               name="customContractTotal"
               className="svc-in"
-              value={getDisplayValue(
-                'customContractTotal',
-                form.customContractTotal !== undefined
+              value={(() => {
+                const val = form.customContractTotal !== undefined
                   ? form.customContractTotal
-                  : calc?.contractTotal || 0
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
+                  : calc?.contractTotal || 0;
+                return val.toFixed(2);
+              })()}
               style={{
                 borderBottom: '2px solid #ff0000',
                 borderTop: 'none',
@@ -782,7 +778,7 @@ export const JanitorialForm: React.FC<
                 width: '100px',
                 marginLeft: '5px'
               }}
-              title="Contract total - editable"
+              title="Contract total (fixed 2 decimals)"
             />
           </div>
         </div>

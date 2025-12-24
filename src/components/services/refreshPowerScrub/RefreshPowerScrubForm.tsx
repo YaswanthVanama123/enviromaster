@@ -447,6 +447,7 @@ export const RefreshPowerScrubForm: React.FC<
                     <input
                       className="rps-line rps-num"
                       type="number"
+                      readOnly
                       min="0"
                       step="1"
                       value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPatioStandalone())))}
@@ -473,11 +474,10 @@ export const RefreshPowerScrubForm: React.FC<
                       type="number"
                       min="0"
                       step="1"
-                      value={getPatioUpsell()}
-                      onChange={() => {}} // For now keep static, can be made editable later if needed
-                      disabled
-                      style={{ width: '60px', backgroundColor: '#f5f5f5' }}
-                      title="Add-on service price"
+                      value={area.patioAddonRate === null ? '' : (area.patioAddonRate ?? getPatioUpsell())}
+                      onChange={(e) => setAreaField(areaKey, "patioAddonRate", e.target.value)}
+                      style={{ width: '60px' }}
+                      title="Add-on service price - editable"
                     />
                   </label>
                   <div style={{
@@ -486,7 +486,7 @@ export const RefreshPowerScrubForm: React.FC<
                     fontWeight: 'bold',
                     color: '#0066cc'
                   }}>
-                    Total: ${formatAmount((area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPatioStandalone())))) + (area.includePatioAddon ? getPatioUpsell() : 0))}
+                    Total: ${formatAmount((area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPatioStandalone())))) + (area.includePatioAddon ? (area.patioAddonRate === null ? 0 : (area.patioAddonRate ?? getPatioUpsell())) : 0))}
                   </div>
                 </div>
               </div>
@@ -670,7 +670,7 @@ export const RefreshPowerScrubForm: React.FC<
             <input
               className="rps-line rps-num"
               type="number"
-            min="0"
+              min="0"
               step="1"
               value={area.hourlyRate}
               onChange={(e) => setAreaField(areaKey, "hourlyRate", e.target.value)}
@@ -726,7 +726,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
-            min="0"
+                min="0"
                 value={area.outsideSqFt}
                 onChange={(e) => setAreaField(areaKey, "outsideSqFt", e.target.value)}
                 style={{ width: '80px' }}
@@ -735,7 +735,7 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
-            min="0"
+                min="0"
                 step="0.1"
                 value={area.outsideRate}
                 onChange={(e) => setAreaField(areaKey, "outsideRate", e.target.value)}
@@ -812,7 +812,7 @@ export const RefreshPowerScrubForm: React.FC<
 
       {/* Global rule controls */}
       <div className="rps-config-row">
-        <div className="rps-inline">
+        {/* <div className="rps-inline">
           <span className="rps-label">Hourly Rate</span>
           <span>$</span>
           <input
@@ -823,7 +823,7 @@ export const RefreshPowerScrubForm: React.FC<
             onChange={(e) => setHourlyRate(e.target.value)}
           />
           <span>/hr/worker</span>
-        </div>
+        </div> */}
         <div className="rps-inline">
           <span className="rps-label">Minimum Visit</span>
           <span>$</span>
@@ -921,8 +921,9 @@ export const RefreshPowerScrubForm: React.FC<
                           <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
                         </div>
 
-                        {/* Monthly Total – HIDE for visit-based frequencies (Quarterly, Bi-annual, Annual) */}
-                        {form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" &&
+                        {/* Monthly Total – HIDE for visit-based frequencies (Bi-monthly, Quarterly, Bi-annual, Annual) */}
+                        {form[areaKey].frequencyLabel?.toLowerCase() !== "bi-monthly" &&
+                         form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" &&
                          form[areaKey].frequencyLabel?.toLowerCase() !== "bi-annual" &&
                          form[areaKey].frequencyLabel?.toLowerCase() !== "annual" && (
                           <div className="rps-inline" style={{ marginTop: '8px' }}>

@@ -160,7 +160,13 @@ function getBillingMultiplier(
   frequency: string,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-  const normalizedFrequency = frequency.toLowerCase().replace("-", "").replace(/\s+/g, "");
+  // ✅ FIXED: Handle special characters in frequency labels
+  let normalizedFrequency = frequency.toLowerCase().replace("-", "").replace(/\s+/g, "");
+
+  // ✅ Special handling for "2× / Month" → "twicepermonth"
+  if (normalizedFrequency.includes("2×") || normalizedFrequency.includes("2x") || normalizedFrequency === "2/month") {
+    normalizedFrequency = "twicepermonth";
+  }
 
   // Default multipliers as fallback
   const defaultMultipliers: Record<string, number> = {
@@ -183,15 +189,14 @@ function getBillingMultiplier(
         return conversions.weekly?.monthlyMultiplier ?? defaultMultipliers.weekly;
       case "biweekly":
         return conversions.biweekly?.monthlyMultiplier ?? defaultMultipliers.biweekly;
+      case "twicepermonth":
+        return defaultMultipliers.twicepermonth; // Always use 2.0 for twice per month
       case "monthly":
         return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
       case "bimonthly":
         return conversions.bimonthly?.monthlyMultiplier ?? defaultMultipliers.bimonthly;
       case "quarterly":
         return conversions.quarterly?.monthlyMultiplier ?? defaultMultipliers.quarterly;
-      case "twicepermonth":
-        // Always use 2.0 for twicePerMonth (2 visits per month)
-        return 2.0;
     }
   }
 
@@ -231,6 +236,7 @@ function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null
     largeCustomAmount: 0, // ✅ NEW: Custom override for large
     patioMode: "standalone",
     includePatioAddon: false,
+    patioAddonRate: undefined, // ✅ NEW: undefined = use backend default
     frequencyLabel: "",
     contractMonths: 12,
   };
@@ -288,6 +294,7 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   largeCustomAmount: 0, // ✅ NEW: Custom override for large
   patioMode: "standalone",
   includePatioAddon: false, // Default to no add-on
+  patioAddonRate: undefined, // ✅ NEW: undefined = use backend default
   frequencyLabel: "",
   contractMonths: 12, // Default contract length for individual areas
 };
@@ -335,6 +342,7 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "largeQuantity", // ✅ NEW: BOH large fields
   "largeRate",
   "largeCustomAmount",
+  "patioAddonRate", // ✅ NEW: Patio addon rate
 ];
 
 /** Per Worker rule:
@@ -542,7 +550,9 @@ function calcPresetPackage(
 
   // ✅ For patio, add the addon separately (after qty × rate calculation)
   if (area === "patio" && state.includePatioAddon) {
-    baseAmount += config.areaSpecificPricing.patio.upsell;
+    // ✅ Use editable patio addon rate (null = 0, undefined = backend default)
+    const addonRate = state.patioAddonRate === null ? 0 : (state.patioAddonRate ?? config.areaSpecificPricing.patio.upsell);
+    baseAmount += addonRate;
   }
 
   return baseAmount;

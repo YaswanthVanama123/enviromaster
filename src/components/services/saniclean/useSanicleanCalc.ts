@@ -407,6 +407,8 @@ function calculateAllInclusive(
       weeklyTotal: 0,
       monthlyTotal: 0,
       contractTotal: 0,
+      baseServiceMonthly: 0,
+      facilityComponentsMonthly: 0,
       breakdown: {
         baseService: 0,
         tripCharge: 0,
@@ -487,20 +489,22 @@ function calculateAllInclusive(
     config
   );
 
-  // ✅ FIXED: Use frequency-adjusted per-visit total from dual frequency calculation
-  // The base weekly prices are just the starting point - dualFreqResult applies frequency multipliers
+  // ✅ FIXED: Calculate service and facility components INDEPENDENTLY to avoid double-counting
+  // Service and facility are calculated at their own frequencies and added separately to contract
   const calculationMode = getCalculationMode(form.mainServiceFrequency);
 
-  // In monthly mode: combinedTotal is already monthly recurring
-  // In per-visit mode: combinedTotal is the per-visit price with frequency adjustments
+  // ✅ FIXED: weeklyTotal should ONLY include main service (NOT facility components)
+  // Facility components are calculated separately and added to monthly/contract independently
   const weeklyTotal = calculationMode === "monthly"
-    ? mainServiceTotal + facilityComponentsTotal  // For monthly mode, keep base as per-visit price
+    ? mainServiceTotal  // ✅ FIXED: Only main service per-visit price (facility calculated separately)
     : dualFreqResult.combinedTotal; // For per-visit mode, use frequency-adjusted price
 
   const monthlyTotal = dualFreqResult.monthlyTotal ?? dualFreqResult.combinedTotal;
   const contractTotal = dualFreqResult.contractTotal;
 
   console.log(`🔍 [SaniClean All-Inclusive] Frequency: ${form.mainServiceFrequency}, Mode: ${calculationMode}, ContractMonths: ${form.contractMonths}`, {
+    mainServiceTotal_base: mainServiceTotal,
+    facilityComponentsTotal_base: facilityComponentsTotal,
     weeklyTotal,
     monthlyTotal,
     contractTotal,
@@ -529,6 +533,9 @@ function calculateAllInclusive(
     weeklyTotal,
     monthlyTotal,
     contractTotal,
+    // ✅ NEW: Separate monthly totals for base service and facility components
+    baseServiceMonthly: dualFreqResult.mainServiceTotal,
+    facilityComponentsMonthly: dualFreqResult.facilityComponentsTotal,
     breakdown: {
       baseService,
       tripCharge,
@@ -595,6 +602,8 @@ function calculatePerItemCharge(
       weeklyTotal: 0,
       monthlyTotal: 0,
       contractTotal: 0,
+      baseServiceMonthly: 0,
+      facilityComponentsMonthly: 0,
       breakdown: {
         baseService: 0,
         tripCharge: 0,
@@ -733,20 +742,22 @@ function calculatePerItemCharge(
     config
   );
 
-  // ✅ FIXED: Use frequency-adjusted per-visit total from dual frequency calculation
-  // The base weekly prices are just the starting point - dualFreqResult applies frequency multipliers
+  // ✅ FIXED: Calculate service and facility components INDEPENDENTLY to avoid double-counting
+  // Service and facility are calculated at their own frequencies and added separately to contract
   const calculationMode = getCalculationMode(form.mainServiceFrequency);
 
-  // In monthly mode: combinedTotal is already monthly recurring
-  // In per-visit mode: combinedTotal is the per-visit price with frequency adjustments
+  // ✅ FIXED: weeklyTotal should ONLY include main service (NOT facility components)
+  // Facility components are calculated separately and added to monthly/contract independently
   const weeklyTotal = calculationMode === "monthly"
-    ? mainServiceTotal + facilityComponentsTotal  // For monthly mode, keep base as per-visit price
+    ? mainServiceTotal  // ✅ FIXED: Only main service per-visit price (facility calculated separately)
     : dualFreqResult.combinedTotal; // For per-visit mode, use frequency-adjusted price
 
   const monthlyTotal = dualFreqResult.monthlyTotal ?? dualFreqResult.combinedTotal;
   const contractTotal = dualFreqResult.contractTotal;
 
   console.log(`🔍 [SaniClean Per-Item] Frequency: ${form.mainServiceFrequency}, Mode: ${calculationMode}, ContractMonths: ${form.contractMonths}`, {
+    mainServiceTotal_base: mainServiceTotal,
+    facilityComponentsTotal_base: facilityComponentsTotal,
     weeklyTotal,
     monthlyTotal,
     contractTotal,
@@ -772,6 +783,9 @@ function calculatePerItemCharge(
     weeklyTotal,
     monthlyTotal,
     contractTotal,
+    // ✅ NEW: Separate monthly totals for base service and facility components
+    baseServiceMonthly: dualFreqResult.mainServiceTotal,
+    facilityComponentsMonthly: dualFreqResult.facilityComponentsTotal,
     breakdown: {
       baseService,
       tripCharge,

@@ -1535,40 +1535,12 @@ export const SanicleanForm: React.FC<
         </div>
       </div> */}
 
-      <div className="svc-row">
-        <label>Per Visit</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-              readOnly
-              min="0"
-              step="1"
-              name="customWeeklyTotal"
-              value={getDisplayValue(
-                'customWeeklyTotal',
-                form.customWeeklyTotal !== undefined
-                  ? form.customWeeklyTotal
-                  : quote.weeklyTotal
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customWeeklyTotal !== undefined ? '#fffacd' : 'white',
-                width: '100px'
-              }}
-              title=""
-            />
-          </div>
-        </div>
-      </div>
+      {/* ✅ REMOVED: Per Visit field - confusing in dual frequency model */}
+      {/* User requested removal to avoid confusion with service + facility components */}
 
       {/* Redline/Greenline Pricing Indicator */}
       {fixtures > 0 && (
-        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+        <div className="svc-row" style={{ paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
             {quote.weeklyTotal <= quote.minimumChargePerWeek ? (
@@ -1600,10 +1572,10 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring - Only show for weekly, biweekly, twicePerMonth, and monthly frequencies */}
+      {/* ✅ NEW: Base Service Monthly Total - Only show for weekly, biweekly, twicePerMonth, and monthly frequencies */}
       {['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
         <div className="svc-row">
-          <label>Monthly Recurring</label>
+          <label>Base Service Monthly Total</label>
           <div className="svc-row-right">
             <div className="svc-dollar">
               <span>$</span>
@@ -1611,16 +1583,37 @@ export const SanicleanForm: React.FC<
                 className="svc-in"
                 type="text"
                 readOnly
-                name="customMonthlyTotal"
-                value={(form.customMonthlyTotal !== undefined
-                  ? form.customMonthlyTotal
-                  : quote.monthlyTotal
-                ).toFixed(2)}
+                value={quote.baseServiceMonthly?.toFixed(2) || '0.00'}
                 style={{
-                  backgroundColor: form.customMonthlyTotal !== undefined ? '#fffacd' : 'white',
+                  backgroundColor: 'white',
                   width: '100px'
                 }}
-                title=""
+                title="Base service monthly total (service × frequency)"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Facility Component Monthly Total - Only show for per-item-charge and when components are added */}
+      {form.pricingMode === "per_item_charge" &&
+       (form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) &&
+       ['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
+        <div className="svc-row">
+          <label>Facility Component Monthly Total</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={quote.facilityComponentsMonthly?.toFixed(2) || '0.00'}
+                style={{
+                  backgroundColor: 'white',
+                  width: '100px'
+                }}
+                title="Facility components monthly total (components × facility frequency)"
               />
             </div>
           </div>

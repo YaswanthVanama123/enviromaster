@@ -289,6 +289,10 @@ export interface SanicleanQuoteResult {
   monthlyTotal: number;
   contractTotal: number;
 
+  // ✅ NEW: Separate monthly totals for display
+  baseServiceMonthly: number; // Base service monthly total (service × frequency)
+  facilityComponentsMonthly: number; // Facility components monthly total (components × facility frequency)
+
   // Breakdown Components
   breakdown: {
     baseService: number; // core saniclean charge

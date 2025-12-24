@@ -1,5 +1,5 @@
 // src/features/services/janitorial/useJanitorialCalc.ts
-import { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import type {
@@ -81,6 +81,7 @@ export interface JanitorialCalcResult {
   firstVisit: number;
   ongoingMonthly: number;
   contractTotal: number;
+  minimumChargePerVisit: number; // ✅ NEW: Minimum charge for red/green line indicator
   breakdown: {
     manualHours: number;
     vacuumingHours: number;
@@ -432,6 +433,46 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
+  // ✅ NEW: Sync global contract months to service (unless service has explicitly overridden it)
+  const hasContractMonthsOverride = useRef(false);
+  const wasActiveRef = useRef(false); // Track if service was previously active
+
+  useEffect(() => {
+    // Determine if service is active (has hours entered)
+    const isServiceActive = (form.manualHours > 0) || (form.vacuumingHours > 0) || (form.dustingCalculatedHours > 0);
+    const wasActive = wasActiveRef.current;
+
+    // ✅ FIX: Detect transition from inactive to active
+    const justBecameActive = isServiceActive && !wasActive;
+
+    if (justBecameActive) {
+      // Service just became active - adopt global contract months
+      console.log(`📅 [PURE-JANITORIAL-CONTRACT] Service just became active, adopting global contract months`);
+      if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+        const globalMonths = servicesContext.globalContractMonths;
+        console.log(`📅 [PURE-JANITORIAL-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => ({
+          ...prev,
+          contractMonths: globalMonths,
+        }));
+      }
+    } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
+      // Service is already active - sync with global if it changes
+      const globalMonths = servicesContext.globalContractMonths;
+      if (form.contractMonths !== globalMonths) {
+        console.log(`📅 [PURE-JANITORIAL-CONTRACT] Syncing global contract months: ${globalMonths}`);
+        setForm(prev => ({
+          ...prev,
+          contractMonths: globalMonths,
+        }));
+      }
+    }
+    // ✅ IMPORTANT: If service is inactive, do NOT sync global months
+
+    // Update the ref for next render
+    wasActiveRef.current = isServiceActive;
+  }, [servicesContext?.globalContractMonths, form.contractMonths, form.manualHours, form.vacuumingHours, form.dustingCalculatedHours, servicesContext]);
+
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -488,6 +529,12 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         const raw = t.value;
         const num = raw === "" ? 0 : Number(raw);
         (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
+
+        // ✅ NEW: Track when user manually changes contract months
+        if (name === "contractMonths") {
+          hasContractMonthsOverride.current = true;
+          console.log(`📅 [PURE-JANITORIAL-CONTRACT] User override: ${num} months`);
+        }
       } else {
         (next as any)[name] = t.value;
       }
