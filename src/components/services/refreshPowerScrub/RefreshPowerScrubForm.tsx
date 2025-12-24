@@ -567,7 +567,7 @@ export const RefreshPowerScrubForm: React.FC<
                     type="number"
                     min="0"
                     step="1"
-                    value={area.largeCustomAmount > 0 ? area.largeCustomAmount : ((area.largeQuantity || 0) * (area.largeRate ?? getKitchenLarge()))}
+                    value={area.largeCustomAmount > 0 ? area.largeCustomAmount : ((area.largeQuantity || 0) * (area.largeRate === null ? 0 : (area.largeRate ?? getKitchenLarge())))}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value) || 0;
                       setAreaField(areaKey, "largeCustomAmount", value.toString());
@@ -576,7 +576,7 @@ export const RefreshPowerScrubForm: React.FC<
                       width: '90px',
                       backgroundColor: area.largeCustomAmount > 0 ? '#fffacd' : 'white'
                     }}
-                    title={`Large Kitchen total - editable (default: $${formatAmount((area.largeQuantity || 0) * (area.largeRate ?? getKitchenLarge()))})`}
+                    title={`Large Kitchen total - editable (default: $${formatAmount((area.largeQuantity || 0) * (area.largeRate === null ? 0 : (area.largeRate ?? getKitchenLarge())))})`}
                   />
                 </div>
               </div>
@@ -611,7 +611,7 @@ export const RefreshPowerScrubForm: React.FC<
                   type="number"
                   min="0"
                   step="1"
-                  value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate ?? getPresetAmount(areaKey)))}
+                  value={area.customAmount > 0 ? area.customAmount : ((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPresetAmount(areaKey))))}
                   onChange={(e) => {
                     const value = parseFloat(e.target.value) || 0;
                     setAreaField(areaKey, "customAmount", value.toString());
@@ -620,7 +620,7 @@ export const RefreshPowerScrubForm: React.FC<
                     width: '90px',
                     backgroundColor: area.customAmount > 0 ? '#fffacd' : 'white'
                   }}
-                  title={`Total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate ?? getPresetAmount(areaKey)))})`}
+                  title={`Total - editable (default: $${formatAmount((area.presetQuantity || 1) * (area.presetRate === null ? 0 : (area.presetRate ?? getPresetAmount(areaKey))))})`}
                 />
               </div>
             )}
