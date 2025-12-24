@@ -51,6 +51,56 @@ export function transformRpmWindowsData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
+  // Extract top-level direct fields (saved from form)
+  if (structuredData.smallWindowRate !== undefined) {
+    formState.smallWindowRate = structuredData.smallWindowRate;
+  }
+  if (structuredData.mediumWindowRate !== undefined) {
+    formState.mediumWindowRate = structuredData.mediumWindowRate;
+  }
+  if (structuredData.largeWindowRate !== undefined) {
+    formState.largeWindowRate = structuredData.largeWindowRate;
+  }
+  if (structuredData.tripCharge !== undefined) {
+    formState.tripCharge = structuredData.tripCharge;
+  }
+  if (structuredData.installMultiplierFirstTime !== undefined) {
+    formState.installMultiplierFirstTime = structuredData.installMultiplierFirstTime;
+  }
+  if (structuredData.installMultiplierClean !== undefined) {
+    formState.installMultiplierClean = structuredData.installMultiplierClean;
+  }
+  if (structuredData.contractMonths !== undefined) {
+    formState.contractMonths = structuredData.contractMonths;
+  }
+  if (structuredData.customSmallTotal !== undefined) {
+    formState.customSmallTotal = structuredData.customSmallTotal;
+  }
+  if (structuredData.customMediumTotal !== undefined) {
+    formState.customMediumTotal = structuredData.customMediumTotal;
+  }
+  if (structuredData.customLargeTotal !== undefined) {
+    formState.customLargeTotal = structuredData.customLargeTotal;
+  }
+  if (structuredData.customInstallationFee !== undefined) {
+    formState.customInstallationFee = structuredData.customInstallationFee;
+  }
+  if (structuredData.customPerVisitPrice !== undefined) {
+    formState.customPerVisitPrice = structuredData.customPerVisitPrice;
+  }
+  if (structuredData.customFirstMonthTotal !== undefined) {
+    formState.customFirstMonthTotal = structuredData.customFirstMonthTotal;
+  }
+  if (structuredData.customMonthlyRecurring !== undefined) {
+    formState.customMonthlyRecurring = structuredData.customMonthlyRecurring;
+  }
+  if (structuredData.customAnnualPrice !== undefined) {
+    formState.customAnnualPrice = structuredData.customAnnualPrice;
+  }
+  if (structuredData.customContractTotal !== undefined) {
+    formState.customContractTotal = structuredData.customContractTotal;
+  }
+
   // Extract quantities from windows array (✅ FIXED: Extract both quantities AND rates)
   if (structuredData.windows && Array.isArray(structuredData.windows)) {
     structuredData.windows.forEach((window: any) => {

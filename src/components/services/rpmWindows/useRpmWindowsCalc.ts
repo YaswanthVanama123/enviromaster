@@ -84,10 +84,55 @@ function mapFrequency(v: string): RpmFrequencyKey {
   return "weekly";
 }
 
+function getEffectiveFrequencyKey(freqKey: RpmFrequencyKey): RpmFrequencyKey {
+  if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+    return "monthly";
+  }
+  if (freqKey === "biannual" || freqKey === "annual") {
+    return "quarterly";
+  }
+  return freqKey;
+}
+
+function getFrequencyMultiplier(
+  effectiveFreqKey: RpmFrequencyKey,
+  backendConfig: BackendRpmConfig | null
+): number {
+  if (backendConfig?.frequencyPriceMultipliers) {
+    if (effectiveFreqKey === "weekly") return 1;
+    if (effectiveFreqKey === "biweekly" && backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier) {
+      return backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier;
+    }
+    if (effectiveFreqKey === "monthly" && backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier) {
+      return backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier;
+    }
+    if (effectiveFreqKey === "quarterly" && backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime) {
+      return backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime;
+    }
+  }
+
+  return cfg.frequencyMultipliers[effectiveFreqKey] || 1;
+}
+
+function getBackendBaseRates(backendConfig: BackendRpmConfig | null) {
+  return {
+    small: backendConfig?.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
+    medium: backendConfig?.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
+    large: backendConfig?.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
+    trip: backendConfig?.tripCharges?.standard ?? cfg.tripCharge,
+  };
+}
+
 export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, customFields?: any[]) {
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
+  const isEditMode = useRef(!!initial);
+  const forceRefreshRef = useRef(false);
+  const prevFrequencyRef = useRef<string | null>(null);
+  const baselineValues = useRef<Record<string, number>>({});
+  const baselineInitialized = useRef(false);
+  const baseRatesInitialized = useRef(false);
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
@@ -160,8 +205,14 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
   // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
+    forceRefreshRef.current = forceRefresh;
+    if (forceRefresh) {
+      baselineInitialized.current = false;
+      baselineValues.current = {};
+    }
+    const shouldApplyConfig = !isEditMode.current || forceRefresh;
     console.log('🔄 [RPM Windows] Fetching fresh configuration from backend...');
 
     try {
@@ -181,6 +232,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
             console.log('✅ [RPM Windows] Using backend pricing data from context for inactive service');
             const config = fallbackConfig.config as BackendRpmConfig;
             setBackendConfig(config);
+
+            if (!shouldApplyConfig) {
+              return;
+            }
 
             const newBaseRates = {
               small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
@@ -207,6 +262,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
               customMonthlyRecurring: undefined,
               customContractTotal: undefined,
               customInstallationFee: undefined,
+              customFirstMonthTotal: undefined,
+              customAnnualPrice: undefined,
             }));
 
             console.log('✅ RPM Windows FALLBACK CONFIG loaded from context:', config);
@@ -238,6 +295,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
 
+      if (!shouldApplyConfig) {
+        return;
+      }
+
       // ✅ Store base weekly rates for frequency adjustment
       const newBaseRates = {
         small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
@@ -266,6 +327,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
         customMonthlyRecurring: undefined,
         customContractTotal: undefined,
         customInstallationFee: undefined,
+        customFirstMonthTotal: undefined,
+        customAnnualPrice: undefined,
       }));
 
       console.log('✅ RPM Windows config loaded from backend and form updated:', {
@@ -289,6 +352,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           console.log('✅ [RPM Windows] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendRpmConfig;
           setBackendConfig(config);
+
+          if (!shouldApplyConfig) {
+            return;
+          }
 
           const newBaseRates = {
             small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
@@ -314,6 +381,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
             customMonthlyRecurring: undefined,
             customContractTotal: undefined,
             customInstallationFee: undefined,
+            customFirstMonthTotal: undefined,
+            customAnnualPrice: undefined,
           }));
 
           return;
@@ -326,27 +395,88 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     }
   };
 
-  // Fetch on mount ONLY if no initial data (new service)
+  // Fetch on mount (used for baseline/override detection)
   useEffect(() => {
-    // Skip fetching if we have initial data (editing existing service with saved prices)
-    if (initial) {
-      console.log('📋 [RPM-WINDOWS-PRICING] Skipping price fetch - using saved historical prices from initial data');
-      return;
-    }
-
-    console.log('📋 [RPM-WINDOWS-PRICING] Fetching current prices - new service or no initial data');
-    fetchPricing();
+    console.log('[RPM-WINDOWS-PRICING] Fetching backend prices for baseline/override detection');
+    fetchPricing(false);
   }, []); // Run once on mount
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+  // Also fetch when services context becomes available
   useEffect(() => {
-    // Skip if we have initial data (editing existing service)
-    if (initial) return;
-
     if (servicesContext?.backendPricingData && !backendConfig) {
-      fetchPricing();
+      fetchPricing(false);
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // Initialize base weekly rates from loaded form values in edit mode
+  useEffect(() => {
+    if (!initial || baseRatesInitialized.current) return;
+
+    const freqKey = mapFrequency(form.frequency);
+    const effectiveFreqKey = getEffectiveFrequencyKey(freqKey);
+    const freqMult = getFrequencyMultiplier(effectiveFreqKey, backendConfig);
+
+    if (freqMult > 0) {
+      setBaseWeeklyRates({
+        small: (form.smallWindowRate || 0) / freqMult,
+        medium: (form.mediumWindowRate || 0) / freqMult,
+        large: (form.largeWindowRate || 0) / freqMult,
+        trip: (form.tripCharge || 0) / freqMult,
+      });
+    }
+
+    baseRatesInitialized.current = true;
+  }, [
+    initial,
+    form.frequency,
+    form.smallWindowRate,
+    form.mediumWindowRate,
+    form.largeWindowRate,
+    form.tripCharge,
+    backendConfig,
+  ]);
+
+  // Initialize baseline values for logging (backend defaults for new, saved values for edit mode)
+  useEffect(() => {
+    if (baselineInitialized.current) return;
+    if (!backendConfig) return;
+
+    baselineInitialized.current = true;
+
+    const freqKey = mapFrequency(form.frequency);
+    const effectiveFreqKey = getEffectiveFrequencyKey(freqKey);
+    const freqMult = getFrequencyMultiplier(effectiveFreqKey, backendConfig);
+    const backendBase = getBackendBaseRates(backendConfig);
+    const expectedRates = {
+      small: backendBase.small * freqMult,
+      medium: backendBase.medium * freqMult,
+      large: backendBase.large * freqMult,
+      trip: backendBase.trip * freqMult,
+    };
+
+    const setBaseline = (field: keyof RpmWindowsFormState, value: unknown) => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        baselineValues.current[field as string] = value;
+      }
+    };
+
+    setBaseline("smallWindowRate", initial?.smallWindowRate ?? expectedRates.small);
+    setBaseline("mediumWindowRate", initial?.mediumWindowRate ?? expectedRates.medium);
+    setBaseline("largeWindowRate", initial?.largeWindowRate ?? expectedRates.large);
+    setBaseline("tripCharge", initial?.tripCharge ?? expectedRates.trip);
+    setBaseline("installMultiplierFirstTime", initial?.installMultiplierFirstTime ?? backendConfig.installPricing?.installationMultiplier);
+    setBaseline("installMultiplierClean", initial?.installMultiplierClean ?? backendConfig.installPricing?.cleanInstallationMultiplier);
+
+    setBaseline("customSmallTotal", initial?.customSmallTotal);
+    setBaseline("customMediumTotal", initial?.customMediumTotal);
+    setBaseline("customLargeTotal", initial?.customLargeTotal);
+    setBaseline("customInstallationFee", initial?.customInstallationFee);
+    setBaseline("customPerVisitPrice", initial?.customPerVisitPrice);
+    setBaseline("customMonthlyRecurring", initial?.customMonthlyRecurring);
+    setBaseline("customFirstMonthTotal", initial?.customFirstMonthTotal);
+    setBaseline("customAnnualPrice", initial?.customAnnualPrice);
+    setBaseline("customContractTotal", initial?.customContractTotal);
+  }, [backendConfig, initial, form.frequency]);
 
   // ✅ Add sync effect to adopt global months when service becomes active or when global months change
   useEffect(() => {
@@ -399,47 +529,63 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     });
   }, [form.smallQty, form.mediumQty, form.largeQty, form.frequency]);
 
+  const pricingOverrides = useMemo(() => {
+    if (!backendConfig) return {};
+
+    const freqKey = mapFrequency(form.frequency);
+    const effectiveFreqKey = getEffectiveFrequencyKey(freqKey);
+    const freqMult = getFrequencyMultiplier(effectiveFreqKey, backendConfig);
+    const backendBase = getBackendBaseRates(backendConfig);
+
+    const expectedRates = {
+      small: backendBase.small * freqMult,
+      medium: backendBase.medium * freqMult,
+      large: backendBase.large * freqMult,
+      trip: backendBase.trip * freqMult,
+    };
+
+    const isOverride = (current: number, expected: number | undefined) =>
+      typeof expected === "number" && Number.isFinite(expected) && current !== expected;
+
+    return {
+      smallWindowRate: isOverride(form.smallWindowRate, expectedRates.small),
+      mediumWindowRate: isOverride(form.mediumWindowRate, expectedRates.medium),
+      largeWindowRate: isOverride(form.largeWindowRate, expectedRates.large),
+      tripCharge: isOverride(form.tripCharge, expectedRates.trip),
+      installMultiplierFirstTime: isOverride(
+        form.installMultiplierFirstTime,
+        backendConfig.installPricing?.installationMultiplier
+      ),
+      installMultiplierClean: isOverride(
+        form.installMultiplierClean,
+        backendConfig.installPricing?.cleanInstallationMultiplier
+      ),
+    };
+  }, [
+    backendConfig,
+    form.frequency,
+    form.smallWindowRate,
+    form.mediumWindowRate,
+    form.largeWindowRate,
+    form.tripCharge,
+    form.installMultiplierFirstTime,
+    form.installMultiplierClean,
+  ]);
+
   // ✅ Update rate fields when frequency changes (apply frequency multiplier)
   useEffect(() => {
     const freqKey = mapFrequency(form.frequency);
+    const freqChanged = prevFrequencyRef.current !== form.frequency;
+    prevFrequencyRef.current = form.frequency;
 
-    // ✅ Apply special pricing rules for certain frequencies
-    let effectiveFreqKey = freqKey;
-
-    // 2×/Month and Bi-Monthly use Monthly pricing
-    if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
-      effectiveFreqKey = "monthly";
-    }
-    // Bi-Annual and Annual use Quarterly pricing
-    else if (freqKey === "biannual" || freqKey === "annual") {
-      effectiveFreqKey = "quarterly";
+    if (isEditMode.current && !forceRefreshRef.current && !freqChanged) {
+      return;
     }
 
-    // ✅ Use backend config frequency data if available, otherwise use fallback
-    let freqMult = 1;
+    const effectiveFreqKey = getEffectiveFrequencyKey(freqKey);
+    const freqMult = getFrequencyMultiplier(effectiveFreqKey, backendConfig);
 
-    if (backendConfig?.frequencyPriceMultipliers) {
-      // Use backend frequency multipliers for the effective frequency
-      if (effectiveFreqKey === "weekly") {
-        freqMult = 1; // Weekly is base rate
-      } else if (effectiveFreqKey === "biweekly" && backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier) {
-        freqMult = backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier;
-      } else if (effectiveFreqKey === "monthly" && backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier) {
-        freqMult = backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier;
-      } else if (effectiveFreqKey === "quarterly" && backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime) {
-        freqMult = backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime;
-      } else {
-        // Use fallback config multipliers
-        const activeFreqMult = cfg.frequencyMultipliers;
-        freqMult = activeFreqMult[effectiveFreqKey] || 1;
-      }
-    } else {
-      // Use fallback config multipliers
-      const activeFreqMult = cfg.frequencyMultipliers;
-      freqMult = activeFreqMult[effectiveFreqKey] || 1;
-    }
-
-    console.log('📊 [RPM Windows] Applying frequency multiplier:', {
+    console.log('[RPM Windows] Applying frequency multiplier:', {
       originalFrequency: freqKey,
       effectiveFrequency: effectiveFreqKey,
       multiplier: freqMult,
@@ -454,6 +600,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       largeWindowRate: baseWeeklyRates.large * freqMult,
       tripCharge: baseWeeklyRates.trip * freqMult,
     }));
+
+    if (forceRefreshRef.current) {
+      forceRefreshRef.current = false;
+    }
   }, [form.frequency, backendConfig, baseWeeklyRates]); // Run when frequency, backend config, or base rates change
 
   // ✅ Add setContractMonths function
@@ -608,8 +758,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       const pricingFields = [
         'smallWindowRate', 'mediumWindowRate', 'largeWindowRate', 'tripCharge',
         'customSmallTotal', 'customMediumTotal', 'customLargeTotal',
-        'customPerVisitPrice', 'customMonthlyRecurring', 'customInstallationFee',
-        'customContractTotal',
+        'customPerVisitPrice', 'customMonthlyRecurring', 'customFirstMonthTotal',
+        'customAnnualPrice', 'customInstallationFee', 'customContractTotal',
         // ✅ NEW: Installation multiplier fields
         'installMultiplierFirstTime', 'installMultiplierClean'
       ];
@@ -617,12 +767,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       if (pricingFields.includes(name)) {
         const newValue = newFormState[name as keyof RpmWindowsFormState] as number | undefined;
         const oldValue = originalValue as number | undefined;
+        const baselineValue = baselineValues.current[name] ?? oldValue;
 
         // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(name, oldValue, newValue);
+        if (newValue !== undefined && baselineValue !== undefined &&
+            typeof newValue === 'number' && typeof baselineValue === 'number' &&
+            newValue !== baselineValue) {
+          addServiceFieldChange(name, baselineValue, newValue);
         }
       }
 
@@ -1119,8 +1270,16 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     removeExtraCharge,
     calc,
     quote,
-    refreshConfig: fetchPricing,
+    pricingOverrides,
+    refreshConfig: () => fetchPricing(true),
     isLoadingConfig,
     setContractMonths,
   };
 }
+
+
+
+
+
+
+

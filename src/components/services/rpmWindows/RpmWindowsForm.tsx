@@ -35,6 +35,7 @@ export const RpmWindowsForm: React.FC<
     quote,
     refreshConfig,
     isLoadingConfig,
+    pricingOverrides,
   } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -43,6 +44,18 @@ export const RpmWindowsForm: React.FC<
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
   // ✅ NEW: Track original values when focusing to detect actual changes
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
+
+  const getOverrideStyle = (
+    isOverride: boolean,
+    baseStyle?: React.CSSProperties
+  ): React.CSSProperties => ({
+    ...(baseStyle || {}),
+    backgroundColor: isOverride ? "#fffacd" : (baseStyle?.backgroundColor ?? "white"),
+  });
+
+  const hasPricingOverride = (fieldName: string): boolean => {
+    return Boolean((pricingOverrides as Record<string, boolean> | undefined)?.[fieldName]);
+  };
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
@@ -132,6 +145,24 @@ export const RpmWindowsForm: React.FC<
         perVisitBase: calc.subtotal,  // Raw subtotal before minimum
         perVisit: calc.perVisit,  // Final per-visit price after minimum
         minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
+
+        // Persist editable pricing fields for edit mode
+        smallWindowRate: form.smallWindowRate,
+        mediumWindowRate: form.mediumWindowRate,
+        largeWindowRate: form.largeWindowRate,
+        tripCharge: form.tripCharge,
+        installMultiplierFirstTime: form.installMultiplierFirstTime,
+        installMultiplierClean: form.installMultiplierClean,
+        contractMonths: form.contractMonths,
+        customSmallTotal: form.customSmallTotal,
+        customMediumTotal: form.customMediumTotal,
+        customLargeTotal: form.customLargeTotal,
+        customInstallationFee: form.customInstallationFee,
+        customPerVisitPrice: form.customPerVisitPrice,
+        customFirstMonthTotal: form.customFirstMonthTotal,
+        customMonthlyRecurring: form.customMonthlyRecurring,
+        customAnnualPrice: form.customAnnualPrice,
+        customContractTotal: form.customContractTotal,
 
         windows: [
           ...(form.smallQty > 0 ? [{
@@ -395,6 +426,7 @@ export const RpmWindowsForm: React.FC<
             value={form.smallWindowRate || ""}
             onChange={onChange}
             title="Base weekly rate (from backend)"
+            style={getOverrideStyle(hasPricingOverride("smallWindowRate"))}
           />
           <span>=</span>
           <input
@@ -441,6 +473,7 @@ export const RpmWindowsForm: React.FC<
             value={form.mediumWindowRate || ""}
             onChange={onChange}
             title="Base weekly rate (from backend)"
+            style={getOverrideStyle(hasPricingOverride("mediumWindowRate"))}
           />
           <span>=</span>
           <input
@@ -487,6 +520,7 @@ export const RpmWindowsForm: React.FC<
             value={form.largeWindowRate || ""}
             onChange={onChange}
             title="Base weekly rate (from backend)"
+            style={getOverrideStyle(hasPricingOverride("largeWindowRate"))}
           />
           <span>=</span>
           <input
@@ -616,7 +650,7 @@ export const RpmWindowsForm: React.FC<
             className="svc-in multiplier-field"
             value={form.installMultiplierFirstTime}
             onChange={onChange}
-            style={{ backgroundColor: form.installMultiplierFirstTime !== 3 ? '#fffacd' : 'white', display: 'inline', width: '60px' }}
+            style={getOverrideStyle(hasPricingOverride("installMultiplierFirstTime"), { display: "inline", width: "60px" })}
             title="Multiplier for dirty/first-time installations (typically 3×)"
           />
           <span className="svc-small">×)</span>
@@ -629,7 +663,7 @@ export const RpmWindowsForm: React.FC<
             className="svc-in multiplier-field"
             value={form.installMultiplierClean}
             onChange={onChange}
-            style={{ backgroundColor: form.installMultiplierClean !== 1 ? '#fffacd' : 'white', display: 'inline', width: '60px' }}
+            style={getOverrideStyle(hasPricingOverride("installMultiplierClean"), { display: "inline", width: "60px" })}
             title="Multiplier for clean installations (typically 1×)"
           />
           <span className="svc-small">×)</span>
