@@ -51,6 +51,7 @@ export function transformRpmWindowsData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
+
   // Extract quantities from windows array (✅ FIXED: Extract both quantities AND rates)
   if (structuredData.windows && Array.isArray(structuredData.windows)) {
     structuredData.windows.forEach((window: any) => {
@@ -651,6 +652,33 @@ export function transformSaniscrubData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
+  // STEP 1: Extract top-level direct fields (saved from form) - PRIORITY
+  const directFields = [
+    "fixtureCount",
+    "nonBathroomSqFt",
+    "useExactNonBathroomSqft",
+    "hasSaniClean",
+    "includeInstall",
+    "isDirtyInstall",
+    "contractMonths",
+    "fixtureRateMonthly",
+    "fixtureRateBimonthly",
+    "fixtureRateQuarterly",
+    "minimumMonthly",
+    "minimumBimonthly",
+    "nonBathroomFirstUnitRate",
+    "nonBathroomAdditionalUnitRate",
+    "installMultiplierDirty",
+    "installMultiplierClean",
+    "twoTimesPerMonthDiscount",
+  ];
+
+  for (const field of directFields) {
+    if (structuredData[field] !== undefined) {
+      formState[field] = structuredData[field];
+    }
+  }
+
   // Extract frequency
   if (structuredData.frequency) {
     const freq = structuredData.frequency.value?.toLowerCase();
@@ -674,7 +702,12 @@ export function transformSaniscrubData(structuredData: any): any {
   if (structuredData.restroomFixtures) {
     formState.fixtureCount = structuredData.restroomFixtures.qty || 0;
     if (structuredData.restroomFixtures.rate !== undefined && structuredData.restroomFixtures.rate !== null) {
-      formState.fixtureRate = structuredData.restroomFixtures.rate; // ✅ Preserve saved rate
+      // Backward compatibility: older documents stored a single per-fixture rate (no monthly/bimonthly split)
+      const savedRate = structuredData.restroomFixtures.rate;
+      const freq = formState.frequency || "monthly";
+      if (freq === "bimonthly") formState.fixtureRateBimonthly = formState.fixtureRateBimonthly ?? savedRate;
+      else if (freq === "quarterly" || freq === "biannual" || freq === "annual") formState.fixtureRateQuarterly = formState.fixtureRateQuarterly ?? savedRate;
+      else formState.fixtureRateMonthly = formState.fixtureRateMonthly ?? savedRate;
     }
   }
 
@@ -682,7 +715,15 @@ export function transformSaniscrubData(structuredData: any): any {
   if (structuredData.nonBathroomArea) {
     formState.nonBathroomSqFt = structuredData.nonBathroomArea.qty || 0;
     if (structuredData.nonBathroomArea.rate !== undefined && structuredData.nonBathroomArea.rate !== null) {
-      formState.nonBathroomRate = structuredData.nonBathroomArea.rate; // ✅ Preserve saved rate
+      // Backward compatibility: attempt to parse old string format "250/500+125"
+      const rate = structuredData.nonBathroomArea.rate;
+      if (typeof rate === "string") {
+        const match = rate.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)[+](\d+(?:\.\d+)?)$/);
+        if (match) {
+          formState.nonBathroomFirstUnitRate = formState.nonBathroomFirstUnitRate ?? Number(match[1]);
+          formState.nonBathroomAdditionalUnitRate = formState.nonBathroomAdditionalUnitRate ?? Number(match[3]);
+        }
+      }
     }
   }
 

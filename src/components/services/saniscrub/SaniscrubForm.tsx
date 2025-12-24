@@ -34,7 +34,7 @@ export const SaniscrubForm: React.FC<
   );
 
   // ✅ UPDATED: Pass customFields to calculation hook
-  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useSaniscrubCalc(initialData, customFields);
+  const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig, pricingOverrides } = useSaniscrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -166,16 +166,40 @@ export const SaniscrubForm: React.FC<
   React.useEffect(() => {
     if (servicesContext) {
       const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
+      const minimumThreshold = form.frequency === "monthly" || form.frequency === "twicePerMonth"
+        ? form.minimumMonthly
+        : form.minimumBimonthly;
 
       const data = isActive ? {
         serviceId: "saniscrub",
         displayName: "SaniScrub",
         isActive: true,
 
+        // Persist editable pricing config so edit mode reloads saved values (not current backend defaults)
+        fixtureRateMonthly: form.fixtureRateMonthly,
+        fixtureRateBimonthly: form.fixtureRateBimonthly,
+        fixtureRateQuarterly: form.fixtureRateQuarterly,
+        minimumMonthly: form.minimumMonthly,
+        minimumBimonthly: form.minimumBimonthly,
+        nonBathroomFirstUnitRate: form.nonBathroomFirstUnitRate,
+        nonBathroomAdditionalUnitRate: form.nonBathroomAdditionalUnitRate,
+        installMultiplierDirty: form.installMultiplierDirty,
+        installMultiplierClean: form.installMultiplierClean,
+        twoTimesPerMonthDiscount: form.twoTimesPerMonthDiscount,
+
+        // Persist base inputs/toggles for accurate edit-mode rehydration
+        fixtureCount: form.fixtureCount,
+        nonBathroomSqFt: form.nonBathroomSqFt,
+        useExactNonBathroomSqft: form.useExactNonBathroomSqft,
+        hasSaniClean: form.hasSaniClean,
+        includeInstall: form.includeInstall,
+        isDirtyInstall: form.isDirtyInstall,
+        contractMonths: form.contractMonths,
+
         // Red/Green Line pricing data
         perVisitBase: calc.perVisitEffective,  // Raw per-visit cost before minimum/trip
         perVisit: calc.perVisitEffective,  // Final per-visit price after minimum/trip
-        perVisitMinimum: form.perVisitMinimum,  // Minimum threshold
+        perVisitMinimum: minimumThreshold,  // Minimum threshold (frequency-dependent)
 
         frequency: {
           isDisplay: true,
@@ -284,6 +308,13 @@ export const SaniscrubForm: React.FC<
     }
     return "fixtureRateQuarterly"; // quarterly, biannual, annual
   })();
+  const fixtureRateOverride =
+    fixtureRateFieldName === "fixtureRateMonthly"
+      ? pricingOverrides?.fixtureRateMonthly
+      : fixtureRateFieldName === "fixtureRateBimonthly"
+        ? pricingOverrides?.fixtureRateBimonthly
+        : pricingOverrides?.fixtureRateQuarterly;
+
 
   return (
     <div className="svc-card">
@@ -414,6 +445,7 @@ export const SaniscrubForm: React.FC<
             onChange={handleLocalChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            style={{ backgroundColor: fixtureRateOverride ? '#fffacd' : 'white' }}
           />
           <span>=</span>
           <input
@@ -493,6 +525,7 @@ export const SaniscrubForm: React.FC<
               name="nonBathroomFirstUnitRate"
               value={form.nonBathroomFirstUnitRate || ""}
               onChange={onChange}
+              style={{ backgroundColor: pricingOverrides?.nonBathroomFirstUnitRate ? '#fffacd' : 'white' }}
               title={`Rate for first ${calc.nonBathroomUnitSqFt} sq ft (from backend, editable)`}
             />
           </div>
@@ -513,6 +546,7 @@ export const SaniscrubForm: React.FC<
               name="nonBathroomAdditionalUnitRate"
               value={form.nonBathroomAdditionalUnitRate || ""}
               onChange={onChange}
+              style={{ backgroundColor: pricingOverrides?.nonBathroomAdditionalUnitRate ? '#fffacd' : 'white' }}
               title={`Rate per additional ${calc.nonBathroomUnitSqFt} sq ft block (from backend, editable)`}
             />
           </div>
@@ -647,7 +681,7 @@ export const SaniscrubForm: React.FC<
               name="installMultiplierDirty"
               value={form.installMultiplierDirty % 1 === 0 ? form.installMultiplierDirty.toString() : form.installMultiplierDirty.toFixed(1)}
               onChange={onChange}
-              style={{ display: "inline" }}
+              style={{ display: "inline", backgroundColor: pricingOverrides?.installMultiplierDirty ? '#fffacd' : 'white' }}
             />
             <span>×)</span>
           </label>
@@ -655,13 +689,13 @@ export const SaniscrubForm: React.FC<
           <input
             className="svc-in multiplier-field"
             type="number"
-            min="0"
-            step="0.1"
-            name="installMultiplierClean"
-            value={form.installMultiplierClean % 1 === 0 ? form.installMultiplierClean.toString() : form.installMultiplierClean.toFixed(1)}
-            onChange={onChange}
-            style={{ display: "inline" }}
-          />
+              min="0"
+              step="0.1"
+              name="installMultiplierClean"
+              value={form.installMultiplierClean % 1 === 0 ? form.installMultiplierClean.toString() : form.installMultiplierClean.toFixed(1)}
+              onChange={onChange}
+              style={{ display: "inline", backgroundColor: pricingOverrides?.installMultiplierClean ? '#fffacd' : 'white' }}
+            />
           <span className="svc-small">×)</span>
         </div>
       </div>

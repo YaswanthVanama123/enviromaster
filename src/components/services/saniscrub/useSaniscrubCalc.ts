@@ -239,6 +239,9 @@ function buildActiveConfig(backendConfig: BackendSaniscrubConfig | null) {
 export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFields?: any[]) {
   // Get services context for fallback pricing data AND global contract months
   const servicesContext = useServicesContextOptional();
+  const isEditMode = useRef(!!initial);
+  const baselineValues = useRef<Record<string, number>>({});
+  const baselineInitialized = useRef(false);
 
   // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
   const calcFieldsTotal = useMemo(() => {
@@ -302,9 +305,15 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendSaniscrubConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+  const backendActiveConfig = useMemo(() => buildActiveConfig(backendConfig), [backendConfig]);
 
   // Helper function to update form with config data from the actual backend structure
-  const updateFormWithConfig = (activeConfig: any) => {
+  const updateFormWithConfig = (activeConfig: any, forceUpdate: boolean = false) => {
+    if (isEditMode.current && !forceUpdate) {
+      console.log('ÐY"< [SANISCRUB] Edit mode: skipping auto-overwrite from backend');
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       // ✅ Extract from active config (built from MongoDB structure)
@@ -318,6 +327,13 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       installMultiplierDirty: activeConfig.installMultipliers?.dirty ?? prev.installMultiplierDirty,
       installMultiplierClean: activeConfig.installMultipliers?.clean ?? prev.installMultiplierClean,
       twoTimesPerMonthDiscount: activeConfig.twoTimesPerMonthDiscountFlat ?? prev.twoTimesPerMonthDiscount,
+      ...(forceUpdate ? {
+        customInstallationFee: undefined,
+        customPerVisitPrice: undefined,
+        customMonthlyRecurring: undefined,
+        customFirstMonthPrice: undefined,
+        customContractTotal: undefined,
+      } : {}),
     }));
 
     console.log('✅ [SaniScrub] Form updated with backend config values:', {
@@ -334,7 +350,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
   };
 
   // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
       // First try to get active service config
@@ -355,17 +371,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
             const activeConfig = buildActiveConfig(config);
 
             setBackendConfig(config);
-            updateFormWithConfig(activeConfig);
-
-            // ✅ Clear all custom overrides when refreshing config
-            setForm(prev => ({
-              ...prev,
-              customInstallationFee: undefined,
-              customPerVisitPrice: undefined,
-              customMonthlyRecurring: undefined,
-              customFirstMonthPrice: undefined,
-              customContractTotal: undefined,
-            }));
+            updateFormWithConfig(activeConfig, forceRefresh);
 
             console.log('✅ SaniScrub FALLBACK CONFIG loaded from context');
             return;
@@ -391,17 +397,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(config);
-      updateFormWithConfig(activeConfig);
+      updateFormWithConfig(activeConfig, forceRefresh);
 
-      // ✅ Clear all custom overrides when refreshing config
-      setForm(prev => ({
-        ...prev,
-        customInstallationFee: undefined,
-        customPerVisitPrice: undefined,
-        customMonthlyRecurring: undefined,
-        customFirstMonthPrice: undefined,
-        customContractTotal: undefined,
-      }));
 
       console.log('✅ SaniScrub ACTIVE CONFIG loaded from backend successfully');
     } catch (error) {
@@ -418,17 +415,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
           const activeConfig = buildActiveConfig(config);
 
           setBackendConfig(config);
-          updateFormWithConfig(activeConfig);
-
-          // ✅ Clear all custom overrides when refreshing config
-          setForm(prev => ({
-            ...prev,
-            customInstallationFee: undefined,
-            customPerVisitPrice: undefined,
-            customMonthlyRecurring: undefined,
-            customFirstMonthPrice: undefined,
-            customContractTotal: undefined,
-          }));
+          updateFormWithConfig(activeConfig, forceRefresh);
 
           return;
         }
@@ -440,28 +427,73 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
     }
   };
 
-  // ✅ Fetch pricing configuration on mount ONLY if no initial data (new service)
+  // �o. Fetch pricing configuration on mount (used for baseline/override detection)
   useEffect(() => {
-    // Skip fetching if we have initial data (editing existing service with saved prices)
-    if (initial) {
-      console.log('📋 [SANISCRUB-PRICING] Skipping price fetch - using saved historical prices from initial data');
-      return;
-    }
-
-    console.log('📋 [SANISCRUB-PRICING] Fetching current prices - new service or no initial data');
-    fetchPricing();
+    console.log('�Y"< [SANISCRUB-PRICING] Fetching backend prices for baseline/override detection');
+    fetchPricing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+  // Also fetch when services context becomes available (for fallback pricing)
   useEffect(() => {
-    // Skip if we have initial data (editing existing service)
-    if (initial) return;
-
     if (servicesContext?.backendPricingData && !backendConfig) {
-      fetchPricing();
+      fetchPricing(false);
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  useEffect(() => {
+    if (baselineInitialized.current) return;
+    if (!backendConfig) return;
+
+    baselineInitialized.current = true;
+    baselineValues.current = {
+      fixtureRateMonthly: initial?.fixtureRateMonthly ?? backendActiveConfig.fixtureRates?.monthly,
+      fixtureRateBimonthly: initial?.fixtureRateBimonthly ?? backendActiveConfig.fixtureRates?.bimonthly,
+      fixtureRateQuarterly: initial?.fixtureRateQuarterly ?? backendActiveConfig.fixtureRates?.quarterly,
+      minimumMonthly: initial?.minimumMonthly ?? backendActiveConfig.minimums?.monthly,
+      minimumBimonthly: initial?.minimumBimonthly ?? backendActiveConfig.minimums?.bimonthly,
+      nonBathroomFirstUnitRate: initial?.nonBathroomFirstUnitRate ?? backendActiveConfig.nonBathroomFirstUnitRate,
+      nonBathroomAdditionalUnitRate: initial?.nonBathroomAdditionalUnitRate ?? backendActiveConfig.nonBathroomAdditionalUnitRate,
+      installMultiplierDirty: initial?.installMultiplierDirty ?? backendActiveConfig.installMultipliers?.dirty,
+      installMultiplierClean: initial?.installMultiplierClean ?? backendActiveConfig.installMultipliers?.clean,
+      twoTimesPerMonthDiscount: initial?.twoTimesPerMonthDiscount ?? backendActiveConfig.twoTimesPerMonthDiscountFlat,
+    };
+
+    console.log('�o. [SANISCRUB-BASELINE] Initialized baseline values for logging/highlighting:', baselineValues.current);
+  }, [backendActiveConfig, initial]);
+
+  const pricingOverrides = useMemo(() => {
+    const cfg = backendActiveConfig;
+    if (!cfg) return {};
+
+    const isOverride = (current: number | undefined, baseline: number | undefined) =>
+      Number(current ?? 0) !== Number(baseline ?? 0);
+
+    return {
+      fixtureRateMonthly: isOverride(form.fixtureRateMonthly, cfg.fixtureRates?.monthly),
+      fixtureRateBimonthly: isOverride(form.fixtureRateBimonthly, cfg.fixtureRates?.bimonthly),
+      fixtureRateQuarterly: isOverride(form.fixtureRateQuarterly, cfg.fixtureRates?.quarterly),
+      minimumMonthly: isOverride(form.minimumMonthly, cfg.minimums?.monthly),
+      minimumBimonthly: isOverride(form.minimumBimonthly, cfg.minimums?.bimonthly),
+      nonBathroomFirstUnitRate: isOverride(form.nonBathroomFirstUnitRate, cfg.nonBathroomFirstUnitRate),
+      nonBathroomAdditionalUnitRate: isOverride(form.nonBathroomAdditionalUnitRate, cfg.nonBathroomAdditionalUnitRate),
+      installMultiplierDirty: isOverride(form.installMultiplierDirty, cfg.installMultipliers?.dirty),
+      installMultiplierClean: isOverride(form.installMultiplierClean, cfg.installMultipliers?.clean),
+      twoTimesPerMonthDiscount: isOverride(form.twoTimesPerMonthDiscount, cfg.twoTimesPerMonthDiscountFlat),
+    };
+  }, [
+    backendActiveConfig,
+    form.fixtureRateMonthly,
+    form.fixtureRateBimonthly,
+    form.fixtureRateQuarterly,
+    form.minimumMonthly,
+    form.minimumBimonthly,
+    form.nonBathroomFirstUnitRate,
+    form.nonBathroomAdditionalUnitRate,
+    form.installMultiplierDirty,
+    form.installMultiplierClean,
+    form.twoTimesPerMonthDiscount,
+  ]);
 
   // ✅ Sync global contract months to service (unless service has explicitly overridden it)
   const hasContractMonthsOverride = useRef(false);
@@ -679,24 +711,49 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         newFormState.customContractTotal = undefined;
       }
 
-      // ✅ Log price override for numeric pricing fields
-      const pricingFields = [
+      // ?. Log price override for numeric pricing fields using baseline comparison
+      const baseEditableFields = [
         'fixtureRateMonthly', 'fixtureRateBimonthly', 'fixtureRateQuarterly',
         'minimumMonthly', 'minimumBimonthly', 'nonBathroomFirstUnitRate',
         'nonBathroomAdditionalUnitRate', 'installMultiplierDirty', 'installMultiplierClean',
-        'twoTimesPerMonthDiscount', 'customInstallationFee', 'customPerVisitPrice',
-        'customMonthlyRecurring', 'customFirstMonthPrice', 'customContractTotal'
+        'twoTimesPerMonthDiscount'
       ];
 
-      if (pricingFields.includes(name)) {
-        const newValue = newFormState[name as keyof SaniscrubFormState] as number | undefined;
-        const oldValue = originalValue as number | undefined;
+      const customOverrideFields = [
+        'customInstallationFee', 'customPerVisitPrice', 'customMonthlyRecurring',
+        'customFirstMonthPrice', 'customContractTotal'
+      ];
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(name, oldValue, newValue);
+      const allPricingFields = [...baseEditableFields, ...customOverrideFields];
+
+      if (allPricingFields.includes(name)) {
+        const newValue = newFormState[name as keyof SaniscrubFormState] as number | undefined;
+
+        let baselineValue = baselineValues.current[name];
+        if (baselineValue === undefined && name.startsWith('custom')) {
+          const baseFieldMap: Record<string, string> = {
+            customInstallationFee: 'installMultiplierDirty',
+            customPerVisitPrice: 'minimumMonthly',
+            customMonthlyRecurring: 'minimumMonthly',
+            customFirstMonthPrice: 'minimumMonthly',
+            customContractTotal: 'minimumMonthly',
+          };
+
+          const mappedBase = baseFieldMap[name];
+          if (mappedBase) {
+            baselineValue = baselineValues.current[mappedBase];
+          }
+        }
+
+        if (newValue !== undefined && baselineValue !== undefined &&
+            typeof newValue === 'number' && typeof baselineValue === 'number' &&
+            newValue !== baselineValue) {
+          console.log("�Y\"? [SANISCRUB-BASELINE-LOG] Logging change for " + name + ":", {
+            baseline: baselineValue,
+            newValue,
+            change: newValue - baselineValue,
+          });
+          addServiceFieldChange(name, baselineValue, newValue);
         }
       }
 
@@ -731,7 +788,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
   } = useMemo(() => {
     // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
     // Map backend config to expected format with proper fallbacks
-    const activeConfig = buildActiveConfig(backendConfig);
+    const activeConfig = backendActiveConfig;
 
     if (!backendConfig) {
       console.warn('⚠️ [SaniScrub] Using fallback config - backend not loaded yet');
@@ -1209,7 +1266,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       nonBathroomUnitSqFt: activeConfig.nonBathroomUnitSqFt,
     };
   }, [
-    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    backendActiveConfig,  // ?. CRITICAL: Re-calculate when backend config loads!
     form.fixtureCount,
     form.nonBathroomSqFt,
     form.useExactNonBathroomSqft,  // ✅ Re-calculate when calculation method changes
@@ -1281,7 +1338,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       // ✅ NEW: Backend config values for UI
       nonBathroomUnitSqFt,
     },
-    refreshConfig: fetchPricing,
+    pricingOverrides,
+    refreshConfig: () => fetchPricing(true),
     isLoadingConfig,
     setContractMonths, // ✅ NEW: Contract months with override support
   };
