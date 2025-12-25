@@ -663,6 +663,7 @@ export const pdfApi = {
       isDeleted?: boolean;
       includeLogs?: boolean;
       includeDrafts?: boolean; // ✅ NEW: Include draft agreements without PDFs
+      isTrashView?: boolean; // ✅ NEW: Include isTrashView for trash filtering
     } = {}
   ): Promise<SavedFilesGroupedResponse> {
     const params = new URLSearchParams();
@@ -683,6 +684,10 @@ export const pdfApi = {
     // ✅ NEW: Add includeDrafts parameter
     if (filters.includeDrafts !== undefined) {
       params.set('includeDrafts', filters.includeDrafts.toString());
+    }
+    // ✅ NEW: Add isTrashView parameter for frontend to control backend filtering
+    if (filters.isTrashView !== undefined) {
+      params.set('isTrashView', filters.isTrashView.toString());
     }
 
     console.log('📡 [pdfApi] getSavedFilesGrouped called with params:', params.toString());

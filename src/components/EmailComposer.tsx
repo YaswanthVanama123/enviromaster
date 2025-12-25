@@ -8,7 +8,7 @@ import './EmailComposer.css';
 export interface EmailAttachment {
   id: string;
   fileName: string;
-  documentType?: 'agreement' | 'version' | 'manual-upload';
+  documentType: 'agreement' | 'version' | 'manual-upload' | 'version-log'; // ✅ FIXED: Made documentType required
   watermark?: boolean;
 }
 

@@ -19,9 +19,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare, faCloudUploadAlt, faTrash, faEdit
+  faPlus, faCheckSquare, faSquare, faCloudUploadAlt, faTrash, faEdit, faRedo // ✅ NEW: Added faRedo for restore icon
 } from "@fortawesome/free-solid-svg-icons";
-import EmailComposer, { type EmailData } from "./EmailComposer";
+import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComposer"; // ✅ NEW: Import EmailAttachment type
 import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
 
@@ -131,6 +131,8 @@ interface FileRowProps {
   onStatusChange: (file: SavedFileListItem, newStatus: string) => void;
   onWatermarkToggle: (fileId: string, checked: boolean) => void; // ✅ NEW: Handle watermark toggle
   onDelete: (type: 'file' | 'folder', id: string, title: string) => void;
+  onRestore: (type: 'file' | 'folder', id: string, title: string) => void; // ✅ NEW: Handle restore
+  isTrashView: boolean; // ✅ NEW: Indicate if in trash view
 }
 
 const FileRow = memo(({
@@ -147,7 +149,9 @@ const FileRow = memo(({
   onEdit,
   onStatusChange,
   onWatermarkToggle, // ✅ NEW
-  onDelete
+  onDelete,
+  onRestore, // ✅ NEW
+  isTrashView // ✅ NEW
 }: FileRowProps) => {
   // ✅ OPTIMIZED: Memoized event handlers with useCallback
   const handleToggle = useCallback(() => onToggleSelection(file.id), [file.id, onToggleSelection]);
@@ -156,7 +160,8 @@ const FileRow = memo(({
   const handleEmail = useCallback(() => onEmail(file), [file, onEmail]);
   const handleZohoUpload = useCallback(() => onZohoUpload(file), [file, onZohoUpload]);
   const handleEdit = useCallback(() => onEdit(file), [file, onEdit]);
-  const handleDelete = useCallback(() => onDelete('file', file.id, file.title), [file.id, file.title, onDelete]);
+  const handleDeleteClick = useCallback(() => onDelete('file', file.id, file.title), [file.id, file.title, onDelete]); // ✅ RENAMED
+  const handleRestoreClick = useCallback(() => onRestore('file', file.id, file.title), [file.id, file.title, onRestore]); // ✅ NEW
   const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     onStatusChange(file, e.target.value);
   }, [file, onStatusChange]);
@@ -313,7 +318,7 @@ const FileRow = memo(({
 
       {/* File actions */}
       <div style={{ display: 'flex', gap: '6px' }}>
-        {canEdit && (
+        {!isTrashView && canEdit && (
           <button
             className="iconbtn"
             title="Edit Agreement"
@@ -338,25 +343,29 @@ const FileRow = memo(({
         >
           <FontAwesomeIcon icon={faDownload} />
         </button>
-        <button
-          className="iconbtn"
-          title="Share via Email"
-          onClick={handleEmail}
-          disabled={!file.hasPdf && file.fileType !== 'version_log'}
-        >
-          <FontAwesomeIcon icon={faEnvelope} />
-        </button>
-        <button
-          className="iconbtn zoho-upload-btn"
-          title="Upload to Bigin"
-          onClick={handleZohoUpload}
-          disabled={!file.hasPdf && file.fileType !== 'version_log'}
-        >
-          <FontAwesomeIcon icon={faUpload} />
-        </button>
+        {!isTrashView && (
+          <>
+            <button
+              className="iconbtn"
+              title="Share via Email"
+              onClick={handleEmail}
+              disabled={!file.hasPdf && file.fileType !== 'version_log'}
+            >
+              <FontAwesomeIcon icon={faEnvelope} />
+            </button>
+            <button
+              className="iconbtn zoho-upload-btn"
+              title="Upload to Bigin"
+              onClick={handleZohoUpload}
+              disabled={!file.hasPdf && file.fileType !== 'version_log'}
+            >
+              <FontAwesomeIcon icon={faUpload} />
+            </button>
+          </>
+        )}
 
         {/* ✅ UPDATED: Status Dropdown for PDFs and manual uploads */}
-        {(file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
+        {!isTrashView && (file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
           <div style={{ position: 'relative', display: 'inline-block' }}>
             {canChangeStatus && !statusChangeLoading ? (
               <select
@@ -404,18 +413,46 @@ const FileRow = memo(({
           </div>
         )}
 
-        {/* ✅ NEW: Delete file button */}
-        <button
-          className="iconbtn"
-          title="Delete file (move to trash)"
-          onClick={handleDelete}
-          style={{
-            color: '#dc2626',
-            borderColor: '#fca5a5'
-          }}
-        >
-          <FontAwesomeIcon icon={faTrash} />
-        </button>
+        {isTrashView ? (
+          // In trash view, show restore and permanent delete
+          <>
+            <button
+              className="iconbtn"
+              title="Restore file"
+              onClick={handleRestoreClick}
+              style={{
+                color: '#10b981',
+                borderColor: '#a7f3d0'
+              }}
+            >
+              <FontAwesomeIcon icon={faRedo} />
+            </button>
+            <button
+              className="iconbtn"
+              title="Permanently delete file"
+              onClick={handleDeleteClick} // This will now call permanentlyDeleteFile via onDelete prop
+              style={{
+                color: '#dc2626',
+                borderColor: '#fca5a5'
+              }}
+            >
+              <FontAwesomeIcon icon={faTrash} />
+            </button>
+          </>
+        ) : (
+          // In normal view, show soft delete
+          <button
+            className="iconbtn"
+            title="Delete file (move to trash)"
+            onClick={handleDeleteClick}
+            style={{
+              color: '#dc2626',
+              borderColor: '#fca5a5'
+            }}
+          >
+            <FontAwesomeIcon icon={faTrash} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -479,6 +516,7 @@ export default function SavedFilesAgreements() {
   const navigate = useNavigate();
   const location = useLocation();
   const isInAdminContext = location.pathname.includes("/admin-panel");
+  const isTrashView = location.pathname.includes("/trash"); // ✅ NEW: Determine if in trash view
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
   // ✅ NEW: Watermark toggle handler
@@ -490,6 +528,38 @@ export default function SavedFilesAgreements() {
     });
     console.log(`💧 [WATERMARK] Toggled watermark for file ${fileId}: ${checked}`);
   }, []);
+
+  // ✅ NEW: Restore handler for files and agreements
+  const handleRestore = useCallback(async (type: 'file' | 'folder', id: string, title: string) => {
+    try {
+      let result;
+      if (type === 'folder') {
+        result = await pdfApi.restoreAgreement(id);
+      } else {
+        result = await pdfApi.restoreFile(id);
+      }
+
+      if (result.success) {
+        setToastMessage({
+          message: `${type === 'folder' ? 'Agreement' : 'File'} "${title}" restored successfully!`,
+          type: "success"
+        });
+        // Refresh the list to show updated status
+        await fetchAgreements(currentPage, query);
+      } else {
+        setToastMessage({
+          message: result.message || `Failed to restore ${type === 'folder' ? 'agreement' : 'file'}. Please try again.`,
+          type: "error"
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to restore ${type === 'folder' ? 'agreement' : 'file'}:`, error);
+      setToastMessage({
+        message: `Failed to restore ${type === 'folder' ? 'agreement' : 'file'}. Please try again.`,
+        type: "error"
+      });
+    }
+  }, [currentPage, query]);
 
   // ✅ PERFORMANCE: Memoized callback for status changes
   const handleStatusChange = useCallback(async (file: SavedFileListItem, newStatus: string) => {
@@ -551,12 +621,13 @@ export default function SavedFilesAgreements() {
 
     try {
       // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
-      console.log(`📡 [API-CALL] Fetching agreements: page=${page}, search="${search}"`);
+      console.log(`📡 [API-CALL] Fetching agreements: page=${page}, search="${search}", isTrashView=${isTrashView}`);
 
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
         search: search.trim() || undefined,
         includeLogs: true,
-        includeDrafts: true  // ✅ Backend should include draft agreements without PDFs
+        includeDrafts: true,  // ✅ Backend should include draft agreements without PDFs
+        isDeleted: isTrashView // ✅ NEW: Pass isTrashView to backend for trash filtering
       });
 
       // ✅ REMOVED: Second API call to getCustomerHeadersSummary()
@@ -658,10 +729,10 @@ export default function SavedFilesAgreements() {
       }, 50); // 50ms delay - Strict Mode remounts happen much faster
 
       // If component remounts (Strict Mode), clear the timeout
-      return () => clearTimeout(timeoutId);
+      clearTimeout(timeoutId); // Clear the timeout on unmount
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only runs on mount
+  }, [isTrashView]); // Add isTrashView to dependencies to re-fetch when navigating to/from trash
 
   // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
@@ -684,7 +755,7 @@ export default function SavedFilesAgreements() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]); // Only depends on query
+  }, [query, isTrashView]); // Add isTrashView to dependencies
 
   // Load default email template on mount
   useEffect(() => {
@@ -1077,9 +1148,21 @@ export default function SavedFilesAgreements() {
     try {
       let result;
       if (itemToDelete.type === 'folder') {
-        result = await pdfApi.deleteAgreement(itemToDelete.id);
+        // If in trash view, permanently delete the agreement
+        if (isTrashView) {
+          result = await pdfApi.permanentlyDeleteAgreement(itemToDelete.id);
+        } else {
+          // Otherwise, soft delete (move to trash)
+          result = await pdfApi.deleteAgreement(itemToDelete.id);
+        }
       } else {
-        result = await pdfApi.deleteFile(itemToDelete.id);
+        // If in trash view, permanently delete the file
+        if (isTrashView) {
+          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id);
+        } else {
+          // Otherwise, soft delete (move to trash)
+          result = await pdfApi.deleteFile(itemToDelete.id);
+        }
       }
 
       if (result.success) {
@@ -1088,7 +1171,7 @@ export default function SavedFilesAgreements() {
         setDeleteConfirmText('');
 
         setToastMessage({
-          message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} moved to trash successfully!`,
+          message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} ${isTrashView ? 'permanently deleted' : 'moved to trash'} successfully!`,
           type: "success"
         });
 
@@ -1096,14 +1179,14 @@ export default function SavedFilesAgreements() {
         await fetchAgreements(currentPage, query);
       } else {
         setToastMessage({
-          message: result.message || "Failed to delete. Please try again.",
+          message: result.message || `Failed to ${isTrashView ? 'permanently delete' : 'delete'}. Please try again.`,
           type: "error"
         });
       }
     } catch (error) {
-      console.error("Failed to delete:", error);
+      console.error(`Failed to ${isTrashView ? 'permanently delete' : 'delete'}:`, error);
       setToastMessage({
-        message: "Failed to delete. Please try again.",
+        message: `Failed to ${isTrashView ? 'permanently delete' : 'delete'}. Please try again.`,
         type: "error"
       });
     }
@@ -1158,7 +1241,7 @@ export default function SavedFilesAgreements() {
         <div className="sf__actions">
           {hasSelectedFiles && (
             <>
-              <div className="sf__selection-info" style={{
+              <div style={{
                 fontSize: '14px',
                 color: '#6b7280',
                 fontWeight: '500',
@@ -1534,6 +1617,8 @@ export default function SavedFilesAgreements() {
                       onStatusChange={handleStatusChange}
                       onWatermarkToggle={handleWatermarkToggle} // ✅ NEW: Pass watermark toggle handler
                       onDelete={handleDelete}
+                      onRestore={handleRestore} // ✅ NEW: Pass restore handler
+                      isTrashView={isTrashView} // ✅ NEW: Pass trash view flag
                     />
                   ))}
                 </div>
@@ -1560,7 +1645,7 @@ export default function SavedFilesAgreements() {
           </button>
 
           {/* Page numbers */}
-          <div className="sf__page-numbers">
+          <div style={{ display: 'flex', gap: '4px' }}>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
@@ -1614,11 +1699,13 @@ export default function SavedFilesAgreements() {
           if (!currentEmailFile) return;
 
           // Determine document type based on file type
-          let documentType: 'agreement' | 'version' | 'manual-upload' = 'agreement';
-          if (currentEmailFile.type === 'version') {
+          let documentType: 'agreement' | 'version' | 'manual-upload' | 'version-log' = 'agreement';
+          if (currentEmailFile.fileType === 'version_pdf') {
             documentType = 'version';
-          } else if (currentEmailFile.type === 'manual-upload') {
+          } else if (currentEmailFile.fileType === 'attached_pdf') {
             documentType = 'manual-upload';
+          } else if (currentEmailFile.fileType === 'version_log') {
+            documentType = 'version-log';
           }
 
           await emailApi.sendEmailWithPdfById({
@@ -1640,9 +1727,10 @@ export default function SavedFilesAgreements() {
         attachment={currentEmailFile ? {
           id: currentEmailFile.id,
           fileName: currentEmailFile.title,
-          documentType: currentEmailFile.type === 'version' ? 'version' :
-                        currentEmailFile.type === 'manual-upload' ? 'manual-upload' : 'agreement',
-          watermark: currentEmailFile.type === 'version' ? (watermarkStates.get(currentEmailFile.id) || false) : false
+          documentType: (currentEmailFile.fileType === 'version_pdf' ? 'version' :
+                        currentEmailFile.fileType === 'attached_pdf' ? 'manual-upload' :
+                        currentEmailFile.fileType === 'version_log' ? 'version-log' : 'agreement'),
+          watermark: currentEmailFile.fileType === 'version_pdf' ? (fileWatermarkStates.get(currentEmailFile.id) || false) : false
         } : undefined}
         defaultSubject={defaultEmailTemplate?.subject || (currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : '')}
         defaultBody={defaultEmailTemplate?.body || (currentEmailFile ? `Hello,\n\nPlease find the document attached.\n\nDocument: ${currentEmailFile.title}\n\nBest regards` : '')}
