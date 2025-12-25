@@ -1252,7 +1252,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
-    newValue: number
+    newValue: number,
+    quantityOverride?: number,
+    frequencyOverride?: string
   ) => {
     addPriceChange({
       productKey: `saniclean_${fieldName}`,
@@ -1262,8 +1264,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       fieldDisplayName: getFieldDisplayName(fieldName),
       originalValue,
       newValue,
-      quantity: form.fixtureCount || 1,
-      frequency: 'weekly'
+      quantity: quantityOverride ?? (form.fixtureCount || 1),
+      frequency: frequencyOverride ?? (form.mainServiceFrequency || 'weekly')
     });
 
     console.log(`📝 [SANICLEAN-FILE-LOGGER] Added change for ${fieldName}:`, {
@@ -1272,7 +1274,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       change: newValue - originalValue,
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
-  }, [form.fixtureCount]);
+  }, [form.fixtureCount, form.mainServiceFrequency]);
 
   // ✅ NEW: Sync global contract months to service (unless service has explicitly overridden it)
   const hasContractMonthsOverride = useRef(false);
@@ -1428,11 +1430,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
 
       // ✅ NEW: Log all form field changes using universal logger
       const allFormFields = [
-        // Quantity fields
-        'sinks', 'urinals', 'maleToilets', 'femaleToilets',
-        'microfiberBathrooms', 'estimatedPaperSpendPerWeek', 'excessSoapGallonsPerWeek',
-        'warrantyDispensers', 'contractMonths',
-        'urinalScreensQty', 'urinalMatsQty', 'toiletClipsQty', 'seatCoverDispensersQty', 'sanipodsQty',
         // Selection fields
         'location', 'soapType', 'pricingMode', 'rateTier',
         'needsParking', 'addMicrofiberMopping', 'addTripCharge',
@@ -1441,14 +1438,18 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
         'mainServiceFrequency', 'facilityComponentsFrequency', 'frequency'
       ];
 
+      const normalizedNext = recomputeFixtureCount(next);
+      const logQuantity = normalizedNext.fixtureCount || 1;
+      const logFrequency = normalizedNext.mainServiceFrequency || 'weekly';
+
       logServiceFieldChanges(
         'saniclean',
         'SaniClean',
         updates,
         originalValues,
         allFormFields,
-        form.fixtureCount || 1,
-        form.mainServiceFrequency || 'weekly'
+        logQuantity,
+        logFrequency
       );
 
       // ✅ Log price override for numeric pricing fields
@@ -1479,12 +1480,12 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
           if (newValue !== undefined && baselineValue !== undefined &&
               typeof newValue === 'number' && typeof baselineValue === 'number' &&
               newValue !== baselineValue && newValue > 0) {
-            addServiceFieldChange(fieldName, baselineValue, newValue);
+            addServiceFieldChange(fieldName, baselineValue, newValue, logQuantity, logFrequency);
           }
         }
       });
 
-      return recomputeFixtureCount(next);
+      return normalizedNext;
     });
   };
 

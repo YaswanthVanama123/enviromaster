@@ -6,6 +6,7 @@ import type {
   StripWaxFrequencyKey,
   StripWaxRateCategory,
   StripWaxServiceVariant,
+  StripWaxVariantConfig,
   StripWaxFormState,
 } from "./stripWaxTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
@@ -207,6 +208,35 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
   return activeConfig;
 }
 
+function resolveVariantDefaultsFromConfig(
+  config: ReturnType<typeof buildActiveConfig>,
+  variant?: StripWaxServiceVariant
+): StripWaxVariantConfig {
+  const key = variant ?? config.defaultVariant;
+  return config.variants[key] ?? config.variants[config.defaultVariant];
+}
+
+function getVariantConfigFromState(state: StripWaxFormState): StripWaxVariantConfig {
+  if (state.serviceVariant === "standardFull") {
+    return {
+      ratePerSqFt: state.standardFullRatePerSqFt,
+      minCharge: state.standardFullMinCharge,
+    };
+  }
+
+  if (state.serviceVariant === "noSealant") {
+    return {
+      ratePerSqFt: state.noSealantRatePerSqFt,
+      minCharge: state.noSealantMinCharge,
+    };
+  }
+
+  return {
+    ratePerSqFt: state.wellMaintainedRatePerSqFt,
+    minCharge: state.wellMaintainedMinCharge,
+  };
+}
+
 export interface StripWaxCalcResult {
   /** Per-visit revenue (service only). */
   perVisit: number;
@@ -311,10 +341,42 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     };
   });
 
+  useEffect(() => {
+    setForm((prev) => {
+      const variantDefaults = getVariantConfigFromState(prev);
+      const nextCustomRate =
+        prev.ratePerSqFt !== variantDefaults.ratePerSqFt ? prev.ratePerSqFt : undefined;
+      const nextCustomMin =
+        prev.minCharge !== variantDefaults.minCharge ? prev.minCharge : undefined;
+
+      if (
+        prev.customRatePerSqFt === nextCustomRate &&
+        prev.customMinCharge === nextCustomMin
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        customRatePerSqFt: nextCustomRate,
+        customMinCharge: nextCustomMin,
+      };
+    });
+  }, [
+    form.ratePerSqFt,
+    form.minCharge,
+    form.serviceVariant,
+    form.standardFullRatePerSqFt,
+    form.standardFullMinCharge,
+    form.noSealantRatePerSqFt,
+    form.noSealantMinCharge,
+    form.wellMaintainedRatePerSqFt,
+    form.wellMaintainedMinCharge,
+  ]);
+
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendStripWaxConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
   // Helper function to update form with config data
   const updateFormWithConfig = (activeConfig: any) => {
     setForm((prev) => ({
@@ -344,7 +406,40 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
   };
 
   // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = async (forceRefresh: boolean = false) => {
+    const applyBackendConfig = (config: BackendStripWaxConfig, forceOverride: boolean = forceRefresh) => {
+      const activeCfg = buildActiveConfig(config);
+      setBackendConfig(config);
+      updateFormWithConfig(activeCfg);
+
+      if (initialData && !forceOverride) {
+        return activeCfg;
+      }
+
+      setForm((prev) => {
+        const defaults = forceOverride
+          ? resolveVariantDefaultsFromConfig(activeCfg, prev.serviceVariant)
+          : undefined;
+
+        return {
+          ...prev,
+          customPerVisit: undefined,
+          customMonthly: undefined,
+          customOngoingMonthly: undefined,
+          customContractTotal: undefined,
+          ...(defaults
+            ? {
+                ratePerSqFt: defaults.ratePerSqFt,
+                minCharge: defaults.minCharge,
+                customRatePerSqFt: undefined,
+                customMinCharge: undefined,
+              }
+            : {}),
+        };
+      });
+
+      return activeCfg;
+    };
     setIsLoadingConfig(true);
     try {
       // First try to get active service config
@@ -359,23 +454,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
           const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
           if (fallbackConfig?.config) {
             console.log('✅ [Strip Wax] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendStripWaxConfig;
-
-            // ✅ Build active config from backend structure
-            const activeConfig = buildActiveConfig(config);
-
-            setBackendConfig(config);
-            updateFormWithConfig(activeConfig);
-
-            // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
-            setForm(prev => ({
-              ...prev,
-              customPerVisit: undefined,
-              customMonthly: undefined,
-              customOngoingMonthly: undefined,
-              customContractTotal: undefined,
-            }));
-
+            applyBackendConfig(fallbackConfig.config, forceRefresh);
             console.log('✅ Strip Wax FALLBACK CONFIG loaded from context');
             return;
           }
@@ -396,21 +475,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       const config = document.config as BackendStripWaxConfig;
 
       // ✅ Build active config from backend structure
-      const activeConfig = buildActiveConfig(config);
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(activeConfig);
-
-      // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
-      setForm(prev => ({
-        ...prev,
-        customPerVisit: undefined,
-        customMonthly: undefined,
-        customOngoingMonthly: undefined,
-        customContractTotal: undefined,
-      }));
-
+      applyBackendConfig(config, forceRefresh);
       console.log('✅ Strip Wax ACTIVE CONFIG loaded from backend successfully');
     } catch (error) {
       console.error('❌ Failed to fetch Strip Wax config from backend:', error);
@@ -420,23 +485,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
         const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
         if (fallbackConfig?.config) {
           console.log('✅ [Strip Wax] Using backend pricing data from context after error');
-          const config = fallbackConfig.config as BackendStripWaxConfig;
-
-          // ✅ Build active config from backend structure
-          const activeConfig = buildActiveConfig(config);
-
-          setBackendConfig(config);
-          updateFormWithConfig(activeConfig);
-
-          // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
-          setForm(prev => ({
-            ...prev,
-            customPerVisit: undefined,
-            customMonthly: undefined,
-            customOngoingMonthly: undefined,
-            customContractTotal: undefined,
-          }));
-
+          applyBackendConfig(fallbackConfig.config, forceRefresh);
           return;
         }
       }

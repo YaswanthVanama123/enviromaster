@@ -36,6 +36,7 @@ export const RpmWindowsForm: React.FC<
     refreshConfig,
     isLoadingConfig,
     pricingOverrides,
+    manualOverrides,
   } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -53,9 +54,8 @@ export const RpmWindowsForm: React.FC<
     backgroundColor: isOverride ? "#fffacd" : (baseStyle?.backgroundColor ?? "white"),
   });
 
-  const hasPricingOverride = (fieldName: string): boolean => {
-    return Boolean((pricingOverrides as Record<string, boolean> | undefined)?.[fieldName]);
-  };
+  const hasPricingOverride = (fieldName: string): boolean =>
+    Boolean(manualOverrides[fieldName]);
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {

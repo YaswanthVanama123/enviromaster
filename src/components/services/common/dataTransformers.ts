@@ -624,6 +624,24 @@ export function transformStripWaxData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
+  if (structuredData.ratePerSqFt !== undefined) {
+    formState.ratePerSqFt = structuredData.ratePerSqFt;
+  }
+  if (structuredData.minCharge !== undefined) {
+    formState.minCharge = structuredData.minCharge;
+  }
+  if (structuredData.serviceVariant !== undefined) {
+    formState.serviceVariant = structuredData.serviceVariant;
+  }
+  if (structuredData.rateCategory !== undefined) {
+    formState.rateCategory = structuredData.rateCategory;
+  }
+  if (structuredData.contractMonths !== undefined) {
+    formState.contractMonths = structuredData.contractMonths;
+  } else if (structuredData.totals?.contract?.months !== undefined) {
+    formState.contractMonths = structuredData.totals.contract.months;
+  }
+
   // Extract frequency
   if (structuredData.frequency) {
     formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
@@ -632,7 +650,9 @@ export function transformStripWaxData(structuredData: any): any {
   // Extract service (floor area)
   if (structuredData.service) {
     formState.floorAreaSqFt = structuredData.service.qty || 0;
-    formState.ratePerSqFt = structuredData.service.rate || 0;
+    if (structuredData.service.rate !== undefined && formState.ratePerSqFt === undefined) {
+      formState.ratePerSqFt = structuredData.service.rate;
+    }
   }
 
   // Extract custom fields

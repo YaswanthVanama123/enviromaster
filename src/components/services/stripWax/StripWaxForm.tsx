@@ -148,6 +148,11 @@ export const StripWaxForm: React.FC<
         serviceId: "stripwax",
         displayName: "Strip & Wax",
         isActive: true,
+        ratePerSqFt: form.ratePerSqFt,
+        minCharge: form.minCharge,
+        serviceVariant: form.serviceVariant,
+        rateCategory: form.rateCategory,
+        contractMonths: form.contractMonths,
 
         // Red/Green Line pricing data
         rawPrice: calc.rawPrice,  // Raw price before minimum
@@ -249,7 +254,7 @@ export const StripWaxForm: React.FC<
           <button
             type="button"
             className="svc-mini"
-            onClick={refreshConfig}
+            onClick={() => refreshConfig(true)}
             disabled={isLoadingConfig}
             title="Refresh config from database"
           >
@@ -347,19 +352,22 @@ export const StripWaxForm: React.FC<
             onChange={onChange}
           />
           <span className="svc-multi">@</span>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in svc-in-small field-qty"
-              type="number"
-              min="0"
-              step={0.01}
-              name="ratePerSqFt"
-              value={form.ratePerSqFt || ""}
-              onChange={onChange}
-              title="Rate per sq ft (from backend, editable)"
-            />
-          </div>
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in svc-in-small field-qty"
+                type="number"
+                min="0"
+                step={0.01}
+                name="ratePerSqFt"
+                value={form.ratePerSqFt || ""}
+                onChange={onChange}
+                title="Rate per sq ft (from backend, editable)"
+                style={{
+                  backgroundColor: form.customRatePerSqFt !== undefined ? '#fffacd' : 'white',
+                }}
+              />
+            </div>
           <span className="svc-small">/sq ft</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
@@ -393,6 +401,9 @@ export const StripWaxForm: React.FC<
               value={form.minCharge || ""}
               onChange={onChange}
               title="Minimum charge per visit (from backend, editable)"
+              style={{
+                backgroundColor: form.customMinCharge !== undefined ? '#fffacd' : 'white',
+              }}
             />
           </div>
           <span className="svc-small">minimum</span>

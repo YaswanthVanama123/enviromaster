@@ -83,4 +83,6 @@ export interface StripWaxFormState {
   customMonthly?: number;
   customOngoingMonthly?: number;
   customContractTotal?: number;
+  customRatePerSqFt?: number;  // Tracks manual overrides for highlight
+  customMinCharge?: number;    // Tracks manual overrides for highlight
 }
