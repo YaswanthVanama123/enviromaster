@@ -1164,6 +1164,13 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     formState.frequency = structuredData.frequency || "monthly";
     formState.contractMonths = structuredData.contractMonths || 12;
 
+    if (structuredData.hourlyRateIsCustom !== undefined) {
+      formState.hourlyRateIsCustom = structuredData.hourlyRateIsCustom;
+    }
+    if (structuredData.minimumVisitIsCustom !== undefined) {
+      formState.minimumVisitIsCustom = structuredData.minimumVisitIsCustom;
+    }
+
     // Handle area objects directly with defaults
     const areaKeys = ['dumpster', 'patio', 'walkway', 'foh', 'boh', 'other'];
     for (const areaKey of areaKeys) {
@@ -1246,6 +1253,12 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
 
       formState.hourlyRate = hourlyMatch ? parseFloat(hourlyMatch[1]) : 200;
       formState.minimumVisit = minMatch ? parseFloat(minMatch[1]) : 400;
+      if (structuredData.hourlyRateIsCustom !== undefined) {
+        formState.hourlyRateIsCustom = structuredData.hourlyRateIsCustom;
+      }
+      if (structuredData.minimumVisitIsCustom !== undefined) {
+        formState.minimumVisitIsCustom = structuredData.minimumVisitIsCustom;
+      }
 
       console.log(`🔄 Extracted rates - hourly: ${formState.hourlyRate}, minimum: ${formState.minimumVisit}`);
     }
@@ -1359,6 +1372,73 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
         } else if (storedAreaKey === 'backHouse' && areaData.plan?.value) {
           areaState.kitchenSize = areaData.plan.value.toLowerCase().includes('large') ? 'large' : 'smallMedium';
         }
+      }
+
+      if (areaData.customAmount !== undefined) {
+        areaState.customAmount = areaData.customAmount;
+      }
+      if (areaData.smallMediumCustomAmount !== undefined) {
+        areaState.smallMediumCustomAmount = areaData.smallMediumCustomAmount;
+      }
+      if (areaData.largeCustomAmount !== undefined) {
+        areaState.largeCustomAmount = areaData.largeCustomAmount;
+      }
+      if (areaData.patioAddonRate !== undefined) {
+        areaState.patioAddonRate = areaData.patioAddonRate;
+      }
+      if (areaData.workerRateIsCustom !== undefined) {
+        areaState.workerRateIsCustom = areaData.workerRateIsCustom;
+      }
+      if (areaData.hourlyRateIsCustom !== undefined) {
+        areaState.hourlyRateIsCustom = areaData.hourlyRateIsCustom;
+      }
+      if (areaData.insideRateIsCustom !== undefined) {
+        areaState.insideRateIsCustom = areaData.insideRateIsCustom;
+      }
+      if (areaData.outsideRateIsCustom !== undefined) {
+        areaState.outsideRateIsCustom = areaData.outsideRateIsCustom;
+      }
+      if (areaData.sqFtFixedFeeIsCustom !== undefined) {
+        areaState.sqFtFixedFeeIsCustom = areaData.sqFtFixedFeeIsCustom;
+      }
+      if (areaData.presetRateIsCustom !== undefined) {
+        areaState.presetRateIsCustom = areaData.presetRateIsCustom;
+      }
+      if (areaData.smallMediumRateIsCustom !== undefined) {
+        areaState.smallMediumRateIsCustom = areaData.smallMediumRateIsCustom;
+      }
+      if (areaData.largeRateIsCustom !== undefined) {
+        areaState.largeRateIsCustom = areaData.largeRateIsCustom;
+      }
+      if (areaData.savedPresetRate !== undefined) {
+        areaState.presetRate = areaData.savedPresetRate;
+      }
+      if (areaData.savedPresetQuantity !== undefined) {
+        areaState.presetQuantity = areaData.savedPresetQuantity;
+      }
+      if (areaData.savedWorkerRate !== undefined) {
+        areaState.workerRate = areaData.savedWorkerRate;
+      }
+      if (areaData.savedHours !== undefined) {
+        areaState.hours = areaData.savedHours;
+      }
+      if (areaData.savedHourlyRate !== undefined) {
+        areaState.hourlyRate = areaData.savedHourlyRate;
+      }
+      if (areaData.savedInsideRate !== undefined) {
+        areaState.insideRate = areaData.savedInsideRate;
+      }
+      if (areaData.savedOutsideRate !== undefined) {
+        areaState.outsideRate = areaData.savedOutsideRate;
+      }
+      if (areaData.savedSqFtFixedFee !== undefined) {
+        areaState.sqFtFixedFee = areaData.savedSqFtFixedFee;
+      }
+      if (areaData.savedSmallMediumRate !== undefined) {
+        areaState.smallMediumRate = areaData.savedSmallMediumRate;
+      }
+      if (areaData.savedLargeRate !== undefined) {
+        areaState.largeRate = areaData.savedLargeRate;
       }
 
       formState[formAreaKey] = areaState;

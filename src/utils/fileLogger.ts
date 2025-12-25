@@ -335,6 +335,10 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customPerVisitPrice': 'Per Visit Price',
     'customMonthlyRecurring': 'Monthly Recurring',
     'customFirstMonthPrice': 'First Month Price',
+    'workerRate': 'Worker Rate',
+    'presetRate': 'Preset Rate',
+    'smallMediumRate': 'Small/Medium Rate',
+    'largeRate': 'Large Rate',
 
     // Service fields - SaniScrub
     'customBathroomTotal': 'Bathroom Total',
@@ -481,5 +485,17 @@ export const getFieldDisplayName = (fieldType: string): string => {
     // Add more service fields as needed...
   };
 
-  return displayNames[fieldType] || fieldType;
+  if (displayNames[fieldType]) {
+    return displayNames[fieldType];
+  }
+
+  const underscoreIndex = fieldType.indexOf('_');
+  if (underscoreIndex > 0) {
+    const areaName = fieldType.slice(0, underscoreIndex);
+    const rawField = fieldType.slice(underscoreIndex + 1);
+    const rawDisplay = displayNames[rawField] || rawField;
+    return `${areaName} ${rawDisplay}`;
+  }
+
+  return fieldType;
 };

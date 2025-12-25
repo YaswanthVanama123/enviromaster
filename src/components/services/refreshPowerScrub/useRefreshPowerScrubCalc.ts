@@ -224,6 +224,14 @@ function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null
     insideRate: backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE,
     outsideRate: backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE,
     sqFtFixedFee: backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE,
+    workerRateIsCustom: false,
+    hourlyRateIsCustom: false,
+    insideRateIsCustom: false,
+    outsideRateIsCustom: false,
+    sqFtFixedFeeIsCustom: false,
+    presetRateIsCustom: false,
+    smallMediumRateIsCustom: false,
+    largeRateIsCustom: false,
     customAmount: 0,
     presetQuantity: 1, // Default quantity for preset calculations
     presetRate: undefined, // ✅ FIXED: Use undefined so ?? operator falls back to backend defaults
@@ -282,6 +290,14 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   insideRate: FALLBACK_SQFT_INSIDE_RATE, // $0.60/sq ft default
   outsideRate: FALLBACK_SQFT_OUTSIDE_RATE, // $0.40/sq ft default
   sqFtFixedFee: FALLBACK_SQFT_FIXED_FEE, // $200 fixed fee default
+  workerRateIsCustom: false,
+  hourlyRateIsCustom: false,
+  insideRateIsCustom: false,
+  outsideRateIsCustom: false,
+  sqFtFixedFeeIsCustom: false,
+  presetRateIsCustom: false,
+  smallMediumRateIsCustom: false,
+  largeRateIsCustom: false,
   customAmount: 0,
   presetQuantity: 1, // Default quantity for preset calculations
   presetRate: undefined, // ✅ FIXED: Use undefined so ?? operator falls back to backend defaults
@@ -299,6 +315,34 @@ const DEFAULT_AREA: RefreshAreaCalcState = {
   contractMonths: 12, // Default contract length for individual areas
 };
 
+const resetAreaCustoms = (area: RefreshAreaCalcState): RefreshAreaCalcState => ({
+  ...area,
+  customAmount: 0,
+  smallMediumCustomAmount: 0,
+  largeCustomAmount: 0,
+  patioAddonRate: undefined,
+  workerRateIsCustom: false,
+  hourlyRateIsCustom: false,
+  insideRateIsCustom: false,
+  outsideRateIsCustom: false,
+  sqFtFixedFeeIsCustom: false,
+  presetRateIsCustom: false,
+  smallMediumRateIsCustom: false,
+  largeRateIsCustom: false,
+});
+
+const clearAllCustomOverrides = (state: RefreshPowerScrubFormState): RefreshPowerScrubFormState => ({
+  ...state,
+  hourlyRateIsCustom: false,
+  minimumVisitIsCustom: false,
+  dumpster: resetAreaCustoms(state.dumpster),
+  patio: resetAreaCustoms(state.patio),
+  walkway: resetAreaCustoms(state.walkway),
+  foh: resetAreaCustoms(state.foh),
+  boh: resetAreaCustoms(state.boh),
+  other: resetAreaCustoms(state.other),
+});
+
 const DEFAULT_FORM: RefreshPowerScrubFormState = {
   // BaseServiceFormState (actual type lives elsewhere)
   frequency: "monthly" as any,
@@ -309,6 +353,8 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   tripCharge: FALLBACK_DEFAULT_TRIP,   // $75
   hourlyRate: FALLBACK_DEFAULT_HOURLY, // $200/hr/worker
   minimumVisit: FALLBACK_DEFAULT_MIN,  // $475 minimum
+  hourlyRateIsCustom: false,
+  minimumVisitIsCustom: false,
 
   // Global contract settings
   contractMonths: 12,
@@ -826,15 +872,7 @@ export function useRefreshPowerScrubCalc(
             updateFormWithConfig(config);
 
             // ✅ Clear any custom amounts to ensure backend values are used
-            setForm(prev => ({
-              ...prev,
-              dumpster: { ...prev.dumpster, customAmount: 0 },
-              patio: { ...prev.patio, customAmount: 0 },
-              walkway: { ...prev.walkway, customAmount: 0 },
-              foh: { ...prev.foh, customAmount: 0 },
-              boh: { ...prev.boh, customAmount: 0 },
-              other: { ...prev.other, customAmount: 0 },
-            }));
+            setForm(clearAllCustomOverrides);
 
             console.log('✅ Refresh Power Scrub FALLBACK CONFIG loaded from context:', {
               coreRates: config.coreRates,
@@ -865,16 +903,7 @@ export function useRefreshPowerScrubCalc(
       updateFormWithConfig(config);
 
       // ✅ Clear any custom amounts to ensure backend values are used
-      setForm(prev => ({
-        ...prev,
-        // Clear all custom amounts that might override backend values
-        dumpster: { ...prev.dumpster, customAmount: 0 },
-        patio: { ...prev.patio, customAmount: 0 },
-        walkway: { ...prev.walkway, customAmount: 0 },
-        foh: { ...prev.foh, customAmount: 0 },
-        boh: { ...prev.boh, customAmount: 0 },
-        other: { ...prev.other, customAmount: 0 },
-      }));
+      setForm(clearAllCustomOverrides);
 
       console.log('📊 [Refresh Power Scrub] Active Backend Config Received:', {
         coreRates: config.coreRates,
@@ -897,15 +926,7 @@ export function useRefreshPowerScrubCalc(
           updateFormWithConfig(config);
 
           // ✅ Clear any custom amounts to ensure backend values are used
-          setForm(prev => ({
-            ...prev,
-            dumpster: { ...prev.dumpster, customAmount: 0 },
-            patio: { ...prev.patio, customAmount: 0 },
-            walkway: { ...prev.walkway, customAmount: 0 },
-            foh: { ...prev.foh, customAmount: 0 },
-            boh: { ...prev.boh, customAmount: 0 },
-            other: { ...prev.other, customAmount: 0 },
-          }));
+          setForm(clearAllCustomOverrides);
 
           return;
         }
@@ -938,6 +959,15 @@ export function useRefreshPowerScrubCalc(
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  // ƒo. In edit mode we still need backend defaults to compare overrides
+  useEffect(() => {
+    if (!initial || backendConfig) return;
+    const fallbackConfig = servicesContext?.getBackendPricingForService?.("refreshPowerScrub");
+    if (fallbackConfig?.config) {
+      setBackendConfig(fallbackConfig.config as BackendRefreshPowerScrubConfig);
+    }
+  }, [initial, backendConfig, servicesContext?.getBackendPricingForService]);
 
   // ✅ Add sync effect to adopt global months when service becomes active or when global months change
   useEffect(() => {
@@ -1049,14 +1079,37 @@ export function useRefreshPowerScrubCalc(
              'insideRate', 'outsideRate', 'sqFtFixedFee', 'customAmount', 'presetRate',
              'smallMediumRate', 'largeRate'].includes(field as string)) {
 
-          // Convert area key to readable name
           const areaName = area === 'boh' ? 'Back of House' :
                           area === 'foh' ? 'Front of House' :
                           area.charAt(0).toUpperCase() + area.slice(1);
 
+          const getPresetBaseline = (areaKey: RefreshAreaKey): number => {
+            if (areaKey === "dumpster") {
+              return backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+            }
+            if (areaKey === "patio") {
+              return backendConfig?.areaSpecificPricing?.patio?.standalone ?? 800;
+            }
+            if (areaKey === "foh") {
+              return backendConfig?.areaSpecificPricing?.frontOfHouse ?? 2500;
+            }
+            if (areaKey === "boh") {
+              const kitchenSize = current.kitchenSize === "large" ? "large" : "smallMedium";
+              return kitchenSize === "large"
+                ? backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500
+                : backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? 1500;
+            }
+            return 0;
+          };
+
+          const isPresetField = field === "presetRate";
+          const shouldUseBaseline = isPresetField && !current.presetRateIsCustom && originalValue === 0;
+          const logOriginalValue = shouldUseBaseline ? getPresetBaseline(area) : originalValue;
+          const areaFieldKey = `${areaName}_${field}`;
+
           addServiceFieldChange(
-            `${areaName} ${field}`,
-            originalValue,
+            areaFieldKey,
+            logOriginalValue,
             value
           );
         }
@@ -1088,6 +1141,34 @@ export function useRefreshPowerScrubCalc(
         ...current,
         [field]: value,
       };
+
+      const hasValidNumber = (val: number | null | undefined) => val !== null && val !== undefined;
+      const changedNumber = hasValidNumber(value) && value !== originalValue;
+
+      if (field === "workerRate") {
+        updatedArea.workerRateIsCustom = changedNumber;
+      }
+      if (field === "hourlyRate") {
+        updatedArea.hourlyRateIsCustom = changedNumber;
+      }
+      if (field === "insideRate") {
+        updatedArea.insideRateIsCustom = changedNumber;
+      }
+      if (field === "outsideRate") {
+        updatedArea.outsideRateIsCustom = changedNumber;
+      }
+      if (field === "sqFtFixedFee") {
+        updatedArea.sqFtFixedFeeIsCustom = changedNumber;
+      }
+      if (field === "presetRate") {
+        updatedArea.presetRateIsCustom = hasValidNumber(value) && value !== originalValue;
+      }
+      if (field === "smallMediumRate") {
+        updatedArea.smallMediumRateIsCustom = changedNumber;
+      }
+      if (field === "largeRate") {
+        updatedArea.largeRateIsCustom = changedNumber;
+      }
 
       // If kitchen size is being changed, clear preset values and custom amount
       if (field === 'kitchenSize') {
@@ -1130,13 +1211,16 @@ export function useRefreshPowerScrubCalc(
     const n = parseFloat(raw);
     const newValue = Number.isFinite(n) ? n : 0;
     const originalValue = form.hourlyRate;
+    const baselineHourlyRate = backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+    const hasOverride = newValue !== baselineHourlyRate;
 
     setForm((prev) => ({
       ...prev,
       hourlyRate: newValue,
+      hourlyRateIsCustom: hasOverride,
     }));
 
-    // ✅ Log price override if value changed
+    // ƒo. Log price override if value changed
     if (newValue !== originalValue && newValue > 0) {
       addServiceFieldChange('global', 'hourlyRate', originalValue, newValue);
     }
@@ -1146,13 +1230,16 @@ export function useRefreshPowerScrubCalc(
     const n = parseFloat(raw);
     const newValue = Number.isFinite(n) ? n : 0;
     const originalValue = form.minimumVisit;
+    const baselineMinimum = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+    const hasOverride = newValue !== baselineMinimum;
 
     setForm((prev) => ({
       ...prev,
       minimumVisit: newValue,
+      minimumVisitIsCustom: hasOverride,
     }));
 
-    // ✅ Log price override if value changed
+    // ƒo. Log price override if value changed
     if (newValue !== originalValue && newValue > 0) {
       addServiceFieldChange('global', 'minimumVisit', originalValue, newValue);
     }

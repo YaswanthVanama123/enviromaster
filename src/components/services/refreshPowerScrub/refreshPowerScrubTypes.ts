@@ -46,6 +46,14 @@ export interface RefreshAreaCalcState {
 
   /** Custom manual amount */
   customAmount: number;
+  workerRateIsCustom?: boolean;
+  hourlyRateIsCustom?: boolean;
+  insideRateIsCustom?: boolean;
+  outsideRateIsCustom?: boolean;
+  sqFtFixedFeeIsCustom?: boolean;
+  presetRateIsCustom?: boolean;
+  smallMediumRateIsCustom?: boolean;
+  largeRateIsCustom?: boolean;
 
   /** Preset package calculation fields */
   presetQuantity: number; // Quantity for preset calculations
@@ -81,6 +89,8 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
   tripCharge: number;
   hourlyRate: number;
   minimumVisit: number;
+  hourlyRateIsCustom?: boolean;
+  minimumVisitIsCustom?: boolean;
 
   // Global frequency and contract settings
   frequency: RefreshFrequency;

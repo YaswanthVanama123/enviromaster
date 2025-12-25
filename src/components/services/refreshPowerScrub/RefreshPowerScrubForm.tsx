@@ -162,6 +162,8 @@ export const RefreshPowerScrubForm: React.FC<
           type: "text" as const,
           value: `Hourly Rate: $${form.hourlyRate}/hr | Minimum: $${form.minimumVisit}`,
         },
+        hourlyRateIsCustom: form.hourlyRateIsCustom,
+        minimumVisitIsCustom: form.minimumVisitIsCustom,
 
         // Services object with new structure
         services: AREA_ORDER
@@ -342,6 +344,35 @@ export const RefreshPowerScrubForm: React.FC<
               type: "calc"
             };
 
+            serviceData.customAmount = area.customAmount;
+            if (key === "boh") {
+              serviceData.smallMediumCustomAmount = area.smallMediumCustomAmount;
+              serviceData.largeCustomAmount = area.largeCustomAmount;
+            }
+            if (key === "patio") {
+              serviceData.patioAddonRate = area.patioAddonRate;
+            }
+
+            serviceData.workerRateIsCustom = area.workerRateIsCustom;
+            serviceData.hourlyRateIsCustom = area.hourlyRateIsCustom;
+            serviceData.insideRateIsCustom = area.insideRateIsCustom;
+            serviceData.outsideRateIsCustom = area.outsideRateIsCustom;
+            serviceData.sqFtFixedFeeIsCustom = area.sqFtFixedFeeIsCustom;
+            serviceData.presetRateIsCustom = area.presetRateIsCustom;
+            serviceData.smallMediumRateIsCustom = area.smallMediumRateIsCustom;
+            serviceData.largeRateIsCustom = area.largeRateIsCustom;
+
+            serviceData.savedPresetRate = area.presetRate;
+            serviceData.savedPresetQuantity = area.presetQuantity;
+            serviceData.savedWorkerRate = area.workerRate;
+            serviceData.savedHours = area.hours;
+            serviceData.savedHourlyRate = area.hourlyRate;
+            serviceData.savedInsideRate = area.insideRate;
+            serviceData.savedOutsideRate = area.outsideRate;
+            serviceData.savedSqFtFixedFee = area.sqFtFixedFee;
+            serviceData.savedSmallMediumRate = area.smallMediumRate;
+            serviceData.savedLargeRate = area.largeRate;
+
             acc[areaName] = serviceData;
             return acc;
           }, {} as Record<string, any>),
@@ -449,7 +480,10 @@ export const RefreshPowerScrubForm: React.FC<
                       step="1"
                       value={area.presetRate === null ? '' : (area.presetRate ?? getPatioStandalone())}
                       onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
-                      style={{ width: '80px' }}
+                      style={{
+                        width: '80px',
+                        backgroundColor: area.presetRateIsCustom ? '#fffacd' : 'white',
+                      }}
                       title="Patio base rate - editable"
                     />
                     <span>=</span>
@@ -486,7 +520,10 @@ export const RefreshPowerScrubForm: React.FC<
                       step="1"
                       value={area.patioAddonRate === null ? '' : (area.patioAddonRate ?? getPatioUpsell())}
                       onChange={(e) => setAreaField(areaKey, "patioAddonRate", e.target.value)}
-                      style={{ width: '60px' }}
+                      style={{
+                        width: '60px',
+                        backgroundColor: area.patioAddonRate !== undefined && area.patioAddonRate !== null ? '#fffacd' : 'white',
+                      }}
                       title="Add-on service price - editable"
                     />
                   </label>
@@ -524,7 +561,10 @@ export const RefreshPowerScrubForm: React.FC<
                     step="1"
                     value={area.smallMediumRate === null ? '' : (area.smallMediumRate ?? getKitchenSmallMed())}
                     onChange={(e) => setAreaField(areaKey, "smallMediumRate", e.target.value)}
-                    style={{ width: '80px' }}
+                    style={{
+                      width: '80px',
+                      backgroundColor: area.smallMediumRateIsCustom ? '#fffacd' : 'white',
+                    }}
                     title="Small/Medium Kitchen rate - editable"
                   />
                   <span>=</span>
@@ -567,7 +607,10 @@ export const RefreshPowerScrubForm: React.FC<
                     step="1"
                     value={area.largeRate === null ? '' : (area.largeRate ?? getKitchenLarge())}
                     onChange={(e) => setAreaField(areaKey, "largeRate", e.target.value)}
-                    style={{ width: '80px' }}
+                    style={{
+                      width: '80px',
+                      backgroundColor: area.largeRateIsCustom ? '#fffacd' : 'white',
+                    }}
                     title="Large Kitchen rate - editable"
                   />
                   <span>=</span>
@@ -611,7 +654,10 @@ export const RefreshPowerScrubForm: React.FC<
                   step="1"
                   value={area.presetRate === null ? '' : (area.presetRate ?? getPresetAmount(areaKey))}
                   onChange={(e) => setAreaField(areaKey, "presetRate", e.target.value)}
-                  style={{ width: '80px' }}
+                  style={{
+                    width: '80px',
+                    backgroundColor: area.presetRateIsCustom ? '#fffacd' : 'white',
+                  }}
                   title="Rate - editable"
                 />
                 <span>=</span>
@@ -657,7 +703,10 @@ export const RefreshPowerScrubForm: React.FC<
               step="1"
               value={area.workerRate || ""}
               onChange={(e) => setAreaField(areaKey, "workerRate", e.target.value)}
-              style={{ width: '80px' }}
+              style={{
+                width: '80px',
+                backgroundColor: area.workerRateIsCustom ? '#fffacd' : 'white',
+              }}
               title="Per worker rate - editable"
             />
             <span className="rps-label">= ${formatAmount((area.workers || 0) * area.workerRate)}</span>
@@ -684,7 +733,10 @@ export const RefreshPowerScrubForm: React.FC<
               step="1"
               value={area.hourlyRate}
               onChange={(e) => setAreaField(areaKey, "hourlyRate", e.target.value)}
-              style={{ width: '80px' }}
+              style={{
+                width: '80px',
+                backgroundColor: area.hourlyRateIsCustom ? '#fffacd' : 'white',
+              }}
               title="Per hour rate - editable"
             />
             <span className="rps-label">= ${formatAmount((area.hours || 0) * area.hourlyRate)}</span>
@@ -700,11 +752,14 @@ export const RefreshPowerScrubForm: React.FC<
               <input
                 className="rps-line rps-num"
                 type="number"
-            min="0"
+                min="0"
                 step="1"
                 value={area.sqFtFixedFee}
                 onChange={(e) => setAreaField(areaKey, "sqFtFixedFee", e.target.value)}
-                style={{ width: '80px' }}
+                style={{
+                  width: '80px',
+                  backgroundColor: area.sqFtFixedFeeIsCustom ? '#fffacd' : 'white',
+                }}
                 title="Fixed fee - editable"
               />
             </div>
@@ -726,7 +781,10 @@ export const RefreshPowerScrubForm: React.FC<
                 step="0.1"
                 value={area.insideRate}
                 onChange={(e) => setAreaField(areaKey, "insideRate", e.target.value)}
-                style={{ width: '60px' }}
+                style={{
+                  width: '60px',
+                  backgroundColor: area.insideRateIsCustom ? '#fffacd' : 'white',
+                }}
                 title="Inside rate - editable"
               />
               <span>= ${formatAmount((area.insideSqFt || 0) * area.insideRate)}</span>
@@ -749,7 +807,10 @@ export const RefreshPowerScrubForm: React.FC<
                 step="0.1"
                 value={area.outsideRate}
                 onChange={(e) => setAreaField(areaKey, "outsideRate", e.target.value)}
-                style={{ width: '60px' }}
+                style={{
+                  width: '60px',
+                  backgroundColor: area.outsideRateIsCustom ? '#fffacd' : 'white',
+                }}
                 title="Outside rate - editable"
               />
               <span>= ${formatAmount((area.outsideSqFt || 0) * area.outsideRate)}</span>
@@ -843,6 +904,7 @@ export const RefreshPowerScrubForm: React.FC<
             className="rps-line rps-num"
             value={form.minimumVisit || ""}
             onChange={(e) => setMinimumVisit(e.target.value)}
+            style={{ backgroundColor: form.minimumVisitIsCustom ? '#fffacd' : 'white' }}
           />
         </div>
       </div>
