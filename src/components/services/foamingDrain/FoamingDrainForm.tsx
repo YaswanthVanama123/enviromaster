@@ -23,6 +23,9 @@ const formatAmount = (n: number): string => (n > 0 ? n.toFixed(2) : "");
 
 // Helper function to format numbers without unnecessary decimals (like SaniScrub)
 const formatNumber = (num: number): string => {
+  if (!Number.isFinite(num)) {
+    return "0";
+  }
   return num % 1 === 0 ? num.toString() : num.toFixed(2);
 };
 
@@ -389,28 +392,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     );
   };
 
-  // Pricing model label - ✅ DYNAMIC from current form state (updates in real-time when editing)
-  const pricingLabel = (() => {
-    const minimumDrains = backendConfig?.volumePricing?.minimumDrains ?? 10;
-    // Use current form state values so label updates when user edits fields
-    const standardRate = state.standardDrainRate;
-    const altBase = state.altBaseCharge;
-    const altPerDrain = state.altExtraPerDrain;
-    const volumeWeekly = state.volumeWeeklyRate;
-    const volumeBimonthly = state.volumeBimonthlyRate;
-
-    if (breakdown.usedBigAccountAlt) {
-      return `Volume – $${standardRate}/week per drain, install waived (${minimumDrains}+ drains)`;
-    }
-    if (breakdown.volumePricingApplied) {
-      return `Volume (${minimumDrains}+ drains, separate $${volumeWeekly}/$${volumeBimonthly} install-drain)`;
-    }
-    if (breakdown.usedSmallAlt) {
-      return `Alternative (weekly: $${altBase} + $${altPerDrain}/drain)`;
-    }
-    return `Standard ($${standardRate}/drain)`;
-  })();
-
   // --------- Calc-line numbers: qty @ rate = total ---------
 
   // Standard drains: show only the drains that are billed as "standard"
@@ -432,7 +413,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   // ✅ FIXED: Calculate rate for display
   // When all-inclusive: show the base rate even though total is $0
   // Otherwise: calculate from actual pricing
-  let stdRate = state.standardDrainRate; // Default to base rate
+  const effectiveStandardRate = state.customRatePerDrain ?? state.standardDrainRate;
+  let stdRate = effectiveStandardRate;
   if (!state.isAllInclusive && stdQtyForRateCalc > 0 && stdTotal > 0) {
     stdRate = stdTotal / stdQtyForRateCalc;
   }
@@ -444,6 +426,29 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const greenQty = state.greenDrainCount;
   const greenTotal = breakdown.weeklyGreenDrains;
   const greenRate = greenQty > 0 ? greenTotal / greenQty : 0;
+
+  const effectivePlumbingRate = state.customPlumbingAddonRate ?? state.plumbingAddonRate;
+
+  // Pricing model label - ✅ DYNAMIC from current form state (updates in real-time when editing)
+  const pricingLabel = (() => {
+    const minimumDrains = backendConfig?.volumePricing?.minimumDrains ?? 10;
+    const altBase = formatNumber(state.customAltBaseCharge ?? state.altBaseCharge);
+    const altPerDrain = formatNumber(state.customAltExtraPerDrain ?? state.altExtraPerDrain);
+    const volumeWeekly = formatNumber(state.customVolumeWeeklyRate ?? state.volumeWeeklyRate);
+    const volumeBimonthly = formatNumber(state.customVolumeBimonthlyRate ?? state.volumeBimonthlyRate);
+    const standardRate = formatNumber(stdRate);
+
+    if (breakdown.usedBigAccountAlt) {
+      return `Volume – $${volumeWeekly}/week per drain, install waived (${minimumDrains}+ drains)`;
+    }
+    if (breakdown.volumePricingApplied) {
+      return `Volume (${minimumDrains}+ drains, separate $${volumeWeekly}/$${volumeBimonthly} install-drain)`;
+    }
+    if (breakdown.usedSmallAlt) {
+      return `Alternative (weekly: $${altBase} + $${altPerDrain}/drain)`;
+    }
+    return `Standard ($${standardRate}/drain)`;
+  })();
 
   // NEW: install-program calc line (qty @ rate = total)
   const installQty = isInstallLevelUi ? state.installDrainCount : 0;
@@ -803,6 +808,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   value={state.standardDrainCount || ""}
                   onChange={handleNumberChange("standardDrainCount")}
                 />
+                {isInstallLevelUi && state.installDrainCount > 0 && (
+                  <span className="svc-note" style={{ marginLeft: "8px" }}>
+                    Service drains: {stdQtyForRateCalc}
+                  </span>
+                )}
 
                 <span>@</span>
                 {/* RATE = Shows effective rate based on active pricing model */}
@@ -1057,7 +1067,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     min="0"
                     step={1}
                     className="svc-in field-rate"
-                    value={state.plumbingAddonRate}
+                    value={effectivePlumbingRate}
                   />
                   <span>=</span>
                   {/* TOTAL - calculated */}
