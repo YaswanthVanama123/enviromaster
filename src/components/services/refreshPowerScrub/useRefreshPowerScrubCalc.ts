@@ -10,7 +10,6 @@ import type { ServiceQuoteResult } from "../common/serviceTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
-import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Fallback constants (only used when backend is unavailable)
 const FALLBACK_DEFAULT_HOURLY = 200;
@@ -391,6 +390,19 @@ const numericAreaFields: (keyof RefreshAreaCalcState)[] = [
   "patioAddonRate", // ✅ NEW: Patio addon rate
 ];
 
+const priceFieldsForLogging: (keyof RefreshAreaCalcState)[] = [
+  "hourlyRate",
+  "workerRate",
+  "insideRate",
+  "outsideRate",
+  "sqFtFixedFee",
+  "customAmount",
+  "presetRate",
+  "smallMediumRate",
+  "largeRate",
+  "patioAddonRate",
+];
+
 /** Per Worker rule:
  *  Workers × perWorkerRate (NO trip charge here - applied at visit level).
  *  Returns the labour cost only. Uses area rate first, then form global rate, then backend rate.
@@ -659,6 +671,7 @@ export function useRefreshPowerScrubCalc(
   // ✅ Add refs for tracking override and active state
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
+  const initialAppliedRef = useRef(false);
 
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
@@ -850,7 +863,11 @@ export function useRefreshPowerScrubCalc(
   };
 
   // ✅ Fetch configuration from backend
-  const fetchPricing = async () => {
+  const fetchPricing = useCallback(async () => {
+    if (initial) {
+      console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Edit mode detected, skipping fetchPricing');
+      return;
+    }
     setIsLoadingConfig(true);
     try {
       console.log('🔄 [Refresh Power Scrub] Fetching fresh configuration from backend...');
@@ -936,11 +953,10 @@ export function useRefreshPowerScrubCalc(
     } finally {
       setIsLoadingConfig(false);
     }
-  };
+  }, [servicesContext?.getBackendPricingForService]);
 
   // Fetch on mount ONLY if no initial data (new service)
   useEffect(() => {
-    // Skip fetching if we have initial data (editing existing service with saved prices)
     if (initial) {
       console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Skipping price fetch - using saved historical prices from initial data');
       return;
@@ -948,17 +964,16 @@ export function useRefreshPowerScrubCalc(
 
     console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Fetching current prices - new service or no initial data');
     fetchPricing();
-  }, []); // Run once on mount
+  }, [initial, fetchPricing]); // Run once on mount (re-run if initial changes)
 
   // Also fetch when services context becomes available (but NOT in edit mode)
   useEffect(() => {
-    // Skip if we have initial data (editing existing service)
     if (initial) return;
 
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
-  }, [servicesContext?.backendPricingData, backendConfig]);
+  }, [initial, servicesContext?.backendPricingData, backendConfig, fetchPricing]);
 
   // ƒo. In edit mode we still need backend defaults to compare overrides
   useEffect(() => {
@@ -968,6 +983,22 @@ export function useRefreshPowerScrubCalc(
       setBackendConfig(fallbackConfig.config as BackendRefreshPowerScrubConfig);
     }
   }, [initial, backendConfig, servicesContext?.getBackendPricingForService]);
+
+  useEffect(() => {
+    if (!initial) {
+      initialAppliedRef.current = false;
+      return;
+    }
+    if (initialAppliedRef.current) return;
+
+    const baselineForm = {
+      ...DEFAULT_FORM,
+      ...initial,
+    };
+    setForm(baselineForm);
+    initialAppliedRef.current = true;
+    console.log('📋 [REFRESH-POWER-SCRUB] Applied saved edit-mode data to form');
+  }, [initial]);
 
   // ✅ Add sync effect to adopt global months when service becomes active or when global months change
   useEffect(() => {
@@ -1024,22 +1055,6 @@ export function useRefreshPowerScrubCalc(
       const originalValue = prev[area].enabled;
 
       // Log the area toggle change
-      if (originalValue !== enabled) {
-        const areaName = area === 'boh' ? 'Back of House' :
-                        area === 'foh' ? 'Front of House' :
-                        area.charAt(0).toUpperCase() + area.slice(1);
-
-        logServiceFieldChanges(
-          'refreshPowerScrub',
-          'Refresh Power Scrub',
-          { [`${areaName} Enabled`]: enabled },
-          { [`${areaName} Enabled`]: originalValue },
-          [`${areaName} Enabled`],
-          1, // quantity
-          prev.frequency || 'monthly'
-        );
-      }
-
       return {
         ...prev,
         [area]: {
@@ -1048,6 +1063,37 @@ export function useRefreshPowerScrubCalc(
         } as RefreshAreaCalcState,
       };
     });
+  };
+
+  const getAreaFieldFallback = (
+    areaKey: RefreshAreaKey,
+    fieldName: keyof RefreshAreaCalcState,
+    state: RefreshAreaCalcState
+  ): number => {
+    switch (fieldName) {
+      case "hourlyRate":
+        return backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
+      case "workerRate":
+        return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+      case "insideRate":
+        return backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
+      case "outsideRate":
+        return backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
+      case "sqFtFixedFee":
+        return backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE;
+      case "patioAddonRate":
+        return backendConfig?.areaSpecificPricing?.patio?.upsell ?? FALLBACK_PATIO_UPSELL;
+      case "smallMediumRate":
+        return backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? FALLBACK_KITCHEN_SMALL_MED;
+      case "largeRate":
+        return backendConfig?.areaSpecificPricing?.kitchen?.large ?? FALLBACK_KITCHEN_LARGE;
+      case "customAmount":
+        return typeof state.customAmount === "number" ? state.customAmount : 0;
+      default:
+        return typeof state[fieldName] === "number"
+          ? (state[fieldName] as number)
+          : 0;
+    }
   };
 
   /** Update a single area field from the form */
@@ -1075,9 +1121,7 @@ export function useRefreshPowerScrubCalc(
 
         // ✅ Log price override for numeric pricing fields (only if value is a valid number)
         if (value !== undefined && value !== null && value !== originalValue && value > 0 &&
-            ['workers', 'hours', 'hourlyRate', 'workerRate', 'insideSqFt', 'outsideSqFt',
-             'insideRate', 'outsideRate', 'sqFtFixedFee', 'customAmount', 'presetRate',
-             'smallMediumRate', 'largeRate'].includes(field as string)) {
+            priceFieldsForLogging.includes(field)) {
 
           const areaName = area === 'boh' ? 'Back of House' :
                           area === 'foh' ? 'Front of House' :
@@ -1104,34 +1148,15 @@ export function useRefreshPowerScrubCalc(
 
           const isPresetField = field === "presetRate";
           const shouldUseBaseline = isPresetField && !current.presetRateIsCustom && originalValue === 0;
-          const logOriginalValue = shouldUseBaseline ? getPresetBaseline(area) : originalValue;
+          const baseOriginal = shouldUseBaseline ? getPresetBaseline(area) : originalValue;
+          const fallbackBaseline = getAreaFieldFallback(area, field, current);
+          const logOriginalValue = baseOriginal > 0 ? baseOriginal : fallbackBaseline;
           const areaFieldKey = `${areaName}_${field}`;
 
           addServiceFieldChange(
             areaFieldKey,
             logOriginalValue,
             value
-          );
-        }
-      }
-
-      // ✅ Log form field changes for non-pricing fields
-      if (originalValue !== value) {
-        const areaName = area === 'boh' ? 'Back of House' :
-                        area === 'foh' ? 'Front of House' :
-                        area.charAt(0).toUpperCase() + area.slice(1);
-
-        const formFields = ['pricingType', 'kitchenSize', 'patioMode', 'includePatioAddon', 'frequencyLabel'];
-
-        if (formFields.includes(field as string)) {
-          logServiceFieldChanges(
-            'refreshPowerScrub',
-            'Refresh Power Scrub',
-            { [`${areaName} ${field}`]: value },
-            { [`${areaName} ${field}`]: originalValue },
-            [`${areaName} ${field}`],
-            1, // quantity
-            prev.frequency || 'monthly'
           );
         }
       }
@@ -1253,18 +1278,6 @@ export function useRefreshPowerScrubCalc(
       frequency: frequency as any,
     }));
 
-    // ✅ Log frequency changes
-    if (originalValue !== frequency) {
-      logServiceFieldChanges(
-        'refreshPowerScrub',
-        'Refresh Power Scrub',
-        { frequency: frequency },
-        { frequency: originalValue },
-        ['frequency'],
-        1, // quantity
-        frequency
-      );
-    }
   };
 
   const setContractMonths = (months: number) => {
@@ -1276,18 +1289,6 @@ export function useRefreshPowerScrubCalc(
       contractMonths: months,
     }));
 
-    // ✅ Log contract months changes
-    if (originalValue !== months) {
-      logServiceFieldChanges(
-        'refreshPowerScrub',
-        'Refresh Power Scrub',
-        { contractMonths: months },
-        { contractMonths: originalValue },
-        ['contractMonths'],
-        1, // quantity
-        form.frequency || 'monthly'
-      );
-    }
   };
 
   // Calculate area totals and track if any use package pricing

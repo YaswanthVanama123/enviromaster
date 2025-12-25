@@ -60,6 +60,63 @@ function normalizeStructuredValue(rawValue: any): any {
   return rawValue;
 }
 
+const REFRESH_AREA_KEYS = ["dumpster", "patio", "walkway", "foh", "boh", "other"];
+
+const REFRESH_FALLBACKS = {
+  hourlyRate: 200,
+  workerRate: 200,
+  perHourRate: 400,
+  minimumVisit: 400,
+  tripCharge: 75,
+  insideRate: 0.6,
+  outsideRate: 0.4,
+  sqFtFixedFee: 200,
+  patioStandalone: 800,
+  patioUpsell: 500,
+};
+
+const createRefreshAreaTemplate = () => ({
+  enabled: false,
+  pricingType: "preset",
+  workers: 2,
+  hours: 0,
+  hourlyRate: REFRESH_FALLBACKS.perHourRate,
+  workerRate: REFRESH_FALLBACKS.workerRate,
+  insideSqFt: 0,
+  outsideSqFt: 0,
+  insideRate: REFRESH_FALLBACKS.insideRate,
+  outsideRate: REFRESH_FALLBACKS.outsideRate,
+  sqFtFixedFee: REFRESH_FALLBACKS.sqFtFixedFee,
+  customAmount: 0,
+  workerRateIsCustom: false,
+  hourlyRateIsCustom: false,
+  insideRateIsCustom: false,
+  outsideRateIsCustom: false,
+  sqFtFixedFeeIsCustom: false,
+  presetRateIsCustom: false,
+  smallMediumRateIsCustom: false,
+  largeRateIsCustom: false,
+  presetQuantity: 1,
+  presetRate: undefined,
+  kitchenSize: "smallMedium",
+  smallMediumQuantity: 0,
+  smallMediumRate: undefined,
+  smallMediumCustomAmount: 0,
+  largeQuantity: 0,
+  largeRate: undefined,
+  largeCustomAmount: 0,
+  patioMode: "standalone",
+  includePatioAddon: false,
+  patioAddonRate: undefined,
+  frequencyLabel: "",
+  contractMonths: 12,
+});
+
+const mergeRefreshAreaState = (data: any = {}) => ({
+  ...createRefreshAreaTemplate(),
+  ...data,
+});
+
 export function transformRpmWindowsData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
@@ -1223,13 +1280,15 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
 
   // Handle NEW CONVERTED FORMAT (from backend edit-format endpoint)
   if (structuredData.hourlyRate !== undefined || structuredData.minimumVisit !== undefined) {
-    console.log('🔄 [transformRefreshPowerScrubData] Using NEW converted format');
+    console.log('?"" [transformRefreshPowerScrubData] Using NEW converted format');
 
     // Direct values from converted format
-    formState.hourlyRate = structuredData.hourlyRate || 200;
-    formState.minimumVisit = structuredData.minimumVisit || 400;
+    formState.hourlyRate = structuredData.hourlyRate ?? REFRESH_FALLBACKS.hourlyRate;
+    formState.minimumVisit = structuredData.minimumVisit ?? REFRESH_FALLBACKS.minimumVisit;
     formState.frequency = structuredData.frequency || "monthly";
     formState.contractMonths = structuredData.contractMonths || 12;
+    formState.tripCharge = structuredData.tripCharge ?? REFRESH_FALLBACKS.tripCharge;
+    formState.tripChargeIncluded = structuredData.tripChargeIncluded ?? true;
 
     if (structuredData.hourlyRateIsCustom !== undefined) {
       formState.hourlyRateIsCustom = structuredData.hourlyRateIsCustom;
@@ -1238,76 +1297,119 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       formState.minimumVisitIsCustom = structuredData.minimumVisitIsCustom;
     }
 
-    // Handle area objects directly with defaults
-    const areaKeys = ['dumpster', 'patio', 'walkway', 'foh', 'boh', 'other'];
-    for (const areaKey of areaKeys) {
-      if (structuredData[areaKey]) {
-        // Ensure all required fields are present with proper defaults
-        formState[areaKey] = {
-          enabled: false,
-          pricingType: "preset",
-          workers: 2,
-          hours: 0,
-          hourlyRate: 200,
-          insideSqFt: 0,
-          outsideSqFt: 0,
-          insideRate: 0.6,
-          outsideRate: 0.4,
-          sqFtFixedFee: 200,
-          customAmount: 0,
-          kitchenSize: "smallMedium",
-          patioMode: "standalone",
-          includePatioAddon: false, // Default to no add-on
-          frequencyLabel: "",
-          contractMonths: 12,
-          // Override with actual stored values
-          ...structuredData[areaKey]
-        };
+    for (const areaKey of REFRESH_AREA_KEYS) {
+      const storedArea = structuredData[areaKey] || {};
+      const areaState = mergeRefreshAreaState(storedArea);
 
-        // ✅ SPECIAL HANDLING: Infer patio add-on from patioMode if includePatioAddon is missing
-        if (areaKey === 'patio' && structuredData[areaKey].includePatioAddon === undefined) {
-          // If patioMode is "upsell" but includePatioAddon is missing,
-          // this likely means the add-on was selected but got lost in backend conversion
-          const patioMode = structuredData[areaKey].patioMode;
-          console.log(`🔄 [Patio FIX] includePatioAddon missing, patioMode: ${patioMode}`);
-
-          // ✅ INFER from patioMode: "upsell" means add-on was likely selected
-          const inferredAddon = patioMode === 'upsell';
-          formState[areaKey].includePatioAddon = inferredAddon;
-          console.log(`🔄 [Patio FIX] Inferred includePatioAddon: ${inferredAddon} (from patioMode: ${patioMode})`);
-        }
-
-        console.log(`🔄 [transformRefreshPowerScrubData] Mapped ${areaKey}:`, formState[areaKey]);
-      } else {
-        // Provide complete default area object
-        formState[areaKey] = {
-          enabled: false,
-          pricingType: "preset",
-          workers: 2,
-          hours: 0,
-          hourlyRate: 200,
-          insideSqFt: 0,
-          outsideSqFt: 0,
-          insideRate: 0.6,
-          outsideRate: 0.4,
-          sqFtFixedFee: 200,
-          customAmount: 0,
-          kitchenSize: "smallMedium",
-          patioMode: "standalone",
-          includePatioAddon: false, // Default to no add-on
-          frequencyLabel: "",
-          contractMonths: 12
-        };
+      if (areaKey === "patio" && storedArea.includePatioAddon === undefined) {
+        const patioMode = storedArea.patioMode;
+        console.log(`?"" [Patio FIX] includePatioAddon missing, patioMode: ${patioMode}`);
+        const inferredAddon = patioMode === "upsell";
+        areaState.includePatioAddon = inferredAddon;
+        console.log(`?"" [Patio FIX] Inferred includePatioAddon: ${inferredAddon} (from patioMode: ${patioMode})`);
       }
+
+      const savedFieldMap = {
+        savedPresetRate: "presetRate",
+        savedPresetQuantity: "presetQuantity",
+        savedWorkerRate: "workerRate",
+        savedHours: "hours",
+        savedHourlyRate: "hourlyRate",
+        savedInsideRate: "insideRate",
+        savedOutsideRate: "outsideRate",
+        savedSqFtFixedFee: "sqFtFixedFee",
+        savedSmallMediumRate: "smallMediumRate",
+        savedLargeRate: "largeRate",
+      };
+
+      Object.entries(savedFieldMap).forEach(([sourceKey, targetKey]) => {
+        if (storedArea[sourceKey] !== undefined) {
+          areaState[targetKey] = storedArea[sourceKey];
+        }
+      });
+
+      formState[areaKey] = areaState;
+      console.log(`?"" [transformRefreshPowerScrubData] Mapped ${areaKey}:`, areaState);
     }
 
     // Extract custom fields
     formState.customFields = extractCustomFields(structuredData);
 
-    console.log('🔄 [transformRefreshPowerScrubData] Converted form state:', formState);
+    const overrideField = formState.customFields.find(
+      (field) => field.name === "refreshPowerScrubOverrides" || field.id === "refreshPowerScrubOverrides"
+    );
+    if (overrideField) {
+      overrideField.isInternal = true;
+      try {
+        const overrides = JSON.parse(overrideField.value || "{}");
+        REFRESH_AREA_KEYS.forEach((key) => {
+          const areaOverride = overrides[key];
+          if (!areaOverride) return;
+
+          const targetArea = formState[key];
+          if (!targetArea) return;
+
+          if (areaOverride.presetRate !== undefined) {
+            targetArea.presetRate = areaOverride.presetRate;
+          }
+          if (areaOverride.presetQuantity !== undefined) {
+            targetArea.presetQuantity = areaOverride.presetQuantity;
+          }
+          if (areaOverride.workerRate !== undefined) {
+            targetArea.workerRate = areaOverride.workerRate;
+          }
+          if (areaOverride.workers !== undefined) {
+            targetArea.workers = areaOverride.workers;
+          }
+          if (areaOverride.hourlyRate !== undefined) {
+            targetArea.hourlyRate = areaOverride.hourlyRate;
+          }
+          if (areaOverride.hours !== undefined) {
+            targetArea.hours = areaOverride.hours;
+          }
+          if (areaOverride.insideRate !== undefined) {
+            targetArea.insideRate = areaOverride.insideRate;
+          }
+          if (areaOverride.outsideRate !== undefined) {
+            targetArea.outsideRate = areaOverride.outsideRate;
+          }
+          if (areaOverride.sqFtFixedFee !== undefined) {
+            targetArea.sqFtFixedFee = areaOverride.sqFtFixedFee;
+          }
+          if (areaOverride.insideSqFt !== undefined) {
+            targetArea.insideSqFt = areaOverride.insideSqFt;
+          }
+          if (areaOverride.outsideSqFt !== undefined) {
+            targetArea.outsideSqFt = areaOverride.outsideSqFt;
+          }
+          if (areaOverride.patioAddonRate !== undefined) {
+            targetArea.patioAddonRate = areaOverride.patioAddonRate;
+          }
+          const overrideCustomFieldMap: Record<string, string> = {
+            presetRate: "presetRateIsCustom",
+            workerRate: "workerRateIsCustom",
+            hourlyRate: "hourlyRateIsCustom",
+            insideRate: "insideRateIsCustom",
+            outsideRate: "outsideRateIsCustom",
+            sqFtFixedFee: "sqFtFixedFeeIsCustom",
+            smallMediumRate: "smallMediumRateIsCustom",
+            largeRate: "largeRateIsCustom",
+          };
+          Object.keys(areaOverride).forEach((overrideKey) => {
+            const customFlag = overrideCustomFieldMap[overrideKey];
+            if (customFlag) {
+              targetArea[customFlag] = true;
+            }
+          });
+        });
+      } catch (err) {
+        console.warn("Failed to parse refresh power scrub overrides:", err);
+      }
+    }
+
+    console.log('?"" [transformRefreshPowerScrubData] Converted form state:', formState);
     return formState;
   }
-
   // Handle CURRENT STORAGE FORMAT (services object structure)
   if (structuredData.services) {
     console.log('🔄 [transformRefreshPowerScrubData] Using CURRENT storage format (services object)');
@@ -1405,8 +1507,14 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       // Extract pricing-specific data
       if (pricingType === "perHour" && areaData.hours) {
         areaState.hours = areaData.hours.quantity || 0;
+        if (areaData.hours.priceRate !== undefined) {
+          areaState.hourlyRate = areaData.hours.priceRate;
+        }
       } else if (pricingType === "perWorker" && areaData.workersCalc) {
         areaState.workers = areaData.workersCalc.quantity || 2;
+        if (areaData.workersCalc.priceRate !== undefined) {
+          areaState.workerRate = areaData.workersCalc.priceRate;
+        }
       } else if (pricingType === "squareFeet") {
         if (areaData.fixedFee?.value) areaState.sqFtFixedFee = areaData.fixedFee.value;
         if (areaData.insideSqft?.quantity) areaState.insideSqFt = areaData.insideSqft.quantity;

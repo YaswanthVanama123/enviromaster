@@ -19,6 +19,8 @@ const formatNumber = (num: number | undefined): string => {
 
 const formatAmount = (n: number): string => formatNumber(n);
 
+const OVERRIDES_FIELD_ID = "refreshPowerScrubOverrides";
+
 const FREQ_OPTIONS = [
   { value: "oneTime", label: "One Time" },
   { value: "weekly", label: "Weekly" },
@@ -52,6 +54,43 @@ const AREA_ORDER: RefreshAreaKey[] = [
   "boh",
   // "other",
 ];
+
+const buildOverridePayload = (formState: RefreshPowerScrubFormState) => {
+  const overrides: Record<string, any> = {};
+  AREA_ORDER.forEach((key) => {
+    const area = formState[key];
+    const entry: Record<string, any> = {};
+
+    if (area.pricingType === "preset") {
+      entry.presetRate = area.presetRate;
+      entry.presetQuantity = area.presetQuantity;
+    }
+    if (area.pricingType === "perWorker") {
+      entry.workerRate = area.workerRate;
+      entry.workers = area.workers;
+    }
+    if (area.pricingType === "perHour") {
+      entry.hourlyRate = area.hourlyRate;
+      entry.hours = area.hours;
+    }
+    if (area.pricingType === "squareFeet") {
+      entry.insideRate = area.insideRate;
+      entry.outsideRate = area.outsideRate;
+      entry.sqFtFixedFee = area.sqFtFixedFee;
+      entry.insideSqFt = area.insideSqFt;
+      entry.outsideSqFt = area.outsideSqFt;
+    }
+    if (area.patioAddonRate !== undefined) {
+      entry.patioAddonRate = area.patioAddonRate;
+    }
+
+    if (Object.keys(entry).length > 0) {
+      overrides[key] = entry;
+    }
+  });
+
+  return JSON.stringify(overrides);
+};
 
 const PRICING_TYPES = [
   { value: "preset", label: "Preset Package" },
@@ -132,9 +171,39 @@ export const RefreshPowerScrubForm: React.FC<
     return backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? 1500;
   };
 
-  const getKitchenLarge = (): number => {
-    return backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500;
-  };
+const getKitchenLarge = (): number => {
+  return backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500;
+};
+
+  useEffect(() => {
+    const overridesValue = buildOverridePayload(form);
+    setCustomFields((prev) => {
+      const existingIndex = prev.findIndex(
+        (field) =>
+          field.id === OVERRIDES_FIELD_ID || field.name === OVERRIDES_FIELD_ID
+      );
+      const overrideField: CustomField = {
+        id: OVERRIDES_FIELD_ID,
+        name: OVERRIDES_FIELD_ID,
+        type: "text",
+        value: overridesValue,
+        isInternal: true,
+      };
+
+      if (existingIndex === -1) {
+        return [...prev, overrideField];
+      }
+
+      const existing = prev[existingIndex];
+      if (existing.value === overridesValue && existing.isInternal) {
+        return prev;
+      }
+
+      const updated = [...prev];
+      updated[existingIndex] = { ...overrideField, id: existing.id };
+      return updated;
+    });
+  }, [form]);
 
   useEffect(() => {
     if (servicesContext) {
@@ -197,18 +266,21 @@ export const RefreshPowerScrubForm: React.FC<
               }
             };
 
-            const multiplier = getFrequencyMultiplier(area.frequencyLabel);
-            const monthlyAmount = areaTotals[key] * multiplier;
+            const frequencyLabel = area.frequencyLabel || 'TBD';
+            const freqLower = frequencyLabel.toLowerCase();
+            const baseMultiplier = getFrequencyMultiplier(area.frequencyLabel);
+            const visitsPerMonth =
+              freqLower === "one time" ? 1 : (baseMultiplier <= 0 ? 1 : baseMultiplier);
+            const monthlyAmount = areaTotals[key] * visitsPerMonth;
 
             // Calculate contract amount based on frequency type
             let contractAmount: number;
-            const freqLower = area.frequencyLabel?.toLowerCase();
 
             if (freqLower === "quarterly") {
               // Quarterly: visits = months / 3
               const quarterlyVisits = (area.contractMonths || 12) / 3;
               contractAmount = areaTotals[key] * quarterlyVisits;
-            } else if (freqLower === "bi-annual") {
+            } else if (freqLower === "bi-annual" || freqLower === "biannual") {
               // Bi-annual: visits = months / 6
               const biannualVisits = (area.contractMonths || 12) / 6;
               contractAmount = areaTotals[key] * biannualVisits;
@@ -321,7 +393,7 @@ export const RefreshPowerScrubForm: React.FC<
             // Common fields for all pricing types
             serviceData.frequency = {
               isDisplay: true,
-              value: area.frequencyLabel || 'TBD',
+              value: frequencyLabel,
               type: "text"
             };
             serviceData.total = {
@@ -329,10 +401,18 @@ export const RefreshPowerScrubForm: React.FC<
               value: areaTotals[key],
               type: "calc"
             };
+            const monthlyQuantity =
+              area.pricingType === "preset"
+                ? area.presetQuantity || 1
+                : visitsPerMonth;
+            const monthlyPriceRate =
+              area.pricingType === "preset"
+                ? (area.presetRate ?? areaTotals[key])
+                : areaTotals[key];
             serviceData.monthly = {
               isDisplay: true,
-              quantity: multiplier,
-              priceRate: areaTotals[key],
+              quantity: monthlyQuantity,
+              priceRate: monthlyPriceRate,
               total: monthlyAmount,
               type: "calc"
             };

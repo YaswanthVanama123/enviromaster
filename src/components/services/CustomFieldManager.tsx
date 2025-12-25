@@ -10,6 +10,7 @@ export type CustomField = {
   name: string;
   value?: string;
   calcValues?: { left: string; middle: string; right: string };
+  isInternal?: boolean;
 };
 
 type CustomFieldManagerProps = {
@@ -57,7 +58,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
   return (
     <div className="custom-field-manager">
       {/* Render existing fields - each as a single row like service fields */}
-      {fields.map((field) => (
+      {fields.filter((field) => !field.isInternal).map((field) => (
         <div key={field.id} className="svc-row">
           {/* Editable label on the left */}
           <label>
