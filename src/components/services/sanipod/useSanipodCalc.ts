@@ -429,13 +429,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     });
   };
 
-  useEffect(() => {
-    baselineRatesRef.current = {
-      extraBagPrice: initialData?.extraBagPrice ?? DEFAULT_FORM_STATE.extraBagPrice,
-      installRatePerPod: initialData?.installRatePerPod ?? DEFAULT_FORM_STATE.installRatePerPod,
-    };
-  }, [initialData?.extraBagPrice, initialData?.installRatePerPod]);
-
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
     setIsLoadingConfig(true);
@@ -540,6 +533,19 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
+
+  useEffect(() => {
+    const backendConfigEntry = servicesContext?.getBackendPricingForService("sanipod");
+    if (backendConfigEntry?.config) {
+      const activeConfig = buildActiveConfig(
+        backendConfigEntry.config as BackendSanipodConfig
+      );
+      baselineRatesRef.current = {
+        extraBagPrice: activeConfig.extraBagPrice,
+        installRatePerPod: activeConfig.installChargePerUnit,
+      };
+    }
+  }, [servicesContext?.getBackendPricingForService, servicesContext?.backendPricingData]);
 
   // ✅ Add sync effect to adopt global months when service becomes active or when global months change
   useEffect(() => {
