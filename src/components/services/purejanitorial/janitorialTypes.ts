@@ -112,6 +112,8 @@ export interface JanitorialFormState {
   customShortJobHourlyRate?: number;    // Custom override for short job hourly rate
   customMinHoursPerVisit?: number;      // Custom override for minimum hours per visit
 
+  customDustingPlacesPerHour?: number;  // Custom override for dusting places/hour
+
   // ========== CUSTOM OVERRIDES (user can manually set totals) ==========
   customPerVisit?: number;
   customFirstVisit?: number;

@@ -127,6 +127,7 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   customBaseHourlyRate: undefined,
   customShortJobHourlyRate: undefined,
   customMinHoursPerVisit: undefined,
+  customDustingPlacesPerHour: undefined,
 };
 
 /**
@@ -285,50 +286,117 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     return total;
   }, [customFields]);
 
-  const [form, setForm] = useState<JanitorialFormState>(() => {
-    const initialForm = { ...DEFAULT_FORM_STATE, ...initialData };
-
-    // Set custom flags for initial data that differ from defaults
-    const pricingFields: (keyof JanitorialFormState)[] = ['baseHourlyRate', 'shortJobHourlyRate', 'minHoursPerVisit', 'weeksPerMonth', 'dustingPlacesPerHour', 'dustingPricePerPlace', 'vacuumingDefaultHours'];
-
-    if (initialData) {
-      for (const field of pricingFields) {
-        const customField = `custom${field.charAt(0).toUpperCase() + field.slice(1)}` as keyof JanitorialFormState;
-        const initialValue = initialData[field];
-        const defaultValue = DEFAULT_FORM_STATE[field];
-        if (initialValue !== undefined && initialValue !== defaultValue) {
-          (initialForm as any)[customField] = initialValue;
-        }
-      }
-    }
-
-    return initialForm;
-  });
+  const [form, setForm] = useState<JanitorialFormState>(() => ({
+    ...DEFAULT_FORM_STATE,
+    ...initialData,
+  }));
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
+  const isEditMode = Boolean(initialData && Object.keys(initialData).length > 0);
+  const forceOverrideConfigRef = useRef(false);
+
+  const pricingBaselines = useMemo(() => ({
+    baseHourlyRate: backendConfig?.standardHourlyPricing?.standardHourlyRate ?? cfg.baseHourlyRate,
+    shortJobHourlyRate: backendConfig?.shortJobHourlyPricing?.shortJobHourlyRate ?? cfg.shortJobHourlyRate,
+    minHoursPerVisit: backendConfig?.standardHourlyPricing?.minimumHoursPerTrip ?? cfg.minHoursPerVisit,
+    dustingPlacesPerHour: backendConfig?.dusting?.itemsPerHour ?? cfg.dustingPlacesPerHour,
+  }), [backendConfig]);
 
   // Helper function to update form with config data from new backend structure
-  const updateFormWithConfig = (config: BackendJanitorialConfig) => {
-    setForm((prev) => ({
-      ...prev,
-      // Extract from nested backend structure
-      baseHourlyRate: config.standardHourlyPricing?.standardHourlyRate ?? prev.baseHourlyRate,
-      shortJobHourlyRate: config.shortJobHourlyPricing?.shortJobHourlyRate ?? prev.shortJobHourlyRate,
-      minHoursPerVisit: config.standardHourlyPricing?.minimumHoursPerTrip ?? prev.minHoursPerVisit,
-      weeksPerMonth: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? prev.weeksPerMonth,
-      dustingPlacesPerHour: config.dusting?.itemsPerHour ?? prev.dustingPlacesPerHour,
-      dustingPricePerPlace: config.dusting?.pricePerItem ?? prev.dustingPricePerPlace,
-      vacuumingDefaultHours: config.vacuuming?.estimatedTimeHoursPerJob ?? prev.vacuumingDefaultHours,
-      // Add new fields from backend
-      dirtyInitialMultiplier: config.dusting?.dirtyFirstTimeMultiplier ?? prev.dirtyInitialMultiplier,
-      infrequentMultiplier: config.dusting?.infrequentServiceMultiplier4PerYear ?? prev.infrequentMultiplier,
-    }));
+  const updateFormWithConfig = (
+    config: BackendJanitorialConfig,
+    options?: { forceOverride?: boolean }
+  ) => {
+    setForm((prev) => {
+      const shouldOverrideConfigValues =
+        (options?.forceOverride ?? false) || !isEditMode;
+
+      const applyConfigValue = (prevValue: number, configValue?: number) =>
+        shouldOverrideConfigValues ? (configValue ?? prevValue) : prevValue;
+
+      return {
+        ...prev,
+        // Extract from nested backend structure
+        baseHourlyRate: applyConfigValue(
+          prev.baseHourlyRate,
+          config.standardHourlyPricing?.standardHourlyRate
+        ),
+        shortJobHourlyRate: applyConfigValue(
+          prev.shortJobHourlyRate,
+          config.shortJobHourlyPricing?.shortJobHourlyRate
+        ),
+        minHoursPerVisit: applyConfigValue(
+          prev.minHoursPerVisit,
+          config.standardHourlyPricing?.minimumHoursPerTrip
+        ),
+        weeksPerMonth: applyConfigValue(
+          prev.weeksPerMonth,
+          config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier
+        ),
+        dustingPlacesPerHour: applyConfigValue(
+          prev.dustingPlacesPerHour,
+          config.dusting?.itemsPerHour
+        ),
+        dustingPricePerPlace: applyConfigValue(
+          prev.dustingPricePerPlace,
+          config.dusting?.pricePerItem
+        ),
+        vacuumingDefaultHours: applyConfigValue(
+          prev.vacuumingDefaultHours,
+          config.vacuuming?.estimatedTimeHoursPerJob
+        ),
+        // Add new fields from backend
+        dirtyInitialMultiplier: applyConfigValue(
+          prev.dirtyInitialMultiplier,
+          config.dusting?.dirtyFirstTimeMultiplier
+        ),
+        infrequentMultiplier: applyConfigValue(
+          prev.infrequentMultiplier,
+          config.dusting?.infrequentServiceMultiplier4PerYear
+        ),
+      };
+    });
   };
+
+  useEffect(() => {
+    setForm(prev => {
+      const customBase = prev.baseHourlyRate !== pricingBaselines.baseHourlyRate
+        ? prev.baseHourlyRate
+        : undefined;
+      const customShort = prev.shortJobHourlyRate !== pricingBaselines.shortJobHourlyRate
+        ? prev.shortJobHourlyRate
+        : undefined;
+      const customMin = prev.minHoursPerVisit !== pricingBaselines.minHoursPerVisit
+        ? prev.minHoursPerVisit
+      : undefined;
+      const customDusting = prev.dustingPlacesPerHour !== pricingBaselines.dustingPlacesPerHour
+        ? prev.dustingPlacesPerHour
+        : undefined;
+
+      if (
+        prev.customBaseHourlyRate === customBase &&
+        prev.customShortJobHourlyRate === customShort &&
+        prev.customMinHoursPerVisit === customMin
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        customBaseHourlyRate: customBase,
+        customShortJobHourlyRate: customShort,
+        customMinHoursPerVisit: customMin,
+        customDustingPlacesPerHour: customDusting,
+      };
+    });
+  }, [pricingBaselines]);
 
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
+    const shouldForceOverrideConfig = forceOverrideConfigRef.current;
+    forceOverrideConfigRef.current = false;
     setIsLoadingConfig(true);
     try {
       // First try to get active service config
@@ -352,7 +420,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
             } as BackendJanitorialConfig;
 
             setBackendConfig(config);
-            updateFormWithConfig(config);
+            updateFormWithConfig(config, { forceOverride: shouldForceOverrideConfig });
 
             console.log('✅ Pure Janitorial FALLBACK CONFIG loaded from context:', {
               baseHourlyRate: config.standardHourlyPricing?.standardHourlyRate,
@@ -390,7 +458,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
 
       // ✅ Store the ENTIRE backend config for use in calculations
       setBackendConfig(completeConfig);
-      updateFormWithConfig(completeConfig);
+      updateFormWithConfig(completeConfig, { forceOverride: shouldForceOverrideConfig });
 
       console.log('✅ Pure Janitorial ACTIVE CONFIG loaded from backend:', {
         baseHourlyRate: completeConfig.standardHourlyPricing?.standardHourlyRate,
@@ -419,7 +487,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
           } as BackendJanitorialConfig;
 
           setBackendConfig(config);
-          updateFormWithConfig(config);
+          updateFormWithConfig(config, { forceOverride: shouldForceOverrideConfig });
           return;
         }
       }
@@ -428,6 +496,11 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     } finally {
       setIsLoadingConfig(false);
     }
+  };
+
+  const refreshConfig = () => {
+    forceOverrideConfigRef.current = true;
+    fetchPricing();
   };
 
   // ✅ Fetch pricing configuration on mount ONLY if no initialData (new service)
@@ -589,6 +662,23 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
             newValue !== oldValue && newValue > 0) {
           addServiceFieldChange(name, oldValue, newValue);
         }
+      }
+
+  const overrideMapping: Record<string, keyof JanitorialFormState> = {
+    baseHourlyRate: 'customBaseHourlyRate',
+    shortJobHourlyRate: 'customShortJobHourlyRate',
+    minHoursPerVisit: 'customMinHoursPerVisit',
+    dustingPlacesPerHour: 'customDustingPlacesPerHour',
+  };
+
+      if (overrideMapping[name]) {
+        const overrideKey = overrideMapping[name];
+        const baselineValue = (pricingBaselines as any)[name] ?? 0;
+        const overriddenValue = (next as any)[name];
+        (next as any)[overrideKey] =
+          typeof overriddenValue === 'number' && overriddenValue !== baselineValue
+            ? overriddenValue
+            : undefined;
       }
 
       console.log(`📝 Form updated: ${name} =`, (next as any)[name]);
@@ -840,7 +930,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     setForm,
     onChange,
     calc,
-    refreshConfig: fetchPricing,
+    refreshConfig,
     isLoadingConfig,
   };
 }

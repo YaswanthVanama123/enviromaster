@@ -384,6 +384,9 @@ export const JanitorialForm: React.FC<
                 value={form.shortJobHourlyRate || ""}
                 onChange={onChange}
                 title="One-time service hourly rate (from backend)"
+                style={{
+                  backgroundColor: form.customShortJobHourlyRate !== undefined ? '#fffacd' : 'white'
+                }}
               />
             </div>
             <span className="svc-small">/hr (min {form.minHoursPerVisit || 0} hours = ${formatNumber((form.minHoursPerVisit || 0) * (form.shortJobHourlyRate || 0))} minimum)</span>
@@ -407,6 +410,9 @@ export const JanitorialForm: React.FC<
                 value={form.baseHourlyRate || ""}
                 onChange={onChange}
                 title="Recurring service hourly rate (from backend)"
+                style={{
+                  backgroundColor: form.customBaseHourlyRate !== undefined ? '#fffacd' : 'white'
+                }}
               />
             </div>
             <span className="svc-small">/hr (min {form.minHoursPerVisit || 0} hours = ${formatNumber((form.minHoursPerVisit || 0) * (form.baseHourlyRate || 0))} minimum)</span>
@@ -476,6 +482,9 @@ export const JanitorialForm: React.FC<
             value={form.dustingPlacesPerHour || ""}
             onChange={onChange}
             title="Places per hour (from admin panel, editable by salesman)"
+            style={{
+              backgroundColor: form.customDustingPlacesPerHour !== undefined ? '#fffacd' : 'white'
+            }}
           />
           <span className="svc-small">places/hr = </span>
           <input

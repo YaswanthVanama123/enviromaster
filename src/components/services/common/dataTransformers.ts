@@ -813,6 +813,7 @@ export function transformJanitorialData(structuredData: any): any {
   let manualHours = 0;
   let vacuumingHours = 0;
   let dustingPlaces = 0;
+  let dustingHours = 0;
   let addonTimeMinutes = 0;
 
   // Extract total hours from service
@@ -851,11 +852,27 @@ export function transformJanitorialData(structuredData: any): any {
 
   // Extract dusting places
   if (structuredData.dusting) {
-    const placesMatch = structuredData.dusting.value?.match(/(\d+(?:\.\d+)?)/);
-    if (placesMatch) {
-      dustingPlaces = parseInt(placesMatch[1]);
-      formState.dustingPlaces = dustingPlaces;
+    const dustingText = structuredData.dusting.value || "";
+    const fullMatch = dustingText.match(/(\d+(?:\.\d+)?)\s*places\s*=\s*(\d+(?:\.\d+)?)/i);
+    if (fullMatch) {
+      dustingPlaces = parseFloat(fullMatch[1]);
+      dustingHours = parseFloat(fullMatch[2]);
+    } else {
+      const placesMatch = dustingText.match(/(\d+(?:\.\d+)?)/);
+      if (placesMatch) {
+        dustingPlaces = parseFloat(placesMatch[1]);
+      }
+      const hoursMatch = dustingText.match(/=\s*(\d+(?:\.\d+)?)/);
+      if (hoursMatch) {
+        dustingHours = parseFloat(hoursMatch[1]);
+      }
     }
+
+    formState.dustingTotalPlaces = dustingPlaces;
+    formState.dustingCalculatedHours = dustingHours;
+    formState.dustingPlacesPerHour = dustingHours > 0
+      ? dustingPlaces / dustingHours
+      : 4;
   }
 
   // Extract add-on time
@@ -879,8 +896,8 @@ export function transformJanitorialData(structuredData: any): any {
   // If we have individual components but no manual hours extracted, calculate it
   if (!manualHours && totalHours > 0) {
     // Default dustingPlacesPerHour (this should match the backend config default)
-    const dustingPlacesPerHour = 4; // Default from purejanitorial config
-    const dustingHours = dustingPlaces / dustingPlacesPerHour;
+    const dustingPlacesPerHour = formState.dustingPlacesPerHour || 4;
+    const dustingHours = formState.dustingCalculatedHours || (dustingPlaces / dustingPlacesPerHour);
 
     const calculatedManualHours = Math.max(0, totalHours - vacuumingHours - dustingHours);
     formState.manualHours = Math.round(calculatedManualHours * 100) / 100; // Round to 2 decimal places
