@@ -289,6 +289,13 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
   // Get services context for fallback pricing data
   const servicesContext = useServicesContextOptional();
 
+  const baselineRef = useRef<Record<string, number>>({});
+  const setBaselineVariant = useCallback((state: StripWaxFormState) => {
+    const variantDefaults = getVariantConfigFromState(state);
+    baselineRef.current.ratePerSqFt = variantDefaults.ratePerSqFt;
+    baselineRef.current.minCharge = variantDefaults.minCharge;
+  }, []);
+
   // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -342,6 +349,11 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
   });
 
   useEffect(() => {
+    setBaselineVariant(form);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     setForm((prev) => {
       const variantDefaults = getVariantConfigFromState(prev);
       const nextCustomRate =
@@ -379,19 +391,23 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   // Helper function to update form with config data
   const updateFormWithConfig = (activeConfig: any) => {
-    setForm((prev) => ({
-      ...prev,
-      // Update all rate fields from backend config
-      weeksPerMonth: activeConfig.frequencyMultipliers?.weekly ?? prev.weeksPerMonth,
-      standardFullRatePerSqFt: activeConfig.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
-      standardFullMinCharge: activeConfig.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
-      noSealantRatePerSqFt: activeConfig.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
-      noSealantMinCharge: activeConfig.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
-      wellMaintainedRatePerSqFt: activeConfig.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
-      wellMaintainedMinCharge: activeConfig.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
-      redRateMultiplier: activeConfig.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
-      greenRateMultiplier: activeConfig.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
-    }));
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        // Update all rate fields from backend config
+        weeksPerMonth: activeConfig.frequencyMultipliers?.weekly ?? prev.weeksPerMonth,
+        standardFullRatePerSqFt: activeConfig.variants?.standardFull?.ratePerSqFt ?? prev.standardFullRatePerSqFt,
+        standardFullMinCharge: activeConfig.variants?.standardFull?.minCharge ?? prev.standardFullMinCharge,
+        noSealantRatePerSqFt: activeConfig.variants?.noSealant?.ratePerSqFt ?? prev.noSealantRatePerSqFt,
+        noSealantMinCharge: activeConfig.variants?.noSealant?.minCharge ?? prev.noSealantMinCharge,
+        wellMaintainedRatePerSqFt: activeConfig.variants?.wellMaintained?.ratePerSqFt ?? prev.wellMaintainedRatePerSqFt,
+        wellMaintainedMinCharge: activeConfig.variants?.wellMaintained?.minCharge ?? prev.wellMaintainedMinCharge,
+        redRateMultiplier: activeConfig.rateCategories?.redRate?.multiplier ?? prev.redRateMultiplier,
+        greenRateMultiplier: activeConfig.rateCategories?.greenRate?.multiplier ?? prev.greenRateMultiplier,
+      };
+      setBaselineVariant(next);
+      return next;
+    });
 
     console.log('✅ [Strip & Wax] Form updated with backend config values:', {
       standardFullRate: activeConfig.variants?.standardFull?.ratePerSqFt,
@@ -544,7 +560,41 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.floorAreaSqFt, servicesContext]);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+  const getFallbackFieldValue = useCallback((fieldName: string, state: StripWaxFormState): number | undefined => {
+    const baseline = baselineRef.current[fieldName];
+    if (baseline !== undefined) {
+      return baseline;
+    }
+
+    const variantDefaults = getVariantConfigFromState(state);
+    switch (fieldName) {
+      case "ratePerSqFt":
+        return variantDefaults.ratePerSqFt;
+      case "minCharge":
+        return variantDefaults.minCharge;
+      case "weeksPerMonth":
+        return state.weeksPerMonth;
+      case "standardFullRatePerSqFt":
+        return state.standardFullRatePerSqFt;
+      case "standardFullMinCharge":
+        return state.standardFullMinCharge;
+      case "noSealantRatePerSqFt":
+        return state.noSealantRatePerSqFt;
+      case "noSealantMinCharge":
+        return state.noSealantMinCharge;
+      case "wellMaintainedRatePerSqFt":
+        return state.wellMaintainedRatePerSqFt;
+      case "wellMaintainedMinCharge":
+        return state.wellMaintainedMinCharge;
+      case "redRateMultiplier":
+        return state.redRateMultiplier;
+      case "greenRateMultiplier":
+        return state.greenRateMultiplier;
+      default:
+        return undefined;
+    }
+  }, []);
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -607,6 +657,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
           next.ratePerSqFt = prev.wellMaintainedRatePerSqFt;
           next.minCharge = prev.wellMaintainedMinCharge;
         }
+        setBaselineVariant(next);
         return next;
       }
 
@@ -629,29 +680,41 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
         }
       } else if (type === "number") {
         const raw = t.value;
-        const num = raw === "" ? 0 : Number(raw);
-        (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
+        if (raw === "") {
+          (next as any)[name] = undefined;
+        } else {
+          const num = Number(raw);
+          (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : (next as any)[name];
+        }
       } else {
         (next as any)[name] = t.value;
       }
 
       // ✅ Log price override for numeric pricing fields
       const pricingFields = [
-        'floorAreaSqFt', 'ratePerSqFt', 'minCharge', 'weeksPerMonth',
+      'ratePerSqFt', 'minCharge', 'weeksPerMonth',
         'standardFullRatePerSqFt', 'standardFullMinCharge', 'noSealantRatePerSqFt', 'noSealantMinCharge',
         'wellMaintainedRatePerSqFt', 'wellMaintainedMinCharge', 'redRateMultiplier', 'greenRateMultiplier',
         'customPerVisit', 'customMonthly', 'customOngoingMonthly', 'customContractTotal'
       ];
 
       if (pricingFields.includes(name)) {
-        const newValue = (next as any)[name] as number | undefined;
-        const oldValue = originalValue as number | undefined;
+      const newValue = (next as any)[name] as number | undefined;
+      const oldValue = originalValue as number | undefined;
+      const fallbackValue = getFallbackFieldValue(name, prev);
+      const resolvedOriginal = fallbackValue !== undefined
+        ? fallbackValue
+        : oldValue;
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(name, oldValue, newValue);
+        if (
+          newValue !== undefined &&
+          typeof newValue === 'number' &&
+          newValue > 0 &&
+        resolvedOriginal !== undefined &&
+          typeof resolvedOriginal === 'number' &&
+          newValue !== resolvedOriginal
+        ) {
+          addServiceFieldChange(name, resolvedOriginal, newValue);
         }
       }
 

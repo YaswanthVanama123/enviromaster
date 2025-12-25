@@ -56,10 +56,10 @@ export const StripWaxForm: React.FC<
     // Also parse and update form state immediately (triggers calculations)
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      onChange({ target: { name, value: String(numValue) } } as any);
+      onChange({ target: { name, value: numValue, type: "number" } } as any);
     } else if (value === '') {
       // If field is cleared, update form to clear the override
-      onChange({ target: { name, value: '' } } as any);
+      onChange({ target: { name, value: '', type: "number" } } as any);
     }
   };
 
@@ -91,12 +91,12 @@ export const StripWaxForm: React.FC<
     if (originalValue !== value) {
       // If empty or invalid, clear the override
       if (value === '' || isNaN(numValue)) {
-        onChange({ target: { name, value: '' } } as any);
+        onChange({ target: { name, value: '', type: "number" } } as any);
         return;
       }
 
       // ✅ Update form state with parsed numeric value ONLY if changed
-      onChange({ target: { name, value: String(numValue) } } as any);
+      onChange({ target: { name, value: numValue, type: "number" } } as any);
     }
   };
 
@@ -108,6 +108,14 @@ export const StripWaxForm: React.FC<
     form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
 
   // Generate frequency-specific contract month options
+  const formatDisplayNumber = (value: number | undefined): string => {
+    return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+  };
+
+  const formatCalcValue = (value: number | undefined): string => {
+    return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+  };
+
   const generateContractMonths = () => {
     const months = [];
 
@@ -348,8 +356,10 @@ export const StripWaxForm: React.FC<
             min="0"
             step={1}
             name="floorAreaSqFt"
-            value={form.floorAreaSqFt || ""}
-            onChange={onChange}
+            value={getDisplayValue('floorAreaSqFt', form.floorAreaSqFt)}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
           />
           <span className="svc-multi">@</span>
             <div className="svc-dollar">
@@ -360,8 +370,10 @@ export const StripWaxForm: React.FC<
                 min="0"
                 step={0.01}
                 name="ratePerSqFt"
-                value={form.ratePerSqFt || ""}
-                onChange={onChange}
+                value={getDisplayValue('ratePerSqFt', form.ratePerSqFt)}
+                onChange={handleLocalChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 title="Rate per sq ft (from backend, editable)"
                 style={{
                   backgroundColor: form.customRatePerSqFt !== undefined ? '#fffacd' : 'white',
@@ -371,7 +383,7 @@ export const StripWaxForm: React.FC<
           <span className="svc-small">/sq ft</span>
           <span className="svc-eq">=</span>
           <span className="svc-dollar">
-            ${calc.perVisit.toFixed(2)}
+          ${formatCalcValue(calc.perVisit)}
           </span>
         </div>
       </div>
@@ -380,9 +392,9 @@ export const StripWaxForm: React.FC<
       <div className="svc-row">
         <label></label>
         <div className="svc-row-right">
-          <span className="svc-small">
-            (Direct: area × $${form.ratePerSqFt.toFixed(2)}/sq ft, min $${form.minCharge.toFixed(2)})
-          </span>
+            <span className="svc-small">
+              (Direct: area × $${formatDisplayNumber(form.ratePerSqFt)}/sq ft, min $${formatDisplayNumber(form.minCharge)})
+            </span>
         </div>
       </div>
 
@@ -531,7 +543,7 @@ export const StripWaxForm: React.FC<
         <div className="svc-row svc-row-total">
           <label>Recurring Visit Total</label>
           <div className="svc-dollar">
-            ${calc.perVisit.toFixed(2)}
+            ${formatCalcValue(calc.perVisit)}
           </div>
         </div>
       )}

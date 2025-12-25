@@ -41,26 +41,27 @@ class FileLogger {
 
   // Add or update a change (replaces previous change for same field)
   addChange(change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>): void {
-    const changeAmount = change.newValue - change.originalValue;
-    const changePercentage = change.originalValue !== 0
-      ? (changeAmount / change.originalValue) * 100
+    const key = `${change.productKey}_${change.fieldType}`;
+    const existingEntry = this.changes.get(key);
+    const resolvedOriginalValue = existingEntry
+      ? existingEntry.originalValue
+      : change.originalValue;
+    const changeAmount = change.newValue - resolvedOriginalValue;
+    const changePercentage = resolvedOriginalValue !== 0
+      ? (changeAmount / resolvedOriginalValue) * 100
       : 0;
 
     const fullChange: FieldChange = {
       ...change,
+      originalValue: resolvedOriginalValue,
       changeAmount,
       changePercentage,
       timestamp: new Date().toISOString()
     };
 
-    // ✅ Use Map key to keep only ONE change per field
-    // Key format: "productKey_fieldType" (e.g., "carpetCleaning_customFirstUnitRate")
-    const key = `${change.productKey}_${change.fieldType}`;
-    const existingChange = this.changes.get(key);
-
-    if (existingChange) {
+    if (existingEntry) {
       console.log(`🔄 [FILE-LOGGER] REPLACING change for ${change.productName} - ${change.fieldDisplayName}:`, {
-        oldChange: `${existingChange.originalValue} → ${existingChange.newValue}`,
+      oldChange: `${existingEntry.originalValue} → ${existingEntry.newValue}`,
         newChange: `${change.originalValue} → ${change.newValue}`,
         note: 'Keeping baseline originalValue'
       });
@@ -68,8 +69,8 @@ class FileLogger {
 
     this.changes.set(key, fullChange);
 
-    console.log(`📝 [FILE-LOGGER] ${existingChange ? 'Updated' : 'Added'} change: ${change.productName} - ${change.fieldType}`, {
-      from: change.originalValue,
+    console.log(`📝 [FILE-LOGGER] ${existingEntry ? 'Updated' : 'Added'} change: ${change.productName} - ${change.fieldType}`, {
+      from: resolvedOriginalValue,
       to: change.newValue,
       change: changeAmount,
       changePercent: changePercentage.toFixed(2) + '%'
