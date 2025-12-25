@@ -1113,6 +1113,20 @@ export function transformSanipodData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
+  const hydrateNumberField = (fieldName: string) => {
+    const value = normalizeStructuredValue(structuredData[fieldName]);
+    if (value !== undefined) {
+      formState[fieldName] = value;
+    }
+  };
+
+  hydrateNumberField("weeklyRatePerUnit");
+  hydrateNumberField("altWeeklyRatePerUnit");
+  hydrateNumberField("extraBagPrice");
+  hydrateNumberField("standaloneExtraWeeklyCharge");
+  hydrateNumberField("tripChargePerVisit");
+  hydrateNumberField("installRatePerPod");
+
   // Extract service (sanipods) (✅ FIXED: Extract rate as well)
   if (structuredData.service) {
     formState.podQuantity = structuredData.service.qty || 0;

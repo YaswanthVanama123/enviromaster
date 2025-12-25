@@ -155,10 +155,17 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   const contractMonthOptions = generateContractMonths();
 
+  const isEditingField = (field: string) => Object.prototype.hasOwnProperty.call(editingValues, field);
   const extraBagPriceChanged =
-    form.extraBagPrice !== baselineRates.extraBagPrice || form.customExtraBagsTotal !== undefined;
+    form.extraBagPrice !== baselineRates.extraBagPrice || form.customExtraBagsTotal !== undefined || isEditingField("extraBagPrice");
   const installRateChanged =
-    form.installRatePerPod !== baselineRates.installRatePerPod || form.customInstallationFee !== undefined;
+    form.installRatePerPod !== baselineRates.installRatePerPod || form.customInstallationFee !== undefined || isEditingField("installRatePerPod");
+  const baseWeeklyRateChanged =
+    form.weeklyRatePerUnit !== baselineRates.weeklyRatePerUnit || isEditingField("weeklyRatePerUnit");
+  const altWeeklyRateChanged =
+    form.altWeeklyRatePerUnit !== baselineRates.altWeeklyRatePerUnit || isEditingField("altWeeklyRatePerUnit");
+  const standaloneBaseChanged =
+    form.standaloneExtraWeeklyCharge !== baselineRates.standaloneExtraWeeklyCharge || isEditingField("standaloneExtraWeeklyCharge");
 
   useEffect(() => {
     if (servicesContext) {
@@ -207,6 +214,13 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             total: calc.installCost,
           },
         } : {}),
+
+        weeklyRatePerUnit: form.weeklyRatePerUnit,
+        altWeeklyRatePerUnit: form.altWeeklyRatePerUnit,
+        extraBagPrice: form.extraBagPrice,
+        standaloneExtraWeeklyCharge: form.standaloneExtraWeeklyCharge,
+        tripChargePerVisit: form.tripChargePerVisit,
+        installRatePerPod: form.installRatePerPod,
 
         totals: {
           perVisit: {
@@ -398,9 +412,21 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     : "$/bag one-time";
 
   // Decide the label that appears after "@"
+  const normalizeRate = (value: number | string | undefined) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+  const formatRateLabel = (value: number | string | undefined) => `$${normalizeRate(value).toFixed(2)}`;
+  const formatRatePlain = (value: number | string | undefined) => normalizeRate(value).toFixed(2);
+  const customRateActive = form.customWeeklyPodRate !== undefined;
+  const effectiveRuleLabel = customRateActive
+    ? formatRateLabel(form.customWeeklyPodRate)
+    : (calc.chosenServiceRule === "perPod8"
+      ? formatRateLabel(form.altWeeklyRatePerUnit)
+      : `${formatRateLabel(form.weeklyRatePerUnit)} + ${formatRateLabel(form.standaloneExtraWeeklyCharge)}`);
   const ruleLabel = form.isStandalone
-    ? (calc.chosenServiceRule === "perPod8" ? "8" : "3+40")
-    : "8 (always)";
+    ? effectiveRuleLabel
+    : `${formatRateLabel(form.altWeeklyRatePerUnit)} (always)`;
 
   return (
     <div className="svc-card">
@@ -492,9 +518,79 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               onChange(event);
             }}
           >
-            <option value="standalone">Standalone (auto-switch: ${form.weeklyRatePerUnit.toFixed(2)} or ${form.altWeeklyRatePerUnit.toFixed(2)}+${form.standaloneExtraWeeklyCharge.toFixed(2)})</option>
-            <option value="package">Part of Package (always ${form.weeklyRatePerUnit.toFixed(2)}/pod)</option>
+            <option value="standalone">
+              Standalone (auto-switch: {formatRateLabel(form.weeklyRatePerUnit)} or {formatRateLabel(form.altWeeklyRatePerUnit)}+{formatRateLabel(form.standaloneExtraWeeklyCharge)})
+            </option>
+            <option value="package">
+              Part of Package (always {formatRateLabel(form.weeklyRatePerUnit)}/pod)
+            </option>
           </select>
+        </div>
+      </div>
+
+      <div className="svc-row">
+        <label>Package base rate (${formatRatePlain(form.weeklyRatePerUnit)}/pod)</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min="0"
+            step="0.01"
+            name="weeklyRatePerUnit"
+            value={getDisplayValue('weeklyRatePerUnit', form.weeklyRatePerUnit)}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: baseWeeklyRateChanged ? "#fffacd" : "white",
+              width: "90px",
+            }}
+          />
+          <span className="svc-small">
+            $/wk each (standalone adds ${formatRatePlain(form.standaloneExtraWeeklyCharge)}/wk base)
+          </span>
+        </div>
+      </div>
+      <div className="svc-row">
+        <label>Alternative flat rate (${formatRatePlain(form.altWeeklyRatePerUnit)}/pod)</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min="0"
+            step="0.01"
+            name="altWeeklyRatePerUnit"
+            value={getDisplayValue('altWeeklyRatePerUnit', form.altWeeklyRatePerUnit)}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: altWeeklyRateChanged ? "#fffacd" : "white",
+              width: "90px",
+            }}
+          />
+          <span className="svc-small">$/wk each (for standalone opt A)</span>
+        </div>
+      </div>
+      <div className="svc-row">
+        <label>Standalone base weekly charge ({formatRateLabel(form.standaloneExtraWeeklyCharge)})</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min="0"
+            step="0.01"
+            name="standaloneExtraWeeklyCharge"
+            value={getDisplayValue('standaloneExtraWeeklyCharge', form.standaloneExtraWeeklyCharge)}
+            onChange={handleLocalChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            style={{
+              backgroundColor: standaloneBaseChanged ? "#fffacd" : "white",
+              width: "90px",
+            }}
+          />
+          <span className="svc-small">$/wk base used when standalone</span>
         </div>
       </div>
 

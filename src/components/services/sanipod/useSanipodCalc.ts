@@ -370,7 +370,11 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
   }, [customFields]);
 
   const baselineRatesRef = useRef({
+    weeklyRatePerUnit: DEFAULT_FORM_STATE.weeklyRatePerUnit,
+    altWeeklyRatePerUnit: DEFAULT_FORM_STATE.altWeeklyRatePerUnit,
     extraBagPrice: DEFAULT_FORM_STATE.extraBagPrice,
+    standaloneExtraWeeklyCharge: DEFAULT_FORM_STATE.standaloneExtraWeeklyCharge,
+    tripChargePerVisit: DEFAULT_FORM_STATE.tripChargePerVisit,
     installRatePerPod: DEFAULT_FORM_STATE.installRatePerPod,
   });
   const calcRef = useRef<SanipodCalcResult | null>(null);
@@ -402,22 +406,30 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
   // Helper function to update form with config data
   const updateFormWithConfig = (activeConfig: any) => {
     setForm((prev) => {
+      const nextWeeklyRate = activeConfig.weeklyRatePerUnit ?? prev.weeklyRatePerUnit;
+      const nextAltWeeklyRate = activeConfig.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit;
       const nextExtraBagPrice = activeConfig.extraBagPrice ?? prev.extraBagPrice;
+      const nextStandaloneExtra = activeConfig.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge;
+      const nextTripCharge = activeConfig.tripChargePerVisit ?? prev.tripChargePerVisit;
       const nextInstallRate = activeConfig.installChargePerUnit ?? prev.installRatePerPod;
       baselineRatesRef.current = {
+        weeklyRatePerUnit: nextWeeklyRate,
+        altWeeklyRatePerUnit: nextAltWeeklyRate,
         extraBagPrice: nextExtraBagPrice,
+        standaloneExtraWeeklyCharge: nextStandaloneExtra,
+        tripChargePerVisit: nextTripCharge,
         installRatePerPod: nextInstallRate,
       };
 
       return {
         ...prev,
         // Update all rate fields from backend config
-        weeklyRatePerUnit: activeConfig.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
-        altWeeklyRatePerUnit: activeConfig.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
+        weeklyRatePerUnit: nextWeeklyRate,
+        altWeeklyRatePerUnit: nextAltWeeklyRate,
         extraBagPrice: nextExtraBagPrice,
-        standaloneExtraWeeklyCharge: activeConfig.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
+        standaloneExtraWeeklyCharge: nextStandaloneExtra,
         installRatePerPod: nextInstallRate,
-        tripChargePerVisit: activeConfig.tripChargePerVisit ?? prev.tripChargePerVisit,
+        tripChargePerVisit: nextTripCharge,
         // Clear manual overrides when refreshing backend config so we show pure backend values
         customInstallationFee: undefined,
         customPerVisitPrice: undefined,
@@ -584,6 +596,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     }
 
     const fallbackValues: Record<string, number | undefined> = {
+      ...baselineRatesRef.current,
       customWeeklyPodRate: calcRef.current?.effectiveRatePerPod,
       customPodServiceTotal: calcRef.current?.adjustedPodServiceTotal,
       customExtraBagsTotal: calcRef.current?.adjustedBagsTotal,
@@ -688,8 +701,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
       // ✅ NEW: Log form field changes using universal logger
       const allFormFields = [
-        // Quantity fields
-        'podQuantity', 'extraBagsPerWeek', 'installQuantity',
         // Selection fields
         'frequency', 'rateCategory', 'serviceRule',
         // Boolean fields
