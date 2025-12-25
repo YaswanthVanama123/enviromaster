@@ -373,6 +373,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     extraBagPrice: DEFAULT_FORM_STATE.extraBagPrice,
     installRatePerPod: DEFAULT_FORM_STATE.installRatePerPod,
   });
+  const calcRef = useRef<SanipodCalcResult | null>(null);
 
   const [form, setForm] = useState<SanipodFormState>(() => {
     const baseForm = {
@@ -575,26 +576,45 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const addServiceFieldChange = useCallback((
     fieldName: string,
-    originalValue: number,
-    newValue: number
+    originalValue: number | undefined,
+    newValue: number | undefined
   ) => {
+    if (typeof newValue !== "number" || Number.isNaN(newValue) || newValue <= 0) {
+      return;
+    }
+
+    const fallbackValues: Record<string, number | undefined> = {
+      customWeeklyPodRate: calcRef.current?.effectiveRatePerPod,
+      customPodServiceTotal: calcRef.current?.adjustedPodServiceTotal,
+      customExtraBagsTotal: calcRef.current?.adjustedBagsTotal,
+      customInstallationFee: calcRef.current?.installCost,
+      customPerVisitPrice: calcRef.current?.adjustedPerVisit,
+      customMonthlyPrice: calcRef.current?.adjustedMonthly,
+      customAnnualPrice: calcRef.current?.contractTotal,
+    };
+
+    const resolvedOriginal = originalValue ?? fallbackValues[fieldName];
+    if (resolvedOriginal === undefined || resolvedOriginal === newValue) {
+      return;
+    }
+
     addPriceChange({
       productKey: `sanipod_${fieldName}`,
       productName: `SaniPod - ${getFieldDisplayName(fieldName)}`,
       productType: 'service',
       fieldType: fieldName,
       fieldDisplayName: getFieldDisplayName(fieldName),
-      originalValue,
+      originalValue: resolvedOriginal,
       newValue,
       quantity: form.podQuantity || 1,
       frequency: form.frequency || ''
     });
 
     console.log(`📝 [SANIPOD-FILE-LOGGER] Added change for ${fieldName}:`, {
-      from: originalValue,
+      from: resolvedOriginal,
       to: newValue,
-      change: newValue - originalValue,
-      changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
+      change: newValue - resolvedOriginal,
+      changePercent: resolvedOriginal ? ((newValue - resolvedOriginal) / resolvedOriginal * 100).toFixed(2) + '%' : 'N/A'
     });
   }, [form.podQuantity, form.frequency]);
 
@@ -663,14 +683,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
       if (pricingFields.includes(name)) {
         const newValue = (next as any)[name] as number | undefined;
-        const oldValue = originalValue as number | undefined;
-
-        // Handle undefined values (when cleared) - don't log clearing to undefined
-        if (newValue !== undefined && oldValue !== undefined &&
-            typeof newValue === 'number' && typeof oldValue === 'number' &&
-            newValue !== oldValue && newValue > 0) {
-          addServiceFieldChange(name, oldValue, newValue);
-        }
+        addServiceFieldChange(name, originalValue as number | undefined, newValue);
       }
 
       // ✅ NEW: Log form field changes using universal logger
@@ -1088,6 +1101,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     calcFieldsTotal,
     dollarFieldsTotal,
   ]);
+
+  calcRef.current = calc;
 
   return {
     form,
