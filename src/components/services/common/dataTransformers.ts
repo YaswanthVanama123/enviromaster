@@ -1092,6 +1092,22 @@ export function transformSanipodData(structuredData: any): any {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
+  // Restore saved manual overrides so edit mode can rehydrate overrides/highlights
+  const overrideFields = [
+    "customInstallationFee",
+    "customPerVisitPrice",
+    "customMonthlyPrice",
+    "customAnnualPrice",
+    "customWeeklyPodRate",
+    "customPodServiceTotal",
+    "customExtraBagsTotal",
+  ];
+  overrideFields.forEach((key) => {
+    if (structuredData[key] !== undefined && structuredData[key] !== null) {
+      formState[key] = structuredData[key];
+    }
+  });
+
   // Extract custom fields
   formState.customFields = extractCustomFields(structuredData);
 

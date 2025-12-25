@@ -369,6 +369,11 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     return total;
   }, [customFields]);
 
+  const baselineRatesRef = useRef({
+    extraBagPrice: DEFAULT_FORM_STATE.extraBagPrice,
+    installRatePerPod: DEFAULT_FORM_STATE.installRatePerPod,
+  });
+
   const [form, setForm] = useState<SanipodFormState>(() => {
     const baseForm = {
       ...DEFAULT_FORM_STATE,
@@ -395,17 +400,41 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
   // Helper function to update form with config data
   const updateFormWithConfig = (activeConfig: any) => {
-    setForm((prev) => ({
-      ...prev,
-      // Update all rate fields from backend config
-      weeklyRatePerUnit: activeConfig.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
-      altWeeklyRatePerUnit: activeConfig.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
-      extraBagPrice: activeConfig.extraBagPrice ?? prev.extraBagPrice,
-      standaloneExtraWeeklyCharge: activeConfig.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
-      installRatePerPod: activeConfig.installChargePerUnit ?? prev.installRatePerPod,
-      tripChargePerVisit: activeConfig.tripChargePerVisit ?? prev.tripChargePerVisit,
-    }));
+    setForm((prev) => {
+      const nextExtraBagPrice = activeConfig.extraBagPrice ?? prev.extraBagPrice;
+      const nextInstallRate = activeConfig.installChargePerUnit ?? prev.installRatePerPod;
+      baselineRatesRef.current = {
+        extraBagPrice: nextExtraBagPrice,
+        installRatePerPod: nextInstallRate,
+      };
+
+      return {
+        ...prev,
+        // Update all rate fields from backend config
+        weeklyRatePerUnit: activeConfig.weeklyRatePerUnit ?? prev.weeklyRatePerUnit,
+        altWeeklyRatePerUnit: activeConfig.altWeeklyRatePerUnit ?? prev.altWeeklyRatePerUnit,
+        extraBagPrice: nextExtraBagPrice,
+        standaloneExtraWeeklyCharge: activeConfig.standaloneExtraWeeklyCharge ?? prev.standaloneExtraWeeklyCharge,
+        installRatePerPod: nextInstallRate,
+        tripChargePerVisit: activeConfig.tripChargePerVisit ?? prev.tripChargePerVisit,
+        // Clear manual overrides when refreshing backend config so we show pure backend values
+        customInstallationFee: undefined,
+        customPerVisitPrice: undefined,
+        customMonthlyPrice: undefined,
+        customAnnualPrice: undefined,
+        customWeeklyPodRate: undefined,
+        customPodServiceTotal: undefined,
+        customExtraBagsTotal: undefined,
+      };
+    });
   };
+
+  useEffect(() => {
+    baselineRatesRef.current = {
+      extraBagPrice: initialData?.extraBagPrice ?? DEFAULT_FORM_STATE.extraBagPrice,
+      installRatePerPod: initialData?.installRatePerPod ?? DEFAULT_FORM_STATE.installRatePerPod,
+    };
+  }, [initialData?.extraBagPrice, initialData?.installRatePerPod]);
 
   // ✅ Fetch COMPLETE pricing configuration from backend
   const fetchPricing = async () => {
@@ -1062,5 +1091,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     refreshConfig: fetchPricing,
     isLoadingConfig,
     setContractMonths,
+    baselineRates: baselineRatesRef.current,
   };
 }

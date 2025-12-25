@@ -21,7 +21,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   );
 
   // ✅ UPDATED: Pass customFields to calculation hook
-  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useSanipodCalc(initialData, customFields);
+  const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, baselineRates } =
+    useSanipodCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -154,6 +155,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   const contractMonthOptions = generateContractMonths();
 
+  const extraBagPriceChanged =
+    form.extraBagPrice !== baselineRates.extraBagPrice || form.customExtraBagsTotal !== undefined;
+  const installRateChanged =
+    form.installRatePerPod !== baselineRates.installRatePerPod || form.customInstallationFee !== undefined;
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
@@ -224,6 +230,15 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           },
         },
 
+        // Persist manual overrides so edits keep their yellow highlights and log data matches
+        customInstallationFee: form.customInstallationFee,
+        customPerVisitPrice: form.customPerVisitPrice,
+        customMonthlyPrice: form.customMonthlyPrice,
+        customAnnualPrice: form.customAnnualPrice,
+        customWeeklyPodRate: form.customWeeklyPodRate,
+        customPodServiceTotal: form.customPodServiceTotal,
+        customExtraBagsTotal: form.customExtraBagsTotal,
+
         notes: form.notes || "",
         customFields: customFields,
       } : null;
@@ -273,9 +288,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     if (hasChanged) {
       setForm((prev) => ({
         ...prev,
-        customWeeklyPodRate: undefined,
-        customPodServiceTotal: undefined,
-        customExtraBagsTotal: undefined,
+        // Only clear the dependent totals; keep manual overrides that are still valid
         customPerVisitPrice: undefined,
         customMonthlyPrice: undefined,
         customAnnualPrice: undefined,
@@ -567,6 +580,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             name="extraBagPrice"
             value={form.extraBagPrice || ""}
             onChange={onChange}
+            style={{
+              backgroundColor: extraBagPriceChanged ? '#fffacd' : 'white',
+              width: "70px",
+            }}
           />
           <span className="svc-small">{bagUnitLabel}</span>
           <span className="svc-eq">=</span>
@@ -678,6 +695,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 name="installRatePerPod"
                 value={form.installRatePerPod || ""}
                 onChange={onChange}
+                style={{ backgroundColor: installRateChanged ? '#fffacd' : 'white', width: "70px" }}
               />
               <span className="svc-small">$/pod install</span>
               <span className="svc-eq">=</span>
