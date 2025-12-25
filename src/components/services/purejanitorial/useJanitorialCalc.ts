@@ -732,6 +732,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     const dustingCalculatedHours = dustingTotalPlaces > 0
       ? dustingTotalPlaces / dustingPlacesPerHour
       : 0;
+    const dustingHoursBase = dustingCalculatedHours;
 
     const totalHoursBase =
       manualHours + vacuumingHours + dustingCalculatedHours;
