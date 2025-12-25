@@ -612,6 +612,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             className="svc-in svc-in-small field-qty"
             type="number"
             min="0"
+            readOnly
             step="1"
             name="customWeeklyPodRate"
             value={getDisplayValue(
