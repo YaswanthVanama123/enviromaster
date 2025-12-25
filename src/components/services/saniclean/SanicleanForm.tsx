@@ -276,6 +276,18 @@ export const SanicleanForm: React.FC<
         customMonthlyTotal: form.customMonthlyTotal,
         customContractTotal: form.customContractTotal,
 
+        addUrinalComponents: form.addUrinalComponents,
+        urinalScreensQty: form.urinalScreensQty,
+        urinalMatsQty: form.urinalMatsQty,
+        addMaleToiletComponents: form.addMaleToiletComponents,
+        toiletClipsQty: form.toiletClipsQty,
+        seatCoverDispensersQty: form.seatCoverDispensersQty,
+        addFemaleToiletComponents: form.addFemaleToiletComponents,
+        sanipodsQty: form.sanipodsQty,
+        warrantyDispensers: form.warrantyDispensers,
+        addMicrofiberMopping: form.addMicrofiberMopping,
+        microfiberBathrooms: form.microfiberBathrooms,
+
         // Red/Green Line pricing data (weekly pricing)
         perVisitBase: quote.breakdown.baseService,  // Raw base service weekly
         perVisit: quote.weeklyTotal,  // Final weekly total
@@ -329,6 +341,9 @@ export const SanicleanForm: React.FC<
             total: form.femaleToilets * form.insideBeltwayRatePerFixture,
           }] : []),
         ],
+
+        facilityComponentsTotal: quote.breakdown.facilityComponents,
+        facilityComponentsMonthly: quote.facilityComponentsMonthly,
 
         soapType: {
           isDisplay: true,

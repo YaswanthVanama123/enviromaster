@@ -44,6 +44,22 @@ function extractCustomFields(structuredData: any): any[] {
   }
 }
 
+function normalizeStructuredValue(rawValue: any): any {
+  if (rawValue === undefined || rawValue === null) return undefined;
+  if (Array.isArray(rawValue)) return rawValue;
+  if (typeof rawValue !== "object") return rawValue;
+  if ("value" in rawValue) {
+    return normalizeStructuredValue(rawValue.value);
+  }
+  if ("amount" in rawValue) {
+    return normalizeStructuredValue(rawValue.amount);
+  }
+  if ("qty" in rawValue) {
+    return normalizeStructuredValue(rawValue.qty);
+  }
+  return rawValue;
+}
+
 export function transformRpmWindowsData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
@@ -211,8 +227,10 @@ export function transformSanicleanData(structuredData: any): any {
   if (structuredData.mainServiceFrequency !== undefined) {
     formState.mainServiceFrequency = structuredData.mainServiceFrequency;
   }
-  if (structuredData.facilityComponentsFrequency !== undefined) {
-    formState.facilityComponentsFrequency = structuredData.facilityComponentsFrequency;
+
+  const facilityFrequencyValue = normalizeStructuredValue(structuredData.facilityComponentsFrequency);
+  if (facilityFrequencyValue !== undefined) {
+    formState.facilityComponentsFrequency = facilityFrequencyValue;
   }
   if (structuredData.frequency !== undefined) {
     formState.frequency = structuredData.frequency;
@@ -255,8 +273,9 @@ export function transformSanicleanData(structuredData: any): any {
   ];
 
   pricingFields.forEach((field) => {
-    if (structuredData[field] !== undefined) {
-      formState[field] = structuredData[field];
+    const resolvedValue = normalizeStructuredValue(structuredData[field]);
+    if (resolvedValue !== undefined) {
+      formState[field] = resolvedValue;
     }
   });
 
@@ -275,10 +294,44 @@ export function transformSanicleanData(structuredData: any): any {
   ];
 
   customOverrideFields.forEach((field) => {
-    if (structuredData[field] !== undefined) {
-      formState[field] = structuredData[field];
+    const resolvedValue = normalizeStructuredValue(structuredData[field]);
+    if (resolvedValue !== undefined) {
+      formState[field] = resolvedValue;
     }
   });
+
+  const facilityComponentFields = [
+    "addUrinalComponents",
+    "urinalScreensQty",
+    "urinalMatsQty",
+    "addMaleToiletComponents",
+    "toiletClipsQty",
+    "seatCoverDispensersQty",
+    "addFemaleToiletComponents",
+    "sanipodsQty",
+    "warrantyDispensers",
+    "addMicrofiberMopping",
+    "microfiberBathrooms",
+  ];
+
+  facilityComponentFields.forEach((field) => {
+    const resolvedValue = normalizeStructuredValue(structuredData[field]);
+    if (resolvedValue !== undefined) {
+      formState[field] = resolvedValue;
+    }
+  });
+
+  const facilityComponentsValue = normalizeStructuredValue(structuredData.facilityComponents);
+  if (facilityComponentsValue !== undefined) {
+    formState.customFacilityComponents = facilityComponentsValue;
+  }
+
+  const facilityMonthlyValue = normalizeStructuredValue(structuredData.facilityComponentsMonthly);
+  if (facilityMonthlyValue !== undefined) {
+    // preserve for edit mode if needed
+    formState.facilityComponentsMonthly = facilityMonthlyValue;
+  }
+
   // Extract fixture breakdown (quantities + rates)
   if (structuredData.fixtureBreakdown && Array.isArray(structuredData.fixtureBreakdown)) {
     structuredData.fixtureBreakdown.forEach((fixture: any) => {

@@ -276,6 +276,7 @@ export interface SanicleanFormState {
   customWeeklyTotal?: number;
   customMonthlyTotal?: number;
   customContractTotal?: number;
+  facilityComponentsMonthly?: number;
 }
 
 // Result of SaniClean calculations
