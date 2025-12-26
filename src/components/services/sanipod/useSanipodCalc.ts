@@ -10,7 +10,6 @@ import type {
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
-import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching the EXACT MongoDB JSON structure
 interface BackendSanipodConfig {
@@ -606,7 +605,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       customAnnualPrice: calcRef.current?.contractTotal,
     };
 
-    const resolvedOriginal = originalValue ?? fallbackValues[fieldName];
+    const fallbackValue = fallbackValues[fieldName];
+    let resolvedOriginal = originalValue;
+    if ((resolvedOriginal === undefined || resolvedOriginal === null || resolvedOriginal === 0) &&
+        fallbackValue !== undefined) {
+      resolvedOriginal = fallbackValue;
+    }
     if (resolvedOriginal === undefined || resolvedOriginal === newValue) {
       return;
     }
@@ -700,26 +704,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       }
 
       // ✅ NEW: Log form field changes using universal logger
-      const allFormFields = [
-        // Selection fields
-        'frequency', 'rateCategory', 'serviceRule',
-        // Boolean fields
-        'isNewInstall', 'includedWithSaniClean', 'needsTripCharge'
-      ];
-
-      // Only log non-pricing field changes (pricing fields handled separately above)
-      if (allFormFields.includes(name)) {
-        logServiceFieldChanges(
-          'sanipod',
-          'SaniPod',
-          { [name]: next[name as keyof SanipodFormState] },
-          { [name]: originalValue },
-          [name],
-          form.podQuantity || 1,
-          form.frequency || 'weekly'
-        );
-      }
-
       return next;
     });
   };
