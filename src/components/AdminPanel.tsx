@@ -1,6 +1,6 @@
 // src/components/AdminPanel.tsx
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminAuth } from "../backendservice/hooks";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
@@ -84,9 +84,6 @@ export default function AdminPanel() {
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // ✅ NEW: All documents for pie chart filtering (not just recent)
-  const [allDocuments, setAllDocuments] = useState<Document[]>([]);
-
   // ✅ NEW: Dashboard statistics from admin API
   const [dashboardStats, setDashboardStats] = useState({
     manualUploads: 0,
@@ -94,20 +91,18 @@ export default function AdminPanel() {
     totalDocuments: 0
   });
 
-  // ✅ NEW: Document status counts from backend
-  const [documentStatusCounts, setDocumentStatusCounts] = useState({
-    approved_admin: 0,
-    pending_approval: 0,
-    approved_salesman: 0,
-    saved: 0,
-    draft: 0
-  });
-
   // Pie chart states
   const [pieTimeFilter, setPieTimeFilter] = useState("This Month");
   const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
   const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pieCounts, setPieCounts] = useState({
+    done: 0,
+    pending: 0,
+    saved: 0,
+    drafts: 0,
+    total: 0
+  });
 
   // Update active tab when URL parameter changes
   useEffect(() => {
@@ -122,6 +117,47 @@ export default function AdminPanel() {
     setActiveTab(newTab);
     navigate(`/admin-panel/${newTab}`, { replace: true });
   };
+
+  const fetchPieStatusCounts = useCallback(async () => {
+    if (pieTimeFilter === "Date Range" && (!selectedDateFrom || !selectedDateTo)) {
+      return;
+    }
+
+    const periodMap: Record<string, string> = {
+      "This Week": "this_week",
+      "This Month": "this_month",
+      "This Year": "this_year",
+      "Date Range": "date_range"
+    };
+
+    const period = periodMap[pieTimeFilter] || "this_month";
+    const params: { period?: string; from?: string; to?: string } = { period };
+
+    if (period === "date_range") {
+      if (selectedDateFrom) params.from = selectedDateFrom.toISOString();
+      if (selectedDateTo) params.to = selectedDateTo.toISOString();
+      if (!params.from || !params.to) {
+        return;
+      }
+    }
+
+    try {
+      const response = await pdfApi.getDashboardStatusCounts(params);
+      setPieCounts(response.counts || {
+        done: 0,
+        pending: 0,
+        saved: 0,
+        drafts: 0,
+        total: 0
+      });
+    } catch (err) {
+      console.error("Error fetching pie status counts:", err);
+    }
+  }, [pieTimeFilter, selectedDateFrom, selectedDateTo]);
+
+  useEffect(() => {
+    fetchPieStatusCounts();
+  }, [fetchPieStatusCounts]);
 
   // Hide global navigation when admin panel is open
   useEffect(() => {
@@ -189,22 +225,6 @@ export default function AdminPanel() {
 
         setDocuments(mapped);
 
-        // ✅ NEW: Fetch ALL documents for pie chart (not limited to recent)
-        const allDocsResponse = await pdfApi.getCustomerHeadersSummary();
-        const allDocsMapped: Document[] = (allDocsResponse.items || []).map((item: any) => ({
-          id: item._id || item.id,
-          name: item.headerTitle || "Untitled Document",
-          uploadedOn: new Date(item.updatedAt).toLocaleDateString("en-US", {
-            month: "long",
-            year: "numeric",
-          }),
-          status: item.status || "draft",
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-        }));
-        setAllDocuments(allDocsMapped);
-        console.log("📊 [ADMIN-PANEL] Loaded all documents for pie chart:", allDocsMapped.length);
-
         // ✅ NEW: Also fetch grouped recent documents for folder view
         const groupedData = await pdfApi.getSavedFilesGrouped(1, 10); // Get first 10 groups for recent view
         setRecentAgreements(groupedData.groups || []);
@@ -212,33 +232,6 @@ export default function AdminPanel() {
         // ✅ Set all statistics from the dashboard API response
         setUploadCount(dashboardData.stats.manualUploads);
         setDashboardStats(dashboardData.stats);
-
-        // ✅ NEW: Set document status counts if provided by backend
-        if (dashboardData.documentStatus) {
-          console.log("📊 [ADMIN-PANEL] Document status from backend:", dashboardData.documentStatus);
-          setDocumentStatusCounts(dashboardData.documentStatus);
-        } else {
-          console.warn("⚠️ [ADMIN-PANEL] No documentStatus provided by backend, will calculate from all documents");
-          // Fallback: Calculate from all documents
-          const statusCounts = {
-            approved_admin: 0,
-            pending_approval: 0,
-            approved_salesman: 0,
-            saved: 0,
-            draft: 0
-          };
-
-          allDocsMapped.forEach((doc: Document) => {
-            if (doc.status === 'approved_admin') statusCounts.approved_admin++;
-            else if (doc.status === 'pending_approval') statusCounts.pending_approval++;
-            else if (doc.status === 'approved_salesman') statusCounts.approved_salesman++;
-            else if (doc.status === 'saved') statusCounts.saved++;
-            else if (doc.status === 'draft') statusCounts.draft++;
-          });
-
-          console.log("📊 [ADMIN-PANEL] Calculated status counts from all documents:", statusCounts);
-          setDocumentStatusCounts(statusCounts);
-        }
 
         // Set last upload date from the most recent document
         if (dashboardData.recentDocuments.length > 0) {
@@ -437,72 +430,21 @@ export default function AdminPanel() {
     }
   };
 
-  // Calculate pie chart data based on time filter
-  const getPieChartData = () => {
-    // ✅ FIXED: All filters now use date-based filtering on allDocuments for consistency
-    const today = new Date();
-    let filteredDocs = [...allDocuments];
-
-    if (pieTimeFilter === "This Week") {
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      filteredDocs = allDocuments.filter((doc) => {
-        const docDate = new Date(doc.createdAt || doc.updatedAt);
-        return docDate >= startOfWeek;
-      });
-    } else if (pieTimeFilter === "This Month") {
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
-      filteredDocs = allDocuments.filter((doc) => {
-        const docDate = new Date(doc.createdAt || doc.updatedAt);
-        return docDate >= startOfMonth;
-      });
-    } else if (pieTimeFilter === "This Year") {
-      const startOfYear = new Date(today.getFullYear(), 0, 1);
-      startOfYear.setHours(0, 0, 0, 0);
-
-      filteredDocs = allDocuments.filter((doc) => {
-        const docDate = new Date(doc.createdAt || doc.updatedAt);
-        return docDate >= startOfYear;
-      });
-    } else if (pieTimeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
-      const startDate = new Date(selectedDateFrom);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(selectedDateTo);
-      endDate.setHours(23, 59, 59, 999);
-
-      filteredDocs = allDocuments.filter((doc) => {
-        const docDate = new Date(doc.createdAt || doc.updatedAt);
-        return docDate >= startDate && docDate <= endDate;
-      });
-    }
-
-    // Count statuses from filtered documents
-    const done = filteredDocs.filter((d) => d.status === "approved_admin").length;
-    const pending = filteredDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
-    const saved = filteredDocs.filter((d) => d.status === "saved").length;
-    const drafts = filteredDocs.filter((d) => d.status === "draft").length;
-    const total = done + pending + saved + drafts;
-
-    console.log(`📊 [PIE CHART] Filter: ${pieTimeFilter}, Filtered: ${filteredDocs.length} docs, Total: ${total}, Done: ${done}, Pending: ${pending}, Saved: ${saved}, Drafts: ${drafts}`);
-
+  const pieData = useMemo(() => {
+    const totalFromCounts = pieCounts.total || pieCounts.done + pieCounts.pending + pieCounts.saved + pieCounts.drafts;
+    const total = totalFromCounts;
     return {
-      done,
-      pending,
-      saved,
-      drafts,
+      done: pieCounts.done,
+      pending: pieCounts.pending,
+      saved: pieCounts.saved,
+      drafts: pieCounts.drafts,
       total,
-      donePercent: total > 0 ? (done / total) * 100 : 0,
-      pendingPercent: total > 0 ? (pending / total) * 100 : 0,
-      savedPercent: total > 0 ? (saved / total) * 100 : 0,
-      draftsPercent: total > 0 ? (drafts / total) * 100 : 0,
+      donePercent: total > 0 ? (pieCounts.done / total) * 100 : 0,
+      pendingPercent: total > 0 ? (pieCounts.pending / total) * 100 : 0,
+      savedPercent: total > 0 ? (pieCounts.saved / total) * 100 : 0,
+      draftsPercent: total > 0 ? (pieCounts.drafts / total) * 100 : 0,
     };
-  };
-
-  const pieData = getPieChartData();
+  }, [pieCounts]);
 
   const handlePieTimeFilterChange = (value: string) => {
     setPieTimeFilter(value);

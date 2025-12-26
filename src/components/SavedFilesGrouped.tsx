@@ -35,6 +35,21 @@ function timeAgo(iso: string) {
   return `${sec} sec ago`;
 }
 
+function formatDeletionMeta(deletedBy?: string | null, deletedAt?: string | null) {
+  const parts: string[] = [];
+  if (deletedBy) {
+    parts.push(`by ${deletedBy}`);
+  }
+  if (deletedAt) {
+    const timestamp = new Date(deletedAt);
+    if (!Number.isNaN(timestamp.getTime())) {
+      parts.push(`on ${timestamp.toLocaleString()}`);
+    }
+  }
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
+
 const STATUS_LABEL: Record<FileStatus, string> = {
   saved: "Saved",
   draft: "Draft",
@@ -65,6 +80,11 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+  const queryRef = useRef(query);
+
+  useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
 
   // ✅ PERFORMANCE: Prevent duplicate concurrent API calls
   const isFetchingRef = useRef(false);
@@ -96,8 +116,10 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
 
   // ✅ NEW: Delete confirmation modal state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string} | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string, fileType?: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const normalizedDeleteText = deleteConfirmText.trim().toUpperCase();
+  const isDeleteConfirmed = normalizedDeleteText === 'DELETE';
 
   // ✅ NEW: Enhanced permanent delete confirmation state
   const [permanentDeleteConfirmed, setPermanentDeleteConfirmed] = useState(false);
@@ -112,7 +134,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   // ✅ NEW: Support both normal and trash modes
   const fetchGroups = useCallback(async (page = 1, search = "") => {
     // ✅ CRITICAL FIX: Check flag AND loading state to prevent race conditions
-    if (isFetchingRef.current || loading) {
+    if (isFetchingRef.current) {
       console.log('⏭️ [SAVED-FILES-GROUPED] Skipping duplicate call - already fetching or loading');
       return;
     }
@@ -184,34 +206,25 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
       setLoading(false);
       isFetchingRef.current = false;  // ✅ Reset fetching flag
     }
-  }, [mode, groupsPerPage, loading]); // ✅ Dependencies for useCallback
+  }, [mode, groupsPerPage]); // ✅ Dependencies for useCallback
 
   // ✅ FIXED: Separate initial load from search to prevent duplicate calls
   // ✅ FIXED: Use mode-specific flag to allow both normal and trash views to load independently
   useEffect(() => {
-    if (!hasInitiallyLoadedByMode[mode]) {
-      hasInitiallyLoadedByMode[mode] = true;
-      console.log(`📁 [SAVED-FILES-GROUPED] Initial load (mode: ${mode})`);
-      fetchGroups(1, query);
-    } else {
-      console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping duplicate initial load for ${mode} mode (React Strict Mode remount)`);
+    if (hasInitiallyLoadedByMode[mode]) {
+      console.log(`ƒ?ð‹÷? [SAVED-FILES-GROUPED] Skipping duplicate initial load for ${mode} mode`);
+      return;
     }
+    hasInitiallyLoadedByMode[mode] = true;
+    console.log(`ÐY"? [SAVED-FILES-GROUPED] Initial load (mode: ${mode})`);
+    fetchGroups(1, queryRef.current);
 
-    // ✅ CRITICAL FIX: Reset flags on unmount so next mount (tab navigation) loads fresh
     return () => {
-      // Use setTimeout to distinguish between React Strict Mode unmount (immediate remount)
-      // and real navigation unmount (no remount). Strict Mode remounts within ~10ms.
-      const timeoutId = setTimeout(() => {
-        hasInitiallyLoadedByMode[mode] = false;
-        isFirstSearchRenderByMode.current[mode] = true;
-        console.log(`🔄 [SAVED-FILES-GROUPED] Flags reset for ${mode} mode after unmount (navigating away)`);
-      }, 50); // 50ms delay - Strict Mode remounts happen much faster
-
-      // If component remounts (Strict Mode), clear the timeout
-      return () => clearTimeout(timeoutId);
+      hasInitiallyLoadedByMode[mode] = false;
+      isFirstSearchRenderByMode.current[mode] = true;
+      console.log(`ÐY"" [SAVED-FILES-GROUPED] Flags reset for ${mode} mode after unmount (navigating away)`);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode, fetchGroups]);
 
   // ✅ CRITICAL FIX: Track if this is the first render of search effect per mode to prevent duplicate call on page refresh
   // Use an object to track first render status for each mode separately
@@ -551,15 +564,15 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   };
 
   // ✅ NEW: Handle delete confirmation
-  const handleDelete = (type: 'file' | 'folder', id: string, title: string) => {
-    setItemToDelete({ type, id, title });
+  const handleDelete = (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
+    setItemToDelete({ type, id, title, fileType });
     setDeleteConfirmText('');
     setPermanentDeleteConfirmed(false);  // Reset checkbox state
     setDeleteConfirmOpen(true);
   };
 
   // ✅ NEW: Handle restore from trash
-  const handleRestore = async (type: 'file' | 'folder', id: string, title: string) => {
+  const handleRestore = async (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
     try {
       let result;
 
@@ -574,7 +587,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
         } else {
           // Agreement is not deleted, but has deleted files - restore all deleted files
           console.log(`♻️ [RESTORE] Restoring all deleted files in agreement: ${title}`);
-          const deletedFiles = group?.files || [];
+          const deletedFiles = (group?.files || []).filter(file => file.isDeleted === true || !!file.deletedAt);
 
           if (deletedFiles.length === 0) {
             setToastMessage({
@@ -585,7 +598,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
           }
 
           // Restore all deleted files in this agreement
-          const restorePromises = deletedFiles.map(file => pdfApi.restoreFile(file.id));
+          const restorePromises = deletedFiles.map(file => pdfApi.restoreFile(file.id, { fileType: file.fileType }));
           const results = await Promise.all(restorePromises);
 
           const successCount = results.filter(r => r.success).length;
@@ -606,7 +619,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
       } else {
         // Restore individual file
         console.log(`♻️ [RESTORE] Restoring individual file: ${title}`);
-        result = await pdfApi.restoreFile(id);
+        result = await pdfApi.restoreFile(id, { fileType });
       }
 
       if (result.success) {
@@ -636,7 +649,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   const confirmDelete = async () => {
     const isTrashMode = mode === 'trash';
 
-    if (!itemToDelete || deleteConfirmText !== 'DELETE') {
+    if (!itemToDelete || !isDeleteConfirmed) {
       setToastMessage({
         message: "Please type 'DELETE' to confirm",
         type: "error"
@@ -661,7 +674,9 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
         if (itemToDelete.type === 'folder') {
           result = await pdfApi.permanentlyDeleteAgreement(itemToDelete.id);
         } else {
-          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id);
+          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id, {
+            fileType: itemToDelete.fileType
+          });
         }
 
         if (result.success) {
@@ -700,7 +715,9 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
         if (itemToDelete.type === 'folder') {
           result = await pdfApi.deleteAgreement(itemToDelete.id);
         } else {
-          result = await pdfApi.deleteFile(itemToDelete.id);
+          result = await pdfApi.deleteFile(itemToDelete.id, {
+            fileType: itemToDelete.fileType
+          });
         }
 
         if (result.success) {
@@ -941,6 +958,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
 
         {!loading && !error && groups.map((group) => {
           const groupSelectionState = getGroupSelectionState(group);
+          const groupDeletionInfo = mode === 'trash' ? formatDeletionMeta(group.deletedBy, group.deletedAt) : null;
 
           return (
             <div key={group.id} className="sf__group" style={{
@@ -1024,6 +1042,14 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                         fontWeight: '600'
                       }}>
                         {STATUS_LABEL[group.statuses[0] as FileStatus]}
+                      </span>
+                    )}
+                    {groupDeletionInfo && (
+                      <span style={{
+                        fontSize: '11px',
+                        color: '#9ca3af'
+                      }}>
+                        Deleted {groupDeletionInfo}
                       </span>
                     )}
                     {group.hasUploads && (
@@ -1313,7 +1339,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                               <button
                                 className="iconbtn"
                                 title="Delete file (move to trash)"
-                                onClick={() => handleDelete('file', file.id, file.title)}
+                                onClick={() => handleDelete('file', file.id, file.title, file.fileType)}
                                 style={{
                                   color: '#dc2626',
                                   borderColor: '#fca5a5'
@@ -1338,7 +1364,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                               <button
                                 className="iconbtn"
                                 title="Restore file from trash"
-                                onClick={() => handleRestore('file', file.id, file.title)}
+                                onClick={() => handleRestore('file', file.id, file.title, file.fileType)}
                                 style={{
                                   color: '#16a34a',
                                   borderColor: '#bbf7d0'
@@ -1350,7 +1376,7 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                               <button
                                 className="iconbtn"
                                 title="Permanently delete file"
-                                onClick={() => handleDelete('file', file.id, file.title)}
+                                onClick={() => handleDelete('file', file.id, file.title, file.fileType)}
                                 style={{
                                   color: '#dc2626',
                                   borderColor: '#fca5a5'
@@ -1419,10 +1445,16 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
 
       {/* Zoho Upload Modal */}
       {zohoUploadOpen && currentZohoFile && (
-        <ZohoUpload
-          agreementId={currentZohoFile.agreementId || currentZohoFile.id}
-          agreementTitle={currentZohoFile.title}
-          onClose={() => {
+      <ZohoUpload
+        agreementId={currentZohoFile.agreementId || currentZohoFile.id}
+        agreementTitle={currentZohoFile.title}
+        bulkFiles={[{
+          id: currentZohoFile.id,
+          fileName: currentZohoFile.fileName,
+          title: currentZohoFile.title,
+          fileType: currentZohoFile.fileType
+        }]}
+        onClose={() => {
             setZohoUploadOpen(false);
             setCurrentZohoFile(null);
           }}
@@ -2042,24 +2074,24 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
               <button
                 type="button"
                 style={{
-                  background: deleteConfirmText === 'DELETE' && (mode !== 'trash' || permanentDeleteConfirmed)
+                  background: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
                     ? mode === 'trash' ? '#7f1d1d' : '#dc2626'
                     : '#f3f4f6',
-                  border: `1px solid ${deleteConfirmText === 'DELETE' && (mode !== 'trash' || permanentDeleteConfirmed)
+                  border: `1px solid ${isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
                     ? mode === 'trash' ? '#7f1d1d' : '#dc2626'
                     : '#d1d5db'}`,
                   borderRadius: '8px',
                   padding: '8px 16px',
-                  cursor: deleteConfirmText === 'DELETE' && (mode !== 'trash' || permanentDeleteConfirmed)
+                  cursor: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
                     ? 'pointer' : 'not-allowed',
                   fontSize: '14px',
                   fontWeight: '500',
-                  color: deleteConfirmText === 'DELETE' && (mode !== 'trash' || permanentDeleteConfirmed)
+                  color: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
                     ? '#fff' : '#9ca3af',
-                  opacity: deleteConfirmText === 'DELETE' && (mode !== 'trash' || permanentDeleteConfirmed) ? 1 : 0.6
+                  opacity: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed) ? 1 : 0.6
                 }}
                 onClick={confirmDelete}
-                disabled={deleteConfirmText !== 'DELETE' || (mode === 'trash' && !permanentDeleteConfirmed)}
+                disabled={!isDeleteConfirmed || (mode === 'trash' && !permanentDeleteConfirmed)}
               >
                 <FontAwesomeIcon icon={faTrash} style={{ marginRight: '6px' }} />
                 {mode === 'trash' ? 'Permanently Delete' : 'Move to Trash'}

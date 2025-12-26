@@ -21,6 +21,20 @@ export interface CustomerHeadersResponse {
   items: CustomerHeader[];
 }
 
+export interface CustomerHeadersSummaryOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}
+
+export interface CustomerHeadersAggregateOptions {
+  limit?: number;
+  maxPages?: number;
+  search?: string;
+  status?: string;
+}
+
 export interface ProductItem {
   displayName: string;
   qty: number;
@@ -368,7 +382,12 @@ export const pdfApi = {
    * Returns only essential fields: _id, status, updatedAt, headerTitle
    * Use this for list views to avoid loading heavy form data upfront
    */
-  async getCustomerHeadersSummary(): Promise<{
+  async getCustomerHeadersSummary(
+    options: CustomerHeadersSummaryOptions = {}
+  ): Promise<{
+    total: number;
+    page: number;
+    limit: number;
     items: Array<{
       _id: string;
       status: string;
@@ -376,10 +395,65 @@ export const pdfApi = {
       headerTitle?: string; // extracted from payload.headerTitle
     }>;
   }> {
-    const res = await axios.get(`${API_BASE_URL}/api/pdf/customer-headers?fields=_id,status,updatedAt,payload.headerTitle`, {
+    const params = new URLSearchParams();
+    params.set('page', (options.page || 1).toString());
+    params.set('limit', (options.limit || 20).toString());
+    params.set('fields', '_id,status,updatedAt,payload.headerTitle');
+
+    if (options.search) {
+      params.set('search', options.search);
+    }
+    if (options.status) {
+      params.set('status', options.status);
+    }
+
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/customer-headers?${params.toString()}`, {
       headers: { Accept: "application/json" },
     });
     return res.data;
+  },
+
+  /**
+   * Fetch multiple pages of customer headers summary for dashboards
+   */
+  async getAllCustomerHeadersSummary(
+    options: CustomerHeadersAggregateOptions = {}
+  ): Promise<{
+    items: Array<{
+      _id: string;
+      status: string;
+      updatedAt: string;
+      headerTitle?: string;
+    }>;
+  }> {
+    const perPage = Math.max(1, Math.min(options.limit || 100, 100));
+    const maxPages = Math.max(1, options.maxPages ?? 5);
+    let page = 1;
+    const aggregated: Array<{
+      _id: string;
+      status: string;
+      updatedAt: string;
+      headerTitle?: string;
+    }> = [];
+
+    while (page <= maxPages) {
+      const result = await this.getCustomerHeadersSummary({
+        page,
+        limit: perPage,
+        search: options.search,
+        status: options.status
+      });
+
+      aggregated.push(...(result.items || []));
+
+      if (!result.items || result.items.length < perPage) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return { items: aggregated };
   },
 
   /**
@@ -648,7 +722,8 @@ export const pdfApi = {
    * 1. When `includeLogs: true`, backend must include version logs in files array for each agreement
    * 2. Backend must set `isLatestVersion: true` for the newest version PDF of each agreement
    * 3. Backend must set `canChangeStatus: true` for latest version PDFs (frontend will override this)
-   * 4. Log files should be mapped using mapLogToSavedFileItem format with descriptive filenames
+  * 4. Log files should be mapped using mapLogToSavedFileItem format with descriptive filenames
+  * 5. Trash responses expose `isDeleted`, `deletedAt`, and `deletedBy` on manual uploads, version PDFs, and version logs so the UI can surface deleted traces
    *
    * @param page Page number (default: 1)
    * @param limit Groups per page (default: 20, max: 100)
@@ -747,9 +822,12 @@ export const pdfApi = {
   },
 
   /**
-   * ✅ NEW: Restore deleted file from trash
+   * ✅ NEW: Restore deleted manual uploads, version PDFs, and version logs from trash
    */
-  async restoreFile(fileId: string): Promise<{
+  async restoreFile(
+    fileId: string,
+    options: { fileType?: string } = {}
+  ): Promise<{
     success: boolean;
     message: string;
     file?: {
@@ -757,8 +835,16 @@ export const pdfApi = {
       title: string;
     };
   }> {
+    const params = new URLSearchParams();
+    if (options?.fileType) {
+      params.set('fileType', options.fileType);
+    }
+
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/api/pdf/files/${fileId}/restore${queryString ? `?${queryString}` : ''}`;
+
     const res = await axios.patch(
-      `${API_BASE_URL}/api/pdf/files/${fileId}/restore`,
+      url,
       {},
       {
         headers: { "Content-Type": "application/json" },
@@ -785,14 +871,24 @@ export const pdfApi = {
   },
 
   /**
-   * ✅ NEW: Soft delete file (move to trash)
+   * ✅ NEW: Soft delete attached files, version PDFs, or version logs (moves them to trash with deleted metadata)
    */
-  async deleteFile(fileId: string): Promise<{
+  async deleteFile(
+    fileId: string,
+    options: { fileType?: string } = {}
+  ): Promise<{
     success: boolean;
     message: string;
   }> {
+    const params = new URLSearchParams();
+    if (options?.fileType) {
+      params.set('fileType', options.fileType);
+    }
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/api/pdf/files/${fileId}/delete${queryString ? `?${queryString}` : ''}`;
+
     const res = await axios.patch(
-      `${API_BASE_URL}/api/pdf/files/${fileId}/delete`,
+      url,
       {},
       {
         headers: { "Content-Type": "application/json" },
@@ -826,7 +922,10 @@ export const pdfApi = {
   /**
    * ✅ NEW: Permanently delete individual file and cleanup references
    */
-  async permanentlyDeleteFile(fileId: string): Promise<{
+  async permanentlyDeleteFile(
+    fileId: string,
+    options: { fileType?: string } = {}
+  ): Promise<{
     success: boolean;
     message: string;
     deletedData?: {
@@ -835,8 +934,16 @@ export const pdfApi = {
       cleanedReferences: number;
     };
   }> {
+    const params = new URLSearchParams();
+    if (options?.fileType) {
+      params.set('fileType', options.fileType);
+    }
+
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/api/pdf/files/${fileId}/permanent-delete${queryString ? `?${queryString}` : ''}`;
+
     const res = await axios.delete(
-      `${API_BASE_URL}/api/pdf/files/${fileId}/permanent-delete`,
+      url,
       {
         headers: { "Content-Type": "application/json" },
       }
@@ -1011,6 +1118,45 @@ export const pdfApi = {
         Authorization: `Bearer ${token}`
       },
     });
+    return res.data;
+  },
+
+  /**
+   * Get status counts scoped to a time filter for the admin pie chart
+   */
+  async getDashboardStatusCounts(params: { period?: string; from?: string; to?: string } = {}): Promise<{
+    success: boolean;
+    period: string;
+    counts: {
+      done: number;
+      pending: number;
+      saved: number;
+      drafts: number;
+      total: number;
+    };
+  }> {
+    const token = localStorage.getItem('admin_token');
+
+    if (!token) {
+      throw new Error('No admin token found. Please log in as admin first.');
+    }
+
+    const searchParams = new URLSearchParams();
+    if (params.period) searchParams.set('period', params.period);
+    if (params.from) searchParams.set('from', params.from);
+    if (params.to) searchParams.set('to', params.to);
+
+    const queryString = searchParams.toString();
+
+    const res = await axios.get(
+      `${API_BASE_URL}/api/admin/dashboard/status-counts${queryString ? `?${queryString}` : ''}`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`
+        },
+      }
+    );
     return res.data;
   },
 

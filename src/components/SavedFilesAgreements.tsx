@@ -1,7 +1,7 @@
 // src/components/SavedFilesAgreements.tsx
 // ✅ CORRECTED: Single document per agreement with attachedFiles array
 // ✅ PERFORMANCE OPTIMIZED: React.memo, useCallback, useMemo for 5-10x faster rendering
-import { useEffect, useState, useMemo, useRef, useCallback, memo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, memo, ChangeEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import { emailTemplateApi } from "../backendservice/api/emailTemplateApi";
@@ -101,6 +101,20 @@ function timeAgo(iso: string) {
   return `${sec} sec ago`;
 }
 
+function formatDeletionMeta(deletedBy?: string | null, deletedAt?: string | null) {
+  const parts: string[] = [];
+  if (deletedBy) {
+    parts.push(`by ${deletedBy}`);
+  }
+  if (deletedAt) {
+    const timestamp = new Date(deletedAt);
+    if (!Number.isNaN(timestamp.getTime())) {
+      parts.push(`on ${timestamp.toLocaleString()}`);
+    }
+  }
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
 const STATUS_LABEL: Record<FileStatus, string> = {
   saved: "Saved",
   draft: "Draft",
@@ -130,8 +144,8 @@ interface FileRowProps {
   onEdit: (file: SavedFileListItem) => void;
   onStatusChange: (file: SavedFileListItem, newStatus: string) => void;
   onWatermarkToggle: (fileId: string, checked: boolean) => void; // ✅ NEW: Handle watermark toggle
-  onDelete: (type: 'file' | 'folder', id: string, title: string) => void;
-  onRestore: (type: 'file' | 'folder', id: string, title: string) => void; // ✅ NEW: Handle restore
+  onDelete: (type: 'file' | 'folder', id: string, title: string, fileType?: string) => void;
+  onRestore: (type: 'file' | 'folder', id: string, title: string, fileType?: string) => void; // ✅ NEW: Handle restore
   isTrashView: boolean; // ✅ NEW: Indicate if in trash view
 }
 
@@ -153,6 +167,7 @@ const FileRow = memo(({
   onRestore, // ✅ NEW
   isTrashView // ✅ NEW
 }: FileRowProps) => {
+  const fileDeletionInfo = isTrashView ? formatDeletionMeta(file.deletedBy, file.deletedAt) : null;
   // ✅ OPTIMIZED: Memoized event handlers with useCallback
   const handleToggle = useCallback(() => onToggleSelection(file.id), [file.id, onToggleSelection]);
   const handleView = useCallback(() => onView(file, watermarkEnabled), [file, watermarkEnabled, onView]); // ✅ UPDATED
@@ -160,12 +175,12 @@ const FileRow = memo(({
   const handleEmail = useCallback(() => onEmail(file), [file, onEmail]);
   const handleZohoUpload = useCallback(() => onZohoUpload(file), [file, onZohoUpload]);
   const handleEdit = useCallback(() => onEdit(file), [file, onEdit]);
-  const handleDeleteClick = useCallback(() => onDelete('file', file.id, file.title), [file.id, file.title, onDelete]); // ✅ RENAMED
-  const handleRestoreClick = useCallback(() => onRestore('file', file.id, file.title), [file.id, file.title, onRestore]); // ✅ NEW
-  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleDeleteClick = useCallback(() => onDelete('file', file.id, file.title, file.fileType), [file.id, file.title, file.fileType, onDelete]); // ✅ RENAMED
+  const handleRestoreClick = useCallback(() => onRestore('file', file.id, file.title, file.fileType), [file.id, file.title, file.fileType, onRestore]); // ✅ NEW
+  const handleStatusChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
     onStatusChange(file, e.target.value);
   }, [file, onStatusChange]);
-  const handleWatermarkToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWatermarkToggle = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     onWatermarkToggle(file.id, e.target.checked);
   }, [file.id, onWatermarkToggle]); // ✅ NEW
 
@@ -212,7 +227,8 @@ const FileRow = memo(({
       </div>
 
       {/* File info */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <FontAwesomeIcon
           icon={faFileAlt}
           style={{
@@ -277,6 +293,15 @@ const FileRow = memo(({
           }}>
             {file.description}
           </span>
+        )}
+        </div>
+        {isTrashView && fileDeletionInfo && (
+          <div style={{
+            fontSize: '11px',
+            color: '#9ca3af'
+          }}>
+            Deleted {fileDeletionInfo}
+          </div>
         )}
       </div>
 
@@ -504,8 +529,10 @@ export default function SavedFilesAgreements() {
 
   // ✅ NEW: Delete confirmation state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string} | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string, fileType?: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const normalizedDeleteConfirmText = deleteConfirmText.trim().toUpperCase();
+  const isDeleteConfirmed = normalizedDeleteConfirmText === 'DELETE';
 
   // ✅ NEW: Status change state
   const [statusChangeLoading, setStatusChangeLoading] = useState<Record<string, boolean>>({});
@@ -530,13 +557,13 @@ export default function SavedFilesAgreements() {
   }, []);
 
   // ✅ NEW: Restore handler for files and agreements
-  const handleRestore = useCallback(async (type: 'file' | 'folder', id: string, title: string) => {
+  const handleRestore = useCallback(async (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
     try {
       let result;
       if (type === 'folder') {
         result = await pdfApi.restoreAgreement(id);
       } else {
-        result = await pdfApi.restoreFile(id);
+        result = await pdfApi.restoreFile(id, { fileType });
       }
 
       if (result.success) {
@@ -722,14 +749,11 @@ export default function SavedFilesAgreements() {
     return () => {
       // Use setTimeout to distinguish between React Strict Mode unmount (immediate remount)
       // and real navigation unmount (no remount). Strict Mode remounts within ~10ms.
-      const timeoutId = setTimeout(() => {
+      setTimeout(() => {
         hasInitiallyLoaded = false;
         isFirstSearchRender.current = true;
         console.log('🔄 [SAVED-FILES-AGREEMENTS] Flags reset after unmount (navigating away)');
       }, 50); // 50ms delay - Strict Mode remounts happen much faster
-
-      // If component remounts (Strict Mode), clear the timeout
-      clearTimeout(timeoutId); // Clear the timeout on unmount
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTrashView]); // Add isTrashView to dependencies to re-fetch when navigating to/from trash
@@ -1130,14 +1154,14 @@ export default function SavedFilesAgreements() {
   };
 
   // ✅ NEW: Delete confirmation handlers
-  const handleDelete = (type: 'file' | 'folder', id: string, title: string) => {
-    setItemToDelete({ type, id, title });
+  const handleDelete = (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
+    setItemToDelete({ type, id, title, fileType });
     setDeleteConfirmText('');
     setDeleteConfirmOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!itemToDelete || deleteConfirmText !== 'DELETE') {
+    if (!itemToDelete || !isDeleteConfirmed) {
       setToastMessage({
         message: "Please type 'DELETE' to confirm",
         type: "error"
@@ -1158,10 +1182,14 @@ export default function SavedFilesAgreements() {
       } else {
         // If in trash view, permanently delete the file
         if (isTrashView) {
-          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id);
+          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id, {
+            fileType: itemToDelete.fileType
+          });
         } else {
           // Otherwise, soft delete (move to trash)
-          result = await pdfApi.deleteFile(itemToDelete.id);
+          result = await pdfApi.deleteFile(itemToDelete.id, {
+            fileType: itemToDelete.fileType
+          });
         }
       }
 
@@ -1388,6 +1416,11 @@ export default function SavedFilesAgreements() {
 
         {!loading && !error && agreements.map((agreement) => {
           const agreementSelectionState = getAgreementSelectionState(agreement);
+          const agreementDeletionInfo = isTrashView ? formatDeletionMeta(agreement.deletedBy, agreement.deletedAt) : null;
+          const hasActiveVersions = agreement.files.some(file =>
+            file.fileType === 'version_pdf' && file.isDeleted !== true
+          );
+          const showAgreementLevelEdit = !isTrashView && !hasActiveVersions;
 
           return (
             <div key={agreement.id} className="sf__group" style={{
@@ -1450,17 +1483,17 @@ export default function SavedFilesAgreements() {
                   }}>
                     {agreement.agreementTitle}
                   </span>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    marginTop: '4px',
-                    fontSize: '13px',
-                    color: '#6b7280'
-                  }}>
-                    <span>{agreement.fileCount} files</span>
-                    <span>{timeAgo(agreement.latestUpdate)}</span>
-                    {agreement.hasUploads && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                  marginTop: '4px',
+                  fontSize: '13px',
+                  color: '#6b7280'
+                }}>
+                  <span>{agreement.fileCount} files</span>
+                  <span>{timeAgo(agreement.latestUpdate)}</span>
+                  {agreement.hasUploads && (
                       <span style={{
                         background: '#fef3c7',
                         color: '#92400e',
@@ -1484,9 +1517,18 @@ export default function SavedFilesAgreements() {
                       }}>
                         📝 {getStatusConfig('draft').label}
                       </span>
-                    )}
-                  </div>
+                  )}
                 </div>
+                {isTrashView && agreementDeletionInfo && (
+                  <div style={{
+                    marginTop: '4px',
+                    fontSize: '12px',
+                    color: '#9ca3af'
+                  }}>
+                    Deleted {agreementDeletionInfo}
+                  </div>
+                )}
+              </div>
 
                 {/* ✅ CORRECTED: Add file button and Zoho upload button */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1543,7 +1585,7 @@ export default function SavedFilesAgreements() {
                   </button>
 
                   {/* ✅ NEW: Edit Agreement button for draft-only agreements */}
-                  {agreement.fileCount === 0 && (
+                  {showAgreementLevelEdit && (
                     <button
                       style={{
                         background: '#3b82f6',
@@ -1741,6 +1783,12 @@ export default function SavedFilesAgreements() {
         <ZohoUpload
           agreementId={currentZohoFile.agreementId || currentZohoFile.id}
           agreementTitle={currentZohoFile.title}
+          bulkFiles={[{
+            id: currentZohoFile.id,
+            fileName: currentZohoFile.fileName,
+            title: currentZohoFile.title,
+            fileType: currentZohoFile.fileType
+          }]}
           onClose={() => {
             setZohoUploadOpen(false);
             setCurrentZohoFile(null);
@@ -2014,18 +2062,18 @@ export default function SavedFilesAgreements() {
               <button
                 type="button"
                 style={{
-                  background: deleteConfirmText === 'DELETE' ? '#dc2626' : '#f3f4f6',
-                  border: `1px solid ${deleteConfirmText === 'DELETE' ? '#dc2626' : '#d1d5db'}`,
+                background: isDeleteConfirmed ? '#dc2626' : '#f3f4f6',
+                border: `1px solid ${isDeleteConfirmed ? '#dc2626' : '#d1d5db'}`,
                   borderRadius: '8px',
                   padding: '8px 16px',
-                  cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed',
+                  cursor: isDeleteConfirmed ? 'pointer' : 'not-allowed',
                   fontSize: '14px',
                   fontWeight: '500',
-                  color: deleteConfirmText === 'DELETE' ? '#fff' : '#9ca3af',
-                  opacity: deleteConfirmText === 'DELETE' ? 1 : 0.6
+                  color: isDeleteConfirmed ? '#fff' : '#9ca3af',
+                  opacity: isDeleteConfirmed ? 1 : 0.6
                 }}
                 onClick={confirmDelete}
-                disabled={deleteConfirmText !== 'DELETE'}
+                disabled={!isDeleteConfirmed}
               >
                 <FontAwesomeIcon icon={faTrash} style={{ marginRight: '6px' }} />
                 Move to Trash
