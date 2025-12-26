@@ -15,7 +15,6 @@ import { SANICLEAN_CONFIG } from "./sanicleanConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
-import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 // ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
 interface BackendSanicleanConfig {
@@ -1429,28 +1428,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       }
 
       // ✅ NEW: Log all form field changes using universal logger
-      const allFormFields = [
-        // Selection fields
-        'location', 'soapType', 'pricingMode', 'rateTier',
-        'needsParking', 'addMicrofiberMopping', 'addTripCharge',
-        'addUrinalComponents', 'addMaleToiletComponents', 'addFemaleToiletComponents',
-        // Frequency fields
-        'mainServiceFrequency', 'facilityComponentsFrequency', 'frequency'
-      ];
-
       const normalizedNext = recomputeFixtureCount(next);
       const logQuantity = normalizedNext.fixtureCount || 1;
       const logFrequency = normalizedNext.mainServiceFrequency || 'weekly';
-
-      logServiceFieldChanges(
-        'saniclean',
-        'SaniClean',
-        updates,
-        originalValues,
-        allFormFields,
-        logQuantity,
-        logFrequency
-      );
 
       // ✅ Log price override for numeric pricing fields
       const pricingFields = [
