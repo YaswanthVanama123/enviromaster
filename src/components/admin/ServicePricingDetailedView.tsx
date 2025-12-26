@@ -488,59 +488,59 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Terms
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
     }
 
@@ -591,20 +591,20 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
       // Trip Charges
       categories.sprayTripCharges = [
-        {
-          label: "Standard Trip Charge",
-          value: tripChargesData.standard ?? 0,
-          path: ["tripCharges", "standard"],
-          unit: "$",
-          description: "Standard trip charge for service visits",
-        },
-        {
-          label: "Beltway Trip Charge",
-          value: tripChargesData.beltway ?? 0,
-          path: ["tripCharges", "beltway"],
-          unit: "$",
-          description: "Trip charge for beltway locations",
-        },
+        // {
+        //   label: "Standard Trip Charge",
+        //   value: tripChargesData.standard ?? 0,
+        //   path: ["tripCharges", "standard"],
+        //   unit: "$",
+        //   description: "Standard trip charge for service visits",
+        // },
+        // {
+        //   label: "Beltway Trip Charge",
+        //   value: tripChargesData.beltway ?? 0,
+        //   path: ["tripCharges", "beltway"],
+        //   unit: "$",
+        //   description: "Trip charge for beltway locations",
+        // },
       ];
 
       // Frequency Conversions
@@ -637,59 +637,59 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Terms
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
     }
 
@@ -815,20 +815,20 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       // Trip Charges
       const tripChargesData = getValue(["tripCharges"]) || {};
       categories.tripCharges = [
-        {
-          label: "Standard Trip Charge",
-          value: tripChargesData.standard ?? 0,
-          path: ["tripCharges", "standard"],
-          unit: "$",
-          description: "Standard trip charge for service visits",
-        },
-        {
-          label: "Beltway Trip Charge",
-          value: tripChargesData.beltway ?? 0,
-          path: ["tripCharges", "beltway"],
-          unit: "$",
-          description: "Trip charge for locations inside the beltway area",
-        },
+        // {
+        //   label: "Standard Trip Charge",
+        //   value: tripChargesData.standard ?? 0,
+        //   path: ["tripCharges", "standard"],
+        //   unit: "$",
+        //   description: "Standard trip charge for service visits",
+        // },
+        // {
+        //   label: "Beltway Trip Charge",
+        //   value: tripChargesData.beltway ?? 0,
+        //   path: ["tripCharges", "beltway"],
+        //   unit: "$",
+        //   description: "Trip charge for locations inside the beltway area",
+        // },
       ];
 
       // Billing Conversions (Frequency Metadata)
@@ -862,60 +862,60 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Terms
       const contract = getValue(["contract"]) || {};
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: contract.minMonths ?? 0,
-          path: ["contract", "minMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: contract.maxMonths ?? 0,
-          path: ["contract", "maxMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
-        {
-          label: "Default Contract Months",
-          value: contract.defaultMonths ?? 0,
-          path: ["contract", "defaultMonths"],
-          unit: "months",
-          description: "Default contract duration if not specified (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: contract.minMonths ?? 0,
+        //   path: ["contract", "minMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: contract.maxMonths ?? 0,
+        //   path: ["contract", "maxMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
+        // {
+        //   label: "Default Contract Months",
+        //   value: contract.defaultMonths ?? 0,
+        //   path: ["contract", "defaultMonths"],
+        //   unit: "months",
+        //   description: "Default contract duration if not specified (typically 36 months)",
+        // },
       ];
     }
 
@@ -1070,59 +1070,59 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Terms
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
     }
 
@@ -1209,53 +1209,53 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Settings
       const contract = getValue(["contract"]) || {};
       categories.contractSettings = [
-        {
-          label: "Minimum Contract Months",
-          value: contract.minMonths ?? 0,
-          path: ["contract", "minMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: contract.maxMonths ?? 0,
-          path: ["contract", "maxMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: contract.minMonths ?? 0,
+        //   path: ["contract", "minMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: contract.maxMonths ?? 0,
+        //   path: ["contract", "maxMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
 
       // Dusting & Vacuuming
@@ -1489,41 +1489,41 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMetadata.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMetadata.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMetadata.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMetadata.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMetadata.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMetadata.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMetadata.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMetadata.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMetadata.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMetadata.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Rate Tiers
@@ -1646,20 +1646,20 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
       // Contract Terms
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
     }
 
@@ -1789,92 +1789,92 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Terms
       categories.sanipodContractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (e.g., 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (e.g., 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (e.g., 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (e.g., 36 months)",
+        // },
       ];
 
       // Rate Tiers
       const rateCategories = getValue(["rateCategories"]) || {};
       categories.sanipodRateTiers = [
-        {
-          label: "Red Rate Multiplier",
-          value: rateCategories.redRate?.multiplier ?? 0,
-          path: ["rateCategories", "redRate", "multiplier"],
-          unit: "×",
-          description: "Standard rate multiplier (typically 1.0)",
-        },
-        {
-          label: "Red Rate Commission",
-          value: parseFloat(rateCategories.redRate?.commissionRate?.replace('%', '') || '0'),
-          path: ["rateCategories", "redRate", "commissionRate"],
-          unit: "%",
-          description: "Commission rate for Red Rate tier (typically 20%)",
-        },
-        {
-          label: "Green Rate Multiplier",
-          value: rateCategories.greenRate?.multiplier ?? 0,
-          path: ["rateCategories", "greenRate", "multiplier"],
-          unit: "×",
-          description: "Premium rate multiplier (typically 1.3 = 30% higher)",
-        },
-        {
-          label: "Green Rate Commission",
-          value: parseFloat(rateCategories.greenRate?.commissionRate?.replace('%', '') || '0'),
-          path: ["rateCategories", "greenRate", "commissionRate"],
-          unit: "%",
-          description: "Commission rate for Green Rate tier (typically 25%)",
-        },
+        // {
+        //   label: "Red Rate Multiplier",
+        //   value: rateCategories.redRate?.multiplier ?? 0,
+        //   path: ["rateCategories", "redRate", "multiplier"],
+        //   unit: "×",
+        //   description: "Standard rate multiplier (typically 1.0)",
+        // },
+        // {
+        //   label: "Red Rate Commission",
+        //   value: parseFloat(rateCategories.redRate?.commissionRate?.replace('%', '') || '0'),
+        //   path: ["rateCategories", "redRate", "commissionRate"],
+        //   unit: "%",
+        //   description: "Commission rate for Red Rate tier (typically 20%)",
+        // },
+        // {
+        //   label: "Green Rate Multiplier",
+        //   value: rateCategories.greenRate?.multiplier ?? 0,
+        //   path: ["rateCategories", "greenRate", "multiplier"],
+        //   unit: "×",
+        //   description: "Premium rate multiplier (typically 1.3 = 30% higher)",
+        // },
+        // {
+        //   label: "Green Rate Commission",
+        //   value: parseFloat(rateCategories.greenRate?.commissionRate?.replace('%', '') || '0'),
+        //   path: ["rateCategories", "greenRate", "commissionRate"],
+        //   unit: "%",
+        //   description: "Commission rate for Green Rate tier (typically 25%)",
+        // },
       ];
     }
 
@@ -2010,71 +2010,71 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
       ];
 
       // Discounts & Fees
       const tripChargesData = getValue(["tripCharges"]) || {};
       categories.discountsAndFees = [
-        {
-          label: "Trip Charge - Standard",
-          value: tripChargesData.standard ?? 0,
-          path: ["tripCharges", "standard"],
-          unit: "$",
-          description: "Standard trip charge (typically $8)",
-        },
-        {
-          label: "Trip Charge - Beltway",
-          value: tripChargesData.beltway ?? 0,
-          path: ["tripCharges", "beltway"],
-          unit: "$",
-          description: "Beltway trip charge (typically $8)",
-        },
-        {
-          label: "Parking Fee Add-On",
-          value: getValue(["parkingFeeAddOn"]) ?? 0,
-          path: ["parkingFeeAddOn"],
-          unit: "$",
-          description: "Additional parking fee (typically $0)",
-        },
+        // {
+        //   label: "Trip Charge - Standard",
+        //   value: tripChargesData.standard ?? 0,
+        //   path: ["tripCharges", "standard"],
+        //   unit: "$",
+        //   description: "Standard trip charge (typically $8)",
+        // },
+        // {
+        //   label: "Trip Charge - Beltway",
+        //   value: tripChargesData.beltway ?? 0,
+        //   path: ["tripCharges", "beltway"],
+        //   unit: "$",
+        //   description: "Beltway trip charge (typically $8)",
+        // },
+        // {
+        //   label: "Parking Fee Add-On",
+        //   value: getValue(["parkingFeeAddOn"]) ?? 0,
+        //   path: ["parkingFeeAddOn"],
+        //   unit: "$",
+        //   description: "Additional parking fee (typically $0)",
+        // },
       ];
 
       // Contract Terms
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
     }
 
@@ -2186,74 +2186,74 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Rate Tiers
       const rateCategories = getValue(["rateCategories"]) || {};
       categories.stripWaxRateTiers = [
-        {
-          label: "Red Rate Multiplier",
-          value: rateCategories.redRate?.multiplier ?? 0,
-          path: ["rateCategories", "redRate", "multiplier"],
-          unit: "×",
-          description: "Standard rate multiplier (typically 1.0)",
-        },
-        {
-          label: "Red Rate Commission",
-          value: parseFloat(rateCategories.redRate?.commissionRate?.replace('%', '') || '0'),
-          path: ["rateCategories", "redRate", "commissionRate"],
-          unit: "%",
-          description: "Commission rate for Red Rate tier (typically 20%)",
-        },
-        {
-          label: "Green Rate Multiplier",
-          value: rateCategories.greenRate?.multiplier ?? 0,
-          path: ["rateCategories", "greenRate", "multiplier"],
-          unit: "×",
-          description: "Premium rate multiplier (typically 1.3 = 30% higher)",
-        },
-        {
-          label: "Green Rate Commission",
-          value: parseFloat(rateCategories.greenRate?.commissionRate?.replace('%', '') || '0'),
-          path: ["rateCategories", "greenRate", "commissionRate"],
-          unit: "%",
-          description: "Commission rate for Green Rate tier (typically 25%)",
-        },
+        // {
+        //   label: "Red Rate Multiplier",
+        //   value: rateCategories.redRate?.multiplier ?? 0,
+        //   path: ["rateCategories", "redRate", "multiplier"],
+        //   unit: "×",
+        //   description: "Standard rate multiplier (typically 1.0)",
+        // },
+        // {
+        //   label: "Red Rate Commission",
+        //   value: parseFloat(rateCategories.redRate?.commissionRate?.replace('%', '') || '0'),
+        //   path: ["rateCategories", "redRate", "commissionRate"],
+        //   unit: "%",
+        //   description: "Commission rate for Red Rate tier (typically 20%)",
+        // },
+        // {
+        //   label: "Green Rate Multiplier",
+        //   value: rateCategories.greenRate?.multiplier ?? 0,
+        //   path: ["rateCategories", "greenRate", "multiplier"],
+        //   unit: "×",
+        //   description: "Premium rate multiplier (typically 1.3 = 30% higher)",
+        // },
+        // {
+        //   label: "Green Rate Commission",
+        //   value: parseFloat(rateCategories.greenRate?.commissionRate?.replace('%', '') || '0'),
+        //   path: ["rateCategories", "greenRate", "commissionRate"],
+        //   unit: "%",
+        //   description: "Commission rate for Green Rate tier (typically 25%)",
+        // },
       ];
     }
 
@@ -2401,59 +2401,59 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           unit: "×",
           description: "Additional multiplier for first month (typically 1.165)",
         },
-        {
-          label: "Monthly - Cycle Months",
-          value: freqMeta.monthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "monthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 1)",
-        },
-        {
-          label: "Bimonthly - Cycle Months",
-          value: freqMeta.bimonthly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 2)",
-        },
-        {
-          label: "Quarterly - Cycle Months",
-          value: freqMeta.quarterly?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "quarterly", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 3)",
-        },
-        {
-          label: "Biannual - Cycle Months",
-          value: freqMeta.biannual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "biannual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 6)",
-        },
-        {
-          label: "Annual - Cycle Months",
-          value: freqMeta.annual?.cycleMonths ?? 0,
-          path: ["frequencyMetadata", "annual", "cycleMonths"],
-          unit: "months",
-          description: "Billing cycle in months (typically 12)",
-        },
+        // {
+        //   label: "Monthly - Cycle Months",
+        //   value: freqMeta.monthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "monthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 1)",
+        // },
+        // {
+        //   label: "Bimonthly - Cycle Months",
+        //   value: freqMeta.bimonthly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "bimonthly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 2)",
+        // },
+        // {
+        //   label: "Quarterly - Cycle Months",
+        //   value: freqMeta.quarterly?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "quarterly", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 3)",
+        // },
+        // {
+        //   label: "Biannual - Cycle Months",
+        //   value: freqMeta.biannual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "biannual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 6)",
+        // },
+        // {
+        //   label: "Annual - Cycle Months",
+        //   value: freqMeta.annual?.cycleMonths ?? 0,
+        //   path: ["frequencyMetadata", "annual", "cycleMonths"],
+        //   unit: "months",
+        //   description: "Billing cycle in months (typically 12)",
+        // },
       ];
 
       // Contract Terms
       categories.contractTerms = [
-        {
-          label: "Minimum Contract Months",
-          value: getValue(["minContractMonths"]) ?? 0,
-          path: ["minContractMonths"],
-          unit: "months",
-          description: "Minimum contract duration required (typically 2 months)",
-        },
-        {
-          label: "Maximum Contract Months",
-          value: getValue(["maxContractMonths"]) ?? 0,
-          path: ["maxContractMonths"],
-          unit: "months",
-          description: "Maximum contract duration allowed (typically 36 months)",
-        },
+        // {
+        //   label: "Minimum Contract Months",
+        //   value: getValue(["minContractMonths"]) ?? 0,
+        //   path: ["minContractMonths"],
+        //   unit: "months",
+        //   description: "Minimum contract duration required (typically 2 months)",
+        // },
+        // {
+        //   label: "Maximum Contract Months",
+        //   value: getValue(["maxContractMonths"]) ?? 0,
+        //   path: ["maxContractMonths"],
+        //   unit: "months",
+        //   description: "Maximum contract duration allowed (typically 36 months)",
+        // },
       ];
     }
 
@@ -2495,7 +2495,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "minimumAndTripCharges", label: "Minimum & Trip Charges", icon: "💵" },
         { key: "frequencyPriceMultipliers", label: "Frequency Multipliers", icon: "✖️" },
         { key: "frequencyConversions", label: "Billing Conversions", icon: "🔄" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2505,7 +2505,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "minimums", label: "Minimums", icon: "💵" },
         { key: "carpetInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
         { key: "frequencyMeta", label: "Service Frequencies", icon: "📅" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2513,8 +2513,8 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       return [
         { key: "sprayRates", label: "Spray Rates", icon: "💨" },
         { key: "sprayTripCharges", label: "Trip Charges", icon: "🚗" },
-        { key: "sprayFrequencyConversions", label: "Frequency Conversions", icon: "🔄" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "sprayFrequencyConversions", label: "Frequency Conversions", icon: "🔄" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2525,9 +2525,9 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "greaseTrap", label: "Grease Trap", icon: "🛢️" },
         { key: "greenDrain", label: "Green Drain", icon: "🌿" },
         { key: "addonsMultipliers", label: "Add-ons & Multipliers", icon: "➕" },
-        { key: "tripCharges", label: "Trip Charges", icon: "🚗" },
+        // { key: "tripCharges", label: "Trip Charges", icon: "🚗" },
         { key: "billingConversions", label: "Billing Conversions", icon: "🔄" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2538,7 +2538,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "extraAreas", label: "Extra Areas", icon: "🏛️" },
         { key: "standalonePricing", label: "Standalone Service", icon: "⭐" },
         { key: "moppingMetadata", label: "Billing Conversions", icon: "🔄" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2547,11 +2547,11 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "baseRates", label: "Base Rates", icon: "🕐" },
         { key: "shortJobPricing", label: "Short Job Pricing", icon: "⚡" },
         { key: "serviceMultipliers", label: "Service Multipliers", icon: "✖️" },
-        { key: "monthlyConversions", label: "Monthly Conversions", icon: "📅" },
-        { key: "contractSettings", label: "Contract Terms", icon: "📋" },
+        // { key: "monthlyConversions", label: "Monthly Conversions", icon: "📅" },
+        // { key: "contractSettings", label: "Contract Terms", icon: "📋" },
         { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: "🧹" },
         { key: "smoothBreakdown", label: "Smooth Breakdown Pricing", icon: "📊" },
-        { key: "rateTiers", label: "Rate Tiers", icon: "💰" },
+        // { key: "rateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
@@ -2567,8 +2567,8 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "monthlyAddOns", label: "Monthly Add-Ons", icon: "📋" },
         { key: "microfiberMoppingAddon", label: "Microfiber Mopping", icon: "🧹" },
         { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: "🔄" },
-        { key: "sanicleanRateTiers", label: "Rate Tiers", icon: "💰" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "sanicleanRateTiers", label: "Rate Tiers", icon: "💰" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2579,8 +2579,8 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "standaloneService", label: "Standalone Service", icon: "⭐" },
         { key: "frequencySettings", label: "Service Frequencies", icon: "📅" },
         { key: "sanipodBillingConversions", label: "Billing Conversions", icon: "🔄" },
-        { key: "sanipodContractTerms", label: "Contract Terms", icon: "📋" },
-        { key: "sanipodRateTiers", label: "Rate Tiers", icon: "💰" },
+        // { key: "sanipodContractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "sanipodRateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
@@ -2592,7 +2592,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "saniscrubInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
         { key: "serviceFrequencies", label: "Service Frequencies", icon: "📅" },
         { key: "discountsAndFees", label: "Discounts & Fees", icon: "🎟️" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 
@@ -2603,7 +2603,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "wellMaintained", label: "Well Maintained", icon: "✨" },
         { key: "stripWaxContractTerms", label: "Contract Terms", icon: "📋" },
         { key: "stripWaxBillingConversions", label: "Billing Conversions", icon: "🔄" },
-        { key: "stripWaxRateTiers", label: "Rate Tiers", icon: "💰" },
+        // { key: "stripWaxRateTiers", label: "Rate Tiers", icon: "💰" },
       ];
     }
 
@@ -2615,7 +2615,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "patioPricing", label: "Patio Pricing", icon: "🌿" },
         { key: "sqftPricing", label: "Square Footage", icon: "📐" },
         { key: "scrubFrequencyConversions", label: "Billing Conversions", icon: "🔄" },
-        { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
 

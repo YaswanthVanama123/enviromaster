@@ -745,7 +745,7 @@ function FormFillingContent() {
     if (currentUrl.includes('admin')) {
       navigate('/admin-panel');
     } else {
-      navigate('/saved-files');
+      navigate('/saved-pdfs');
     }
   };
 

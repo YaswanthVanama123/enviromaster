@@ -286,7 +286,7 @@ export default function PDFViewer() {
       if (window.location.href.includes('admin')) {
         navigate('/admin-panel');
       } else {
-        navigate('/saved-files');
+        navigate('/saved-pdfs');
       }
       return;
     }
@@ -314,7 +314,7 @@ export default function PDFViewer() {
       navigate('/admin-panel');
     } else {
       // Default to saved files for regular users
-      navigate('/saved-files');
+      navigate('/saved-pdfs');
     }
   };
 
