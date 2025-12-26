@@ -13,7 +13,39 @@ export interface ProductsSectionHandle {
     dispensers: ProductRow[];
     products: ProductRow[];
   };
+  getProductTotals: () => {
+    monthlyTotal: number;
+    contractTotal: number;
+  };
 }
+
+const FREQUENCY_MONTHLY_MULTIPLIERS: Record<string, number> = {
+  daily: 30,
+  weekly: 4.33,
+  biweekly: 2,
+  fortnightly: 2,
+  monthly: 1,
+  bimonthly: 0.5,
+  every2months: 0.5,
+  quarterly: 1 / 3,
+  quarter: 1 / 3,
+  biannual: 1 / 6,
+  semiannual: 1 / 6,
+  annually: 1 / 12,
+  yearly: 1 / 12,
+};
+
+const normalizeFrequencyKey = (frequency?: string) =>
+  (frequency || "")
+    .toLowerCase()
+    .replace(/[\s-]+/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+const getFrequencyMultiplier = (frequency?: string): number => {
+  const key = normalizeFrequencyKey(frequency);
+  if (!key) return 1;
+  return FREQUENCY_MONTHLY_MULTIPLIERS[key] ?? 1;
+};
 
 // Initial product data from backend
 export interface InitialProductData {
@@ -38,6 +70,7 @@ interface ProductsSectionProps {
   };
   activeTab?: string; // ✅ Added activeTab prop for URL-based tab switching
   onTabChange?: (tab: string) => void; // ✅ Added tab change callback
+  onTotalsChange?: (totals: { monthlyTotal: number; contractTotal: number }) => void;
 }
 
 // ---------------------------
@@ -699,11 +732,12 @@ function convertInitialToRows(
 }
 
 const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>((props, ref) => {
-  const { initialSmallProducts, initialDispensers, initialBigProducts, initialCustomColumns, activeTab, onTabChange } = props;
+  const { initialSmallProducts, initialDispensers, initialBigProducts, initialCustomColumns, activeTab, onTabChange, onTotalsChange } = props;
   const isDesktop = useIsDesktop();
   const servicesContext = useServicesContextOptional();
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
+  const globalContractMonths = servicesContext?.globalContractMonths ?? 0;
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
 
@@ -1073,6 +1107,48 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
   const getQty = (row?: ProductRow) => row?.qty ?? 0;
 
+  const getRowTotal = (row: ProductRow, bucket: ColumnKey) => {
+    if (row.totalOverride !== undefined) {
+      return row.totalOverride;
+    }
+
+    const qty = getQty(row);
+    if (bucket === "products") {
+      const product = getProduct(row);
+      const isSmallProduct = product?.familyKey === "paper";
+      const basePrice = isSmallProduct ? getSmallUnitPrice(row, product) : getBigAmount(row, product);
+      return basePrice * qty;
+    }
+
+    const product = getProduct(row);
+    return getDispReplacementPrice(row, product) * qty;
+  };
+
+  const productMonthlyTotal = useMemo(() => {
+    const allRows = [
+      ...data.products.map((row) => ({ row, bucket: "products" as ColumnKey })),
+      ...data.dispensers.map((row) => ({ row, bucket: "dispensers" as ColumnKey })),
+    ];
+
+    return allRows.reduce((sum, { row, bucket }) => {
+      const multiplier = getFrequencyMultiplier(row.frequency);
+      return sum + getRowTotal(row, bucket) * multiplier;
+    }, 0);
+  }, [data.products, data.dispensers, getProduct]);
+
+  const productContractTotal = useMemo(
+    () => productMonthlyTotal * globalContractMonths,
+    [productMonthlyTotal, globalContractMonths]
+  );
+
+  useEffect(() => {
+    if (!onTotalsChange) return;
+    onTotalsChange({
+      monthlyTotal: productMonthlyTotal,
+      contractTotal: productContractTotal,
+    });
+  }, [onTotalsChange, productMonthlyTotal, productContractTotal]);
+
   // Expose getData method via ref
   useImperativeHandle(ref, () => ({
     getData: () => {
@@ -1187,8 +1263,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         dispensersCount: enrichedDispensers.length,
         bigProductsCount: enrichedBigProducts.length
       });
-    }
-  }), [data, getProduct]);
+    },
+    getProductTotals: () => ({
+      monthlyTotal: productMonthlyTotal,
+      contractTotal: productContractTotal,
+    }),
+  }), [data, getProduct, productMonthlyTotal, productContractTotal]);
 
   // ---------------------------
   // Reference Tables for Salespeople

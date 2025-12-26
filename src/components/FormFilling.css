@@ -278,7 +278,7 @@
 /* ✅ NEW: Grid Layout for Cards */
 .contract-summary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -409,6 +409,14 @@
 
 .breakdown-value.profit {
   font-size: 18px;
+}
+
+.breakdown-value.product-monthly {
+  color: #0ea5e9;
+}
+
+.breakdown-value.product-contract {
+  color: #111827;
 }
 
 .breakdown-value.profit.red {

@@ -46,6 +46,11 @@ type ProductsPayload = {
   bigProducts?: any[];
 };
 
+type ProductTotals = {
+  monthlyTotal: number;
+  contractTotal: number;
+};
+
 type ServiceLine = {
   type: "line" | "bold" | "atCharge";
   label: string;
@@ -112,7 +117,11 @@ const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 
 // ✅ NEW: Contract Summary Component
 // Displays global contract months and total agreement amount
-function ContractSummary() {
+type ContractSummaryProps = {
+  productTotals?: ProductTotals;
+};
+
+function ContractSummary({ productTotals }: ContractSummaryProps) {
   const {
     globalContractMonths,
     setGlobalContractMonths,
@@ -128,6 +137,12 @@ function ContractSummary() {
     globalParkingChargeFrequency,
     setGlobalParkingChargeFrequency,
   } = useServicesContext();
+
+  const { monthlyTotal: productMonthlyTotal = 0, contractTotal: productContractTotal = 0 } =
+    productTotals || {
+      monthlyTotal: 0,
+      contractTotal: 0,
+    };
 
   const totalAmount = getTotalAgreementAmount();
   const totalOriginal = getTotalOriginalPerVisit();
@@ -600,6 +615,20 @@ function ContractSummary() {
           )}
         </div>
       </div>
+      <div className="contract-card">
+        <h3 className="card-title">Product Totals</h3>
+
+        <div className="pricing-breakdown">
+          <div className="breakdown-row">
+            <span className="breakdown-label">Monthly Product Total</span>
+            <span className="breakdown-value product-monthly">${productMonthlyTotal.toFixed(2)}</span>
+          </div>
+          <div className="breakdown-row">
+            <span className="breakdown-label">Products × {globalContractMonths} Months</span>
+            <span className="breakdown-value product-contract">${productContractTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -624,6 +653,10 @@ function FormFillingContent() {
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
+  const [productTotals, setProductTotals] = useState<ProductTotals>({
+    monthlyTotal: 0,
+    contractTotal: 0,
+  });
 
   // ✅ NEW: Access ServicesContext for pricing calculations
   const {
@@ -663,6 +696,18 @@ function FormFillingContent() {
       return 'neutral';
     }
   }, [getTotalOriginalPerVisit, getTotalMinimumPerVisit]);
+
+  const handleProductTotalsChange = useCallback((totals: ProductTotals) => {
+    setProductTotals((prev) => {
+      if (
+        prev.monthlyTotal === totals.monthlyTotal &&
+        prev.contractTotal === totals.contractTotal
+      ) {
+        return prev;
+      }
+      return totals;
+    });
+  }, []);
 
   // ✅ NEW: Determine document status based on pricing
   const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
@@ -1768,6 +1813,7 @@ function FormFillingContent() {
                 }
                 setSearchParams(newParams, { replace: true });
               }}
+              onTotalsChange={handleProductTotalsChange}
             />
 
             <ServicesSection
@@ -1786,7 +1832,7 @@ function FormFillingContent() {
             <ServicesDataCollector ref={servicesRef} />
 
             {/* ✅ NEW: Contract Summary - Global contract months and total agreement amount */}
-            <ContractSummary />
+            <ContractSummary productTotals={productTotals} />
 
             {/* Service Agreement Component */}
             <ServiceAgreement
