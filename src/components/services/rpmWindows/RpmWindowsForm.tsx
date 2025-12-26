@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { useRpmWindowsCalc } from "./useRpmWindowsCalc";
+import { RPM_OVERRIDE_TOLERANCE, useRpmWindowsCalc } from "./useRpmWindowsCalc";
 import type { RpmWindowsFormState } from "./rpmWindowsTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
@@ -37,6 +37,8 @@ export const RpmWindowsForm: React.FC<
     isLoadingConfig,
     pricingOverrides,
     manualOverrides,
+    persistedOverrides,
+    baselineValues,
   } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -54,8 +56,20 @@ export const RpmWindowsForm: React.FC<
     backgroundColor: isOverride ? "#fffacd" : (baseStyle?.backgroundColor ?? "white"),
   });
 
-  const hasPricingOverride = (fieldName: string): boolean =>
-    Boolean(manualOverrides[fieldName]);
+  const hasPricingOverride = (fieldName: string): boolean => {
+    if (manualOverrides[fieldName] || persistedOverrides[fieldName]) {
+      return true;
+    }
+
+    const baseline = baselineValues[fieldName];
+    const currentValue = Number(form[fieldName]);
+
+    if (typeof baseline === "number" && !Number.isNaN(currentValue)) {
+      return Math.abs(currentValue - baseline) > RPM_OVERRIDE_TOLERANCE;
+    }
+
+    return false;
+  };
 
   // ✅ Helper to get display value (local state while editing, or calculated value)
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {

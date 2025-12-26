@@ -13,6 +13,8 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
+export const RPM_OVERRIDE_TOLERANCE = 0.005;
+
 // ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
 interface BackendRpmConfig {
   windowPricingBothSidesIncluded: {
@@ -129,6 +131,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
   const wasActiveRef = useRef<boolean>(false);
   const isEditMode = useRef(!!initial);
   const forceRefreshRef = useRef(false);
+  const skipInitialOverridesRef = useRef(false);
   const skipInitCustomSmall = useRef(!!initial);
   const skipInitCustomMedium = useRef(!!initial);
   const skipInitCustomLarge = useRef(!!initial);
@@ -139,6 +142,33 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
   const baselineInitialized = useRef(false);
   const baseRatesInitialized = useRef(false);
   const [manualOverrides, setManualOverrides] = useState<Record<string, boolean>>({});
+  const [baselineReady, setBaselineReady] = useState(false);
+  const overrideFieldsList: Array<keyof RpmWindowsFormState> = [
+    "smallWindowRate",
+    "mediumWindowRate",
+    "largeWindowRate",
+    "tripCharge",
+    "installMultiplierFirstTime",
+    "installMultiplierClean",
+  ];
+  const markManualOverride = (name: string, value: number) => {
+    setManualOverrides(prev => {
+      const next = { ...prev };
+      const baseline = baselineValues.current[name];
+      const shouldOverride =
+        typeof baseline !== "number"
+          ? true
+      : Math.abs(value - baseline) > RPM_OVERRIDE_TOLERANCE;
+
+      if (shouldOverride) {
+        next[name] = true;
+      } else {
+        delete next[name];
+      }
+
+      return next;
+    });
+  };
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
@@ -161,25 +191,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     console.log(`💰 [RPM-WINDOWS-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
-  useEffect(() => {
-    if (!initial) return;
-    const overrideFields = [
-      'smallWindowRate',
-      'mediumWindowRate',
-      'largeWindowRate',
-      'tripCharge',
-      'installMultiplierFirstTime',
-      'installMultiplierClean',
-    ];
-    const overrides: Record<string, boolean> = {};
-    overrideFields.forEach(field => {
-      if (initial[field as keyof RpmWindowsFormState] !== undefined) {
-        overrides[field] = true;
-      }
-    });
-    setManualOverrides(overrides);
-  }, [initial]);
 
   // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
   const dollarFieldsTotal = useMemo(() => {
@@ -236,6 +247,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     if (forceRefresh) {
       baselineInitialized.current = false;
       baselineValues.current = {};
+      skipInitialOverridesRef.current = true;
     }
     const shouldApplyConfig = !isEditMode.current || forceRefresh;
     console.log('🔄 [RPM Windows] Fetching fresh configuration from backend...');
@@ -424,14 +436,12 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
   // Fetch on mount (used for baseline/override detection)
   useEffect(() => {
-    if (initial) return;
     console.log('[RPM-WINDOWS-PRICING] Fetching backend prices for baseline/override detection');
     fetchPricing(false);
-  }, [initial]); // Run once on mount when not editing
+  }, [initial]); // Run once on mount (baseline detection even when editing)
 
   // Also fetch when services context becomes available
   useEffect(() => {
-    if (initial) return;
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing(false);
     }
@@ -467,6 +477,11 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
   // Initialize baseline values for logging (backend defaults for new, saved values for edit mode)
   useEffect(() => {
+    setBaselineReady(false);
+    if (!backendConfig) {
+      return;
+    }
+
     const freqKey = mapFrequency(form.frequency);
     const effectiveFreqKey = getEffectiveFrequencyKey(freqKey);
     const freqMult = getFrequencyMultiplier(effectiveFreqKey, backendConfig);
@@ -478,59 +493,64 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       trip: backendBase.trip * freqMult,
     };
 
-    const useInitialValues = !baselineInitialized.current;
-
-    const setPriceBaseline = (
-      field: keyof RpmWindowsFormState,
-      computedValue: number | undefined,
-      initialValue: number | undefined
-    ) => {
-      let value: number | undefined;
-
-      if (useInitialValues && typeof initialValue === "number" && Number.isFinite(initialValue)) {
-        value = initialValue;
-      } else if (typeof computedValue === "number" && Number.isFinite(computedValue)) {
-        value = computedValue;
-      }
-
-      if (typeof value === "number") {
-        baselineValues.current[field as string] = value;
-      }
-    };
-
-    setPriceBaseline("smallWindowRate", expectedRates.small, initial?.smallWindowRate);
-    setPriceBaseline("mediumWindowRate", expectedRates.medium, initial?.mediumWindowRate);
-    setPriceBaseline("largeWindowRate", expectedRates.large, initial?.largeWindowRate);
-    setPriceBaseline("tripCharge", expectedRates.trip, initial?.tripCharge);
-
-    const installationMultiplierFirstTime =
-      backendConfig?.installPricing?.installationMultiplier ?? cfg.installMultiplierFirstTime;
-    const installationMultiplierClean =
-      backendConfig?.installPricing?.cleanInstallationMultiplier ?? cfg.installMultiplierClean;
-
-    setPriceBaseline("installMultiplierFirstTime", installationMultiplierFirstTime, initial?.installMultiplierFirstTime);
-    setPriceBaseline("installMultiplierClean", installationMultiplierClean, initial?.installMultiplierClean);
-
-    if (useInitialValues) {
-      const setInitialBaseline = (field: keyof RpmWindowsFormState, value: number | undefined) => {
-        if (typeof value === "number" && Number.isFinite(value)) {
-          baselineValues.current[field as string] = value;
-        }
-      };
-
-      setInitialBaseline("customSmallTotal", initial?.customSmallTotal);
-      setInitialBaseline("customMediumTotal", initial?.customMediumTotal);
-      setInitialBaseline("customLargeTotal", initial?.customLargeTotal);
-      setInitialBaseline("customInstallationFee", initial?.customInstallationFee);
-      setInitialBaseline("customPerVisitPrice", initial?.customPerVisitPrice);
-      setInitialBaseline("customMonthlyRecurring", initial?.customMonthlyRecurring);
-      setInitialBaseline("customFirstMonthTotal", initial?.customFirstMonthTotal);
-      setInitialBaseline("customAnnualPrice", initial?.customAnnualPrice);
-      setInitialBaseline("customContractTotal", initial?.customContractTotal);
-    }
+    baselineValues.current.smallWindowRate = expectedRates.small;
+    baselineValues.current.mediumWindowRate = expectedRates.medium;
+    baselineValues.current.largeWindowRate = expectedRates.large;
+    baselineValues.current.tripCharge = expectedRates.trip;
+    baselineValues.current.installMultiplierFirstTime =
+      backendConfig.installPricing?.installationMultiplier ?? cfg.installMultiplierFirstTime;
+    baselineValues.current.installMultiplierClean =
+      backendConfig.installPricing?.cleanInstallationMultiplier ?? cfg.installMultiplierClean;
 
     baselineInitialized.current = true;
-  }, [backendConfig, initial, form.frequency]);
+    setBaselineReady(true);
+
+    if (forceRefreshRef.current) {
+      setManualOverrides({});
+      forceRefreshRef.current = false;
+    }
+  }, [
+    backendConfig,
+    form.frequency,
+  ]);
+
+  useEffect(() => {
+    if (skipInitialOverridesRef.current) {
+      skipInitialOverridesRef.current = false;
+      return;
+    }
+
+    if (forceRefreshRef.current) {
+      return;
+    }
+
+    if (!baselineReady || !initial) {
+      return;
+    }
+
+    const overrides: Record<string, boolean> = {};
+
+    overrideFieldsList.forEach(field => {
+      const savedRaw = initial[field];
+      const savedValue =
+        typeof savedRaw === "number"
+          ? savedRaw
+          : typeof savedRaw === "string"
+            ? parseFloat(savedRaw)
+            : undefined;
+      const baseline = baselineValues.current[field as string];
+
+      if (
+        typeof savedValue === "number" &&
+        typeof baseline === "number" &&
+        Math.abs(savedValue - baseline) > RPM_OVERRIDE_TOLERANCE
+      ) {
+        overrides[field] = true;
+      }
+    });
+
+    setManualOverrides(prev => ({ ...prev, ...overrides }));
+  }, [baselineReady, initial]);
 
   // ✅ Add sync effect to adopt global months when service becomes active or when global months change
   useEffect(() => {
@@ -791,7 +811,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
             setBaseWeeklyRates(b => ({ ...b, trip: weeklyBase }));
           }
 
-          setManualOverrides(prev => ({ ...prev, [name]: true }));
+          markManualOverride(name, displayVal);
 
           newFormState = { ...prev, [name]: displayVal };
           break;
@@ -801,7 +821,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
         case "installMultiplierFirstTime":
         case "installMultiplierClean": {
           const displayVal = Number(value) || 0;
-          setManualOverrides(prev => ({ ...prev, [name]: true }));
+          markManualOverride(name, displayVal);
           newFormState = { ...prev, [name]: displayVal };
           break;
         }
@@ -1318,6 +1338,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     detailsBreakdown: [],
   };
 
+  const persistedOverrides = manualOverrides;
+
   return {
     form,
     setForm,
@@ -1329,6 +1351,8 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     quote,
     pricingOverrides,
     manualOverrides,
+    persistedOverrides,
+    baselineValues: baselineValues.current,
     refreshConfig: () => fetchPricing(true),
     isLoadingConfig,
     setContractMonths,
