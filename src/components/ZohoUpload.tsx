@@ -765,7 +765,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 dealId: dealId,
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 dealName: uploadStatus?.mapping?.dealName || 'Unknown Deal',
-                skipNoteCreation: !isFirstFileUpload  // ✅ Skip note creation for subsequent files
+                skipNoteCreation: !isFirstFileUpload,  // ✅ Skip note creation for subsequent files
+                fileType: file.fileType
               });
             } else {
               // Fallback - shouldn't happen with current logic
