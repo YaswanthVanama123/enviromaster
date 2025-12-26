@@ -779,19 +779,54 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       : bags * form.extraBagPrice;
 
     // ---------- WEEKLY SERVICE (RED RATE) ----------
-    // Auto-switch between Option A and B ONLY when standalone
-    // When NOT standalone (part of package), always use $8/pod (Option A)
-    const weeklyPodOptA_Red = pods * form.altWeeklyRatePerUnit; // 8$/wk * pods
+    const weeklyRatePerUnit = Number(form.weeklyRatePerUnit) || 0;
+    const standaloneCharge = Number(form.standaloneExtraWeeklyCharge) || 0;
+    const customPodRate = form.customWeeklyPodRate !== undefined
+      ? Number(form.customWeeklyPodRate)
+      : undefined;
+    const effectiveOptAPerPodRate = (customPodRate ?? Number(form.altWeeklyRatePerUnit)) || 0;
+    const weeklyPodOptA_Red = form.customPodServiceTotal !== undefined
+      ? form.customPodServiceTotal
+      : pods * effectiveOptAPerPodRate;
     const weeklyPodOptB_Red =
-      pods * form.weeklyRatePerUnit + form.standaloneExtraWeeklyCharge; // 3$/wk * pods + 40$/wk
+      pods * weeklyRatePerUnit + standaloneCharge;
 
     const weeklyServiceOptA_Red = weeklyPodOptA_Red + weeklyBagsRed;
     const weeklyServiceOptB_Red = weeklyPodOptB_Red + weeklyBagsRed;
 
-    // Only compare options when standalone; otherwise always use Option A
-    const usingOptA = form.isStandalone
-      ? weeklyServiceOptA_Red <= weeklyServiceOptB_Red  // Auto-switch to cheaper
-      : true;  // Always use Option A when not standalone
+    console.log('[SANIPOD-VALUES]', {
+      weeklyPodOptA_Red,
+      weeklyPodOptB_Red,
+      weeklyServiceOptA_Red,
+      weeklyServiceOptB_Red,
+      weeklyBagsRed,
+      weeklyRatePerUnit: Number(form.weeklyRatePerUnit),
+      standaloneExtraWeeklyCharge: Number(form.standaloneExtraWeeklyCharge),
+      bags,
+      pods
+    });
+
+    const serviceRuleSelection = form.serviceRule || "auto";
+    const applyStandaloneMinimum = (value: number) => {
+      if (form.isStandalone) {
+        return Math.max(value, standaloneCharge);
+      }
+      return value;
+    };
+
+    const optionATotalBeforeMin = weeklyServiceOptA_Red * rateCfg.multiplier;
+    const optionBTotalBeforeMin = weeklyServiceOptB_Red * rateCfg.multiplier;
+    const optionATotalWithMin = applyStandaloneMinimum(optionATotalBeforeMin);
+    const optionBTotalWithMin = applyStandaloneMinimum(optionBTotalBeforeMin);
+
+    let usingOptA: boolean;
+    if (serviceRuleSelection === "perPod8") {
+      usingOptA = true;
+    } else if (serviceRuleSelection === "perPod3Plus40") {
+      usingOptA = false;
+    } else {
+      usingOptA = optionATotalWithMin <= optionBTotalWithMin;
+    }
 
     const weeklyServiceRed = usingOptA
       ? weeklyServiceOptA_Red
@@ -805,14 +840,17 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       ? "perPod8"
       : "perPod3Plus40";
 
-    // Apply rate category to service portion only.
-    const weeklyServiceBeforeMinimum = weeklyServiceRed * rateCfg.multiplier;
+    console.log(' [SANIPOD-RULE]',
+      {usingOptA, chosenServiceRule, optionATotalBeforeMin, optionBTotalBeforeMin, optionATotalWithMin, optionBTotalWithMin}
+    );
 
-    // ✅ NEW: Apply minimum charge for standalone service
-    // The weeklyMinimumPrice ($40) should be enforced regardless of which option is chosen
-    const weeklyService = form.isStandalone
-      ? Math.max(weeklyServiceBeforeMinimum, form.standaloneExtraWeeklyCharge)
-      : weeklyServiceBeforeMinimum;
+    const weeklyServiceBeforeMinimum = usingOptA
+      ? optionATotalBeforeMin
+      : optionBTotalBeforeMin;
+
+    const weeklyService = usingOptA
+      ? optionATotalWithMin
+      : optionBTotalWithMin;
 
     console.log(`💰 [SANIPOD-MINIMUM] Applying minimum charge check:`, {
       isStandalone: form.isStandalone,

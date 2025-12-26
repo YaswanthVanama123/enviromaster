@@ -60,10 +60,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     // Also parse and update form state immediately (triggers calculations)
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      onChange({ target: { name, value: String(numValue) } } as any);
+    onChange({ target: { name, type: "number", value: String(numValue) } } as any);
     } else if (value === '') {
       // If field is cleared, update form to clear the override
-      onChange({ target: { name, value: '' } } as any);
+    onChange({ target: { name, type: "number", value: '' } } as any);
     }
   };
 
