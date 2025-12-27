@@ -9,7 +9,7 @@ import type {
 import type { ServiceQuoteResult } from "../common/serviceTypes";
 import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
-import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
+import { addPriceChange, getFieldDisplayName, updateRefreshPowerScrubFrequency } from "../../../utils/fileLogger";
 
 // ✅ Fallback constants (only used when backend is unavailable)
 const FALLBACK_DEFAULT_HOURLY = 200;
@@ -24,6 +24,15 @@ const FALLBACK_SQFT_FIXED_FEE = 200;
 const FALLBACK_SQFT_INSIDE_RATE = 0.6;
 const FALLBACK_SQFT_OUTSIDE_RATE = 0.4;
 const FALLBACK_PER_HOUR_RATE = 400;
+
+const AREA_LOG_NAMES: Record<RefreshAreaKey, string> = {
+  dumpster: "Dumpster",
+  patio: "Patio",
+  walkway: "Walkway",
+  foh: "Front of House",
+  boh: "Back of House",
+  other: "Other",
+};
 
 // ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
 interface BackendRefreshPowerScrubConfig {
@@ -756,6 +765,8 @@ export function useRefreshPowerScrubCalc(
     newValue: number,
     frequencyOverride?: string
   ) => {
+    const appliedFrequency = frequencyOverride || form.frequency || 'monthly';
+
     addPriceChange({
       productKey: `refreshPowerScrub_${fieldName}`,
       productName: `Refresh Power Scrub - ${getFieldDisplayName(fieldName)}`,
@@ -765,10 +776,10 @@ export function useRefreshPowerScrubCalc(
       originalValue,
       newValue,
       quantity: 1, // Default quantity for service changes
-      frequency: frequencyOverride || form.frequency || 'monthly'
+      frequency: appliedFrequency
     });
 
-    console.log(`📝 [REFRESH-POWER-SCRUB-FILE-LOGGER] Added change for ${fieldName}:`, {
+    console.log(`📝 [REFRESH-POWER-SCRUB-FILE-LOGGER] Added change for ${fieldName} with frequency "${appliedFrequency}":`, {
       from: originalValue,
       to: newValue,
       change: newValue - originalValue,
@@ -1225,6 +1236,13 @@ export function useRefreshPowerScrubCalc(
         updatedArea.outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
         updatedArea.sqFtFixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE;
         console.log(`🔧 [Refresh Power Scrub] Cleared all pricing fields for ${area} when pricing type changed from ${originalValue} to ${value}`);
+      }
+
+      if (field === "frequencyLabel") {
+        const areaLogLabel = AREA_LOG_NAMES[area];
+        const normalizedFrequency = value || form.frequency || "monthly";
+        updateRefreshPowerScrubFrequency(areaLogLabel, normalizedFrequency);
+        console.log(`📝 [REFRESH-POWER-SCRUB-FILE-LOGGER] Frequency label for ${areaLogLabel} set to "${normalizedFrequency}"`);
       }
 
       return {

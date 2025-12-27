@@ -176,6 +176,24 @@ class FileLogger {
       }))
     });
   }
+
+  // Update frequency label for pending service changes
+  updateServiceChangeFrequency(
+    areaName: string,
+    frequency: string
+  ): void {
+    const prefix = `refreshPowerScrub_${areaName}_`;
+    let updated = false;
+    this.changes.forEach((change, key) => {
+      if (key.startsWith(prefix)) {
+        change.frequency = frequency;
+        updated = true;
+      }
+    });
+    if (updated) {
+      console.log(`ĐY"" [FILE-LOGGER] Updated frequency for ${areaName} changes to ${frequency}`);
+    }
+  }
 }
 
 // Global singleton instance
@@ -213,6 +231,10 @@ export const createVersionLogFile = async (
 
 export const debugFileLogger = () => {
   fileLogger.debug();
+};
+
+export const updateRefreshPowerScrubFrequency = (areaName: string, frequency: string) => {
+  fileLogger.updateServiceChangeFrequency(areaName, frequency);
 };
 
 // ✅ SIMPLIFIED: Helper function to get all version logs for testing (uses Logs collection)
