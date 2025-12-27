@@ -1110,26 +1110,24 @@ const getAreaFieldFallback = (
       return backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
     case "workerRate":
       return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
-      case "insideRate":
-        return backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
-      case "outsideRate":
-        return backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
-      case "sqFtFixedFee":
-        return backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE;
-      case "patioAddonRate":
-        return backendConfig?.areaSpecificPricing?.patio?.upsell ?? FALLBACK_PATIO_UPSELL;
-      case "smallMediumRate":
-        return backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? FALLBACK_KITCHEN_SMALL_MED;
+    case "insideRate":
+      return backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
+    case "outsideRate":
+      return backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
+    case "sqFtFixedFee":
+      return backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE;
+    case "patioAddonRate":
+      return backendConfig?.areaSpecificPricing?.patio?.upsell ?? FALLBACK_PATIO_UPSELL;
+    case "smallMediumRate":
+      return backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? FALLBACK_KITCHEN_SMALL_MED;
     case "largeRate":
       return backendConfig?.areaSpecificPricing?.kitchen?.large ?? FALLBACK_KITCHEN_LARGE;
     case "customAmount":
-      return typeof state.customAmount === "number" ? state.customAmount : 0;
+      return 0;
     case "presetRate":
       return getPresetBaselineForArea(areaKey, state, backendConfig);
     default:
-      return typeof state[fieldName] === "number"
-        ? (state[fieldName] as number)
-        : 0;
+      return 0;
   }
 };
 
@@ -1165,13 +1163,9 @@ const getAreaFieldFallback = (
                           area.charAt(0).toUpperCase() + area.slice(1);
 
           const isPresetField = field === "presetRate";
-          const shouldUseBaseline = isPresetField && !current.presetRateIsCustom && originalValue === 0;
-          const baseOriginal = shouldUseBaseline ? getPresetBaselineForArea(area, current, backendConfig) : originalValue;
-          const fallbackBaseline = getAreaFieldFallback(area, field, current);
-          let logOriginalValue = baseOriginal > 0 ? baseOriginal : fallbackBaseline;
-          if (logOriginalValue <= 0 && isPresetField) {
-            logOriginalValue = getPresetBaselineForArea(area, current, backendConfig);
-          }
+          const logOriginalValue = isPresetField
+            ? getPresetBaselineForArea(area, current, backendConfig)
+            : getAreaFieldFallback(area, field, current);
           const areaFieldKey = `${areaName}_${field}`;
           const areaFrequency = current.frequencyLabel || form.frequency || 'monthly';
 
