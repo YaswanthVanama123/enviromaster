@@ -4,6 +4,11 @@
  * that the service forms can use to initialize their fields.
  */
 
+import {
+  parseRefreshPowerScrubDraftPayload,
+  REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID,
+} from "../refreshPowerScrub/refreshPowerScrubDraftPayload";
+
 /**
  * Helper function to extract and format custom fields for all services
  */
@@ -43,6 +48,30 @@ function extractCustomFields(structuredData: any): any[] {
     return [];
   }
 }
+
+const parseDraftPayloadFromCustomFields = (structuredData: any) => {
+  const fields = structuredData.customFields;
+  if (!Array.isArray(fields)) return undefined;
+
+  const draftField = fields.find(
+    (field: any) =>
+      (field?.id && field.id === REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID) ||
+      (field?.name && field.name === REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID)
+  );
+
+  if (!draftField || !draftField.value) return undefined;
+
+  try {
+    const value =
+      typeof draftField.value === "string"
+        ? JSON.parse(draftField.value)
+        : draftField.value;
+    return parseRefreshPowerScrubDraftPayload(value);
+  } catch (err) {
+    console.warn("Failed to parse refresh power scrub draft custom field:", err);
+    return undefined;
+  }
+};
 
 function normalizeStructuredValue(rawValue: any): any {
   if (rawValue === undefined || rawValue === null) return undefined;
@@ -1289,6 +1318,32 @@ export function transformGreaseTrapData(structuredData: any): any {
 export function transformRefreshPowerScrubData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
+  const draftFormState =
+    parseRefreshPowerScrubDraftPayload(structuredData) ??
+    parseDraftPayloadFromCustomFields(structuredData);
+  if (draftFormState) {
+    console.log('🔄 [transformRefreshPowerScrubData] Detected draft schema, normalizing form state');
+    const normalizedFormState: any = {
+      notes: draftFormState.notes ?? "",
+      tripCharge: draftFormState.tripCharge ?? REFRESH_FALLBACKS.tripCharge,
+      hourlyRate: draftFormState.hourlyRate ?? REFRESH_FALLBACKS.hourlyRate,
+      minimumVisit: draftFormState.minimumVisit ?? REFRESH_FALLBACKS.minimumVisit,
+      frequency: draftFormState.frequency ?? "monthly",
+      contractMonths: draftFormState.contractMonths ?? 12,
+      hourlyRateIsCustom: draftFormState.hourlyRateIsCustom,
+      minimumVisitIsCustom: draftFormState.minimumVisitIsCustom,
+      tripChargeIncluded: draftFormState.tripChargeIncluded ?? true,
+    };
+
+    REFRESH_AREA_KEYS.forEach((areaKey) => {
+      normalizedFormState[areaKey] = mergeRefreshAreaState(draftFormState[areaKey]);
+    });
+
+    normalizedFormState.customFields = draftFormState.customFields ?? [];
+
+    return normalizedFormState;
+  }
+
   console.log('🔄 [transformRefreshPowerScrubData] Processing structured data:', structuredData);
 
   const formState: any = {
@@ -1296,7 +1351,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
   };
 
   // Handle NEW CONVERTED FORMAT (from backend edit-format endpoint)
-  if (structuredData.hourlyRate !== undefined || structuredData.minimumVisit !== undefined) {
+  if (!structuredData.services && (structuredData.hourlyRate !== undefined || structuredData.minimumVisit !== undefined)) {
     console.log('?"" [transformRefreshPowerScrubData] Using NEW converted format');
 
     // Direct values from converted format
@@ -1401,6 +1456,24 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
           }
           if (areaOverride.patioAddonRate !== undefined) {
             targetArea.patioAddonRate = areaOverride.patioAddonRate;
+          }
+          if (areaOverride.smallMediumRate !== undefined) {
+            targetArea.smallMediumRate = areaOverride.smallMediumRate;
+          }
+          if (areaOverride.largeRate !== undefined) {
+            targetArea.largeRate = areaOverride.largeRate;
+          }
+          if (areaOverride.smallMediumQuantity !== undefined) {
+            targetArea.smallMediumQuantity = areaOverride.smallMediumQuantity;
+          }
+          if (areaOverride.largeQuantity !== undefined) {
+            targetArea.largeQuantity = areaOverride.largeQuantity;
+          }
+          if (areaOverride.smallMediumCustomAmount !== undefined) {
+            targetArea.smallMediumCustomAmount = areaOverride.smallMediumCustomAmount;
+          }
+          if (areaOverride.largeCustomAmount !== undefined) {
+            targetArea.largeCustomAmount = areaOverride.largeCustomAmount;
           }
           const overrideCustomFieldMap: Record<string, string> = {
             presetRate: "presetRateIsCustom",

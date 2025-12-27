@@ -30,6 +30,7 @@ import { useAllServicePricing } from "../backendservice/hooks";
 import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
 import { ServiceAgreement } from "./ServiceAgreement";
 import type { ServiceAgreementData } from "./ServiceAgreement/ServiceAgreement";
+import { REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID } from "./services/refreshPowerScrub/refreshPowerScrubDraftPayload";
 
 type HeaderRow = {
   labelLeft: string;
@@ -1034,6 +1035,8 @@ function FormFillingContent() {
       isUsingCustomerName: customerName !== "Unnamed_Customer"
     });
 
+    const servicesWithDraftField = attachRefreshPowerScrubDraftCustomField(servicesData);
+
     return {
       headerTitle: titleForSave,
       headerRows: payload?.headerRows || [],
@@ -1042,7 +1045,7 @@ function FormFillingContent() {
         smallProducts: productsData.smallProducts,
         bigProducts: productsData.bigProducts,
       },
-      services: servicesData,
+      services: servicesWithDraftField,
       agreement: payload?.agreement || {
         enviroOf: "",
         customerExecutedOn: "",
@@ -1050,9 +1053,67 @@ function FormFillingContent() {
       },
       serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
-      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
-    };
+    customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
   };
+};
+
+const replaceRefreshPowerScrubWithDraftPayload = (services?: Record<string, any>) => {
+  if (!services?.refreshPowerScrub?.draftPayload) return services;
+  const { draftPayload, customFields } = services.refreshPowerScrub;
+  return {
+    ...services,
+    refreshPowerScrub: {
+      ...draftPayload,
+      customFields: customFields ?? [],
+    },
+  };
+};
+
+const stripRefreshPowerScrubDraftMetadata = (services?: Record<string, any>) => {
+  if (!services?.refreshPowerScrub?.draftPayload) return services;
+  const { draftPayload, ...cleaned } = services.refreshPowerScrub;
+  return {
+    ...services,
+    refreshPowerScrub: cleaned,
+  };
+};
+
+const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>) => {
+  const service = services?.refreshPowerScrub;
+  if (!service?.draftPayload) return services;
+
+  const draftField = {
+    id: REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID,
+    name: REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID,
+    type: "text",
+    value: JSON.stringify(service.draftPayload),
+    isInternal: true,
+  };
+
+  const customFields = Array.isArray(service.customFields)
+    ? [...service.customFields]
+    : [];
+
+  const existingIndex = customFields.findIndex(
+    (field: any) =>
+      field.id === REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID ||
+      field.name === REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID
+  );
+
+  if (existingIndex >= 0) {
+    customFields[existingIndex] = draftField;
+  } else {
+    customFields.push(draftField);
+  }
+
+  return {
+    ...services,
+    refreshPowerScrub: {
+      ...service,
+      customFields,
+    },
+  };
+};
 
   // Helper function to extract customer name from headerRows
   const extractCustomerName = (headerRows: HeaderRow[]): string => {
@@ -1079,8 +1140,10 @@ function FormFillingContent() {
     const pricingStatus = calculatePricingStatus();
     console.log(`💾 [DRAFT] Pricing status: ${pricingStatus} (Red/Green Line check - drafts always use "draft" status)`);
 
+    const currentFormData = collectFormData();
     const payloadToSend = {
-      ...collectFormData(), // Collect current data from all child components
+      ...currentFormData, // Collect current data from all child components
+      services: replaceRefreshPowerScrubWithDraftPayload(currentFormData.services),
       status: "draft", // Drafts are always "draft" regardless of pricing
       // ✅ NEW: Include version context for backend to update correct version status
       versionContext: locationState.editingVersionId ? {
@@ -1225,8 +1288,10 @@ function FormFillingContent() {
       }
 
       // 1. ✅ FIXED: Always update the main agreement data first
+      const currentFormData = collectFormData();
       const payloadToSend = {
-        ...collectFormData(),
+        ...currentFormData,
+        services: stripRefreshPowerScrubDraftMetadata(currentFormData.services),
         status: documentStatus, // ✅ NEW: Dynamic status based on pricing
       };
 
@@ -1363,8 +1428,10 @@ function FormFillingContent() {
       console.log(`✅ [NEW-DOC-APPROVED] Green Line pricing - document auto-approved`);
     }
 
+    const currentFormData = collectFormData();
     const payloadToSend = {
-      ...collectFormData(), // Collect current data from all child components
+      ...currentFormData,
+      services: stripRefreshPowerScrubDraftMetadata(currentFormData.services),
       status: documentStatus, // ✅ NEW: Dynamic status based on pricing
     };
 

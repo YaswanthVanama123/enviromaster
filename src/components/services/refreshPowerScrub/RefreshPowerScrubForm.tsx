@@ -8,6 +8,7 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import "./refreshPowerScrub.css";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
+import { buildRefreshPowerScrubDraftPayload } from "./refreshPowerScrubDraftPayload";
 
 // Helper function to format numbers without unnecessary decimals
 const formatNumber = (num: number | undefined): string => {
@@ -18,8 +19,6 @@ const formatNumber = (num: number | undefined): string => {
 };
 
 const formatAmount = (n: number): string => formatNumber(n);
-
-const OVERRIDES_FIELD_ID = "refreshPowerScrubOverrides";
 
 const FREQ_OPTIONS = [
   { value: "oneTime", label: "One Time" },
@@ -54,43 +53,6 @@ const AREA_ORDER: RefreshAreaKey[] = [
   "boh",
   // "other",
 ];
-
-const buildOverridePayload = (formState: RefreshPowerScrubFormState) => {
-  const overrides: Record<string, any> = {};
-  AREA_ORDER.forEach((key) => {
-    const area = formState[key];
-    const entry: Record<string, any> = {};
-
-    if (area.pricingType === "preset") {
-      entry.presetRate = area.presetRate;
-      entry.presetQuantity = area.presetQuantity;
-    }
-    if (area.pricingType === "perWorker") {
-      entry.workerRate = area.workerRate;
-      entry.workers = area.workers;
-    }
-    if (area.pricingType === "perHour") {
-      entry.hourlyRate = area.hourlyRate;
-      entry.hours = area.hours;
-    }
-    if (area.pricingType === "squareFeet") {
-      entry.insideRate = area.insideRate;
-      entry.outsideRate = area.outsideRate;
-      entry.sqFtFixedFee = area.sqFtFixedFee;
-      entry.insideSqFt = area.insideSqFt;
-      entry.outsideSqFt = area.outsideSqFt;
-    }
-    if (area.patioAddonRate !== undefined) {
-      entry.patioAddonRate = area.patioAddonRate;
-    }
-
-    if (Object.keys(entry).length > 0) {
-      overrides[key] = entry;
-    }
-  });
-
-  return JSON.stringify(overrides);
-};
 
 const PRICING_TYPES = [
   { value: "preset", label: "Preset Package" },
@@ -176,36 +138,6 @@ const getKitchenLarge = (): number => {
 };
 
   useEffect(() => {
-    const overridesValue = buildOverridePayload(form);
-    setCustomFields((prev) => {
-      const existingIndex = prev.findIndex(
-        (field) =>
-          field.id === OVERRIDES_FIELD_ID || field.name === OVERRIDES_FIELD_ID
-      );
-      const overrideField: CustomField = {
-        id: OVERRIDES_FIELD_ID,
-        name: OVERRIDES_FIELD_ID,
-        type: "text",
-        value: overridesValue,
-        isInternal: true,
-      };
-
-      if (existingIndex === -1) {
-        return [...prev, overrideField];
-      }
-
-      const existing = prev[existingIndex];
-      if (existing.value === overridesValue && existing.isInternal) {
-        return prev;
-      }
-
-      const updated = [...prev];
-      updated[existingIndex] = { ...overrideField, id: existing.id };
-      return updated;
-    });
-  }, [form]);
-
-  useEffect(() => {
     if (servicesContext) {
       const activeAreaKeys = AREA_ORDER.filter((key) => {
         const area = form[key];
@@ -220,6 +152,8 @@ const getKitchenLarge = (): number => {
       );
 
       const isActive = totalPerVisitCost > 0;
+
+      const draftPayload = buildRefreshPowerScrubDraftPayload(form, customFields);
 
       const data = isActive ? {
         serviceId: "refreshPowerScrub",
@@ -485,6 +419,7 @@ const getKitchenLarge = (): number => {
 
         notes: form.notes || "",
         customFields: customFields,
+        draftPayload,
       } : null;
 
       console.log(`🔄 [SAVE CONTEXT DEBUG] Final services context data:`, JSON.stringify(data, null, 2));
