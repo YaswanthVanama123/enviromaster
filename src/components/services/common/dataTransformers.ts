@@ -8,6 +8,7 @@ import {
   parseRefreshPowerScrubDraftPayload,
   REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID,
 } from "../refreshPowerScrub/refreshPowerScrubDraftPayload";
+import { type RefreshFrequency } from "../refreshPowerScrub/refreshPowerScrubTypes";
 
 /**
  * Helper function to extract and format custom fields for all services
@@ -102,6 +103,55 @@ const REFRESH_FALLBACKS = {
   sqFtFixedFee: 200,
   patioStandalone: 800,
   patioUpsell: 500,
+};
+
+const normalizeFrequencyLabel = (raw?: string): RefreshFrequency | undefined => {
+  if (!raw) return undefined;
+  const cleaned = raw.toLowerCase().replace(/[^a-z0-9]/g, "");
+  switch (cleaned) {
+    case "onetime":
+    case "1time":
+      return "oneTime";
+    case "weekly":
+      return "weekly";
+    case "biweekly":
+      return "biweekly";
+    case "twicepermonth":
+    case "2permonth":
+    case "2month":
+    case "2xmonth":
+      return "twicePerMonth";
+    case "monthly":
+      return "monthly";
+    case "bimonthly":
+      return "bimonthly";
+    case "quarterly":
+      return "quarterly";
+    case "biannual":
+      return "biannual";
+    case "annual":
+      return "annual";
+    default:
+      return undefined;
+  }
+};
+
+const deriveFrequencyFromServices = (structuredData: any): RefreshFrequency | undefined => {
+  const explicit = structuredData.frequency && normalizeFrequencyLabel(structuredData.frequency);
+  if (explicit) return explicit;
+
+  if (structuredData.services) {
+    for (const areaRecord of Object.values(structuredData.services)) {
+      const label =
+        areaRecord?.frequency?.value ||
+        areaRecord?.frequencyLabel ||
+        areaRecord?.frequency;
+      const normalized = normalizeFrequencyLabel(label);
+      if (normalized) return normalized;
+    }
+  }
+
+  return undefined;
 };
 
 const createRefreshAreaTemplate = () => ({
@@ -1521,6 +1571,11 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
 
       console.log(`🔄 Extracted rates - hourly: ${formState.hourlyRate}, minimum: ${formState.minimumVisit}`);
     }
+
+    formState.frequency = deriveFrequencyFromServices(structuredData) ?? "monthly";
+    formState.contractMonths = structuredData.contractMonths ?? 12;
+    formState.tripCharge = structuredData.tripCharge ?? REFRESH_FALLBACKS.tripCharge;
+    formState.tripChargeIncluded = structuredData.tripChargeIncluded ?? true;
 
     // Map area naming between stored format and form format
     const areaMapping = {

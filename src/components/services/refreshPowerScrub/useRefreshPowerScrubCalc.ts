@@ -753,7 +753,8 @@ export function useRefreshPowerScrubCalc(
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
-    newValue: number
+    newValue: number,
+    frequencyOverride?: string
   ) => {
     addPriceChange({
       productKey: `refreshPowerScrub_${fieldName}`,
@@ -764,7 +765,7 @@ export function useRefreshPowerScrubCalc(
       originalValue,
       newValue,
       quantity: 1, // Default quantity for service changes
-      frequency: form.frequency || 'monthly'
+      frequency: frequencyOverride || form.frequency || 'monthly'
     });
 
     console.log(`📝 [REFRESH-POWER-SCRUB-FILE-LOGGER] Added change for ${fieldName}:`, {
@@ -1152,11 +1153,13 @@ export function useRefreshPowerScrubCalc(
           const fallbackBaseline = getAreaFieldFallback(area, field, current);
           const logOriginalValue = baseOriginal > 0 ? baseOriginal : fallbackBaseline;
           const areaFieldKey = `${areaName}_${field}`;
+          const areaFrequency = current.frequencyLabel || form.frequency || 'monthly';
 
           addServiceFieldChange(
             areaFieldKey,
             logOriginalValue,
-            value
+            value,
+            areaFrequency
           );
         }
       }
@@ -1199,7 +1202,7 @@ export function useRefreshPowerScrubCalc(
       if (field === 'kitchenSize') {
         updatedArea.customAmount = 0;
         updatedArea.presetQuantity = 1;  // Reset to default quantity
-        updatedArea.presetRate = 0;  // Reset to allow recalculation from backend
+        updatedArea.presetRate = undefined;  // Reset so fallback can repopulate from backend
         console.log(`🔧 [Refresh Power Scrub] Cleared custom values for ${area} when kitchen size changed from ${originalValue} to ${value}`);
       }
 
@@ -1208,7 +1211,7 @@ export function useRefreshPowerScrubCalc(
         updatedArea.customAmount = 0;
         // Clear preset fields
         updatedArea.presetQuantity = 1;
-        updatedArea.presetRate = 0;
+        updatedArea.presetRate = undefined;
         // Clear per-worker fields
         updatedArea.workers = 2;
         updatedArea.workerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
