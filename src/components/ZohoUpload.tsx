@@ -242,7 +242,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           const actualFileNames = bulkFiles.map(file =>
             calculateZohoFileName(file, folderMapping.dealName || 'Deal', nextVersion)
           );
-          setNoteText(`Bulk update - Adding ${bulkFiles.length} documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
+          // setNoteText(`Bulk update - Adding ${bulkFiles.length} documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
           setStep('update');
           return;
         }
