@@ -33,6 +33,7 @@ interface LogData {
 class FileLogger {
   private changes: Map<string, FieldChange> = new Map(); // ✅ Use Map to keep only ONE change per field
   private sessionId: string;
+  private baselineValues: Map<string, number> = new Map();
 
   constructor() {
     this.sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -43,9 +44,12 @@ class FileLogger {
   addChange(change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>): void {
     const key = `${change.productKey}_${change.fieldType}`;
     const existingEntry = this.changes.get(key);
-    const resolvedOriginalValue = existingEntry
-      ? existingEntry.originalValue
-      : change.originalValue;
+    const baselineValue = this.baselineValues.get(key);
+    const resolvedOriginalValue = baselineValue !== undefined
+      ? baselineValue
+      : existingEntry
+        ? existingEntry.originalValue
+        : change.originalValue;
     const changeAmount = change.newValue - resolvedOriginalValue;
     const changePercentage = resolvedOriginalValue !== 0
       ? (changeAmount / resolvedOriginalValue) * 100
@@ -68,6 +72,9 @@ class FileLogger {
     }
 
     this.changes.set(key, fullChange);
+    if (baselineValue === undefined) {
+      this.baselineValues.set(key, resolvedOriginalValue);
+    }
 
     console.log(`📝 [FILE-LOGGER] ${existingEntry ? 'Updated' : 'Added'} change: ${change.productName} - ${change.fieldType}`, {
       from: resolvedOriginalValue,

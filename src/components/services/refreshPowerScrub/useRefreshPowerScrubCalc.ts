@@ -1077,16 +1077,39 @@ export function useRefreshPowerScrubCalc(
     });
   };
 
-  const getAreaFieldFallback = (
-    areaKey: RefreshAreaKey,
-    fieldName: keyof RefreshAreaCalcState,
-    state: RefreshAreaCalcState
-  ): number => {
-    switch (fieldName) {
-      case "hourlyRate":
-        return backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
-      case "workerRate":
-        return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+const getPresetBaselineForArea = (
+  areaKey: RefreshAreaKey,
+  state: RefreshAreaCalcState,
+  config?: BackendRefreshPowerScrubConfig | null
+): number => {
+  if (areaKey === "dumpster") {
+    return config?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+  }
+  if (areaKey === "patio") {
+    return config?.areaSpecificPricing?.patio?.standalone ?? FALLBACK_PATIO_STANDALONE;
+  }
+  if (areaKey === "foh") {
+    return config?.areaSpecificPricing?.frontOfHouse ?? FALLBACK_FOH_RATE;
+  }
+  if (areaKey === "boh") {
+    const kitchenSize = state.kitchenSize === "large" ? "large" : "smallMedium";
+    return kitchenSize === "large"
+      ? config?.areaSpecificPricing?.kitchen?.large ?? FALLBACK_KITCHEN_LARGE
+      : config?.areaSpecificPricing?.kitchen?.smallMedium ?? FALLBACK_KITCHEN_SMALL_MED;
+  }
+  return 0;
+};
+
+const getAreaFieldFallback = (
+  areaKey: RefreshAreaKey,
+  fieldName: keyof RefreshAreaCalcState,
+  state: RefreshAreaCalcState
+): number => {
+  switch (fieldName) {
+    case "hourlyRate":
+      return backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
+    case "workerRate":
+      return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
       case "insideRate":
         return backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
       case "outsideRate":
@@ -1097,16 +1120,18 @@ export function useRefreshPowerScrubCalc(
         return backendConfig?.areaSpecificPricing?.patio?.upsell ?? FALLBACK_PATIO_UPSELL;
       case "smallMediumRate":
         return backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? FALLBACK_KITCHEN_SMALL_MED;
-      case "largeRate":
-        return backendConfig?.areaSpecificPricing?.kitchen?.large ?? FALLBACK_KITCHEN_LARGE;
-      case "customAmount":
-        return typeof state.customAmount === "number" ? state.customAmount : 0;
-      default:
-        return typeof state[fieldName] === "number"
-          ? (state[fieldName] as number)
-          : 0;
-    }
-  };
+    case "largeRate":
+      return backendConfig?.areaSpecificPricing?.kitchen?.large ?? FALLBACK_KITCHEN_LARGE;
+    case "customAmount":
+      return typeof state.customAmount === "number" ? state.customAmount : 0;
+    case "presetRate":
+      return getPresetBaselineForArea(areaKey, state, backendConfig);
+    default:
+      return typeof state[fieldName] === "number"
+        ? (state[fieldName] as number)
+        : 0;
+  }
+};
 
   /** Update a single area field from the form */
   const setAreaField = (
@@ -1139,30 +1164,14 @@ export function useRefreshPowerScrubCalc(
                           area === 'foh' ? 'Front of House' :
                           area.charAt(0).toUpperCase() + area.slice(1);
 
-          const getPresetBaseline = (areaKey: RefreshAreaKey): number => {
-            if (areaKey === "dumpster") {
-              return backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
-            }
-            if (areaKey === "patio") {
-              return backendConfig?.areaSpecificPricing?.patio?.standalone ?? 800;
-            }
-            if (areaKey === "foh") {
-              return backendConfig?.areaSpecificPricing?.frontOfHouse ?? 2500;
-            }
-            if (areaKey === "boh") {
-              const kitchenSize = current.kitchenSize === "large" ? "large" : "smallMedium";
-              return kitchenSize === "large"
-                ? backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500
-                : backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? 1500;
-            }
-            return 0;
-          };
-
           const isPresetField = field === "presetRate";
           const shouldUseBaseline = isPresetField && !current.presetRateIsCustom && originalValue === 0;
-          const baseOriginal = shouldUseBaseline ? getPresetBaseline(area) : originalValue;
+          const baseOriginal = shouldUseBaseline ? getPresetBaselineForArea(area, current, backendConfig) : originalValue;
           const fallbackBaseline = getAreaFieldFallback(area, field, current);
-          const logOriginalValue = baseOriginal > 0 ? baseOriginal : fallbackBaseline;
+          let logOriginalValue = baseOriginal > 0 ? baseOriginal : fallbackBaseline;
+          if (logOriginalValue <= 0 && isPresetField) {
+            logOriginalValue = getPresetBaselineForArea(area, current, backendConfig);
+          }
           const areaFieldKey = `${areaName}_${field}`;
           const areaFrequency = current.frequencyLabel || form.frequency || 'monthly';
 
