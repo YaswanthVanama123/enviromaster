@@ -990,7 +990,7 @@ export default function SavedFilesAgreements() {
 
   const handleZohoUpload = useCallback((file: SavedFileListItem) => {
     // ✅ UPDATED: Support both PDFs and TXT log files for Zoho upload
-    const isUploadableFile = file.hasPdf || file.fileType === 'version_log';
+    const isUploadableFile = file.hasPdf || file.fileType === 'version_log' || file.fileType === 'attached_pdf';
     if (!isUploadableFile) {
       setToastMessage({
         message: "This document doesn't have a file to upload. Please generate a PDF or ensure the file exists.",
@@ -1002,10 +1002,18 @@ export default function SavedFilesAgreements() {
     setZohoUploadOpen(true);
   }, []);
 
+  const getAgreementUploadableFiles = (agreement: SavedFileGroup) => {
+    return agreement.files.filter(file =>
+      file.hasPdf ||
+      file.fileType === 'version_log' ||
+      file.fileType === 'attached_pdf'
+    );
+  };
+
   // ✅ NEW: Handle Zoho upload for entire agreement (folder-level upload)
   const handleAgreementZohoUpload = (agreement: SavedFileGroup) => {
-    // ✅ UPDATED: Support both PDFs and TXT log files for agreement upload
-    const uploadableFiles = agreement.files.filter(file => file.hasPdf || file.fileType === 'version_log');
+    // ✅ UPDATED: Support PDFs, version logs, and attached files for agreement upload
+    const uploadableFiles = getAgreementUploadableFiles(agreement);
 
     if (uploadableFiles.length === 0) {
       setToastMessage({
@@ -1416,6 +1424,7 @@ export default function SavedFilesAgreements() {
 
         {!loading && !error && agreements.map((agreement) => {
           const agreementSelectionState = getAgreementSelectionState(agreement);
+          const uploadableFiles = getAgreementUploadableFiles(agreement);
           const agreementDeletionInfo = isTrashView ? formatDeletionMeta(agreement.deletedBy, agreement.deletedAt) : null;
           const hasActiveVersions = agreement.files.some(file =>
             file.fileType === 'version_pdf' && file.isDeleted !== true
@@ -1546,14 +1555,14 @@ export default function SavedFilesAgreements() {
                       fontSize: '12px',
                       color: '#fff',
                       fontWeight: '500',
-                      opacity: agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length > 0 ? 1 : 0.5
+                      opacity: uploadableFiles.length > 0 ? 1 : 0.5
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAgreementZohoUpload(agreement);
                     }}
-                    disabled={agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length === 0}
-                    title={`Upload ${agreement.files.filter(f => f.hasPdf || f.fileType === 'version_log').length} files to Zoho Bigin`}
+                    disabled={uploadableFiles.length === 0}
+                    title={`Upload ${uploadableFiles.length} files to Zoho Bigin`}
                   >
                     <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
                     Bigin

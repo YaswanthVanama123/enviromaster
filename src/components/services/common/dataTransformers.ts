@@ -1575,6 +1575,14 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       if (areaData.largeCustomAmount !== undefined) {
         areaState.largeCustomAmount = areaData.largeCustomAmount;
       }
+      const normalizedSmallMediumQty = normalizeStructuredValue(areaData.smallMediumQuantity);
+      if (normalizedSmallMediumQty !== undefined) {
+        areaState.smallMediumQuantity = normalizedSmallMediumQty;
+      }
+      const normalizedLargeQty = normalizeStructuredValue(areaData.largeQuantity);
+      if (normalizedLargeQty !== undefined) {
+        areaState.largeQuantity = normalizedLargeQty;
+      }
       if (areaData.patioAddonRate !== undefined) {
         areaState.patioAddonRate = areaData.patioAddonRate;
       }

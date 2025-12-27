@@ -207,12 +207,19 @@ const getKitchenLarge = (): number => {
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = AREA_ORDER.some(key => form[key]?.enabled);
+      const activeAreaKeys = AREA_ORDER.filter((key) => {
+        const area = form[key];
+        const areaTotal = areaTotals[key] || 0;
+        return area?.enabled && areaTotal > 0;
+      });
 
-      // Calculate total per-visit cost across all enabled areas
-      const totalPerVisitCost = AREA_ORDER
-        .filter(key => form[key]?.enabled)
-        .reduce((sum, key) => sum + (areaTotals[key] || 0), 0);
+      // Calculate total per-visit cost across active areas only
+      const totalPerVisitCost = activeAreaKeys.reduce(
+        (sum, key) => sum + (areaTotals[key] || 0),
+        0
+      );
+
+      const isActive = totalPerVisitCost > 0;
 
       const data = isActive ? {
         serviceId: "refreshPowerScrub",
@@ -220,8 +227,10 @@ const getKitchenLarge = (): number => {
         isActive: true,
 
         // Red/Green Line pricing data
-        perVisitBase: totalPerVisitCost,  // Raw cost (sum of all areas)
-        perVisit: Math.max(totalPerVisitCost, form.minimumVisit || 0),  // Final per-visit price after minimum
+        perVisitBase: isActive ? totalPerVisitCost : 0,  // Raw cost (sum of all areas)
+        perVisit: isActive
+          ? Math.max(totalPerVisitCost, form.minimumVisit || 0)
+          : 0,  // Final per-visit price after minimum
         minimumVisit: form.minimumVisit,  // Minimum threshold
 
         // Global service information
@@ -235,9 +244,7 @@ const getKitchenLarge = (): number => {
         minimumVisitIsCustom: form.minimumVisitIsCustom,
 
         // Services object with new structure
-        services: AREA_ORDER
-          .filter(key => form[key]?.enabled)
-          .reduce((acc, key) => {
+        services: activeAreaKeys.reduce((acc, key) => {
             const area = form[key];
             const areaName = key === 'foh' ? 'frontHouse' : key === 'boh' ? 'backHouse' : key;
 
