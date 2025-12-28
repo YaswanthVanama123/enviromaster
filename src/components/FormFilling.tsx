@@ -576,12 +576,12 @@ function ContractSummary({ productTotals }: ContractSummaryProps) {
         </div>
       </div>
 
-      {/* ✅ Total Agreement Amount - Full Width at Bottom */}
+      {/* ✅ Total Service Agreement Total - Full Width at Bottom */}
       <div className="contract-total-section">
-        <div className="total-label">Total Agreement Amount</div>
+        <div className="total-label">Total Service Agreement Total</div>
         <div className="total-amount">${totalAmount.toFixed(2)}</div>
         <div className="total-breakdown">
-          ${totalOriginal.toFixed(2)} × {globalContractMonths} months
+          Sum of all service contract totals across {globalContractMonths} month agreement
           {(globalTripCharge > 0 || globalParkingCharge > 0) && (
             <span className="charges-included">
               {globalTripCharge > 0 && (() => {

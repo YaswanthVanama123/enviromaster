@@ -917,7 +917,7 @@ const getKitchenLarge = (): number => {
           />
           <span>/hr/worker</span>
         </div> */}
-        <div className="rps-inline">
+        {/* <div className="rps-inline">
           <span className="rps-label">Minimum Visit</span>
           <span>$</span>
           <input
@@ -928,7 +928,7 @@ const getKitchenLarge = (): number => {
             onChange={(e) => setMinimumVisit(e.target.value)}
             style={{ backgroundColor: form.minimumVisitIsCustom ? '#fffacd' : 'white' }}
           />
-        </div>
+        </div> */}
       </div>
 
       <div className="rps-wrap rps-wrap-full">
