@@ -755,7 +755,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
     const shouldShowMonthlyRecurring = frequentFrequencies.includes(freq);
     const shouldShowVisitRecurring = infrequentFrequencies.includes(freq);
-    const isVisitBasedFrequency = shouldShowMonthlyRecurring;
+    const isVisitBasedFrequency = shouldShowVisitRecurring;
 
     const areaSqFt = form.areaSqFt ?? 0;
 

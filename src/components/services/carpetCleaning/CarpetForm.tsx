@@ -112,11 +112,12 @@ export const CarpetForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
+  const monthlyRecurringFrequencies: CarpetFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
+  const visitBasedRecurringFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
+
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.areaSqFt ?? 0) > 0;
-      const monthlyRecurringFrequencies: CarpetFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
-      const visitBasedRecurringFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
       const shouldShowMonthlyRecurring = monthlyRecurringFrequencies.includes(form.frequency);
       const shouldShowVisitRecurring = visitBasedRecurringFrequencies.includes(form.frequency);
 
@@ -129,10 +130,15 @@ export const CarpetForm: React.FC<
         },
         monthly: {
           isDisplay: form.frequency !== "oneTime",
-          label: form.frequency === "oneTime" ? "Total Price" :
-                 calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
+          label: form.frequency === "oneTime"
+            ? "Total Price"
+            : shouldShowVisitRecurring
+              ? "First Visit Total"
+              : "First Month Total",
           type: "dollar" as const,
-          amount: form.frequency === "oneTime" ? calc.perVisitCharge : calc.firstMonthTotal,
+          amount: form.frequency === "oneTime"
+            ? calc.perVisitCharge
+            : calc.firstMonthTotal,
         },
       };
 
@@ -145,16 +151,16 @@ export const CarpetForm: React.FC<
         };
       }
 
-      if (shouldShowVisitRecurring) {
+       if (shouldShowVisitRecurring) {
         totals.recurringVisit = {
           isDisplay: true,
           label: "Recurring Visit Total",
           type: "dollar" as const,
-          amount: calc.monthlyTotal,
+          amount: calc.perVisitCharge,
         };
       }
 
-      if (form.frequency !== "oneTime") {
+       if (form.frequency !== "oneTime") {
         totals.contract = {
           isDisplay: true,
           label: "Contract Total",
@@ -164,7 +170,7 @@ export const CarpetForm: React.FC<
         };
       }
 
-      const data = isActive ? {
+       const data = isActive ? {
         serviceId: "carpetclean",
         displayName: "Carpet Cleaning",
         isActive: true,

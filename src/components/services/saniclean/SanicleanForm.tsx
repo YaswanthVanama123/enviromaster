@@ -24,6 +24,33 @@ const sanicleanFrequencyLabels: Record<string, string> = {
   annual: "Annual",
 };
 
+const MONTHLY_OR_BELOW_FREQUENCIES = new Set(["weekly", "biweekly", "twicePerMonth", "monthly"]);
+const ABOVE_MONTHLY_FREQUENCIES = new Set(["bimonthly", "quarterly", "biannual", "annual"]);
+
+const FREQUENCY_MULTIPLIER_FALLBACK: Record<string, number> = {
+  weekly: 4.33,
+  biweekly: 2.165,
+  twicePerMonth: 2.0,
+  monthly: 1.0,
+  bimonthly: 0.5,
+  quarterly: 0.33,
+  biannual: 0.17,
+  annual: 1 / 12,
+};
+
+function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): number {
+  if (backendConfig?.frequencyMetadata?.[frequency]) {
+    const metadata = backendConfig.frequencyMetadata[frequency];
+    if (typeof metadata.monthlyRecurringMultiplier === "number") {
+      return metadata.monthlyRecurringMultiplier;
+    }
+    if (typeof metadata.cycleMonths === "number") {
+      return metadata.cycleMonths === 0 ? 1 : 1 / metadata.cycleMonths;
+    }
+  }
+  return FREQUENCY_MULTIPLIER_FALLBACK[frequency] ?? FREQUENCY_MULTIPLIER_FALLBACK.weekly;
+}
+
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData, onRemove }) => {
@@ -217,6 +244,106 @@ export const SanicleanForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = fixtures > 0;
+      const frequencyLabel =
+        sanicleanFrequencyLabels[form.mainServiceFrequency] ||
+        form.mainServiceFrequency ||
+        "TBD";
+      const facilityFrequencyLabel =
+        sanicleanFrequencyLabels[form.facilityComponentsFrequency] ||
+        form.facilityComponentsFrequency ||
+        "TBD";
+
+      const formatDollars = (amount: number) => `$${amount.toFixed(2)}`;
+      type PdfExtra = {
+        label: string;
+        type?: "line" | "bold" | "atCharge";
+        value?: string;
+        v1?: string | number;
+        v2?: string | number;
+        v3?: string | number;
+      };
+      const extras: PdfExtra[] = [];
+      const addLineExtra = (label: string, amount: number | string | undefined, type: "line" | "bold" = "line") => {
+        if (amount === undefined || amount === null) return;
+        if (typeof amount === "number" && amount === 0) return;
+        if (typeof amount === "string" && amount.trim() === "") return;
+        extras.push({
+          label,
+          value: typeof amount === "number" ? formatDollars(amount) : amount,
+          type,
+        });
+      };
+      const addAtChargeExtra = (
+        label: string,
+        qty: number | undefined,
+        rate: number | undefined,
+        total: number
+      ) => {
+        if (!qty || qty <= 0) return;
+        if (!rate || rate === 0) return;
+        extras.push({
+          label,
+          type: "atCharge",
+          v1: qty,
+          v2: `${formatDollars(rate)}/mo`,
+          v3: formatDollars(total),
+        });
+      };
+
+      const urinalScreensTotal =
+        (form.urinalScreensQty || 0) * (form.urinalScreenMonthly || 0);
+      const urinalMatsTotal =
+        (form.urinalMatsQty || 0) * (form.urinalMatMonthly || 0);
+      const toiletClipsTotal =
+        (form.toiletClipsQty || 0) * (form.toiletClipsMonthly || 0);
+      const seatCoverTotal =
+        (form.seatCoverDispensersQty || 0) * (form.seatCoverDispenserMonthly || 0);
+      const sanipodsTotal =
+        (form.sanipodsQty || 0) * (form.sanipodServiceMonthly || 0);
+      const warrantyTotal =
+        (form.warrantyDispensers || 0) * (form.warrantyFeePerDispenserPerWeek || 0);
+      const microfiberTotal =
+        (form.microfiberBathrooms || 0) * (form.microfiberMoppingPerBathroom || 0);
+
+      const frequency = form.mainServiceFrequency;
+      const frequencyMultiplier = getSanicleanMonthlyMultiplier(frequency, backendConfig);
+      const perVisitPrice =
+        frequencyMultiplier > 0 ? quote.monthlyTotal / frequencyMultiplier : quote.monthlyTotal;
+      const firstMonthExtra =
+        backendConfig?.frequencyMetadata?.[frequency]?.firstMonthExtraMultiplier ?? 0;
+      const firstMonthTotal = quote.monthlyTotal + perVisitPrice * firstMonthExtra;
+
+      if (frequencyLabel) {
+        addLineExtra("Frequency", frequencyLabel);
+      }
+
+      if (form.pricingMode === "per_item_charge") {
+        addLineExtra("Facility Components Frequency", facilityFrequencyLabel);
+      }
+
+      addLineExtra("Luxury Upgrade", luxuryUpgradeWeekly);
+      addAtChargeExtra("Urinal Screens", form.urinalScreensQty, form.urinalScreenMonthly, urinalScreensTotal);
+      addAtChargeExtra("Urinal Mats", form.urinalMatsQty, form.urinalMatMonthly, urinalMatsTotal);
+      addAtChargeExtra("Toilet Clips", form.toiletClipsQty, form.toiletClipsMonthly, toiletClipsTotal);
+      addAtChargeExtra("Seat Cover Dispensers", form.seatCoverDispensersQty, form.seatCoverDispenserMonthly, seatCoverTotal);
+      addAtChargeExtra("SaniPods", form.sanipodsQty, form.sanipodServiceMonthly, sanipodsTotal);
+      addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal);
+      addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal);
+      addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold");
+      addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold");
+
+      if (MONTHLY_OR_BELOW_FREQUENCIES.has(frequency)) {
+        addLineExtra("First Month Total", firstMonthTotal, "bold");
+        addLineExtra("Recurring Month Total", quote.monthlyTotal);
+      } else if (ABOVE_MONTHLY_FREQUENCIES.has(frequency)) {
+        addLineExtra("First Visit Total", perVisitPrice, "bold");
+        addLineExtra("Recurring Visit Total", perVisitPrice);
+      }
+
+      const includedItems = Array.isArray(quote.included)
+        ? quote.included.filter(Boolean).join(" • ")
+        : "";
+      addLineExtra("What's Included", includedItems);
 
       const data = isActive ? {
         serviceId: "saniclean",
@@ -380,9 +507,10 @@ export const SanicleanForm: React.FC<
           amount: quote.contractTotal,
         },
  
-         notes: form.notes || "",
-         customFields: customFields,
-       } : null;
+        notes: form.notes || "",
+        customFields: customFields,
+        pdfExtras: extras,
+      } : null;
 
       const dataStr = JSON.stringify(data);
 
@@ -391,7 +519,7 @@ export const SanicleanForm: React.FC<
         servicesContext.updateService("saniclean", data);
       }
     }
-  }, [form, quote, fixtures, customFields, soapDispensers, isAllInclusive]);
+  }, [form, quote, fixtures, customFields, soapDispensers, isAllInclusive, backendConfig]);
 
   const paperCreditPerWeek = form.fixtureCount * form.paperCreditPerFixture;
   const paperOveragePerWeek = Math.max(0, form.estimatedPaperSpendPerWeek - paperCreditPerWeek);
