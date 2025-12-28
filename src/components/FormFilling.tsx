@@ -581,7 +581,7 @@ function ContractSummary({ productTotals }: ContractSummaryProps) {
         <div className="total-label">Total Service Agreement Total</div>
         <div className="total-amount">${totalAmount.toFixed(2)}</div>
         <div className="total-breakdown">
-          Sum of all service contract totals across {globalContractMonths} month agreement
+          Sum of all active service contract totals (includes Refresh Power Scrub cost) across {globalContractMonths} month agreement
           {(globalTripCharge > 0 || globalParkingCharge > 0) && (
             <span className="charges-included">
               {globalTripCharge > 0 && (() => {
@@ -1857,8 +1857,10 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         )}
 
         {isSaving && (
-          <div className="formfilling__saving-overlay">
-            <div className="formfilling__spinner" />
+          <div className="formfilling__saving-overlay" role="status" aria-live="polite">
+            <div className="formfilling__spinner">
+              <span className="formfilling__sr-only">Saving agreement data…</span>
+            </div>
           </div>
         )}
 

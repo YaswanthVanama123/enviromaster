@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRefreshPowerScrubCalc } from "./useRefreshPowerScrubCalc";
 import type {
   RefreshAreaKey,
@@ -136,6 +136,15 @@ export const RefreshPowerScrubForm: React.FC<
 const getKitchenLarge = (): number => {
   return backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500;
 };
+
+  const totalServiceCost = useMemo(
+    () =>
+      AREA_ORDER.reduce(
+        (sum, key) => sum + (areaContractTotals[key] || 0),
+        0
+      ),
+    [areaContractTotals]
+  );
 
   useEffect(() => {
     if (servicesContext) {
@@ -398,24 +407,24 @@ const getKitchenLarge = (): number => {
             return acc;
           }, {} as Record<string, any>),
 
-        totals: {
-          perVisit: {
-            isDisplay: true,
-            label: "Total Per Visit",
-            type: "dollar" as const,
-            amount: parseFloat(formatNumber(quote.perVisitPrice)),
-          },
-          contract: {
-            isDisplay: true,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: quote.contractTotal,
-          },
-        },
+            totals: {
+              perVisit: {
+                isDisplay: true,
+                label: "Total Service Cost",
+                type: "dollar" as const,
+                amount: parseFloat(formatNumber(totalServiceCost)),
+              },
+              contract: {
+                isDisplay: true,
+                label: "Contract Total",
+                type: "dollar" as const,
+                months: form.contractMonths,
+                amount: totalServiceCost,
+              },
+            },
 
-        // ✅ Also add direct contractTotal field for compatibility with ServicesContext
-        contractTotal: quote.contractTotal,
+            // ✅ Also add direct contractTotal field for compatibility with ServicesContext
+            contractTotal: totalServiceCost,
 
         notes: form.notes || "",
         customFields: customFields,
@@ -432,7 +441,7 @@ const getKitchenLarge = (): number => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, areaTotals, quote, customFields]);
+  }, [form, areaTotals, quote, customFields, totalServiceCost]);
 
   // For each column, show the default rule price so the user
   // knows the starting point even before typing anything.
@@ -1091,9 +1100,9 @@ const getKitchenLarge = (): number => {
       </div>
 
       {/* Summary */}
-      <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
+          <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
         <div className="rps-inline">
-          <span className="rps-label-strong">TOTAL PER VISIT: ${formatAmount(quote.perVisitPrice)}</span>
+          <span className="rps-label-strong">TOTAL REFRESH POWER SCRUB COST: ${formatAmount(totalServiceCost)}</span>
         </div>
       </div>
 
