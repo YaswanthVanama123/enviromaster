@@ -272,9 +272,9 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
         // Set default notes for bulk first-time upload using actual Zoho file names
         const actualFileNames = bulkFiles.map(file =>
-          calculateZohoFileName(file, defaultDealName, 1)
+          file.fileName || calculateZohoFileName(file, defaultDealName, 1)
         );
-        setNoteText(`Bulk upload of ${bulkFiles.length} documents to Zoho Bigin:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
+        // setNoteText(`Bulk upload of ${bulkFiles.length} documents to Zoho Bigin:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
 
         setStep('first-time');
         return;
@@ -495,7 +495,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
         // ✅ FIX: Create ONE note with all file information using actual Zoho file names
         const actualFileNames = selectedBulkFiles.map(file =>
-          calculateZohoFileName(file, dealName.trim(), 1)
+          file.fileName || calculateZohoFileName(file, dealName.trim(), 1)
         );
         const bulkNoteText = `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
 
@@ -724,7 +724,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         // ✅ Prepare comprehensive note text for first file upload using actual Zoho file names
         const nextVersion = uploadStatus?.mapping?.nextVersion || 2;
         const actualFileNames = selectedBulkFiles.map(file =>
-          calculateZohoFileName(file, uploadStatus?.mapping?.dealName || 'Deal', nextVersion)
+          file.fileName || calculateZohoFileName(file, uploadStatus?.mapping?.dealName || 'Deal', nextVersion)
         );
         const bulkUpdateNoteText = `${noteText.trim()}\n\nUpdate with ${selectedBulkFiles.length} selected documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
 
@@ -750,7 +750,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
               result = await zohoApi.updateUpload(targetId, {
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 skipNoteCreation: !isFirstFileUpload,  // ✅ Skip note creation for subsequent files
-                versionId: file.id
+                versionId: file.id,
+                versionFileName: file.fileName
               });
             } else if (strategy.type === 'attached') {
               // Manual uploads - use attached file API
@@ -774,7 +775,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
               result = await zohoApi.updateUpload(agreementId, {
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 skipNoteCreation: !isFirstFileUpload,
-                versionId: file.id
+                versionId: file.id,
+                versionFileName: file.fileName
               });
             }
 

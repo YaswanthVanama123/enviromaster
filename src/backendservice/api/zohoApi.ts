@@ -129,6 +129,7 @@ export interface UpdateUploadRequest {
   dealId?: string; // ✅ NEW: Optional dealId for bulk uploads
   skipNoteCreation?: boolean; // ✅ NEW: Skip note creation for bulk uploads
   versionId?: string; // ✅ NEW: Target a specific version PDF during uploads
+  versionFileName?: string; // Optional actual filename to set on Zoho
 }
 
 export interface ZohoDeal {
