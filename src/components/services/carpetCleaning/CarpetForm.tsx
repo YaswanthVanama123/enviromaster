@@ -115,6 +115,54 @@ export const CarpetForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.areaSqFt ?? 0) > 0;
+      const monthlyRecurringFrequencies: CarpetFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
+      const visitBasedRecurringFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
+      const shouldShowMonthlyRecurring = monthlyRecurringFrequencies.includes(form.frequency);
+      const shouldShowVisitRecurring = visitBasedRecurringFrequencies.includes(form.frequency);
+
+      const totals = {
+        perVisit: {
+          isDisplay: true,
+          label: "Per Visit Total",
+          type: "dollar" as const,
+          amount: calc.perVisitCharge,
+        },
+        monthly: {
+          isDisplay: form.frequency !== "oneTime",
+          label: form.frequency === "oneTime" ? "Total Price" :
+                 calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
+          type: "dollar" as const,
+          amount: form.frequency === "oneTime" ? calc.perVisitCharge : calc.firstMonthTotal,
+        },
+      };
+
+      if (shouldShowMonthlyRecurring) {
+        totals.monthlyRecurring = {
+          isDisplay: true,
+          label: "Monthly Recurring",
+          type: "dollar" as const,
+          amount: calc.monthlyTotal,
+        };
+      }
+
+      if (shouldShowVisitRecurring) {
+        totals.recurringVisit = {
+          isDisplay: true,
+          label: "Recurring Visit Total",
+          type: "dollar" as const,
+          amount: calc.monthlyTotal,
+        };
+      }
+
+      if (form.frequency !== "oneTime") {
+        totals.contract = {
+          isDisplay: true,
+          label: "Contract Total",
+          type: "dollar" as const,
+          months: form.contractMonths,
+          amount: calc.contractTotal,
+        };
+      }
 
       const data = isActive ? {
         serviceId: "carpetclean",
@@ -181,39 +229,16 @@ export const CarpetForm: React.FC<
           },
         } : {}),
 
-        totals: {
-          perVisit: {
-            isDisplay: true,
-            label: "Per Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisitCharge,
-          },
-          monthly: {
-            isDisplay: form.frequency !== "oneTime",
-            label: form.frequency === "oneTime" ? "Total Price" :
-                   calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
-            type: "dollar" as const,
-            amount: form.frequency === "oneTime" ? calc.perVisitCharge : calc.firstMonthTotal,
-          },
-          ...(form.frequency !== "oneTime" && !calc.isVisitBasedFrequency ? {
-            recurring: {
-              isDisplay: true,
-              label: "Monthly Recurring",
-              type: "dollar" as const,
-              amount: calc.monthlyTotal,
-            },
-          } : {}),
-          contract: {
-            isDisplay: form.frequency !== "oneTime",
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-        },
+        totals,
 
         notes: form.notes || "",
         customFields: customFields,
+        pdfFieldVisibility: {
+          location: false,
+          useExactSqft: false,
+          includeInstall: false,
+          isDirtyInstall: false,
+        },
       } : null;
 
       const dataStr = JSON.stringify(data);

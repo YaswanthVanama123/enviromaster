@@ -750,12 +750,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
     const visitsPerMonth = visitsPerYear / 12;
 
-    // ✅ Detect visit-based frequencies (oneTime, quarterly, biannual, annual, bimonthly)
-    const isVisitBasedFrequency = freq === "oneTime" ||
-                                   freq === "quarterly" ||
-                                   freq === "biannual" ||
-                                   freq === "annual" ||
-                                   freq === "bimonthly";
+    const frequentFrequencies: CarpetFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
+    const infrequentFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
+
+    const shouldShowMonthlyRecurring = frequentFrequencies.includes(freq);
+    const shouldShowVisitRecurring = infrequentFrequencies.includes(freq);
+    const isVisitBasedFrequency = shouldShowMonthlyRecurring;
 
     const areaSqFt = form.areaSqFt ?? 0;
 
