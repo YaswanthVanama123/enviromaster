@@ -525,6 +525,7 @@ export default function SavedFilesAgreements() {
 
   // File upload state
   const [fileUploadOpen, setFileUploadOpen] = useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [currentUploadAgreement, setCurrentUploadAgreement] = useState<SavedFileGroup | null>(null);
 
   // ✅ NEW: Delete confirmation state
@@ -1114,6 +1115,8 @@ export default function SavedFilesAgreements() {
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || !currentUploadAgreement) return;
 
+    setIsUploadingFiles(true);
+
     try {
       setToastMessage({
         message: "Uploading files...",
@@ -1158,6 +1161,8 @@ export default function SavedFilesAgreements() {
         message: "Failed to add files to agreement. Please try again.",
         type: "error"
       });
+    } finally {
+      setIsUploadingFiles(false);
     }
   };
 
@@ -1263,6 +1268,13 @@ export default function SavedFilesAgreements() {
 
   return (
     <section className="sf">
+      {isUploadingFiles && (
+        <div className="sf__saving-overlay" role="status" aria-live="polite">
+          <div className="sf__spinner">
+            <span className="sf__sr-only">Uploading files to agreement…</span>
+          </div>
+        </div>
+      )}
       <div className="sf__toolbar">
         <div className="sf__search">
           <input
