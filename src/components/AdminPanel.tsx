@@ -104,6 +104,22 @@ export default function AdminPanel() {
     total: 0
   });
 
+  const pieData = useMemo(() => {
+    const totalFromCounts = pieCounts.total || pieCounts.done + pieCounts.pending + pieCounts.saved + pieCounts.drafts;
+    const total = totalFromCounts;
+    return {
+      done: pieCounts.done,
+      pending: pieCounts.pending,
+      saved: pieCounts.saved,
+      drafts: pieCounts.drafts,
+      total,
+      donePercent: total > 0 ? (pieCounts.done / total) * 100 : 0,
+      pendingPercent: total > 0 ? (pieCounts.pending / total) * 100 : 0,
+      savedPercent: total > 0 ? (pieCounts.saved / total) * 100 : 0,
+      draftsPercent: total > 0 ? (pieCounts.drafts / total) * 100 : 0,
+    };
+  }, [pieCounts]);
+
   // Update active tab when URL parameter changes
   useEffect(() => {
     const urlTab = getActiveTabFromUrl();
@@ -374,6 +390,7 @@ export default function AdminPanel() {
   const handleLogout = () => {
     if (logout) {
       logout();
+      navigate("/admin-login", { replace: true });
     }
   };
 
@@ -429,22 +446,6 @@ export default function AdminPanel() {
         return "Dashboard";
     }
   };
-
-  const pieData = useMemo(() => {
-    const totalFromCounts = pieCounts.total || pieCounts.done + pieCounts.pending + pieCounts.saved + pieCounts.drafts;
-    const total = totalFromCounts;
-    return {
-      done: pieCounts.done,
-      pending: pieCounts.pending,
-      saved: pieCounts.saved,
-      drafts: pieCounts.drafts,
-      total,
-      donePercent: total > 0 ? (pieCounts.done / total) * 100 : 0,
-      pendingPercent: total > 0 ? (pieCounts.pending / total) * 100 : 0,
-      savedPercent: total > 0 ? (pieCounts.saved / total) * 100 : 0,
-      draftsPercent: total > 0 ? (pieCounts.drafts / total) * 100 : 0,
-    };
-  }, [pieCounts]);
 
   const handlePieTimeFilterChange = (value: string) => {
     setPieTimeFilter(value);

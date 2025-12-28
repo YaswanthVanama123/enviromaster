@@ -1856,6 +1856,12 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           <div className="formfilling__loading">Loading…</div>
         )}
 
+        {isSaving && (
+          <div className="formfilling__saving-overlay">
+            <div className="formfilling__spinner" />
+          </div>
+        )}
+
         {payload && (
           <>
             <CustomerSection
