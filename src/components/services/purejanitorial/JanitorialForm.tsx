@@ -19,6 +19,29 @@ const formatNumber = (num: number | undefined): string => {
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
+const FIELD_ORDER = {
+  frequency: 1,
+  serviceType: 2,
+  visitsPerWeek: 3,
+  service: 10,
+  otherTasks: 20,
+  vacuuming: 21,
+  dusting: 22,
+  addonTime: 23,
+  installation: 24,
+  totals: {
+    perVisit: 30,
+    weekly: 31,
+    firstMonth: 32,
+    monthlyRecurring: 33,
+    firstVisit: 34,
+    recurringVisit: 35,
+    oneTime: 36,
+    contract: 37,
+    minimum: 38,
+  },
+} as const;
+
 export const JanitorialForm: React.FC<
   ServiceInitialData<JanitorialFormState>
 > = ({ initialData, onRemove }) => {
@@ -115,6 +138,100 @@ export const JanitorialForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingTotalPlaces ?? 0) > 0;
+      const frequencyKey = form.serviceType === "recurring" ? "weekly" : "oneTime";
+      const frequencyLabel =
+        form.serviceType === "recurring"
+          ? `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`
+          : "One-Time Service";
+      const frequencyField = {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.frequency,
+        label: "Frequency",
+        type: "text" as const,
+        value: frequencyLabel,
+        frequencyKey,
+      };
+      const serviceTypeField = {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.serviceType,
+        label: "Service Type",
+        type: "text" as const,
+        value: form.serviceType === "recurring" ? "Recurring Service" : "One-Time Service",
+      };
+      const visitsPerWeekField = form.serviceType === "recurring" ? {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.visitsPerWeek,
+        label: "Visits per Week",
+        type: "text" as const,
+        value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
+      } : undefined;
+      const totals = (() => {
+        const payload: any = {
+          perVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.perVisit,
+            label: "Per Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisit,
+          },
+        };
+        if (form.serviceType === "recurring") {
+          payload.weekly = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.weekly,
+            label: "Weekly Total",
+            type: "dollar" as const,
+            amount: calc.weekly,
+          };
+          payload.firstMonth = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.firstMonth,
+            label: "First Month Total",
+            type: "dollar" as const,
+            amount: calc.firstMonth,
+          };
+          payload.monthlyRecurring = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.monthlyRecurring,
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: calc.recurringMonthly,
+            gap: "wide",
+          };
+          payload.contract = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.contract,
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          };
+        } else {
+          payload.firstVisit = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.firstVisit,
+            label: "Total Price",
+            type: "dollar" as const,
+            amount: calc.firstVisit,
+          };
+          payload.recurringVisit = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.recurringVisit,
+            label: "Recurring Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisit,
+            gap: "wide",
+          };
+        }
+        payload.minimum = {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.totals.minimum,
+          label: "Minimum",
+          type: "dollar" as const,
+          amount: calc.minimumChargePerVisit,
+        };
+        return payload;
+      })();
 
       const data = isActive ? {
         serviceId: "pureJanitorial", // ✅ FIXED: Use correct service ID to match backend
@@ -126,15 +243,13 @@ export const JanitorialForm: React.FC<
         perVisit: calc.perVisit,  // Final price after minimum
         minCharge: calc.minimumChargePerVisit || 0,  // Minimum threshold
 
-        serviceType: {
-          isDisplay: true,
-          label: "Service Type",
-          type: "text" as const,
-          value: form.serviceType === "recurring" ? "Recurring Service" : "One-Time Service",
-        },
+        frequency: frequencyField,
+        serviceType: serviceTypeField,
+        ...(visitsPerWeekField ? { visitsPerWeek: visitsPerWeekField } : {}),
 
         service: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.service,
           label: "Service",
           type: "calc" as const,
           qty: parseFloat(calc.totalHours.toFixed(2)),
@@ -146,6 +261,7 @@ export const JanitorialForm: React.FC<
         ...(form.manualHours !== undefined ? {
           otherTasks: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.otherTasks,
             label: "Other Tasks",
             type: "text" as const,
             value: `${form.manualHours} hours`,
@@ -155,6 +271,7 @@ export const JanitorialForm: React.FC<
         ...(form.vacuumingHours !== undefined ? {
           vacuuming: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.vacuuming,
             label: "Vacuuming",
             type: "text" as const,
             value: `${form.vacuumingHours} hours`,
@@ -164,6 +281,7 @@ export const JanitorialForm: React.FC<
         ...(form.dustingTotalPlaces !== undefined ? {
           dusting: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.dusting,
             label: "Dusting",
             type: "text" as const,
             value: `${form.dustingTotalPlaces} places = ${form.dustingCalculatedHours?.toFixed(2) || 0} hours`,
@@ -173,6 +291,7 @@ export const JanitorialForm: React.FC<
         ...(form.addonTimeMinutes !== undefined ? {
           addonTime: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.addonTime,
             label: "Add-on Time",
             type: "text" as const,
             value: `${form.addonTimeMinutes} minutes`,
@@ -182,63 +301,14 @@ export const JanitorialForm: React.FC<
         ...(form.serviceType === "recurring" && form.installation ? {
           installation: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.installation,
             label: "Installation",
             type: "text" as const,
             value: "Included",
           },
         } : {}),
 
-        ...(form.serviceType === "recurring" ? {
-          visitsPerWeek: {
-            isDisplay: true,
-            label: "Visits per Week",
-            type: "text" as const,
-            value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
-          },
-        } : {}),
-
-        totals: form.serviceType === "recurring" ? {
-          perVisit: {
-            isDisplay: true,
-            label: "Per Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisit,
-          },
-          weekly: {
-            isDisplay: true,
-            label: "Weekly Total",
-            type: "dollar" as const,
-            amount: calc.weekly,
-          },
-          monthlyRecurring: {
-            isDisplay: true,
-            label: "Monthly Recurring",
-            type: "dollar" as const,
-            amount: calc.recurringMonthly,
-          },
-          ...(form.installation ? {
-            firstMonth: {
-              isDisplay: true,
-              label: "First Month Total",
-              type: "dollar" as const,
-              amount: calc.firstMonth,
-            },
-          } : {}),
-          contract: {
-            isDisplay: true,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-        } : {
-          oneTime: {
-            isDisplay: true,
-            label: "One-Time Service Total",
-            type: "dollar" as const,
-            amount: calc.perVisit,
-          },
-        },
+        totals,
 
         notes: form.notes || "", // Optional notes field
         customFields: customFields,
