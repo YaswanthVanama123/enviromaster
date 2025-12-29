@@ -4,12 +4,25 @@ import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
 import type { SaniscrubFormState } from "./saniscrubTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
-import {
-  saniscrubPricingConfig as cfg,
-  saniscrubFrequencyLabels,
-} from "./saniscrubConfig";
+import { saniscrubFrequencyLabels } from "./saniscrubConfig";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
+
+const FIELD_ORDER = {
+  frequency: 1,
+  location: 2,
+  restroomFixtures: 10,
+  nonBathroomArea: 15,
+  totals: {
+    perVisit: 30,
+    firstMonth: 31,
+    monthlyRecurring: 32,
+    firstVisit: 33,
+    recurringVisit: 34,
+    contract: 35,
+    minimum: 36,
+  },
+} as const;
 
 /**
  * SaniScrub form with updated rules:
@@ -170,7 +183,7 @@ export const SaniscrubForm: React.FC<
         ? form.minimumMonthly
         : form.minimumBimonthly;
 
-      const data = isActive ? {
+  const data = isActive ? {
         serviceId: "saniscrub",
         displayName: "SaniScrub",
         isActive: true,
@@ -203,13 +216,16 @@ export const SaniscrubForm: React.FC<
 
         frequency: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
           value: saniscrubFrequencyLabels[form.frequency] || form.frequency,
+          frequencyKey: form.frequency,
         },
 
         location: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.location,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
@@ -218,6 +234,7 @@ export const SaniscrubForm: React.FC<
         ...(form.fixtureCount > 0 ? {
           restroomFixtures: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.restroomFixtures,
             label: "Restroom Fixtures",
             type: "calc" as const,
             qty: form.fixtureCount,
@@ -229,6 +246,7 @@ export const SaniscrubForm: React.FC<
         ...(form.nonBathroomSqFt > 0 ? {
           nonBathroomArea: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.nonBathroomArea,
             label: "Non-Bathroom Area",
             type: "calc" as const,
             qty: form.nonBathroomSqFt,
@@ -240,42 +258,70 @@ export const SaniscrubForm: React.FC<
           },
         } : {}),
 
-        totals: {
-          perVisit: {
-            isDisplay: true,
-            label: "Per Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisitEffective,
-          },
-          monthly: {
-            isDisplay: form.frequency !== "oneTime",
-            label: form.frequency === "oneTime" ? "Total Price" :
-                   calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
-            type: "dollar" as const,
-            amount: calc.firstMonthTotal,
-          },
-          ...(form.frequency !== "oneTime" && !calc.isVisitBasedFrequency ? {
-            recurring: {
+        totals: (() => {
+          const totals: any = {
+            perVisit: {
               isDisplay: true,
+              orderNo: FIELD_ORDER.totals.perVisit,
+              label: "Per Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisitEffective,
+            },
+          };
+
+          if (calc.isVisitBasedFrequency) {
+            totals.firstVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstVisit,
+              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+              type: "dollar" as const,
+              amount: calc.firstMonthTotal,
+            };
+            totals.recurringVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.recurringVisit,
+              label: "Recurring Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisitEffective,
+            };
+          } else {
+            totals.firstMonth = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstMonth,
+              label: "First Month Total",
+              type: "dollar" as const,
+              amount: calc.firstMonthTotal,
+            };
+            totals.monthlyRecurring = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.monthlyRecurring,
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: calc.monthlyTotal,
-            }
-          } : {}),
-          contract: {
-            isDisplay: form.frequency !== "oneTime",
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-          minimum: {
+            };
+          }
+
+          if (form.frequency !== "oneTime") {
+            totals.contract = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.contract,
+              label: "Contract Total",
+              type: "dollar" as const,
+              months: form.contractMonths,
+              amount: calc.contractTotal,
+            };
+          }
+
+          totals.minimum = {
             isDisplay: true,
+            orderNo: FIELD_ORDER.totals.minimum,
             label: "Minimum",
             type: "dollar" as const,
-            amount: form.perVisitMinimum,
-          },
-        },
+            amount: minimumThreshold,
+          };
+
+          return totals;
+        })(),
 
         notes: form.notes || "",
         customFields: customFields,

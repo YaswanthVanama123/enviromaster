@@ -9,6 +9,21 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+const FIELD_ORDER = {
+  frequency: 1,
+  variant: 2,
+  service: 10,
+  totals: {
+    perVisit: 20,
+    firstMonth: 21,
+    monthlyRecurring: 22,
+    firstVisit: 23,
+    recurringVisit: 24,
+    contract: 25,
+    minimum: 26,
+  },
+} as const;
+
 export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
 > = ({ initialData, onRemove }) => {
@@ -152,6 +167,9 @@ export const StripWaxForm: React.FC<
     if (servicesContext) {
       const isActive = (form.floorAreaSqFt ?? 0) > 0;
 
+      const frequencyLabel = typeof form.frequency === "string"
+        ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+        : String(form.frequency || "");
       const data = isActive ? {
         serviceId: "stripwax",
         displayName: "Strip & Wax",
@@ -169,15 +187,16 @@ export const StripWaxForm: React.FC<
 
         frequency: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
-          value: typeof form.frequency === 'string'
-            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
-            : String(form.frequency || ''),
+          value: frequencyLabel,
+          frequencyKey: form.frequency,
         },
 
         variant: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.variant,
           label: "Service Type",
           type: "text" as const,
           value: cfg.variants[form.serviceVariant]?.label || '',
@@ -185,6 +204,7 @@ export const StripWaxForm: React.FC<
 
         service: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.service,
           label: "Floor Area",
           type: "calc" as const,
           qty: form.floorAreaSqFt,
@@ -193,28 +213,70 @@ export const StripWaxForm: React.FC<
           unit: "sq ft",
         },
 
-        totals: {
-          perVisit: {
+        totals: (() => {
+          const totals: any = {
+            perVisit: {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.perVisit,
+              label: "Per Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisit,
+            },
+          };
+
+          if (isVisitBasedFrequency) {
+            totals.firstVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstVisit,
+              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+              type: "dollar" as const,
+              amount: calc.firstVisit,
+            };
+            totals.recurringVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.recurringVisit,
+              label: "Recurring Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisit,
+            };
+          } else {
+            totals.firstMonth = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstMonth,
+              label: "First Month Total",
+              type: "dollar" as const,
+              amount: calc.monthly,
+            };
+            totals.monthlyRecurring = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.monthlyRecurring,
+              label: "Monthly Recurring",
+              type: "dollar" as const,
+              amount: calc.ongoingMonthly,
+            };
+          }
+
+          if (form.frequency !== "oneTime") {
+            totals.contract = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.contract,
+              label: "Contract Total",
+              type: "dollar" as const,
+              months: form.contractMonths,
+              amount: calc.contractTotal,
+            };
+          }
+
+          totals.minimum = {
             isDisplay: true,
-            label: "Per Visit Total",
+            orderNo: FIELD_ORDER.totals.minimum,
+            label: "Minimum",
             type: "dollar" as const,
-            amount: calc.perVisit,
-          },
-          monthly: {
-            isDisplay: true,
-            label: form.frequency === "oneTime" ? "Total Price" :
-                   isVisitBasedFrequency ? "First Visit Total" : "First Month Total",
-            type: "dollar" as const,
-            amount: calc.monthly,
-          },
-          contract: {
-            isDisplay: form.frequency !== "oneTime",
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-        },
+            amount: form.minCharge,
+          };
+
+          return totals;
+        })(),
 
         notes: "", // No notes field in Strip Wax
         customFields: customFields,

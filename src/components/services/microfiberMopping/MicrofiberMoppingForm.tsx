@@ -9,6 +9,27 @@ import { microfiberMoppingPricingConfig as cfg } from "./microfiberMoppingConfig
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+const FIELD_ORDER = {
+  frequency: 1,
+  location: 2,
+  serviceBreakdown: {
+    bathrooms: 10,
+    hugeBathrooms: 11,
+    extraArea: 12,
+    standalone: 13,
+    chemicals: 14,
+  },
+  totals: {
+    perVisit: 20,
+    firstMonth: 21,
+    monthlyRecurring: 22,
+    firstVisit: 23,
+    recurringVisit: 24,
+    contract: 25,
+    minimum: 26,
+  },
+} as const;
+
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData, onRemove }) => {
@@ -117,6 +138,11 @@ export const MicrofiberMoppingForm: React.FC<
     if (servicesContext) {
       const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0 || (form.standaloneSqFt ?? 0) > 0 || (form.chemicalGallons ?? 0) > 0;
 
+      const frequencyLabel = typeof form.frequency === 'string'
+        ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+        : String(form.frequency || '');
+      const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly"].includes(form.frequency);
+
       const data = isActive ? {
         serviceId: "microfiberMopping",
         displayName: "Microfiber Mopping",
@@ -153,81 +179,143 @@ export const MicrofiberMoppingForm: React.FC<
 
         frequencyDisplay: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
-          value: typeof form.frequency === 'string'
-            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
-            : String(form.frequency || ''),
+          value: frequencyLabel,
+          frequencyKey: form.frequency,
         },
 
-        serviceBreakdown: [
-          ...(form.bathroomCount > 0 ? [{
-            isDisplay: true,
-            label: "Bathrooms",
-            type: "calc" as const,
-            qty: form.bathroomCount,
-            rate: bathroomRate,
-            total: calc.standardBathroomPrice,
-          }] : []),
-          ...(form.hugeBathroomSqFt > 0 ? [{
-            isDisplay: true,
-            label: "Huge Bathrooms",
-            type: "calc" as const,
-            qty: form.hugeBathroomSqFt,
-            rate: hugeBathroomRate,
-            total: calc.hugeBathroomPrice,
-            unit: "sq ft",
-          }] : []),
-          ...(form.extraAreaSqFt > 0 ? [{
-            isDisplay: true,
-            label: "Extra Area",
-            type: "calc" as const,
-            qty: form.extraAreaSqFt,
-            rate: extraAreaRate,
-            total: calc.extraAreaPrice,
-            unit: "sq ft",
-          }] : []),
-          ...(form.standaloneSqFt > 0 ? [{
-            isDisplay: true,
-            label: "Standalone Service",
-            type: "calc" as const,
-            qty: form.standaloneSqFt,
-            rate: form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit,
-            total: calc.standaloneServicePrice,
-            unit: "sq ft",
-          }] : []),
-          ...(form.chemicalGallons > 0 ? [{
-            isDisplay: true,
-            label: "Chemical Supply",
-            type: "calc" as const,
-            qty: form.chemicalGallons,
-            rate: form.customDailyChemicalPerGallon ?? form.dailyChemicalPerGallon,
-            total: calc.chemicalSupplyMonthly,
-            unit: "gallons",
-          }] : []),
-        ],
+        serviceBreakdown: (() => {
+          const breakdown = [];
+          if (form.bathroomCount > 0) {
+            breakdown.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.serviceBreakdown.bathrooms,
+              label: "Bathrooms",
+              type: "calc" as const,
+              qty: form.bathroomCount,
+              rate: bathroomRate,
+              total: calc.standardBathroomPrice,
+            });
+          }
+          if (form.hugeBathroomSqFt > 0) {
+            breakdown.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.serviceBreakdown.hugeBathrooms,
+              label: "Huge Bathrooms",
+              type: "calc" as const,
+              qty: form.hugeBathroomSqFt,
+              rate: hugeBathroomRate,
+              total: calc.hugeBathroomPrice,
+              unit: "sq ft",
+            });
+          }
+          if (form.extraAreaSqFt > 0) {
+            breakdown.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.serviceBreakdown.extraArea,
+              label: "Extra Area",
+              type: "calc" as const,
+              qty: form.extraAreaSqFt,
+              rate: extraAreaRate,
+              total: calc.extraAreaPrice,
+              unit: "sq ft",
+            });
+          }
+          if (form.standaloneSqFt > 0) {
+            breakdown.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.serviceBreakdown.standalone,
+              label: "Standalone Service",
+              type: "calc" as const,
+              qty: form.standaloneSqFt,
+              rate: form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit,
+              total: calc.standaloneServicePrice,
+              unit: "sq ft",
+            });
+          }
+          if (form.chemicalGallons > 0) {
+            breakdown.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.serviceBreakdown.chemicals,
+              label: "Chemical Supply",
+              type: "calc" as const,
+              qty: form.chemicalGallons,
+              rate: form.customDailyChemicalPerGallon ?? form.dailyChemicalPerGallon,
+              total: calc.chemicalSupplyMonthly,
+              unit: "gallons",
+            });
+          }
+          return breakdown;
+        })(),
 
-        totals: {
-          perVisit: {
+        totals: (() => {
+          const totals: any = {
+            perVisit: {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.perVisit,
+              label: "Per Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisitPrice,
+            },
+          };
+
+          if (visitBasedFrequency) {
+            totals.firstVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstVisit,
+              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+              type: "dollar" as const,
+              amount: calc.firstVisitPrice,
+            };
+            totals.recurringVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.recurringVisit,
+              label: "Recurring Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisitPrice,
+              gap: "wide",
+            };
+          } else {
+            totals.firstMonth = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstMonth,
+              label: "First Month Total",
+              type: "dollar" as const,
+              amount: calc.firstMonthPrice,
+            };
+            totals.monthlyRecurring = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.monthlyRecurring,
+              label: "Monthly Recurring",
+              type: "dollar" as const,
+              amount: calc.monthlyRecurring,
+              gap: "wide",
+            };
+          }
+
+          if (form.frequency !== "oneTime") {
+            totals.contract = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.contract,
+              label: "Contract Total",
+              type: "dollar" as const,
+              months: form.contractTermMonths,
+              amount: calc.contractTotal,
+            };
+          }
+
+          totals.minimum = {
             isDisplay: true,
-            label: "Per Visit Total",
+            orderNo: FIELD_ORDER.totals.minimum,
+            label: "Minimum",
             type: "dollar" as const,
-            amount: calc.perVisitPrice,
-          },
-          monthly: {
-            isDisplay: true,
-            label: "Monthly Total",
-            type: "dollar" as const,
-            amount: calc.monthlyRecurring,
-          },
-          contract: {
-            isDisplay: true,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-        },
+            amount: form.minCharge,
+          };
+
+          return totals;
+        })(),
 
         notes: form.notes || "",
         customFields: customFields,

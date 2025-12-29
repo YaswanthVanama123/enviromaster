@@ -10,6 +10,24 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+const FIELD_ORDER = {
+  frequency: 1,
+  location: 2,
+  combinedService: 5,
+  service: 10,
+  calculationMethod: 11,
+  tripCharge: 12,
+  totals: {
+    perVisit: 20,
+    firstMonth: 21,
+    monthlyRecurring: 22,
+    firstVisit: 23,
+    recurringVisit: 24,
+    contract: 25,
+    minimum: 26,
+  },
+} as const;
+
 // Helper function to format numbers without unnecessary decimals
 const formatNumber = (num: number): string => {
   return num % 1 === 0 ? num.toString() : num.toFixed(2);
@@ -165,6 +183,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     if (servicesContext) {
       const isActive = (form.roomCount > 0 || form.squareFeet > 0);
 
+      const frequencyLabel = typeof form.frequency === 'string'
+        ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+        : String(form.frequency || 'Weekly');
+      const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly"].includes(form.frequency);
       const data = isActive ? {
         serviceId: "electrostaticSpray",
         displayName: "Electrostatic Spray",
@@ -201,15 +223,16 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         frequencyDisplay: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
-          value: typeof form.frequency === 'string'
-            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
-            : String(form.frequency || 'Weekly'),
+          value: frequencyLabel,
+          frequencyKey: form.frequency,
         },
 
         locationDisplay: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.location,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" :
@@ -219,6 +242,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         ...(form.isCombinedWithSaniClean ? {
           combinedService: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.combinedService,
             label: "Combined with",
             type: "text" as const,
             value: "Sani-Clean",
@@ -227,6 +251,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         service: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.service,
           label: form.pricingMethod === "byRoom" ? "Rooms" : "Square Feet",
           type: "calc" as const,
           qty: form.pricingMethod === "byRoom" ? form.roomCount : form.squareFeet,
@@ -238,6 +263,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         ...(form.pricingMethod === "bySqFt" && !form.useExactCalculation ? {
           calculationMethod: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.calculationMethod,
             label: "Calculation Method",
             type: "text" as const,
             value: "Minimum Tier Pricing",
@@ -247,33 +273,79 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         ...(calc.tripCharge > 0 ? {
           tripCharge: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.tripCharge,
             label: "Trip Charge",
             type: "dollar" as const,
             amount: calc.tripCharge,
           },
         } : {}),
 
-        totals: {
-          perVisit: {
+        totals: (() => {
+          const totals: any = {
+            perVisit: {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.perVisit,
+              label: "Per Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisit,
+            },
+          };
+
+          if (visitBasedFrequency) {
+            totals.firstVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstVisit,
+              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisit,
+            };
+            totals.recurringVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.recurringVisit,
+              label: "Recurring Visit Total",
+              type: "dollar" as const,
+              amount: calc.perVisit,
+              gap: "wide",
+            };
+          } else {
+            totals.firstMonth = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstMonth,
+              label: "First Month Total",
+              type: "dollar" as const,
+              amount: calc.monthlyRecurring,
+            };
+            totals.monthlyRecurring = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.monthlyRecurring,
+              label: "Monthly Recurring",
+              type: "dollar" as const,
+              amount: calc.monthlyRecurring,
+              gap: "wide",
+            };
+          }
+
+          if (form.frequency !== "oneTime") {
+            totals.contract = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.contract,
+              label: "Contract Total",
+              type: "dollar" as const,
+              months: form.contractMonths,
+              amount: calc.contractTotal,
+            };
+          }
+
+          totals.minimum = {
             isDisplay: true,
-            label: "Per Visit Total",
+            orderNo: FIELD_ORDER.totals.minimum,
+            label: "Minimum",
             type: "dollar" as const,
-            amount: calc.perVisit,
-          },
-          monthly: {
-            isDisplay: true,
-            label: "Monthly Total",
-            type: "dollar" as const,
-            amount: calc.monthlyRecurring,
-          },
-          contract: {
-            isDisplay: true,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-        },
+            amount: calc.minimumChargePerVisit,
+          };
+
+          return totals;
+        })(),
 
         notes: form.notes || "",
         customFields: customFields,
