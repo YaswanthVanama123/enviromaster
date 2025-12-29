@@ -3,9 +3,13 @@ import type { ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useCarpetCalc } from "./useCarpetCalc";
-import type { CarpetFormState } from "./carpetTypes";
+import type { CarpetFormState, CarpetFrequency } from "./carpetTypes";
 import type { ServiceInitialData } from "../common/serviceTypes";
-import { carpetFrequencyLabels, getContractOptions } from "./carpetConfig";
+import {
+  carpetFrequencyLabels,
+  carpetFrequencyList,
+  getContractOptions,
+} from "./carpetConfig";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
@@ -112,57 +116,100 @@ export const CarpetForm: React.FC<
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 
-  const monthlyRecurringFrequencies: CarpetFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
-  const visitBasedRecurringFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
+  const monthlyRecurringFrequencies: CarpetFrequency[] = [
+    "weekly",
+    "biweekly",
+    "twicePerMonth",
+    "monthly",
+  ];
+  const visitBasedRecurringFrequencies: CarpetFrequency[] = [
+    "bimonthly",
+    "quarterly",
+    "biannual",
+    "annual",
+  ];
+
+  const resolveCarpetFrequency = (value: string): CarpetFrequency => {
+    if (carpetFrequencyList.includes(value as CarpetFrequency)) {
+      return value as CarpetFrequency;
+    }
+    const normalized = value?.trim().toLowerCase() || "";
+    const match = carpetFrequencyList.find(
+      (freq) => carpetFrequencyLabels[freq].toLowerCase() === normalized
+    );
+    return match || "monthly";
+  };
+  const FIELD_ORDER = {
+    frequency: 1,
+    location: 2,
+    service: 3,
+    installation: 4,
+    perVisit: 5,
+    firstMonth: 6,
+    recurringVisit: 7,
+    recurringMonth: 8,
+    contract: 9,
+  };
 
   useEffect(() => {
     if (servicesContext) {
+      const resolvedFrequency = resolveCarpetFrequency(form.frequency);
       const isActive = (form.areaSqFt ?? 0) > 0;
-      const shouldShowMonthlyRecurring = monthlyRecurringFrequencies.includes(form.frequency);
-      const shouldShowVisitRecurring = visitBasedRecurringFrequencies.includes(form.frequency);
+      const shouldShowMonthlyRecurring = monthlyRecurringFrequencies.includes(resolvedFrequency);
+      const shouldShowVisitRecurring = visitBasedRecurringFrequencies.includes(resolvedFrequency);
 
-      const totals = {
+      const totalLabel =
+        resolvedFrequency === "oneTime"
+          ? "Total Price"
+          : shouldShowVisitRecurring
+            ? "First Visit Total"
+            : "First Month Total";
+      const totalAmount =
+        form.frequency === "oneTime"
+          ? calc.perVisitCharge
+          : calc.firstMonthTotal;
+
+      const totals: any = {
         perVisit: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.perVisit,
           label: "Per Visit Total",
           type: "dollar" as const,
           amount: calc.perVisitCharge,
         },
-        monthly: {
-          isDisplay: form.frequency !== "oneTime",
-          label: form.frequency === "oneTime"
-            ? "Total Price"
-            : shouldShowVisitRecurring
-              ? "First Visit Total"
-              : "First Month Total",
+        firstMonth: {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.firstMonth,
+          label: totalLabel,
           type: "dollar" as const,
-          amount: form.frequency === "oneTime"
-            ? calc.perVisitCharge
-            : calc.firstMonthTotal,
+          amount: totalAmount,
         },
       };
 
       if (shouldShowMonthlyRecurring) {
         totals.monthlyRecurring = {
           isDisplay: true,
-          label: "Monthly Recurring",
+          orderNo: FIELD_ORDER.recurringMonth,
+          label: "Recurring Month Total",
           type: "dollar" as const,
           amount: calc.monthlyTotal,
         };
       }
 
-       if (shouldShowVisitRecurring) {
+      if (shouldShowVisitRecurring) {
         totals.recurringVisit = {
           isDisplay: true,
+          orderNo: FIELD_ORDER.recurringVisit,
           label: "Recurring Visit Total",
           type: "dollar" as const,
           amount: calc.perVisitCharge,
         };
       }
 
-       if (form.frequency !== "oneTime") {
+      if (form.frequency !== "oneTime") {
         totals.contract = {
           isDisplay: true,
+          orderNo: FIELD_ORDER.contract,
           label: "Contract Total",
           type: "dollar" as const,
           months: form.contractMonths,
@@ -170,7 +217,7 @@ export const CarpetForm: React.FC<
         };
       }
 
-       const data = isActive ? {
+      const data = isActive ? {
         serviceId: "carpetclean",
         displayName: "Carpet Cleaning",
         isActive: true,
@@ -199,13 +246,15 @@ export const CarpetForm: React.FC<
 
         frequency: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
           value: carpetFrequencyLabels[form.frequency] || form.frequency,
         },
 
         location: {
-          isDisplay: true,
+          isDisplay: false,
+          orderNo: FIELD_ORDER.location,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
@@ -213,6 +262,7 @@ export const CarpetForm: React.FC<
 
         service: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.service,
           label: "Carpet Area",
           type: "calc" as const,
           qty: form.areaSqFt,
@@ -225,7 +275,8 @@ export const CarpetForm: React.FC<
         ...(form.includeInstall ? {
           installation: {
             isDisplay: true,
-            label: form.isDirtyInstall ? "Installation (Dirty - 3×)" : "Installation (Clean - 1×)",
+             orderNo: FIELD_ORDER.installation,
+           label: form.isDirtyInstall ? "Installation (Dirty - 3×)" : "Installation (Clean - 1×)",
             type: "calc" as const,
             qty: 1,
             rate: calc.installOneTime,
@@ -810,7 +861,7 @@ export const CarpetForm: React.FC<
       {/* Monthly Recurring - Show only for weekly, biweekly, monthly, and twicePerMonth */}
       {(form.frequency === "weekly" || form.frequency === "biweekly" || form.frequency === "monthly" || form.frequency === "twicePerMonth") && (
         <div className="svc-row svc-row-total">
-          <label>Monthly Recurring</label>
+          <label>Recurring Month Total</label>
           <div className="svc-dollar">
             $<input
               type="number"
@@ -833,7 +884,7 @@ export const CarpetForm: React.FC<
                 border: 'none',
                 width: '100px'
               }}
-              title="Monthly recurring - editable"
+              title="Recurring month total - editable"
             />
           </div>
         </div>

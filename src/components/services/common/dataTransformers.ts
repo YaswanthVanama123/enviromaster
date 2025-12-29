@@ -9,6 +9,8 @@ import {
   REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID,
 } from "../refreshPowerScrub/refreshPowerScrubDraftPayload";
 import { type RefreshFrequency } from "../refreshPowerScrub/refreshPowerScrubTypes";
+import { carpetFrequencyLabels } from "../carpetCleaning/carpetConfig";
+import type { CarpetFrequency } from "../carpetCleaning/carpetTypes";
 
 /**
  * Helper function to extract and format custom fields for all services
@@ -89,6 +91,17 @@ function normalizeStructuredValue(rawValue: any): any {
   }
   return rawValue;
 }
+
+function normalizeCarpetFrequencyLabel(label: string): string {
+  return label.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+const carpetFrequencyLabelToValue = new Map<string, CarpetFrequency>(
+  Object.entries(carpetFrequencyLabels).map(([frequency, label]) => [
+    normalizeCarpetFrequencyLabel(label),
+    frequency as CarpetFrequency,
+  ])
+);
 
 const REFRESH_AREA_KEYS = ["dumpster", "patio", "walkway", "foh", "boh", "other"];
 
@@ -699,34 +712,77 @@ export function transformCarpetCleanData(structuredData: any): any {
     } else if (typeof rawValue === "object" && rawValue !== null) {
       freqLabel = (rawValue.value || rawValue.label || rawValue.name || "");
     }
-    const freq = freqLabel.toLowerCase();
-    const everyMatch = freq.match(/every\s+(\d+)\s+months?/);
 
-    if (freq.includes("once") || freq.includes("one-time") || freq.includes("one time")) {
-      formState.frequency = "oneTime";
-    } else if (freq.includes("weekly")) {
-      formState.frequency = "weekly";
-    } else if (freq.includes("biweekly")) {
-      formState.frequency = "biweekly";
-    } else if (freq.includes("twice")) {
-      formState.frequency = "twicePerMonth";
-    } else if (everyMatch) {
-      const everyValue = Number(everyMatch[1]);
-      if (everyValue === 2) {
-        formState.frequency = "bimonthly";
-      } else if (everyValue === 1) {
-        formState.frequency = "monthly";
+    const normalizedLabel = normalizeCarpetFrequencyLabel(freqLabel);
+    if (normalizedLabel) {
+      let mappedFrequency = carpetFrequencyLabelToValue.get(normalizedLabel);
+      if (!mappedFrequency) {
+        for (const [labelKey, freqValue] of carpetFrequencyLabelToValue.entries()) {
+          if (labelKey && normalizedLabel.includes(labelKey)) {
+            mappedFrequency = freqValue;
+            break;
+          }
+        }
       }
-    } else if (freq.includes("monthly")) {
-      formState.frequency = "monthly";
-    } else if (freq.includes("bimonthly")) {
-      formState.frequency = "bimonthly";
-    } else if (freq.includes("quarterly")) {
-      formState.frequency = "quarterly";
-    } else if (freq.includes("biannual") || freq.includes("semiannual")) {
-      formState.frequency = "biannual";
-    } else if (freq.includes("annual") || freq.includes("yearly")) {
-      formState.frequency = "annual";
+
+      if (mappedFrequency) {
+        formState.frequency = mappedFrequency;
+      }
+
+      if (!formState.frequency) {
+        const freq = normalizedLabel;
+        const everyMatch = freq.match(/every\s+(\d+)\s+months?/);
+
+        if (freq.includes("once") || freq.includes("one-time") || freq.includes("one time")) {
+          formState.frequency = "oneTime";
+        }
+        if (!formState.frequency && freq.includes("weekly")) {
+          formState.frequency = "weekly";
+        }
+        if (!formState.frequency && freq.includes("biweekly")) {
+          formState.frequency = "biweekly";
+        }
+        if (!formState.frequency && freq.includes("twice")) {
+          formState.frequency = "twicePerMonth";
+        }
+        if (!formState.frequency && everyMatch) {
+          const everyValue = Number(everyMatch[1]);
+          switch (everyValue) {
+            case 1:
+              formState.frequency = "monthly";
+              break;
+            case 2:
+              formState.frequency = "bimonthly";
+              break;
+            case 3:
+              formState.frequency = "quarterly";
+              break;
+            case 6:
+              formState.frequency = "biannual";
+              break;
+            case 12:
+              formState.frequency = "annual";
+              break;
+            default:
+              break;
+          }
+        }
+        if (!formState.frequency && freq.includes("monthly")) {
+          formState.frequency = "monthly";
+        }
+        if (!formState.frequency && freq.includes("bimonthly")) {
+          formState.frequency = "bimonthly";
+        }
+        if (!formState.frequency && freq.includes("quarterly")) {
+          formState.frequency = "quarterly";
+        }
+        if (!formState.frequency && (freq.includes("biannual") || freq.includes("semiannual"))) {
+          formState.frequency = "biannual";
+        }
+        if (!formState.frequency && (freq.includes("annual") || freq.includes("yearly"))) {
+          formState.frequency = "annual";
+        }
+      }
     }
   }
 
