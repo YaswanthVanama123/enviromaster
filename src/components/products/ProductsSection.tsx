@@ -120,6 +120,7 @@ function useProductCatalog() {
           suggestedCustomerRollPrice: p.suggestedCustomerRollPrice,
           quantityPerCase: p.quantityPerCase,
           quantityPerCaseLabel: p.quantityPerCaseLabel,
+          description: p.description,
         }))
     );
 
@@ -1276,6 +1277,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
   // Helper function to get product description
   const getProductDescription = (product: EnvProduct): string => {
+    if (product.description?.trim()) {
+      return product.description;
+    }
+
     const descriptions: Record<string, string> = {
       // Paper Products
       'paper_towel_premium': 'High-quality paper towels for general cleaning and spill control',
@@ -1421,6 +1426,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
   // Helper function to get dispenser description
   const getDispenserDescription = (dispenser: EnvProduct): string => {
+    if (dispenser.description?.trim()) {
+      return dispenser.description;
+    }
+
     const descriptions: Record<string, string> = {
       // Specific dispenser descriptions
       'paper_towel_dispenser_basic': 'Basic wall-mounted paper towel dispenser for low-traffic areas',
