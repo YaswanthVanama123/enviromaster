@@ -177,13 +177,20 @@ export const MicrofiberMoppingForm: React.FC<
         perVisit: calc.perVisitPrice,  // Final per-visit price
         minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
-        frequencyDisplay: {
+        frequency: {
           isDisplay: true,
           orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
           value: frequencyLabel,
           frequencyKey: form.frequency,
+        },
+        location: {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.location,
+          label: "Location",
+          type: "text" as const,
+          value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
         },
 
         serviceBreakdown: (() => {
