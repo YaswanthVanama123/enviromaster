@@ -290,6 +290,7 @@ export const SanicleanForm: React.FC<
         v3?: string | number;
         orderNo?: number;
         isDisplay?: boolean;
+        gap?: "wide";
       };
       const extras: PdfExtra[] = [];
       const addLineExtra = (
