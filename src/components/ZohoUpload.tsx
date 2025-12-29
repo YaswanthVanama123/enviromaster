@@ -698,6 +698,28 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     }
   };
 
+  const sendUpdateNoteOnly = async () => {
+    if (!uploadStatus?.mapping?.dealId) {
+      setError("No existing Zoho deal mapping found. Upload the agreement at least once before sending notes.");
+      setStep("error");
+      return;
+    }
+
+    const updateResult = await zohoApi.updateUpload(agreementId, {
+      dealId: uploadStatus.mapping.dealId,
+      noteText: noteText.trim()
+    });
+
+    if (updateResult.success) {
+      setStep("success");
+      setToastMessage({ message: `Successfully added note to deal ${uploadStatus.mapping.dealName}!`, type: "success" });
+      onSuccess();
+    } else {
+      setError(updateResult.error || "Update failed");
+      setStep("error");
+    }
+  };
+
   const handleUpdateUpload = async () => {
     if (!noteText.trim()) {
       setToastMessage({ message: 'Please add notes about what changed in this version', type: 'error' });
@@ -711,10 +733,10 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       if (bulkFiles && bulkFiles.length > 0) {
         const selectedBulkFiles = getSelectedBulkFiles();
 
-        if (!selectedBulkFiles || selectedBulkFiles.length === 0) {
-          setToastMessage({ message: 'Please select at least one file to upload', type: 'error' });
-          return;
-        }
+      if (!selectedBulkFiles || selectedBulkFiles.length === 0) {
+        await sendUpdateNoteOnly();
+        return;
+      }
 
         console.log(`♻️ [BULK-UPDATE] Processing ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total) for existing folder`);
         let successCount = 0;
@@ -810,7 +832,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
       // ✅ SINGLE UPDATE MODE: Check if file is selected
       if (!selectedFiles.has(agreementId)) {
-        setToastMessage({ message: 'Please select the file to upload', type: 'error' });
+        await sendUpdateNoteOnly();
         return;
       }
 
