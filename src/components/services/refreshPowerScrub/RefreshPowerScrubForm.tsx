@@ -351,6 +351,8 @@ const getKitchenLarge = (): number => {
               value: areaTotals[key],
               type: "calc"
             };
+            serviceData.presetQuantity = area.presetQuantity;
+            serviceData.presetRate = area.presetRate;
             const monthlyQuantity =
               area.pricingType === "preset"
                 ? area.presetQuantity || 1
