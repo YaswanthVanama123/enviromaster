@@ -157,6 +157,11 @@ export const CarpetForm: React.FC<
       const isActive = (form.areaSqFt ?? 0) > 0;
       const shouldShowMonthlyRecurring = monthlyRecurringFrequencies.includes(resolvedFrequency);
       const shouldShowVisitRecurring = visitBasedRecurringFrequencies.includes(resolvedFrequency);
+      const displayFrequencyLabel =
+        carpetFrequencyLabels[resolvedFrequency] || resolvedFrequency;
+      const shouldShowRecurringGap =
+        resolvedFrequency !== "oneTime" &&
+        (shouldShowMonthlyRecurring || shouldShowVisitRecurring);
 
       const totalLabel =
         resolvedFrequency === "oneTime"
@@ -165,7 +170,7 @@ export const CarpetForm: React.FC<
             ? "First Visit Total"
             : "First Month Total";
       const totalAmount =
-        form.frequency === "oneTime"
+        resolvedFrequency === "oneTime"
           ? calc.perVisitCharge
           : calc.firstMonthTotal;
 
@@ -194,19 +199,19 @@ export const CarpetForm: React.FC<
           type: "dollar" as const,
           amount: calc.monthlyTotal,
         };
-      }
+        }
 
-      if (shouldShowVisitRecurring) {
-        totals.recurringVisit = {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.recurringVisit,
-          label: "Recurring Visit Total",
-          type: "dollar" as const,
-          amount: calc.perVisitCharge,
-        };
-      }
+        if (shouldShowVisitRecurring) {
+          totals.recurringVisit = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.recurringVisit,
+            label: "Recurring Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisitCharge,
+          };
+        }
 
-      if (form.frequency !== "oneTime") {
+        if (resolvedFrequency !== "oneTime") {
         totals.contract = {
           isDisplay: true,
           orderNo: FIELD_ORDER.contract,
@@ -249,7 +254,7 @@ export const CarpetForm: React.FC<
           orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
-          value: carpetFrequencyLabels[form.frequency] || form.frequency,
+          value: displayFrequencyLabel,
         },
 
         location: {
@@ -275,7 +280,8 @@ export const CarpetForm: React.FC<
         ...(form.includeInstall ? {
           installation: {
             isDisplay: true,
-             orderNo: FIELD_ORDER.installation,
+             orderNo: FIELD_ORDER.installation,
+
            label: form.isDirtyInstall ? "Installation (Dirty - 3×)" : "Installation (Clean - 1×)",
             type: "calc" as const,
             qty: 1,
