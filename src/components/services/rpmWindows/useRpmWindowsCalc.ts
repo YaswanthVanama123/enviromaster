@@ -507,7 +507,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
     if (forceRefreshRef.current) {
       setManualOverrides({});
-      forceRefreshRef.current = false;
     }
   }, [
     backendConfig,
@@ -650,7 +649,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
   useEffect(() => {
     const freqKey = mapFrequency(form.frequency);
     const freqChanged = prevFrequencyRef.current !== form.frequency;
-    prevFrequencyRef.current = form.frequency;
+    if (freqChanged) {
+      prevFrequencyRef.current = form.frequency;
+      setManualOverrides({});
+    }
 
     if (isEditMode.current && !forceRefreshRef.current && !freqChanged) {
       return;
@@ -1353,6 +1355,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     manualOverrides,
     persistedOverrides,
     baselineValues: baselineValues.current,
+    baselineReady,
     refreshConfig: () => fetchPricing(true),
     isLoadingConfig,
     setContractMonths,

@@ -61,6 +61,7 @@ export const RpmWindowsForm: React.FC<
     manualOverrides,
     persistedOverrides,
     baselineValues,
+    baselineReady,
   } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -80,7 +81,11 @@ export const RpmWindowsForm: React.FC<
 
   const hasPricingOverride = (fieldName: string): boolean => {
     if (manualOverrides[fieldName] || persistedOverrides[fieldName]) {
-      return true;
+      return baselineReady;
+    }
+
+    if (!baselineReady) {
+      return false;
     }
 
     const baseline = baselineValues[fieldName];
