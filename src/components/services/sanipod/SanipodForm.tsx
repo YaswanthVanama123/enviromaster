@@ -83,6 +83,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     }
   };
 
+  const handleRefresh = () => {
+    setEditingValues({});
+    setOriginalValues({});
+    refreshConfig();
+  };
+
   // ✅ Handler for finishing editing (blur) - parse and update form only
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -501,7 +507,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <button
             type="button"
             className="svc-mini"
-            onClick={refreshConfig}
+            onClick={handleRefresh}
             disabled={isLoadingConfig}
             title="Refresh config from database"
           >

@@ -320,6 +320,7 @@ export const RpmWindowsForm: React.FC<
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: form.customMonthlyRecurring ?? calc.monthlyBillRated,
+            gap: "normal",
           },
           firstVisit: {
             isDisplay: true,
@@ -334,6 +335,7 @@ export const RpmWindowsForm: React.FC<
             label: "Recurring Visit Total",
             type: "dollar" as const,
             amount: calc.recurringPerVisitRated,
+            gap: "normal",
           },
           annual: {
             isDisplay: true,

@@ -376,6 +376,16 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     tripChargePerVisit: DEFAULT_FORM_STATE.tripChargePerVisit,
     installRatePerPod: DEFAULT_FORM_STATE.installRatePerPod,
   });
+  const deriveBaselineFromData = (data: Partial<SanipodFormState>) => ({
+    weeklyRatePerUnit: data.weeklyRatePerUnit ?? DEFAULT_FORM_STATE.weeklyRatePerUnit,
+    altWeeklyRatePerUnit: data.altWeeklyRatePerUnit ?? DEFAULT_FORM_STATE.altWeeklyRatePerUnit,
+    extraBagPrice: data.extraBagPrice ?? DEFAULT_FORM_STATE.extraBagPrice,
+    standaloneExtraWeeklyCharge:
+      data.standaloneExtraWeeklyCharge ?? DEFAULT_FORM_STATE.standaloneExtraWeeklyCharge,
+    tripChargePerVisit: data.tripChargePerVisit ?? DEFAULT_FORM_STATE.tripChargePerVisit,
+    installRatePerPod: data.installRatePerPod ?? DEFAULT_FORM_STATE.installRatePerPod,
+  });
+  baselineRatesRef.current = deriveBaselineFromData(initialData || {});
   const calcRef = useRef<SanipodCalcResult | null>(null);
 
   const [form, setForm] = useState<SanipodFormState>(() => {
