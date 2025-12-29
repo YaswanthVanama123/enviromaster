@@ -38,6 +38,33 @@ const FREQUENCY_MULTIPLIER_FALLBACK: Record<string, number> = {
   annual: 1 / 12,
 };
 
+const FIELD_ORDER = {
+  frequency: 1,
+  pricingMode: 2,
+  location: 3,
+  sinks: 4,
+  urinals: 5,
+  maleToilets: 6,
+  femaleToilets: 7,
+  soapType: 8,
+  contractTotal: 100,
+};
+
+const EXTRA_ORDER = {
+  luxuryUpgrade: 12,
+  urinalScreens: 13,
+  urinalMats: 14,
+  toiletClips: 15,
+  seatCover: 16,
+  sanipods: 17,
+  warranty: 18,
+  microfiber: 19,
+  baseServiceMonthly: 20,
+  facilityComponentsMonthly: 21,
+  facilityFrequency: 22,
+  includedItems: 23,
+};
+
 function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): number {
   if (backendConfig?.frequencyMetadata?.[frequency]) {
     const metadata = backendConfig.frequencyMetadata[frequency];
@@ -261,9 +288,17 @@ export const SanicleanForm: React.FC<
         v1?: string | number;
         v2?: string | number;
         v3?: string | number;
+        orderNo?: number;
+        isDisplay?: boolean;
       };
       const extras: PdfExtra[] = [];
-      const addLineExtra = (label: string, amount: number | string | undefined, type: "line" | "bold" = "line") => {
+      const addLineExtra = (
+        label: string,
+        amount: number | string | undefined,
+        type: "line" | "bold" = "line",
+        orderNo?: number,
+        gap?: "wide"
+      ) => {
         if (amount === undefined || amount === null) return;
         if (typeof amount === "number" && amount === 0) return;
         if (typeof amount === "string" && amount.trim() === "") return;
@@ -271,13 +306,17 @@ export const SanicleanForm: React.FC<
           label,
           value: typeof amount === "number" ? formatDollars(amount) : amount,
           type,
+          isDisplay: true,
+          orderNo,
+          gap,
         });
       };
       const addAtChargeExtra = (
         label: string,
         qty: number | undefined,
         rate: number | undefined,
-        total: number
+        total: number,
+        orderNo?: number
       ) => {
         if (!qty || qty <= 0) return;
         if (!rate || rate === 0) return;
@@ -287,6 +326,8 @@ export const SanicleanForm: React.FC<
           v1: qty,
           v2: `${formatDollars(rate)}/mo`,
           v3: formatDollars(total),
+          isDisplay: true,
+          orderNo,
         });
       };
 
@@ -305,46 +346,26 @@ export const SanicleanForm: React.FC<
       const microfiberTotal =
         (form.microfiberBathrooms || 0) * (form.microfiberMoppingPerBathroom || 0);
 
-      const frequency = form.mainServiceFrequency;
-      const frequencyMultiplier = getSanicleanMonthlyMultiplier(frequency, backendConfig);
-      const perVisitPrice =
-        frequencyMultiplier > 0 ? quote.monthlyTotal / frequencyMultiplier : quote.monthlyTotal;
-      const firstMonthExtra =
-        backendConfig?.frequencyMetadata?.[frequency]?.firstMonthExtraMultiplier ?? 0;
-      const firstMonthTotal = quote.monthlyTotal + perVisitPrice * firstMonthExtra;
-
-      if (frequencyLabel) {
-        addLineExtra("Frequency", frequencyLabel);
-      }
-
+      addLineExtra("Luxury Upgrade", luxuryUpgradeWeekly, "line", EXTRA_ORDER.luxuryUpgrade);
+      addAtChargeExtra("Urinal Screens", form.urinalScreensQty, form.urinalScreenMonthly, urinalScreensTotal, EXTRA_ORDER.urinalScreens);
+      addAtChargeExtra("Urinal Mats", form.urinalMatsQty, form.urinalMatMonthly, urinalMatsTotal, EXTRA_ORDER.urinalMats);
+      addAtChargeExtra("Toilet Clips", form.toiletClipsQty, form.toiletClipsMonthly, toiletClipsTotal, EXTRA_ORDER.toiletClips);
+      addAtChargeExtra("Seat Cover Dispensers", form.seatCoverDispensersQty, form.seatCoverDispenserMonthly, seatCoverTotal, EXTRA_ORDER.seatCover);
+      addAtChargeExtra("SaniPods", form.sanipodsQty, form.sanipodServiceMonthly, sanipodsTotal, EXTRA_ORDER.sanipods);
+      addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal, EXTRA_ORDER.warranty);
+      addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal, EXTRA_ORDER.microfiber);
       if (form.pricingMode === "per_item_charge") {
-        addLineExtra("Facility Components Frequency", facilityFrequencyLabel);
+        addLineExtra("Facility Components Frequency", facilityFrequencyLabel, "line", EXTRA_ORDER.facilityFrequency, "wide");
       }
-
-      addLineExtra("Luxury Upgrade", luxuryUpgradeWeekly);
-      addAtChargeExtra("Urinal Screens", form.urinalScreensQty, form.urinalScreenMonthly, urinalScreensTotal);
-      addAtChargeExtra("Urinal Mats", form.urinalMatsQty, form.urinalMatMonthly, urinalMatsTotal);
-      addAtChargeExtra("Toilet Clips", form.toiletClipsQty, form.toiletClipsMonthly, toiletClipsTotal);
-      addAtChargeExtra("Seat Cover Dispensers", form.seatCoverDispensersQty, form.seatCoverDispenserMonthly, seatCoverTotal);
-      addAtChargeExtra("SaniPods", form.sanipodsQty, form.sanipodServiceMonthly, sanipodsTotal);
-      addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal);
-      addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal);
-      addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold");
-      addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold");
-
-      if (MONTHLY_OR_BELOW_FREQUENCIES.has(frequency)) {
-        addLineExtra("First Month Total", firstMonthTotal, "bold");
-        addLineExtra("Recurring Month Total", quote.monthlyTotal);
-      } else if (ABOVE_MONTHLY_FREQUENCIES.has(frequency)) {
-        addLineExtra("First Visit Total", perVisitPrice, "bold");
-        addLineExtra("Recurring Visit Total", perVisitPrice);
-      }
+      addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold", EXTRA_ORDER.baseServiceMonthly, "wide");
+      addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
 
       const includedItems = Array.isArray(quote.included)
-        ? quote.included.filter(Boolean).join(" • ")
-        : "";
-      addLineExtra("What's Included", includedItems);
-
+        ? quote.included.filter(Boolean)
+        : [];
+      includedItems.forEach((item, index) => {
+        addLineExtra("Included", item, "line", EXTRA_ORDER.includedItems + index * 0.1);
+      });
       const data = isActive ? {
         serviceId: "saniclean",
         displayName: "SaniClean",
@@ -359,6 +380,14 @@ export const SanicleanForm: React.FC<
         frequency: form.frequency, // backward-compat field
         facilityComponentFrequency: form.facilityComponentFrequency, // backward-compat field
         contractMonths: form.contractMonths,
+
+        frequency: {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
+          label: "Frequency",
+          type: "text" as const,
+          value: frequencyLabel,
+        },
 
         // Editable pricing config (backend-driven rates)
         allInclusiveWeeklyRatePerFixture: form.allInclusiveWeeklyRatePerFixture,
@@ -422,6 +451,7 @@ export const SanicleanForm: React.FC<
 
         pricingMode: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.pricingMode,
           label: "Pricing Mode",
           type: "text" as const,
           value: form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Fixture Charge",
@@ -429,6 +459,7 @@ export const SanicleanForm: React.FC<
 
         location: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.location,
           label: "Location",
           type: "text" as const,
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
@@ -437,6 +468,7 @@ export const SanicleanForm: React.FC<
         fixtureBreakdown: [
           ...(form.sinks > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.sinks,
             label: "Sinks",
             type: "calc" as const,
             qty: form.sinks,
@@ -445,6 +477,7 @@ export const SanicleanForm: React.FC<
           }] : []),
           ...(form.urinals > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.urinals,
             label: "Urinals",
             type: "calc" as const,
             qty: form.urinals,
@@ -453,6 +486,7 @@ export const SanicleanForm: React.FC<
           }] : []),
           ...(form.maleToilets > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.maleToilets,
             label: "Male Toilets",
             type: "calc" as const,
             qty: form.maleToilets,
@@ -461,6 +495,7 @@ export const SanicleanForm: React.FC<
           }] : []),
           ...(form.femaleToilets > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.femaleToilets,
             label: "Female Toilets",
             type: "calc" as const,
             qty: form.femaleToilets,
@@ -474,26 +509,16 @@ export const SanicleanForm: React.FC<
 
         soapType: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.soapType,
           label: "Soap Type",
           type: "text" as const,
           value: form.soapType === "luxury" ? "Luxury" : "Standard",
         },
 
         totals: {
-          weekly: {
-            isDisplay: true,
-            label: "Weekly Total",
-            type: "dollar" as const,
-            amount: quote.weeklyTotal,
-          },
-          monthly: {
-            isDisplay: true,
-            label: "Monthly Recurring",
-            type: "dollar" as const,
-            amount: quote.monthlyTotal,
-          },
           contract: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.contractTotal,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,

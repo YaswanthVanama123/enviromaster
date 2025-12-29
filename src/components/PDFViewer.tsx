@@ -364,8 +364,6 @@ export default function PDFViewer() {
             <button onClick={handleBack} className="pdf-viewer__btn pdf-viewer__btn--secondary">
               ← Back to Files
             </button>
-
-            {/* ✅ NEW: Show Edit button if document exists but PDF failed */}
             {errorDetails?.error === "no_pdf" && documentId && (
               <button
                 onClick={handleEdit}
@@ -409,7 +407,7 @@ export default function PDFViewer() {
             </div>
           )}
           {/* ✅ UPDATED: Hide Edit button for log files */}
-          {!isLogFile && (
+          {/* {!isLogFile && (
             <button
               onClick={handleEdit}
               className="pdf-viewer__btn pdf-viewer__btn--edit"
@@ -417,7 +415,7 @@ export default function PDFViewer() {
             >
               ✏️ Edit
             </button>
-          )}
+          )} */}
           <button
             onClick={handleDownload}
             className="pdf-viewer__btn pdf-viewer__btn--download"
