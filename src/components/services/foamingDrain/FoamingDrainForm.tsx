@@ -13,6 +13,29 @@ import { FOAMING_DRAIN_CONFIG as cfg } from "./foamingDrainConfig";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+const FIELD_ORDER = {
+  frequency: 1,
+  installFrequency: 2,
+  location: 3,
+  breakdown: {
+    standard: 10,
+    grease: 11,
+    green: 12,
+  },
+  installDrains: 13,
+  plumbingWork: 14,
+  tripCharge: 20,
+  totals: {
+    perVisit: 30,
+    firstMonth: 31,
+    monthlyRecurring: 32,
+    firstVisit: 33,
+    recurringVisit: 34,
+    contract: 35,
+    minimum: 36,
+  },
+} as const;
+
 interface FoamingDrainFormProps {
   initialData?: Partial<FoamingDrainFormState>;
   onRemove?: () => void;
@@ -148,6 +171,23 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
     if (servicesContext) {
       const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
+      const dynamicMinimumDrains = backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains;
+      const isVolume = state.standardDrainCount >= dynamicMinimumDrains;
+      const isInstallProgram = isVolume && !state.useBigAccountTenWeekly && !state.isAllInclusive;
+      const installQty = isInstallProgram ? Math.max(0, state.installDrainCount) : 0;
+      const installTotal = breakdown.weeklyInstallDrains || 0;
+      const installRate =
+        installQty > 0
+          ? installTotal / installQty
+          : state.installFrequency === "bimonthly"
+            ? state.volumeBimonthlyRate
+            : state.volumeWeeklyRate;
+      const installRowQty = installQty > 0 ? installQty : (state.installDrainCount || 0);
+      const plumbingQty = state.needsPlumbing ? Math.max(0, state.plumbingDrainCount) : 0;
+      const plumbingTotal = breakdown.weeklyPlumbing || 0;
+      const effectivePlumbingRate = state.customPlumbingAddonRate ?? state.plumbingAddonRate;
+      const plumbingRate = plumbingQty > 0 ? plumbingTotal / plumbingQty : effectivePlumbingRate;
+      const plumbingRowQty = plumbingQty > 0 ? plumbingQty : (state.plumbingDrainCount || 0);
 
       const data = isActive ? {
         serviceId: "foamingDrain",
@@ -191,88 +231,162 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         perVisit: quote.weeklyTotal,  // Weekly total including all charges
         minimumChargePerVisit: quote.minimumChargePerVisit,  // Minimum threshold
 
-        // ✅ FIXED: Renamed display fields to avoid overwriting saved values
-        frequencyDisplay: {
+        frequency: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
           label: "Frequency",
           type: "text" as const,
-          value: typeof state.frequency === 'string'
+          value: typeof state.frequency === "string"
             ? state.frequency.charAt(0).toUpperCase() + state.frequency.slice(1)
-            : String(state.frequency || 'Weekly'),
+            : String(state.frequency || "Weekly"),
+          frequencyKey: state.frequency,
         },
-
-        // ✅ NEW: Install frequency (separate from main service frequency)
-        installFrequencyDisplay: {
+        installFrequency: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.installFrequency,
           label: "Install Frequency",
           type: "text" as const,
           value: state.installFrequency.charAt(0).toUpperCase() + state.installFrequency.slice(1),
         },
-
-        locationDisplay: {
+        location: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.location,
           label: "Location",
           type: "text" as const,
           value: state.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
         },
 
-        drainBreakdown: [
-          ...(state.standardDrainCount > 0 ? [{
-            isDisplay: true,
-            label: "Standard Drains",
-            type: "calc" as const,
-            qty: state.standardDrainCount,
-            rate: stdRate,
-            total: breakdown.weeklyStandardDrains,
-          }] : []),
-          ...(state.greaseTrapCount > 0 ? [{
-            isDisplay: true,
-            label: "Grease Trap Drains",
-            type: "calc" as const,
-            qty: state.greaseTrapCount,
-            rate: greaseRate,
-            total: breakdown.weeklyGreaseTraps,
-          }] : []),
-          ...(state.greenDrainCount > 0 ? [{
-            isDisplay: true,
-            label: "Green Drains",
-            type: "calc" as const,
-            qty: state.greenDrainCount,
-            rate: greenRate,
-            total: breakdown.weeklyGreenDrains,
-          }] : []),
-        ],
+        drainBreakdown: (() => {
+          const rows: any[] = [];
+          if (state.standardDrainCount > 0) {
+            rows.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.breakdown.standard,
+              label: "Standard Drains",
+              type: "calc" as const,
+              qty: state.standardDrainCount,
+              rate: stdRate,
+              total: breakdown.weeklyStandardDrains,
+            });
+          }
+          if (state.greaseTrapCount > 0) {
+            rows.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.breakdown.grease,
+              label: "Grease Trap Drains",
+              type: "calc" as const,
+              qty: state.greaseTrapCount,
+              rate: greaseRate,
+              total: breakdown.weeklyGreaseTraps,
+            });
+          }
+          if (state.greenDrainCount > 0) {
+            rows.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.breakdown.green,
+              label: "Green Drains",
+              type: "calc" as const,
+              qty: state.greenDrainCount,
+              rate: greenRate,
+              total: breakdown.weeklyGreenDrains,
+            });
+          }
+          if (installRowQty > 0 && installTotal > 0) {
+            rows.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.installDrains,
+              label: `Install Drains (${state.installFrequency.charAt(0).toUpperCase() + state.installFrequency.slice(1)})`,
+              type: "calc" as const,
+              qty: installRowQty,
+              rate: installRate,
+              total: installTotal,
+            });
+          }
+          if (plumbingRowQty > 0 && plumbingTotal > 0) {
+            rows.push({
+              isDisplay: true,
+              orderNo: FIELD_ORDER.plumbingWork,
+              label: "Extra Plumbing Work",
+              type: "calc" as const,
+              qty: plumbingRowQty,
+              rate: plumbingRate,
+              total: plumbingTotal,
+            });
+          }
+          return rows;
+        })(),
 
         ...(breakdown.tripCharge > 0 ? {
           tripCharge: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.tripCharge,
             label: "Trip Charge",
             type: "dollar" as const,
             amount: breakdown.tripCharge,
           },
         } : {}),
 
-        totals: {
-          perVisit: {
+        totals: (() => {
+          const totals: any = {
+            perVisit: {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.perVisit,
+              label: "Per Visit Total",
+              type: "dollar" as const,
+              amount: quote.weeklyTotal,
+            },
+          };
+          const monthlyGroup = new Set<FoamingDrainFrequency>(["weekly", "biweekly", "twicePerMonth", "monthly"]);
+          if (monthlyGroup.has(state.frequency)) {
+            totals.firstMonth = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstMonth,
+              label: "First Month Total",
+              type: "dollar" as const,
+              amount: quote.firstMonthPrice,
+            };
+            totals.monthlyRecurring = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.monthlyRecurring,
+              label: "Monthly Recurring",
+              type: "dollar" as const,
+              amount: quote.monthlyRecurring,
+              gap: "wide",
+            };
+          } else {
+            totals.firstVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.firstVisit,
+              label: state.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+              type: "dollar" as const,
+              amount: quote.firstVisitPrice,
+            };
+            totals.recurringVisit = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.recurringVisit,
+              label: "Recurring Visit Total",
+              type: "dollar" as const,
+              amount: quote.weeklyService,
+              gap: "wide",
+            };
+          }
+          totals.contract = {
             isDisplay: true,
-            label: "Per Visit Total",
-            type: "dollar" as const,
-            amount: quote.weeklyTotal,
-          },
-          monthly: {
-            isDisplay: true,
-            label: "Monthly Total",
-            type: "dollar" as const,
-            amount: quote.monthlyRecurring,
-          },
-          contract: {
-            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.contract,
             label: "Contract Total",
             type: "dollar" as const,
             months: state.contractMonths,
             amount: quote.annualRecurring,
-          },
-        },
+          };
+          totals.minimum = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.minimum,
+            label: "Minimum",
+            type: "dollar" as const,
+            amount: quote.minimumChargePerVisit,
+          };
+          return totals;
+        })(),
 
         notes: state.notes || "",
         customFields: customFields,
@@ -293,7 +407,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, quote, breakdown, customFields]);
+  }, [state, quote, breakdown, customFields, backendConfig]);
 
   // Availability for alt options - ✅ USE DYNAMIC BACKEND CONFIG
   const dynamicMinimumDrains = backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains;
