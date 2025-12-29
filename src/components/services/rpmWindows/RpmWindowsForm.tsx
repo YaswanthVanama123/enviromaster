@@ -16,6 +16,28 @@ const formatNumber = (num: number | undefined): string => {
   return num % 1 === 0 ? num.toString() : num.toFixed(2);
 };
 
+const FIELD_ORDER = {
+  serviceFrequency: 1,
+  rateCategory: 2,
+  mirrorCleaning: 3,
+  installType: 4,
+  installationFee: 5,
+  windows: {
+    small: 10,
+    medium: 11,
+    large: 12,
+  },
+  extraChargesBase: 20,
+  totals: {
+    perVisit: 90,
+    monthly: 91,
+    monthlyRecurring: 92,
+    firstVisit: 93,
+    recurringVisit: 94,
+    contract: 95,
+  },
+} as const;
+
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
 > = ({ initialData, onRemove }) => {
@@ -150,6 +172,51 @@ export const RpmWindowsForm: React.FC<
     if (servicesContext) {
       const isActive = (form.smallQty ?? 0) > 0 || (form.mediumQty ?? 0) > 0 || (form.largeQty ?? 0) > 0;
 
+      const formatDollars = (value: number) => `$${value.toFixed(2)}`;
+      const frequencyLabel =
+        typeof form.frequency === "string"
+          ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+          : String(form.frequency || "");
+      const installationFeeDisplay = form.isFirstTimeInstall
+        ? calc.firstVisitTotalRated
+        : 0;
+      const pdfExtras = form.extraCharges.map((charge, index) => ({
+        label: charge.description || "Extra Charge",
+        value: formatDollars(charge.amount),
+        type: "line" as const,
+        orderNo: FIELD_ORDER.extraChargesBase + index * 0.1,
+        isDisplay: true,
+      }));
+      const frequencyField = {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.serviceFrequency,
+        label: "Service Frequency",
+        type: "text" as const,
+        value: frequencyLabel,
+        frequencyKey: form.frequency,
+      };
+      const installTypeField = {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.installType,
+        label: "Install Type",
+        type: "text" as const,
+        value: form.isFirstTimeInstall ? "First Time (Install)" : "Ongoing / Clean",
+      };
+      const mirrorCleaningField = {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.mirrorCleaning,
+        label: "Mirror Cleaning",
+        type: "text" as const,
+        value: form.includeMirrors ? "Include (same chemicals)" : "Not included",
+      };
+      const rateCategoryField = {
+        isDisplay: true,
+        orderNo: FIELD_ORDER.rateCategory,
+        label: "Rate Category",
+        type: "text" as const,
+        value: form.selectedRateCategory === "redRate" ? "Red Rate" : "Green Rate",
+      };
+
       const data = isActive ? {
         serviceId: "rpmWindows",
         displayName: "RPM Window",
@@ -181,6 +248,7 @@ export const RpmWindowsForm: React.FC<
         windows: [
           ...(form.smallQty > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.windows.small,
             label: "Small Windows",
             type: "calc" as const,
             qty: form.smallQty,
@@ -189,6 +257,7 @@ export const RpmWindowsForm: React.FC<
           }] : []),
           ...(form.mediumQty > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.windows.medium,
             label: "Medium Windows",
             type: "calc" as const,
             qty: form.mediumQty,
@@ -197,6 +266,7 @@ export const RpmWindowsForm: React.FC<
           }] : []),
           ...(form.largeQty > 0 ? [{
             isDisplay: true,
+            orderNo: FIELD_ORDER.windows.large,
             label: "Large Windows",
             type: "calc" as const,
             qty: form.largeQty,
@@ -206,38 +276,20 @@ export const RpmWindowsForm: React.FC<
         ],
         installationFee: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.installationFee,
           label: "First Visit",
           type: "dollar" as const,
-          amount: form.customInstallationFee ?? calc.installOneTime,
+          amount: form.customInstallationFee ?? installationFeeDisplay,
+          isCustom: form.customInstallationFee !== undefined,
         },
-        installType: {
+        frequency: frequencyField,
+        serviceFrequency: frequencyField,
+        installType: installTypeField,
+        mirrorCleaning: mirrorCleaningField,
+        rateCategory: rateCategoryField,
+        extraCharges: form.extraCharges.map((charge, index) => ({
           isDisplay: true,
-          label: "Install Type",
-          type: "text" as const,
-          value: form.isFirstTimeInstall ? "First Time (Install)" : "Ongoing / Clean",
-        },
-        serviceFrequency: {
-          isDisplay: true,
-          label: "Service Frequency",
-          type: "text" as const,
-          value: typeof form.frequency === 'string'
-            ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
-            : String(form.frequency || ''),
-        },
-        mirrorCleaning: {
-          isDisplay: true,
-          label: "Mirror Cleaning",
-          type: "text" as const,
-          value: form.includeMirrors ? "Include (same chemicals)" : "Not included",
-        },
-        rateCategory: {
-          isDisplay: true,
-          label: "Rate Category",
-          type: "text" as const,
-          value: form.selectedRateCategory === "redRate" ? "Red Rate" : "Green Rate",
-        },
-        extraCharges: form.extraCharges.map(charge => ({
-          isDisplay: true,
+          orderNo: FIELD_ORDER.extraChargesBase + index * 0.1,
           label: charge.description || "Extra Charge",
           type: "dollar" as const,
           amount: charge.amount,
@@ -245,30 +297,49 @@ export const RpmWindowsForm: React.FC<
         totals: {
           perVisit: {
             isDisplay: true,
-            label: "Total Price)",
+            orderNo: FIELD_ORDER.totals.perVisit,
+            label: "Total Price",
             type: "dollar" as const,
             amount: form.customPerVisitPrice ?? quote.perVisitPrice,
           },
-          firstMonth: {
+          monthly: {
             isDisplay: true,
-            label: "First Month Total",
+            orderNo: FIELD_ORDER.totals.monthly,
+            label: "Monthly Total",
             type: "dollar" as const,
             amount: form.customFirstMonthTotal ?? calc.firstMonthBillRated,
           },
           monthlyRecurring: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.totals.monthlyRecurring,
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: form.customMonthlyRecurring ?? calc.monthlyBillRated,
           },
+          firstVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.firstVisit,
+            label: "First Visit Total",
+            type: "dollar" as const,
+            amount: calc.firstVisitTotalRated,
+          },
+          recurringVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.recurringVisit,
+            label: "Recurring Visit Total",
+            type: "dollar" as const,
+            amount: calc.recurringPerVisitRated,
+          },
           annual: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.totals.contract,
             label: "Annual Price",
             type: "dollar" as const,
             months: form.contractMonths,
             amount: form.customAnnualPrice ?? quote.annualPrice,
           },
         },
+        pdfExtras,
         notes: form.notes || "",
         customFields: customFields,
       } : null;

@@ -83,6 +83,8 @@ export interface RpmExtraChargeLine {
   calcText: string;
   description: string;
   amount: number; // per-visit extra charge (already in “this frequency” units)
+  orderNo?: number;
+  isDisplay?: boolean;
 }
 
 // Form state used by the frontend

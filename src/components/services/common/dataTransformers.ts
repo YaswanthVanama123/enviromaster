@@ -300,9 +300,12 @@ export function transformRpmWindowsData(structuredData: any): any {
   }
 
   // Extract frequency
-  if (structuredData.serviceFrequency) {
-    const freq = structuredData.serviceFrequency.value?.toLowerCase();
-    formState.frequency = freq || "weekly";
+  const frequencyField = structuredData.frequency || structuredData.serviceFrequency;
+  if (frequencyField) {
+    const freqKey = frequencyField.frequencyKey ?? frequencyField.value;
+    if (typeof freqKey === "string" && freqKey.trim()) {
+      formState.frequency = freqKey;
+    }
   }
 
   // Extract mirror cleaning
@@ -532,6 +535,17 @@ export function transformSanicleanData(structuredData: any): any {
   // Extract contract months
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
+  }
+
+  // Extract frequency (new field or legacy serviceFrequency)
+  const frequencyField = structuredData.frequency || structuredData.serviceFrequency;
+  if (frequencyField) {
+    const freq = frequencyField.value?.toLowerCase();
+    formState.frequency = freq || "weekly";
+  }
+
+  if (structuredData.rateCategory) {
+    formState.rateCategory = structuredData.rateCategory.value?.includes("Green") ? "greenRate" : "redRate";
   }
 
   // Extract custom fields

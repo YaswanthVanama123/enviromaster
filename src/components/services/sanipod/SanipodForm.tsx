@@ -11,6 +11,22 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
 
+const FIELD_ORDER = {
+  frequency: 1,
+  rateCategory: 2,
+  service: 10,
+  extraBags: 20,
+  installation: 30,
+  totals: {
+    perVisit: 90,
+    monthly: 91,
+    monthlyRecurring: 92,
+    firstVisit: 93,
+    recurringVisit: 94,
+    contract: 95,
+  },
+} as const;
+
 export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
   onRemove,
@@ -171,6 +187,12 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     if (servicesContext) {
       const isActive = (form.podQuantity ?? 0) > 0;
 
+      const frequencyLabel =
+        typeof form.frequency === "string"
+          ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
+          : String(form.frequency || "");
+      const rateCategoryLabel = form.rateCategory === "greenRate" ? "Green Rate" : "Red Rate";
+
       const data = isActive ? {
         serviceId: "sanipod",
         displayName: "SaniPod",
@@ -181,8 +203,24 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         perVisit: calc.perVisit,  // Final per-visit price
         minimumChargePerVisit: calc.minimumChargePerVisit,  // ✅ NEW: Minimum threshold
 
+        frequency: {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
+          label: "Frequency",
+          type: "text" as const,
+          value: frequencyLabel,
+          frequencyKey: form.frequency,
+        },
+        rateCategory: {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.rateCategory,
+          label: "Rate Category",
+          type: "text" as const,
+          value: rateCategoryLabel,
+        },
         service: {
           isDisplay: true,
+          orderNo: FIELD_ORDER.service,
           label: "SaniPods",
           type: "calc" as const,
           qty: form.podQuantity,
@@ -194,6 +232,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         ...(form.extraBagsPerWeek > 0 ? {
           extraBags: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.extraBags,
             label: form.extraBagsRecurring ? "Extra Bags (Weekly)" : "Extra Bags (One-time)",
             type: "calc" as const,
             qty: form.extraBagsPerWeek,
@@ -207,6 +246,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         ...(form.isNewInstall && form.installQuantity > 0 ? {
           installation: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.installation,
             label: "Installation",
             type: "calc" as const,
             qty: form.installQuantity,
@@ -225,18 +265,42 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         totals: {
           perVisit: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.totals.perVisit,
             label: "Per Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
           },
           monthly: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.totals.monthly,
             label: "Monthly Total",
             type: "dollar" as const,
             amount: calc.monthly,
           },
+          monthlyRecurring: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.monthlyRecurring,
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: calc.ongoingMonthly,
+          },
+          firstVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.firstVisit,
+            label: "First Visit Total",
+            type: "dollar" as const,
+            amount: calc.firstVisit,
+          },
+          recurringVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.recurringVisit,
+            label: "Recurring Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisit,
+          },
           contract: {
             isDisplay: true,
+            orderNo: FIELD_ORDER.totals.contract,
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,

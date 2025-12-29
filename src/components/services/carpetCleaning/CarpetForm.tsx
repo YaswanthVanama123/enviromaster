@@ -255,6 +255,7 @@ export const CarpetForm: React.FC<
           label: "Frequency",
           type: "text" as const,
           value: displayFrequencyLabel,
+          frequencyKey: resolvedFrequency,
         },
 
         location: {
