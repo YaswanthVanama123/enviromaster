@@ -303,14 +303,22 @@ export const SanicleanForm: React.FC<
         if (amount === undefined || amount === null) return;
         if (typeof amount === "number" && amount === 0) return;
         if (typeof amount === "string" && amount.trim() === "") return;
+        const displayValue = typeof amount === "number" ? formatDollars(amount) : amount;
         extras.push({
           label,
-          value: typeof amount === "number" ? formatDollars(amount) : amount,
+          value: displayValue,
           type,
           isDisplay: true,
           orderNo,
           gap,
         });
+        if (gap === "wide") {
+          console.debug("[Saniclean PDF extra] wide gap", {
+            label,
+            value: displayValue,
+            orderNo,
+          });
+        }
       };
       const addAtChargeExtra = (
         label: string,
