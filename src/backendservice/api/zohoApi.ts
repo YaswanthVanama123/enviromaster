@@ -130,6 +130,7 @@ export interface UpdateUploadRequest {
   skipNoteCreation?: boolean; // ✅ NEW: Skip note creation for bulk uploads
   versionId?: string; // ✅ NEW: Target a specific version PDF during uploads
   versionFileName?: string; // Optional actual filename to set on Zoho
+  skipFileUpload?: boolean; // ✅ NEW: Support note-only/update requests
 }
 
 export interface ZohoDeal {

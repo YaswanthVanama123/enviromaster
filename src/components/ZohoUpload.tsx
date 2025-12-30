@@ -707,7 +707,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
     const updateResult = await zohoApi.updateUpload(agreementId, {
       dealId: uploadStatus.mapping.dealId,
-      noteText: noteText.trim()
+      noteText: noteText.trim(),
+      skipFileUpload: true
     });
 
     if (updateResult.success) {
@@ -1396,16 +1397,13 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
               !selectedCompany ||
               !dealName.trim() ||
               !noteText.trim() ||
-              showCreateCompany ||
-              selectedFiles.size === 0
+              showCreateCompany
             }
           >
             <FontAwesomeIcon icon={faUpload} />
-            {bulkFiles && bulkFiles.length > 0
+            {selectedFiles.size > 0
               ? `Upload ${selectedFiles.size} Selected Files to Zoho`
-              : selectedFiles.has(agreementId)
-                ? 'Upload Selected File to Zoho'
-                : 'Upload to Bigin (No File Selected)'
+              : 'Send Notes to Zoho'
             }
           </button>
         </div>
@@ -1425,16 +1423,13 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
             className="zoho-upload__btn zoho-upload__btn--primary"
             onClick={handleUpdateUpload}
             disabled={
-              !noteText.trim() ||
-              selectedFiles.size === 0
+              !noteText.trim()
             }
           >
             <FontAwesomeIcon icon={faUpload} />
-            {bulkFiles && bulkFiles.length > 0
+            {selectedFiles.size > 0
               ? `Upload ${selectedFiles.size} Selected Files (Version ${uploadStatus?.mapping?.nextVersion})`
-              : selectedFiles.has(agreementId)
-                ? `Upload Selected File (Version ${uploadStatus?.mapping?.nextVersion})`
-                : `Upload Version ${uploadStatus?.mapping?.nextVersion} (No File Selected)`
+              : `Send Notes to Zoho (Version ${uploadStatus?.mapping?.nextVersion})`
             }
           </button>
         </div>
