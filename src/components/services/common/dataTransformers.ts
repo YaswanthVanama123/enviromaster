@@ -11,6 +11,7 @@ import {
 import { type RefreshFrequency } from "../refreshPowerScrub/refreshPowerScrubTypes";
 import { carpetFrequencyLabels } from "../carpetCleaning/carpetConfig";
 import type { CarpetFrequency } from "../carpetCleaning/carpetTypes";
+import { saniscrubFrequencyList } from "../saniscrub/saniscrubConfig";
 
 /**
  * Helper function to extract and format custom fields for all services
@@ -129,6 +130,7 @@ function sanitizeFrequencyTextForDetection(raw: string): string {
 }
 
 const EVERY_TWO_MONTHS_PATTERN = /every\s*2\s*months?|\b2\s*months?\b/;
+const SANISCRUB_FREQUENCY_SET = new Set<string>(saniscrubFrequencyList);
 
 function detectSaniscrubFrequencyText(cleaned: string): string | undefined {
   if (!cleaned) return undefined;
@@ -1234,8 +1236,14 @@ export function transformSaniscrubData(structuredData: any): any {
   ];
 
   for (const candidate of frequencyCandidates) {
-    const candidateText = sanitizeFrequencyTextForDetection(normalizeFrequencyCandidate(candidate));
-    if (!candidateText) continue;
+    const candidateTextRaw = normalizeFrequencyCandidate(candidate);
+    if (!candidateTextRaw) continue;
+
+    const candidateText = sanitizeFrequencyTextForDetection(candidateTextRaw);
+    if (SANISCRUB_FREQUENCY_SET.has(candidateText)) {
+      formState.frequency = candidateText;
+      break;
+    }
 
     const detectedFrequency = detectSaniscrubFrequencyText(candidateText);
     if (detectedFrequency) {
