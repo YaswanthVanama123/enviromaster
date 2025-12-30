@@ -756,8 +756,8 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       monthlyVisits = activeConfig.frequencyMultipliers[form.frequency];
     } else {
       // Fallback to static config
-      const conv = cfg.billingConversions[form.frequency];
-      monthlyVisits = conv.monthlyMultiplier;
+      const conv = cfg.billingConversions?.[form.frequency];
+      monthlyVisits = conv?.monthlyMultiplier ?? 0;
     }
 
     // ✅ Detect visit-based frequencies (quarterly, biannual, annual, bimonthly, oneTime)
