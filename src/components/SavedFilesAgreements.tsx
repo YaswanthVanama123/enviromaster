@@ -717,7 +717,19 @@ export default function SavedFilesAgreements() {
         });
       });
 
-      setAgreements(allAgreements);
+      const parseTimestamp = (value?: string | null) => {
+        const parsed = value ? Date.parse(value) : NaN;
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+
+      const sortedAgreements = [...allAgreements].sort((a, b) => {
+        const aTime = parseTimestamp(a.latestUpdate);
+        const bTime = parseTimestamp(b.latestUpdate);
+        if (aTime !== bTime) return bTime - aTime;
+        return (a.agreementTitle || "").localeCompare(b.agreementTitle || "");
+      });
+
+      setAgreements(sortedAgreements);
       setTotalAgreements(groupedResponse.totalGroups);
       setTotalFiles(allAgreements.reduce((sum, agreement) => sum + agreement.files.length, 0));
       setCurrentPage(page);
