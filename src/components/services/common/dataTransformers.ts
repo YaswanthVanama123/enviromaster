@@ -1140,15 +1140,22 @@ export function transformSaniscrubData(structuredData: any): any {
 
   // Extract frequency
   if (structuredData.frequency) {
-    const freq = structuredData.frequency.value?.toLowerCase();
-    if (freq?.includes("twice")) {
-      formState.frequency = "twicePerMonth";
-    } else if (freq?.includes("monthly")) {
-      formState.frequency = "monthly";
-    } else if (freq?.includes("bimonthly")) {
-      formState.frequency = "bimonthly";
-    } else if (freq?.includes("quarterly")) {
-      formState.frequency = "quarterly";
+    const freqRaw = (structuredData.frequency.frequencyKey || structuredData.frequency.value || "").toString().toLowerCase();
+    const freq = (() => {
+      if (freqRaw.includes("one")) return "oneTime";
+      if (freqRaw.includes("weekly") && !freqRaw.includes("bi")) return "weekly";
+      if (freqRaw.includes("biweekly")) return "biweekly";
+      if (freqRaw.includes("twice")) return "twicePerMonth";
+      if (freqRaw.includes("monthly") && !freqRaw.includes("twice")) return "monthly";
+      if (freqRaw.includes("bimonthly")) return "bimonthly";
+      if (freqRaw.includes("quarterly")) return "quarterly";
+      if (freqRaw.includes("biannual") || freqRaw.includes("semiannual")) return "biannual";
+      if (freqRaw.includes("annual") || freqRaw.includes("yearly")) return "annual";
+      return undefined;
+    })();
+
+    if (freq) {
+      formState.frequency = freq;
     }
   }
 
