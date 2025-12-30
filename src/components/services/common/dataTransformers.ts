@@ -1007,9 +1007,14 @@ export function transformStripWaxData(structuredData: any): any {
   }
 
   // Extract frequency
-  if (structuredData.frequency) {
-    formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
-  }
+  const rawFrequencyValue =
+    structuredData.frequency?.frequencyKey ??
+    structuredData.frequency?.value ??
+    structuredData.frequency?.label ??
+    structuredData.frequency;
+  const normalizedFrequencyValue = sanitizeFrequencyTextForDetection(normalizeFrequencyCandidate(rawFrequencyValue));
+  const frequencyLookup = detectSaniscrubFrequencyText(normalizedFrequencyValue);
+  formState.frequency = frequencyLookup || "weekly";
 
   // Extract service (floor area)
   if (structuredData.service) {
