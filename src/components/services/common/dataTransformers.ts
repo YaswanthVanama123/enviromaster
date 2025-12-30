@@ -96,6 +96,83 @@ function normalizeCarpetFrequencyLabel(label: string): string {
   return label.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function normalizeFrequencyCandidate(value: any): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "object") {
+    const nested =
+      value.frequencyKey ??
+      value.value ??
+      value.label ??
+      value.name ??
+      value.frequency ??
+      "";
+    if (nested !== value) {
+      return normalizeFrequencyCandidate(nested);
+    }
+    if (typeof value === "object" && value.toString && value.toString !== Object.prototype.toString) {
+      return value.toString();
+    }
+    return "";
+  }
+  return String(value);
+}
+
+function sanitizeFrequencyTextForDetection(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\u00a0/g, " ")
+    .replace(/×/g, "x")
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+const EVERY_TWO_MONTHS_PATTERN = /every\s*2\s*months?|\b2\s*months?\b/;
+
+function detectSaniscrubFrequencyText(cleaned: string): string | undefined {
+  if (!cleaned) return undefined;
+  const collapsed = cleaned.replace(/[\s-]+/g, "");
+
+  if (collapsed.includes("onetim") || cleaned.includes("one time") || cleaned.includes("1 time")) {
+    return "oneTime";
+  }
+  if (/^weekly$/.test(collapsed) || (cleaned.includes("weekly") && !cleaned.includes("biweekly"))) {
+    return "weekly";
+  }
+  if (cleaned.includes("biweekly")) {
+    return "biweekly";
+  }
+  if (
+    cleaned.includes("twice per month") ||
+    cleaned.includes("2 per month") ||
+    cleaned.includes("2x month") ||
+    cleaned.includes("2xmonth") ||
+    cleaned.includes("2 x month") ||
+    cleaned.includes("two times per month") ||
+    collapsed.includes("twicepermonth") ||
+    collapsed.includes("2permonth")
+  ) {
+    return "twicePerMonth";
+  }
+  if (cleaned.includes("monthly") && !cleaned.includes("twice per")) {
+    return "monthly";
+  }
+  if (collapsed.includes("bimonth") || EVERY_TWO_MONTHS_PATTERN.test(cleaned)) {
+    return "bimonthly";
+  }
+  if (cleaned.includes("quarterly") || cleaned.includes("quarter")) {
+    return "quarterly";
+  }
+  if (cleaned.includes("biannual") || cleaned.includes("semiannual")) {
+    return "biannual";
+  }
+  if (cleaned.includes("annual") || cleaned.includes("yearly")) {
+    return "annual";
+  }
+  return undefined;
+}
+
 const carpetFrequencyLabelToValue = new Map<string, CarpetFrequency>(
   Object.entries(carpetFrequencyLabels).map(([frequency, label]) => [
     normalizeCarpetFrequencyLabel(label),
@@ -1149,37 +1226,21 @@ export function transformSaniscrubData(structuredData: any): any {
     }
   }
 
-  // Extract frequency
-  if (structuredData.frequency) {
-    const freqRaw = (
-      (structuredData.frequency.frequencyKey || structuredData.frequency.value || structuredData.frequency.label || "")
-        .toString()
-        .toLowerCase()
-    );
-    const normalizedFreq = freqRaw.replace(/[\s\-\u2013]+/g, "");
-    const freq = (() => {
-      if (normalizedFreq.includes("onetim")) return "oneTime";
-      if (/^weekly$/.test(normalizedFreq) || (normalizedFreq.includes("weekly") && !normalizedFreq.includes("biweekly"))) return "weekly";
-      if (normalizedFreq.includes("biweekly")) return "biweekly";
-      if (normalizedFreq.includes("twice") || normalizedFreq.includes("2permonth") || normalizedFreq.includes("twicepermonth")) return "twicePerMonth";
-      if (normalizedFreq.includes("monthly") && !normalizedFreq.includes("twicem")) return "monthly";
-      if (
-        normalizedFreq.includes("bimonth") ||
-        freqRaw.includes("every 2") ||
-        freqRaw.includes("everytwo") ||
-        normalizedFreq.includes("2months") ||
-        /2\s*months?/.test(freqRaw)
-      ) {
-        return "bimonthly";
-      }
-      if (normalizedFreq.includes("quarterly") || normalizedFreq.includes("quarter")) return "quarterly";
-      if (normalizedFreq.includes("biannual") || normalizedFreq.includes("semiannual")) return "biannual";
-      if (normalizedFreq.includes("annual") || normalizedFreq.includes("yearly")) return "annual";
-      return undefined;
-    })();
+  const frequencyCandidates = [
+    structuredData.frequency,
+    structuredData.frequencyKey,
+    structuredData.frequencyLabel,
+    structuredData.frequencyValue,
+  ];
 
-    if (freq) {
-      formState.frequency = freq;
+  for (const candidate of frequencyCandidates) {
+    const candidateText = sanitizeFrequencyTextForDetection(normalizeFrequencyCandidate(candidate));
+    if (!candidateText) continue;
+
+    const detectedFrequency = detectSaniscrubFrequencyText(candidateText);
+    if (detectedFrequency) {
+      formState.frequency = detectedFrequency;
+      break;
     }
   }
 
