@@ -1852,8 +1852,12 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         </div>
       )}
 
-        {loading && !payload && (
-          <div className="formfilling__loading">Loading…</div>
+        {loading && (
+          <div className="formfilling__loading-overlay" role="status" aria-live="polite">
+            <div className="formfilling__spinner">
+              <span className="formfilling__sr-only">Loading form data…</span>
+            </div>
+          </div>
         )}
 
         {isSaving && (
