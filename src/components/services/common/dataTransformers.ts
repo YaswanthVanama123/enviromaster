@@ -653,9 +653,29 @@ export function transformFoamingDrainData(structuredData: any): any {
   };
 
   // ✅ STEP 1: Extract top-level direct fields (saved from form)
-  if (structuredData.frequency !== undefined && typeof structuredData.frequency === 'string') {
-    formState.frequency = structuredData.frequency;
+  const foamingFrequencySources = [
+    structuredData.frequency,
+    structuredData.frequency?.frequencyKey,
+    structuredData.frequency?.value,
+    structuredData.frequency?.label,
+    structuredData.serviceFrequency,
+    structuredData.serviceFrequency?.frequencyKey,
+    structuredData.serviceFrequency?.value,
+    structuredData.serviceFrequency?.label,
+  ];
+
+  for (const candidate of foamingFrequencySources) {
+    const freq = resolveFrequencyKeyFromCandidate(candidate);
+    if (freq) {
+      formState.frequency = freq;
+      break;
+    }
   }
+
+  if (!formState.frequency) {
+    formState.frequency = "weekly";
+  }
+
   if (structuredData.installFrequency !== undefined && typeof structuredData.installFrequency === 'string') {
     formState.installFrequency = structuredData.installFrequency;
   }
