@@ -1590,9 +1590,13 @@
 }
 
 .agreement-header-admin td {
-  font-weight: 600;
+  font-weight: 400;
   color: #1e293b;
   padding: 12px !important;
+}
+
+.agreement-header-admin strong {
+  font-weight: 500;
 }
 
 .file-row-admin {

@@ -173,11 +173,15 @@
 }
 
 .agreement-header td {
-  font-weight: 600;
+  font-weight: 400;
   color: #1e293b;
   padding: 16px !important;
   height: auto; /* ✅ FIXED: Allow natural height */
   min-height: 68px;
+}
+
+.agreement-header strong {
+  font-weight: 500;
 }
 
 .file-row {
