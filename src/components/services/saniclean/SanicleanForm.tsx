@@ -46,12 +46,12 @@ const FIELD_ORDER = {
   urinals: 5,
   maleToilets: 6,
   femaleToilets: 7,
-  soapType: 8,
+  soapType: 20,
   contractTotal: 100,
 };
 
 const EXTRA_ORDER = {
-  luxuryUpgrade: 12,
+  luxuryUpgrade: 21,
   urinalScreens: 13,
   urinalMats: 14,
   toiletClips: 15,
@@ -59,10 +59,10 @@ const EXTRA_ORDER = {
   sanipods: 17,
   warranty: 18,
   microfiber: 19,
-  baseServiceMonthly: 20,
-  facilityComponentsMonthly: 21,
-  facilityFrequency: 22,
-  includedItems: 23,
+  baseServiceMonthly: 22,
+  facilityComponentsMonthly: 23,
+  facilityFrequency: 24,
+  includedItems: 25,
 };
 
 function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): number {
