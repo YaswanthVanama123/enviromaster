@@ -1517,6 +1517,29 @@ export function transformSanipodData(structuredData: any): any {
     }
   }
 
+  // Extract frequency
+  const sanipodFrequencySources = [
+    structuredData.frequency?.frequencyKey,
+    structuredData.frequency?.value,
+    structuredData.frequency?.label,
+    structuredData.frequency,
+    structuredData.frequencyDisplay?.frequencyKey,
+    structuredData.frequencyDisplay?.value,
+    structuredData.frequencyDisplay?.label,
+  ];
+
+  for (const candidate of sanipodFrequencySources) {
+    const freq = resolveFrequencyKeyFromCandidate(candidate);
+    if (freq) {
+      formState.frequency = freq;
+      break;
+    }
+  }
+
+  if (!formState.frequency) {
+    formState.frequency = "weekly";
+  }
+
   // Extract installation
   if (structuredData.installation) {
     formState.isNewInstall = true;
