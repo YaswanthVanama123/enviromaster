@@ -28,7 +28,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
-type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details" | "email-template";
+// type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details" | "email-template";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -70,7 +71,8 @@ export default function AdminPanel() {
   const getActiveTabFromUrl = (): TabType => {
     if (!tab) return "dashboard";
 
-    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details", "email-template"];
+    // const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details", "email-template"];
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
 
@@ -436,8 +438,8 @@ export default function AdminPanel() {
         return "Saved PDFs";
       case "approval-documents":
         return "Approval Documents";
-      case "manual-uploads":
-        return "Manual Uploads";
+      // case "manual-uploads":
+      //   return "Manual Uploads";
       case "pricing-details":
         return "Pricing Details";
       case "email-template":
@@ -528,12 +530,12 @@ export default function AdminPanel() {
         >
           Approval Documents
         </button>
-        <button
+        {/* <button
           className={`secondary-nav-item ${activeTab === "manual-uploads" ? "active" : ""}`}
           onClick={() => handleTabChange("manual-uploads")}
         >
           Manual Uploads
-        </button>
+        </button> */}
         <button
           className={`secondary-nav-item ${activeTab === "pricing-details" ? "active" : ""}`}
           onClick={() => handleTabChange("pricing-details")}

@@ -532,7 +532,7 @@ export default function Home() {
           </div>
 
           {/* Upload Section */}
-          <div className="home__upload-section">
+          {/* <div className="home__upload-section">
             <h3 className="home__upload-title">Manual File Upload</h3>
             <div
               className="home__upload-area"
@@ -580,7 +580,7 @@ export default function Home() {
               {uploading ? `Uploading ${uploadedFiles.length} file(s)...` : `Upload ${uploadedFiles.length > 0 ? uploadedFiles.length : ''} File${uploadedFiles.length !== 1 ? 's' : ''}`}
             </button>
             <p className="home__upload-formats">PDF, DOC, DOCX</p>
-          </div>
+          </div> */}
         </div>
       </div>
 
