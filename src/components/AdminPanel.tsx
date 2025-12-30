@@ -324,10 +324,16 @@ export default function AdminPanel() {
     return null;
   }
 
+  const canAccessFile = useCallback((file: SavedFileListItem) => {
+    return file.hasPdf || file.fileType === 'version_log' || file.fileType === 'attached_pdf';
+  }, []);
+
   const handleDownload = async (docId: string, fileName: string, fileType?: string) => {
     try {
       let blob: Blob;
-      if (fileType === 'attached_pdf') {
+      if (fileType === 'version_log') {
+        blob = await pdfApi.downloadVersionLog(docId);
+      } else if (fileType === 'attached_pdf') {
         // ✅ FIX: Use attached files API for attached files
         blob = await pdfApi.downloadAttachedFile(docId);
       } else if (fileType === 'version_pdf') {
@@ -368,6 +374,8 @@ export default function AdminPanel() {
       documentType = 'manual-upload';
     } else if (docType === 'attached-file' || docType === 'attached_pdf') {
       documentType = 'attached-file';
+    } else if (docType === 'version_log') {
+      documentType = 'version-log';
     } else if (docType === 'version_pdf') {
       documentType = 'version';  // ✅ FIX: Map version_pdf to 'version' for PDFViewer
     }
@@ -687,8 +695,8 @@ export default function AdminPanel() {
                             No documents found
                           </td>
                         </tr>
-                      ) : (
-                        recentAgreements.slice(0, 4).map((agreement) => (
+                        ) : (
+                          recentAgreements.slice(0, 10).map((agreement) => (
                           <React.Fragment key={agreement.id}>
                             {/* Agreement Header Row */}
                             <tr className="agreement-header-admin">
@@ -765,7 +773,7 @@ export default function AdminPanel() {
                                       className="action-btn action-view"
                                       onClick={() => handleViewPDF(file.id, file.fileName, file.fileType)}
                                       title="View PDF"
-                                      disabled={!file.hasPdf}
+                                      disabled={!canAccessFile(file)}
                                     >
                                       <FontAwesomeIcon icon={faEye} size="sm" />
                                     </button>
@@ -773,7 +781,7 @@ export default function AdminPanel() {
                                       className="action-btn action-download"
                                       onClick={() => handleDownload(file.id, file.fileName, file.fileType)}
                                       title="Download PDF"
-                                      disabled={!file.hasPdf}
+                                      disabled={!canAccessFile(file)}
                                     >
                                       <FontAwesomeIcon icon={faDownload} size="sm" />
                                     </button>
