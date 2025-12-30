@@ -103,7 +103,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
       emFranchiseeLabel: "EM Franchisee:",
       emSignatureLabel: "Signature:",
       emDateLabel: "Date:",
-      pageNumberText: "Page #2",
+      // pageNumberText: "Page #2",
     };
   });
 

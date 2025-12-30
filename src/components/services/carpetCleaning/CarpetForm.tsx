@@ -195,7 +195,7 @@ export const CarpetForm: React.FC<
         totals.monthlyRecurring = {
           isDisplay: true,
           orderNo: FIELD_ORDER.recurringMonth,
-          label: "Recurring Month Total",
+          label: "Monthly Recurring",
           type: "dollar" as const,
           amount: calc.monthlyTotal,
           gap: "normal",
@@ -226,26 +226,29 @@ export const CarpetForm: React.FC<
 
       const data = isActive ? {
         serviceId: "carpetclean",
-        displayName: "Carpet Cleaning",
-        isActive: true,
+      displayName: "Carpet Cleaning",
+      isActive: true,
 
-        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-        // This ensures edited values are saved to backend, not just backend defaults
-        firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate,
-        additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate,
-        perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,
-        installMultiplierDirty: form.installMultiplierDirty,
-        installMultiplierClean: form.installMultiplierClean,
-        unitSqFt: form.unitSqFt,
-        useExactSqft: form.useExactSqft,
+      // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
+      // This ensures edited values are saved to backend, not just backend defaults
+      firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate,
+      additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate,
+      perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,
+      installMultiplierDirty: form.installMultiplierDirty,
+      installMultiplierClean: form.installMultiplierClean,
+      unitSqFt: form.unitSqFt,
+      useExactSqft: form.useExactSqft,
 
-        // ✅ NEW: Save quantity inputs for proper loading in edit mode
-        areaSqFt: form.areaSqFt,
-        frequency: form.frequency,
-        contractMonths: form.contractMonths,
-        includeInstall: form.includeInstall,
-        isDirtyInstall: form.isDirtyInstall,
-        location: form.location,
+      // ✅ NEW: Save quantity inputs for proper loading in edit mode
+      areaSqFt: form.areaSqFt,
+      frequency: form.frequency,
+      contractMonths: form.contractMonths,
+      includeInstall: form.includeInstall,
+      isDirtyInstall: form.isDirtyInstall,
+      location: form.location,
+
+      // Ensure contract total is always saved (oneTime may hide contract row in UI)
+      contractTotal: calc.contractTotal,
 
         // Red/Green Line pricing data
         perVisitBase: calc.perVisitBase,  // Raw price before minimum

@@ -143,10 +143,37 @@ export const ServicesProvider: React.FC<{
           console.log(`📊 [TOTAL CALC] ${serviceName} found totals.annual.amount: $${contractTotal.toFixed(2)}`);
         }
 
+        if (contractTotal <= 0) {
+          const fallbackFields = [
+            serviceData.totals?.firstMonth?.amount,
+            serviceData.perVisitCharge,
+            serviceData.perVisit,
+            serviceData.calc?.perVisit,
+            serviceData.calc?.contractTotal,
+            serviceData.calc?.total,
+            serviceData.totalPrice,
+            serviceData.calc?.totalPrice,
+            serviceData.totals?.perVisit?.amount,
+            serviceData.totals?.perVisit?.total,
+          ];
+          for (const fallback of fallbackFields) {
+            if (typeof fallback === "number" && fallback > 0) {
+              contractTotal = fallback;
+              console.log(
+                `📊 [TOTAL CALC] ${serviceName} fallback contract total: $${contractTotal.toFixed(2)}`
+              );
+              break;
+            }
+          }
+        }
+
         if (contractTotal > 0) {
           totalAmount += contractTotal;
         } else {
-          console.warn(`⚠️ [TOTAL CALC] ${serviceName} is active but no contract total found. Service data keys:`, Object.keys(serviceData));
+          console.warn(
+            `⚠️ [TOTAL CALC] ${serviceName} is active but no contract total found. Service data keys:`,
+            Object.keys(serviceData)
+          );
         }
       }
     });
