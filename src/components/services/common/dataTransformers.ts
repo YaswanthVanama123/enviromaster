@@ -130,7 +130,7 @@ function sanitizeFrequencyTextForDetection(raw: string): string {
 }
 
 const EVERY_TWO_MONTHS_PATTERN = /every\s*2\s*months?|\b2\s*months?\b/;
-const SANISCRUB_FREQUENCY_SET = new Set<string>(saniscrubFrequencyList);
+const KNOWN_FREQUENCY_KEYS = new Set<string>(saniscrubFrequencyList);
 
 function detectSaniscrubFrequencyText(cleaned: string): string | undefined {
   if (!cleaned) return undefined;
@@ -173,6 +173,18 @@ function detectSaniscrubFrequencyText(cleaned: string): string | undefined {
     return "annual";
   }
   return undefined;
+}
+
+function resolveFrequencyKeyFromCandidate(candidate: any): string | undefined {
+  const candidateTextRaw = normalizeFrequencyCandidate(candidate);
+  if (!candidateTextRaw) return undefined;
+
+  const normalizedText = sanitizeFrequencyTextForDetection(candidateTextRaw);
+  if (KNOWN_FREQUENCY_KEYS.has(normalizedText)) {
+    return normalizedText;
+  }
+
+  return detectSaniscrubFrequencyText(normalizedText);
 }
 
 const carpetFrequencyLabelToValue = new Map<string, CarpetFrequency>(
@@ -1241,18 +1253,9 @@ export function transformSaniscrubData(structuredData: any): any {
   ];
 
   for (const candidate of frequencyCandidates) {
-    const candidateTextRaw = normalizeFrequencyCandidate(candidate);
-    if (!candidateTextRaw) continue;
-
-    const candidateText = sanitizeFrequencyTextForDetection(candidateTextRaw);
-    if (SANISCRUB_FREQUENCY_SET.has(candidateText)) {
-      formState.frequency = candidateText;
-      break;
-    }
-
-    const detectedFrequency = detectSaniscrubFrequencyText(candidateText);
-    if (detectedFrequency) {
-      formState.frequency = detectedFrequency;
+    const freq = resolveFrequencyKeyFromCandidate(candidate);
+    if (freq) {
+      formState.frequency = freq;
       break;
     }
   }
@@ -1353,11 +1356,26 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
   }
 
   // ✅ STEP 3: Extract frequency
-  if (structuredData.frequency !== undefined && typeof structuredData.frequency === 'string') {
-    formState.frequency = structuredData.frequency;
-  } else if (structuredData.frequencyDisplay?.value) {
-    // Fallback to display field
-    formState.frequency = structuredData.frequencyDisplay.value.toLowerCase() || "weekly";
+  const microfiberFrequencySources = [
+    structuredData.frequency?.frequencyKey,
+    structuredData.frequency?.value,
+    structuredData.frequency?.label,
+    structuredData.frequency,
+    structuredData.frequencyDisplay?.frequencyKey,
+    structuredData.frequencyDisplay?.value,
+    structuredData.frequencyDisplay?.label,
+  ];
+
+  for (const candidate of microfiberFrequencySources) {
+    const freq = resolveFrequencyKeyFromCandidate(candidate);
+    if (freq) {
+      formState.frequency = freq;
+      break;
+    }
+  }
+
+  if (!formState.frequency) {
+    formState.frequency = "weekly";
   }
 
   // ✅ STEP 4: Extract boolean flags
