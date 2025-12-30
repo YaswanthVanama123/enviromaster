@@ -957,7 +957,18 @@ export function transformJanitorialData(structuredData: any): any {
 
   // Extract service type (recurring vs one-time)
   if (structuredData.serviceType) {
-    formState.serviceType = structuredData.serviceType.value?.includes("One-Time") ? "one-time" : "recurring";
+    const rawValue =
+      typeof structuredData.serviceType === "string"
+        ? structuredData.serviceType
+        : structuredData.serviceType.value || structuredData.serviceType.label || "";
+    const normalized = rawValue.toString().toLowerCase();
+    if (normalized.includes("one-time") || normalized.includes("one time") || normalized.includes("one")) {
+      formState.serviceType = "oneTime";
+    } else if (normalized.includes("recurring")) {
+      formState.serviceType = "recurring";
+    } else if (normalized.includes("service")) {
+      formState.serviceType = normalized.includes("one") ? "oneTime" : "recurring";
+    }
   }
 
   // Extract frequency
@@ -1140,17 +1151,30 @@ export function transformSaniscrubData(structuredData: any): any {
 
   // Extract frequency
   if (structuredData.frequency) {
-    const freqRaw = (structuredData.frequency.frequencyKey || structuredData.frequency.value || "").toString().toLowerCase();
+    const freqRaw = (
+      (structuredData.frequency.frequencyKey || structuredData.frequency.value || structuredData.frequency.label || "")
+        .toString()
+        .toLowerCase()
+    );
+    const normalizedFreq = freqRaw.replace(/[\s\-\u2013]+/g, "");
     const freq = (() => {
-      if (freqRaw.includes("one")) return "oneTime";
-      if (freqRaw.includes("weekly") && !freqRaw.includes("bi")) return "weekly";
-      if (freqRaw.includes("biweekly")) return "biweekly";
-      if (freqRaw.includes("twice")) return "twicePerMonth";
-      if (freqRaw.includes("monthly") && !freqRaw.includes("twice")) return "monthly";
-      if (freqRaw.includes("bimonthly")) return "bimonthly";
-      if (freqRaw.includes("quarterly")) return "quarterly";
-      if (freqRaw.includes("biannual") || freqRaw.includes("semiannual")) return "biannual";
-      if (freqRaw.includes("annual") || freqRaw.includes("yearly")) return "annual";
+      if (normalizedFreq.includes("onetim")) return "oneTime";
+      if (/^weekly$/.test(normalizedFreq) || (normalizedFreq.includes("weekly") && !normalizedFreq.includes("biweekly"))) return "weekly";
+      if (normalizedFreq.includes("biweekly")) return "biweekly";
+      if (normalizedFreq.includes("twice") || normalizedFreq.includes("2permonth") || normalizedFreq.includes("twicepermonth")) return "twicePerMonth";
+      if (normalizedFreq.includes("monthly") && !normalizedFreq.includes("twicem")) return "monthly";
+      if (
+        normalizedFreq.includes("bimonth") ||
+        freqRaw.includes("every 2") ||
+        freqRaw.includes("everytwo") ||
+        normalizedFreq.includes("2months") ||
+        /2\s*months?/.test(freqRaw)
+      ) {
+        return "bimonthly";
+      }
+      if (normalizedFreq.includes("quarterly") || normalizedFreq.includes("quarter")) return "quarterly";
+      if (normalizedFreq.includes("biannual") || normalizedFreq.includes("semiannual")) return "biannual";
+      if (normalizedFreq.includes("annual") || normalizedFreq.includes("yearly")) return "annual";
       return undefined;
     })();
 
