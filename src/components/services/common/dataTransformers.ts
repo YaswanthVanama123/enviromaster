@@ -1018,15 +1018,27 @@ export function transformStripWaxData(structuredData: any): any {
     formState.contractMonths = structuredData.totals.contract.months;
   }
 
-  // Extract frequency
-  const rawFrequencyValue =
-    structuredData.frequency?.frequencyKey ??
-    structuredData.frequency?.value ??
-    structuredData.frequency?.label ??
-    structuredData.frequency;
-  const normalizedFrequencyValue = sanitizeFrequencyTextForDetection(normalizeFrequencyCandidate(rawFrequencyValue));
-  const frequencyLookup = detectSaniscrubFrequencyText(normalizedFrequencyValue);
-  formState.frequency = frequencyLookup || "weekly";
+  const stripFrequencySources = [
+    structuredData.frequency,
+    structuredData.frequency?.frequencyKey,
+    structuredData.frequency?.value,
+    structuredData.frequency?.label,
+    structuredData.frequencyDisplay?.frequencyKey,
+    structuredData.frequencyDisplay?.value,
+    structuredData.frequencyDisplay?.label,
+  ];
+
+  for (const candidate of stripFrequencySources) {
+    const freq = resolveFrequencyKeyFromCandidate(candidate);
+    if (freq) {
+      formState.frequency = freq;
+      break;
+    }
+  }
+
+  if (!formState.frequency) {
+    formState.frequency = "weekly";
+  }
 
   // Extract service (floor area)
   if (structuredData.service) {
@@ -1376,6 +1388,13 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
 
   if (!formState.frequency) {
     formState.frequency = "weekly";
+  }
+
+  if (!formState.frequency && typeof structuredData.frequency === "object") {
+    const raw = structuredData.frequency.value || structuredData.frequency.label || "";
+    if (raw.toLowerCase().includes("bimonth")) {
+      formState.frequency = "bimonthly";
+    }
   }
 
   // ✅ STEP 4: Extract boolean flags
