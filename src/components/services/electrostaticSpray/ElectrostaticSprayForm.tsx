@@ -12,7 +12,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const FIELD_ORDER = {
   frequency: 1,
-  location: 2,
+  // location: 2,
   combinedService: 5,
   service: 10,
   calculationMethod: 11,
@@ -206,7 +206,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         frequency: form.frequency,
         contractMonths: form.contractMonths,
         isCombinedWithSaniClean: form.isCombinedWithSaniClean,
-        location: form.location,
+        // location: form.location,
 
         // Red/Green Line pricing data
         perVisitBase: calc.serviceCharge,  // Raw service charge before trip/minimum
@@ -230,14 +230,14 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           frequencyKey: form.frequency,
         },
 
-        locationDisplay: {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.location,
-          label: "Location",
-          type: "text" as const,
-          value: form.location === "insideBeltway" ? "Inside Beltway" :
-                 form.location === "outsideBeltway" ? "Outside Beltway" : "Standard",
-        },
+        // locationDisplay: {
+        //   isDisplay: true,
+        //   orderNo: FIELD_ORDER.location,
+        //   label: "Location",
+        //   type: "text" as const,
+        //   value: form.location === "insideBeltway" ? "Inside Beltway" :
+        //          form.location === "outsideBeltway" ? "Outside Beltway" : "Standard",
+        // },
 
         ...(form.isCombinedWithSaniClean ? {
           combinedService: {
@@ -398,7 +398,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     form.frequency,
     form.contractMonths,
     form.isCombinedWithSaniClean,
-    form.location,
+    // form.location,
   ]);
 
   return (
