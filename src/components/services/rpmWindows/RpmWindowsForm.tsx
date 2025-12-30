@@ -21,7 +21,7 @@ const FIELD_ORDER = {
   rateCategory: 2,
   mirrorCleaning: 3,
   installType: 4,
-  installationFee: 5,
+  installationFee: 14,
   windows: {
     small: 10,
     medium: 11,
@@ -29,6 +29,7 @@ const FIELD_ORDER = {
   },
   extraChargesBase: 20,
   totals: {
+    installationFee: 14,
     perVisit: 90,
     monthly: 91,
     monthlyRecurring: 92,
@@ -282,7 +283,7 @@ export const RpmWindowsForm: React.FC<
         installationFee: {
           isDisplay: true,
           orderNo: FIELD_ORDER.installationFee,
-          label: "First Visit",
+          label: "Installation Fee",
           type: "dollar" as const,
           amount: form.customInstallationFee ?? installationFeeDisplay,
           isCustom: form.customInstallationFee !== undefined,

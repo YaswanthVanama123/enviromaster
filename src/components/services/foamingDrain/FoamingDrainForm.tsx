@@ -16,7 +16,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const FIELD_ORDER = {
   frequency: 1,
   installFrequency: 2,
-  location: 3,
+  // location: 3,
   breakdown: {
     standard: 10,
     grease: 11,
@@ -219,7 +219,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         installFrequency: state.installFrequency,
         contractMonths: state.contractMonths,
         facilityCondition: state.facilityCondition,
-        location: state.location,
+        // location: state.location,
         useSmallAltPricingWeekly: state.useSmallAltPricingWeekly,
         useBigAccountTenWeekly: state.useBigAccountTenWeekly,
         isAllInclusive: state.isAllInclusive,
@@ -248,13 +248,13 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           type: "text" as const,
           value: state.installFrequency.charAt(0).toUpperCase() + state.installFrequency.slice(1),
         },
-        location: {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.location,
-          label: "Location",
-          type: "text" as const,
-          value: state.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
-        },
+        // location: {
+        //   isDisplay: true,
+        //   orderNo: FIELD_ORDER.location,
+        //   label: "Location",
+        //   type: "text" as const,
+        //   value: state.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        // },
 
         drainBreakdown: (() => {
           const rows: any[] = [];
@@ -351,7 +351,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: quote.monthlyRecurring,
-              gap: "wide",
+              gap: "normal",
             };
           } else {
             totals.firstVisit = {
@@ -367,7 +367,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               label: "Recurring Visit Total",
               type: "dollar" as const,
               amount: quote.weeklyService,
-              gap: "wide",
+              gap: "normal",
             };
           }
           totals.contract = {

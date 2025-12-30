@@ -289,6 +289,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: calc.ongoingMonthly,
+            gap: "normal",
           },
           firstVisit: {
             isDisplay: true,
@@ -303,6 +304,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             label: "Recurring Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
+            gap: "normal",
           },
           contract: {
             isDisplay: true,

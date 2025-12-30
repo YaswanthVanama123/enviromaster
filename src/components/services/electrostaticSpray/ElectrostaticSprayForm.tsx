@@ -305,7 +305,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               label: "Recurring Visit Total",
               type: "dollar" as const,
               amount: calc.perVisit,
-              gap: "wide",
+              gap: "normal",
             };
           } else {
             totals.firstMonth = {
@@ -321,7 +321,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: calc.monthlyRecurring,
-              gap: "wide",
+              gap: "normal",
             };
           }
 

@@ -10,7 +10,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const FIELD_ORDER = {
   frequency: 1,
-  location: 2,
+  // location: 2,
   restroomFixtures: 10,
   nonBathroomArea: 15,
   totals: {
@@ -223,13 +223,13 @@ export const SaniscrubForm: React.FC<
           frequencyKey: form.frequency,
         },
 
-        location: {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.location,
-          label: "Location",
-          type: "text" as const,
-          value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
-        },
+        // location: {
+        //   isDisplay: true,
+        //   orderNo: FIELD_ORDER.location,
+        //   label: "Location",
+        //   type: "text" as const,
+        //   value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        // },
 
         ...(form.fixtureCount > 0 ? {
           restroomFixtures: {
@@ -283,6 +283,7 @@ export const SaniscrubForm: React.FC<
               label: "Recurring Visit Total",
               type: "dollar" as const,
               amount: calc.perVisitEffective,
+              gap: "normal",
             };
           } else {
             totals.firstMonth = {
@@ -298,6 +299,7 @@ export const SaniscrubForm: React.FC<
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: calc.monthlyTotal,
+              gap: "normal",
             };
           }
 

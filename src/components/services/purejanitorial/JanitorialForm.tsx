@@ -196,7 +196,7 @@ export const JanitorialForm: React.FC<
             label: "Monthly Recurring",
             type: "dollar" as const,
             amount: calc.recurringMonthly,
-            gap: "wide",
+            gap: "normal",
           };
           payload.contract = {
             isDisplay: true,
@@ -220,7 +220,7 @@ export const JanitorialForm: React.FC<
             label: "Recurring Visit Total",
             type: "dollar" as const,
             amount: calc.perVisit,
-            gap: "wide",
+            gap: "normal",
           };
         }
         payload.minimum = {

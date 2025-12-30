@@ -198,6 +198,7 @@ export const CarpetForm: React.FC<
           label: "Recurring Month Total",
           type: "dollar" as const,
           amount: calc.monthlyTotal,
+          gap: "normal",
         };
         }
 
@@ -208,6 +209,7 @@ export const CarpetForm: React.FC<
             label: "Recurring Visit Total",
             type: "dollar" as const,
             amount: calc.perVisitCharge,
+            gap: "normal",
           };
         }
 

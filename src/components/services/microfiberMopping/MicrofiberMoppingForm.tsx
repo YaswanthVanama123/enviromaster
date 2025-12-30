@@ -11,7 +11,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const FIELD_ORDER = {
   frequency: 1,
-  location: 2,
+  // location: 2,
   serviceBreakdown: {
     bathrooms: 10,
     hugeBathrooms: 11,
@@ -169,7 +169,7 @@ export const MicrofiberMoppingForm: React.FC<
         contractTermMonths: form.contractTermMonths,
         hasExistingSaniService: form.hasExistingSaniService,
         isAllInclusive: form.isAllInclusive,
-        location: form.location,
+        // location: form.location,
         needsParking: form.needsParking,
 
         // Red/Green Line pricing data
@@ -185,13 +185,13 @@ export const MicrofiberMoppingForm: React.FC<
           value: frequencyLabel,
           frequencyKey: form.frequency,
         },
-        location: {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.location,
-          label: "Location",
-          type: "text" as const,
-          value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
-        },
+        // location: {
+        //   isDisplay: true,
+        //   orderNo: FIELD_ORDER.location,
+        //   label: "Location",
+        //   type: "text" as const,
+        //   value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
+        // },
 
         serviceBreakdown: (() => {
           const breakdown = [];
@@ -282,7 +282,7 @@ export const MicrofiberMoppingForm: React.FC<
               label: "Recurring Visit Total",
               type: "dollar" as const,
               amount: calc.perVisitPrice,
-              gap: "wide",
+              gap: "normal",
             };
           } else {
             totals.firstMonth = {
@@ -298,7 +298,7 @@ export const MicrofiberMoppingForm: React.FC<
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: calc.monthlyRecurring,
-              gap: "wide",
+              gap: "normal",
             };
           }
 

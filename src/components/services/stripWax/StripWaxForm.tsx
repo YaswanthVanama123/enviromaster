@@ -238,6 +238,7 @@ export const StripWaxForm: React.FC<
               label: "Recurring Visit Total",
               type: "dollar" as const,
               amount: calc.perVisit,
+              gap: "normal",
             };
           } else {
             totals.firstMonth = {
@@ -253,6 +254,7 @@ export const StripWaxForm: React.FC<
               label: "Monthly Recurring",
               type: "dollar" as const,
               amount: calc.ongoingMonthly,
+              gap: "normal",
             };
           }
 
