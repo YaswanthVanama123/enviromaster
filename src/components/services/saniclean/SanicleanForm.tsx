@@ -46,7 +46,7 @@ const FIELD_ORDER = {
   urinals: 5,
   maleToilets: 6,
   femaleToilets: 7,
-  soapType: 20,
+  // soapType: 20,
   contractTotal: 100,
 };
 
@@ -516,13 +516,13 @@ export const SanicleanForm: React.FC<
         facilityComponentsTotal: quote.breakdown.facilityComponents,
         facilityComponentsMonthly: quote.facilityComponentsMonthly,
 
-        soapType: {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.soapType,
-          label: "Soap Type",
-          type: "text" as const,
-          value: form.soapType === "luxury" ? "Luxury" : "Standard",
-        },
+        // soapType: {
+        //   isDisplay: true,
+        //   orderNo: FIELD_ORDER.soapType,
+        //   label: "Soap Type",
+        //   type: "text" as const,
+        //   value: form.soapType === "luxury" ? "Luxury" : "Standard",
+        // },
 
         totals: {
           contract: {

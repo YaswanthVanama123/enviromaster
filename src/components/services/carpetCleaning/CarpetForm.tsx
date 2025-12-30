@@ -288,7 +288,7 @@ export const CarpetForm: React.FC<
             isDisplay: true,
              orderNo: FIELD_ORDER.installation,
 
-           label: form.isDirtyInstall ? "Installation (Dirty - 3×)" : "Installation (Clean - 1×)",
+           label: form.isDirtyInstall ? "Installation" : "Installation",
             type: "calc" as const,
             qty: 1,
             rate: calc.installOneTime,

@@ -19,9 +19,9 @@ const FIELD_ORDER = {
   tripCharge: 12,
   totals: {
     perVisit: 20,
-    firstMonth: 21,
+    // firstMonth: 21,
     monthlyRecurring: 22,
-    firstVisit: 23,
+    // firstVisit: 23,
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
@@ -292,13 +292,13 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           };
 
           if (visitBasedFrequency) {
-            totals.firstVisit = {
-              isDisplay: true,
-              orderNo: FIELD_ORDER.totals.firstVisit,
-              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
-              type: "dollar" as const,
-              amount: calc.perVisit,
-            };
+            // totals.firstVisit = {
+            //   isDisplay: true,
+            //   orderNo: FIELD_ORDER.totals.firstVisit,
+            //   label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+            //   type: "dollar" as const,
+            //   amount: calc.perVisit,
+            // };
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -308,13 +308,13 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               gap: "normal",
             };
           } else {
-            totals.firstMonth = {
-              isDisplay: true,
-              orderNo: FIELD_ORDER.totals.firstMonth,
-              label: "First Month Total",
-              type: "dollar" as const,
-              amount: calc.monthlyRecurring,
-            };
+            // totals.firstMonth = {
+            //   isDisplay: true,
+            //   orderNo: FIELD_ORDER.totals.firstMonth,
+            //   label: "First Month Total",
+            //   type: "dollar" as const,
+            //   amount: calc.monthlyRecurring,
+            // };
             totals.monthlyRecurring = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.monthlyRecurring,

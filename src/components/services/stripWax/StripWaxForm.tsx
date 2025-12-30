@@ -15,9 +15,9 @@ const FIELD_ORDER = {
   service: 10,
   totals: {
     perVisit: 20,
-    firstMonth: 21,
+    // firstMonth: 21,
     monthlyRecurring: 22,
-    firstVisit: 23,
+    // firstVisit: 23,
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
@@ -225,13 +225,13 @@ export const StripWaxForm: React.FC<
           };
 
           if (isVisitBasedFrequency) {
-            totals.firstVisit = {
-              isDisplay: true,
-              orderNo: FIELD_ORDER.totals.firstVisit,
-              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
-              type: "dollar" as const,
-              amount: calc.firstVisit,
-            };
+            // totals.firstVisit = {
+            //   isDisplay: true,
+            //   orderNo: FIELD_ORDER.totals.firstVisit,
+            //   label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+            //   type: "dollar" as const,
+            //   amount: calc.firstVisit,
+            // };
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -241,13 +241,13 @@ export const StripWaxForm: React.FC<
               gap: "normal",
             };
           } else {
-            totals.firstMonth = {
-              isDisplay: true,
-              orderNo: FIELD_ORDER.totals.firstMonth,
-              label: "First Month Total",
-              type: "dollar" as const,
-              amount: calc.monthly,
-            };
+            // totals.firstMonth = {
+            //   isDisplay: true,
+            //   orderNo: FIELD_ORDER.totals.firstMonth,
+            //   label: "First Month Total",
+            //   type: "dollar" as const,
+            //   amount: calc.monthly,
+            // };
             totals.monthlyRecurring = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.monthlyRecurring,

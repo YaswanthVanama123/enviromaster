@@ -279,7 +279,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           monthly: {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.monthly,
-            label: "Monthly Total",
+            label: "First Month Total",
             type: "dollar" as const,
             amount: calc.monthly,
           },

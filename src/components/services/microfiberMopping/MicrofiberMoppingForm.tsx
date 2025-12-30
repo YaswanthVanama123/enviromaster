@@ -21,9 +21,9 @@ const FIELD_ORDER = {
   },
   totals: {
     perVisit: 20,
-    firstMonth: 21,
+    // firstMonth: 21,
     monthlyRecurring: 22,
-    firstVisit: 23,
+    // firstVisit: 23,
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
@@ -269,13 +269,13 @@ export const MicrofiberMoppingForm: React.FC<
           };
 
           if (visitBasedFrequency) {
-            totals.firstVisit = {
-              isDisplay: true,
-              orderNo: FIELD_ORDER.totals.firstVisit,
-              label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
-              type: "dollar" as const,
-              amount: calc.firstVisitPrice,
-            };
+            // totals.firstVisit = {
+            //   isDisplay: true,
+            //   orderNo: FIELD_ORDER.totals.firstVisit,
+            //   label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+            //   type: "dollar" as const,
+            //   amount: calc.firstVisitPrice,
+            // };
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -285,13 +285,13 @@ export const MicrofiberMoppingForm: React.FC<
               gap: "normal",
             };
           } else {
-            totals.firstMonth = {
-              isDisplay: true,
-              orderNo: FIELD_ORDER.totals.firstMonth,
-              label: "First Month Total",
-              type: "dollar" as const,
-              amount: calc.firstMonthPrice,
-            };
+            // totals.firstMonth = {
+            //   isDisplay: true,
+            //   orderNo: FIELD_ORDER.totals.firstMonth,
+            //   label: "First Month Total",
+            //   type: "dollar" as const,
+            //   amount: calc.firstMonthPrice,
+            // };
             totals.monthlyRecurring = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.monthlyRecurring,

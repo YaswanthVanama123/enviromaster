@@ -304,14 +304,14 @@ export const RpmWindowsForm: React.FC<
           perVisit: {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.perVisit,
-            label: "Total Price",
+            label: "Per Visit",
             type: "dollar" as const,
             amount: form.customPerVisitPrice ?? quote.perVisitPrice,
           },
           monthly: {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.monthly,
-            label: "Monthly Total",
+            label: "First Month Total",
             type: "dollar" as const,
             amount: form.customFirstMonthTotal ?? calc.firstMonthBillRated,
           },

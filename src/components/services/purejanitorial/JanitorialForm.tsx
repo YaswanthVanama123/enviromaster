@@ -32,9 +32,9 @@ const FIELD_ORDER = {
   totals: {
     perVisit: 30,
     weekly: 31,
-    firstMonth: 32,
+    // firstMonth: 32,
     monthlyRecurring: 33,
-    firstVisit: 34,
+    // firstVisit: 34,
     recurringVisit: 35,
     oneTime: 36,
     contract: 37,
@@ -183,13 +183,13 @@ export const JanitorialForm: React.FC<
             type: "dollar" as const,
             amount: calc.weekly,
           };
-          payload.firstMonth = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.firstMonth,
-            label: "First Month Total",
-            type: "dollar" as const,
-            amount: calc.firstMonth,
-          };
+          // payload.firstMonth = {
+          //   isDisplay: true,
+          //   orderNo: FIELD_ORDER.totals.firstMonth,
+          //   label: "First Month Total",
+          //   type: "dollar" as const,
+          //   amount: calc.firstMonth,
+          // };
           payload.monthlyRecurring = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.monthlyRecurring,
@@ -207,13 +207,13 @@ export const JanitorialForm: React.FC<
             amount: calc.contractTotal,
           };
         } else {
-          payload.firstVisit = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.firstVisit,
-            label: "Total Price",
-            type: "dollar" as const,
-            amount: calc.firstVisit,
-          };
+          // payload.firstVisit = {
+          //   isDisplay: true,
+          //   orderNo: FIELD_ORDER.totals.firstVisit,
+          //   label: "Total Price",
+          //   type: "dollar" as const,
+          //   amount: calc.firstVisit,
+          // };
           payload.recurringVisit = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.recurringVisit,
