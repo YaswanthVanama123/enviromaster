@@ -21,6 +21,7 @@ const FIELD_ORDER = {
     recurringVisit: 34,
     contract: 35,
     minimum: 36,
+    totalPrice: 37,
   },
 } as const;
 
@@ -259,7 +260,7 @@ export const SaniscrubForm: React.FC<
         } : {}),
 
         totals: (() => {
-          const totals: any = {
+      const totals: any = {
             perVisit: {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.perVisit,
@@ -269,14 +270,28 @@ export const SaniscrubForm: React.FC<
             },
           };
 
+          const displayTotal =
+            form.customFirstMonthPrice !== undefined
+              ? form.customFirstMonthPrice
+              : calc.firstMonthTotal;
+
           if (calc.isVisitBasedFrequency) {
             totals.firstVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.firstVisit,
               label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
               type: "dollar" as const,
-              amount: calc.firstMonthTotal,
+              amount: displayTotal,
             };
+            if (form.frequency === "oneTime") {
+              totals.totalPrice = {
+                isDisplay: true,
+                orderNo: FIELD_ORDER.totals.totalPrice,
+                label: "Total Price",
+                type: "dollar" as const,
+                amount: displayTotal,
+              };
+            }
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,

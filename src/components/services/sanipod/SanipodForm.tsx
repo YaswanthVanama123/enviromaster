@@ -24,6 +24,7 @@ const FIELD_ORDER = {
     firstVisit: 93,
     recurringVisit: 94,
     contract: 95,
+    totalPrice: 96,
   },
 } as const;
 
@@ -199,6 +200,71 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           : String(form.frequency || "");
       const rateCategoryLabel = form.rateCategory === "greenRate" ? "Green Rate" : "Red Rate";
 
+      const oneTimeTotalPrice =
+        form.customMonthlyPrice !== undefined
+          ? form.customMonthlyPrice
+          : parseFloat(calc.adjustedMonthly.toFixed(2));
+
+      const totals = (() => {
+        const base: any = {
+          perVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.perVisit,
+            label: "Per Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisit,
+          },
+          monthly: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.monthly,
+            label: "First Month Total",
+            type: "dollar" as const,
+            amount: calc.monthly,
+          },
+          monthlyRecurring: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.monthlyRecurring,
+            label: "Monthly Recurring",
+            type: "dollar" as const,
+            amount: calc.ongoingMonthly,
+            gap: "normal",
+          },
+          firstVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.firstVisit,
+            label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
+            type: "dollar" as const,
+            amount: form.frequency === "oneTime" ? oneTimeTotalPrice : calc.firstVisit,
+          },
+          recurringVisit: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.recurringVisit,
+            label: "Recurring Visit Total",
+            type: "dollar" as const,
+            amount: calc.perVisit,
+            gap: "normal",
+          },
+          contract: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.contract,
+            label: "Contract Total",
+            type: "dollar" as const,
+            months: form.contractMonths,
+            amount: calc.contractTotal,
+          },
+        };
+        if (form.frequency === "oneTime") {
+          base.totalPrice = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.totalPrice,
+            label: "Total Price",
+            type: "dollar" as const,
+            amount: oneTimeTotalPrice,
+          };
+        }
+        return base;
+      })();
+
       const data = isActive ? {
         serviceId: "sanipod",
         displayName: "SaniPod",
@@ -268,53 +334,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         tripChargePerVisit: form.tripChargePerVisit,
         installRatePerPod: form.installRatePerPod,
 
-        totals: {
-          perVisit: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.perVisit,
-            label: "Per Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisit,
-          },
-          monthly: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.monthly,
-            label: "First Month Total",
-            type: "dollar" as const,
-            amount: calc.monthly,
-          },
-          monthlyRecurring: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.monthlyRecurring,
-            label: "Monthly Recurring",
-            type: "dollar" as const,
-            amount: calc.ongoingMonthly,
-            gap: "normal",
-          },
-          firstVisit: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.firstVisit,
-            label: "First Visit Total",
-            type: "dollar" as const,
-            amount: calc.firstVisit,
-          },
-          recurringVisit: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.recurringVisit,
-            label: "Recurring Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisit,
-            gap: "normal",
-          },
-          contract: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.contract,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          },
-        },
+        totals,
 
         // Persist manual overrides so edits keep their yellow highlights and log data matches
         customInstallationFee: form.customInstallationFee,
