@@ -27,6 +27,7 @@ const FIELD_ORDER = {
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
+    totalPrice: 27,
   },
 } as const;
 
@@ -142,6 +143,11 @@ export const MicrofiberMoppingForm: React.FC<
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
         : String(form.frequency || '');
       const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly"].includes(form.frequency);
+
+      const totalPriceValue =
+        form.customFirstMonthPrice !== undefined
+          ? form.customFirstMonthPrice
+          : calc.firstMonthPrice;
 
       const data = isActive ? {
         serviceId: "microfiberMopping",
@@ -269,13 +275,6 @@ export const MicrofiberMoppingForm: React.FC<
           };
 
           if (visitBasedFrequency) {
-            // totals.firstVisit = {
-            //   isDisplay: true,
-            //   orderNo: FIELD_ORDER.totals.firstVisit,
-            //   label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
-            //   type: "dollar" as const,
-            //   amount: calc.firstVisitPrice,
-            // };
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -285,13 +284,6 @@ export const MicrofiberMoppingForm: React.FC<
               gap: "normal",
             };
           } else {
-            // totals.firstMonth = {
-            //   isDisplay: true,
-            //   orderNo: FIELD_ORDER.totals.firstMonth,
-            //   label: "First Month Total",
-            //   type: "dollar" as const,
-            //   amount: calc.firstMonthPrice,
-            // };
             totals.monthlyRecurring = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.monthlyRecurring,
@@ -320,6 +312,16 @@ export const MicrofiberMoppingForm: React.FC<
             type: "dollar" as const,
             amount: form.minCharge,
           };
+
+          if (form.frequency === "oneTime") {
+            totals.totalPrice = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.totalPrice,
+              label: "Total Price",
+              type: "dollar" as const,
+              amount: totalPriceValue,
+            };
+          }
 
           return totals;
         })(),
