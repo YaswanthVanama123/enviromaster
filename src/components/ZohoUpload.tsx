@@ -531,6 +531,10 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
           const strategy = getFileUploadStrategy(file);
           return strategy.type === 'agreement';
         });
+        const areAllAttachments = selectedBulkFiles.length > 0 && selectedBulkFiles.every(file => {
+          const strategy = getFileUploadStrategy(file);
+          return strategy.type === 'attached';
+        });
 
         console.log(`?Y"? [BULK-FIRST-TIME] Analysis: ${selectedBulkFiles.length} files, hasVersionPdf: ${hasVersionPdf}`);
 
@@ -555,7 +559,7 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
                 pipelineName,
                 stage,
                 noteText: bulkNoteText,
-                skipFileUpload: hasVersionPdf
+                skipFileUpload: hasVersionPdf || areAllAttachments
               });
 
               if (result.success) {
