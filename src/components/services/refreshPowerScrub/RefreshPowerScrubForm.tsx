@@ -137,14 +137,21 @@ const getKitchenLarge = (): number => {
   return backendConfig?.areaSpecificPricing?.kitchen?.large ?? 2500;
 };
 
-  const totalServiceCost = useMemo(
-    () =>
-      AREA_ORDER.reduce(
-        (sum, key) => sum + (areaContractTotals[key] || 0),
-        0
-      ),
-    [areaContractTotals]
-  );
+  const isOneTimeLabel = (label?: string) => {
+    if (!label) return false;
+    const normalized = label.toLowerCase().replace(/-/g, " ").trim();
+    return normalized === "one time" || normalized === "one time service";
+  };
+
+  const totalServiceCost = useMemo(() => {
+    return AREA_ORDER.reduce((sum, key) => {
+      const areaForm = form[key];
+      const target = areaForm?.frequencyLabel || form.frequency;
+      const isOneTime = isOneTimeLabel(target);
+      const value = isOneTime ? areaTotals[key] || 0 : areaContractTotals[key] || 0;
+      return sum + value;
+    }, 0);
+  }, [areaTotals, areaContractTotals, form.frequency, form]);
 
   useEffect(() => {
     if (servicesContext) {
