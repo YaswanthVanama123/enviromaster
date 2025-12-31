@@ -617,10 +617,21 @@ export function transformSanicleanData(structuredData: any): any {
       formState.insideBeltwayRatePerFixture = fixtureRateFallback;
     }
   }
+  console.log("🔄 [Saniclean] Derived fixtureRateFallback:", structuredData);
 
   // Extract soap type
   if (structuredData.soapType) {
-    formState.soapType = structuredData.soapType.value?.toLowerCase() === "luxury" ? "luxury" : "standard";
+    const soapValue = normalizeStructuredValue(structuredData.soapType);
+    let resolvedType: "luxury" | "standard" = "standard";
+    if (typeof soapValue === "string" && soapValue.toLowerCase().includes("luxury")) {
+      resolvedType = "luxury";
+    }
+    formState.soapType = resolvedType;
+    console.log("🔄 [Saniclean] Loaded soapType:", {
+      raw: structuredData.soapType,
+      resolvedType,
+      normalizedValue: soapValue,
+    });
   }
 
   // Extract contract months

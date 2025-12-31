@@ -530,13 +530,7 @@ export const SanicleanForm: React.FC<
         facilityComponentsTotal: quote.breakdown.facilityComponents,
         facilityComponentsMonthly: quote.facilityComponentsMonthly,
 
-        // soapType: {
-        //   isDisplay: true,
-        //   orderNo: FIELD_ORDER.soapType,
-        //   label: "Soap Type",
-        //   type: "text" as const,
-        //   value: form.soapType === "luxury" ? "Luxury" : "Standard",
-        // },
+        soapType: form.soapType,
 
           totals,
           ...(totalPriceValue !== undefined ? { totalPrice: totalPriceValue } : {}),
