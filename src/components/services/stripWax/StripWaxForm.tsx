@@ -15,12 +15,11 @@ const FIELD_ORDER = {
   service: 10,
   totals: {
     perVisit: 20,
-    // firstMonth: 21,
     monthlyRecurring: 22,
-    // firstVisit: 23,
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
+    totalPrice: 27,
   },
 } as const;
 
@@ -170,6 +169,8 @@ export const StripWaxForm: React.FC<
       const frequencyLabel = typeof form.frequency === "string"
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
         : String(form.frequency || "");
+      const totalPriceValue = form.customPerVisit ?? calc.perVisit;
+
       const data = isActive ? {
         serviceId: "stripwax",
         displayName: "Strip & Wax",
@@ -269,6 +270,16 @@ export const StripWaxForm: React.FC<
             };
           }
 
+          if (form.frequency === "oneTime") {
+            totals.totalPrice = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.totalPrice,
+              label: "Total Price",
+              type: "dollar" as const,
+              amount: totalPriceValue,
+            };
+          }
+
           totals.minimum = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.minimum,
@@ -282,6 +293,7 @@ export const StripWaxForm: React.FC<
 
         notes: "", // No notes field in Strip Wax
         customFields: customFields,
+        ...(form.frequency === "oneTime" ? { totalPrice: totalPriceValue } : {}),
       } : null;
 
       const dataStr = JSON.stringify(data);

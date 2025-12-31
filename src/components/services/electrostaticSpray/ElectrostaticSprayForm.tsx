@@ -19,12 +19,11 @@ const FIELD_ORDER = {
   tripCharge: 12,
   totals: {
     perVisit: 20,
-    // firstMonth: 21,
     monthlyRecurring: 22,
-    // firstVisit: 23,
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
+    totalPrice: 27,
   },
 } as const;
 
@@ -187,6 +186,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
         : String(form.frequency || 'Weekly');
       const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly"].includes(form.frequency);
+      const totalPriceValue =
+        form.customFirstMonthTotal !== undefined ? form.customFirstMonthTotal : calc.perVisit;
+
       const data = isActive ? {
         serviceId: "electrostaticSpray",
         displayName: "Electrostatic Spray",
@@ -219,6 +221,15 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           label: "Pricing Method",
           type: "text" as const,
           value: form.pricingMethod === "byRoom" ? "By Room" : "By Square Feet",
+        },
+
+        frequency: {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.frequency,
+          label: "Frequency",
+          type: "text" as const,
+          value: frequencyLabel,
+          frequencyKey: form.frequency,
         },
 
         frequencyDisplay: {
@@ -336,6 +347,16 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             };
           }
 
+          if (form.frequency === "oneTime") {
+            totals.totalPrice = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.totalPrice,
+              label: "Total Price",
+              type: "dollar" as const,
+              amount: totalPriceValue,
+            };
+          }
+
           totals.minimum = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.minimum,
@@ -349,6 +370,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         notes: form.notes || "",
         customFields: customFields,
+        ...(form.frequency === "oneTime" ? { totalPrice: totalPriceValue } : {}),
       } : null;
 
       const dataStr = JSON.stringify(data);

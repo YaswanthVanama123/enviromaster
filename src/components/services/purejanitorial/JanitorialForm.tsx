@@ -36,7 +36,7 @@ const FIELD_ORDER = {
     monthlyRecurring: 33,
     // firstVisit: 34,
     recurringVisit: 35,
-    oneTime: 36,
+    totalPrice: 36,
     contract: 37,
     minimum: 38,
   },
@@ -165,6 +165,8 @@ export const JanitorialForm: React.FC<
         type: "text" as const,
         value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
       } : undefined;
+      const totalPriceValue = form.customPerVisit ?? calc.perVisit ?? 0;
+
       const totals = (() => {
         const payload: any = {
           perVisit: {
@@ -221,6 +223,13 @@ export const JanitorialForm: React.FC<
             type: "dollar" as const,
             amount: calc.perVisit,
             gap: "normal",
+          };
+          payload.totalPrice = {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.totalPrice,
+            label: "Total Price",
+            type: "dollar" as const,
+            amount: totalPriceValue,
           };
         }
         payload.minimum = {
@@ -309,6 +318,11 @@ export const JanitorialForm: React.FC<
         } : {}),
 
         totals,
+        ...(form.serviceType === "oneTime"
+          ? {
+              totalPrice: totalPriceValue,
+            }
+          : {}),
 
         notes: form.notes || "", // Optional notes field
         customFields: customFields,
