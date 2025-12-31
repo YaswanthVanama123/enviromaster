@@ -12,6 +12,8 @@ import { type RefreshFrequency } from "../refreshPowerScrub/refreshPowerScrubTyp
 import { carpetFrequencyLabels } from "../carpetCleaning/carpetConfig";
 import type { CarpetFrequency } from "../carpetCleaning/carpetTypes";
 import { saniscrubFrequencyList } from "../saniscrub/saniscrubConfig";
+import { electrostaticSprayPricingConfig } from "../electrostaticSpray/electrostaticSprayConfig";
+import type { ElectrostaticSprayFrequency } from "../electrostaticSpray/electrostaticSprayTypes";
 
 /**
  * Helper function to extract and format custom fields for all services
@@ -2117,6 +2119,48 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
   return formState;
 }
 
+const ELECTROSTATIC_ALLOWED_FREQUENCIES = electrostaticSprayPricingConfig.allowedFrequencies;
+
+function matchElectrostaticFrequencyCandidate(value: string | undefined): ElectrostaticSprayFrequency | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const directMatch = ELECTROSTATIC_ALLOWED_FREQUENCIES.find(
+    (freq) => freq.toLowerCase() === trimmed.toLowerCase()
+  );
+  if (directMatch) {
+    return directMatch;
+  }
+  const sanitizedInput = trimmed.toLowerCase().replace(/[^a-z0-9]/g, "");
+  for (const freq of ELECTROSTATIC_ALLOWED_FREQUENCIES) {
+    const normalizedFreq = freq.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!normalizedFreq) continue;
+    if (
+      sanitizedInput === normalizedFreq ||
+      sanitizedInput.includes(normalizedFreq)
+    ) {
+      return freq;
+    }
+  }
+  return undefined;
+}
+
+function normalizeElectrostaticFrequency(rawValue: any): ElectrostaticSprayFrequency | undefined {
+  if (rawValue === undefined || rawValue === null) return undefined;
+  if (typeof rawValue === "string") {
+    return matchElectrostaticFrequencyCandidate(rawValue);
+  }
+  if (typeof rawValue === "object") {
+    for (const key of ["frequencyKey", "value", "label"]) {
+      const result = normalizeElectrostaticFrequency(rawValue[key]);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return undefined;
+}
+
 export function transformElectrostaticSprayData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
@@ -2153,7 +2197,10 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     formState.isCombinedWithSaniClean = structuredData.isCombinedWithSaniClean;
   }
   if (structuredData.frequency !== undefined) {
-    formState.frequency = structuredData.frequency;
+    const normalizedFrequency = normalizeElectrostaticFrequency(structuredData.frequency);
+    if (normalizedFrequency) {
+      formState.frequency = normalizedFrequency;
+    }
   }
   if (structuredData.contractMonths !== undefined) {
     formState.contractMonths = structuredData.contractMonths;
@@ -2196,11 +2243,14 @@ export function transformElectrostaticSprayData(structuredData: any): any {
 
   // Extract frequency (fallback) - check both new and old field names
   if (formState.frequency === undefined) {
-    if (structuredData.frequencyDisplay?.value) {
-      formState.frequency = structuredData.frequencyDisplay.value.toLowerCase();
-    } else if (structuredData.frequency?.value) {
-      // Old format for backward compatibility
-      formState.frequency = structuredData.frequency.value.toLowerCase() || "weekly";
+    const fallbackFromDisplay = normalizeElectrostaticFrequency(structuredData.frequencyDisplay?.value);
+    if (fallbackFromDisplay) {
+      formState.frequency = fallbackFromDisplay;
+    } else {
+      const fallbackFromFrequencyValue = normalizeElectrostaticFrequency(structuredData.frequency?.value);
+      if (fallbackFromFrequencyValue) {
+        formState.frequency = fallbackFromFrequencyValue;
+      }
     }
   }
 
