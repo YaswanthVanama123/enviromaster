@@ -73,6 +73,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
 
   // ✅ NEW: File selection state for checkbox functionality
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [uploadMode, setUploadMode] = useState<"files" | "notes">("files");
 
   // Initialize component
   useEffect(() => {
@@ -462,6 +463,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     }
   };
 
+
   const handleFirstTimeUpload = async () => {
     if (!selectedCompany) {
       setToastMessage({ message: 'Please select a company', type: 'error' });
@@ -471,47 +473,72 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setToastMessage({ message: 'Deal name is required', type: 'error' });
       return;
     }
-    if (!noteText.trim()) {
-      setToastMessage({ message: 'Please add notes about this proposal', type: 'error' });
-      return;
-    }
 
     try {
+      const trimmedNote = noteText.trim();
+      const selectedBulkFiles = bulkFiles ? getSelectedBulkFiles() || [] : [];
+      const hasSelectedBulkFiles = selectedBulkFiles.length > 0;
+      const hasSingleSelection = (!bulkFiles || bulkFiles.length === 0) && selectedFiles.has(agreementId);
+      const hasAnyFile = bulkFiles && bulkFiles.length > 0 ? hasSelectedBulkFiles : hasSingleSelection;
+      const hasNotes = trimmedNote.length > 0;
+
+      if (!hasAnyFile && !hasNotes) {
+        setToastMessage({ message: "Please add a note or select at least one file to upload to Bigin.", type: "error" });
+        return;
+      }
+
+      setUploadMode(hasAnyFile ? "files" : "notes");
       setStep('uploading');
 
-      // ✅ BULK UPLOAD MODE: Create ONE deal and add only selected files to it
+      // ?o. BULK UPLOAD MODE: Create ONE deal and add only selected files to it
       if (bulkFiles && bulkFiles.length > 0) {
-        const selectedBulkFiles = getSelectedBulkFiles();
+        if (!hasSelectedBulkFiles) {
+          const result = await zohoApi.firstTimeUpload(agreementId, {
+            companyId: selectedCompany.id,
+            companyName: selectedCompany.name,
+            dealName: dealName.trim(),
+            pipelineName,
+            stage,
+            noteText: trimmedNote,
+            skipFileUpload: true
+          });
 
-        if (!selectedBulkFiles || selectedBulkFiles.length === 0) {
-          setToastMessage({ message: 'Please select at least one file to upload', type: 'error' });
+          if (result.success) {
+            setStep('success');
+            setToastMessage({ message: 'Deal created with note only!', type: 'success' });
+            onSuccess();
+          } else {
+            setError(result.error || 'Upload failed');
+            setStep('error');
+          }
           return;
         }
 
-        console.log(`🆕 [BULK-FIRST-TIME] Creating single deal for ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total)`);
+        console.log(`?Y? [BULK-FIRST-TIME] Creating single deal for ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total)`);
         let dealId: string | null = null;
         let successCount = 0;
         let failCount = 0;
 
-        // ✅ FIX: Create ONE note with all file information using actual Zoho file names
         const actualFileNames = selectedBulkFiles.map(file =>
           file.fileName || calculateZohoFileName(file, dealName.trim(), 1)
         );
-        const bulkNoteText = `${noteText.trim()}\n\nBulk upload of ${selectedBulkFiles.length} selected documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
+        const bulkNoteText = `${trimmedNote}
 
-        // ✅ FIXED: Check if we have any version PDFs in selected files
+Bulk upload of ${selectedBulkFiles.length} selected documents:
+${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
+
         const hasVersionPdf = selectedBulkFiles.some(file => {
           const strategy = getFileUploadStrategy(file);
           return strategy.type === 'agreement';
         });
 
-        console.log(`🔍 [BULK-FIRST-TIME] Analysis: ${selectedBulkFiles.length} files, hasVersionPdf: ${hasVersionPdf}`);
+        console.log(`?Y"? [BULK-FIRST-TIME] Analysis: ${selectedBulkFiles.length} files, hasVersionPdf: ${hasVersionPdf}`);
 
         for (const [index, file] of selectedBulkFiles.entries()) {
           try {
             const strategy = getFileUploadStrategy(file);
-            console.log(`📤 [BULK-FIRST-TIME] Processing file ${index + 1}/${selectedBulkFiles.length}: ${file.fileName} (${strategy.description})`);
-            console.log(`🔍 [BULK-FIRST-TIME] File details:`, {
+            console.log(`?Y" [BULK-FIRST-TIME] Processing file ${index + 1}/${selectedBulkFiles.length}: ${file.fileName} (${strategy.description})`);
+            console.log(`?Y"? [BULK-FIRST-TIME] File details:`, {
               id: file.id,
               fileName: file.fileName,
               fileType: file.fileType,
@@ -519,8 +546,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
             });
 
             if (index === 0) {
-              // ✅ FIXED: Create deal, but only upload agreement PDF if no version PDF is selected
-              console.log(`📝 [BULK-FIRST-TIME] Creating deal ${hasVersionPdf ? 'without auto PDF upload' : 'with agreement PDF'}`);
+              console.log(`?Y"? [BULK-FIRST-TIME] Creating deal ${hasVersionPdf ? 'without auto PDF upload' : 'with agreement PDF'}`);
 
               const result = await zohoApi.firstTimeUpload(agreementId, {
                 companyId: selectedCompany.id,
@@ -529,77 +555,73 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
                 pipelineName,
                 stage,
                 noteText: bulkNoteText,
-                skipFileUpload: hasVersionPdf  // ✅ Skip auto PDF upload if we have version PDFs to process
+                skipFileUpload: hasVersionPdf
               });
 
               if (result.success) {
                 dealId = result.data?.deal?.id;
-                console.log(`✅ [BULK-FIRST-TIME] Deal created with ID: ${dealId}`);
+                console.log(`?o. [BULK-FIRST-TIME] Deal created with ID: ${dealId}`);
 
                 if (!dealId) {
                   failCount++;
-                  console.error(`❌ [BULK-FIRST-TIME] Could not extract dealId from response:`, result.data);
+                  console.error(`??O [BULK-FIRST-TIME] Could not extract dealId from response:`, result.data);
                   break;
                 }
 
-                // ✅ FIXED: Process first file using strategy
                 if (strategy.type === 'attached') {
-                  console.log(`📎 [BULK-FIRST-TIME] Adding first file as attached: ${file.fileName}`);
+                  console.log(`?Y"Z [BULK-FIRST-TIME] Adding first file as attached: ${file.fileName}`);
 
                   const attachedResult = await zohoApi.uploadAttachedFile(file.id, {
                     dealId: dealId,
                     noteText: `Bulk upload attached file: ${file.fileName}`,
                     dealName: dealName.trim(),
-                    skipNoteCreation: true, // Skip note creation since we already created comprehensive note
+                    skipNoteCreation: true,
                     fileType: file.fileType
                   });
 
                   if (attachedResult.success) {
                     successCount++;
-                    console.log(`✅ [BULK-FIRST-TIME] Added attached file to deal: ${file.fileName}`);
+                    console.log(`?o. [BULK-FIRST-TIME] Added attached file to deal: ${file.fileName}`);
                   } else {
                     failCount++;
-                    console.error(`❌ [BULK-FIRST-TIME] Failed to add attached file ${file.fileName}:`, attachedResult.error);
+                    console.error(`??O [BULK-FIRST-TIME] Failed to add attached file ${file.fileName}:`, attachedResult.error);
                   }
                 } else if (strategy.type === 'agreement') {
-                  console.log(`📝 [BULK-FIRST-TIME] Adding first file as version PDF: ${file.fileName}`);
+                  console.log(`?Y"? [BULK-FIRST-TIME] Adding first file as version PDF: ${file.fileName}`);
 
                   const versionResult = await zohoApi.updateUpload(agreementId, {
                     noteText: `First file in bulk upload: ${file.fileName}`,
                     dealId: dealId,
-                    skipNoteCreation: true, // Skip note creation since we already created comprehensive note
+                    skipNoteCreation: true,
                     versionId: file.id
                   });
 
                   if (versionResult.success) {
                     successCount++;
-                    console.log(`✅ [BULK-FIRST-TIME] Added version PDF to deal: ${file.fileName}`);
+                    console.log(`?o. [BULK-FIRST-TIME] Added version PDF to deal: ${file.fileName}`);
                   } else {
                     failCount++;
-                    console.error(`❌ [BULK-FIRST-TIME] Failed to add version PDF ${file.fileName}:`, versionResult.error);
+                    console.error(`??O [BULK-FIRST-TIME] Failed to add version PDF ${file.fileName}:`, versionResult.error);
                   }
                 } else {
-                  // This was the auto-uploaded agreement PDF during deal creation
                   successCount++;
-                  console.log(`✅ [BULK-FIRST-TIME] Agreement PDF auto-uploaded during deal creation`);
+                  console.log(`?o. [BULK-FIRST-TIME] Agreement PDF auto-uploaded during deal creation`);
                 }
               } else {
                 failCount++;
-                console.error(`❌ [BULK-FIRST-TIME] Failed to create deal:`, result.error);
+                console.error(`??O [BULK-FIRST-TIME] Failed to create deal:`, result.error);
                 break;
               }
             } else {
-              // ✅ Subsequent files: Upload to existing deal using proper strategy
               if (!dealId) {
                 failCount++;
-                console.error(`❌ [BULK-FIRST-TIME] No dealId available for file: ${file.fileName}`);
+                console.error(`??O [BULK-FIRST-TIME] No dealId available for file: ${file.fileName}`);
                 continue;
               }
 
-              // ✅ FIXED: Use strategy to determine correct upload method
               const strategy = getFileUploadStrategy(file);
-              console.log(`📤 [BULK-FIRST-TIME] Processing file: ${file.fileName} (${strategy.description})`);
-              console.log(`🔍 [BULK-FIRST-TIME] File details:`, {
+              console.log(`?Y"? [BULK-FIRST-TIME] Processing file: ${file.fileName} (${strategy.description})`);
+              console.log(`?Y"? [BULK-FIRST-TIME] File details:`, {
                 id: file.id,
                 fileName: file.fileName,
                 fileType: file.fileType,
@@ -609,48 +631,44 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
               let result;
 
               if (strategy.type === 'agreement') {
-                // Version PDFs and main agreement files - use main agreement API
                 const targetId = strategy.useAgreementId ? agreementId : file.id;
-                console.log(`📝 [BULK-FIRST-TIME] Using agreement route for: ${file.fileName} (targetId: ${targetId})`);
+                console.log(`?Y"? [BULK-FIRST-TIME] Using agreement route for: ${file.fileName} (targetId: ${targetId})`);
 
                 result = await zohoApi.updateUpload(targetId, {
                   noteText: `Additional file in bulk upload: ${file.fileName}`,
-                  dealId: dealId,
-                                    skipNoteCreation: true,   // ✅ Skip individual note creation
+                  skipNoteCreation: true,
                   versionId: file.id
                 });
               } else if (strategy.type === 'attached') {
-                // Manual uploads - use attached file API
-                console.log(`📎 [BULK-FIRST-TIME] Using attached file route for: ${file.fileName} (fileId: ${file.id})`);
+                console.log(`?Y"Z [BULK-FIRST-TIME] Using attached file route for: ${file.fileName} (fileId: ${file.id})`);
 
                 result = await zohoApi.uploadAttachedFile(file.id, {
                   dealId: dealId,
                   noteText: `Additional file in bulk upload: ${file.fileName}`,
                   dealName: dealName.trim(),
-                  skipNoteCreation: true,  // ✅ Skip individual note creation
+                  skipNoteCreation: true,
                   fileType: file.fileType
                 });
               } else {
-                // Fallback - shouldn't happen with current logic
-                console.warn(`⚠️ [BULK-FIRST-TIME] Unknown strategy type for ${file.fileName}, using agreement route`);
+                console.warn(`?s???? [BULK-FIRST-TIME] Unknown strategy type for ${file.fileName}, using agreement route`);
                 result = await zohoApi.updateUpload(agreementId, {
                   noteText: `Additional file in bulk upload: ${file.fileName}`,
-                  dealId: dealId,
-                  skipNoteCreation: true
+                  skipNoteCreation: true,
+                  versionId: file.id
                 });
               }
 
               if (result.success) {
                 successCount++;
-                console.log(`✅ [BULK-FIRST-TIME] Added file to deal: ${file.fileName}`);
+                console.log(`?o. [BULK-FIRST-TIME] Added file to deal: ${file.fileName}`);
               } else {
                 failCount++;
-                console.error(`❌ [BULK-FIRST-TIME] Failed to add ${file.fileName} to deal:`, result.error);
+                console.error(`??O [BULK-FIRST-TIME] Failed to add ${file.fileName} to deal:`, result.error);
               }
             }
           } catch (err) {
             failCount++;
-            console.error(`💥 [BULK-FIRST-TIME] Error processing ${file.fileName}:`, err);
+            console.error(`?Y'? [BULK-FIRST-TIME] Error processing ${file.fileName}:`, err);
           }
         }
 
@@ -668,19 +686,15 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         return;
       }
 
-      // ✅ SINGLE UPLOAD MODE: Check if file is selected
-      if (!selectedFiles.has(agreementId)) {
-        setToastMessage({ message: 'Please select the file to upload', type: 'error' });
-        return;
-      }
-
+      const shouldSkipSingleFileUpload = !selectedFiles.has(agreementId);
       const result = await zohoApi.firstTimeUpload(agreementId, {
         companyId: selectedCompany.id,
         companyName: selectedCompany.name,
         dealName: dealName.trim(),
         pipelineName,
         stage,
-        noteText: noteText.trim()
+        noteText: trimmedNote,
+        skipFileUpload: shouldSkipSingleFileUpload
       });
 
       if (result.success) {
@@ -697,7 +711,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setStep('error');
     }
   };
-
   const sendUpdateNoteOnly = async () => {
     if (!uploadStatus?.mapping?.dealId) {
       setError("No existing Zoho deal mapping found. Upload the agreement at least once before sending notes.");
@@ -728,16 +741,19 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     }
 
     try {
+      const selectedBulkFiles = bulkFiles ? getSelectedBulkFiles() || [] : [];
+      const hasSelectedBulkFiles = selectedBulkFiles.length > 0;
+      const hasSingleSelection = (!bulkFiles || bulkFiles.length === 0) && selectedFiles.has(agreementId);
+      const hasAnyFile = bulkFiles && bulkFiles.length > 0 ? hasSelectedBulkFiles : hasSingleSelection;
+      setUploadMode(hasAnyFile ? "files" : "notes");
       setStep('uploading');
 
       // ✅ BULK UPDATE MODE: Process only selected files for existing folder
       if (bulkFiles && bulkFiles.length > 0) {
-        const selectedBulkFiles = getSelectedBulkFiles();
-
-      if (!selectedBulkFiles || selectedBulkFiles.length === 0) {
-        await sendUpdateNoteOnly();
-        return;
-      }
+        if (selectedBulkFiles.length === 0) {
+          await sendUpdateNoteOnly();
+          return;
+        }
 
         console.log(`♻️ [BULK-UPDATE] Processing ${selectedBulkFiles.length} selected files (out of ${bulkFiles.length} total) for existing folder`);
         let successCount = 0;
@@ -866,9 +882,19 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     </div>
   );
 
-  const renderFirstTimeStep = () => (
-    <div className="zoho-upload__step zoho-upload__step--first-time">
-      <div className="zoho-upload__header">
+  const renderFirstTimeStep = () => {
+    const hasNotes = noteText.trim().length > 0;
+    const warningColor = hasNotes ? '#f59e0b' : '#f44336';
+    const noteOnlyMessage = bulkFiles && bulkFiles.length > 0
+      ? 'No files selected. Notes-only upload will create the deal without uploading documents.'
+      : 'No file selected. This action will send only notes to Zoho Bigin.';
+    const warningMessage = hasNotes
+      ? noteOnlyMessage
+      : 'Please add a note or select at least one file to upload to Bigin.';
+
+    return (
+      <div className="zoho-upload__step zoho-upload__step--first-time">
+        <div className="zoho-upload__header">
         <h3>
           <FontAwesomeIcon icon={faUpload} />
           {bulkFiles && bulkFiles.length > 0
@@ -956,8 +982,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         </div>
 
         {selectedFiles.size === 0 && (
-          <div style={{ color: '#f44336', fontSize: '14px', marginTop: '8px' }}>
-            ⚠️ Please select at least one file to upload to Bigin.
+          <div style={{ color: warningColor, fontSize: '14px', marginTop: '8px' }}>
+            {warningMessage}
           </div>
         )}
       </div>
@@ -1155,9 +1181,20 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       </div>
     </div>
   );
+  };
 
-  const renderUpdateStep = () => (
-    <div className="zoho-upload__step zoho-upload__step--update">
+  const renderUpdateStep = () => {
+    const hasNotes = noteText.trim().length > 0;
+    const warningColor = hasNotes ? '#f59e0b' : '#f44336';
+    const noteOnlyMessage = bulkFiles && bulkFiles.length > 0
+      ? 'No files selected. Notes-only update will add the note to the deal without uploading documents.'
+      : 'No file selected. This action will send only notes to Zoho Bigin.';
+    const warningMessage = hasNotes
+      ? noteOnlyMessage
+      : 'Please add a note or select at least one file to upload to Bigin.';
+
+    return (
+      <div className="zoho-upload__step zoho-upload__step--update">
       <div className="zoho-upload__header">
         <h3>
           <FontAwesomeIcon icon={faHistory} />
@@ -1294,8 +1331,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         </div>
 
         {selectedFiles.size === 0 && (
-          <div style={{ color: '#f44336', fontSize: '14px', marginTop: '8px' }}>
-            ⚠️ Please select at least one file to upload to Bigin.
+          <div style={{ color: warningColor, fontSize: '14px', marginTop: '8px' }}>
+            {warningMessage}
           </div>
         )}
       </div>
@@ -1316,17 +1353,27 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
-  const renderUploadingStep = () => (
-    <div className="zoho-upload__step zoho-upload__step--uploading">
-      <div className="zoho-upload__loading">
+  const renderUploadingStep = () => {
+    const uploadingLabel = uploadMode === 'notes'
+      ? "Creating deal and adding note..."
+      : "Creating deal, adding note, and uploading files...";
+    const uploadingSubtext = uploadMode === 'notes'
+      ? "Adding the note to the new Zoho deal."
+      : "Creating deal, adding note, and uploading files to Zoho.";
+
+    return (
+      <div className="zoho-upload__step zoho-upload__step--uploading">
+        <div className="zoho-upload__loading">
         <FontAwesomeIcon icon={faSpinner} spin size="2x" />
-        <p>Uploading to Zoho Bigin...</p>
-        <small>Creating deal, adding notes, and uploading PDF...</small>
+        <p>{uploadingLabel}</p>
+        <small>{uploadingSubtext}</small>
       </div>
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderSuccessStep = () => (
     <div className="zoho-upload__step zoho-upload__step--success">
