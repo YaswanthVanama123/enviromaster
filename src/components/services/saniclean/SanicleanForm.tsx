@@ -373,11 +373,13 @@ export const SanicleanForm: React.FC<
       addAtChargeExtra("SaniPods", form.sanipodsQty, form.sanipodServiceMonthly, sanipodsTotal, EXTRA_ORDER.sanipods);
       addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal, EXTRA_ORDER.warranty);
       addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal, EXTRA_ORDER.microfiber);
-      if (form.pricingMode === "per_item_charge") {
-        addLineExtra("Facility Components Frequency", facilityFrequencyLabel, "line", EXTRA_ORDER.facilityFrequency, "wide");
-      }
-      addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold", EXTRA_ORDER.baseServiceMonthly, "wide");
-      addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
+        if (form.mainServiceFrequency !== "oneTime") {
+          if (form.pricingMode === "per_item_charge") {
+            addLineExtra("Facility Components Frequency", facilityFrequencyLabel, "line", EXTRA_ORDER.facilityFrequency, "wide");
+          }
+          addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold", EXTRA_ORDER.baseServiceMonthly, "wide");
+          addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
+        }
 
       const includedItems = Array.isArray(quote.included)
         ? quote.included.filter(Boolean)
@@ -504,44 +506,26 @@ export const SanicleanForm: React.FC<
           value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
         },
 
-        fixtureBreakdown: [
-          ...(form.sinks > 0 ? [{
+        fixtureBreakdown: (() => {
+          const fixtureRate = form.location === "insideBeltway"
+            ? form.insideBeltwayRatePerFixture
+            : form.outsideBeltwayRatePerFixture;
+          const createLine = (label: string, quantity: number, orderNo: number) => ({
             isDisplay: true,
-            orderNo: FIELD_ORDER.sinks,
-            label: "Sinks",
+            orderNo,
+            label,
             type: "calc" as const,
-            qty: form.sinks,
-            rate: form.insideBeltwayRatePerFixture,
-            total: form.sinks * form.insideBeltwayRatePerFixture,
-          }] : []),
-          ...(form.urinals > 0 ? [{
-            isDisplay: true,
-            orderNo: FIELD_ORDER.urinals,
-            label: "Urinals",
-            type: "calc" as const,
-            qty: form.urinals,
-            rate: form.insideBeltwayRatePerFixture,
-            total: form.urinals * form.insideBeltwayRatePerFixture,
-          }] : []),
-          ...(form.maleToilets > 0 ? [{
-            isDisplay: true,
-            orderNo: FIELD_ORDER.maleToilets,
-            label: "Male Toilets",
-            type: "calc" as const,
-            qty: form.maleToilets,
-            rate: form.insideBeltwayRatePerFixture,
-            total: form.maleToilets * form.insideBeltwayRatePerFixture,
-          }] : []),
-          ...(form.femaleToilets > 0 ? [{
-            isDisplay: true,
-            orderNo: FIELD_ORDER.femaleToilets,
-            label: "Female Toilets",
-            type: "calc" as const,
-            qty: form.femaleToilets,
-            rate: form.insideBeltwayRatePerFixture,
-            total: form.femaleToilets * form.insideBeltwayRatePerFixture,
-          }] : []),
-        ],
+            qty: quantity,
+            rate: fixtureRate,
+            total: quantity * fixtureRate,
+          });
+          return [
+            ...(form.sinks > 0 ? [createLine("Sinks", form.sinks, FIELD_ORDER.sinks)] : []),
+            ...(form.urinals > 0 ? [createLine("Urinals", form.urinals, FIELD_ORDER.urinals)] : []),
+            ...(form.maleToilets > 0 ? [createLine("Male Toilets", form.maleToilets, FIELD_ORDER.maleToilets)] : []),
+            ...(form.femaleToilets > 0 ? [createLine("Female Toilets", form.femaleToilets, FIELD_ORDER.femaleToilets)] : []),
+          ];
+        })(),
 
         facilityComponentsTotal: quote.breakdown.facilityComponents,
         facilityComponentsMonthly: quote.facilityComponentsMonthly,
@@ -982,7 +966,7 @@ export const SanicleanForm: React.FC<
           </div>
 
           {/* ✅ NEW: Facility Components Frequency (only show for per-item-charge) */}
-          {form.pricingMode === "per_item_charge" && (
+          {form.pricingMode === "per_item_charge" && form.mainServiceFrequency !== "oneTime" && (
             <div className="svc-row">
               <label>
                 Facility Components Frequency
@@ -991,19 +975,19 @@ export const SanicleanForm: React.FC<
                 </small>
               </label>
               <div className="svc-row-right">
-                <select
-                  className="svc-in"
-                  name="facilityComponentsFrequency"
-                  value={form.facilityComponentsFrequency}
-                  onChange={(e) => setFacilityComponentsFrequency(e.target.value as SanicleanFrequency)}
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="biweekly">Bi Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-            </div>
-          )}
+          <select
+            className="svc-in"
+            name="facilityComponentsFrequency"
+            value={form.facilityComponentsFrequency}
+            onChange={(e) => setFacilityComponentsFrequency(e.target.value as SanicleanFrequency)}
+          >
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Bi Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+    )}
 
           {/* Urinal Components - Only show checkbox if urinals > 0 */}
           {form.urinals > 0 && (
@@ -1259,7 +1243,10 @@ export const SanicleanForm: React.FC<
           {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
             <>
               <div className="svc-row">
-                <label>Total Facility Components (at {form.facilityComponentsFrequency} frequency)</label>
+                <label>
+                  Total Facility Components
+                  {form.mainServiceFrequency !== "oneTime" ? ` (at ${form.facilityComponentsFrequency} frequency)` : ""}
+                </label>
                 <div className="svc-row-right">
                   <input
                     className="svc-in-box"
@@ -1276,18 +1263,20 @@ export const SanicleanForm: React.FC<
               </div>
 
               {/* Facility Component Monthly Total - Shows the monthly recurring cost */}
-              <div className="svc-row">
-                <label>Facility Component Monthly Total</label>
-                <div className="svc-row-right">
-                  <input
-                    className="svc-in-box"
-                    type="text"
-                    readOnly
-                    value={formatMoney(quote.breakdown.facilityComponents)}
-                    title="Facility components monthly recurring cost (includes frequency multiplier)"
-                  />
+              {form.mainServiceFrequency !== "oneTime" && (
+                <div className="svc-row">
+                  <label>Facility Component Monthly Total</label>
+                  <div className="svc-row-right">
+                    <input
+                      className="svc-in-box"
+                      type="text"
+                      readOnly
+                      value={formatMoney(quote.breakdown.facilityComponents)}
+                      title="Facility components monthly recurring cost (includes frequency multiplier)"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
         </>
