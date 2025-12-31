@@ -33,6 +33,7 @@ const FIELD_ORDER = {
     recurringVisit: 34,
     contract: 35,
     minimum: 36,
+    totalPrice: 37,
   },
 } as const;
 
@@ -188,6 +189,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       const effectivePlumbingRate = state.customPlumbingAddonRate ?? state.plumbingAddonRate;
       const plumbingRate = plumbingQty > 0 ? plumbingTotal / plumbingQty : effectivePlumbingRate;
       const plumbingRowQty = plumbingQty > 0 ? plumbingQty : (state.plumbingDrainCount || 0);
+
+      const totalPriceValue =
+        state.frequency === "oneTime"
+          ? state.customWeeklyService ?? quote.firstVisitPrice
+          : undefined;
 
       const data = isActive ? {
         serviceId: "foamingDrain",
@@ -370,6 +376,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               gap: "normal",
             };
           }
+          if (state.frequency === "oneTime" && totalPriceValue !== undefined) {
+            totals.totalPrice = {
+              isDisplay: true,
+              orderNo: FIELD_ORDER.totals.totalPrice,
+              label: "Total Price",
+              type: "dollar" as const,
+              amount: totalPriceValue,
+            };
+          }
+
           totals.contract = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.contract,
@@ -390,6 +406,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
         notes: state.notes || "",
         customFields: customFields,
+        ...(state.frequency === "oneTime" && totalPriceValue !== undefined
+          ? { totalPrice: totalPriceValue }
+          : {}),
       } : null;
 
       const dataStr = JSON.stringify(data);
@@ -1445,7 +1464,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     'customWeeklyService',
                     state.customWeeklyService !== undefined
                       ? state.customWeeklyService
-                      : parseFloat(formatAmount(quote.weeklyTotal) || '0')
+                      : quote.firstVisitPrice
                   )}
                   style={{
                     backgroundColor: state.customWeeklyService !== undefined ? '#fffacd' : 'white',
