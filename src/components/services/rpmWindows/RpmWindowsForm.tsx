@@ -36,6 +36,7 @@ const FIELD_ORDER = {
     firstVisit: 93,
     recurringVisit: 94,
     contract: 95,
+    totalPrice: 96,
   },
 } as const;
 
@@ -345,6 +346,13 @@ export const RpmWindowsForm: React.FC<
             type: "dollar" as const,
             months: form.contractMonths,
             amount: form.customAnnualPrice ?? quote.annualPrice,
+          },
+          totalPrice: {
+            isDisplay: true,
+            orderNo: FIELD_ORDER.totals.totalPrice,
+            label: "Total Price",
+            type: "dollar" as const,
+            amount: calc.firstVisitTotalRated,
           },
         },
         pdfExtras,
