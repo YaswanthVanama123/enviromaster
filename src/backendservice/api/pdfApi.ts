@@ -52,12 +52,24 @@ export interface ProductsPayload {
   bigProducts: ProductItem[];
 }
 
+export interface GlobalSummary {
+  contractMonths: number;
+  tripCharge: number;
+  tripChargeFrequency: number;
+  parkingCharge: number;
+  parkingChargeFrequency: number;
+  serviceAgreementTotal: number;
+  productMonthlyTotal: number;
+  productContractTotal: number;
+}
+
 export interface FormPayload {
   headerTitle: string;
   headerRows: any[];
   products: ProductsPayload;
   services: any;
   agreement: any;
+  summary?: GlobalSummary;
 }
 
 // ✅ NEW: Status types for agreements and versions

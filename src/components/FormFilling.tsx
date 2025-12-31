@@ -52,6 +52,17 @@ type ProductTotals = {
   contractTotal: number;
 };
 
+type GlobalSummary = {
+  contractMonths: number;
+  tripCharge: number;
+  tripChargeFrequency: number;
+  parkingCharge: number;
+  parkingChargeFrequency: number;
+  serviceAgreementTotal: number;
+  productMonthlyTotal: number;
+  productContractTotal: number;
+};
+
 type ServiceLine = {
   type: "line" | "bold" | "atCharge";
   label: string;
@@ -93,6 +104,7 @@ export type FormPayload = {
   products: ProductsPayload;
   services: ServicesPayload;
   agreement: AgreementPayload;
+  summary?: GlobalSummary;
   customColumns?: {
     products: { id: string; label: string }[];
     dispensers: { id: string; label: string }[];
@@ -663,6 +675,12 @@ function FormFillingContent() {
   const {
     getTotalOriginalPerVisit,
     getTotalMinimumPerVisit,
+    getTotalAgreementAmount,
+    globalContractMonths,
+    globalTripCharge,
+    globalParkingCharge,
+    globalTripChargeFrequency,
+    globalParkingChargeFrequency,
   } = useServicesContext();
 
   // ✅ NEW: Calculate pricing status (Red/Green Line) for approval workflow
@@ -928,6 +946,7 @@ function FormFillingContent() {
           },
           customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
           serviceAgreement: fromBackend.serviceAgreement, // ✅ Include service agreement data for editing
+          summary: fromBackend.summary,
         };
 
         setPayload(cleanPayload);
@@ -1037,6 +1056,17 @@ function FormFillingContent() {
 
     const servicesWithDraftField = attachRefreshPowerScrubDraftCustomField(servicesData);
 
+    const summary: GlobalSummary = {
+      contractMonths: globalContractMonths,
+      tripCharge: globalTripCharge,
+      tripChargeFrequency: globalTripChargeFrequency,
+      parkingCharge: globalParkingCharge,
+      parkingChargeFrequency: globalParkingChargeFrequency,
+      serviceAgreementTotal: getTotalAgreementAmount(),
+      productMonthlyTotal: productTotals.monthlyTotal,
+      productContractTotal: productTotals.contractTotal,
+    };
+
     return {
       headerTitle: titleForSave,
       headerRows: payload?.headerRows || [],
@@ -1053,9 +1083,10 @@ function FormFillingContent() {
       },
       serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
-    customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
+      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
+      summary,
+    };
   };
-};
 
 const replaceRefreshPowerScrubWithDraftPayload = (services?: Record<string, any>) => {
   if (!services?.refreshPowerScrub?.draftPayload) return services;
