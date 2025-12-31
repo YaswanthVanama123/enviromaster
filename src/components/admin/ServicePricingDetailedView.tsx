@@ -2513,7 +2513,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       return [
         { key: "sprayRates", label: "Spray Rates", icon: "💨" },
         { key: "sprayTripCharges", label: "Trip Charges", icon: "🚗" },
-        // { key: "sprayFrequencyConversions", label: "Frequency Conversions", icon: "🔄" },
+        { key: "sprayFrequencyConversions", label: "Frequency Conversions", icon: "🔄" },
         // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
       ];
     }
@@ -2547,7 +2547,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "baseRates", label: "Base Rates", icon: "🕐" },
         { key: "shortJobPricing", label: "Short Job Pricing", icon: "⚡" },
         { key: "serviceMultipliers", label: "Service Multipliers", icon: "✖️" },
-        // { key: "monthlyConversions", label: "Monthly Conversions", icon: "📅" },
+        { key: "monthlyConversions", label: "Monthly Conversions", icon: "📅" },
         // { key: "contractSettings", label: "Contract Terms", icon: "📋" },
         { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: "🧹" },
         { key: "smoothBreakdown", label: "Smooth Breakdown Pricing", icon: "📊" },

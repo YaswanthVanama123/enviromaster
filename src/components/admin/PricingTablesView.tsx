@@ -456,17 +456,17 @@ export const PricingTablesView: React.FC = () => {
     // if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
 
     // Frequency Metadata
-    // if (config.frequencyMetadata) {
-    //   if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
-    //   if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
-    //   if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
-    //   if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
-    //   // if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
-    // }
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      // if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
     } // End Microfiber Mopping
 
     // RPM WINDOWS - Complete extraction (NEW STRUCTURE - 2025)
@@ -665,17 +665,17 @@ export const PricingTablesView: React.FC = () => {
     if (config.squareFootagePricing?.outsideRate !== undefined) fields.push({ label: "Square Footage - Outside Rate", value: config.squareFootagePricing.outsideRate, path: ["squareFootagePricing", "outsideRate"], unit: "$ per sq ft" });
 
     // Frequency Metadata
-    // if (config.frequencyMetadata) {
-    //   if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
-    //   if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
-    //   if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
-    //   if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
-    //   // if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
-    //   // if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
-    // }
+    if (config.frequencyMetadata) {
+      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+      // if (config.frequencyMetadata.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.biannual?.cycleMonths !== undefined) fields.push({ label: "Biannual - Cycle Months", value: config.frequencyMetadata.biannual.cycleMonths, path: ["frequencyMetadata", "biannual", "cycleMonths"], unit: "months" });
+      // if (config.frequencyMetadata.annual?.cycleMonths !== undefined) fields.push({ label: "Annual - Cycle Months", value: config.frequencyMetadata.annual.cycleMonths, path: ["frequencyMetadata", "annual", "cycleMonths"], unit: "months" });
+    }
     } // End Refresh Power Scrub
 
     // ELECTROSTATIC SPRAY - Complete extraction (NEW STRUCTURE)
@@ -692,10 +692,10 @@ export const PricingTablesView: React.FC = () => {
     // if (config.tripCharges?.beltway !== undefined) fields.push({ label: "Trip Charge - Beltway", value: config.tripCharges.beltway, path: ["tripCharges", "beltway"], unit: "$" });
 
     // Frequency Metadata
-    // if (config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
-    // if (config.frequencyMetadata?.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
-    // if (config.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
-    // if (config.frequencyMetadata?.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
+    if (config.frequencyMetadata?.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
     // if (config.frequencyMetadata?.monthly?.cycleMonths !== undefined) fields.push({ label: "Monthly - Cycle Months", value: config.frequencyMetadata.monthly.cycleMonths, path: ["frequencyMetadata", "monthly", "cycleMonths"], unit: "months" });
     // if (config.frequencyMetadata?.bimonthly?.cycleMonths !== undefined) fields.push({ label: "Bimonthly - Cycle Months", value: config.frequencyMetadata.bimonthly.cycleMonths, path: ["frequencyMetadata", "bimonthly", "cycleMonths"], unit: "months" });
     // if (config.frequencyMetadata?.quarterly?.cycleMonths !== undefined) fields.push({ label: "Quarterly - Cycle Months", value: config.frequencyMetadata.quarterly.cycleMonths, path: ["frequencyMetadata", "quarterly", "cycleMonths"], unit: "months" });

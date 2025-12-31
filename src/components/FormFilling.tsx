@@ -681,6 +681,11 @@ function FormFillingContent() {
     globalParkingCharge,
     globalTripChargeFrequency,
     globalParkingChargeFrequency,
+    setGlobalContractMonths,
+    setGlobalTripCharge,
+    setGlobalTripChargeFrequency,
+    setGlobalParkingCharge,
+    setGlobalParkingChargeFrequency,
   } = useServicesContext();
 
   // ✅ NEW: Calculate pricing status (Red/Green Line) for approval workflow
@@ -728,7 +733,58 @@ function FormFillingContent() {
     });
   }, []);
 
-  // ✅ NEW: Determine document status based on pricing
+
+  useEffect(() => {
+    if (!payload?.summary) return;
+
+    const {
+      contractMonths,
+      tripCharge,
+      tripChargeFrequency,
+      parkingCharge,
+      parkingChargeFrequency,
+      productMonthlyTotal,
+      productContractTotal,
+    } = payload.summary;
+
+    if (contractMonths !== undefined && contractMonths !== null) {
+      setGlobalContractMonths(contractMonths);
+    }
+    if (tripCharge !== undefined && tripCharge !== null) {
+      setGlobalTripCharge(tripCharge);
+    }
+    if (tripChargeFrequency !== undefined && tripChargeFrequency !== null) {
+      setGlobalTripChargeFrequency(tripChargeFrequency);
+    }
+    if (parkingCharge !== undefined && parkingCharge !== null) {
+      setGlobalParkingCharge(parkingCharge);
+    }
+    if (parkingChargeFrequency !== undefined && parkingChargeFrequency !== null) {
+      setGlobalParkingChargeFrequency(parkingChargeFrequency);
+    }
+
+    setProductTotals((prev) => {
+      const monthlyValue = productMonthlyTotal ?? prev.monthlyTotal;
+      const contractValue = productContractTotal ?? prev.contractTotal;
+      if (monthlyValue === prev.monthlyTotal && contractValue === prev.contractTotal) {
+        return prev;
+      }
+      return {
+        monthlyTotal: monthlyValue,
+        contractTotal: contractValue,
+      };
+    });
+  }, [
+    payload?.summary,
+    setGlobalContractMonths,
+    setGlobalTripCharge,
+    setGlobalTripChargeFrequency,
+    setGlobalParkingCharge,
+    setGlobalParkingChargeFrequency,
+    setProductTotals,
+  ]);
+
+  // ƒo. NEW: Determine document status based on pricing
   const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
     const pricingStatus = calculatePricingStatus();
 
