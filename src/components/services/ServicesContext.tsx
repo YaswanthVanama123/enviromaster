@@ -115,6 +115,50 @@ export const ServicesProvider: React.FC<{
   }, [backendPricingData]);
 
   // ✅ NEW: Helper function to calculate total agreement amount (sum of all service contract totals)
+  const normalizeFrequencyKey = (value: any): string | null => {
+    if (value === undefined || value === null) return null;
+    const raw = typeof value === "object"
+      ? value.frequencyKey ?? value.value ?? value.label ?? value.name ?? value.frequency ?? ""
+      : value;
+    const text = String(raw).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    return text || null;
+  };
+
+  const isOneTimeService = (serviceData: any): boolean => {
+    if (!serviceData) return false;
+    const candidates = [
+      serviceData.frequency,
+      serviceData.frequencyKey,
+      serviceData.frequency?.frequencyKey,
+      serviceData.frequency?.value,
+      serviceData.frequency?.label,
+      serviceData.frequencyDisplay?.frequencyKey,
+      serviceData.frequencyDisplay?.value,
+      serviceData.frequencyDisplay?.label,
+    ];
+    return candidates.some((candidate) => {
+      const normalized = normalizeFrequencyKey(candidate);
+      return normalized === "onetime" || normalized === "1time";
+    });
+  };
+
+  const getOneTimePrice = (serviceData: any): number | null => {
+    const candidates = [
+      serviceData.totalPrice,
+      serviceData.calc?.totalPrice,
+      serviceData.totals?.totalPrice?.amount,
+      serviceData.totals?.perVisit?.amount,
+      serviceData.totals?.firstVisit?.amount,
+      serviceData.perVisit,
+    ];
+    for (const candidate of candidates) {
+      if (typeof candidate === "number" && candidate > 0) {
+        return candidate;
+      }
+    }
+    return null;
+  };
+
   const getTotalAgreementAmount = useCallback((): number => {
     let totalAmount = 0;
 
@@ -141,6 +185,15 @@ export const ServicesProvider: React.FC<{
         else if (serviceData.totals?.annual?.amount && typeof serviceData.totals.annual.amount === 'number') {
           contractTotal = serviceData.totals.annual.amount;
           console.log(`📊 [TOTAL CALC] ${serviceName} found totals.annual.amount: $${contractTotal.toFixed(2)}`);
+        }
+
+        const oneTime = isOneTimeService(serviceData);
+        if (oneTime) {
+          const oneTimePrice = getOneTimePrice(serviceData);
+          if (oneTimePrice !== null) {
+            contractTotal = oneTimePrice;
+            console.log(`ÐY"S [TOTAL CALC] ${serviceName} one-time override: $${contractTotal.toFixed(2)}`);
+          }
         }
 
         if (contractTotal <= 0) {
