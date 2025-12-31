@@ -289,6 +289,7 @@ export interface SanicleanQuoteResult {
   weeklyTotal: number;
   monthlyTotal: number;
   contractTotal: number;
+  oneTimeTotal?: number;
 
   // ✅ NEW: Separate monthly totals for display
   baseServiceMonthly: number; // Base service monthly total (service × frequency)

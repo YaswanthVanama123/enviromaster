@@ -47,6 +47,7 @@ const FIELD_ORDER = {
   maleToilets: 6,
   femaleToilets: 7,
   // soapType: 20,
+  totalPrice: 200,
   contractTotal: 100,
 };
 
@@ -267,6 +268,15 @@ export const SanicleanForm: React.FC<
     updateForm({ [name]: processedValue });
   };
 
+  const sumBreakdown = Object.values(quote.breakdown || {}).reduce(
+    (acc, value) => acc + (typeof value === "number" ? value : 0),
+    0
+  );
+  const totalPriceValue =
+    form.mainServiceFrequency === "oneTime"
+      ? (quote.oneTimeTotal ?? sumBreakdown)
+      : undefined;
+
   // Save form data to context for form submission
   useEffect(() => {
     if (servicesContext) {
@@ -375,6 +385,26 @@ export const SanicleanForm: React.FC<
       includedItems.forEach((item, index) => {
         addLineExtra("Included", item, "line", EXTRA_ORDER.includedItems + index * 0.1);
       });
+      const totals: Record<string, any> = {};
+      if (totalPriceValue !== undefined) {
+        totals.totalPrice = {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.totalPrice,
+          label: "Total Price",
+          type: "dollar" as const,
+          amount: totalPriceValue,
+        };
+      } else {
+        totals.contract = {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.contractTotal,
+          label: "Contract Total",
+          type: "dollar" as const,
+          months: form.contractMonths,
+          amount: quote.contractTotal,
+        };
+      }
+
       const data = isActive ? {
         serviceId: "saniclean",
         displayName: "SaniClean",
@@ -524,22 +554,18 @@ export const SanicleanForm: React.FC<
         //   value: form.soapType === "luxury" ? "Luxury" : "Standard",
         // },
 
-        totals: {
-          contract: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.contractTotal,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: quote.contractTotal,
-          },
-        },
-        contractTotal: {
-          isDisplay: true,
-          label: "Contract Total",
-          type: "dollar" as const,
-          amount: quote.contractTotal,
-        },
+          totals,
+          ...(totalPriceValue !== undefined ? { totalPrice: totalPriceValue } : {}),
+          ...(totalPriceValue === undefined
+            ? {
+                contractTotal: {
+                  isDisplay: true,
+                  label: "Contract Total",
+                  type: "dollar" as const,
+                  amount: quote.contractTotal,
+                },
+              }
+            : {}),
  
         notes: form.notes || "",
         customFields: customFields,
@@ -613,7 +639,6 @@ export const SanicleanForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Pricing Mode */}
       <div className="svc-row">
         <label>Pricing Mode</label>
         <div className="svc-row-right">
@@ -1854,60 +1879,79 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      <div className="svc-row">
-        <label>Contract Total</label>
-        <div className="svc-row-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <select
-            className="svc-in"
-            name="contractMonths"
-            value={contractMonths}
-            onChange={onChange}
-            style={{
-              borderBottom: '2px solid #000',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              backgroundColor: 'transparent',
-              padding: '4px 20px 4px 4px'
-            }}
-          >
-            {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
-              <option key={m} value={m}>
-                {m} mo
-              </option>
-            ))}
-          </select>
-          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            name="customContractTotal"
-            className="svc-in"
-            value={getDisplayValue(
-              'customContractTotal',
-              form.customContractTotal !== undefined
-                ? form.customContractTotal
-                : contractTotal
-            )}
-            onChange={handleLocalChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            style={{
-              borderBottom: '2px solid #ff0000',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              padding: '4px',
-              width: '100px'
-            }}
-            title="Contract total - editable"
-          />
+      {form.mainServiceFrequency !== "oneTime" && (
+        <div className="svc-row">
+          <label>Contract Total</label>
+          <div className="svc-row-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <select
+              className="svc-in"
+              name="contractMonths"
+              value={contractMonths}
+              onChange={onChange}
+              style={{
+                borderBottom: '2px solid #000',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                backgroundColor: 'transparent',
+                padding: '4px 20px 4px 4px'
+              }}
+            >
+              {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
+                <option key={m} value={m}>
+                  {m} mo
+                </option>
+              ))}
+            </select>
+            <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              name="customContractTotal"
+              className="svc-in"
+              value={getDisplayValue(
+                'customContractTotal',
+                form.customContractTotal !== undefined
+                  ? form.customContractTotal
+                  : contractTotal
+              )}
+              onChange={handleLocalChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={{
+                borderBottom: '2px solid #ff0000',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                padding: '4px',
+                width: '100px'
+              }}
+              title="Contract total - editable"
+            />
+          </div>
         </div>
-      </div>
+      )}
+      {totalPriceValue !== undefined && (
+        <div className="svc-row svc-row-charge">
+          <label>Total Price</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="text"
+                readOnly
+                value={totalPriceValue.toFixed(2)}
+                style={{ width: "100px" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notes */}
       <div className="svc-row">
