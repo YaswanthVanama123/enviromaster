@@ -149,6 +149,7 @@ export const CarpetForm: React.FC<
     recurringVisit: 7,
     recurringMonth: 8,
     contract: 9,
+    totalPrice: 10,
   };
 
   useEffect(() => {
@@ -171,7 +172,9 @@ export const CarpetForm: React.FC<
             : "First Month Total";
       const totalAmount =
         resolvedFrequency === "oneTime"
-          ? calc.perVisitCharge
+          ? form.customFirstMonthPrice !== undefined
+            ? form.customFirstMonthPrice
+            : calc.firstMonthTotal
           : calc.firstMonthTotal;
 
       const totals: any = {
@@ -190,6 +193,16 @@ export const CarpetForm: React.FC<
           amount: totalAmount,
         },
       };
+
+      if (resolvedFrequency === "oneTime") {
+        totals.totalPrice = {
+          isDisplay: true,
+          orderNo: FIELD_ORDER.totalPrice,
+          label: "Total Price",
+          type: "dollar" as const,
+          amount: totalAmount,
+        };
+      }
 
       if (shouldShowMonthlyRecurring) {
         totals.monthlyRecurring = {
