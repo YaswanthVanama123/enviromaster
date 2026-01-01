@@ -92,11 +92,32 @@ type ServicesPayload = {
   };
 };
 
+type PaymentOption = "online" | "cash" | "others";
+
 type AgreementPayload = {
   enviroOf: string;
   customerExecutedOn: string;
   additionalMonths: string;
+  paymentOption?: PaymentOption;
 };
+
+const PAYMENT_OPTION_DETAILS: { value: PaymentOption; label: string; description: string }[] = [
+  {
+    value: "online",
+    label: "Online Payment",
+    description: "Card or portal payment keeps the document on auto-approved Green Line pricing."
+  },
+  {
+    value: "cash",
+    label: "Cash Payment",
+    description: "Customer will pay cash/check in the field on scheduled visits."
+  },
+  {
+    value: "others",
+    label: "Other Payment",
+    description: "Custom payment terms require approval and will send this document to Pending Approval."
+  },
+];
 
 export type FormPayload = {
   headerTitle: string;
@@ -661,6 +682,7 @@ function FormFillingContent() {
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
   const [agreementData, setAgreementData] = useState<ServiceAgreementData | null>(null); // Service Agreement data
+  const [paymentOption, setPaymentOption] = useState<PaymentOption>("online");
 
   // ✅ NEW: Version dialog state for PDF versioning
   const [showVersionDialog, setShowVersionDialog] = useState(false);
@@ -687,6 +709,14 @@ function FormFillingContent() {
     setGlobalParkingCharge,
     setGlobalParkingChargeFrequency,
   } = useServicesContext();
+
+  useEffect(() => {
+    if (!payload) return;
+    const option = payload.agreement?.paymentOption as PaymentOption | undefined;
+    setPaymentOption(option ?? "online");
+  }, [payload]);
+
+  const currentPaymentLabel = PAYMENT_OPTION_DETAILS.find((entry) => entry.value === paymentOption)?.label ?? "Payment Option";
 
   // ✅ NEW: Calculate pricing status (Red/Green Line) for approval workflow
   const calculatePricingStatus = useCallback((): 'red' | 'green' | 'neutral' => {
@@ -787,15 +817,24 @@ function FormFillingContent() {
   // ƒo. NEW: Determine document status based on pricing
   const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
     const pricingStatus = calculatePricingStatus();
+    const requiresApproval =
+      paymentOption === "others" ||
+      pricingStatus === 'red' ||
+      pricingStatus === 'neutral';
 
-    const status = (pricingStatus === 'red' || pricingStatus === 'neutral')
-      ? 'pending_approval'
-      : 'saved';
+    const status = requiresApproval ? 'pending_approval' : 'saved';
+    const reason = paymentOption === "others"
+      ? "Payment option requires approval"
+      : pricingStatus === 'red'
+        ? "Red Line pricing"
+        : pricingStatus === 'neutral'
+          ? "Neutral (below green line)"
+          : "Green Line pricing";
 
-    console.log(`📋 [STATUS-CALC] Pricing: ${pricingStatus} → Document Status: ${status}`);
+    console.log(`📋 [STATUS-CALC] Pricing: ${pricingStatus} | Payment: ${paymentOption} → Document Status: ${status} (${reason})`);
 
     return status;
-  }, [calculatePricingStatus]);
+  }, [calculatePricingStatus, paymentOption]);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const hasChanges = hasPriceChanges();
@@ -1123,6 +1162,12 @@ function FormFillingContent() {
       productContractTotal: productTotals.contractTotal,
     };
 
+    const agreementBase = payload?.agreement || {
+      enviroOf: "",
+      customerExecutedOn: "",
+      additionalMonths: "",
+    };
+
     return {
       headerTitle: titleForSave,
       headerRows: payload?.headerRows || [],
@@ -1132,10 +1177,9 @@ function FormFillingContent() {
         bigProducts: productsData.bigProducts,
       },
       services: servicesWithDraftField,
-      agreement: payload?.agreement || {
-        enviroOf: "",
-        customerExecutedOn: "",
-        additionalMonths: "",
+      agreement: {
+        ...agreementBase,
+        paymentOption,
       },
       serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
@@ -1999,6 +2043,35 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
             {/* ✅ NEW: Contract Summary - Global contract months and total agreement amount */}
             <ContractSummary productTotals={productTotals} />
+
+            <div className="formfilling__payment-options">
+              <div className="formfilling__payment-options-header">
+                <div>
+                  <h3>Payment Options</h3>
+                  <p>Select how the customer will pay. Choosing “Other Payment” moves the document to Pending Approval even if Green Line pricing applies.</p>
+                </div>
+                <span className="formfilling__payment-option-current">Current: {currentPaymentLabel}</span>
+              </div>
+
+              <div className="formfilling__payment-options-grid">
+                {PAYMENT_OPTION_DETAILS.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`payment-option ${paymentOption === option.value ? "payment-option--selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentOption"
+                      value={option.value}
+                      checked={paymentOption === option.value}
+                      onChange={() => setPaymentOption(option.value)}
+                    />
+                    <span className="payment-option-title">{option.label}</span>
+                    <span className="payment-option-description">{option.description}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             {/* Service Agreement Component */}
             <ServiceAgreement

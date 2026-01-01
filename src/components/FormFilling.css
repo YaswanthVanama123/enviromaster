@@ -359,6 +359,77 @@
   transition: all 0.3s ease;
 }
 
+.formfilling__payment-options {
+  max-width: 1000px;
+  margin: 32px auto;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #fcefe4;
+  background: #fff8f2;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.formfilling__payment-options-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.formfilling__payment-options-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.formfilling__payment-options-header p {
+  margin: 6px 0 0;
+  color: #475569;
+}
+
+.formfilling__payment-option-current {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.formfilling__payment-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.payment-option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payment-option input {
+  display: none;
+}
+
+.payment-option-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.payment-option-description {
+  font-size: 13px;
+  color: #475569;
+}
+
+.payment-option--selected {
+  border-color: #ff8c42;
+  box-shadow: 0 4px 14px rgba(255, 132, 36, 0.25);
+}
+
 .contract-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border-color: #d1d5db;
