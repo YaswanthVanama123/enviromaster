@@ -204,6 +204,7 @@ export const SanicleanForm: React.FC<
   // Calculate derived values
   const fixtures = form.sinks + form.urinals + form.maleToilets + form.femaleToilets;
   const soapDispensers = form.sinks; // 1 soap dispenser per sink
+  const luxuryUpgradeQty = form.luxuryUpgradeQty ?? soapDispensers;
 
   const isAllInclusive = form.pricingMode === "all_inclusive";
   const fixtureRateFieldName = isAllInclusive
@@ -221,8 +222,8 @@ export const SanicleanForm: React.FC<
     insideBeltwayRate: form.insideBeltwayRatePerFixture
   });
 
-  const luxuryUpgradeWeekly = form.soapType === "luxury" && soapDispensers > 0
-    ? soapDispensers * form.luxuryUpgradePerDispenser
+  const luxuryUpgradeWeekly = form.soapType === "luxury" && luxuryUpgradeQty > 0
+    ? luxuryUpgradeQty * form.luxuryUpgradePerDispenser
     : 0;
 
   const extraSoapRatePerGallon = form.soapType === "luxury"
@@ -261,6 +262,8 @@ export const SanicleanForm: React.FC<
 
     if (type === "checkbox") {
       processedValue = checked;
+    } else if (name === "luxuryUpgradeQty") {
+      processedValue = value === "" ? undefined : parseFloat(value);
     } else if (type === "number") {
       processedValue = parseFloat(value) || 0;
     }
@@ -433,6 +436,7 @@ export const SanicleanForm: React.FC<
         // Editable pricing config (backend-driven rates)
         allInclusiveWeeklyRatePerFixture: form.allInclusiveWeeklyRatePerFixture,
         luxuryUpgradePerDispenser: form.luxuryUpgradePerDispenser,
+        luxuryUpgradeQty: form.luxuryUpgradeQty,
         excessStandardSoapRate: form.excessStandardSoapRate,
         excessLuxurySoapRate: form.excessLuxurySoapRate,
         paperCreditPerFixture: form.paperCreditPerFixture,
@@ -884,7 +888,26 @@ export const SanicleanForm: React.FC<
       <div className="svc-row">
         <label>Luxury Upgrade</label>
         <div className="svc-row-right">
-          <input className="svc-in field-qty" type="text" readOnly value={soapDispensers} />
+          <input
+            className="svc-in field-qty"
+            type="number"
+            min="0"
+            step="1"
+            name="luxuryUpgradeQty"
+            value={luxuryUpgradeQty}
+            onChange={onChange}
+            disabled={form.soapType !== "luxury"}
+            style={{
+              ...getOverrideStyle(
+                Boolean(form.luxuryUpgradeQty),
+                { backgroundColor: form.soapType !== "luxury" ? "#f5f5f5" : "white" }
+              ),
+              color: form.soapType !== "luxury" ? "#999" : "black"
+            }}
+            title={form.soapType === "luxury"
+              ? "Override the number of dispensers used for the luxury upgrade"
+              : "Luxury soap upgrade quantity (enable luxury soap to edit)"}
+          />
           <span>@</span>
           <input
             className="svc-in field-qty"

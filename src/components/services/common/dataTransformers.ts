@@ -636,6 +636,10 @@ export function transformSanicleanData(structuredData: any): any {
     });
   }
 
+  if (structuredData.luxuryUpgradeQty !== undefined) {
+    formState.luxuryUpgradeQty = normalizeStructuredValue(structuredData.luxuryUpgradeQty);
+  }
+
   // Extract contract months
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;

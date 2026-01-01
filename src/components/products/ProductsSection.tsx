@@ -1633,9 +1633,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
               <button className="prod__add" onClick={addRowAll} type="button">
                 + Row
               </button>
-              <button className="prod__add" onClick={addColAll} type="button">
+                {/*    <button className="prod__add" onClick={addColAll} type="button">
                 + Column
-              </button>
+              </button>*/}
             </div>
           </div>
         </div>
@@ -1974,9 +1974,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         <button className="prod__add" onClick={onAddRow} type="button">
           + Row
         </button>
-        <button className="prod__add" onClick={onAddCol} type="button">
+        {/* <button className="prod__add" onClick={onAddCol} type="button">
           + Col
-        </button>
+        </button> */}
       </div>
       {children}
     </div>

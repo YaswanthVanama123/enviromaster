@@ -95,6 +95,18 @@ interface BackendSanicleanConfig {
   maxContractMonths: number;
 }
 
+const resolveLuxuryUpgradeQty = (form: SanicleanFormState): number => {
+
+  const sinkCount = Number.isFinite(form.sinks) ? form.sinks : 0;
+
+  const overrideQty = Number.isFinite(form.luxuryUpgradeQty) ? form.luxuryUpgradeQty : sinkCount;
+
+  return Math.max(0, overrideQty);
+
+};
+
+
+
 const DEFAULT_FORM: SanicleanFormState = {
   serviceId: "saniclean",
 
@@ -442,9 +454,10 @@ function calculateAllInclusive(
   // Base Service: Uses backend pricePerFixture
   const baseServiceCalc = fixtureCount * form.allInclusiveWeeklyRatePerFixture * rateTierMultiplier;
   const baseService = form.customBaseService ?? baseServiceCalc;
+  const luxuryUpgradeQty = resolveLuxuryUpgradeQty(form);
 
   // Soap Upgrade: Uses backend standardToLuxuryPerDispenserPerWeek
-  const soapUpgradeCalc = form.soapType === "luxury" ? form.sinks * form.luxuryUpgradePerDispenser : 0;
+  const soapUpgradeCalc = form.soapType === "luxury" ? luxuryUpgradeQty * form.luxuryUpgradePerDispenser : 0;
   const soapUpgrade = form.customSoapUpgrade ?? soapUpgradeCalc;
 
   // Excess Soap: Uses backend excess usage charges
@@ -574,9 +587,9 @@ function calculateAllInclusive(
       "Warranty fees (waived)",
     ],
     appliedRules: [
-      `All-Inclusive: ${fixtureCount} fixtures × $${form.allInclusiveWeeklyRatePerFixture}/fixture/week`,
-      form.soapType === "luxury" ? `Luxury soap upgrade: ${soapDispensers} dispensers × $${form.luxuryUpgradePerDispenser}/week` : "",
-      form.excessSoapGallonsPerWeek > 0 ? `Excess soap: ${form.excessSoapGallonsPerWeek} gallons × $${form.soapType === "luxury" ? form.excessLuxurySoapRate : form.excessStandardSoapRate}/gallon` : "",
+      `All-Inclusive: ${fixtureCount} fixtures ?- $${form.allInclusiveWeeklyRatePerFixture}/fixture/week`,
+      form.soapType === "luxury" && luxuryUpgradeQty > 0 ? `Luxury soap upgrade: ${luxuryUpgradeQty} dispensers ?- $${form.luxuryUpgradePerDispenser}/week` : "",
+      form.excessSoapGallonsPerWeek > 0 ? `Excess soap: ${form.excessSoapGallonsPerWeek} gallons ?- $${form.soapType === "luxury" ? form.excessLuxurySoapRate : form.excessStandardSoapRate}/gallon` : "",
       paperOverage > 0 ? `Paper overage: $${form.estimatedPaperSpendPerWeek} spend - $${paperCredit.toFixed(2)} credit = $${paperOverage.toFixed(2)}` : "",
       "All fees waived (trip, warranty)",
     ].filter(Boolean),
@@ -699,8 +712,10 @@ function calculatePerItemCharge(
 
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
+  const luxuryUpgradeQty = resolveLuxuryUpgradeQty(form);
+
   // Soap upgrades (only applicable if they want luxury)
-  const soapUpgradeCalc = form.soapType === "luxury" ? form.sinks * form.luxuryUpgradePerDispenser : 0;
+  const soapUpgradeCalc = form.soapType === "luxury" ? luxuryUpgradeQty * form.luxuryUpgradePerDispenser : 0;
   const soapUpgrade = form.customSoapUpgrade ?? soapUpgradeCalc;
 
   // Excess soap (not really applicable in per-item model, but kept for compatibility)

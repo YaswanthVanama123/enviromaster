@@ -180,6 +180,7 @@ export interface SanicleanFormState {
 
   // Soap Configuration
   soapType: SanicleanSoapType; // "standard" | "luxury"
+  luxuryUpgradeQty?: number;
   excessSoapGallonsPerWeek: number; // beyond "one fill" for all-inclusive
 
   // Microfiber Mopping (always available)
