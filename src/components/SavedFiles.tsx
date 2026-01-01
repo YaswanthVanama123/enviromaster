@@ -11,6 +11,7 @@ import {
   faPlus, faCheckSquare, faSquare
 } from "@fortawesome/free-solid-svg-icons";
 import "./SavedFiles.css";
+import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
 // ✅ OPTIMIZED: Lazy load heavy components (code splitting for better LCP)
 const EmailComposer = lazy(() => import("./EmailComposer"));
@@ -446,13 +447,15 @@ export default function SavedFiles() {
     if (!currentEmailFile) return;
 
     try {
+      const documentType = getDocumentTypeForSavedFile(currentEmailFile);
       await emailApi.sendEmailWithPdfById({
         to: emailData.to,
         from: emailData.from,
         subject: emailData.subject,
         body: emailData.body,
         documentId: currentEmailFile.id,
-        fileName: currentEmailFile.title
+        fileName: currentEmailFile.title,
+        documentType,
       });
 
       setToastMessage({
@@ -854,7 +857,8 @@ export default function SavedFiles() {
           attachment={currentEmailFile ? {
             id: currentEmailFile.id,
             fileName: currentEmailFile.title,
-            downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+            downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id),
+            documentType: getDocumentTypeForSavedFile(currentEmailFile)
           } : undefined}
           defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
           defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}

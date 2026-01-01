@@ -15,6 +15,7 @@ import {
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
+import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
 type FileStatus =
   | "saved"
@@ -1413,19 +1414,21 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
       )}
 
       {/* Email Composer Modal */}
-      <EmailComposer
-        isOpen={emailComposerOpen}
-        onClose={() => setEmailComposerOpen(false)}
-        onSend={async (emailData: EmailData) => {
-          if (!currentEmailFile) return;
-          await emailApi.sendEmailWithPdfById({
-            to: emailData.to,
-            from: emailData.from,
-            subject: emailData.subject,
-            body: emailData.body,
-            documentId: currentEmailFile.id,
-            fileName: currentEmailFile.title
-          });
+        <EmailComposer
+          isOpen={emailComposerOpen}
+          onClose={() => setEmailComposerOpen(false)}
+          onSend={async (emailData: EmailData) => {
+            if (!currentEmailFile) return;
+            const documentType = getDocumentTypeForSavedFile(currentEmailFile);
+            await emailApi.sendEmailWithPdfById({
+              to: emailData.to,
+              from: emailData.from,
+              subject: emailData.subject,
+              body: emailData.body,
+              documentId: currentEmailFile.id,
+              fileName: currentEmailFile.title,
+              documentType,
+            });
           setToastMessage({
             message: "Email sent successfully with PDF attachment!",
             type: "success"
@@ -1436,7 +1439,8 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
         attachment={currentEmailFile ? {
           id: currentEmailFile.id,
           fileName: currentEmailFile.title,
-          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+          downloadUrl: pdfApi.getPdfDownloadUrl(currentEmailFile.id),
+          documentType: getDocumentTypeForSavedFile(currentEmailFile)
         } : undefined}
         defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
         defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}

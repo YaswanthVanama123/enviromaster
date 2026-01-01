@@ -16,6 +16,7 @@ import {
   faChevronDown, faChevronRight, faCheckSquare, faSquare
 } from "@fortawesome/free-solid-svg-icons";
 import "./ApprovalDocuments.css";
+import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
 // ✅ OPTIMIZED: Lazy load EmailComposer (code splitting for better LCP)
 const EmailComposer = lazy(() => import("./EmailComposer"));
@@ -424,14 +425,16 @@ export default function ApprovalDocuments() {
     if (!currentEmailFile) return;
 
     try {
+      const documentType = getDocumentTypeForSavedFile(currentEmailFile);
       await emailApi.sendEmailWithPdfById({
         to: emailData.to,
         from: emailData.from,
         subject: emailData.subject,
-        body: emailData.body,
-        documentId: currentEmailFile.id,
-        fileName: currentEmailFile.fileName
-      });
+          body: emailData.body,
+          documentId: currentEmailFile.id,
+          fileName: currentEmailFile.fileName,
+          documentType,
+        });
 
       setToastMessage({
         message: "Approval request email sent successfully with PDF attachment!",
@@ -794,7 +797,8 @@ export default function ApprovalDocuments() {
             fileName: currentEmailFile.fileName,
             downloadUrl: currentEmailFile.fileType === 'attached_pdf'
               ? pdfApi.getPdfDownloadUrl(currentEmailFile.id) // Use generic download for attached files
-              : pdfApi.getPdfDownloadUrl(currentEmailFile.id)
+              : pdfApi.getPdfDownloadUrl(currentEmailFile.id),
+            documentType: getDocumentTypeForSavedFile(currentEmailFile)
           } : undefined}
           defaultSubject={currentEmailFile ? `${currentEmailFile.fileName} - Approval Request` : ''}
           defaultBody={currentEmailFile ? `Hello,

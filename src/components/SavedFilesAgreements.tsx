@@ -24,6 +24,7 @@ import {
 import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComposer"; // ✅ NEW: Import EmailAttachment type
 import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
+import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
 type FileStatus =
   | "saved"
@@ -1767,46 +1768,36 @@ export default function SavedFilesAgreements() {
       )}
 
       {/* Email Composer Modal */}
-      <EmailComposer
-        isOpen={emailComposerOpen}
-        onClose={() => setEmailComposerOpen(false)}
-        onSend={async (emailData: EmailData) => {
-          if (!currentEmailFile) return;
+        <EmailComposer
+          isOpen={emailComposerOpen}
+          onClose={() => setEmailComposerOpen(false)}
+          onSend={async (emailData: EmailData) => {
+            if (!currentEmailFile) return;
 
-          // Determine document type based on file type
-          let documentType: 'agreement' | 'version' | 'manual-upload' | 'version-log' = 'agreement';
-          if (currentEmailFile.fileType === 'version_pdf') {
-            documentType = 'version';
-          } else if (currentEmailFile.fileType === 'attached_pdf') {
-            documentType = 'manual-upload';
-          } else if (currentEmailFile.fileType === 'version_log') {
-            documentType = 'version-log';
-          }
+            const documentType = getDocumentTypeForSavedFile(currentEmailFile);
 
-          await emailApi.sendEmailWithPdfById({
-            to: emailData.to,
-            subject: emailData.subject,
-            body: emailData.body,
-            documentId: currentEmailFile.id,
+            await emailApi.sendEmailWithPdfById({
+              to: emailData.to,
+              subject: emailData.subject,
+              body: emailData.body,
+              documentId: currentEmailFile.id,
+              fileName: currentEmailFile.title,
+              documentType,
+              watermark: emailData.attachment?.watermark || false
+            });
+            setToastMessage({
+              message: "Email sent successfully with PDF attachment!",
+              type: "success"
+            });
+            setEmailComposerOpen(false);
+            setCurrentEmailFile(null);
+          }}
+          attachment={currentEmailFile ? {
+            id: currentEmailFile.id,
             fileName: currentEmailFile.title,
-            documentType: documentType,
-            watermark: emailData.attachment?.watermark || false
-          });
-          setToastMessage({
-            message: "Email sent successfully with PDF attachment!",
-            type: "success"
-          });
-          setEmailComposerOpen(false);
-          setCurrentEmailFile(null);
-        }}
-        attachment={currentEmailFile ? {
-          id: currentEmailFile.id,
-          fileName: currentEmailFile.title,
-          documentType: (currentEmailFile.fileType === 'version_pdf' ? 'version' :
-                        currentEmailFile.fileType === 'attached_pdf' ? 'manual-upload' :
-                        currentEmailFile.fileType === 'version_log' ? 'version-log' : 'agreement'),
-          watermark: currentEmailFile.fileType === 'version_pdf' ? (fileWatermarkStates.get(currentEmailFile.id) || false) : false
-        } : undefined}
+            documentType: getDocumentTypeForSavedFile(currentEmailFile),
+            watermark: currentEmailFile.fileType === 'version_pdf' ? (fileWatermarkStates.get(currentEmailFile.id) || false) : false
+          } : undefined}
         defaultSubject={defaultEmailTemplate?.subject || (currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : '')}
         defaultBody={defaultEmailTemplate?.body || (currentEmailFile ? `Hello,\n\nPlease find the document attached.\n\nDocument: ${currentEmailFile.title}\n\nBest regards` : '')}
       />
