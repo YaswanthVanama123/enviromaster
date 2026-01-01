@@ -1332,9 +1332,19 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     return 'Professional cleaning product for commercial use';
   };
 
-  const ProductsReferenceTable = () => {
-    const productsForReference = getProductsForColumn("products", allProducts);
+  // ✅ PERFORMANCE: Memoize filtered products for reference tables
+  const productsForReference = useMemo(() =>
+    getProductsForColumn("products", allProducts),
+    [allProducts]
+  );
 
+  const dispensersForReference = useMemo(() =>
+    getProductsForColumn("dispensers", allProducts),
+    [allProducts]
+  );
+
+  // ✅ PERFORMANCE: Memoize reference table component
+  const ProductsReferenceTable = useMemo(() => {
     return (
       <div className="reference-table-container">
         <div className="prod__ribbon">
@@ -1422,7 +1432,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         </div>
       </div>
     );
-  };
+  }, [productsForReference]); // Close useMemo with dependency array
 
   // Helper function to get dispenser description
   const getDispenserDescription = (dispenser: EnvProduct): string => {
@@ -1485,9 +1495,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     return descriptions['dispensers'];
   };
 
-  const DispensersReferenceTable = () => {
-    const dispensersForReference = getProductsForColumn("dispensers", allProducts);
-
+  // ✅ PERFORMANCE: Memoize DispensersReferenceTable
+  const DispensersReferenceTable = useMemo(() => {
     return (
       <div className="reference-table-container">
         <div className="prod__ribbon">
@@ -1585,7 +1594,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         </div>
       </div>
     );
-  };
+  }, [dispensersForReference]); // Close useMemo with dependency array
 
   // ---------------------------
   // Tab Navigation Component
@@ -2273,8 +2282,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           {currentTab === 'form' && (
             isDesktop ? DesktopTable() : GroupedTables()
           )}
-          {currentTab === 'products' && <ProductsReferenceTable />}
-          {currentTab === 'dispensers' && <DispensersReferenceTable />}
+          {currentTab === 'products' && ProductsReferenceTable}
+          {currentTab === 'dispensers' && DispensersReferenceTable}
         </>
       )}
     </section>

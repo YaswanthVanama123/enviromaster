@@ -1038,6 +1038,7 @@ function FormFillingContent() {
               fromBackend.agreement?.customerExecutedOn ?? "",
             additionalMonths:
               fromBackend.agreement?.additionalMonths ?? "",
+            paymentOption: fromBackend.agreement?.paymentOption, // ✅ Include payment option for edit mode
           },
           customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
           serviceAgreement: fromBackend.serviceAgreement, // ✅ Include service agreement data for editing
