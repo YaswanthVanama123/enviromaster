@@ -17,6 +17,7 @@ type LocationState = {
   fromEdit?: boolean; // Added to track if coming from edit
   originalReturnPath?: string; // Added to track original source
   originalReturnState?: any; // Added to track original state
+  includeDeleted?: boolean; // Support navigation from trash/log downloads
 };
 
 export default function PDFViewer() {
@@ -29,7 +30,8 @@ export default function PDFViewer() {
     watermark: initialWatermark = false, // ✅ NEW: Get initial watermark preference
     fromEdit = false,
     originalReturnPath,
-    originalReturnState
+    originalReturnState,
+    includeDeleted = false
   } = (location.state || {}) as LocationState;
 
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -58,8 +60,8 @@ export default function PDFViewer() {
 
         // ✅ NEW: Handle log files (TXT) separately
         if (documentType === 'version-log') {
-          console.log(`📝 [PDF-VIEWER] Fetching log file (TXT) for document ${documentId}`);
-          const blob = await pdfApi.downloadVersionLog(documentId);
+          console.log(`📝 [PDF-VIEWER] Fetching log file (TXT) for document ${documentId} includeDeleted=${includeDeleted}`);
+          const blob = await pdfApi.downloadVersionLog(documentId, includeDeleted);
           const text = await blob.text();
           setTextContent(text);
           console.log(`✅ [PDF-VIEWER] Log file loaded successfully`);

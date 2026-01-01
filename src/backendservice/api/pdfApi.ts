@@ -1033,9 +1033,9 @@ export const pdfApi = {
   /**
    * ✅ SIMPLIFIED: Download version log (from Logs collection)
    */
-  async downloadVersionLog(logId: string): Promise<Blob> {
+  async downloadVersionLog(logId: string, includeDeleted = false): Promise<Blob> {
     const res = await axios.get(
-      `${API_BASE_URL}/api/pdf/logs/${logId}/download`,
+      `${API_BASE_URL}/api/pdf/logs/${logId}/download${includeDeleted ? "?includeDeleted=true" : ""}`,
       {
         responseType: "blob",
       }

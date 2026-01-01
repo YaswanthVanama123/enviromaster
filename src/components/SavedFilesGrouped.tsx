@@ -2,7 +2,7 @@
 // ✅ NEW: Folder-like grouped view with checkboxes and bulk actions
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { pdfApi, emailApi } from "../backendservice/api";
+import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import type { SavedFileListItem, SavedFileGroup } from "../backendservice/api/pdfApi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
@@ -341,43 +341,62 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
   const isGroupExpanded = (groupId: string) => expandedGroups.has(groupId);
 
   // ✅ OPTIMIZED: File action handlers with on-demand detailed data fetching
+  const isTrashMode = mode === "trash";
+
   const handleView = async (file: SavedFileListItem) => {
     try {
-      // ✅ FIXED: Different API calls for different file types
-      if (file.fileType === 'version_pdf') {
-        // ✅ For version PDFs, navigate directly to viewer (no need to fetch details)
-        console.log(`👁️ [VIEW VERSION] Viewing version PDF: ${file.id}`);
+      if (file.fileType === "version_log") {
+        console.log("?? [VIEW LOG] Navigating to PDF viewer", file.id);
         navigate("/pdf-viewer", {
           state: {
             documentId: file.id,
             fileName: file.title,
             originalReturnPath: returnPath,
-            fileType: 'version_pdf' // ✅ Pass file type for proper handling
+            documentType: "version-log",
+            fileType: "version_log",
+            includeDeleted: isTrashMode
           },
         });
-      } else if (file.fileType === 'attached_pdf') {
-        // ✅ For attached PDFs, navigate directly to viewer
-        console.log(`👁️ [VIEW ATTACHED] Viewing attached PDF: ${file.id}`);
-        navigate("/pdf-viewer", {
-          state: {
-            documentId: file.id,
-            fileName: file.title,
-            originalReturnPath: returnPath,
-            fileType: 'attached_pdf' // ✅ Pass file type for proper handling
-          },
-        });
-      } else {
-        // ✅ For main agreement files, use the original logic
-        console.log(`👁️ [VIEW] Loading detailed data for file: ${file.id}`);
-        await pdfApi.getSavedFileDetails(file.id);
-        navigate("/pdf-viewer", {
-          state: {
-            documentId: file.id,
-            fileName: file.title,
-            originalReturnPath: returnPath,
-          },
-        });
+        return;
       }
+
+      if (file.fileType === "attached_pdf") {
+        console.log("?? [VIEW ATTACHED] Navigating to PDF viewer", file.id);
+        navigate("/pdf-viewer", {
+          state: {
+            documentId: file.id,
+            fileName: file.title,
+            originalReturnPath: returnPath,
+            documentType: "manual-upload",
+            fileType: "attached_pdf"
+          },
+        });
+        return;
+      }
+
+      if (file.fileType === "version_pdf") {
+        console.log("?? [VIEW VERSION] Navigating to PDF viewer", file.id);
+        navigate("/pdf-viewer", {
+          state: {
+            documentId: file.id,
+            fileName: file.title,
+            originalReturnPath: returnPath,
+            documentType: "version",
+            fileType: "version_pdf"
+          },
+        });
+        return;
+      }
+
+      console.log(`?? [VIEW] Loading detailed data for file: ${file.id}`);
+      await pdfApi.getSavedFileDetails(file.id);
+      navigate("/pdf-viewer", {
+        state: {
+          documentId: file.id,
+          fileName: file.title,
+          originalReturnPath: returnPath,
+        },
+      });
     } catch (err) {
       setToastMessage({
         message: "Unable to load this document. Please try again.",
@@ -388,18 +407,34 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
 
   const handleDownload = async (file: SavedFileListItem) => {
     try {
-      const blob = await pdfApi.downloadPdf(file.id);
+      let blob: Blob;
+      let fileName = file.title;
+
+      if (file.fileType === "version_log") {
+        blob = await pdfApi.downloadVersionLog(file.id, isTrashMode);
+        fileName = file.fileName || file.title;
+      } else if (file.fileType === "attached_pdf") {
+        blob = await manualUploadApi.downloadFile(file.id);
+        fileName = file.fileName || file.title;
+      } else if (file.fileType === "version_pdf") {
+        blob = await pdfApi.downloadVersionPdf(file.id);
+        fileName = file.fileName || file.title;
+      } else {
+        blob = await pdfApi.downloadPdf(file.id);
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeName = (file.title || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_") + ".pdf";
-      a.download = safeName;
+      const safeName = (fileName || "EnviroMaster_Document").replace(/[^\w\-]+/g, "_");
+      const extension = file.fileType === "version_log" ? ".txt" : ".pdf";
+      a.download = safeName.endsWith(extension) ? safeName : safeName + extension;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setToastMessage({ message: "Unable to download this PDF. Please try again.", type: "error" });
+      setToastMessage({ message: "Unable to download this file. Please try again.", type: "error" });
     }
   };
 
