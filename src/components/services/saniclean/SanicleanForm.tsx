@@ -517,9 +517,11 @@ export const SanicleanForm: React.FC<
         },
 
         fixtureBreakdown: (() => {
-          const fixtureRate = form.location === "insideBeltway"
-            ? form.insideBeltwayRatePerFixture
-            : form.outsideBeltwayRatePerFixture;
+          const fixtureRate = form.pricingMode === "all_inclusive"
+            ? form.allInclusiveWeeklyRatePerFixture
+            : form.location === "insideBeltway"
+              ? form.insideBeltwayRatePerFixture
+              : form.outsideBeltwayRatePerFixture;
           const createLine = (label: string, quantity: number, orderNo: number) => ({
             isDisplay: true,
             orderNo,
