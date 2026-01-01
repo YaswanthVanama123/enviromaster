@@ -368,7 +368,13 @@ export const SanicleanForm: React.FC<
       const microfiberTotal =
         (form.microfiberBathrooms || 0) * (form.microfiberMoppingPerBathroom || 0);
 
-      addLineExtra("Luxury Upgrade", luxuryUpgradeWeekly, "line", EXTRA_ORDER.luxuryUpgrade);
+      addAtChargeExtra(
+        "Luxury Upgrade",
+        luxuryUpgradeQty,
+        form.luxuryUpgradePerDispenser,
+        luxuryUpgradeWeekly,
+        EXTRA_ORDER.luxuryUpgrade
+      );
       addAtChargeExtra("Urinal Screens", form.urinalScreensQty, form.urinalScreenMonthly, urinalScreensTotal, EXTRA_ORDER.urinalScreens);
       addAtChargeExtra("Urinal Mats", form.urinalMatsQty, form.urinalMatMonthly, urinalMatsTotal, EXTRA_ORDER.urinalMats);
       addAtChargeExtra("Toilet Clips", form.toiletClipsQty, form.toiletClipsMonthly, toiletClipsTotal, EXTRA_ORDER.toiletClips);
