@@ -1,0 +1,109 @@
+# ============================================================================
+# Render Deployment Configuration - Frontend (Static Site)
+# ============================================================================
+# This file configures automatic deployment on Render
+# Learn more: https://render.com/docs/blueprint-spec
+
+services:
+  # Frontend Static Site
+  - type: web
+    name: enviromaster-frontend
+    env: static
+    region: oregon  # Choose your preferred region
+    plan: free  # Free tier for testing (can upgrade to starter later)
+
+    # Build settings
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+
+    # Custom headers for security and caching
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      # Cache static assets for 1 year
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      # Don't cache HTML files
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+
+    # Routes configuration (for SPA routing)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    # Environment variables (configure these in Render Dashboard)
+    envVars:
+      # ===== API CONFIGURATION =====
+      # Backend API URL - Set this to your deployed backend URL
+      # Example: https://enviromaster-backend.onrender.com
+      - key: VITE_API_BASE_URL
+        sync: false  # Set manually in dashboard after backend deployment
+
+# ============================================================================
+# Deployment Instructions:
+# ============================================================================
+#
+# 1. Deploy Backend First:
+#    - Make sure your backend is deployed and running
+#    - Get the backend URL (e.g., https://enviromaster-backend.onrender.com)
+#
+# 2. Push Frontend Code to GitHub:
+#    - Commit all your changes
+#    - Push to your GitHub repository
+#
+# 3. Connect to Render:
+#    - Go to https://dashboard.render.com/
+#    - Click "New +" → "Static Site"
+#    - Connect your GitHub repository
+#    - Select the frontend repository/folder
+#
+# 4. Configure Build Settings:
+#    - Build Command: npm install && npm run build
+#    - Publish Directory: dist
+#    - Branch: main (or your preferred branch)
+#
+# 5. Configure Environment Variables (IMPORTANT):
+#    - Go to Environment tab in Render Dashboard
+#    - Add: VITE_API_BASE_URL = https://your-backend-url.onrender.com
+#    - NO trailing slash!
+#    - Save changes and trigger redeploy
+#
+# 6. Update Backend CORS:
+#    - Go to your backend service in Render
+#    - Add your frontend URL to ALLOWED_ORIGINS environment variable
+#    - Example: https://enviromaster-frontend.onrender.com
+#    - This allows the frontend to make API requests to the backend
+#
+# 7. Test Deployment:
+#    - Visit your frontend URL
+#    - Check browser console for any errors
+#    - Test API connectivity (try login, create proposal, etc.)
+#
+# ============================================================================
+# Troubleshooting:
+# ============================================================================
+#
+# Issue: "Failed to fetch" or CORS errors
+# Solution: Make sure VITE_API_BASE_URL is correct and backend ALLOWED_ORIGINS includes your frontend URL
+#
+# Issue: Routes not working (404 on refresh)
+# Solution: Ensure the routes configuration is set (see above) to rewrite all paths to index.html
+#
+# Issue: Environment variables not working
+# Solution: Vite requires VITE_ prefix. Make sure to rebuild after changing env vars.
+#
+# ============================================================================
