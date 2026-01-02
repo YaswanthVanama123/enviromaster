@@ -99,6 +99,7 @@ type AgreementPayload = {
   customerExecutedOn: string;
   additionalMonths: string;
   paymentOption?: PaymentOption;
+  startDate?: string; // ✅ NEW: Agreement start date for expiry tracking
 };
 
 const PAYMENT_OPTION_DETAILS: { value: PaymentOption; label: string; description: string }[] = [
@@ -153,9 +154,11 @@ const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 // Displays global contract months and total agreement amount
 type ContractSummaryProps = {
   productTotals?: ProductTotals;
+  initialStartDate?: string; // ✅ NEW: Load start date from backend
+  onStartDateChange?: (startDate: string) => void; // ✅ NEW: Notify parent of start date changes
 };
 
-function ContractSummary({ productTotals }: ContractSummaryProps) {
+function ContractSummary({ productTotals, initialStartDate, onStartDateChange }: ContractSummaryProps) {
   const {
     globalContractMonths,
     setGlobalContractMonths,
@@ -191,6 +194,25 @@ function ContractSummary({ productTotals }: ContractSummaryProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tripFreqDropdownRef = useRef<HTMLDivElement>(null);
   const parkingFreqDropdownRef = useRef<HTMLDivElement>(null);
+
+  // ✅ NEW: Agreement Timeline - Start Date & Expiry Tracking
+  const [agreementStartDate, setAgreementStartDate] = useState<string>(() => {
+    // Use initialStartDate from props if available, otherwise default to today
+    if (initialStartDate) {
+      return initialStartDate;
+    }
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [expiryDate, setExpiryDate] = useState<Date | null>(null);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [expiryStatus, setExpiryStatus] = useState<'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired'>('safe');
+
+  // ✅ NEW: Notify parent when start date changes
+  const handleStartDateChange = (newDate: string) => {
+    setAgreementStartDate(newDate);
+    onStartDateChange?.(newDate);
+  };
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
@@ -233,6 +255,70 @@ function ContractSummary({ productTotals }: ContractSummaryProps) {
     setpricingIndicator(indicator);
     setAmountToGreenLine(amountNeeded);
   }, [totalOriginal, totalMinimum]);
+
+  // ✅ NEW: Calculate Agreement Expiry & Days Remaining with "Yet to Start" status
+  useEffect(() => {
+    if (!agreementStartDate || !globalContractMonths || globalContractMonths <= 0) {
+      setExpiryDate(null);
+      setDaysRemaining(null);
+      setExpiryStatus('safe');
+      return;
+    }
+
+    // Calculate expiry date: start date + contract months
+    const startDate = new Date(agreementStartDate);
+    const calculatedExpiryDate = new Date(startDate);
+    calculatedExpiryDate.setMonth(calculatedExpiryDate.getMonth() + globalContractMonths);
+    setExpiryDate(calculatedExpiryDate);
+
+    // Calculate days remaining
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time for accurate day comparison
+    const startDateMidnight = new Date(startDate);
+    startDateMidnight.setHours(0, 0, 0, 0);
+    const expiryDateMidnight = new Date(calculatedExpiryDate);
+    expiryDateMidnight.setHours(0, 0, 0, 0);
+
+    // Check if agreement hasn't started yet (future start date)
+    const daysUntilStart = Math.ceil((startDateMidnight.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilStart > 0) {
+      // Agreement hasn't started yet - show "Yet to Start"
+      setDaysRemaining(daysUntilStart);
+      setExpiryStatus('yet-to-start' as any);
+
+      console.log('📅 [AGREEMENT TIMELINE] Yet to Start:', {
+        startDate: agreementStartDate,
+        daysUntilStart,
+        status: 'yet-to-start'
+      });
+      return;
+    }
+
+    // Agreement has started - calculate days until expiry
+    const timeDiff = expiryDateMidnight.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    setDaysRemaining(daysDiff);
+
+    // Determine expiry status with color coding
+    if (daysDiff < 0) {
+      setExpiryStatus('expired'); // Red - Already expired
+    } else if (daysDiff <= 30) {
+      setExpiryStatus('critical'); // Red - 30 days or less
+    } else if (daysDiff <= 90) {
+      setExpiryStatus('warning'); // Orange/Yellow - 31-90 days
+    } else {
+      setExpiryStatus('safe'); // Green - More than 90 days
+    }
+
+    console.log('📅 [AGREEMENT TIMELINE] Active Agreement:', {
+      startDate: agreementStartDate,
+      contractMonths: globalContractMonths,
+      expiryDate: calculatedExpiryDate.toISOString().split('T')[0],
+      daysRemaining: daysDiff,
+      status: daysDiff < 0 ? 'expired' : daysDiff <= 30 ? 'critical' : daysDiff <= 90 ? 'warning' : 'safe'
+    });
+  }, [agreementStartDate, globalContractMonths]);
 
   const handleContractMonthsChange = (months: number) => {
     setGlobalContractMonths(months);
@@ -398,6 +484,116 @@ function ContractSummary({ productTotals }: ContractSummaryProps) {
               )}
             </div>
           </div>
+
+          {/* ✅ NEW: Agreement Start Date */}
+          <div className="contract-field-group">
+            <label htmlFor="agreement-start-date" className="contract-label">
+              <span className="label-icon">
+                <FontAwesomeIcon icon={faCalendarDays} />
+              </span>
+              Agreement Start Date
+            </label>
+            <input
+              id="agreement-start-date"
+              type="date"
+              value={agreementStartDate}
+              onChange={(e) => handleStartDateChange(e.target.value)}
+              className="contract-input"
+              style={{
+                padding: '8px 12px',
+                fontSize: '14px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                width: '100%'
+              }}
+            />
+          </div>
+
+          {/* ✅ NEW: Agreement Expiry Timeline */}
+          {expiryDate && daysRemaining !== null && (
+            <div className="contract-field-group">
+              <div className="agreement-timeline-section">
+                <div className="timeline-header">
+                  <label className="contract-label">
+                    <span className="label-icon">
+                      <FontAwesomeIcon icon={faCalendarDays} />
+                    </span>
+                    Agreement Timeline
+                  </label>
+                </div>
+
+                {/* Expiry Status Badge */}
+                <div className={`expiry-status-badge expiry-status-${expiryStatus}`}>
+                  <div className="badge-content">
+                    <div className="badge-icon">
+                      {expiryStatus === 'yet-to-start' && '📅'}
+                      {expiryStatus === 'expired' && '🔴'}
+                      {expiryStatus === 'critical' && '🔴'}
+                      {expiryStatus === 'warning' && '⚠️'}
+                      {expiryStatus === 'safe' && '✅'}
+                    </div>
+                    <div className="badge-info">
+                      <div className="badge-title">
+                        {expiryStatus === 'yet-to-start' && 'Yet to Start'}
+                        {expiryStatus === 'expired' && 'Inactive'}
+                        {expiryStatus === 'critical' && 'Expiring Soon'}
+                        {expiryStatus === 'warning' && 'Renewal Approaching'}
+                        {expiryStatus === 'safe' && 'Active Agreement'}
+                      </div>
+                      <div className="badge-subtitle">
+                        {expiryStatus === 'yet-to-start'
+                          ? `Starts in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}`
+                          : expiryStatus === 'expired'
+                          ? `Inactive from ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? 'day' : 'days'}`
+                          : `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} remaining`
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline Bar */}
+                <div className="timeline-bar-container">
+                  <div className="timeline-bar">
+                    <div
+                      className={`timeline-progress timeline-progress-${expiryStatus}`}
+                      style={{
+                        width: expiryStatus === 'yet-to-start'
+                          ? '0%'
+                          : expiryStatus === 'expired'
+                          ? '100%'
+                          : `${Math.max(0, Math.min(100, ((globalContractMonths * 30 - daysRemaining) / (globalContractMonths * 30)) * 100))}%`
+                      }}
+                    />
+                  </div>
+                  <div className="timeline-labels">
+                    <span className="timeline-start">Start: {new Date(agreementStartDate).toLocaleDateString()}</span>
+                    <span className="timeline-end">Expires: {expiryDate.toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {/* Days Breakdown */}
+                <div className="timeline-stats">
+                  <div className="timeline-stat">
+                    <span className="stat-label">Total Duration</span>
+                    <span className="stat-value">{globalContractMonths} months</span>
+                  </div>
+                  <div className="timeline-stat">
+                    <span className="stat-label">Days Passed</span>
+                    <span className="stat-value">
+                      {Math.max(0, (globalContractMonths * 30) - (daysRemaining >= 0 ? daysRemaining : 0))} days
+                    </span>
+                  </div>
+                  <div className="timeline-stat">
+                    <span className="stat-label">Days Remaining</span>
+                    <span className={`stat-value stat-${expiryStatus}`}>
+                      {daysRemaining >= 0 ? `${daysRemaining} days` : `Expired`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Trip Charge */}
           <div className="contract-field-group">
@@ -693,6 +889,12 @@ function FormFillingContent() {
     contractTotal: 0,
   });
 
+  // ✅ NEW: Agreement start date for expiry tracking
+  const [agreementStartDate, setAgreementStartDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+
   // ✅ NEW: Access ServicesContext for pricing calculations
   const {
     getTotalOriginalPerVisit,
@@ -714,6 +916,11 @@ function FormFillingContent() {
     if (!payload) return;
     const option = payload.agreement?.paymentOption as PaymentOption | undefined;
     setPaymentOption(option ?? "online");
+
+    // ✅ NEW: Load start date from payload if available
+    if (payload.agreement?.startDate) {
+      setAgreementStartDate(payload.agreement.startDate);
+    }
   }, [payload]);
 
   const currentPaymentLabel = PAYMENT_OPTION_DETAILS.find((entry) => entry.value === paymentOption)?.label ?? "Payment Option";
@@ -1039,6 +1246,7 @@ function FormFillingContent() {
             additionalMonths:
               fromBackend.agreement?.additionalMonths ?? "",
             paymentOption: fromBackend.agreement?.paymentOption, // ✅ Include payment option for edit mode
+            startDate: fromBackend.agreement?.startDate, // ✅ NEW: Include start date for expiry tracking
           },
           customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
           serviceAgreement: fromBackend.serviceAgreement, // ✅ Include service agreement data for editing
@@ -1181,6 +1389,7 @@ function FormFillingContent() {
       agreement: {
         ...agreementBase,
         paymentOption,
+        startDate: agreementStartDate, // ✅ NEW: Include start date for expiry tracking
       },
       serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
@@ -2043,7 +2252,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             <ServicesDataCollector ref={servicesRef} />
 
             {/* ✅ NEW: Contract Summary - Global contract months and total agreement amount */}
-            <ContractSummary productTotals={productTotals} />
+            <ContractSummary
+              productTotals={productTotals}
+              initialStartDate={agreementStartDate}
+              onStartDateChange={setAgreementStartDate}
+            />
 
             <div className="formfilling__payment-options">
               <div className="formfilling__payment-options-header">

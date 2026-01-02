@@ -10,6 +10,7 @@ import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
 import EmailTemplateManager from "./admin/EmailTemplateManager";
+import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt,
@@ -717,6 +718,16 @@ export default function AdminPanel() {
                                   <span style={{ color: '#6b7280', fontSize: '12px' }}>
                                     ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
                                   </span>
+                                  {/* ✅ NEW: Agreement Timeline Badge */}
+                                  {agreement.startDate && agreement.contractMonths && (
+                                    <AgreementTimelineBadge
+                                      startDate={agreement.startDate}
+                                      contractMonths={agreement.contractMonths}
+                                      compact={true}
+                                      showCalendarIcon={false}
+                                      agreementId={agreement.id}
+                                    />
+                                  )}
                                 </div>
                               </td>
                               <td>Agreement</td>

@@ -23,6 +23,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComposer"; // ✅ NEW: Import EmailAttachment type
 import { ZohoUpload } from "./ZohoUpload";
+import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
@@ -498,6 +499,7 @@ export default function SavedFilesAgreements() {
   const [totalFiles, setTotalFiles] = useState(0);
   const [agreementsPerPage] = useState(20);
   const [query, setQuery] = useState("");
+  const [timelineFilter, setTimelineFilter] = useState<'all' | 'yet-to-start' | 'active' | 'inactive'>('all'); // ✅ NEW: Timeline filter
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
@@ -730,12 +732,63 @@ export default function SavedFilesAgreements() {
         return (a.agreementTitle || "").localeCompare(b.agreementTitle || "");
       });
 
-      setAgreements(sortedAgreements);
+      // ✅ NEW: Filter by timeline status if filter is applied
+      const filteredAgreements = timelineFilter === 'all' ? sortedAgreements : sortedAgreements.filter(agreement => {
+        // Calculate timeline status for this agreement
+        if (!agreement.startDate || !agreement.contractMonths) {
+          return false; // Agreements without timeline data don't match any filter
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const startDate = new Date(agreement.startDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        const expiryDate = new Date(startDate);
+        expiryDate.setMonth(expiryDate.getMonth() + agreement.contractMonths);
+
+        const daysUntilStart = Math.ceil((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Determine status
+        let status: 'yet-to-start' | 'active' | 'inactive';
+        if (daysUntilStart > 0) {
+          status = 'yet-to-start';
+        } else if (daysRemaining <= 0) {
+          status = 'inactive';
+        } else {
+          status = 'active';
+        }
+
+        return status === timelineFilter;
+      });
+
+      setAgreements(filteredAgreements);
       setTotalAgreements(groupedResponse.totalGroups);
-      setTotalFiles(allAgreements.reduce((sum, agreement) => sum + agreement.files.length, 0));
+      setTotalFiles(filteredAgreements.reduce((sum, agreement) => sum + agreement.files.length, 0));
       setCurrentPage(page);
 
-      console.log(`✅ [API-CALL] Loaded ${allAgreements.length} agreements, ${groupedResponse.totalGroups} total`);
+      // ✅ DEBUG: Log timeline data for ALL agreements to verify backend data
+      const agreementsWithTimeline = allAgreements.filter(a => a.startDate && a.contractMonths);
+      const agreementsWithoutTimeline = allAgreements.filter(a => !a.startDate || !a.contractMonths);
+      console.log(`📅 [TIMELINE-DEBUG] Timeline data summary:`, {
+        totalAgreements: allAgreements.length,
+        withTimeline: agreementsWithTimeline.length,
+        withoutTimeline: agreementsWithoutTimeline.length,
+        sampleWithTimeline: agreementsWithTimeline.slice(0, 2).map(a => ({
+          title: a.agreementTitle,
+          startDate: a.startDate,
+          contractMonths: a.contractMonths
+        })),
+        sampleWithoutTimeline: agreementsWithoutTimeline.slice(0, 2).map(a => ({
+          title: a.agreementTitle,
+          startDate: a.startDate,
+          contractMonths: a.contractMonths
+        }))
+      });
+
+      console.log(`✅ [API-CALL] Loaded ${filteredAgreements.length}/${allAgreements.length} agreements (timeline filter: ${timelineFilter}), ${groupedResponse.totalGroups} total`);
     } catch (err) {
       console.error("❌ [API-CALL] Error fetching agreements:", err);
       setError("Unable to load agreements. Please try again.");
@@ -784,7 +837,7 @@ export default function SavedFilesAgreements() {
       return;
     }
 
-    console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}"`);
+    console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}" or timeline filter changed to: "${timelineFilter}"`);
 
     // Debounce search to avoid excessive API calls while typing
     const timeoutId = setTimeout(() => {
@@ -793,7 +846,7 @@ export default function SavedFilesAgreements() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, isTrashView]); // Add isTrashView to dependencies
+  }, [query, isTrashView, timelineFilter]); // ✅ NEW: Add timelineFilter to dependencies
 
   // Load default email template on mount
   useEffect(() => {
@@ -1298,6 +1351,33 @@ export default function SavedFilesAgreements() {
           />
         </div>
 
+        {/* ✅ NEW: Timeline filter dropdown */}
+        <div style={{ marginLeft: '12px' }}>
+          <select
+            value={timelineFilter}
+            onChange={(e) => {
+              const newFilter = e.target.value as 'all' | 'yet-to-start' | 'active' | 'inactive';
+              setTimelineFilter(newFilter);
+              console.log(`🔍 [TIMELINE-FILTER] Changed to: ${newFilter}`);
+              // ✅ NOTE: No need to call fetchAgreements here - the useEffect will handle it
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              minWidth: '160px'
+            }}
+          >
+            <option value="all">All Agreements</option>
+            <option value="yet-to-start">⏳ Yet to Start</option>
+            <option value="active">✅ Active</option>
+            <option value="inactive">❌ Inactive</option>
+          </select>
+        </div>
+
         {/* Bulk actions toolbar */}
         <div className="sf__actions">
           {hasSelectedFiles && (
@@ -1551,6 +1631,36 @@ export default function SavedFilesAgreements() {
                       }}>
                         📝 {getStatusConfig('draft').label}
                       </span>
+                  )}
+                  {/* ✅ NEW: Agreement Timeline Badge */}
+                  {agreement.startDate && agreement.contractMonths && (
+                    <AgreementTimelineBadge
+                      startDate={agreement.startDate}
+                      contractMonths={agreement.contractMonths}
+                      compact={true}
+                      showCalendarIcon={!isTrashView}
+                      onDateChange={async (newDate) => {
+                        console.log(`📅 [SAVED-FILES-AGREEMENTS] Updating start date for agreement ${agreement.id}: ${newDate}`);
+                        try {
+                          await pdfApi.updateCustomerHeader(agreement.id, {
+                            agreement: { startDate: newDate }
+                          } as any);
+                          setToastMessage({
+                            message: "Agreement start date updated successfully!",
+                            type: "success"
+                          });
+                          // Refresh the list to show updated timeline
+                          fetchAgreements(currentPage, query);
+                        } catch (error) {
+                          console.error("Failed to update start date:", error);
+                          setToastMessage({
+                            message: "Failed to update start date. Please try again.",
+                            type: "error"
+                          });
+                        }
+                      }}
+                      agreementId={agreement.id}
+                    />
                   )}
                 </div>
                 {isTrashView && agreementDeletionInfo && (

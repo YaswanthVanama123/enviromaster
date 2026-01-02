@@ -1,0 +1,311 @@
+/* ====================================================================
+   AGREEMENT TIMELINE BADGE - COMPACT COMPONENT FOR FOLDER/LIST VIEWS
+   ==================================================================== */
+
+/* Compact Badge Container */
+.timeline-badge-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+/* Color Coding */
+.timeline-badge-yet-to-start {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 1.5px solid #2196f3;
+  color: #1565c0;
+}
+
+.timeline-badge-safe {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border: 1.5px solid #28a745;
+  color: #155724;
+}
+
+.timeline-badge-warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1.5px solid #ffc107;
+  color: #856404;
+}
+
+.timeline-badge-critical {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border: 1.5px solid #dc3545;
+  color: #721c24;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.timeline-badge-expired {
+  background: linear-gradient(135deg, #f8d7da 0%, #e6a1a6 100%);
+  border: 1.5px solid #dc3545;
+  color: #721c24;
+}
+
+/* Pulse Animation for Critical */
+@keyframes pulse-badge {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+  }
+}
+
+/* Badge Content */
+.timeline-badge-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-badge-icon {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timeline-badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.timeline-badge-status {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.timeline-badge-days {
+  font-size: 11px;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+/* Calendar Icon Button */
+.timeline-badge-calendar {
+  position: relative;
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.timeline-calendar-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.timeline-calendar-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.timeline-calendar-btn:active {
+  transform: scale(0.95);
+}
+
+/* Date Picker Popup */
+.timeline-date-picker-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timeline-date-picker-popup label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 6px;
+}
+
+.timeline-date-picker-popup input[type="date"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.timeline-date-picker-popup input[type="date"]:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Date Picker Actions */
+.timeline-date-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.timeline-date-save,
+.timeline-date-cancel {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timeline-date-save {
+  background: #28a745;
+  color: #ffffff;
+}
+
+.timeline-date-save:hover {
+  background: #218838;
+}
+
+.timeline-date-cancel {
+  background: #6c757d;
+  color: #ffffff;
+}
+
+.timeline-date-cancel:hover {
+  background: #5a6268;
+}
+
+/* ====================================================================
+   FULL/NON-COMPACT VERSION (Optional)
+   ==================================================================== */
+
+.timeline-badge-full {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid;
+  margin: 12px 0;
+}
+
+.timeline-badge-full.timeline-badge-yet-to-start {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #2196f3;
+}
+
+.timeline-badge-full.timeline-badge-safe {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  border-color: #28a745;
+}
+
+.timeline-badge-full.timeline-badge-warning {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-color: #ffc107;
+}
+
+.timeline-badge-full.timeline-badge-critical {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border-color: #dc3545;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.timeline-badge-full.timeline-badge-expired {
+  background: linear-gradient(135deg, #f8d7da 0%, #e6a1a6 100%);
+  border-color: #dc3545;
+}
+
+.timeline-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.timeline-badge-icon-large {
+  font-size: 32px;
+}
+
+.timeline-badge-info {
+  flex: 1;
+}
+
+.timeline-badge-title {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.timeline-badge-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.timeline-badge-dates {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6c757d;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .timeline-badge-compact {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .timeline-badge-icon {
+    font-size: 14px;
+  }
+
+  .timeline-badge-status {
+    font-size: 11px;
+  }
+
+  .timeline-badge-days {
+    font-size: 10px;
+  }
+
+  .timeline-date-picker-popup {
+    right: auto;
+    left: 0;
+    min-width: 180px;
+  }
+}

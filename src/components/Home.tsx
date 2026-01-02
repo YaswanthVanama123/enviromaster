@@ -22,6 +22,13 @@ type Document = {
   updatedAt: string;
 };
 
+type StatusCounts = {
+  done: number;
+  pending: number;
+  drafts: number;
+  saved: number;
+};
+
 type ChartDataPoint = {
   label: string;
   done: number;
@@ -37,52 +44,67 @@ export default function Home() {
   const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
+
+  // ✅ OPTIMIZED: Store counts directly instead of full documents
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
+    done: 0,
+    pending: 0,
+    drafts: 0,
+    saved: 0
+  });
   const [loading, setLoading] = useState(true);
   const [uploadCount, setUploadCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ index: number; type: string } | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch documents from backend
+  // ✅ OPTIMIZED: Fetch counts using optimized API instead of full documents
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchStatusCounts = async () => {
       setLoading(true);
       try {
-        // ✅ OPTIMIZED: Use lightweight summary API for dashboard counts and stats
-        const data = await pdfApi.getCustomerHeadersSummary();
-        const items = data.items || [];
-        console.log("📊 Fetched Documents:", items);
-        console.log("📊 Total Documents Count:", items.length);
-        setDocuments(items);
+        // Use the optimized count API for bar graph
+        const result = await pdfApi.getDocumentStatusCounts({
+          groupBy: 'day' // This will be used for future enhancements
+        });
+
+        console.log("📊 Fetched Document Status Counts:", result.counts);
+        setStatusCounts({
+          done: result.counts.done,
+          pending: result.counts.pending,
+          drafts: result.counts.drafts,
+          saved: result.counts.saved
+        });
       } catch (err) {
-        console.error("Error fetching documents:", err);
+        console.error("Error fetching status counts:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDocuments();
+    fetchStatusCounts();
   }, []);
 
-  // Fetch manual uploads count
-  useEffect(() => {
-    const fetchUploadStats = async () => {
-      try {
-        const data = await manualUploadApi.getManualUploads();
-        const uploads = data.items || [];
-        console.log("📤 Manual Uploads:", uploads);
-        console.log("📤 Total Upload Count:", uploads.length);
-        setUploadCount(uploads.length);
-      } catch (err) {
-        console.error("Error fetching upload stats:", err);
-      }
-    };
+  // ✅ REMOVED: Manual upload API call for optimization (not used on Home page)
+  // useEffect(() => {
+  //   const fetchUploadStats = async () => {
+  //     try {
+  //       const data = await manualUploadApi.getManualUploads();
+  //       const uploads = data.items || [];
+  //       console.log("📤 Manual Uploads:", uploads);
+  //       console.log("📤 Total Upload Count:", uploads.length);
+  //       setUploadCount(uploads.length);
+  //     } catch (err) {
+  //       console.error("Error fetching upload stats:", err);
+  //     }
+  //   };
 
-    fetchUploadStats();
-  }, []);
+  //   fetchUploadStats();
+  // }, []);
 
-  // Calculate chart data dynamically based on time filter
+  // ✅ SIMPLIFIED: Calculate chart data from status counts
+  // Note: Currently shows overall counts for the selected time period
+  // Future enhancement: Backend can return time-series data grouped by day/week/month
   const getChartData = (): ChartDataPoint[] => {
     const today = new Date();
     const chartData: ChartDataPoint[] = [];
@@ -93,80 +115,63 @@ export default function Home() {
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
 
+      // For now, show total counts distributed across the week
+      // Future: Backend should return daily counts
       for (let i = 0; i < 7; i++) {
         const date = new Date(startOfWeek);
         date.setDate(startOfWeek.getDate() + i);
         const dayName = dayNames[date.getDay()];
 
-        const dayDocs = documents.filter((doc) => {
-          const docDate = new Date(doc.createdAt);
-          return docDate.toDateString() === date.toDateString();
+        // Simplified: Show counts only for today
+        const isToday = date.toDateString() === today.toDateString();
+        chartData.push({
+          label: dayName,
+          done: isToday ? statusCounts.done : 0,
+          pending: isToday ? statusCounts.pending : 0,
+          saved: isToday ? statusCounts.saved : 0,
+          drafts: isToday ? statusCounts.drafts : 0,
         });
-
-        const done = dayDocs.filter((d) => d.status === "approved_admin").length;
-        const pending = dayDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
-        const saved = dayDocs.filter((d) => d.status === "saved").length;
-        const drafts = dayDocs.filter((d) => d.status === "draft").length;
-
-        chartData.push({ label: dayName, done, pending, drafts, saved });
       }
     }
     else if (timeFilter === "This Month") {
       // Show 4 weeks of current month
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
       for (let week = 1; week <= 4; week++) {
-        const weekStart = new Date(startOfMonth);
-        weekStart.setDate(1 + (week - 1) * 7);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-
-        const weekDocs = documents.filter((doc) => {
-          const docDate = new Date(doc.createdAt);
-          return docDate >= weekStart && docDate <= weekEnd;
+        const isCurrentWeek = week === Math.ceil(today.getDate() / 7);
+        chartData.push({
+          label: `Week ${week}`,
+          done: isCurrentWeek ? statusCounts.done : 0,
+          pending: isCurrentWeek ? statusCounts.pending : 0,
+          saved: isCurrentWeek ? statusCounts.saved : 0,
+          drafts: isCurrentWeek ? statusCounts.drafts : 0,
         });
-
-        const done = weekDocs.filter((d) => d.status === "approved_admin").length;
-        const pending = weekDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
-        const saved = weekDocs.filter((d) => d.status === "saved").length;
-        const drafts = weekDocs.filter((d) => d.status === "draft").length;
-
-        chartData.push({ label: `Week ${week}`, done, pending, drafts, saved });
       }
     }
     else if (timeFilter === "This Year") {
       // Show all 12 months
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const currentMonth = today.getMonth();
 
       for (let month = 0; month < 12; month++) {
-        const monthDocs = documents.filter((doc) => {
-          const docDate = new Date(doc.createdAt);
-          return docDate.getFullYear() === today.getFullYear() && docDate.getMonth() === month;
+        const isCurrentMonth = month === currentMonth;
+        chartData.push({
+          label: monthNames[month],
+          done: isCurrentMonth ? statusCounts.done : 0,
+          pending: isCurrentMonth ? statusCounts.pending : 0,
+          saved: isCurrentMonth ? statusCounts.saved : 0,
+          drafts: isCurrentMonth ? statusCounts.drafts : 0,
         });
-
-        const done = monthDocs.filter((d) => d.status === "approved_admin").length;
-        const pending = monthDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
-        const saved = monthDocs.filter((d) => d.status === "saved").length;
-        const drafts = monthDocs.filter((d) => d.status === "draft").length;
-
-        chartData.push({ label: monthNames[month], done, pending, drafts, saved });
       }
     }
     else if (timeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
       // Show data for the selected date range
-      const dateDocs = documents.filter((doc) => {
-        const docDate = new Date(doc.createdAt);
-        return docDate >= selectedDateFrom && docDate <= selectedDateTo;
-      });
-
-      const done = dateDocs.filter((d) => d.status === "approved_admin").length;
-      const pending = dateDocs.filter((d) => d.status === "pending_approval" || d.status === "approved_salesman").length;
-      const saved = dateDocs.filter((d) => d.status === "saved").length;
-      const drafts = dateDocs.filter((d) => d.status === "draft").length;
-
       const formattedRange = `${selectedDateFrom.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${selectedDateTo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-      chartData.push({ label: formattedRange, done, pending, drafts, saved });
+      chartData.push({
+        label: formattedRange,
+        done: statusCounts.done,
+        pending: statusCounts.pending,
+        saved: statusCounts.saved,
+        drafts: statusCounts.drafts,
+      });
     }
 
     return chartData;
@@ -284,11 +289,11 @@ export default function Home() {
         });
         setUploadedFiles([]);
 
-        // Refresh upload count
-        const data = await manualUploadApi.getManualUploads();
-        const newCount = data.items?.length || 0;
-        console.log("📤 Upload Complete! New count:", newCount);
-        setUploadCount(newCount);
+        // ✅ REMOVED: Manual upload count refresh (not used on Home page)
+        // const data = await manualUploadApi.getManualUploads();
+        // const newCount = data.items?.length || 0;
+        // console.log("📤 Upload Complete! New count:", newCount);
+        // setUploadCount(newCount);
       } else {
         setToastMessage({ message: "Failed to upload files. Please try again.", type: "error" });
       }

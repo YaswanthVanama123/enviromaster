@@ -14,6 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
+import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
@@ -1099,6 +1100,37 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                       }}>
                         📤 Bigin
                       </span>
+                    )}
+                    {/* ✅ NEW: Agreement Timeline Badge */}
+                    {group.startDate && group.contractMonths && (
+                      <AgreementTimelineBadge
+                        startDate={group.startDate}
+                        contractMonths={group.contractMonths}
+                        compact={true}
+                        showCalendarIcon={mode === 'normal'}
+                        onDateChange={async (newDate) => {
+                          console.log(`📅 [SAVED-FILES] Updating start date for agreement ${group.id}: ${newDate}`);
+                          try {
+                            // TODO: Add API call to update agreement start date
+                            await pdfApi.updateCustomerHeader(group.id, {
+                              agreement: { startDate: newDate }
+                            } as any);
+                            setToastMessage({
+                              message: "Agreement start date updated successfully!",
+                              type: "success"
+                            });
+                            // Refresh the list to show updated timeline
+                            await fetchGroups(currentPage, query);
+                          } catch (error) {
+                            console.error("Failed to update start date:", error);
+                            setToastMessage({
+                              message: "Failed to update start date. Please try again.",
+                              type: "error"
+                            });
+                          }
+                        }}
+                        agreementId={group.id}
+                      />
                     )}
                   </div>
                 </div>

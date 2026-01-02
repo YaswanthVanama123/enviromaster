@@ -15,6 +15,7 @@ import {
   faFileAlt, faEye, faDownload, faEnvelope, faSave, faFolder, faFolderOpen,
   faChevronDown, faChevronRight, faCheckSquare, faSquare
 } from "@fortawesome/free-solid-svg-icons";
+import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import "./ApprovalDocuments.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
@@ -608,6 +609,16 @@ export default function ApprovalDocuments() {
                       <span style={{ color: '#6b7280', fontSize: '14px' }}>
                         ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
                       </span>
+                      {/* ✅ NEW: Agreement Timeline Badge */}
+                      {agreement.startDate && agreement.contractMonths && (
+                        <AgreementTimelineBadge
+                          startDate={agreement.startDate}
+                          contractMonths={agreement.contractMonths}
+                          compact={true}
+                          showCalendarIcon={false}
+                          agreementId={agreement.id}
+                        />
+                      )}
                     </div>
                   </td>
                   <td>Agreement</td>

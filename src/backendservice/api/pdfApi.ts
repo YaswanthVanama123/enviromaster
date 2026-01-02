@@ -138,6 +138,9 @@ export interface SavedFileGroup {
   isDeleted?: boolean;
   deletedAt?: string | null;
   deletedBy?: string | null;
+  // ✅ NEW: Agreement timeline fields for expiry tracking
+  startDate?: string | null;     // Agreement start date (ISO format)
+  contractMonths?: number | null; // Contract duration in months
 }
 
 // ✅ NEW: Interface for adding files to agreement
@@ -466,6 +469,36 @@ export const pdfApi = {
     }
 
     return { items: aggregated };
+  },
+
+  /**
+   * ✅ NEW: Get optimized document status counts for Home page bar graph
+   * Returns only counts without loading full documents (much faster)
+   */
+  async getDocumentStatusCounts(options: {
+    startDate?: string;
+    endDate?: string;
+    groupBy?: 'day' | 'week' | 'month' | 'year';
+  } = {}): Promise<{
+    success: boolean;
+    counts: {
+      done: number;
+      pending: number;
+      saved: number;
+      drafts: number;
+      total: number;
+    };
+    _metadata?: any;
+  }> {
+    const params = new URLSearchParams();
+    if (options.startDate) params.append('startDate', options.startDate);
+    if (options.endDate) params.append('endDate', options.endDate);
+    if (options.groupBy) params.append('groupBy', options.groupBy);
+
+    const res = await axios.get(`${API_BASE_URL}/api/pdf/document-status-counts?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
