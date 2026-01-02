@@ -1,6 +1,7 @@
 // src/components/admin/AdminLogin.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAdminAuth } from "../../backendservice/hooks";
 
 interface AdminLoginProps {
@@ -9,8 +10,21 @@ interface AdminLoginProps {
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const { login, loading, error } = useAdminAuth();
+  const location = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+
+  // ✅ NEW: Show session expired message if redirected from auth guard
+  useEffect(() => {
+    const state = location.state as { message?: string; reason?: string } | undefined;
+    if (state?.message && state?.reason === 'unauthorized') {
+      setSessionMessage(state.message);
+      // Clear message after 10 seconds
+      const timer = setTimeout(() => setSessionMessage(null), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +61,11 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               required
             />
           </div>
+          {sessionMessage && (
+            <div style={styles.sessionWarning}>
+              {sessionMessage}
+            </div>
+          )}
           {error && <div style={styles.error}>{error}</div>}
           <button type="submit" style={styles.button} disabled={loading}>
             {loading ? "Logging in..." : "Login"}
@@ -121,5 +140,13 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#dc2626",
     borderRadius: "8px",
     fontSize: "14px",
+  },
+  sessionWarning: {
+    padding: "10px",
+    backgroundColor: "#fef3c7",
+    color: "#b45309",
+    borderRadius: "8px",
+    fontSize: "14px",
+    border: "1px solid #fbbf24",
   },
 };

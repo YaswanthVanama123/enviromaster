@@ -3,3 +3,4 @@
 export { useServiceConfigs, useActiveServiceConfig, useAllServicePricing } from "./useServiceConfigs";
 export { useProductCatalog, useActiveProductCatalog } from "./useProductCatalog";
 export { useAdminAuth } from "./useAdminAuth";
+export { useAdminAuthGuard } from "./useAdminAuthGuard";

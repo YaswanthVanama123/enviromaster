@@ -8,13 +8,37 @@ export interface ApiResponse<T> {
   status: number;
 }
 
+// ✅ Type for the unauthorized callback
+type UnauthorizedCallback = () => void;
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  // ✅ NEW: Callback to handle 401/403 errors
+  private onUnauthorized: UnauthorizedCallback | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem("admin_token");
+  }
+
+  // ✅ NEW: Set callback for unauthorized errors
+  setUnauthorizedCallback(callback: UnauthorizedCallback | null) {
+    this.onUnauthorized = callback;
+  }
+
+  // ✅ NEW: Handle unauthorized response
+  private handleUnauthorizedResponse(status: number, endpoint: string) {
+    // Only trigger callback for admin panel endpoints (not public endpoints)
+    const isAdminEndpoint = endpoint.includes('/admin') ||
+                           endpoint.includes('/api/pdf') ||
+                           endpoint.includes('/api/email') ||
+                           endpoint.includes('/api/upload');
+
+    if ((status === 401 || status === 403) && isAdminEndpoint && this.onUnauthorized) {
+      console.log(`🔒 [API CLIENT] ${status} error on ${endpoint} - triggering auto-logout`);
+      this.onUnauthorized();
+    }
   }
 
   setToken(token: string | null) {
@@ -52,6 +76,9 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // ✅ NEW: Handle 401/403 errors
+        this.handleUnauthorizedResponse(response.status, endpoint);
+
         return {
           error: data.message || "Request failed",
           status: response.status,
@@ -81,6 +108,9 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // ✅ NEW: Handle 401/403 errors
+        this.handleUnauthorizedResponse(response.status, endpoint);
+
         return {
           error: data.message || "Request failed",
           status: response.status,
@@ -110,6 +140,9 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // ✅ NEW: Handle 401/403 errors
+        this.handleUnauthorizedResponse(response.status, endpoint);
+
         return {
           error: data.message || "Request failed",
           status: response.status,
@@ -147,6 +180,9 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // ✅ NEW: Handle 401/403 errors
+        this.handleUnauthorizedResponse(response.status, endpoint);
+
         return {
           error: data.message || "Request failed",
           status: response.status,
@@ -163,6 +199,59 @@ class ApiClient {
         status: 0,
       };
     }
+  }
+
+  async patch<T, D = any>(endpoint: string, body: D): Promise<ApiResponse<T>> {
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: "PATCH",
+        headers: this.getHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // ✅ NEW: Handle 401/403 errors
+        this.handleUnauthorizedResponse(response.status, endpoint);
+
+        return {
+          error: data.message || "Request failed",
+          status: response.status,
+        };
+      }
+
+      return {
+        data,
+        status: response.status,
+      };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : "Network error",
+        status: 0,
+      };
+    }
+  }
+
+  /**
+   * Download a file as blob (for PDF downloads)
+   */
+  async downloadBlob(endpoint: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: "GET",
+      headers: {
+        ...this.getHeaders(),
+        "Accept": "application/pdf, application/octet-stream"
+      },
+    });
+
+    if (!response.ok) {
+      // ✅ Handle 401/403 errors
+      this.handleUnauthorizedResponse(response.status, endpoint);
+      throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
+    }
+
+    return response.blob();
   }
 }
 

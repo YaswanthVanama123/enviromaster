@@ -1,7 +1,5 @@
 // src/backendservice/api/zohoApi.ts
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { apiClient } from "../utils/apiClient";
 
 // Types for Zoho API responses
 export interface ZohoCompany {
@@ -165,13 +163,11 @@ export const zohoApi = {
    * Check if agreement is first-time upload or existing
    */
   async getUploadStatus(agreementId: string): Promise<ZohoUploadStatus> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/zoho-upload/${agreementId}/status`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<ZohoUploadStatus>(
+      `/api/zoho-upload/${agreementId}/status`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -187,13 +183,11 @@ export const zohoApi = {
       params.set("search", search.trim());
     }
 
-    const res = await axios.get(
-      `${API_BASE_URL}/api/zoho-upload/companies?${params}`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<ZohoCompaniesResponse>(
+      `/api/zoho-upload/companies?${params}`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -204,14 +198,16 @@ export const zohoApi = {
     company?: ZohoCompany;
     error?: string;
   }> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/zoho-upload/companies`,
-      companyData,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<{
+      success: boolean;
+      company?: ZohoCompany;
+      error?: string;
+    }>(
+      `/api/zoho-upload/companies`,
+      companyData
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -226,13 +222,11 @@ export const zohoApi = {
     params.set("page", page.toString());
     params.set("per_page", perPage.toString());
 
-    const res = await axios.get(
-      `${API_BASE_URL}/api/zoho-upload/companies/${companyId}/deals?${params}`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<ZohoDealsResponse>(
+      `/api/zoho-upload/companies/${companyId}/deals?${params}`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -242,26 +236,25 @@ export const zohoApi = {
     companyId: string;
     message?: string;
   }> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/zoho-upload/companies/${companyId}/pipeline-options`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<ZohoPipelineOptions & {
+      companyId: string;
+      message?: string;
+    }>(
+      `/api/zoho-upload/companies/${companyId}/pipeline-options`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
    * Get pipeline and stage options (general)
    */
   async getPipelineOptions(): Promise<ZohoPipelineOptions> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/zoho-upload/pipeline-options`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<ZohoPipelineOptions>(
+      `/api/zoho-upload/pipeline-options`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -276,14 +269,20 @@ export const zohoApi = {
     validPipelines?: Array<{ label: string; value: string }>;
     validStages?: Array<{ label: string; value: string }>;
   }> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/zoho-upload/validate-deal-fields`,
-      { pipelineName, stage },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<{
+      success: boolean;
+      valid: boolean;
+      correctedPipeline?: string;
+      correctedStage?: string;
+      error?: string;
+      validPipelines?: Array<{ label: string; value: string }>;
+      validStages?: Array<{ label: string; value: string }>;
+    }>(
+      `/api/zoho-upload/validate-deal-fields`,
+      { pipelineName, stage }
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -293,14 +292,12 @@ export const zohoApi = {
     agreementId: string,
     uploadData: FirstTimeUploadRequest
   ): Promise<ZohoUploadResult> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/zoho-upload/${agreementId}/first-time`,
-      uploadData,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<ZohoUploadResult>(
+      `/api/zoho-upload/${agreementId}/first-time`,
+      uploadData
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -310,14 +307,12 @@ export const zohoApi = {
     agreementId: string,
     updateData: UpdateUploadRequest
   ): Promise<ZohoUploadResult> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/zoho-upload/${agreementId}/update`,
-      updateData,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<ZohoUploadResult>(
+      `/api/zoho-upload/${agreementId}/update`,
+      updateData
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -327,27 +322,23 @@ export const zohoApi = {
     fileId: string,
     dealData: { dealId: string; noteText: string; dealName: string; skipNoteCreation?: boolean; fileType?: string }
   ): Promise<ZohoUploadResult> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/zoho-upload/attached-file/${fileId}/add-to-deal`,
-      dealData,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<ZohoUploadResult>(
+      `/api/zoho-upload/attached-file/${fileId}/add-to-deal`,
+      dealData
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
    * Get upload history for agreement
    */
   async getUploadHistory(agreementId: string): Promise<ZohoUploadHistory> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/zoho-upload/${agreementId}/history`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<ZohoUploadHistory>(
+      `/api/zoho-upload/${agreementId}/history`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -363,9 +354,17 @@ export const zohoApi = {
     }>;
     error?: string;
   }> {
-    const res = await axios.get(`${API_BASE_URL}/api/zoho-upload/modules`, {
-      headers: { Accept: "application/json" },
-    });
-    return res.data;
+    const res = await apiClient.get<{
+      success: boolean;
+      modules?: Array<{
+        apiName: string;
+        displayLabel: string;
+        creatable: boolean;
+        editable: boolean;
+      }>;
+      error?: string;
+    }>(`/api/zoho-upload/modules`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 };

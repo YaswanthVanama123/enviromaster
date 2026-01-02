@@ -419,9 +419,10 @@ export const pdfApi = {
       params.set('status', options.status);
     }
 
-    const res = await apiClient.get(`/api/pdf/customer-headers?${params.toString()}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/customer-headers?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -491,18 +492,20 @@ export const pdfApi = {
     if (options.endDate) params.append('endDate', options.endDate);
     if (options.groupBy) params.append('groupBy', options.groupBy);
 
-    const res = await apiClient.get(`/api/pdf/document-status-counts?${params.toString()}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/document-status-counts?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
    * Get a specific customer header by ID
    */
   async getCustomerHeaderById(id: string): Promise<{ payload: FormPayload }> {
-    const res = await apiClient.get(`/api/pdf/customer-headers/${id}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/customer-headers/${id}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -510,18 +513,20 @@ export const pdfApi = {
    * This endpoint converts backend data structure for proper edit mode mapping
    */
   async getCustomerHeaderForEdit(id: string): Promise<{ payload: FormPayload }> {
-    const res = await apiClient.get(`/api/pdf/customer-headers/${id}/edit-format`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/customer-headers/${id}/edit-format`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
    * Get admin template header by ID
    */
   async getAdminHeaderById(id: string): Promise<{ payload: FormPayload }> {
-    const res = await apiClient.get(`/api/pdf/admin-headers/${id}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/admin-headers/${id}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -534,7 +539,10 @@ export const pdfApi = {
   }> {
     const res = await apiClient.post(
       `/api/pdf/customer-header`,
-      payload
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
     return {
       status: res.status,
@@ -549,7 +557,10 @@ export const pdfApi = {
   async updateCustomerHeader(id: string, payload: FormPayload): Promise<void> {
     await apiClient.put(
       `/api/pdf/customer-headers/${id}`,
-      payload
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
   },
 
@@ -562,7 +573,10 @@ export const pdfApi = {
   ): Promise<void> {
     await apiClient.put(
       `/api/pdf/customer-headers/${id}?recompile=true`,
-      payload
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
   },
 
@@ -572,7 +586,10 @@ export const pdfApi = {
   async updateDocumentStatus(id: string, status: string): Promise<void> {
     await apiClient.patch(
       `/api/pdf/customer-headers/${id}/status`,
-      { status }
+      { status },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
   },
 
@@ -628,9 +645,10 @@ export const pdfApi = {
     if (params?.versionNumber) searchParams.set('versionNumber', params.versionNumber.toString());
     if (params?.includeDeleted) searchParams.set('includeDeleted', params.includeDeleted.toString());
 
-    const res = await apiClient.get(`/api/versions?${searchParams}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/versions?${searchParams}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -639,7 +657,10 @@ export const pdfApi = {
   async updateVersionStatus(versionId: string, status: string): Promise<void> {
     await apiClient.patch(
       `/api/versions/${versionId}/status`,
-      { status }
+      { status },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
   },
 
@@ -711,9 +732,10 @@ export const pdfApi = {
       params.set('isDeleted', filters.isDeleted.toString());
     }
 
-    const res = await apiClient.get(`/api/pdf/saved-files?${params}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/saved-files?${params}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -769,18 +791,20 @@ export const pdfApi = {
 
     console.log('📡 [pdfApi] getSavedFilesGrouped called with params:', params.toString());
 
-    const res = await apiClient.get(`/api/pdf/saved-files/grouped?${params}`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/saved-files/grouped?${params}`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
    * Get full file details by ID (on-demand - includes complete payload)
    */
   async getSavedFileDetails(id: string): Promise<SavedFileDetailsResponse> {
-    const res = await apiClient.get(`/api/pdf/saved-files/${id}/details`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/saved-files/${id}/details`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -792,10 +816,12 @@ export const pdfApi = {
   ): Promise<AddFileToAgreementResponse> {
     const res = await apiClient.post(
       `/api/pdf/saved-files/${agreementId}/add-files`,
-      request
+      request,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -811,10 +837,12 @@ export const pdfApi = {
   }> {
     const res = await apiClient.patch(
       `/api/pdf/agreements/${agreementId}/restore`,
-      {}
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -841,10 +869,12 @@ export const pdfApi = {
 
     const res = await apiClient.patch(
       url,
-      {}
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -856,10 +886,12 @@ export const pdfApi = {
   }> {
     const res = await apiClient.patch(
       `/api/pdf/agreements/${agreementId}/delete`,
-      {}
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -881,10 +913,12 @@ export const pdfApi = {
 
     const res = await apiClient.patch(
       url,
-      {}
+      {},
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -901,10 +935,12 @@ export const pdfApi = {
     };
   }> {
     const res = await apiClient.delete(
-      `/api/pdf/agreements/${agreementId}/permanent-delete`
+      `/api/pdf/agreements/${agreementId}/permanent-delete`,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -931,10 +967,12 @@ export const pdfApi = {
     const url = `/api/pdf/files/${fileId}/permanent-delete${queryString ? `?${queryString}` : ''}`;
 
     const res = await apiClient.delete(
-      url
+      url,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -943,10 +981,12 @@ export const pdfApi = {
   async createVersionLog(request: VersionLogRequest): Promise<VersionLogResponse> {
     const res = await apiClient.post(
       `/api/pdf/logs/create`,
-      request
+      request,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -961,10 +1001,12 @@ export const pdfApi = {
     logs: LogDocument[];
   }> {
     const res = await apiClient.get(
-      `/api/pdf/logs/agreement/${agreementId}`
+      `/api/pdf/logs/agreement/${agreementId}`,
+      {
+        headers: { Accept: "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -992,10 +1034,12 @@ export const pdfApi = {
     if (params?.agreementId) searchParams.set('agreementId', params.agreementId);
 
     const res = await apiClient.get(
-      `/api/pdf/logs/all?${searchParams}`
+      `/api/pdf/logs/all?${searchParams}`,
+      {
+        headers: { Accept: "application/json" },
+      }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**
@@ -1022,9 +1066,10 @@ export const pdfApi = {
       fileTypes: string[];
     };
   }> {
-    const res = await apiClient.get(`/api/pdf/approval-documents/grouped`);
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    const res = await apiClient.get(`/api/pdf/approval-documents/grouped`, {
+      headers: { Accept: "application/json" },
+    });
+    return res.data;
   },
 
   /**
@@ -1045,10 +1090,12 @@ export const pdfApi = {
       {
         status,
         notes,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
       }
     );
-    if (res.error) throw new Error(res.error);
-    return res.data!;
+    return res.data;
   },
 
   /**

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAdminAuth } from "../backendservice/hooks";
+import { useAdminAuth, useAdminAuthGuard } from "../backendservice/hooks";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
 import type { SavedFileGroup, SavedFileListItem } from "../backendservice/api/pdfApi";
 import SavedFilesAgreements from "./SavedFilesAgreements"; // ✅ UPDATED: Use new folder-like component
@@ -53,6 +53,9 @@ export default function AdminPanel() {
   }>();
   const { isAuthenticated, user, logout } = useAdminAuth();
   const isNavigatingRef = useRef(false);
+
+  // ✅ NEW: Set up automatic logout on 401/403 errors for admin panel
+  useAdminAuthGuard();
 
   // Extract subtab from URL path for nested routes
   const getSubtabFromUrl = (): string | undefined => {

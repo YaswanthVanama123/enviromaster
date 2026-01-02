@@ -1,6 +1,6 @@
 // src/backendservice/api/manualUploadApi.ts
 
-import axios from "axios";
+import { apiClient } from "../utils/apiClient";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -35,12 +35,14 @@ export const manualUploadApi = {
    * Get all manual uploads
    */
   async getManualUploads(): Promise<ManualUploadsResponse> {
-    const res = await axios.get(`${API_BASE_URL}/api/manual-upload`);
-    return res.data;
+    const res = await apiClient.get<ManualUploadsResponse>(`/api/manual-upload`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
    * Upload a new file
+   * Uses FormData for file upload - requires direct fetch since apiClient doesn't support FormData
    */
   async uploadFile(file: File, description?: string): Promise<any> {
     const formData = new FormData();
@@ -49,49 +51,54 @@ export const manualUploadApi = {
       formData.append("description", description);
     }
 
-    const res = await axios.post(
+    // Use fetch directly for FormData (apiClient doesn't support it yet)
+    const headers: HeadersInit = {};
+    const token = apiClient.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    // Note: Do NOT set Content-Type for FormData - browser sets it with boundary
+
+    const response = await fetch(
       `${API_BASE_URL}/api/manual-upload`,
-      formData,
       {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        method: 'POST',
+        headers,
+        body: formData,
       }
     );
-    return res.data;
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
   },
 
   /**
    * Download a file
    */
   async downloadFile(id: string): Promise<Blob> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/manual-upload/${id}/download`,
-      {
-        responseType: "blob",
-      }
-    );
-    return res.data;
+    return apiClient.downloadBlob(`/api/manual-upload/${id}/download`);
   },
 
   /**
    * Update manual upload status
    */
   async updateStatus(id: string, status: string): Promise<void> {
-    await axios.patch(
-      `${API_BASE_URL}/api/manual-upload/${id}/status`,
-      { status },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.patch(
+      `/api/manual-upload/${id}/status`,
+      { status }
     );
+    if (res.error) throw new Error(res.error);
   },
 
   /**
    * Delete a file
    */
   async deleteFile(id: string): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/api/manual-upload/${id}`);
+    const res = await apiClient.delete(`/api/manual-upload/${id}`);
+    if (res.error) throw new Error(res.error);
   },
 
   /**

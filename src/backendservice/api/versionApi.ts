@@ -1,7 +1,5 @@
 // src/backendservice/api/versionApi.ts
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { apiClient } from "../utils/apiClient";
 
 // Types for version API responses
 export interface VersionStatus {
@@ -86,13 +84,11 @@ export const versionApi = {
    * Check version status for an agreement (determines if user should create version or replace)
    */
   async checkVersionStatus(agreementId: string): Promise<VersionStatus> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/versions/${agreementId}/check-status`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<VersionStatus>(
+      `/api/versions/${agreementId}/check-status`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -107,14 +103,12 @@ export const versionApi = {
       isFirstTime?: boolean; // ✅ NEW: Flag for auto v1 creation
     }
   ): Promise<VersionCreateResult> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/versions/${agreementId}/create-version`,
-      options,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<VersionCreateResult>(
+      `/api/versions/${agreementId}/create-version`,
+      options
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -126,14 +120,12 @@ export const versionApi = {
       updatedBy?: string;
     } = {}
   ): Promise<VersionCreateResult> {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/versions/${agreementId}/replace-main`,
-      options,
-      {
-        headers: { "Content-Type": "application/json" },
-      }
+    const res = await apiClient.post<VersionCreateResult>(
+      `/api/versions/${agreementId}/replace-main`,
+      options
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
@@ -148,39 +140,25 @@ export const versionApi = {
       params.set("includeArchived", "true");
     }
 
-    const res = await axios.get(
-      `${API_BASE_URL}/api/versions/${agreementId}/list?${params}`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get<VersionsList>(
+      `/api/versions/${agreementId}/list?${params}`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
    * View a specific version PDF (for inline display in browser)
    */
   async viewVersion(versionId: string): Promise<Blob> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/versions/version/${versionId}/view`,
-      {
-        responseType: 'blob',
-      }
-    );
-    return res.data;
+    return apiClient.downloadBlob(`/api/versions/version/${versionId}/view`);
   },
 
   /**
    * Download a specific version PDF
    */
   async downloadVersion(versionId: string): Promise<Blob> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/versions/version/${versionId}/download`,
-      {
-        responseType: 'blob',
-      }
-    );
-    return res.data;
+    return apiClient.downloadBlob(`/api/versions/version/${versionId}/download`);
   },
 
   /**
@@ -190,26 +168,24 @@ export const versionApi = {
     versionId: string,
     permanent = false
   ): Promise<{ success: boolean; message: string; error?: string }> {
-    const res = await axios.delete(
-      `${API_BASE_URL}/api/versions/version/${versionId}`,
+    const res = await apiClient.delete<{ success: boolean; message: string; error?: string }>(
+      `/api/versions/version/${versionId}`,
       {
-        data: { permanent },
-        headers: { "Content-Type": "application/json" },
+        body: { permanent }
       }
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 
   /**
    * Get version data in edit format for FormFilling component
    */
   async getVersionForEdit(versionId: string): Promise<any> {
-    const res = await axios.get(
-      `${API_BASE_URL}/api/versions/version/${versionId}/edit-format`,
-      {
-        headers: { Accept: "application/json" },
-      }
+    const res = await apiClient.get(
+      `/api/versions/version/${versionId}/edit-format`
     );
-    return res.data;
+    if (res.error) throw new Error(res.error);
+    return res.data!;
   },
 };

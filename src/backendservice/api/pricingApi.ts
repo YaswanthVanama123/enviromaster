@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { apiClient } from "../utils/apiClient";
 
 export interface RestroomHygienePricing {
   ratePerFixture?: number;
@@ -37,18 +35,8 @@ export interface PriceFixDocument {
 
 export const pricingApi = {
   async getPriceFix(): Promise<PriceFixDocument[]> {
-    const token =
-      localStorage.getItem("adminToken") ||
-      localStorage.getItem("token") ||
-      "";
-
-    const res = await axios.get(`${API_BASE_URL}/api/pricefix`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-
+    const res = await apiClient.get<PriceFixDocument[]>(`/api/pricefix`);
+    if (res.error) throw new Error(res.error);
     return Array.isArray(res.data) ? res.data : [];
   },
 
