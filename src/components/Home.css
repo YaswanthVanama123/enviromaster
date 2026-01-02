@@ -239,7 +239,7 @@
   border-bottom: 2px solid #e5e7eb;
   margin-bottom: 20px;
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* ✅ FIXED: Allow tooltips to overflow without being cut off */
 }
 
 .home__chart-loading {
@@ -258,7 +258,7 @@
   align-items: center;
   gap: 8px;
   max-height: 300px; /* ✅ Prevent bar groups from exceeding container */
-  overflow: hidden;
+  overflow: visible; /* ✅ FIXED: Allow tooltips to overflow without being cut off */
 }
 
 .home__chart-bars {
@@ -273,7 +273,7 @@
 
 .home__chart-bar {
   width: 100%;
-  border-radius: 4px 4px 0 0;
+  border-radius: 0; /* ✅ FIXED: Removed border radius for seamless color transitions */
   transition: all 0.3s ease;
   min-height: 2px;
   max-height: 280px; /* ✅ Prevent individual bars from exceeding container */
@@ -304,15 +304,15 @@
   background: #9ca3af;
 }
 
-/* Tooltip on hover */
+/* Tooltip on hover - ✅ FIXED: Improved positioning to prevent cutoff */
 .home__chart-tooltip {
   position: absolute;
-  top: -35px;
+  top: -40px; /* ✅ FIXED: Increased spacing from bar top */
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.9);
   color: white;
-  padding: 6px 12px;
+  padding: 8px 14px; /* ✅ FIXED: Increased padding for better visibility */
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -321,6 +321,7 @@
   pointer-events: none;
   animation: fadeIn 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: fit-content; /* ✅ FIXED: Ensure tooltip fits content without cutoff */
 }
 
 .home__chart-tooltip-label {

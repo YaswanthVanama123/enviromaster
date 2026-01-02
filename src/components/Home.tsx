@@ -52,29 +52,106 @@ export default function Home() {
     drafts: 0,
     saved: 0
   });
+  const [chartTimeSeries, setChartTimeSeries] = useState<any[] | null>(null); // ✅ NEW: Store time-series data from backend
   const [loading, setLoading] = useState(true);
   const [uploadCount, setUploadCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ index: number; type: string } | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // ✅ OPTIMIZED: Fetch counts using optimized API instead of full documents
+  // ✅ OPTIMIZED: Fetch counts using optimized API with date range and grouping
   useEffect(() => {
     const fetchStatusCounts = async () => {
       setLoading(true);
       try {
-        // Use the optimized count API for bar graph
+        // Calculate date range based on selected filter
+        const today = new Date();
+        let startDate, endDate, groupBy;
+
+        switch (timeFilter) {
+          case "This Week":
+            // Get start of current week (Sunday) in local time
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            // Get end of current week (Saturday) in local time
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
+            startDate = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+            endDate = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
+            groupBy = 'day';
+            break;
+
+          case "This Month":
+            // Get start of current month (1st day)
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+            // Get end of current month (last day)
+            const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+            // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
+            startDate = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(startOfMonth.getDate()).padStart(2, '0')}`;
+            endDate = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
+            groupBy = 'week';
+            break;
+
+          case "This Year":
+            // Get start of current year (January 1st)
+            const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+            // Get end of current year (December 31st)
+            const endOfYear = new Date(today.getFullYear(), 11, 31);
+
+            // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
+            startDate = `${startOfYear.getFullYear()}-${String(startOfYear.getMonth() + 1).padStart(2, '0')}-${String(startOfYear.getDate()).padStart(2, '0')}`;
+            endDate = `${endOfYear.getFullYear()}-${String(endOfYear.getMonth() + 1).padStart(2, '0')}-${String(endOfYear.getDate()).padStart(2, '0')}`;
+            groupBy = 'month';
+            break;
+
+          case "Date Range":
+            if (selectedDateFrom && selectedDateTo) {
+              // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
+              startDate = `${selectedDateFrom.getFullYear()}-${String(selectedDateFrom.getMonth() + 1).padStart(2, '0')}-${String(selectedDateFrom.getDate()).padStart(2, '0')}`;
+              endDate = `${selectedDateTo.getFullYear()}-${String(selectedDateTo.getMonth() + 1).padStart(2, '0')}-${String(selectedDateTo.getDate()).padStart(2, '0')}`;
+              groupBy = 'day';
+            }
+            break;
+
+          default:
+            // No filter, get all data
+            startDate = null;
+            endDate = null;
+            groupBy = 'day';
+        }
+
+        console.log(`📊 [FRONTEND] Requesting data with filter: ${timeFilter}, startDate: ${startDate}, endDate: ${endDate}, groupBy: ${groupBy}`);
+
+        // Use the optimized count API with date range and grouping
         const result = await pdfApi.getDocumentStatusCounts({
-          groupBy: 'day' // This will be used for future enhancements
+          startDate,
+          endDate,
+          groupBy
         });
 
-        console.log("📊 Fetched Document Status Counts:", result.counts);
-        setStatusCounts({
-          done: result.counts.done,
-          pending: result.counts.pending,
-          drafts: result.counts.drafts,
-          saved: result.counts.saved
-        });
+        console.log("📊 Fetched Document Status Counts:", result);
+
+        // Store the time-series data from backend
+        if (result.timeSeries) {
+          setChartTimeSeries(result.timeSeries);
+        } else {
+          // Fallback to legacy total counts format
+          setStatusCounts({
+            done: result.counts.done,
+            pending: result.counts.pending,
+            drafts: result.counts.drafts,
+            saved: result.counts.saved
+          });
+          setChartTimeSeries(null);
+        }
       } catch (err) {
         console.error("Error fetching status counts:", err);
       } finally {
@@ -83,7 +160,7 @@ export default function Home() {
     };
 
     fetchStatusCounts();
-  }, []);
+  }, [timeFilter, selectedDateFrom, selectedDateTo]); // ✅ Refetch when filter changes
 
   // ✅ REMOVED: Manual upload API call for optimization (not used on Home page)
   // useEffect(() => {
@@ -102,34 +179,112 @@ export default function Home() {
   //   fetchUploadStats();
   // }, []);
 
-  // ✅ SIMPLIFIED: Calculate chart data from status counts
-  // Note: Currently shows overall counts for the selected time period
-  // Future enhancement: Backend can return time-series data grouped by day/week/month
+  // ✅ ENHANCED: Calculate chart data using actual backend time-series data
   const getChartData = (): ChartDataPoint[] => {
     const today = new Date();
     const chartData: ChartDataPoint[] = [];
 
+    // ✅ NEW: Use actual time-series data from backend if available
+    if (chartTimeSeries && chartTimeSeries.length > 0) {
+      if (timeFilter === "This Week") {
+        // Map backend data to day names (Sun-Sat)
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+
+        // Create a map of date to data
+        const dataMap = new Map();
+        chartTimeSeries.forEach(item => {
+          dataMap.set(item.period, item);
+        });
+
+        // Generate chart data for all 7 days
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(startOfWeek);
+          date.setDate(startOfWeek.getDate() + i);
+          const dayName = dayNames[date.getDay()];
+          const dateKey = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+          const dayData = dataMap.get(dateKey);
+          chartData.push({
+            label: dayName,
+            done: dayData?.done || 0,
+            pending: dayData?.pending || 0,
+            saved: dayData?.saved || 0,
+            drafts: dayData?.drafts || 0,
+          });
+        }
+      }
+      else if (timeFilter === "This Month") {
+        // Map backend weekly data to Week 1, Week 2, etc.
+        chartTimeSeries.forEach((item, index) => {
+          chartData.push({
+            label: `Week ${index + 1}`,
+            done: item.done || 0,
+            pending: item.pending || 0,
+            saved: item.saved || 0,
+            drafts: item.drafts || 0,
+          });
+        });
+      }
+      else if (timeFilter === "This Year") {
+        // Map backend monthly data to Jan, Feb, Mar, etc.
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dataMap = new Map();
+        chartTimeSeries.forEach(item => {
+          // item.period format: "2026-01", "2026-02", etc.
+          const month = parseInt(item.period.split('-')[1]) - 1; // 0-based
+          dataMap.set(month, item);
+        });
+
+        // Generate chart data for all 12 months
+        for (let month = 0; month < 12; month++) {
+          const monthData = dataMap.get(month);
+          chartData.push({
+            label: monthNames[month],
+            done: monthData?.done || 0,
+            pending: monthData?.pending || 0,
+            saved: monthData?.saved || 0,
+            drafts: monthData?.drafts || 0,
+          });
+        }
+      }
+      else if (timeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
+        // Show data for the selected date range
+        chartTimeSeries.forEach(item => {
+          const date = new Date(item.period);
+          const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          chartData.push({
+            label,
+            done: item.done || 0,
+            pending: item.pending || 0,
+            saved: item.saved || 0,
+            drafts: item.drafts || 0,
+          });
+        });
+      }
+
+      return chartData;
+    }
+
+    // ✅ FALLBACK: If no time-series data, use legacy distributed counts
     if (timeFilter === "This Week") {
-      // Show all 7 days of current week (Mon-Sun)
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+      startOfWeek.setDate(today.getDate() - today.getDay());
 
-      // For now, show total counts distributed across the week
-      // Future: Backend should return daily counts
-      for (let i = 0; i < 7; i++) {
+      const totalDays = 7;
+      for (let i = 0; i < totalDays; i++) {
         const date = new Date(startOfWeek);
         date.setDate(startOfWeek.getDate() + i);
         const dayName = dayNames[date.getDay()];
 
-        // Simplified: Show counts only for today
-        const isToday = date.toDateString() === today.toDateString();
         chartData.push({
           label: dayName,
-          done: isToday ? statusCounts.done : 0,
-          pending: isToday ? statusCounts.pending : 0,
-          saved: isToday ? statusCounts.saved : 0,
-          drafts: isToday ? statusCounts.drafts : 0,
+          done: Math.floor(statusCounts.done / totalDays) + (i === 0 ? statusCounts.done % totalDays : 0),
+          pending: Math.floor(statusCounts.pending / totalDays) + (i === 0 ? statusCounts.pending % totalDays : 0),
+          saved: Math.floor(statusCounts.saved / totalDays) + (i === 0 ? statusCounts.saved % totalDays : 0),
+          drafts: Math.floor(statusCounts.drafts / totalDays) + (i === 0 ? statusCounts.drafts % totalDays : 0),
         });
       }
     }
