@@ -152,7 +152,14 @@ export default function CustomerSection({
   return (
     <section className="cua2">
       <div className="cua2__logo">
-        <img src={logo} alt="Enviro-Master Logo" className="cua2__logo-img" />
+        <img
+          src={logo}
+          alt="Enviro-Master Logo"
+          className="cua2__logo-img"
+          width="150"
+          height="100"
+          loading="eager"
+        />
       </div>
 
       <div className="cua2__right">

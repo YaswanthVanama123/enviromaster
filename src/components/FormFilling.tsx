@@ -878,6 +878,16 @@ function FormFillingContent() {
   const { id: urlId } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // ✅ PERFORMANCE FIX: Stabilize locationState to prevent unnecessary re-renders
+  const locationState = useMemo(() => (location.state ?? {}) as LocationState, [
+    location.state?.editing,
+    location.state?.id,
+    location.state?.returnPath,
+    location.state?.fromPdfViewer,
+    location.state?.editingVersionId,
+    location.state?.editingVersionFile
+  ]);
+
   const [payload, setPayload] = useState<FormPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
@@ -1066,7 +1076,6 @@ function FormFillingContent() {
 
   // Detect if we're in edit mode based on URL path
   const isInEditMode = location.pathname.startsWith('/edit/pdf');
-  const locationState = (location.state ?? {}) as LocationState;
 
   // Get tab parameters from URL
   const productTab = searchParams.get('productTab') || undefined;
@@ -1075,6 +1084,9 @@ function FormFillingContent() {
   // Refs to collect data from child components
   const productsRef = useRef<ProductsSectionHandle>(null);
   const servicesRef = useRef<ServicesDataHandle>(null);
+
+  // ✅ PERFORMANCE FIX: Prevent duplicate initial API calls in React 18 Strict Mode
+  const hasInitiallyFetched = useRef(false);
 
   // Handle back navigation
   const handleBack = () => {
@@ -1124,6 +1136,11 @@ function FormFillingContent() {
   };
 
   useEffect(() => {
+    // ✅ PERFORMANCE FIX: Prevent duplicate API calls in React 18 Strict Mode
+    // In development, Strict Mode runs effects twice to detect side effects
+    // We use a ref to track if we've already fetched for this document
+    const currentDocId = urlId || locationState.id;
+
     // Extract editing and id from location.state inside useEffect to ensure fresh values
     const { editing = false, id } = locationState;
 
@@ -1132,6 +1149,8 @@ function FormFillingContent() {
       id,
       locationState,
       urlId,
+      currentDocId,
+      hasInitiallyFetched: hasInitiallyFetched.current,
       // ✅ NEW: Debug version info
       editingVersionId: locationState.editingVersionId,
       editingVersionFile: locationState.editingVersionFile,
@@ -1151,6 +1170,12 @@ function FormFillingContent() {
     const useCustomerDoc = (editing || isInEditMode) && !!agreementId;
 
     const fetchHeaders = async () => {
+      // ✅ PERFORMANCE: Skip if already fetched (prevents React 18 Strict Mode double-fetch)
+      if (hasInitiallyFetched.current) {
+        console.log('⏭️ [FETCH HEADERS] Skipping duplicate fetch (already loaded)');
+        return;
+      }
+
       console.log('🔄 [FETCH HEADERS] Loading document data (should only happen on document change, NOT tab switches):', {
         useCustomerDoc,
         agreementId,
@@ -1158,6 +1183,7 @@ function FormFillingContent() {
         editing: locationState.editing
       });
 
+      hasInitiallyFetched.current = true; // Mark as fetched BEFORE the fetch
       setLoading(true);
       try {
         let json;
@@ -2209,6 +2235,142 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           </div>
         )}
 
+        {/* ✅ PERFORMANCE FIX: Skeleton loader to prevent layout shift */}
+        {loading && (
+          <div className="formfilling__skeleton" style={{
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '28px',
+            minHeight: '2600px'
+          }}>
+            {/* Customer Section skeleton - 250px */}
+            <div style={{
+              minHeight: '250px',
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '20px',
+              display: 'flex',
+              gap: '20px'
+            }}>
+              <div style={{
+                width: '150px',
+                height: '100px',
+                background: '#e5e7eb',
+                borderRadius: '8px',
+                flexShrink: 0
+              }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} style={{
+                    height: '32px',
+                    background: '#e5e7eb',
+                    borderRadius: '4px'
+                  }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Products Section skeleton - 600px */}
+            <div style={{
+              minHeight: '600px',
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '20px'
+            }}>
+              <div style={{
+                height: '40px',
+                background: '#c00000',
+                marginBottom: '20px',
+                borderRadius: '4px'
+              }} />
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} style={{
+                    height: '40px',
+                    background: '#e5e7eb',
+                    borderRadius: '4px'
+                  }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Services Section skeleton - 700px */}
+            <div style={{
+              minHeight: '700px',
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '20px'
+            }}>
+              <div style={{
+                height: '40px',
+                background: '#c00000',
+                marginBottom: '20px',
+                borderRadius: '4px'
+              }} />
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <div key={i} style={{
+                    height: '40px',
+                    background: '#e5e7eb',
+                    borderRadius: '4px'
+                  }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Contract Summary skeleton - 300px */}
+            <div style={{
+              minHeight: '300px',
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '20px'
+            }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{
+                  height: '48px',
+                  background: '#e5e7eb',
+                  borderRadius: '4px',
+                  marginBottom: '12px'
+                }} />
+              ))}
+            </div>
+
+            {/* Buttons skeleton */}
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center',
+              marginTop: '20px'
+            }}>
+              <div style={{
+                width: '150px',
+                height: '48px',
+                background: '#e5e7eb',
+                borderRadius: '8px'
+              }} />
+              <div style={{
+                width: '200px',
+                height: '48px',
+                background: '#e5e7eb',
+                borderRadius: '8px'
+              }} />
+            </div>
+          </div>
+        )}
+
         {isSaving && (
           <div className="formfilling__saving-overlay" role="status" aria-live="polite">
             <div className="formfilling__spinner">
@@ -2218,7 +2380,10 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         )}
 
         {payload && (
-          <>
+          <div style={{
+            /* ✅ PERFORMANCE: Wrapper to prevent layout shifts */
+            minHeight: '2600px'
+          }}>
             <CustomerSection
               headerTitle={payload.headerTitle}
               headerRows={payload.headerRows}
@@ -2355,7 +2520,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
                 {isSaving ? "Saving..." : "Save & Generate PDF"}
               </button>
             </div>
-          </>
+          </div>
         )}
 
         <ConfirmationModal

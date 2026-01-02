@@ -8,6 +8,11 @@
   grid-template-columns: 220px 1fr;
   column-gap:28px;
   align-items:start;
+
+  /* ✅ PERFORMANCE: Prevent layout shifts */
+  min-height: 250px;
+  contain: layout;
+  contain-intrinsic-size: auto 250px;
 }
 
 .cua2__logo{

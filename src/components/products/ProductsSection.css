@@ -4,6 +4,11 @@
   padding: 0 12px;
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+
+  /* ✅ PERFORMANCE: Prevent layout shifts */
+  min-height: 600px;
+  contain: layout;
+  contain-intrinsic-size: auto 600px;
 }
 
 .prod__ribbon { position: relative; }
