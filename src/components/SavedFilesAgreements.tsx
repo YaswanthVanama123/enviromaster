@@ -1632,7 +1632,21 @@ export default function SavedFilesAgreements() {
                         📝 {getStatusConfig('draft').label}
                       </span>
                   )}
-                  {/* ✅ NEW: Agreement Timeline Badge */}
+                </div>
+                {isTrashView && agreementDeletionInfo && (
+                  <div style={{
+                    marginTop: '4px',
+                    fontSize: '12px',
+                    color: '#9ca3af'
+                  }}>
+                    Deleted {agreementDeletionInfo}
+                  </div>
+                )}
+              </div>
+
+                {/* ✅ CORRECTED: Add file button and Zoho upload button */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* ✅ Timeline Badge - placed on right side with buttons */}
                   {agreement.startDate && agreement.contractMonths && (
                     <AgreementTimelineBadge
                       startDate={agreement.startDate}
@@ -1662,20 +1676,7 @@ export default function SavedFilesAgreements() {
                       agreementId={agreement.id}
                     />
                   )}
-                </div>
-                {isTrashView && agreementDeletionInfo && (
-                  <div style={{
-                    marginTop: '4px',
-                    fontSize: '12px',
-                    color: '#9ca3af'
-                  }}>
-                    Deleted {agreementDeletionInfo}
-                  </div>
-                )}
-              </div>
 
-                {/* ✅ CORRECTED: Add file button and Zoho upload button */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {/* Zoho Bigin Upload Button */}
                   <button
                     style={{

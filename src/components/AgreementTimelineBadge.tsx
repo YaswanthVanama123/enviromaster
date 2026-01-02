@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarDays } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCalendarDays,
+  faCircleCheck,
+  faCircleExclamation,
+  faCircleXmark,
+  faHourglass
+} from '@fortawesome/free-solid-svg-icons';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import './AgreementTimelineBadge.css';
 
 type ExpiryStatus = 'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired';
@@ -74,20 +81,20 @@ export function AgreementTimelineBadge({
     }
   }, [startDate, contractMonths]);
 
-  const getStatusIcon = (): string => {
+  const getStatusIcon = (): IconDefinition => {
     switch (expiryStatus) {
       case 'yet-to-start':
-        return '📅';
+        return faHourglass;
       case 'expired':
-        return '🔴';
+        return faCircleXmark;
       case 'critical':
-        return '🔴';
+        return faCircleExclamation;
       case 'warning':
-        return '⚠️';
+        return faCircleExclamation;
       case 'safe':
-        return '✅';
+        return faCircleCheck;
       default:
-        return '✅';
+        return faCircleCheck;
     }
   };
 
@@ -141,7 +148,7 @@ export function AgreementTimelineBadge({
     return (
       <div className={`timeline-badge-compact timeline-badge-${expiryStatus}`}>
         <div className="timeline-badge-content">
-          <span className="timeline-badge-icon">{getStatusIcon()}</span>
+          <FontAwesomeIcon icon={getStatusIcon()} className="timeline-badge-icon" />
           <div className="timeline-badge-text">
             <span className="timeline-badge-status">{getStatusText()}</span>
             <span className="timeline-badge-days">{getDaysText()}</span>
@@ -199,7 +206,7 @@ export function AgreementTimelineBadge({
   return (
     <div className={`timeline-badge-full timeline-badge-${expiryStatus}`}>
       <div className="timeline-badge-header">
-        <span className="timeline-badge-icon-large">{getStatusIcon()}</span>
+        <FontAwesomeIcon icon={getStatusIcon()} className="timeline-badge-icon-large" />
         <div className="timeline-badge-info">
           <h4 className="timeline-badge-title">{getStatusText()}</h4>
           <p className="timeline-badge-subtitle">{getDaysText()}</p>

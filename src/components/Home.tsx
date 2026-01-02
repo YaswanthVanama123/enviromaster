@@ -178,7 +178,23 @@ export default function Home() {
   };
 
   const chartData = getChartData();
-  const pixelsPerUnit = 20; // Each document = 20px height
+
+  // ✅ FIX: Calculate proper scaling to fit bars within container
+  // Find the maximum total value across all bars to normalize heights
+  const maxTotal = Math.max(
+    ...chartData.map(data => data.done + data.pending + data.saved + data.drafts),
+    1 // Minimum 1 to avoid division by zero
+  );
+
+  // Container height minus some padding for labels
+  const maxBarHeight = 280; // Leave space for labels and padding
+
+  // Calculate height as percentage of max value, fitting within container
+  const getBarHeight = (value: number) => {
+    if (value === 0) return 0;
+    // Scale to fit within maxBarHeight, with minimum 20px for visibility
+    return Math.max((value / maxTotal) * maxBarHeight, 20);
+  };
 
   const handleTimeFilterChange = (value: string) => {
     setTimeFilter(value);
@@ -433,10 +449,10 @@ export default function Home() {
               <>
                 <div className="home__chart">
                   {chartData.map((data, index) => {
-                    const doneHeight = Math.max(data.done * pixelsPerUnit, data.done > 0 ? 20 : 0);
-                    const pendingHeight = Math.max(data.pending * pixelsPerUnit, data.pending > 0 ? 20 : 0);
-                    const savedHeight = Math.max(data.saved * pixelsPerUnit, data.saved > 0 ? 20 : 0);
-                    const draftsHeight = Math.max(data.drafts * pixelsPerUnit, data.drafts > 0 ? 20 : 0);
+                    const doneHeight = getBarHeight(data.done);
+                    const pendingHeight = getBarHeight(data.pending);
+                    const savedHeight = getBarHeight(data.saved);
+                    const draftsHeight = getBarHeight(data.drafts);
 
                     return (
                       <div key={index} className="home__chart-bar-group">

@@ -239,6 +239,7 @@
   border-bottom: 2px solid #e5e7eb;
   margin-bottom: 20px;
   position: relative;
+  overflow: hidden;
 }
 
 .home__chart-loading {
@@ -256,6 +257,8 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  max-height: 300px; /* ✅ Prevent bar groups from exceeding container */
+  overflow: hidden;
 }
 
 .home__chart-bars {
@@ -273,6 +276,7 @@
   border-radius: 4px 4px 0 0;
   transition: all 0.3s ease;
   min-height: 2px;
+  max-height: 280px; /* ✅ Prevent individual bars from exceeding container */
   position: relative;
   cursor: pointer;
   z-index: 1;

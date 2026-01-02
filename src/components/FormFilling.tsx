@@ -214,6 +214,14 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     onStartDateChange?.(newDate);
   };
 
+  // ✅ FIX: Sync with initialStartDate prop when it changes (for edit mode)
+  useEffect(() => {
+    if (initialStartDate) {
+      console.log('📅 [CONTRACT-SUMMARY] Syncing start date from prop:', initialStartDate);
+      setAgreementStartDate(initialStartDate);
+    }
+  }, [initialStartDate]);
+
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -575,18 +583,18 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 {/* Days Breakdown */}
                 <div className="timeline-stats">
                   <div className="timeline-stat">
-                    <span className="stat-label">Total Duration</span>
-                    <span className="stat-value">{globalContractMonths} months</span>
+                    <span className="stat-labels">Total Duration</span>
+                    <span className="stat-values">{globalContractMonths} months</span>
                   </div>
                   <div className="timeline-stat">
-                    <span className="stat-label">Days Passed</span>
-                    <span className="stat-value">
+                    <span className="stat-labels">Days Passed</span>
+                    <span className="stat-values">
                       {Math.max(0, (globalContractMonths * 30) - (daysRemaining >= 0 ? daysRemaining : 0))} days
                     </span>
                   </div>
                   <div className="timeline-stat">
-                    <span className="stat-label">Days Remaining</span>
-                    <span className={`stat-value stat-${expiryStatus}`}>
+                    <span className="stat-labels">Days Remaining</span>
+                    <span className={`stat-values stat-${expiryStatus}`}>
                       {daysRemaining >= 0 ? `${daysRemaining} days` : `Expired`}
                     </span>
                   </div>
