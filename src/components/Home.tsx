@@ -70,12 +70,17 @@ export default function Home() {
 
         switch (timeFilter) {
           case "This Week":
-            // Get start of current week (Sunday) in local time
+            // ✅ FIXED: Use ISO week (Monday-Saturday) to match backend
+            // Get current day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+            const dayOfWeek = today.getDay();
+
+            // Get start of ISO week (Monday)
             const startOfWeek = new Date(today);
-            startOfWeek.setDate(today.getDate() - today.getDay());
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days; else go back to Monday
+            startOfWeek.setDate(today.getDate() - daysToMonday);
             startOfWeek.setHours(0, 0, 0, 0);
 
-            // Get end of current week (Saturday) in local time
+            // Get end of ISO week (Sunday)
             const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
@@ -187,10 +192,12 @@ export default function Home() {
     // ✅ NEW: Use actual time-series data from backend if available
     if (chartTimeSeries && chartTimeSeries.length > 0) {
       if (timeFilter === "This Week") {
-        // Map backend data to day names (Sun-Sat)
-        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        // ✅ FIXED: Map backend data to ISO week day names (Mon-Sun)
+        const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
+        const dayOfWeek = today.getDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startOfWeek.setDate(today.getDate() - daysToMonday);
 
         // Create a map of date to data
         const dataMap = new Map();
@@ -198,11 +205,11 @@ export default function Home() {
           dataMap.set(item.period, item);
         });
 
-        // Generate chart data for all 7 days
+        // Generate chart data for all 7 days (Mon-Sun)
         for (let i = 0; i < 7; i++) {
           const date = new Date(startOfWeek);
           date.setDate(startOfWeek.getDate() + i);
-          const dayName = dayNames[date.getDay()];
+          const dayName = dayNames[i]; // Monday=0, Tuesday=1, ..., Sunday=6
           const dateKey = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
           const dayData = dataMap.get(dateKey);
@@ -231,10 +238,17 @@ export default function Home() {
         // Map backend monthly data to Jan, Feb, Mar, etc.
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const dataMap = new Map();
+        const currentYear = today.getFullYear();
+
         chartTimeSeries.forEach(item => {
           // item.period format: "2026-01", "2026-02", etc.
-          const month = parseInt(item.period.split('-')[1]) - 1; // 0-based
-          dataMap.set(month, item);
+          const [year, monthStr] = item.period.split('-');
+
+          // ✅ FIXED: Only include data from the current year (filter out previous/next years)
+          if (parseInt(year) === currentYear) {
+            const month = parseInt(monthStr) - 1; // 0-based (0=Jan, 11=Dec)
+            dataMap.set(month, item);
+          }
         });
 
         // Generate chart data for all 12 months
@@ -269,15 +283,17 @@ export default function Home() {
 
     // ✅ FALLBACK: If no time-series data, use legacy distributed counts
     if (timeFilter === "This Week") {
-      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
       const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay());
+      const dayOfWeek = today.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startOfWeek.setDate(today.getDate() - daysToMonday);
 
       const totalDays = 7;
       for (let i = 0; i < totalDays; i++) {
         const date = new Date(startOfWeek);
         date.setDate(startOfWeek.getDate() + i);
-        const dayName = dayNames[date.getDay()];
+        const dayName = dayNames[i];
 
         chartData.push({
           label: dayName,
