@@ -8,8 +8,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope, faSave, faPencilAlt,
   faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare
+  faPlus, faCheckSquare, faSquare, faCheckCircle, faClock, faExclamationCircle
 } from "@fortawesome/free-solid-svg-icons";
+import DocumentSidebar from "./DocumentSidebar";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
@@ -559,8 +560,69 @@ export default function SavedFiles() {
     }
   };
 
+  // Calculate status counts for sidebar
+  const statusCountsData = useMemo(() => {
+    const counts: { [key: string]: number } = {
+      draft: 0,
+      saved: 0,
+      pending_approval: 0,
+      approved_salesman: 0,
+      approved_admin: 0
+    };
+
+    sorted.forEach(file => {
+      if (counts[file.status] !== undefined) {
+        counts[file.status]++;
+      }
+    });
+
+    return [
+      { label: 'Draft', count: counts.draft, color: '#6b7280', icon: faFileAlt },
+      { label: 'Saved', count: counts.saved, color: '#3b82f6', icon: faCheckCircle },
+      { label: 'Pending Approval', count: counts.pending_approval, color: '#f59e0b', icon: faClock },
+      { label: 'Approved by Salesman', count: counts.approved_salesman, color: '#3b82f6', icon: faCheckCircle },
+      { label: 'Approved by Admin', count: counts.approved_admin, color: '#10b981', icon: faCheckCircle }
+    ];
+  }, [sorted]);
+
+  // Calculate agreement timelines for sidebar
+  const agreementTimelinesData = useMemo(() => {
+    return groups
+      .filter(group => group.startDate && group.contractMonths)
+      .map(group => {
+        const start = new Date(group.startDate!);
+        const today = new Date();
+        const endDate = new Date(start);
+        endDate.setMonth(endDate.getMonth() + group.contractMonths!);
+
+        const totalDays = Math.floor((endDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const daysElapsed = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        let status: 'active' | 'expiring-soon' | 'expired' = 'active';
+        if (daysRemaining < 0) {
+          status = 'expired';
+        } else if (daysRemaining <= 30) {
+          status = 'expiring-soon';
+        }
+
+        return {
+          agreementId: group.id,
+          agreementTitle: group.agreementTitle,
+          startDate: group.startDate!,
+          contractMonths: group.contractMonths!,
+          daysRemaining,
+          daysElapsed,
+          totalDays,
+          status
+        };
+      });
+  }, [groups]);
+
   return (
-    <section className="sf">
+    <div style={{ display: 'flex', gap: '24px' }}>
+      {/* Main Content */}
+      <section className="sf" style={{ flex: 1 }}>
       {/* <div className="sf__hero">Saved Files</div> */}
 
       <div className="sf__toolbar">
@@ -879,5 +941,14 @@ export default function SavedFiles() {
         )}
       </Suspense>
     </section>
+
+    {/* Right Sidebar */}
+    <DocumentSidebar
+      statusCounts={statusCountsData}
+      totalDocuments={totalFiles}
+      mode="normal"
+      agreementTimelines={agreementTimelinesData}
+    />
+  </div>
   );
 }

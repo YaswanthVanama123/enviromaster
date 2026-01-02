@@ -62,6 +62,7 @@ const STATUS_LABEL: Record<FileStatus, string> = {
 
 interface SavedFilesGroupedProps {
   mode?: 'normal' | 'trash';
+  onDataLoaded?: (groups: SavedFileGroup[]) => void;
 }
 
 // ✅ CRITICAL FIX: Module-level flags per mode to prevent duplicate initial loads
@@ -71,7 +72,7 @@ const hasInitiallyLoadedByMode: Record<string, boolean> = {
   trash: false
 };
 
-export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGroupedProps) {
+export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: SavedFilesGroupedProps) {
   const [groups, setGroups] = useState<SavedFileGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -196,6 +197,11 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
       setTotalGroups(groupedResponse.totalGroups);
       setTotalFiles(allGroups.reduce((sum, group) => sum + group.fileCount, 0));
       setCurrentPage(page);
+
+      // ✅ NEW: Call onDataLoaded callback with loaded groups
+      if (onDataLoaded) {
+        onDataLoaded(allGroups);
+      }
 
       console.log(`✅ [SAVED-FILES-GROUPED] Loaded ${allGroups.length} groups, ${groupedResponse.totalGroups} total`);
     } catch (err) {
@@ -1101,39 +1107,77 @@ export default function SavedFilesGrouped({ mode = 'normal' }: SavedFilesGrouped
                         📤 Bigin
                       </span>
                     )}
-                    {/* ✅ NEW: Agreement Timeline Badge */}
-                    {group.startDate && group.contractMonths && (
-                      <AgreementTimelineBadge
-                        startDate={group.startDate}
-                        contractMonths={group.contractMonths}
-                        compact={true}
-                        showCalendarIcon={mode === 'normal'}
-                        onDateChange={async (newDate) => {
-                          console.log(`📅 [SAVED-FILES] Updating start date for agreement ${group.id}: ${newDate}`);
-                          try {
-                            // TODO: Add API call to update agreement start date
-                            await pdfApi.updateCustomerHeader(group.id, {
-                              agreement: { startDate: newDate }
-                            } as any);
-                            setToastMessage({
-                              message: "Agreement start date updated successfully!",
-                              type: "success"
-                            });
-                            // Refresh the list to show updated timeline
-                            await fetchGroups(currentPage, query);
-                          } catch (error) {
-                            console.error("Failed to update start date:", error);
-                            setToastMessage({
-                              message: "Failed to update start date. Please try again.",
-                              type: "error"
-                            });
-                          }
-                        }}
-                        agreementId={group.id}
-                      />
-                    )}
                   </div>
                 </div>
+
+                {/* ✅ NEW: Active Days Remaining Badge - on the right side */}
+                {group.startDate && group.contractMonths && (() => {
+                  const start = new Date(group.startDate);
+                  const today = new Date();
+                  const endDate = new Date(start);
+                  endDate.setMonth(endDate.getMonth() + group.contractMonths);
+
+                  const daysRemaining = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                  let status = 'active';
+                  let bgColor = '#f0fdf4';
+                  let borderColor = '#10b981';
+                  let textColor = '#10b981';
+                  let icon = '✓';
+
+                  if (daysRemaining < 0) {
+                    status = 'expired';
+                    bgColor = '#fef2f2';
+                    borderColor = '#dc2626';
+                    textColor = '#dc2626';
+                    icon = '⚠';
+                  } else if (daysRemaining <= 30) {
+                    status = 'expiring-soon';
+                    bgColor = '#fef3c7';
+                    borderColor = '#f59e0b';
+                    textColor = '#f59e0b';
+                    icon = '⏰';
+                  }
+
+                  return (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        background: bgColor,
+                        border: `2px solid ${borderColor}`,
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginRight: '12px'
+                      }}
+                    >
+                      <span style={{ fontSize: '14px' }}>{icon}</span>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start'
+                      }}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          color: textColor,
+                          textTransform: 'capitalize'
+                        }}>
+                          {status === 'active' ? 'Active' : status === 'expiring-soon' ? 'Expiring Soon' : 'Expired'}
+                        </span>
+                        <span style={{
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          color: textColor
+                        }}>
+                          {daysRemaining > 0 ? `${daysRemaining} days left` : `${Math.abs(daysRemaining)} days ago`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ✅ FIXED: Status dropdown at agreement level - only show in normal mode */}
                 {mode === 'normal' && group.statuses && group.statuses.length > 0 && (
