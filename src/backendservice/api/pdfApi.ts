@@ -570,10 +570,11 @@ export const pdfApi = {
    * Update document status
    */
   async updateDocumentStatus(id: string, status: string): Promise<void> {
-    await apiClient.patch(
+    const res = await apiClient.patch(
       `/api/pdf/customer-headers/${id}/status`,
       { status }
     );
+    if (res.error) throw new Error(res.error);
   },
 
   /**
@@ -637,10 +638,11 @@ export const pdfApi = {
    * Update version status (for version PDFs)
    */
   async updateVersionStatus(versionId: string, status: string): Promise<void> {
-    await apiClient.patch(
+    const res = await apiClient.patch(
       `/api/versions/${versionId}/status`,
       { status }
     );
+    if (res.error) throw new Error(res.error);
   },
 
   /**

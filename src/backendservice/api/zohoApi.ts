@@ -316,6 +316,28 @@ export const zohoApi = {
   },
 
   /**
+   * ✅ OPTIMIZED: Batch update multiple version PDFs to existing deal in single API call
+   * Reduces N API calls to 1 API call for bulk uploads
+   */
+  async batchUpdateUpload(
+    agreementId: string,
+    versionIds: string[],
+    noteText: string,
+    dealId?: string
+  ): Promise<ZohoUploadResult> {
+    const res = await apiClient.post<ZohoUploadResult>(
+      `/api/zoho-upload/${agreementId}/batch-update`,
+      {
+        versionIds,
+        noteText,
+        dealId
+      }
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  /**
    * Upload attached file to existing Zoho deal
    */
   async uploadAttachedFile(
@@ -325,6 +347,29 @@ export const zohoApi = {
     const res = await apiClient.post<ZohoUploadResult>(
       `/api/zoho-upload/attached-file/${fileId}/add-to-deal`,
       dealData
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  /**
+   * ✅ OPTIMIZED: Batch upload multiple attached files to existing deal in single API call
+   * Reduces N API calls to 1 API call for bulk uploads
+   */
+  async batchUploadAttachedFiles(
+    fileIds: Array<string | { fileId: string; fileType: string }>,
+    dealId: string,
+    noteText: string,
+    dealName?: string
+  ): Promise<ZohoUploadResult> {
+    const res = await apiClient.post<ZohoUploadResult>(
+      `/api/zoho-upload/batch-attached-files/add-to-deal`,
+      {
+        fileIds,
+        dealId,
+        noteText,
+        dealName
+      }
     );
     if (res.error) throw new Error(res.error);
     return res.data!;

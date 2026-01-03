@@ -154,16 +154,41 @@ export default function SavedFilesAgreements() {
         throw new Error(`Cannot update status for file type: ${file.fileType}`);
       }
 
+      console.log(`✅ [STATUS-CHANGE] Status update API call succeeded for ${file.id}`);
+
+      // ✅ FIX: Update local state immediately instead of refetching (like ApprovalDocuments)
+      // This prevents race conditions and makes the UI update instantly
+      setAgreements(prev => prev.map(agreement => ({
+        ...agreement,
+        files: agreement.files.map(f =>
+          f.id === file.id ? { ...f, status: newStatus } : f
+        )
+      })));
+
       setToastMessage({
         message: `Status updated to "${getStatusConfig(newStatus).label}" successfully!`,
         type: "success"
       });
 
-      // Refresh the agreements to show updated status
-      await fetchAgreements(currentPage, query);
+      console.log(`✅ [STATUS-CHANGE] Local state updated successfully`);
+
+      // ✅ OPTIONAL: Refresh in background without blocking the success message
+      // Wrapped in try-catch to prevent errors from affecting the success flow
+      setTimeout(() => {
+        fetchAgreements(currentPage, query).catch(err => {
+          console.warn('⚠️ [STATUS-CHANGE] Background refresh failed (non-critical):', err);
+        });
+      }, 100);
 
     } catch (error) {
-      console.error("Failed to update status:", error);
+      console.error("❌ [STATUS-CHANGE] Error during status change flow:", error);
+      console.error("❌ [STATUS-CHANGE] Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        fileId: file.id,
+        fileType: file.fileType,
+        newStatus
+      });
       setToastMessage({
         message: "Failed to update status. Please try again.",
         type: "error"
