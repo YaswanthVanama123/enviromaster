@@ -247,7 +247,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
           )}
 
           {isTrashView ? (
-            // ✅ TRASH VIEW: Only show Restore and Permanent Delete buttons
+            // ✅ TRASH VIEW: Show Restore button, and Permanent Delete only if agreement itself is deleted
             <>
               <button
                 style={{
@@ -273,29 +273,32 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
                 Restore
               </button>
 
-              <button
-                style={{
-                  background: '#fef2f2',
-                  border: '1px solid #fca5a5',
-                  borderRadius: '6px',
-                  padding: '6px 8px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: '#dc2626',
-                  fontWeight: '500'
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-                title="Permanently delete this agreement"
-              >
-                <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
-                Permanent Delete
-              </button>
+              {/* ✅ FIXED: Only show Permanent Delete button if the agreement itself was deleted */}
+              {agreement.isDeleted === true && (
+                <button
+                  style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '6px',
+                    padding: '6px 8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '12px',
+                    color: '#dc2626',
+                    fontWeight: '500'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                  title="Permanently delete this agreement"
+                >
+                  <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
+                  Permanent Delete
+                </button>
+              )}
             </>
           ) : (
             // ✅ NORMAL VIEW: Show regular action buttons

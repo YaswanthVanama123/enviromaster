@@ -6,9 +6,10 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  align-items: flex-end; /* ✅ Align to BOTTOM of visible screen */
+  justify-content: center; /* ✅ Center horizontally */
+  z-index: 9999; /* ✅ Must be above all overlays */
+  padding: 20px; /* ✅ Space from bottom edge */
 }
 
 .modal-content {
@@ -18,6 +19,19 @@
   max-width: 500px;
   width: 90%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  animation: slideUp 0.3s ease-out; /* ✅ Slide up from bottom */
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-title {

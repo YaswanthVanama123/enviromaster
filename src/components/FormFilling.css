@@ -25,7 +25,7 @@ body::-webkit-scrollbar,
 
   justify-content: center;
   margin: 30px;
-  position: relative;
+  /* ✅ REMOVED: position: relative - was breaking fixed positioning of modals */
   /* ✅ CLS FIX: Use content-visibility for off-screen optimization */
   content-visibility: auto;
   contain-intrinsic-size: auto 3000px;
@@ -141,7 +141,7 @@ body::-webkit-scrollbar,
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1200;
+  z-index: 5000; /* ✅ Above content but below modals (9999) */
 }
 
 .formfilling__loading-overlay {
@@ -154,7 +154,7 @@ body::-webkit-scrollbar,
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 5000; /* ✅ Above content but below modals (9999) */
 }
 
 .formfilling__spinner {
@@ -212,6 +212,11 @@ body::-webkit-scrollbar,
 .formfilling__skeleton {
   /* ✅ Prevent layout shift during load-to-content transition */
   animation: fadeIn 0.3s ease-in-out;
+  position: relative;
+  z-index: 1; /* ✅ Below overlays and modals */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 @keyframes fadeIn {

@@ -5,11 +5,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
+  z-index: 9999; /* ✅ Must be above all overlays */
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: flex-end; /* ✅ Align to BOTTOM of visible screen */
+  justify-content: center; /* ✅ Center horizontally */
+  padding: 20px; /* ✅ Space from bottom edge */
 }
 
 .version-dialog__overlay {
@@ -31,7 +31,19 @@
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  z-index: 1001;
+  z-index: 10000; /* ✅ Above parent dialog overlay */
+  animation: slideUp 0.3s ease-out; /* ✅ Slide up from bottom */
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .version-dialog__header {

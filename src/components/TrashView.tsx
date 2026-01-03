@@ -3,13 +3,13 @@
 // ✅ OPTIMIZED: Lazy rendering + memoized components
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { pdfApi, emailApi } from "../backendservice/api";
+import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import type { SavedFileListItem, SavedFileGroup } from "../backendservice/api/pdfApi";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCheckSquare, faTrash, faFileAlt, faFolder
+  faCheckSquare, faTrash, faFileAlt, faFolder, faExclamationTriangle
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import DocumentSidebar from "./DocumentSidebar";
@@ -50,8 +50,9 @@ export default function TrashView() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string, fileType?: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteCheckboxChecked, setDeleteCheckboxChecked] = useState(false); // ✅ Separate checkbox state
   const normalizedDeleteText = deleteConfirmText.trim().toUpperCase();
-  const isDeleteConfirmed = normalizedDeleteText === 'DELETE';
+  const isDeleteConfirmed = normalizedDeleteText === 'DELETE' && deleteCheckboxChecked; // ✅ Require both
 
   // ✅ Watermark state (not used in trash but needed for AgreementRow compatibility)
   const [fileWatermarkStates] = useState<Map<string, boolean>>(new Map());
@@ -147,10 +148,27 @@ export default function TrashView() {
   const handleView = async (file: SavedFileListItem, watermark: boolean = false) => {
     try {
       console.log("👁️ [TRASH] Viewing deleted file", file.id);
+
+      // ✅ FIXED: Use correct documentType based on file type (matching SavedFilesAgreements)
+      let documentType: string;
+      if (file.fileType === 'main_pdf') {
+        documentType = 'agreement';
+      } else if (file.fileType === 'version_pdf') {
+        documentType = 'version';
+      } else if (file.fileType === 'version_log') {
+        documentType = 'version-log';
+      } else if (file.fileType === 'attached_pdf') {
+        documentType = 'manual-upload';
+      } else {
+        documentType = 'attached-file';
+      }
+
       navigate("/pdf-viewer", {
         state: {
-          pdfUrl: `/api/pdf/download/${file.id}`,
+          documentId: file.id,
           fileName: file.title,
+          documentType: documentType, // ✅ FIXED: Pass documentType for correct API selection
+          watermark: watermark,
           source: "trash"
         }
       });
@@ -165,18 +183,52 @@ export default function TrashView() {
 
   const handleDownload = async (file: SavedFileListItem, watermark: boolean = false) => {
     try {
-      const blob = await pdfApi.downloadPDF(file.id);
+      let blob: Blob;
+
+      // ✅ FIXED: Use different download methods based on file type (matching SavedFilesAgreements)
+      if (file.fileType === 'main_pdf') {
+        blob = await pdfApi.downloadPdf(file.id); // ✅ FIXED: lowercase 'df', not 'DF'
+      } else if (file.fileType === 'version_pdf') {
+        console.log(`📥 [TRASH-DOWNLOAD] Downloading version PDF ${file.id} with watermark: ${watermark}`);
+        blob = await pdfApi.downloadVersionPdf(file.id, watermark);
+      } else if (file.fileType === 'version_log') {
+        // ✅ FIXED: Use version log API for log files
+        blob = await pdfApi.downloadVersionLog(file.id, true); // includeDeleted=true for trash
+      } else if (file.fileType === 'attached_pdf') {
+        // ✅ FIXED: Use manual upload API for manually uploaded attached files
+        blob = await manualUploadApi.downloadFile(file.id);
+      } else {
+        // Handle other attached files
+        blob = await pdfApi.downloadAttachedFile(file.id);
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = file.title;
+
+      // ✅ FIXED: Use appropriate file extension based on file type
+      let safeName: string;
+      if (file.fileType === 'version_log') {
+        safeName = file.fileName || "EnviroMaster_Version_Log.txt";
+      } else {
+        const extension = '.pdf';
+        const baseFileName = file.fileName || "EnviroMaster_Document";
+        if (file.fileType === 'version_pdf' && watermark) {
+          const nameWithoutExt = baseFileName.replace('.pdf', '');
+          safeName = nameWithoutExt + '_DRAFT' + extension;
+        } else {
+          safeName = baseFileName.endsWith('.pdf') ? baseFileName : baseFileName.replace(/[^\w\-]+/g, "_") + extension;
+        }
+      }
+
+      a.download = safeName;
       document.body.appendChild(a);
       a.click();
+      a.remove();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
 
       setToastMessage({
-        message: `Downloaded: ${file.title}`,
+        message: `Downloaded: ${safeName}`,
         type: "success"
       });
     } catch (error) {
@@ -195,16 +247,18 @@ export default function TrashView() {
 
   const handleRestore = async (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
     try {
-      console.log(`♻️ [TRASH] Restoring ${type}: ${id}`);
+      console.log(`♻️ [TRASH] Restoring ${type}: ${id} (fileType: ${fileType || 'N/A'})`);
 
       if (type === 'folder') {
-        await pdfApi.restoreCustomerHeader(id);
+        // ✅ FIXED: Use correct API name - restoreAgreement (not restoreCustomerHeader)
+        await pdfApi.restoreAgreement(id);
         setToastMessage({
           message: `Restored agreement: ${title}`,
           type: "success"
         });
       } else {
-        // Restore file logic (if needed)
+        // ✅ FIXED: Call restoreFile API for individual files
+        await pdfApi.restoreFile(id, { fileType });
         setToastMessage({
           message: `Restored file: ${title}`,
           type: "success"
@@ -234,13 +288,15 @@ export default function TrashView() {
       console.log(`🗑️ [TRASH] Permanently deleting ${itemToDelete.type}: ${itemToDelete.id}`);
 
       if (itemToDelete.type === 'folder') {
-        await pdfApi.permanentlyDeleteCustomerHeader(itemToDelete.id);
+        // ✅ FIXED: Use correct API name - permanentlyDeleteAgreement
+        await pdfApi.permanentlyDeleteAgreement(itemToDelete.id);
         setToastMessage({
           message: `Permanently deleted agreement: ${itemToDelete.title}`,
           type: "success"
         });
       } else {
-        // Permanent file delete (if needed)
+        // ✅ FIXED: Call permanentlyDeleteFile API with fileType
+        await pdfApi.permanentlyDeleteFile(itemToDelete.id, { fileType: itemToDelete.fileType });
         setToastMessage({
           message: `Permanently deleted file: ${itemToDelete.title}`,
           type: "success"
@@ -252,6 +308,7 @@ export default function TrashView() {
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
       setDeleteConfirmText('');
+      setDeleteCheckboxChecked(false); // ✅ Reset checkbox
     } catch (error) {
       console.error(`Failed to permanently delete ${itemToDelete.type}:`, error);
       setToastMessage({
@@ -504,15 +561,87 @@ export default function TrashView() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && itemToDelete && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirmOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>⚠️ Permanently Delete {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}?</h3>
-            <p>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center', // ✅ FIXED: Center vertically
+            justifyContent: 'center', // ✅ FIXED: Center horizontally
+            zIndex: 9999
+          }}
+          onClick={() => {
+            setDeleteConfirmOpen(false);
+            setDeleteConfirmText('');
+            setDeleteCheckboxChecked(false); // ✅ Reset checkbox on close
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              padding: '24px',
+              borderRadius: '8px',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: 600, color: '#212121', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* ✅ FIXED: Use FontAwesome icon instead of emoji */}
+              <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#dc2626', fontSize: '24px' }} />
+              Permanently Delete {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}?
+            </h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#4a4a4a', lineHeight: 1.5 }}>
               This will <strong>permanently delete</strong>: <strong>{itemToDelete.title}</strong>
               <br />
               <span style={{ color: '#dc2626', fontWeight: 600 }}>This action cannot be undone!</span>
             </p>
-            <p>Type <strong>DELETE</strong> to confirm:</p>
+
+            {/* ✅ FIXED: Checkbox does NOT auto-fill text - user must type manually */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '16px',
+              padding: '12px',
+              background: '#fef2f2',
+              borderRadius: '6px',
+              border: '1px solid #fca5a5'
+            }}>
+              <input
+                type="checkbox"
+                id="delete-confirm-checkbox"
+                checked={deleteCheckboxChecked}
+                onChange={(e) => setDeleteCheckboxChecked(e.target.checked)} // ✅ FIXED: No auto-fill
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  cursor: 'pointer',
+                  accentColor: '#dc2626'
+                }}
+              />
+              <label
+                htmlFor="delete-confirm-checkbox"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: '#991b1b',
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                I understand this will permanently delete this {itemToDelete.type === 'folder' ? 'agreement' : 'file'}
+              </label>
+            </div>
+
+            <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 500 }}>
+              Type <strong style={{ color: '#dc2626' }}>DELETE</strong> to confirm:
+            </p>
             <input
               type="text"
               value={deleteConfirmText}
@@ -524,7 +653,8 @@ export default function TrashView() {
                 border: '2px solid #dc2626',
                 borderRadius: '6px',
                 fontSize: '14px',
-                marginBottom: '16px'
+                marginBottom: '16px',
+                textTransform: 'uppercase' // ✅ FIXED: Show in uppercase
               }}
             />
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -533,6 +663,7 @@ export default function TrashView() {
                   setDeleteConfirmOpen(false);
                   setItemToDelete(null);
                   setDeleteConfirmText('');
+                  setDeleteCheckboxChecked(false); // ✅ Reset checkbox
                 }}
                 style={{
                   flex: 1,
@@ -540,7 +671,9 @@ export default function TrashView() {
                   background: '#f3f4f6',
                   border: 'none',
                   borderRadius: '6px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 500
                 }}
               >
                 Cancel
@@ -556,10 +689,12 @@ export default function TrashView() {
                   border: 'none',
                   borderRadius: '6px',
                   cursor: isDeleteConfirmed ? 'pointer' : 'not-allowed',
-                  fontWeight: 600
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  textTransform: 'uppercase' // ✅ FIXED: "DELETE" in uppercase
                 }}
               >
-                Permanently Delete
+                Delete
               </button>
             </div>
           </div>
