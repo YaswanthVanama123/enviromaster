@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolder, faFolderOpen, faChevronDown, faChevronRight,
   faPlus, faCheckSquare, faSquare, faCloudUploadAlt,
-  faTrash, faPencilAlt
+  faTrash, faPencilAlt, faRedo
 } from "@fortawesome/free-solid-svg-icons";
 import type { SavedFileGroup, SavedFileListItem } from "../../backendservice/api/pdfApi";
 import { FileRow } from "./FileRow";
@@ -246,106 +246,162 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
             />
           )}
 
-          <button
-            style={{
-              background: '#f97316',
-              border: '1px solid #ea580c',
-              borderRadius: '6px',
-              padding: '6px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-              color: '#fff',
-              fontWeight: '500',
-              opacity: uploadableFiles.length > 0 ? 1 : 0.5
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleZohoUpload();
-            }}
-            disabled={uploadableFiles.length === 0}
-            title={`Upload ${uploadableFiles.length} files to Zoho Bigin`}
-          >
-            <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
-            Bigin
-          </button>
+          {isTrashView ? (
+            // ✅ TRASH VIEW: Only show Restore and Permanent Delete buttons
+            <>
+              <button
+                style={{
+                  background: '#ecfdf5',
+                  border: '1px solid #a7f3d0',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#10b981',
+                  fontWeight: '500'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRestore('folder', agreement.id, agreement.agreementTitle);
+                }}
+                title="Restore this agreement"
+              >
+                <FontAwesomeIcon icon={faRedo} style={{ fontSize: '10px' }} />
+                Restore
+              </button>
 
-          <button
-            style={{
-              background: '#f3f4f6',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              padding: '6px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-              color: '#374151',
-              fontWeight: '500'
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddFile();
-            }}
-            title="Add file to this agreement"
-          >
-            <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
-            Add
-          </button>
+              <button
+                style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#dc2626',
+                  fontWeight: '500'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                title="Permanently delete this agreement"
+              >
+                <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
+                Permanent Delete
+              </button>
+            </>
+          ) : (
+            // ✅ NORMAL VIEW: Show regular action buttons
+            <>
+              <button
+                style={{
+                  background: '#f97316',
+                  border: '1px solid #ea580c',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#fff',
+                  fontWeight: '500',
+                  opacity: uploadableFiles.length > 0 ? 1 : 0.5
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleZohoUpload();
+                }}
+                disabled={uploadableFiles.length === 0}
+                title={`Upload ${uploadableFiles.length} files to Zoho Bigin`}
+              >
+                <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
+                Bigin
+              </button>
 
-          {showAgreementLevelEdit && (
-            <button
-              style={{
-                background: '#3b82f6',
-                border: '1px solid #2563eb',
-                borderRadius: '6px',
-                padding: '6px 8px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '12px',
-                color: '#fff',
-                fontWeight: '500'
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditAgreement();
-              }}
-              title="Edit this draft agreement"
-            >
-              <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '10px' }} />
-              Edit Agreement
-            </button>
+              <button
+                style={{
+                  background: '#f3f4f6',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#374151',
+                  fontWeight: '500'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddFile();
+                }}
+                title="Add file to this agreement"
+              >
+                <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
+                Add
+              </button>
+
+              {showAgreementLevelEdit && (
+                <button
+                  style={{
+                    background: '#3b82f6',
+                    border: '1px solid #2563eb',
+                    borderRadius: '6px',
+                    padding: '6px 8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '12px',
+                    color: '#fff',
+                    fontWeight: '500'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditAgreement();
+                  }}
+                  title="Edit this draft agreement"
+                >
+                  <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '10px' }} />
+                  Edit Agreement
+                </button>
+              )}
+
+              <button
+                style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#dc2626',
+                  fontWeight: '500',
+                  marginLeft: '8px'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                title="Delete this agreement (move to trash)"
+              >
+                <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
+                Delete
+              </button>
+            </>
           )}
-
-          <button
-            style={{
-              background: '#fef2f2',
-              border: '1px solid #fca5a5',
-              borderRadius: '6px',
-              padding: '6px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-              color: '#dc2626',
-              fontWeight: '500',
-              marginLeft: '8px'
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete();
-            }}
-            title="Delete this agreement (move to trash)"
-          >
-            <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
-            Delete
-          </button>
         </div>
       </div>
 
