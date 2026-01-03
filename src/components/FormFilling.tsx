@@ -2382,7 +2382,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         {payload && (
           <div style={{
             /* ✅ PERFORMANCE: Wrapper to prevent layout shifts */
-            minHeight: '2600px'
+            minHeight: '2600px',
+            /* ✅ CLS FIX: Match skeleton dimensions */
+            padding: '20px'
           }}>
             <CustomerSection
               headerTitle={payload.headerTitle}

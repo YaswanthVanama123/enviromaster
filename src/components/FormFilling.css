@@ -1,9 +1,34 @@
+/* ✅ CLS FIX: Prevent font loading shifts */
+* {
+  font-display: swap;
+}
+
+/* ✅ CLS FIX: Reserve space for all root elements */
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  /* ✅ Hide scrollbar while keeping scroll functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* ✅ Hide scrollbar for Chrome, Safari and Opera */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+}
+
 .center-align{
   display: grid;
 
   justify-content: center;
   margin: 30px;
   position: relative;
+  /* ✅ CLS FIX: Use content-visibility for off-screen optimization */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3000px;
 }
 
 /* Edit Mode Styles */
@@ -181,6 +206,43 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* ✅ CLS FIX: Skeleton animation and loading transitions */
+.formfilling__skeleton {
+  /* ✅ Prevent layout shift during load-to-content transition */
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ✅ CLS FIX: Skeleton shimmer effect (smooth loading indication) */
+.formfilling__skeleton > div {
+  animation: shimmer 1.5s infinite linear;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 20%,
+    #f0f0f0 40%,
+    #f0f0f0 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* ✅ NEW: Contract Summary Section Styling */

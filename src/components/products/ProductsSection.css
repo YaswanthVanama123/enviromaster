@@ -126,6 +126,11 @@
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  /* ✅ CLS FIX: Add explicit height to prevent reflow */
+  min-height: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  contain: layout style;
 }
 
 /* First column header (Product Name) - same sky blue as others */
@@ -304,9 +309,17 @@
   border-bottom: 1px solid #000;
   border-right: 1px solid #000;
   text-align: center;
+  /* ✅ CLS FIX: Add explicit height to prevent reflow */
+  min-height: 40px;
+  height: 40px;
+  box-sizing: border-box;
 }
 .h:first-child { border-left: 1px solid #000; }
-.h-blue { background: #dae9f8; }
+.h-blue {
+  background: #dae9f8;
+  /* ✅ CLS FIX: Ensure layout containment */
+  contain: layout style;
+}
 .center { text-align: center; }
 
 .th-edit {
@@ -453,6 +466,11 @@ td:has(.th-edit) {
 .gtable thead th {
   background: #dae9f8; color: #c20000; font-weight: 800; font-size: 14px;
   padding: 8px 10px; border-top: 1px solid #000; border-bottom: 1px solid #000; border-right: 1px solid #000;
+  /* ✅ CLS FIX: Add explicit height to prevent reflow */
+  min-height: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  contain: layout style;
 }
 .gtable thead th:first-child { border-left: 1px solid #000; }
 .gtable td {
