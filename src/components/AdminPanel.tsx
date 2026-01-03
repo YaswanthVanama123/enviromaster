@@ -141,6 +141,12 @@ export default function AdminPanel() {
   };
 
   const fetchPieStatusCounts = useCallback(async () => {
+    // ⚡ CRITICAL: Skip if not on dashboard tab
+    if (activeTab !== "dashboard") {
+      console.log(`⏭️ [ADMIN-PANEL] Skipping pie chart API call - active tab is: ${activeTab}`);
+      return;
+    }
+
     if (pieTimeFilter === "Date Range" && (!selectedDateFrom || !selectedDateTo)) {
       return;
     }
@@ -175,7 +181,7 @@ export default function AdminPanel() {
     } catch (err) {
       console.error("Error fetching pie status counts:", err);
     }
-  }, [pieTimeFilter, selectedDateFrom, selectedDateTo]);
+  }, [activeTab, pieTimeFilter, selectedDateFrom, selectedDateTo]); // ✅ FIXED: Added activeTab dependency
 
   useEffect(() => {
     fetchPieStatusCounts();
@@ -232,79 +238,65 @@ export default function AdminPanel() {
       try {
         console.log("📊 [ADMIN-PANEL] Fetching dashboard data...");
 
-        // ✅ NEW: Use the new admin dashboard API that provides everything in one call
+        // ✅ OPTIMIZED: Fetch dashboard stats (no longer includes recentDocuments)
         const dashboardData = await pdfApi.getAdminDashboardData();
 
-        // Map recent documents to the existing Document interface for compatibility
-        const mapped: Document[] = dashboardData.recentDocuments.map((doc: any) => ({
-          id: doc.id,
-          name: doc.title, // ✅ Now using real document titles from backend
-          uploadedOn: doc.uploadedOnFormatted,
-          status: doc.status,
-          createdAt: doc.createdDate,
-          updatedAt: doc.uploadedOn,
-        }));
-
-        setDocuments(mapped);
-
-        // ✅ NEW: Also fetch grouped recent documents for folder view
-        const groupedData = await pdfApi.getSavedFilesGrouped(1, 10); // Get first 10 groups for recent view
+        // ✅ Fetch grouped recent documents for both folder view and document list
+        const groupedData = await pdfApi.getSavedFilesGrouped(1, 10, {
+          includeLogs: true,
+          isDeleted: false,
+          includeDrafts: true
+        });
         setRecentAgreements(groupedData.groups || []);
+
+        // ✅ Transform grouped data into Document[] format for document list
+        const recentDocs: Document[] = groupedData.groups
+          .flatMap(group =>
+            group.files.map(file => ({
+              id: file.id,
+              name: file.title || group.agreementTitle,
+              uploadedOn: new Date(file.createdAt).toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              }),
+              status: file.status,
+              createdAt: file.createdAt,
+              updatedAt: file.updatedAt || file.createdAt,
+            }))
+          )
+          .slice(0, 10); // Get first 10 files across all agreements
+
+        setDocuments(recentDocs);
 
         // ✅ Set all statistics from the dashboard API response
         setUploadCount(dashboardData.stats.manualUploads);
         setDashboardStats(dashboardData.stats);
 
         // Set last upload date from the most recent document
-        if (dashboardData.recentDocuments.length > 0) {
-          setLastUploadDate(dashboardData.recentDocuments[0].createdDate);
+        if (recentDocs.length > 0) {
+          setLastUploadDate(recentDocs[0].createdAt);
         } else {
           setLastUploadDate(new Date().toISOString());
         }
 
         console.log("✅ Dashboard data loaded:", {
-          documents: mapped.length,
+          documents: recentDocs.length,
           recentAgreements: groupedData.groups?.length || 0,
           stats: dashboardData.stats,
           documentStatus: dashboardData.documentStatus
         });
 
       } catch (err) {
-        console.error("Error fetching dashboard data:", err);
+        console.error("❌ [ADMIN-PANEL] Error fetching dashboard data:", err);
 
-        // ✅ Fallback: If new API fails, use old API calls
-        console.log("⚠️ Falling back to old API calls...");
-        try {
-          const data = await pdfApi.getCustomerHeadersSummary();
-          const items = data.items || [];
-
-          const mapped: Document[] = items.map((item: any) => ({
-            id: item._id || item.id,
-            name: item.headerTitle || "Untitled Document",
-            uploadedOn: new Date(item.updatedAt).toLocaleDateString("en-US", {
-              month: "long",
-              year: "numeric",
-            }),
-            status: item.status || "draft",
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-          }));
-
-          const sortedRecent = mapped
-            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-          setDocuments(sortedRecent);
-
-          // Try to get grouped data as fallback
-          try {
-            const groupedData = await pdfApi.getSavedFilesGrouped(1, 5);
-            setRecentAgreements(groupedData.groups || []);
-          } catch (groupedErr) {
-            console.warn("Could not fetch grouped data:", groupedErr);
-          }
-        } catch (fallbackErr) {
-          console.error("Fallback API also failed:", fallbackErr);
-        }
+        // ✅ Simple error handling - no fallback to old API
+        setDocuments([]);
+        setRecentAgreements([]);
+        setDashboardStats({
+          manualUploads: 0,
+          savedDocuments: 0,
+          totalDocuments: 0
+        });
       } finally {
         setLoading(false);
       }

@@ -32,7 +32,8 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   const { modalType, itemId } = useParams();
   const location = useLocation();
 
-  // Backup hook
+  // ✅ OPTIMIZED: Use manual fetch control (no auto-fetch)
+  // APIs will be called based on active tab instead
   const {
     backups,
     health,
@@ -52,10 +53,9 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     enforceRetentionPolicy,
     refreshAll,
     clearErrors
-  } = usePricingBackups(true);
+  } = usePricingBackups('none');
 
   // Local state
-  const [activeView, setActiveView] = useState<BackupViewMode>(initialView);
   const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -99,15 +99,63 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     existingBackup?: any;
   } | null>(null);
 
-  // Sync view with URL
+  // ✅ OPTIMIZED: Initialize activeView from URL BEFORE first render
+  const [activeView, setActiveView] = useState<BackupViewMode>(() => {
+    const pathSegments = location.pathname.split('/');
+    const viewFromUrl = pathSegments[pathSegments.length - 1] as BackupViewMode;
+
+    if (['list', 'statistics', 'health', 'compare'].includes(viewFromUrl)) {
+      console.log(`📋 [BACKUP-MANAGER] Initializing with view from URL: ${viewFromUrl}`);
+      return viewFromUrl;
+    }
+
+    console.log(`📋 [BACKUP-MANAGER] Initializing with default view: list`);
+    return initialView;
+  });
+
+  // Sync view with URL changes (after initial mount)
   useEffect(() => {
     const pathSegments = location.pathname.split('/');
     const viewFromUrl = pathSegments[pathSegments.length - 1] as BackupViewMode;
 
     if (['list', 'statistics', 'health', 'compare'].includes(viewFromUrl)) {
-      setActiveView(viewFromUrl);
+      setActiveView(prevView => {
+        if (viewFromUrl !== prevView) {
+          console.log(`📋 [BACKUP-MANAGER] URL changed - updating view from ${prevView} to ${viewFromUrl}`);
+          return viewFromUrl;
+        }
+        return prevView;
+      });
     }
-  }, [location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // ✅ Only run when URL changes, not when activeView changes
+
+  // ✅ OPTIMIZED: Fetch data based on active tab only
+  useEffect(() => {
+    console.log(`📋 [BACKUP-MANAGER] Active view changed to: ${activeView} - triggering fetch`);
+
+    switch (activeView) {
+      case 'list':
+        console.log('📋 [BACKUP-MANAGER] Calling fetchBackups()...');
+        fetchBackups();
+        break;
+
+      case 'health':
+        console.log('🏥 [BACKUP-MANAGER] Calling fetchHealth()...');
+        fetchHealth();
+        break;
+
+      case 'statistics':
+        console.log('📊 [BACKUP-MANAGER] Calling fetchStatistics()...');
+        fetchStatistics();
+        break;
+
+      default:
+        console.log(`⏭️ [BACKUP-MANAGER] No data fetch needed for view: ${activeView}`);
+        break;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView]); // ✅ Only depend on activeView, functions are stable (wrapped in useCallback)
 
   // Handle modal actions from URL
   useEffect(() => {
@@ -246,7 +294,12 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
       type: 'danger',
       confirmText: 'Delete',
       cancelText: 'Cancel',
-      onConfirm: () => handleConfirmDelete(changeDayIds)
+      onConfirm: () => handleConfirmDelete(changeDayIds),
+      textConfirmation: {
+        required: false,
+        placeholder: '',
+        label: ''
+      }
     });
   };
 

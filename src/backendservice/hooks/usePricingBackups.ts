@@ -30,7 +30,13 @@ export interface UsePricingBackupsResult {
   fetchBackups: (limit?: number) => Promise<void>;
   fetchHealth: () => Promise<void>;
   fetchStatistics: () => Promise<void>;
-  createBackup: (payload?: CreateBackupPayload) => Promise<{ success: boolean; error?: string; data?: any }>;
+  createBackup: (payload?: CreateBackupPayload) => Promise<{
+    success: boolean;
+    error?: string;
+    data?: any;
+    requiresConfirmation?: boolean;
+    existingBackup?: any;
+  }>;
   restoreBackup: (payload: RestoreBackupPayload) => Promise<{ success: boolean; error?: string; data?: any }>;
   deleteBackups: (changeDayIds: string[]) => Promise<{ success: boolean; error?: string; data?: any }>;
   enforceRetentionPolicy: () => Promise<{ success: boolean; error?: string; data?: any }>;
@@ -44,8 +50,16 @@ export interface UsePricingBackupsResult {
 /**
  * Custom hook for managing pricing backups
  * Follows the same pattern as useServiceConfigs and useProductCatalog
+ *
+ * ✅ OPTIMIZED: Updated to support selective auto-fetch
+ * - autoFetch: 'none' | 'list' | 'health' | 'statistics' | 'all'
+ * - 'none': No auto-fetch (manual control)
+ * - 'list': Only fetch backups list on mount
+ * - 'health': Only fetch health on mount
+ * - 'statistics': Only fetch statistics on mount
+ * - 'all': Fetch all three APIs on mount (legacy behavior)
  */
-export function usePricingBackups(autoFetch: boolean = true): UsePricingBackupsResult {
+export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'statistics' | 'all' = 'none'): UsePricingBackupsResult {
   // Data state
   const [backups, setBackups] = useState<PricingBackup[]>([]);
   const [health, setHealth] = useState<BackupSystemHealth | null>(null);
@@ -264,12 +278,41 @@ export function usePricingBackups(autoFetch: boolean = true): UsePricingBackupsR
     setStatisticsError(null);
   }, []);
 
-  // Auto-fetch on mount if enabled
+  // ✅ OPTIMIZED: Auto-fetch based on mode
   useEffect(() => {
-    if (autoFetch) {
-      refreshAll();
-    }
-  }, [autoFetch, refreshAll]);
+    const performAutoFetch = async () => {
+      console.log(`🔄 [PRICING-BACKUPS] Auto-fetch mode: ${autoFetch}`);
+
+      switch (autoFetch) {
+        case 'list':
+          console.log('📋 [PRICING-BACKUPS] Auto-fetching backups list only');
+          await fetchBackups();
+          break;
+
+        case 'health':
+          console.log('🏥 [PRICING-BACKUPS] Auto-fetching health only');
+          await fetchHealth();
+          break;
+
+        case 'statistics':
+          console.log('📊 [PRICING-BACKUPS] Auto-fetching statistics only');
+          await fetchStatistics();
+          break;
+
+        case 'all':
+          console.log('🔄 [PRICING-BACKUPS] Auto-fetching all APIs (legacy mode)');
+          await refreshAll();
+          break;
+
+        case 'none':
+        default:
+          console.log('⏭️ [PRICING-BACKUPS] Auto-fetch disabled - manual control');
+          break;
+      }
+    };
+
+    performAutoFetch();
+  }, []); // ✅ Empty deps - only run once on mount
 
   return {
     // Data state

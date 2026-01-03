@@ -1,5 +1,5 @@
 // src/components/SavedFilesGrouped.tsx
-// ✅ NEW: Folder-like grouped view with checkboxes and bulk actions
+// ✅ PERFORMANCE OPTIMIZED: Memoized components for better rendering (no virtual scrolling)
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
@@ -8,15 +8,14 @@ import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
-  faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare, faTrash, faUndo, faClipboardList
+  faCheckSquare, faTrash, faClipboardList
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
-import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
+// ✅ OPTIMIZED: Import memoized component for better performance
+import { AgreementRow } from "./SavedFiles/AgreementRow";
 
 type FileStatus =
   | "saved"
@@ -61,18 +60,13 @@ const STATUS_LABEL: Record<FileStatus, string> = {
 };
 
 interface SavedFilesGroupedProps {
-  mode?: 'normal' | 'trash';
   onDataLoaded?: (groups: SavedFileGroup[]) => void;
 }
 
-// ✅ CRITICAL FIX: Module-level flags per mode to prevent duplicate initial loads
-// Separate flag for each mode since component is used in both normal and trash views
-const hasInitiallyLoadedByMode: Record<string, boolean> = {
-  normal: false,
-  trash: false
-};
+// ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads
+let hasInitiallyLoaded = false;
 
-export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: SavedFilesGroupedProps) {
+export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedProps) {
   const [groups, setGroups] = useState<SavedFileGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,8 +118,37 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
   const normalizedDeleteText = deleteConfirmText.trim().toUpperCase();
   const isDeleteConfirmed = normalizedDeleteText === 'DELETE';
 
-  // ✅ NEW: Enhanced permanent delete confirmation state
-  const [permanentDeleteConfirmed, setPermanentDeleteConfirmed] = useState(false);
+  // ✅ NEW: Watermark state for compatibility with VirtualizedAgreementList
+  const [fileWatermarkStates, setFileWatermarkStates] = useState<Map<string, boolean>>(new Map());
+
+  // ✅ NEW: Placeholder handler for watermark toggle (feature not used in this view)
+  const handleWatermarkToggle = useCallback((fileId: string, checked: boolean) => {
+    setFileWatermarkStates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(fileId, checked);
+      return newMap;
+    });
+  }, []);
+
+  // ✅ NEW: Placeholder handler for add file (feature not used in this view)
+  const handleAddFile = useCallback((group: SavedFileGroup) => {
+    console.log('Add file not implemented in SavedFilesGrouped');
+  }, []);
+
+  // ✅ NEW: Placeholder handler for agreement Zoho upload (feature not used in this view)
+  const handleAgreementZohoUpload = useCallback((group: SavedFileGroup) => {
+    console.log('Agreement Zoho upload not implemented in SavedFilesGrouped');
+  }, []);
+
+  // ✅ NEW: Placeholder handler for date change (feature not used in this view)
+  const handleDateChange = useCallback(async (agreementId: string, newDate: string) => {
+    console.log('Date change not implemented in SavedFilesGrouped');
+  }, []);
+
+  // ✅ NEW: Wrapper for handleStatusUpdate to match VirtualizedAgreementList signature
+  const handleStatusChange = useCallback((file: SavedFileListItem, newStatus: string) => {
+    handleStatusUpdate(file.id, newStatus, file.fileType === 'main_pdf');
+  }, []);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,7 +157,7 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
 
   // Fetch grouped files
   // ✅ OPTIMIZED: Single API call with duplicate prevention
-  // ✅ NEW: Support both normal and trash modes
+  // Fetch grouped files
   const fetchGroups = useCallback(async (page = 1, search = "") => {
     // ✅ CRITICAL FIX: Check flag AND loading state to prevent race conditions
     if (isFetchingRef.current) {
@@ -149,15 +172,14 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
     setError(null);
 
     try {
-      const isTrashMode = mode === 'trash';
-      console.log(`📁 [SAVED-FILES-GROUPED] Fetching ${isTrashMode ? 'TRASH' : 'NORMAL'} items - page ${page} with search: "${search}"`);
+      console.log(`📁 [SAVED-FILES-GROUPED] Fetching items - page ${page} with search: "${search}"`);
 
       // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
       const requestParams = {
         search: search.trim() || undefined,
         includeLogs: true,
-        includeDrafts: !isTrashMode, // ✅ Only include drafts in normal mode, not trash
-        isDeleted: isTrashMode // ✅ Filter based on mode (trash shows deleted, normal shows non-deleted)
+        includeDrafts: true,
+        isDeleted: false // ✅ Only fetch non-deleted items (saved files)
       };
 
       console.log(`📡 [SAVED-FILES-GROUPED] Request params:`, requestParams);
@@ -171,12 +193,10 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
           id: groupedResponse.groups[0].id,
           title: groupedResponse.groups[0].agreementTitle,
           fileCount: groupedResponse.groups[0].fileCount,
-          isDeleted: groupedResponse.groups[0].isDeleted,
           files: groupedResponse.groups[0].files.map(f => ({
             id: f.id,
             fileName: f.fileName,
-            fileType: f.fileType,
-            isDeleted: (f as any).isDeleted
+            fileType: f.fileType
           }))
         } : null
       });
@@ -185,13 +205,6 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
       // Backend now returns draft agreements in the grouped response
 
       const allGroups = groupedResponse.groups;
-
-      if (isTrashMode && allGroups.length === 0) {
-        console.warn('⚠️ [TRASH MODE] No deleted items found. This could mean:');
-        console.warn('  1. No files have been deleted yet');
-        console.warn('  2. Files were not properly marked as isDeleted=true in database');
-        console.warn('  3. Backend filter is not working correctly');
-      }
 
       setGroups(allGroups);
       setTotalGroups(groupedResponse.totalGroups);
@@ -214,46 +227,44 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
       setLoading(false);
       isFetchingRef.current = false;  // ✅ Reset fetching flag
     }
-  }, [mode, groupsPerPage]); // ✅ Dependencies for useCallback
+  }, [groupsPerPage]); // ✅ Dependencies for useCallback
+
+  // ✅ CRITICAL FIX: Track if this is the first render of search effect to prevent duplicate call on page refresh
+  const isFirstSearchRender = useRef(true);
 
   // ✅ FIXED: Separate initial load from search to prevent duplicate calls
-  // ✅ FIXED: Use mode-specific flag to allow both normal and trash views to load independently
   useEffect(() => {
-    if (hasInitiallyLoadedByMode[mode]) {
-      console.log(`ƒ?ð‹÷? [SAVED-FILES-GROUPED] Skipping duplicate initial load for ${mode} mode`);
+    if (hasInitiallyLoaded) {
+      console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping duplicate initial load`);
       return;
     }
-    hasInitiallyLoadedByMode[mode] = true;
-    console.log(`ÐY"? [SAVED-FILES-GROUPED] Initial load (mode: ${mode})`);
+    hasInitiallyLoaded = true;
+    console.log(`📁 [SAVED-FILES-GROUPED] Initial load`);
     fetchGroups(1, queryRef.current);
 
     return () => {
-      hasInitiallyLoadedByMode[mode] = false;
-      isFirstSearchRenderByMode.current[mode] = true;
-      console.log(`ÐY"" [SAVED-FILES-GROUPED] Flags reset for ${mode} mode after unmount (navigating away)`);
+      // Use setTimeout to distinguish between React Strict Mode unmount and real navigation
+      setTimeout(() => {
+        hasInitiallyLoaded = false;
+        isFirstSearchRender.current = true;
+        console.log(`🔄 [SAVED-FILES-GROUPED] Flags reset after unmount (navigating away)`);
+      }, 50);
     };
-  }, [mode, fetchGroups]);
-
-  // ✅ CRITICAL FIX: Track if this is the first render of search effect per mode to prevent duplicate call on page refresh
-  // Use an object to track first render status for each mode separately
-  const isFirstSearchRenderByMode = useRef<Record<string, boolean>>({
-    normal: true,
-    trash: true
-  });
+  }, [fetchGroups]);
 
   // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
-    // Skip if the initial load hasn't happened yet for this mode
-    if (!hasInitiallyLoadedByMode[mode]) return;
+    // Skip if the initial load hasn't happened yet
+    if (!hasInitiallyLoaded) return;
 
-    // ✅ FIX: Skip on first render for this mode to prevent duplicate call when page refreshes
-    if (isFirstSearchRenderByMode.current[mode]) {
-      isFirstSearchRenderByMode.current[mode] = false;
-      console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping search effect on first render for ${mode} mode`);
+    // ✅ FIX: Skip on first render to prevent duplicate call when page refreshes
+    if (isFirstSearchRender.current) {
+      isFirstSearchRender.current = false;
+      console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping search effect on first render`);
       return;
     }
 
-    console.log(`🔍 [SAVED-FILES-GROUPED] Search query changed to: "${query}" (mode: ${mode})`);
+    console.log(`🔍 [SAVED-FILES-GROUPED] Search query changed to: "${query}"`);
 
     const timeoutId = setTimeout(() => {
       fetchGroups(1, query);
@@ -348,20 +359,17 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
   const isGroupExpanded = (groupId: string) => expandedGroups.has(groupId);
 
   // ✅ OPTIMIZED: File action handlers with on-demand detailed data fetching
-  const isTrashMode = mode === "trash";
-
-  const handleView = async (file: SavedFileListItem) => {
+  const handleView = async (file: SavedFileListItem, watermark: boolean = false) => {
     try {
       if (file.fileType === "version_log") {
-        console.log("?? [VIEW LOG] Navigating to PDF viewer", file.id);
+        console.log("👁️ [VIEW LOG] Navigating to PDF viewer", file.id);
         navigate("/pdf-viewer", {
           state: {
             documentId: file.id,
             fileName: file.title,
             originalReturnPath: returnPath,
             documentType: "version-log",
-            fileType: "version_log",
-            includeDeleted: isTrashMode
+            fileType: "version_log"
           },
         });
         return;
@@ -412,13 +420,13 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
     }
   };
 
-  const handleDownload = async (file: SavedFileListItem) => {
+  const handleDownload = async (file: SavedFileListItem, watermark: boolean = false) => {
     try {
       let blob: Blob;
       let fileName = file.title;
 
       if (file.fileType === "version_log") {
-        blob = await pdfApi.downloadVersionLog(file.id, isTrashMode);
+        blob = await pdfApi.downloadVersionLog(file.id);
         fileName = file.fileName || file.title;
       } else if (file.fileType === "attached_pdf") {
         blob = await manualUploadApi.downloadFile(file.id);
@@ -507,16 +515,18 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
     }
   };
 
-  const handleEdit = async (file: SavedFileListItem, groupId: string) => {
+  const handleEdit = async (file: SavedFileListItem, groupId?: string) => {
     try {
+      // ✅ Get groupId from file if not provided
+      const agreementId = groupId || file.agreementId || file.id;
       // ✅ FIXED: For version PDFs, edit the agreement directly (like handleEditAgreement)
       if (file.fileType === 'version_pdf') {
-        console.log(`✏️ [EDIT VERSION] Editing agreement for version: ${file.title}, agreement: ${groupId}`);
-        await pdfApi.getCustomerHeaderForEdit(groupId);
-        navigate(`/edit/pdf/${groupId}`, {
+        console.log(`✏️ [EDIT VERSION] Editing agreement for version: ${file.title}, agreement: ${agreementId}`);
+        await pdfApi.getCustomerHeaderForEdit(agreementId);
+        navigate(`/edit/pdf/${agreementId}`, {
           state: {
             editing: true,
-            id: groupId, // ✅ Use agreement ID, not version file ID
+            id: agreementId, // ✅ Use agreement ID, not version file ID
             returnPath: returnPath,
           },
         });
@@ -610,88 +620,11 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
   const handleDelete = (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
     setItemToDelete({ type, id, title, fileType });
     setDeleteConfirmText('');
-    setPermanentDeleteConfirmed(false);  // Reset checkbox state
     setDeleteConfirmOpen(true);
-  };
-
-  // ✅ NEW: Handle restore from trash
-  const handleRestore = async (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
-    try {
-      let result;
-
-      if (type === 'folder') {
-        // Check if this is a deleted agreement or just an agreement with deleted files
-        const group = groups.find(g => g.id === id);
-
-        if (group?.isDeleted === true) {
-          // Agreement itself is deleted - restore the agreement
-          console.log(`♻️ [RESTORE] Restoring deleted agreement: ${title}`);
-          result = await pdfApi.restoreAgreement(id);
-        } else {
-          // Agreement is not deleted, but has deleted files - restore all deleted files
-          console.log(`♻️ [RESTORE] Restoring all deleted files in agreement: ${title}`);
-          const deletedFiles = (group?.files || []).filter(file => file.isDeleted === true || !!file.deletedAt);
-
-          if (deletedFiles.length === 0) {
-            setToastMessage({
-              message: "No deleted files found to restore.",
-              type: "error"
-            });
-            return;
-          }
-
-          // Restore all deleted files in this agreement
-          const restorePromises = deletedFiles.map(file => pdfApi.restoreFile(file.id, { fileType: file.fileType }));
-          const results = await Promise.all(restorePromises);
-
-          const successCount = results.filter(r => r.success).length;
-          const failCount = results.length - successCount;
-
-          if (successCount > 0) {
-            result = {
-              success: true,
-              message: `Restored ${successCount} file${successCount !== 1 ? 's' : ''}${failCount > 0 ? `, ${failCount} failed` : ''}`
-            };
-          } else {
-            result = {
-              success: false,
-              message: `Failed to restore ${failCount} file${failCount !== 1 ? 's' : ''}`
-            };
-          }
-        }
-      } else {
-        // Restore individual file
-        console.log(`♻️ [RESTORE] Restoring individual file: ${title}`);
-        result = await pdfApi.restoreFile(id, { fileType });
-      }
-
-      if (result.success) {
-        setToastMessage({
-          message: result.message || `${type === 'folder' ? 'Agreement' : 'File'} "${title}" restored successfully!`,
-          type: "success"
-        });
-
-        // Refresh the list
-        await fetchGroups(currentPage, query);
-      } else {
-        setToastMessage({
-          message: result.message || "Failed to restore. Please try again.",
-          type: "error"
-        });
-      }
-    } catch (error) {
-      console.error("Failed to restore:", error);
-      setToastMessage({
-        message: "Failed to restore. Please try again.",
-        type: "error"
-      });
-    }
   };
 
   // ✅ NEW: Confirm delete action
   const confirmDelete = async () => {
-    const isTrashMode = mode === 'trash';
-
     if (!itemToDelete || !isDeleteConfirmed) {
       setToastMessage({
         message: "Please type 'DELETE' to confirm",
@@ -700,87 +633,35 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
       return;
     }
 
-    // In trash mode, require additional confirmation checkbox for permanent delete
-    if (isTrashMode && !permanentDeleteConfirmed) {
-      setToastMessage({
-        message: "Please check the confirmation box for permanent delete",
-        type: "error"
-      });
-      return;
-    }
-
     try {
       let result;
 
-      if (isTrashMode) {
-        // Trash mode - permanent delete
-        if (itemToDelete.type === 'folder') {
-          result = await pdfApi.permanentlyDeleteAgreement(itemToDelete.id);
-        } else {
-          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id, {
-            fileType: itemToDelete.fileType
-          });
-        }
-
-        if (result.success) {
-          setDeleteConfirmOpen(false);
-          setItemToDelete(null);
-          setDeleteConfirmText('');
-          setPermanentDeleteConfirmed(false);
-
-          // Show detailed success message with deleted data
-          let successMsg = `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} permanently deleted!`;
-          if (result.deletedData) {
-            if (itemToDelete.type === 'folder' && 'deletedAttachedFiles' in result.deletedData) {
-              const data = result.deletedData as any;
-              successMsg += ` (${data.deletedAttachedFiles} files, ${data.deletedZohoMappings} mappings, ${data.deletedVersions} versions removed)`;
-            } else if ('cleanedReferences' in result.deletedData) {
-              const data = result.deletedData as any;
-              successMsg += ` (${data.cleanedReferences} references cleaned)`;
-            }
-          }
-
-          setToastMessage({
-            message: successMsg,
-            type: "success"
-          });
-
-          // Refresh the list
-          await fetchGroups(currentPage, query);
-        } else {
-          setToastMessage({
-            message: result.message || "Failed to permanently delete. Please try again.",
-            type: "error"
-          });
-        }
+      // Soft delete (move to trash)
+      if (itemToDelete.type === 'folder') {
+        result = await pdfApi.deleteAgreement(itemToDelete.id);
       } else {
-        // Normal mode - soft delete (move to trash)
-        if (itemToDelete.type === 'folder') {
-          result = await pdfApi.deleteAgreement(itemToDelete.id);
-        } else {
-          result = await pdfApi.deleteFile(itemToDelete.id, {
-            fileType: itemToDelete.fileType
-          });
-        }
+        result = await pdfApi.deleteFile(itemToDelete.id, {
+          fileType: itemToDelete.fileType
+        });
+      }
 
-        if (result.success) {
-          setDeleteConfirmOpen(false);
-          setItemToDelete(null);
-          setDeleteConfirmText('');
+      if (result.success) {
+        setDeleteConfirmOpen(false);
+        setItemToDelete(null);
+        setDeleteConfirmText('');
 
-          setToastMessage({
-            message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} moved to trash successfully!`,
-            type: "success"
-          });
+        setToastMessage({
+          message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} moved to trash successfully!`,
+          type: "success"
+        });
 
-          // Refresh the list after deletion
-          await fetchGroups(currentPage, query);
-        } else {
-          setToastMessage({
-            message: result.message || "Failed to delete. Please try again.",
-            type: "error"
-          });
-        }
+        // Refresh the list after deletion
+        await fetchGroups(currentPage, query);
+      } else {
+        setToastMessage({
+          message: result.message || "Failed to delete. Please try again.",
+          type: "error"
+        });
       }
     } catch (error) {
       console.error("Failed to delete:", error);
@@ -797,15 +678,15 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
         <div className="sf__search">
           <input
             type="text"
-            placeholder={mode === 'trash' ? "Search deleted agreements..." : "Search agreements..."}
+            placeholder="Search agreements..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
-        {/* ✅ NEW: Bulk actions toolbar - different for trash vs normal mode */}
+        {/* Bulk actions toolbar */}
         <div className="sf__actions">
-          {hasSelectedFiles && mode === 'normal' && (
+          {hasSelectedFiles && (
             <>
               <div className="sf__selection-info" style={{
                 fontSize: '14px',
@@ -836,55 +717,7 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
             </>
           )}
 
-          {hasSelectedFiles && mode === 'trash' && (
-            <>
-              <div className="sf__selection-info" style={{
-                fontSize: '14px',
-                color: '#6b7280',
-                fontWeight: '500',
-                padding: '0 8px'
-              }}>
-                {selectedFileIds.length} deleted file{selectedFileIds.length !== 1 ? 's' : ''} selected
-              </div>
-
-              <button
-                type="button"
-                className="sf__btn sf__btn--light"
-                onClick={clearAllSelections}
-              >
-                Clear Selection
-              </button>
-
-              <button
-                type="button"
-                className="sf__btn sf__btn--success"
-                onClick={() => {
-                  // TODO: Implement bulk restore
-                  setToastMessage({
-                    message: "Bulk restore feature coming soon!",
-                    type: "info"
-                  });
-                }}
-              >
-                <FontAwesomeIcon icon={faUndo} style={{ marginRight: '6px' }} />
-                Restore Selected ({selectedFileIds.length})
-              </button>
-            </>
-          )}
-
-          {!hasSelectedFiles && mode === 'normal' && (
-            <button
-              type="button"
-              className="sf__btn sf__btn--light"
-              onClick={selectAllFiles}
-              disabled={totalFiles === 0}
-            >
-              <FontAwesomeIcon icon={faCheckSquare} style={{ marginRight: '6px' }} />
-              Select All
-            </button>
-          )}
-
-          {!hasSelectedFiles && mode === 'trash' && (
+          {!hasSelectedFiles && (
             <button
               type="button"
               className="sf__btn sf__btn--light"
@@ -898,10 +731,7 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
         </div>
 
         <div className="sf__stats">
-          {mode === 'trash'
-            ? `${totalGroups} deleted agreements • ${totalFiles} deleted files`
-            : `${totalGroups} agreements • ${totalFiles} files`
-          }
+          {totalGroups} agreements • {totalFiles} files
         </div>
       </div>
 
@@ -969,17 +799,9 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
                     <div style={{
                       width: '70px',
                       height: '28px',
-                      background: mode === 'trash' ? '#10b981' : '#f3f4f6',
+                      background: '#f3f4f6',
                       borderRadius: '6px'
                     }} />
-                    {mode === 'trash' && (
-                      <div style={{
-                        width: '70px',
-                        height: '28px',
-                        background: '#fef2f2',
-                        borderRadius: '6px'
-                      }} />
-                    )}
                   </div>
                 </div>
               </div>
@@ -999,512 +821,42 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
           </div>
         )}
 
+        {/* ✅ OPTIMIZED: Direct rendering with memoized components - no virtual scrolling complexity */}
         {!loading && !error && groups.map((group) => {
-          const groupSelectionState = getGroupSelectionState(group);
-          const groupDeletionInfo = mode === 'trash' ? formatDeletionMeta(group.deletedBy, group.deletedAt) : null;
+          const isExpanded = expandedGroups.has(group.id);
+          const selectionState = getGroupSelectionState(group);
 
           return (
-            <div key={group.id} className="sf__group" style={{
-              background: '#fff',
-              border: '1px solid #e6e6e6',
-              borderRadius: '10px',
-              marginBottom: '8px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-            }}>
-              <div
-                className="sf__group-header"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px',
-                  cursor: 'pointer',
-                  borderBottom: isGroupExpanded(group.id) ? '1px solid #f0f0f0' : 'none'
-                }}
-              >
-                {/* ✅ NEW: Group checkbox */}
-                <div style={{ marginRight: '12px' }} onClick={(e) => e.stopPropagation()}>
-                  <FontAwesomeIcon
-                    icon={groupSelectionState === 'none' ? faSquare : faCheckSquare}
-                    style={{
-                      color: groupSelectionState !== 'none' ? '#3b82f6' : '#d1d5db',
-                      cursor: 'pointer',
-                      fontSize: '16px'
-                    }}
-                    onClick={() => toggleGroupSelection(group.id)}
-                  />
-                </div>
-
-                {/* Expand/collapse arrow */}
-                <FontAwesomeIcon
-                  icon={isGroupExpanded(group.id) ? faChevronDown : faChevronRight}
-                  style={{
-                    color: '#6b7280',
-                    fontSize: '14px',
-                    marginRight: '8px'
-                  }}
-                  onClick={() => toggleGroup(group.id)}
-                />
-
-                {/* Folder icon */}
-                <FontAwesomeIcon
-                  icon={isGroupExpanded(group.id) ? faFolderOpen : faFolder}
-                  style={{
-                    color: '#f59e0b',
-                    fontSize: '18px',
-                    marginRight: '12px'
-                  }}
-                />
-
-                {/* Agreement title and metadata */}
-                <div style={{ flex: 1 }} onClick={() => toggleGroup(group.id)}>
-                  <span style={{
-                    fontWeight: '600',
-                    fontSize: '16px',
-                    color: '#374151'
-                  }}>
-                    {group.agreementTitle}
-                  </span>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    marginTop: '4px',
-                    fontSize: '13px',
-                    color: '#6b7280'
-                  }}>
-                    <span>{group.fileCount} files</span>
-                    <span>{timeAgo(group.latestUpdate)}</span>
-                    {/* ✅ FIXED: Show agreement status from group.statuses */}
-                    {group.statuses && group.statuses.length > 0 && (
-                      <span style={{
-                        background: `var(--status-${group.statuses[0]}-bg, #f3f4f6)`,
-                        color: `var(--status-${group.statuses[0]}-text, #4b5563)`,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600'
-                      }}>
-                        {STATUS_LABEL[group.statuses[0] as FileStatus]}
-                      </span>
-                    )}
-                    {groupDeletionInfo && (
-                      <span style={{
-                        fontSize: '11px',
-                        color: '#9ca3af'
-                      }}>
-                        Deleted {groupDeletionInfo}
-                      </span>
-                    )}
-                    {group.hasUploads && (
-                      <span style={{
-                        background: '#fef3c7',
-                        color: '#92400e',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600'
-                      }}>
-                        📤 Bigin
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* ✅ NEW: Active Days Remaining Badge - on the right side */}
-                {group.startDate && group.contractMonths && (() => {
-                  const start = new Date(group.startDate);
-                  const today = new Date();
-                  const endDate = new Date(start);
-                  endDate.setMonth(endDate.getMonth() + group.contractMonths);
-
-                  const daysRemaining = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-                  let status = 'active';
-                  let bgColor = '#f0fdf4';
-                  let borderColor = '#10b981';
-                  let textColor = '#10b981';
-                  let icon = '✓';
-
-                  if (daysRemaining < 0) {
-                    status = 'expired';
-                    bgColor = '#fef2f2';
-                    borderColor = '#dc2626';
-                    textColor = '#dc2626';
-                    icon = '⚠';
-                  } else if (daysRemaining <= 30) {
-                    status = 'expiring-soon';
-                    bgColor = '#fef3c7';
-                    borderColor = '#f59e0b';
-                    textColor = '#f59e0b';
-                    icon = '⏰';
-                  }
-
-                  return (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        background: bgColor,
-                        border: `2px solid ${borderColor}`,
-                        borderRadius: '8px',
-                        padding: '8px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginRight: '12px'
-                      }}
-                    >
-                      <span style={{ fontSize: '14px' }}>{icon}</span>
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start'
-                      }}>
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          color: textColor,
-                          textTransform: 'capitalize'
-                        }}>
-                          {status === 'active' ? 'Active' : status === 'expiring-soon' ? 'Expiring Soon' : 'Expired'}
-                        </span>
-                        <span style={{
-                          fontSize: '13px',
-                          fontWeight: '700',
-                          color: textColor
-                        }}>
-                          {daysRemaining > 0 ? `${daysRemaining} days left` : `${Math.abs(daysRemaining)} days ago`}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* ✅ FIXED: Status dropdown at agreement level - only show in normal mode */}
-                {mode === 'normal' && group.statuses && group.statuses.length > 0 && (
-                  <select
-                    value={group.statuses[0]}
-                    onChange={(e) => handleStatusUpdate(group.id, e.target.value, true)} // true = isAgreement
-                    disabled={updatingStatus[group.id]}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #d1d5db',
-                      fontSize: '12px',
-                      backgroundColor: updatingStatus[group.id] ? '#f3f4f6' : '#fff',
-                      cursor: updatingStatus[group.id] ? 'not-allowed' : 'pointer',
-                      marginRight: '8px'
-                    }}
-                    title="Change agreement status"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="saved">Saved</option>
-                    <option value="pending_approval">Pending Approval</option>
-                    <option value="approved_salesman">Approved by Salesman</option>
-                    <option value="approved_admin">Approved by Admin</option>
-                  </select>
-                )}
-
-                {/* Add file button - only show in normal mode */}
-                {mode === 'normal' && (
-                  <button
-                    style={{
-                      background: '#f3f4f6',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#374151',
-                      fontWeight: '500'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // TODO: Add file to this agreement
-                      setToastMessage({ message: "Add file feature coming soon!", type: "info" });
-                    }}
-                    title="Add file to this agreement"
-                  >
-                    <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
-                    Add
-                  </button>
-                )}
-
-                {/* ✅ FIXED: Edit Agreement button for all agreements - only show in normal mode */}
-                {mode === 'normal' && (
-                  <button
-                    style={{
-                      background: '#3b82f6',
-                      border: '1px solid #2563eb',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#fff',
-                      fontWeight: '500',
-                      marginLeft: '8px'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditAgreement(group);
-                    }}
-                    title="Edit this agreement"
-                  >
-                    <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '10px' }} />
-                    Edit Agreement
-                  </button>
-                )}
-
-                {/* Edit Agreement button for draft-only agreements - only show in normal mode */}
-                {mode === 'normal' && group.fileCount === 0 && (
-                  <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '8px' }}>
-                    (No files yet)
-                  </span>
-                )}
-
-                {/* Restore button - only show in trash mode */}
-                {mode === 'trash' && (
-                  <button
-                    style={{
-                      background: '#f0fdf4',
-                      border: '1px solid #16a34a',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#16a34a',
-                      fontWeight: '500',
-                      marginLeft: '8px'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRestore('folder', group.id, group.agreementTitle);
-                    }}
-                    title="Restore this agreement from trash"
-                  >
-                    <FontAwesomeIcon icon={faUndo} style={{ fontSize: '10px' }} />
-                    Restore
-                  </button>
-                )}
-
-                {/* Delete/Permanent Delete button - ✅ FIXED: Only show if agreement itself was deleted */}
-                {(mode !== 'trash' || group.isDeleted === true) && (
-                  <button
-                    style={{
-                      background: '#fef2f2',
-                      border: '1px solid #fca5a5',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#dc2626',
-                      fontWeight: '500',
-                      marginLeft: '8px'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete('folder', group.id, group.agreementTitle);
-                    }}
-                    title={mode === 'trash' ? "Permanently delete this agreement" : "Delete this agreement (move to trash)"}
-                  >
-                    <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
-                    {mode === 'trash' ? 'Permanent Delete' : 'Delete'}
-                  </button>
-                )}
-              </div>
-
-              {isGroupExpanded(group.id) && (
-                <div style={{ padding: '0 16px 16px' }}>
-                  {group.files.map((file) => (
-                    <div
-                      key={file.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '12px',
-                        background: selectedFiles[file.id] ? '#f0f9ff' : '#fafafa',
-                        border: '1px solid',
-                        borderColor: selectedFiles[file.id] ? '#bae6fd' : '#f0f0f0',
-                        borderRadius: '8px',
-                        marginBottom: '8px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      {/* ✅ NEW: File checkbox */}
-                      <div style={{ marginRight: '12px' }}>
-                        <FontAwesomeIcon
-                          icon={selectedFiles[file.id] ? faCheckSquare : faSquare}
-                          style={{
-                            color: selectedFiles[file.id] ? '#3b82f6' : '#d1d5db',
-                            cursor: 'pointer',
-                            fontSize: '14px'
-                          }}
-                          onClick={() => toggleFileSelection(file.id)}
-                        />
-                      </div>
-
-                      {/* File info */}
-                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FontAwesomeIcon
-                          icon={faFileAlt}
-                          style={{ color: '#2563eb', fontSize: '16px' }}
-                        />
-                        <span style={{
-                          fontWeight: '500',
-                          color: '#374151'
-                        }}>
-                          {file.title}
-                        </span>
-                        {file.hasPdf && (
-                          <span style={{
-                            fontSize: '12px',
-                            color: '#10b981'
-                          }}>
-                            📎
-                          </span>
-                        )}
-                        {/* ✅ FIXED: Removed individual file status - files don't have their own status */}
-                      </div>
-
-                      {/* ✅ FIXED: File action buttons - only basic actions, no status dropdown or edit */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {/* File action buttons */}
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          {/* Normal mode buttons */}
-                          {mode === 'normal' && (
-                            <>
-                              {/* ✅ FIXED: Edit button only for most recent version PDF */}
-                              {file.fileType === 'version_pdf' && (() => {
-                                // Find the highest version number in this group
-                                const versionFiles = group.files.filter(f => f.fileType === 'version_pdf');
-                                const maxVersion = Math.max(...versionFiles.map(f => f.versionNumber || 0));
-                                const isLatestVersion = file.versionNumber === maxVersion;
-                                return isLatestVersion;
-                              })() && (
-                                <button
-                                  className="iconbtn"
-                                  title="Edit this PDF version"
-                                  onClick={() => handleEdit(file, group.id)}
-                                >
-                                  <FontAwesomeIcon icon={faPencilAlt} />
-                                </button>
-                              )}
-                              <button
-                                className="iconbtn"
-                                title="View"
-                                onClick={() => handleView(file)}
-                                disabled={!file.hasPdf}
-                              >
-                                <FontAwesomeIcon icon={faEye} />
-                              </button>
-                              <button
-                                className="iconbtn"
-                                title="Download"
-                                onClick={() => handleDownload(file)}
-                                disabled={!file.hasPdf}
-                              >
-                                <FontAwesomeIcon icon={faDownload} />
-                              </button>
-                              <button
-                                className="iconbtn"
-                                title="Share via Email"
-                                onClick={() => handleEmail(file)}
-                                disabled={!file.hasPdf}
-                              >
-                                <FontAwesomeIcon icon={faEnvelope} />
-                              </button>
-                              {/* ✅ NEW: View Logs button for version PDFs */}
-                              {file.fileType === 'version_pdf' && (
-                                <button
-                                  className="iconbtn"
-                                  title="View Change Logs"
-                                  onClick={() => handleViewLogs(file)}
-                                  style={{
-                                    backgroundColor: '#f3f4f6',
-                                    border: '1px solid #d1d5db'
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faClipboardList} />
-                                </button>
-                              )}
-                              <button
-                                className="iconbtn zoho-upload-btn"
-                                title="Upload to Bigin"
-                                onClick={() => handleZohoUpload(file)}
-                                disabled={!file.hasPdf}
-                              >
-                                <FontAwesomeIcon icon={faUpload} />
-                              </button>
-                              {/* Delete file button */}
-                              <button
-                                className="iconbtn"
-                                title="Delete file (move to trash)"
-                                onClick={() => handleDelete('file', file.id, file.title, file.fileType)}
-                                style={{
-                                  color: '#dc2626',
-                                  borderColor: '#fca5a5'
-                                }}
-                              >
-                                <FontAwesomeIcon icon={faTrash} />
-                              </button>
-                            </>
-                          )}
-
-                          {/* Trash mode buttons */}
-                          {mode === 'trash' && (
-                            <>
-                              <button
-                                className="iconbtn"
-                                title="View (read-only)"
-                                onClick={() => handleView(file)}
-                                disabled={!file.hasPdf}
-                              >
-                                <FontAwesomeIcon icon={faEye} />
-                              </button>
-                              <button
-                                className="iconbtn"
-                                title="Restore file from trash"
-                                onClick={() => handleRestore('file', file.id, file.title, file.fileType)}
-                                style={{
-                                  color: '#16a34a',
-                                  borderColor: '#bbf7d0'
-                                }}
-                              >
-                                <FontAwesomeIcon icon={faUndo} />
-                              </button>
-                              {/* Permanent delete file button */}
-                              <button
-                                className="iconbtn"
-                                title="Permanently delete file"
-                                onClick={() => handleDelete('file', file.id, file.title, file.fileType)}
-                                style={{
-                                  color: '#dc2626',
-                                  borderColor: '#fca5a5'
-                                }}
-                              >
-                                <FontAwesomeIcon icon={faTrash} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <AgreementRow
+              key={group.id}
+              agreement={group}
+              isExpanded={isExpanded}
+              selectionState={selectionState}
+              selectedFiles={selectedFiles}
+              statusChangeLoading={updatingStatus}
+              fileWatermarkStates={fileWatermarkStates}
+              isInAdminContext={isInAdminContext}
+              isTrashView={false}
+              onToggleExpand={toggleGroup}
+              onToggleSelection={toggleGroupSelection}
+              onFileToggleSelection={toggleFileSelection}
+              onAddFile={handleAddFile}
+              onEditAgreement={handleEditAgreement}
+              onDelete={handleDelete}
+              onAgreementZohoUpload={handleAgreementZohoUpload}
+              onDateChange={handleDateChange}
+              onView={handleView}
+              onDownload={handleDownload}
+              onEmail={handleEmail}
+              onZohoUpload={handleZohoUpload}
+              onEdit={handleEdit}
+              onStatusChange={handleStatusChange}
+              onWatermarkToggle={handleWatermarkToggle}
+              onRestore={(type, id, title, fileType) => {
+                // No-op placeholder for compatibility - not used in normal view
+                console.log('Restore not available in normal view');
+              }}
+            />
           );
         })}
       </div>
@@ -2027,7 +1379,7 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
                 width: '48px',
                 height: '48px',
                 borderRadius: '50%',
-                background: mode === 'trash' ? '#7f1d1d' : '#fef2f2',
+                background: '#fef2f2',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -2035,7 +1387,7 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
                 <FontAwesomeIcon
                   icon={faTrash}
                   style={{
-                    color: mode === 'trash' ? '#fff' : '#dc2626',
+                    color: '#dc2626',
                     fontSize: '20px'
                   }}
                 />
@@ -2047,24 +1399,21 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
                   fontWeight: '600',
                   color: '#374151'
                 }}>
-                  {mode === 'trash' ? 'Permanently Delete' : 'Delete'} {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}
+                  Delete {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}
                 </h3>
                 <p style={{
                   margin: 0,
                   fontSize: '14px',
                   color: '#6b7280'
                 }}>
-                  {mode === 'trash'
-                    ? 'This action cannot be undone and will permanently remove the item from the database'
-                    : 'This action will move the item to trash'
-                  }
+                  This action will move the item to trash
                 </p>
               </div>
             </div>
 
             <div style={{
-              background: mode === 'trash' ? '#fef2f2' : '#f9fafb',
-              border: `1px solid ${mode === 'trash' ? '#fca5a5' : '#e5e7eb'}`,
+              background: '#f9fafb',
+              border: '1px solid #e5e7eb',
               borderRadius: '8px',
               padding: '12px',
               marginBottom: '20px'
@@ -2083,54 +1432,11 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
                 color: '#6b7280'
               }}>
                 {itemToDelete.type === 'folder'
-                  ? mode === 'trash'
-                    ? 'This will permanently delete the entire agreement and all its files, attached documents, versions, and Zoho mappings from the database.'
-                    : 'This will move the entire agreement and all its files to trash.'
-                  : mode === 'trash'
-                    ? 'This will permanently delete this file and clean up all references from the database.'
-                    : 'This will move only this file to trash.'
+                  ? 'This will move the entire agreement and all its files to trash.'
+                  : 'This will move only this file to trash.'
                 }
               </p>
             </div>
-
-            {/* ✅ NEW: Enhanced permanent delete confirmation for trash mode */}
-            {mode === 'trash' && (
-              <div style={{
-                background: '#fef2f2',
-                border: '1px solid #fca5a5',
-                borderRadius: '8px',
-                padding: '12px',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '8px'
-                }}>
-                  <input
-                    type="checkbox"
-                    id="permanent-delete-confirm"
-                    checked={permanentDeleteConfirmed}
-                    onChange={(e) => setPermanentDeleteConfirmed(e.target.checked)}
-                    style={{
-                      marginTop: '2px'
-                    }}
-                  />
-                  <label
-                    htmlFor="permanent-delete-confirm"
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      color: '#7f1d1d',
-                      cursor: 'pointer',
-                      lineHeight: '1.4'
-                    }}
-                  >
-                    I understand this action is permanent and cannot be undone. All data including files, mappings, and references will be permanently removed from the database.
-                  </label>
-                </div>
-              </div>
-            )}
 
             <div style={{ marginBottom: '20px' }}>
               <label style={{
@@ -2181,7 +1487,6 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
                   setDeleteConfirmOpen(false);
                   setItemToDelete(null);
                   setDeleteConfirmText('');
-                  setPermanentDeleteConfirmed(false);
                 }}
               >
                 Cancel
@@ -2189,27 +1494,21 @@ export default function SavedFilesGrouped({ mode = 'normal', onDataLoaded }: Sav
               <button
                 type="button"
                 style={{
-                  background: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
-                    ? mode === 'trash' ? '#7f1d1d' : '#dc2626'
-                    : '#f3f4f6',
-                  border: `1px solid ${isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
-                    ? mode === 'trash' ? '#7f1d1d' : '#dc2626'
-                    : '#d1d5db'}`,
+                  background: isDeleteConfirmed ? '#dc2626' : '#f3f4f6',
+                  border: `1px solid ${isDeleteConfirmed ? '#dc2626' : '#d1d5db'}`,
                   borderRadius: '8px',
                   padding: '8px 16px',
-                  cursor: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
-                    ? 'pointer' : 'not-allowed',
+                  cursor: isDeleteConfirmed ? 'pointer' : 'not-allowed',
                   fontSize: '14px',
                   fontWeight: '500',
-                  color: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed)
-                    ? '#fff' : '#9ca3af',
-                  opacity: isDeleteConfirmed && (mode !== 'trash' || permanentDeleteConfirmed) ? 1 : 0.6
+                  color: isDeleteConfirmed ? '#fff' : '#9ca3af',
+                  opacity: isDeleteConfirmed ? 1 : 0.6
                 }}
                 onClick={confirmDelete}
-                disabled={!isDeleteConfirmed || (mode === 'trash' && !permanentDeleteConfirmed)}
+                disabled={!isDeleteConfirmed}
               >
                 <FontAwesomeIcon icon={faTrash} style={{ marginRight: '6px' }} />
-                {mode === 'trash' ? 'Permanently Delete' : 'Move to Trash'}
+                Move to Trash
               </button>
             </div>
           </div>

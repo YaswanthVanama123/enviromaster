@@ -1,7 +1,7 @@
 // src/components/SavedFilesAgreements.tsx
 // ✅ CORRECTED: Single document per agreement with attachedFiles array
-// ✅ PERFORMANCE OPTIMIZED: React.memo, useCallback, useMemo for 5-10x faster rendering
-import { useEffect, useState, useMemo, useRef, useCallback, memo, ChangeEvent } from "react";
+// ✅ PERFORMANCE OPTIMIZED: Memoized components (AgreementRow, FileRow) for better rendering
+import { useEffect, useState, useMemo, useRef, useCallback, ChangeEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import { emailTemplateApi } from "../backendservice/api/emailTemplateApi";
@@ -17,15 +17,14 @@ import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFileAlt, faEye, faDownload, faEnvelope, faPencilAlt,
-  faUpload, faFolder, faFolderOpen, faChevronDown, faChevronRight,
-  faPlus, faCheckSquare, faSquare, faCloudUploadAlt, faTrash, faEdit, faRedo // ✅ NEW: Added faRedo for restore icon
+  faCheckSquare, faTrash
 } from "@fortawesome/free-solid-svg-icons";
-import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComposer"; // ✅ NEW: Import EmailAttachment type
+import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
-import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
+// ✅ OPTIMIZED: Import memoized components for better performance
+import { AgreementRow } from "./SavedFiles/AgreementRow";
 
 type FileStatus =
   | "saved"
@@ -38,84 +37,6 @@ type FileStatus =
   | "approved_salesman"
   | "approved_admin"
   | "attached";
-
-// ✅ UPDATED: Include manual upload statuses in the system
-const EXISTING_STATUSES: { value: string; label: string; color: string; canManuallySelect: boolean }[] = [
-  { value: 'draft', label: 'Draft', color: '#6b7280', canManuallySelect: false }, // System controlled - only for agreements without PDFs
-  { value: 'saved', label: 'Saved', color: '#059669', canManuallySelect: false }, // Default after PDF creation
-  { value: 'uploaded', label: 'Uploaded', color: '#3b82f6', canManuallySelect: false }, // Default for manual uploads
-  { value: 'processing', label: 'Processing', color: '#f59e0b', canManuallySelect: false }, // System controlled - Zoho upload in progress
-  { value: 'completed', label: 'Completed', color: '#10b981', canManuallySelect: false }, // System controlled - Zoho upload completed
-  { value: 'failed', label: 'Failed', color: '#ef4444', canManuallySelect: false }, // System controlled - Zoho upload failed
-  { value: 'pending_approval', label: 'Pending Approval', color: '#f59e0b', canManuallySelect: true },
-  { value: 'approved_salesman', label: 'Approved by Salesman', color: '#3b82f6', canManuallySelect: true },
-  { value: 'approved_admin', label: 'Approved by Admin', color: '#10b981', canManuallySelect: true },
-  { value: 'attached', label: 'Attached File', color: '#8b5cf6', canManuallySelect: false }, // For attached files and logs
-];
-
-// Helper function to get status configuration
-const getStatusConfig = (status: string) => {
-  return EXISTING_STATUSES.find(s => s.value === status) ||
-         { value: status, label: status, color: '#6b7280', canManuallySelect: true };
-};
-
-// Get available statuses for dropdown based on file type and admin context
-const getAvailableStatusesForDropdown = (currentStatus: string, isLatestVersion: boolean = true, fileType?: string, isInAdminContext: boolean = false) => {
-  return EXISTING_STATUSES.filter(status => {
-    // Always allow current status to stay
-    if (status.value === currentStatus) return true;
-
-    // ✅ CONTEXT-BASED FILTERING: Filter approval statuses based on admin context
-    if (!status.canManuallySelect) return false; // Skip system-controlled statuses
-
-    // In normal saved-pdfs view: hide "approved by admin" option
-    if (!isInAdminContext && status.value === 'approved_admin') {
-      return false;
-    }
-
-    // In admin panel view: hide "approved by salesman" option
-    if (isInAdminContext && status.value === 'approved_salesman') {
-      return false;
-    }
-
-    // For manual uploads (attached_pdf), allow remaining approval workflow statuses
-    if (fileType === 'attached_pdf') {
-      return true; // Allow: pending_approval, and remaining approval status based on context
-    }
-
-    // For latest versions of PDFs, allow manual status changes (filtered by context above)
-    if (isLatestVersion) return true;
-
-    // For old versions, don't allow changes
-    return false;
-  });
-};
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const sec = Math.max(1, Math.floor(diffMs / 1000));
-  const min = Math.floor(sec / 60);
-  const hr = Math.floor(min / 60);
-  const day = Math.floor(hr / 24);
-  if (day > 0) return `${day} day${day > 1 ? "s" : ""} ago`;
-  if (hr > 0) return `${hr} hour${hr > 1 ? "s" : ""} ago`;
-  if (min > 0) return `${min} minute${min > 1 ? "s" : ""} ago`;
-  return `${sec} sec ago`;
-}
-
-function formatDeletionMeta(deletedBy?: string | null, deletedAt?: string | null) {
-  const parts: string[] = [];
-  if (deletedBy) {
-    parts.push(`by ${deletedBy}`);
-  }
-  if (deletedAt) {
-    const timestamp = new Date(deletedAt);
-    if (!Number.isNaN(timestamp.getTime())) {
-      parts.push(`on ${timestamp.toLocaleString()}`);
-    }
-  }
-  return parts.length > 0 ? parts.join(" ") : null;
-}
 
 const STATUS_LABEL: Record<FileStatus, string> = {
   saved: "Saved",
@@ -130,365 +51,14 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   attached: "Attached File",
 };
 
-// ✅ PERFORMANCE OPTIMIZATION: Memoized FileRow Component
-// Prevents unnecessary re-renders when parent component updates
-interface FileRowProps {
-  file: SavedFileListItem;
-  isSelected: boolean;
-  statusChangeLoading: boolean;
-  isInAdminContext: boolean;
-  watermarkEnabled: boolean; // ✅ NEW: Current watermark state for this file
-  onToggleSelection: (fileId: string) => void;
-  onView: (file: SavedFileListItem, watermark: boolean) => void; // ✅ UPDATED: Added watermark parameter
-  onDownload: (file: SavedFileListItem, watermark: boolean) => void; // ✅ UPDATED: Added watermark parameter
-  onEmail: (file: SavedFileListItem) => void;
-  onZohoUpload: (file: SavedFileListItem) => void;
-  onEdit: (file: SavedFileListItem) => void;
-  onStatusChange: (file: SavedFileListItem, newStatus: string) => void;
-  onWatermarkToggle: (fileId: string, checked: boolean) => void; // ✅ NEW: Handle watermark toggle
-  onDelete: (type: 'file' | 'folder', id: string, title: string, fileType?: string) => void;
-  onRestore: (type: 'file' | 'folder', id: string, title: string, fileType?: string) => void; // ✅ NEW: Handle restore
-  isTrashView: boolean; // ✅ NEW: Indicate if in trash view
-}
-
-const FileRow = memo(({
-  file,
-  isSelected,
-  statusChangeLoading,
-  isInAdminContext,
-  watermarkEnabled, // ✅ NEW
-  onToggleSelection,
-  onView,
-  onDownload,
-  onEmail,
-  onZohoUpload,
-  onEdit,
-  onStatusChange,
-  onWatermarkToggle, // ✅ NEW
-  onDelete,
-  onRestore, // ✅ NEW
-  isTrashView // ✅ NEW
-}: FileRowProps) => {
-  const fileDeletionInfo = isTrashView ? formatDeletionMeta(file.deletedBy, file.deletedAt) : null;
-  // ✅ OPTIMIZED: Memoized event handlers with useCallback
-  const handleToggle = useCallback(() => onToggleSelection(file.id), [file.id, onToggleSelection]);
-  const handleView = useCallback(() => onView(file, watermarkEnabled), [file, watermarkEnabled, onView]); // ✅ UPDATED
-  const handleDownload = useCallback(() => onDownload(file, watermarkEnabled), [file, watermarkEnabled, onDownload]); // ✅ UPDATED
-  const handleEmail = useCallback(() => onEmail(file), [file, onEmail]);
-  const handleZohoUpload = useCallback(() => onZohoUpload(file), [file, onZohoUpload]);
-  const handleEdit = useCallback(() => onEdit(file), [file, onEdit]);
-  const handleDeleteClick = useCallback(() => onDelete('file', file.id, file.title, file.fileType), [file.id, file.title, file.fileType, onDelete]); // ✅ RENAMED
-  const handleRestoreClick = useCallback(() => onRestore('file', file.id, file.title, file.fileType), [file.id, file.title, file.fileType, onRestore]); // ✅ NEW
-  const handleStatusChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
-    onStatusChange(file, e.target.value);
-  }, [file, onStatusChange]);
-  const handleWatermarkToggle = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    onWatermarkToggle(file.id, e.target.checked);
-  }, [file.id, onWatermarkToggle]); // ✅ NEW
-
-  // ✅ OPTIMIZED: Memoize computed values to prevent recalculation
-  const canEdit = useMemo(() =>
-    file.fileType === 'main_pdf' || (file.fileType === 'version_pdf' && file.isLatestVersion === true),
-    [file.fileType, file.isLatestVersion]
-  );
-
-  const statusConfig = useMemo(() => getStatusConfig(file.status), [file.status]);
-
-  const availableStatuses = useMemo(() =>
-    getAvailableStatusesForDropdown(file.status, file.isLatestVersion, file.fileType, isInAdminContext),
-    [file.status, file.isLatestVersion, file.fileType, isInAdminContext]
-  );
-
-  const canChangeStatus = useMemo(() => file.canChangeStatus || false, [file.canChangeStatus]);
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '12px',
-        background: isSelected ? '#f0f9ff' : '#fafafa',
-        border: '1px solid',
-        borderColor: isSelected ? '#bae6fd' : '#f0f0f0',
-        borderRadius: '8px',
-        marginBottom: '8px',
-        transition: 'all 0.2s ease'
-      }}
-    >
-      {/* File checkbox */}
-      <div style={{ marginRight: '12px' }}>
-        <FontAwesomeIcon
-          icon={isSelected ? faCheckSquare : faSquare}
-          style={{
-            color: isSelected ? '#3b82f6' : '#d1d5db',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-          onClick={handleToggle}
-        />
-      </div>
-
-      {/* File info */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <FontAwesomeIcon
-          icon={faFileAlt}
-          style={{
-            color: file.fileType === 'main_pdf'
-              ? '#2563eb'
-              : file.fileType === 'version_pdf'
-              ? '#7c3aed'
-              : file.fileType === 'version_log'
-              ? '#f59e0b'
-              : '#10b981',
-            fontSize: '16px'
-          }}
-        />
-        <span style={{
-          fontWeight: '500',
-          color: '#374151'
-        }}>
-          {file.fileName}
-        </span>
-        {file.hasPdf && (
-          <span style={{
-            fontSize: '12px',
-            color: '#10b981'
-          }}>
-            📎
-          </span>
-        )}
-        <span style={{
-          fontSize: '12px',
-          padding: '2px 6px',
-          borderRadius: '4px',
-          background: file.fileType === 'main_pdf'
-            ? '#e0f2fe'
-            : file.fileType === 'version_pdf'
-            ? '#f3e8ff'
-            : file.fileType === 'version_log'
-            ? '#fef3c7'
-            : '#f0fdf4',
-          color: file.fileType === 'main_pdf'
-            ? '#0e7490'
-            : file.fileType === 'version_pdf'
-            ? '#7c2d12'
-            : file.fileType === 'version_log'
-            ? '#92400e'
-            : '#166534',
-          fontWeight: '600'
-        }}>
-          {file.fileType === 'main_pdf'
-            ? 'Main Agreement'
-            : file.fileType === 'version_pdf'
-            ? `Version ${(file as any).versionNumber || ''}`
-            : file.fileType === 'version_log'
-            ? `Log v${(file as any).versionNumber || ''}`
-            : 'Attached'}
-        </span>
-
-        {file.description && (
-          <span style={{
-            fontSize: '11px',
-            color: '#6b7280',
-            fontStyle: 'italic'
-          }}>
-            {file.description}
-          </span>
-        )}
-        </div>
-        {isTrashView && fileDeletionInfo && (
-          <div style={{
-            fontSize: '11px',
-            color: '#9ca3af'
-          }}>
-            Deleted {fileDeletionInfo}
-          </div>
-        )}
-      </div>
-
-      {/* ✅ NEW: Watermark toggle (only for version PDFs) */}
-      {file.fileType === 'version_pdf' && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 10px',
-          background: watermarkEnabled ? 'rgba(59, 130, 246, 0.1)' : '#f3f4f6',
-          border: `1px solid ${watermarkEnabled ? '#60a5fa' : '#d1d5db'}`,
-          borderRadius: '6px',
-          marginRight: '12px',
-          transition: 'all 0.2s'
-        }}>
-          <input
-            type="checkbox"
-            checked={watermarkEnabled}
-            onChange={handleWatermarkToggle}
-            style={{
-              width: '14px',
-              height: '14px',
-              cursor: 'pointer',
-              accentColor: '#3b82f6'
-            }}
-          />
-          <span style={{
-            fontSize: '11px',
-            fontWeight: '500',
-            color: watermarkEnabled ? '#2563eb' : '#6b7280',
-            whiteSpace: 'nowrap',
-            userSelect: 'none'
-          }}>
-            {watermarkEnabled ? '💧 Draft' : '✨ Normal'}
-          </span>
-        </div>
-      )}
-
-      {/* File actions */}
-      <div style={{ display: 'flex', gap: '6px' }}>
-        {!isTrashView && canEdit && (
-          <button
-            className="iconbtn"
-            title="Edit Agreement"
-            onClick={handleEdit}
-          >
-            <FontAwesomeIcon icon={faPencilAlt} />
-          </button>
-        )}
-        <button
-          className="iconbtn"
-          title="View"
-          onClick={handleView}
-          disabled={!file.hasPdf && file.fileType !== 'version_log'}
-        >
-          <FontAwesomeIcon icon={faEye} />
-        </button>
-        <button
-          className="iconbtn"
-          title="Download"
-          onClick={handleDownload}
-          disabled={!file.hasPdf && file.fileType !== 'version_log'}
-        >
-          <FontAwesomeIcon icon={faDownload} />
-        </button>
-        {!isTrashView && (
-          <>
-            <button
-              className="iconbtn"
-              title="Share via Email"
-              onClick={handleEmail}
-              disabled={!file.hasPdf && file.fileType !== 'version_log'}
-            >
-              <FontAwesomeIcon icon={faEnvelope} />
-            </button>
-            <button
-              className="iconbtn zoho-upload-btn"
-              title="Upload to Bigin"
-              onClick={handleZohoUpload}
-              disabled={!file.hasPdf && file.fileType !== 'version_log'}
-            >
-              <FontAwesomeIcon icon={faUpload} />
-            </button>
-          </>
-        )}
-
-        {/* ✅ UPDATED: Status Dropdown for PDFs and manual uploads */}
-        {!isTrashView && (file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            {canChangeStatus && !statusChangeLoading ? (
-              <select
-                value={file.status}
-                onChange={handleStatusChange}
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  border: '1px solid #d1d5db',
-                  background: statusConfig.color,
-                  color: '#fff',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  minWidth: '120px'
-                }}
-                title="Change status"
-              >
-                {availableStatuses.map(status => (
-                  <option key={status.value} value={status.value} style={{ color: '#000' }}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <span
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  background: statusConfig.color,
-                  color: '#fff',
-                  fontWeight: '600',
-                  opacity: statusChangeLoading ? 0.6 : 1,
-                  minWidth: '120px',
-                  display: 'inline-block',
-                  textAlign: 'center'
-                }}
-                title={statusChangeLoading ? "Updating status..." : "Status (read-only)"}
-              >
-                {statusChangeLoading ? "Updating..." : statusConfig.label}
-              </span>
-            )}
-          </div>
-        )}
-
-        {isTrashView ? (
-          // In trash view, show restore and permanent delete
-          <>
-            <button
-              className="iconbtn"
-              title="Restore file"
-              onClick={handleRestoreClick}
-              style={{
-                color: '#10b981',
-                borderColor: '#a7f3d0'
-              }}
-            >
-              <FontAwesomeIcon icon={faRedo} />
-            </button>
-            <button
-              className="iconbtn"
-              title="Permanently delete file"
-              onClick={handleDeleteClick} // This will now call permanentlyDeleteFile via onDelete prop
-              style={{
-                color: '#dc2626',
-                borderColor: '#fca5a5'
-              }}
-            >
-              <FontAwesomeIcon icon={faTrash} />
-            </button>
-          </>
-        ) : (
-          // In normal view, show soft delete
-          <button
-            className="iconbtn"
-            title="Delete file (move to trash)"
-            onClick={handleDeleteClick}
-            style={{
-              color: '#dc2626',
-              borderColor: '#fca5a5'
-            }}
-          >
-            <FontAwesomeIcon icon={faTrash} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-});
-
-FileRow.displayName = 'FileRow';
+// ✅ REMOVED: FileRow component now imported from separate file for better performance
 
 // ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads across React Strict Mode remounts
 let hasInitiallyLoaded = false;
+
+// ✅ OPTIMIZATION: Cache email template at module level to prevent repeated API calls
+let cachedEmailTemplate: { subject: string; body: string } | null = null;
+let isLoadingEmailTemplate = false;
 
 export default function SavedFilesAgreements() {
   // ✅ CORRECTED: agreements is the source of truth (each is one MongoDB document)
@@ -547,7 +117,6 @@ export default function SavedFilesAgreements() {
   const navigate = useNavigate();
   const location = useLocation();
   const isInAdminContext = location.pathname.includes("/admin-panel");
-  const isTrashView = location.pathname.includes("/trash"); // ✅ NEW: Determine if in trash view
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
   // ✅ NEW: Watermark toggle handler
@@ -559,38 +128,6 @@ export default function SavedFilesAgreements() {
     });
     console.log(`💧 [WATERMARK] Toggled watermark for file ${fileId}: ${checked}`);
   }, []);
-
-  // ✅ NEW: Restore handler for files and agreements
-  const handleRestore = useCallback(async (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
-    try {
-      let result;
-      if (type === 'folder') {
-        result = await pdfApi.restoreAgreement(id);
-      } else {
-        result = await pdfApi.restoreFile(id, { fileType });
-      }
-
-      if (result.success) {
-        setToastMessage({
-          message: `${type === 'folder' ? 'Agreement' : 'File'} "${title}" restored successfully!`,
-          type: "success"
-        });
-        // Refresh the list to show updated status
-        await fetchAgreements(currentPage, query);
-      } else {
-        setToastMessage({
-          message: result.message || `Failed to restore ${type === 'folder' ? 'agreement' : 'file'}. Please try again.`,
-          type: "error"
-        });
-      }
-    } catch (error) {
-      console.error(`Failed to restore ${type === 'folder' ? 'agreement' : 'file'}:`, error);
-      setToastMessage({
-        message: `Failed to restore ${type === 'folder' ? 'agreement' : 'file'}. Please try again.`,
-        type: "error"
-      });
-    }
-  }, [currentPage, query]);
 
   // ✅ PERFORMANCE: Memoized callback for status changes
   const handleStatusChange = useCallback(async (file: SavedFileListItem, newStatus: string) => {
@@ -652,13 +189,13 @@ export default function SavedFilesAgreements() {
 
     try {
       // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
-      console.log(`📡 [API-CALL] Fetching agreements: page=${page}, search="${search}", isTrashView=${isTrashView}`);
+      console.log(`📡 [API-CALL] Fetching agreements: page=${page}, search="${search}"`);
 
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
         search: search.trim() || undefined,
         includeLogs: true,
         includeDrafts: true,  // ✅ Backend should include draft agreements without PDFs
-        isDeleted: isTrashView // ✅ NEW: Pass isTrashView to backend for trash filtering
+        isDeleted: false // ✅ Only fetch non-deleted agreements (saved files, not trash)
       });
 
       // ✅ REMOVED: Second API call to getCustomerHeadersSummary()
@@ -823,7 +360,7 @@ export default function SavedFilesAgreements() {
       }, 50); // 50ms delay - Strict Mode remounts happen much faster
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTrashView]); // Add isTrashView to dependencies to re-fetch when navigating to/from trash
+  }, []); // Run only on mount, no dependencies needed for saved files view
 
   // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
@@ -846,29 +383,56 @@ export default function SavedFilesAgreements() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, isTrashView, timelineFilter]); // ✅ NEW: Add timelineFilter to dependencies
+  }, [query, timelineFilter]); // Re-fetch when search query or timeline filter changes
 
-  // Load default email template on mount
+  // ✅ OPTIMIZED: Load default email template on mount (cached to prevent repeated API calls)
   useEffect(() => {
     const loadEmailTemplate = async () => {
+      // ✅ Use cached template if available
+      if (cachedEmailTemplate) {
+        console.log('📧 [EMAIL-TEMPLATE] Using cached email template');
+        setDefaultEmailTemplate(cachedEmailTemplate);
+        return;
+      }
+
+      // ✅ Prevent duplicate concurrent API calls
+      if (isLoadingEmailTemplate) {
+        console.log('📧 [EMAIL-TEMPLATE] Already loading template, skipping...');
+        return;
+      }
+
       try {
+        isLoadingEmailTemplate = true;
+        console.log('📧 [EMAIL-TEMPLATE] Loading email template from API...');
+
         const template = await emailTemplateApi.getActiveTemplate();
-        setDefaultEmailTemplate({
+
+        // ✅ Cache the template for future component mounts
+        cachedEmailTemplate = {
           subject: template.subject,
           body: template.body
-        });
-        console.log('📧 [EMAIL-TEMPLATE] Loaded default email template');
+        };
+
+        setDefaultEmailTemplate(cachedEmailTemplate);
+        console.log('📧 [EMAIL-TEMPLATE] Loaded and cached default email template');
       } catch (error) {
         console.error('❌ [EMAIL-TEMPLATE] Failed to load template:', error);
+
         // Use fallback template if API fails
-        setDefaultEmailTemplate({
+        const fallbackTemplate = {
           subject: 'Document from EnviroMaster NVA',
           body: `Hello,\n\nPlease find the attached document.\n\nBest regards,\nEnviroMaster NVA Team`
-        });
+        };
+
+        cachedEmailTemplate = fallbackTemplate;
+        setDefaultEmailTemplate(fallbackTemplate);
+      } finally {
+        isLoadingEmailTemplate = false;
       }
     };
+
     loadEmailTemplate();
-  }, []);
+  }, []); // ✅ Empty deps - load once per app lifetime (cached)
 
   // Selection helpers
   const selectedFileIds = useMemo(() =>
@@ -1251,25 +815,13 @@ export default function SavedFilesAgreements() {
     try {
       let result;
       if (itemToDelete.type === 'folder') {
-        // If in trash view, permanently delete the agreement
-        if (isTrashView) {
-          result = await pdfApi.permanentlyDeleteAgreement(itemToDelete.id);
-        } else {
-          // Otherwise, soft delete (move to trash)
-          result = await pdfApi.deleteAgreement(itemToDelete.id);
-        }
+        // Soft delete (move to trash)
+        result = await pdfApi.deleteAgreement(itemToDelete.id);
       } else {
-        // If in trash view, permanently delete the file
-        if (isTrashView) {
-          result = await pdfApi.permanentlyDeleteFile(itemToDelete.id, {
-            fileType: itemToDelete.fileType
-          });
-        } else {
-          // Otherwise, soft delete (move to trash)
-          result = await pdfApi.deleteFile(itemToDelete.id, {
-            fileType: itemToDelete.fileType
-          });
-        }
+        // Soft delete (move to trash)
+        result = await pdfApi.deleteFile(itemToDelete.id, {
+          fileType: itemToDelete.fileType
+        });
       }
 
       if (result.success) {
@@ -1278,7 +830,7 @@ export default function SavedFilesAgreements() {
         setDeleteConfirmText('');
 
         setToastMessage({
-          message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} ${isTrashView ? 'permanently deleted' : 'moved to trash'} successfully!`,
+          message: `${itemToDelete.type === 'folder' ? 'Agreement' : 'File'} moved to trash successfully!`,
           type: "success"
         });
 
@@ -1286,14 +838,14 @@ export default function SavedFilesAgreements() {
         await fetchAgreements(currentPage, query);
       } else {
         setToastMessage({
-          message: result.message || `Failed to ${isTrashView ? 'permanently delete' : 'delete'}. Please try again.`,
+          message: result.message || "Failed to delete. Please try again.",
           type: "error"
         });
       }
     } catch (error) {
-      console.error(`Failed to ${isTrashView ? 'permanently delete' : 'delete'}:`, error);
+      console.error("Failed to delete:", error);
       setToastMessage({
-        message: `Failed to ${isTrashView ? 'permanently delete' : 'delete'}. Please try again.`,
+        message: "Failed to delete. Please try again.",
         type: "error"
       });
     }
@@ -1527,290 +1079,61 @@ export default function SavedFilesAgreements() {
           </div>
         )}
 
+        {/* ✅ OPTIMIZED: Direct rendering with memoized components - no virtual scrolling complexity */}
         {!loading && !error && agreements.map((agreement) => {
-          const agreementSelectionState = getAgreementSelectionState(agreement);
-          const uploadableFiles = getAgreementUploadableFiles(agreement);
-          const agreementDeletionInfo = isTrashView ? formatDeletionMeta(agreement.deletedBy, agreement.deletedAt) : null;
-          const hasActiveVersions = agreement.files.some(file =>
-            file.fileType === 'version_pdf' && file.isDeleted !== true
-          );
-          const showAgreementLevelEdit = !isTrashView && !hasActiveVersions;
+          const isExpanded = expandedAgreements.has(agreement.id);
+          const selectionState = getAgreementSelectionState(agreement);
 
           return (
-            <div key={agreement.id} className="sf__group" style={{
-              background: '#fff',
-              border: '1px solid #e6e6e6',
-              borderRadius: '10px',
-              marginBottom: '8px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-            }}>
-              <div
-                className="sf__group-header"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px',
-                  cursor: 'pointer',
-                  borderBottom: isAgreementExpanded(agreement.id) ? '1px solid #f0f0f0' : 'none'
-                }}
-              >
-                {/* Agreement checkbox */}
-                <div style={{ marginRight: '12px' }} onClick={(e) => e.stopPropagation()}>
-                  <FontAwesomeIcon
-                    icon={agreementSelectionState === 'none' ? faSquare : faCheckSquare}
-                    style={{
-                      color: agreementSelectionState !== 'none' ? '#3b82f6' : '#d1d5db',
-                      cursor: 'pointer',
-                      fontSize: '16px'
-                    }}
-                    onClick={() => toggleAgreementSelection(agreement.id)}
-                  />
-                </div>
-
-                {/* Expand/collapse arrow */}
-                <FontAwesomeIcon
-                  icon={isAgreementExpanded(agreement.id) ? faChevronDown : faChevronRight}
-                  style={{
-                    color: '#6b7280',
-                    fontSize: '14px',
-                    marginRight: '8px'
-                  }}
-                  onClick={() => toggleAgreement(agreement.id)}
-                />
-
-                {/* Folder icon */}
-                <FontAwesomeIcon
-                  icon={isAgreementExpanded(agreement.id) ? faFolderOpen : faFolder}
-                  style={{
-                    color: '#f59e0b',
-                    fontSize: '18px',
-                    marginRight: '12px'
-                  }}
-                />
-
-                {/* Agreement title and metadata */}
-                <div style={{ flex: 1 }} onClick={() => toggleAgreement(agreement.id)}>
-                  <span style={{
-                    fontWeight: '600',
-                    fontSize: '16px',
-                    color: '#374151'
-                  }}>
-                    {agreement.agreementTitle}
-                  </span>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  marginTop: '4px',
-                  fontSize: '13px',
-                  color: '#6b7280'
-                }}>
-                  <span>{agreement.fileCount} files</span>
-                  <span>{timeAgo(agreement.latestUpdate)}</span>
-                  {agreement.hasUploads && (
-                      <span style={{
-                        background: '#fef3c7',
-                        color: '#92400e',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600'
-                      }}>
-                        📤 Bigin
-                      </span>
-                    )}
-                    {/* ✅ NEW: Agreement Status Badge (show draft for agreements without PDFs) */}
-                    {agreement.isDraftOnly && (
-                      <span style={{
-                        background: getStatusConfig('draft').color,
-                        color: '#fff',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '600'
-                      }}>
-                        📝 {getStatusConfig('draft').label}
-                      </span>
-                  )}
-                </div>
-                {isTrashView && agreementDeletionInfo && (
-                  <div style={{
-                    marginTop: '4px',
-                    fontSize: '12px',
-                    color: '#9ca3af'
-                  }}>
-                    Deleted {agreementDeletionInfo}
-                  </div>
-                )}
-              </div>
-
-                {/* ✅ CORRECTED: Add file button and Zoho upload button */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {/* ✅ Timeline Badge - placed on right side with buttons */}
-                  {agreement.startDate && agreement.contractMonths && (
-                    <AgreementTimelineBadge
-                      startDate={agreement.startDate}
-                      contractMonths={agreement.contractMonths}
-                      compact={true}
-                      showCalendarIcon={!isTrashView}
-                      onDateChange={async (newDate) => {
-                        console.log(`📅 [SAVED-FILES-AGREEMENTS] Updating start date for agreement ${agreement.id}: ${newDate}`);
-                        try {
-                          await pdfApi.updateCustomerHeader(agreement.id, {
-                            agreement: { startDate: newDate }
-                          } as any);
-                          setToastMessage({
-                            message: "Agreement start date updated successfully!",
-                            type: "success"
-                          });
-                          // Refresh the list to show updated timeline
-                          fetchAgreements(currentPage, query);
-                        } catch (error) {
-                          console.error("Failed to update start date:", error);
-                          setToastMessage({
-                            message: "Failed to update start date. Please try again.",
-                            type: "error"
-                          });
-                        }
-                      }}
-                      agreementId={agreement.id}
-                    />
-                  )}
-
-                  {/* Zoho Bigin Upload Button */}
-                  <button
-                    style={{
-                      background: '#f97316',
-                      border: '1px solid #ea580c',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#fff',
-                      fontWeight: '500',
-                      opacity: uploadableFiles.length > 0 ? 1 : 0.5
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAgreementZohoUpload(agreement);
-                    }}
-                    disabled={uploadableFiles.length === 0}
-                    title={`Upload ${uploadableFiles.length} files to Zoho Bigin`}
-                  >
-                    <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
-                    Bigin
-                  </button>
-
-                  {/* Add File Button */}
-                  <button
-                    style={{
-                      background: '#f3f4f6',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#374151',
-                      fontWeight: '500'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddFileToAgreement(agreement);
-                    }}
-                    title="Add file to this agreement"
-                  >
-                    <FontAwesomeIcon icon={faPlus} style={{ fontSize: '10px' }} />
-                    Add
-                  </button>
-
-                  {/* ✅ NEW: Edit Agreement button for draft-only agreements */}
-                  {showAgreementLevelEdit && (
-                    <button
-                      style={{
-                        background: '#3b82f6',
-                        border: '1px solid #2563eb',
-                        borderRadius: '6px',
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '12px',
-                        color: '#fff',
-                        fontWeight: '500'
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditAgreement(agreement);
-                      }}
-                      title="Edit this draft agreement"
-                    >
-                      <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '10px' }} />
-                      Edit Agreement
-                    </button>
-                  )}
-
-                  {/* ✅ NEW: Delete Agreement button */}
-                  <button
-                    style={{
-                      background: '#fef2f2',
-                      border: '1px solid #fca5a5',
-                      borderRadius: '6px',
-                      padding: '6px 8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '12px',
-                      color: '#dc2626',
-                      fontWeight: '500',
-                      marginLeft: '8px'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete('folder', agreement.id, agreement.agreementTitle);
-                    }}
-                    title="Delete this agreement (move to trash)"
-                  >
-                    <FontAwesomeIcon icon={faTrash} style={{ fontSize: '10px' }} />
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              {/* ✅ PERFORMANCE: Lazy render files only when expanded */}
-              {isAgreementExpanded(agreement.id) && (
-                <div style={{ padding: '0 16px 16px' }}>
-                  {agreement.files.map((file) => (
-                    <FileRow
-                      key={file.id}
-                      file={file}
-                      isSelected={selectedFiles[file.id] || false}
-                      statusChangeLoading={statusChangeLoading[file.id] || false}
-                      isInAdminContext={isInAdminContext}
-                      watermarkEnabled={fileWatermarkStates.get(file.id) || false} // ✅ NEW: Pass watermark state
-                      onToggleSelection={toggleFileSelection}
-                      onView={handleView}
-                      onDownload={handleDownload}
-                      onEmail={handleEmail}
-                      onZohoUpload={handleZohoUpload}
-                      onEdit={handleEdit}
-                      onStatusChange={handleStatusChange}
-                      onWatermarkToggle={handleWatermarkToggle} // ✅ NEW: Pass watermark toggle handler
-                      onDelete={handleDelete}
-                      onRestore={handleRestore} // ✅ NEW: Pass restore handler
-                      isTrashView={isTrashView} // ✅ NEW: Pass trash view flag
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <AgreementRow
+              key={agreement.id}
+              agreement={agreement}
+              isExpanded={isExpanded}
+              selectionState={selectionState}
+              selectedFiles={selectedFiles}
+              statusChangeLoading={statusChangeLoading}
+              fileWatermarkStates={fileWatermarkStates}
+              isInAdminContext={isInAdminContext}
+              isTrashView={false}
+              onToggleExpand={toggleAgreement}
+              onToggleSelection={toggleAgreementSelection}
+              onFileToggleSelection={toggleFileSelection}
+              onAddFile={handleAddFileToAgreement}
+              onEditAgreement={handleEditAgreement}
+              onDelete={handleDelete}
+              onAgreementZohoUpload={handleAgreementZohoUpload}
+              onDateChange={async (agreementId: string, newDate: string) => {
+                console.log(`📅 [SAVED-FILES-AGREEMENTS] Updating start date for agreement ${agreementId}: ${newDate}`);
+                try {
+                  await pdfApi.updateCustomerHeader(agreementId, {
+                    agreement: { startDate: newDate }
+                  } as any);
+                  setToastMessage({
+                    message: "Agreement start date updated successfully!",
+                    type: "success"
+                  });
+                  // Refresh the list to show updated timeline
+                  fetchAgreements(currentPage, query);
+                } catch (error) {
+                  console.error("Failed to update start date:", error);
+                  setToastMessage({
+                    message: "Failed to update start date. Please try again.",
+                    type: "error"
+                  });
+                }
+              }}
+              onView={handleView}
+              onDownload={handleDownload}
+              onEmail={handleEmail}
+              onZohoUpload={handleZohoUpload}
+              onEdit={handleEdit}
+              onStatusChange={handleStatusChange}
+              onWatermarkToggle={handleWatermarkToggle}
+              onRestore={(type, id, title, fileType) => {
+                // No-op placeholder for compatibility - not used in saved files view
+                console.log('Restore not available in saved files view');
+              }}
+            />
           );
         })}
       </div>
