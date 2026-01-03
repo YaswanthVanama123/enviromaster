@@ -393,91 +393,51 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     });
   }, [pricingBaselines]);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
-    const shouldForceOverrideConfig = forceOverrideConfigRef.current;
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+  const fetchPricing = async (forceRefresh: boolean = false) => {
+    const shouldForceOverrideConfig = forceOverrideConfigRef.current || forceRefresh;
     forceOverrideConfigRef.current = false;
     setIsLoadingConfig(true);
     try {
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("pureJanitorial");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("pureJanitorial");
+        if (backendData?.config) {
+          console.log('✅ [PureJanitorial] Using cached pricing data from context');
+          const rawConfig = backendData.config;
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Pure Janitorial config not found in active services, trying fallback pricing...');
+          // ✅ NEW: Transform backend data structure and extract smoothBreakdownPricingTable
+          const config: BackendJanitorialConfig = {
+            ...rawConfig,
+            smoothBreakdownPricingTable: transformTieredPricing(rawConfig.smoothBreakdownPricingTable) || getDefaultTieredPricing()
+          } as BackendJanitorialConfig;
 
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("pureJanitorial");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Pure Janitorial] Using backend pricing data from context for inactive service');
-            const rawConfig = fallbackConfig.config;
+          setBackendConfig(config);
+          updateFormWithConfig(config, { forceOverride: shouldForceOverrideConfig });
 
-            // ✅ NEW: Transform backend data structure and extract smoothBreakdownPricingTable
-            const config: BackendJanitorialConfig = {
-              ...rawConfig,
-              smoothBreakdownPricingTable: transformTieredPricing(rawConfig.smoothBreakdownPricingTable) || getDefaultTieredPricing()
-            } as BackendJanitorialConfig;
-
-            setBackendConfig(config);
-            updateFormWithConfig(config, { forceOverride: shouldForceOverrideConfig });
-
-            console.log('✅ Pure Janitorial FALLBACK CONFIG loaded from context:', {
-              baseHourlyRate: config.standardHourlyPricing?.standardHourlyRate,
-              shortJobHourlyRate: config.shortJobHourlyPricing?.shortJobHourlyRate,
-              minHoursPerVisit: config.standardHourlyPricing?.minimumHoursPerTrip,
-              weeksPerMonth: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier,
-              dustingPlacesPerHour: config.dusting?.itemsPerHour,
-              dustingPricePerPlace: config.dusting?.pricePerItem,
-              vacuumingDefaultHours: config.vacuuming?.estimatedTimeHoursPerJob,
-              tieredPricing: config.smoothBreakdownPricingTable,
-            });
-            return;
-          }
+          console.log('✅ PureJanitorial CONFIG loaded from context:', {
+            baseHourlyRate: config.standardHourlyPricing?.standardHourlyRate,
+            shortJobHourlyRate: config.shortJobHourlyPricing?.shortJobHourlyRate,
+            minHoursPerVisit: config.standardHourlyPricing?.minimumHoursPerTrip,
+            weeksPerMonth: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier,
+            dustingPlacesPerHour: config.dusting?.itemsPerHour,
+            dustingPricePerPlace: config.dusting?.pricePerItem,
+            vacuumingDefaultHours: config.vacuuming?.estimatedTimeHoursPerJob,
+            tieredPricing: config.smoothBreakdownPricingTable,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Pure Janitorial document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendJanitorialConfig;
-
-      // ✅ NEW: Transform backend data structure and extract smoothBreakdownPricingTable
-      const completeConfig: BackendJanitorialConfig = {
-        ...config,
-        smoothBreakdownPricingTable: transformTieredPricing(config.smoothBreakdownPricingTable) || getDefaultTieredPricing()
-      } as BackendJanitorialConfig;
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(completeConfig);
-      updateFormWithConfig(completeConfig, { forceOverride: shouldForceOverrideConfig });
-
-      console.log('✅ Pure Janitorial ACTIVE CONFIG loaded from backend:', {
-        baseHourlyRate: completeConfig.standardHourlyPricing?.standardHourlyRate,
-        shortJobHourlyRate: completeConfig.shortJobHourlyPricing?.shortJobHourlyRate,
-        minHoursPerVisit: completeConfig.standardHourlyPricing?.minimumHoursPerTrip,
-        weeksPerMonth: completeConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier,
-        dustingPlacesPerHour: completeConfig.dusting?.itemsPerHour,
-        dustingPricePerPlace: completeConfig.dusting?.pricePerItem,
-        vacuumingDefaultHours: completeConfig.vacuuming?.estimatedTimeHoursPerJob,
-        smoothBreakdownPricingTable: completeConfig.smoothBreakdownPricingTable,
-      });
+      console.warn('⚠️ No backend pricing available for PureJanitorial, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Pure Janitorial config from backend:', error);
+      console.error('❌ Failed to fetch PureJanitorial config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("pureJanitorial");
         if (fallbackConfig?.config) {
-          console.log('✅ [Pure Janitorial] Using backend pricing data from context after error');
+          console.log('✅ [PureJanitorial] Using backend pricing data from context after error');
           const rawConfig = fallbackConfig.config;
 
           // ✅ NEW: Transform backend data structure and extract smoothBreakdownPricingTable
@@ -499,8 +459,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
   };
 
   const refreshConfig = () => {
-    forceOverrideConfigRef.current = true;
-    fetchPricing();
+    fetchPricing(true); // Pass forceRefresh=true
   };
 
   // ✅ Fetch pricing configuration on mount ONLY if no initialData (new service)

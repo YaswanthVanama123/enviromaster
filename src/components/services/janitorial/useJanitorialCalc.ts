@@ -174,126 +174,63 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     }));
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      const response = await serviceConfigApi.getActive("janitorial");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("janitorial");
+        if (backendData?.config) {
+          console.log('✅ [Janitorial] Using cached pricing data from context');
+          const config = backendData.config as BackendJanitorialConfig;
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Janitorial config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [Janitorial] Error:', response?.error);
+          // ✅ Store the ENTIRE backend config for use in calculations
+          setBackendConfig(config);
+          updateFormWithConfig(config, forceRefresh);
 
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("janitorial");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Janitorial] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendJanitorialConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config, forceRefresh);
-
-            // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
-            if (forceRefresh) {
-              console.log('🔄 [JANITORIAL] Manual refresh: Clearing all custom overrides');
-              setForm(prev => ({
-                ...prev,
-                // Clear custom RATE overrides
-                customRecurringServiceRate: undefined,
-                customOneTimeServiceRate: undefined,
-                customVacuumingRatePerHour: undefined,
-                customDustingRatePerHour: undefined,
-                customDailyMultiplier: undefined,
-                customWeeklyMultiplier: undefined,
-                customBiweeklyMultiplier: undefined,
-                customMonthlyMultiplier: undefined,
-                customOneTimeMultiplier: undefined,
-                customPerVisitMinimum: undefined,
-                customRecurringContractMinimum: undefined,
-                customStandardTripCharge: undefined,
-                customBeltwayTripCharge: undefined,
-                customPaidParkingTripCharge: undefined,
-                // Clear custom TOTAL overrides
-                customPerVisitTotal: undefined,
-                customMonthlyTotal: undefined,
-                customAnnualTotal: undefined,
-                customContractTotal: undefined,
-              }));
-            }
-
-            console.log('✅ Janitorial FALLBACK CONFIG loaded from context:', {
-              baseRates: config.baseRates,
-              additionalServices: config.additionalServices,
-              minimums: config.minimums,
-              tripCharges: config.tripCharges,
-              frequencyMultipliers: config.frequencyMultipliers,
-            });
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [JANITORIAL] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              // Clear custom RATE overrides
+              customRecurringServiceRate: undefined,
+              customOneTimeServiceRate: undefined,
+              customVacuumingRatePerHour: undefined,
+              customDustingRatePerHour: undefined,
+              customDailyMultiplier: undefined,
+              customWeeklyMultiplier: undefined,
+              customBiweeklyMultiplier: undefined,
+              customMonthlyMultiplier: undefined,
+              customOneTimeMultiplier: undefined,
+              customPerVisitMinimum: undefined,
+              customRecurringContractMinimum: undefined,
+              customStandardTripCharge: undefined,
+              customBeltwayTripCharge: undefined,
+              customPaidParkingTripCharge: undefined,
+              // Clear custom TOTAL overrides
+              customPerVisitTotal: undefined,
+              customMonthlyTotal: undefined,
+              customAnnualTotal: undefined,
+              customContractTotal: undefined,
+            }));
           }
+
+          console.log('✅ Janitorial CONFIG loaded from context:', {
+            baseRates: config.baseRates,
+            additionalServices: config.additionalServices,
+            minimums: config.minimums,
+            tripCharges: config.tripCharges,
+            frequencyMultipliers: config.frequencyMultipliers,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Janitorial document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendJanitorialConfig;
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(config, forceRefresh);
-
-      // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
-      if (forceRefresh) {
-        console.log('🔄 [JANITORIAL] Manual refresh: Clearing all custom overrides');
-        setForm(prev => ({
-          ...prev,
-          // Clear custom RATE overrides
-          customRecurringServiceRate: undefined,
-          customOneTimeServiceRate: undefined,
-          customVacuumingRatePerHour: undefined,
-          customDustingRatePerHour: undefined,
-          customDailyMultiplier: undefined,
-          customWeeklyMultiplier: undefined,
-          customBiweeklyMultiplier: undefined,
-          customMonthlyMultiplier: undefined,
-          customOneTimeMultiplier: undefined,
-          customPerVisitMinimum: undefined,
-          customRecurringContractMinimum: undefined,
-          customStandardTripCharge: undefined,
-          customBeltwayTripCharge: undefined,
-          customPaidParkingTripCharge: undefined,
-          // Clear custom TOTAL overrides
-          customPerVisitTotal: undefined,
-          customMonthlyTotal: undefined,
-          customAnnualTotal: undefined,
-          customContractTotal: undefined,
-        }));
-      }
-
-      console.log('✅ Janitorial FULL CONFIG loaded from backend:', {
-        baseRates: config.baseRates,
-        additionalServices: config.additionalServices,
-        minimums: config.minimums,
-        tripCharges: config.tripCharges,
-        frequencyMultipliers: config.frequencyMultipliers,
-      });
+      console.warn('⚠️ No backend pricing available for Janitorial, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Janitorial config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+      console.error('❌ Failed to fetch Janitorial config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -301,10 +238,12 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
         if (fallbackConfig?.config) {
           console.log('✅ [Janitorial] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendJanitorialConfig;
+
+          // ✅ Store the ENTIRE backend config for use in calculations
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
+          // ✅ FIXED: Only clear custom overrides on manual refresh
           if (forceRefresh) {
             console.log('🔄 [JANITORIAL] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({

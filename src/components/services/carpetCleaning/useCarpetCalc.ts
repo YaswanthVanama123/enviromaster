@@ -223,99 +223,50 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }));
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing configuration from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("carpetCleaning");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("carpetCleaning");
+        if (backendData?.config) {
+          console.log('✅ [Carpet Cleaning] Using cached pricing data from context');
+          const config = backendData.config as BackendCarpetConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config, forceRefresh);
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Carpet Cleaning config not found in active services, trying fallback pricing...');
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("carpetCleaning");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Carpet Cleaning] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendCarpetConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config, forceRefresh);
-
-            // ✅ FIXED: Only clear custom overrides on manual refresh
-            if (forceRefresh) {
-              console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
-              setForm(prev => ({
-                ...prev,
-                customFirstUnitRate: undefined,
-                customAdditionalUnitRate: undefined,
-                customPerVisitMinimum: undefined,
-                customPerVisitPrice: undefined,
-                customMonthlyRecurring: undefined,
-                customFirstMonthPrice: undefined,
-                customContractTotal: undefined,
-                customInstallationFee: undefined,
-              }));
-            }
-
-            console.log('✅ Carpet Cleaning FALLBACK CONFIG loaded from context:', {
-              baseSqFtUnit: config.baseSqFtUnit,
-              basePrice: config.basePrice,
-              additionalUnitPrice: config.additionalUnitPrice,
-              minimumChargePerVisit: config.minimumChargePerVisit,
-              installationMultipliers: config.installationMultipliers,
-              frequencyMetadata: config.frequencyMetadata,
-            });
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              customFirstUnitRate: undefined,
+              customAdditionalUnitRate: undefined,
+              customPerVisitMinimum: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+              customInstallationFee: undefined,
+            }));
           }
+
+          console.log('✅ Carpet Cleaning CONFIG loaded from context:', {
+            baseSqFtUnit: config.baseSqFtUnit,
+            basePrice: config.basePrice,
+            additionalUnitPrice: config.additionalUnitPrice,
+            minimumChargePerVisit: config.minimumChargePerVisit,
+            installationMultipliers: config.installationMultipliers,
+            frequencyMetadata: config.frequencyMetadata,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Carpet Cleaning document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendCarpetConfig;
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(config, forceRefresh);
-
-      // ✅ FIXED: Only clear custom overrides on manual refresh
-      if (forceRefresh) {
-        console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
-        setForm(prev => ({
-          ...prev,
-          customFirstUnitRate: undefined,
-          customAdditionalUnitRate: undefined,
-          customPerVisitMinimum: undefined,
-          customPerVisitPrice: undefined,
-          customMonthlyRecurring: undefined,
-          customFirstMonthPrice: undefined,
-          customContractTotal: undefined,
-          customInstallationFee: undefined,
-        }));
-      }
-
-      console.log('✅ Carpet Cleaning ACTIVE CONFIG loaded from backend:', {
-        baseSqFtUnit: config.baseSqFtUnit,
-        basePrice: config.basePrice,
-        additionalUnitPrice: config.additionalUnitPrice,
-        minimumChargePerVisit: config.minimumChargePerVisit,
-        installationMultipliers: config.installationMultipliers,
-        frequencyMetadata: config.frequencyMetadata,
-        contractLimits: `${config.minContractMonths}-${config.maxContractMonths} months`,
-      });
+      console.warn('⚠️ No backend pricing available for Carpet Cleaning, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Carpet Cleaning config from backend:', error);
+      console.error('❌ Failed to fetch Carpet Cleaning config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {

@@ -874,88 +874,57 @@ export function useRefreshPowerScrubCalc(
     });
   };
 
-  // ✅ Fetch configuration from backend
-  const fetchPricing = useCallback(async () => {
-    if (initial) {
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+  const fetchPricing = useCallback(async (forceRefresh: boolean = false) => {
+    if (initial && !forceRefresh) {
       console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Edit mode detected, skipping fetchPricing');
       return;
     }
     setIsLoadingConfig(true);
     try {
-      console.log('🔄 [Refresh Power Scrub] Fetching fresh configuration from backend...');
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("refreshPowerScrub");
+        if (backendData?.config) {
+          console.log('✅ [RefreshPowerScrub] Using cached pricing data from context');
+          const config = backendData.config as BackendRefreshPowerScrubConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
 
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("refreshPowerScrub");
-
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Refresh Power Scrub config not found in active services, trying fallback pricing...');
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("refreshPowerScrub");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Refresh Power Scrub] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendRefreshPowerScrubConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config);
-
-            // ✅ Clear any custom amounts to ensure backend values are used
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [REFRESH-POWER-SCRUB] Manual refresh: Clearing all custom overrides');
             setForm(clearAllCustomOverrides);
-
-            console.log('✅ Refresh Power Scrub FALLBACK CONFIG loaded from context:', {
-              coreRates: config.coreRates,
-              areaSpecificPricing: config.areaSpecificPricing,
-              squareFootagePricing: config.squareFootagePricing,
-              billingConversions: config.billingConversions,
-            });
-            return;
           }
+
+          console.log('✅ RefreshPowerScrub CONFIG loaded from context:', {
+            coreRates: config.coreRates,
+            areaSpecificPricing: config.areaSpecificPricing,
+            squareFootagePricing: config.squareFootagePricing,
+            billingConversions: config.billingConversions,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Refresh Power Scrub document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendRefreshPowerScrubConfig;
-
-      // ✅ Store the backend config and update form
-      setBackendConfig(config);
-      updateFormWithConfig(config);
-
-      // ✅ Clear any custom amounts to ensure backend values are used
-      setForm(clearAllCustomOverrides);
-
-      console.log('📊 [Refresh Power Scrub] Active Backend Config Received:', {
-        coreRates: config.coreRates,
-        areaSpecificPricing: config.areaSpecificPricing,
-        squareFootagePricing: config.squareFootagePricing,
-        billingConversions: config.billingConversions,
-      });
-
-      console.log('✅ Refresh Power Scrub config loaded from backend, custom amounts cleared');
+      console.warn('⚠️ No backend pricing available for RefreshPowerScrub, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Refresh Power Scrub config from backend:', error);
+      console.error('❌ Failed to fetch RefreshPowerScrub config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("refreshPowerScrub");
         if (fallbackConfig?.config) {
-          console.log('✅ [Refresh Power Scrub] Using backend pricing data from context after error');
+          console.log('✅ [RefreshPowerScrub] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendRefreshPowerScrubConfig;
           setBackendConfig(config);
           updateFormWithConfig(config);
 
-          // ✅ Clear any custom amounts to ensure backend values are used
-          setForm(clearAllCustomOverrides);
+          // ✅ FIXED: Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [REFRESH-POWER-SCRUB] Manual refresh: Clearing all custom overrides');
+            setForm(clearAllCustomOverrides);
+          }
 
           return;
         }
@@ -965,7 +934,7 @@ export function useRefreshPowerScrubCalc(
     } finally {
       setIsLoadingConfig(false);
     }
-  }, [servicesContext?.getBackendPricingForService]);
+  }, [servicesContext?.getBackendPricingForService, initial]);
 
   // Fetch on mount ONLY if no initial data (new service)
   useEffect(() => {

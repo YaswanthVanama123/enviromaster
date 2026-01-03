@@ -355,134 +355,65 @@ export function useMicrofiberMoppingCalc(
     }));
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      const response = await serviceConfigApi.getActive("microfiberMopping");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("microfiberMopping");
+        if (backendData?.config) {
+          console.log('✅ [Microfiber Mopping] Using cached pricing data from context');
+          const config = convertFrequencyMetadataToBillingConversions(backendData.config);
+          setBackendConfig(config);
+          updateFormWithConfig(config, forceRefresh);
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Microfiber Mopping config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [Microfiber Mopping] Error:', response?.error);
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("microfiberMopping");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Microfiber Mopping] Using backend pricing data from context for inactive service');
-            const config = convertFrequencyMetadataToBillingConversions(fallbackConfig.config);
-            setBackendConfig(config);
-            updateFormWithConfig(config, forceRefresh);
-
-            // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
-            if (forceRefresh) {
-              console.log('🔄 [MICROFIBER-MOPPING] Manual refresh: Clearing all custom overrides');
-              setForm(prev => ({
-                ...prev,
-                // Clear custom RATE overrides
-                customIncludedBathroomRate: undefined,
-                customHugeBathroomRatePerSqFt: undefined,
-                customExtraAreaRatePerUnit: undefined,
-                customStandaloneRatePerUnit: undefined,
-                customDailyChemicalPerGallon: undefined,
-                // Clear custom TOTAL overrides
-                customStandardBathroomTotal: undefined,
-                customHugeBathroomTotal: undefined,
-                customExtraAreaTotal: undefined,
-                customStandaloneTotal: undefined,
-                customChemicalTotal: undefined,
-                customPerVisitPrice: undefined,
-                customMonthlyRecurring: undefined,
-                customFirstMonthPrice: undefined,
-                customContractTotal: undefined,
-              }));
-            }
-
-            console.log('✅ Microfiber Mopping FALLBACK CONFIG loaded from context:', {
-              pricing: {
-                bathroomRate: config.includedBathroomRate,
-                hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
-                extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
-                standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
-                chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
-              },
-              hugeBathroomPricing: config.hugeBathroomPricing,
-              extraAreaPricing: config.extraAreaPricing,
-              standalonePricing: config.standalonePricing,
-              rateCategories: config.rateCategories,
-              billingConversions: config.billingConversions,
-              allowedFrequencies: config.allowedFrequencies,
-            });
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [MICROFIBER-MOPPING] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              // Clear custom RATE overrides
+              customIncludedBathroomRate: undefined,
+              customHugeBathroomRatePerSqFt: undefined,
+              customExtraAreaRatePerUnit: undefined,
+              customStandaloneRatePerUnit: undefined,
+              customDailyChemicalPerGallon: undefined,
+              // Clear custom TOTAL overrides
+              customStandardBathroomTotal: undefined,
+              customHugeBathroomTotal: undefined,
+              customExtraAreaTotal: undefined,
+              customStandaloneTotal: undefined,
+              customChemicalTotal: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+            }));
           }
+
+          console.log('✅ Microfiber Mopping CONFIG loaded from context:', {
+            pricing: {
+              bathroomRate: config.includedBathroomRate,
+              hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
+              extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
+              standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
+              chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
+            },
+            hugeBathroomPricing: config.hugeBathroomPricing,
+            extraAreaPricing: config.extraAreaPricing,
+            standalonePricing: config.standalonePricing,
+            rateCategories: config.rateCategories,
+            billingConversions: config.billingConversions,
+            allowedFrequencies: config.allowedFrequencies,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Microfiber Mopping document has no config property');
-        return;
-      }
-
-      const config = convertFrequencyMetadataToBillingConversions(document.config);
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(config, forceRefresh);
-
-      // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
-      if (forceRefresh) {
-        console.log('🔄 [MICROFIBER-MOPPING] Manual refresh: Clearing all custom overrides');
-        setForm(prev => ({
-          ...prev,
-          // Clear custom RATE overrides
-          customIncludedBathroomRate: undefined,
-          customHugeBathroomRatePerSqFt: undefined,
-          customExtraAreaRatePerUnit: undefined,
-          customStandaloneRatePerUnit: undefined,
-          customDailyChemicalPerGallon: undefined,
-          // Clear custom TOTAL overrides
-          customStandardBathroomTotal: undefined,
-          customHugeBathroomTotal: undefined,
-          customExtraAreaTotal: undefined,
-          customStandaloneTotal: undefined,
-          customChemicalTotal: undefined,
-          customPerVisitPrice: undefined,
-          customMonthlyRecurring: undefined,
-          customFirstMonthPrice: undefined,
-          customContractTotal: undefined,
-        }));
-      }
-
-      console.log('✅ Microfiber Mopping FULL CONFIG loaded from backend:', {
-        pricing: {
-          bathroomRate: config.includedBathroomRate,
-          hugeBathroomRate: config.hugeBathroomPricing?.ratePerSqFt,
-          extraAreaRate: config.extraAreaPricing?.extraAreaRatePerUnit,
-          standaloneRate: config.standalonePricing?.standaloneRatePerUnit,
-          chemicalRate: config.chemicalProducts?.dailyChemicalPerGallon,
-        },
-        hugeBathroomPricing: config.hugeBathroomPricing,
-        extraAreaPricing: config.extraAreaPricing,
-        standalonePricing: config.standalonePricing,
-        rateCategories: config.rateCategories,
-        billingConversions: config.billingConversions,
-        allowedFrequencies: config.allowedFrequencies,
-      });
+      console.warn('⚠️ No backend pricing available for Microfiber Mopping, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Microfiber Mopping config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+      console.error('❌ Failed to fetch Microfiber Mopping config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -493,7 +424,7 @@ export function useMicrofiberMoppingCalc(
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
+          // ✅ FIXED: Only clear custom overrides on manual refresh
           if (forceRefresh) {
             console.log('🔄 [MICROFIBER-MOPPING] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({

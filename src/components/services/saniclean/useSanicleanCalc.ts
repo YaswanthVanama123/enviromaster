@@ -919,97 +919,53 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   const [backendConfig, setBackendConfig] = useState<BackendSanicleanConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // Fetch configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      console.log('🔄 [SaniClean] Fetching configuration...');
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("saniclean");
+        if (backendData?.config) {
+          console.log('✅ [SaniClean] Using cached pricing data from context');
+          const config = backendData.config as BackendSanicleanConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config, forceRefresh);
 
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("saniclean");
-
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ SaniClean config not found in active services, trying fallback pricing...');
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("saniclean");
-          if (fallbackConfig?.config) {
-            console.log('✅ [SaniClean] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendSanicleanConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config, forceRefresh);
-
-            // ✅ Clear all custom overrides when refreshing config
-            if (forceRefresh) {
-              setForm(prev => ({
-                ...prev,
-                customBaseService: undefined,
-                customTripCharge: undefined,
-                customFacilityComponents: undefined,
-                customSoapUpgrade: undefined,
-                customExcessSoap: undefined,
-                customMicrofiberMopping: undefined,
-                customWarrantyFees: undefined,
-                customPaperOverage: undefined,
-                customWeeklyTotal: undefined,
-                customMonthlyTotal: undefined,
-                customContractTotal: undefined,
-              }));
-            }
-
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [SANICLEAN] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              customBaseService: undefined,
+              customTripCharge: undefined,
+              customFacilityComponents: undefined,
+              customSoapUpgrade: undefined,
+              customExcessSoap: undefined,
+              customMicrofiberMopping: undefined,
+              customWarrantyFees: undefined,
+              customPaperOverage: undefined,
+              customWeeklyTotal: undefined,
+              customMonthlyTotal: undefined,
+              customContractTotal: undefined,
+            }));
           }
+
+          console.log('✅ SaniClean CONFIG loaded from context:', {
+            allInclusivePricing: config.allInclusivePricing,
+            soapUpgrades: config.soapUpgrades,
+            paperCredit: config.paperCredit,
+            microfiberMoppingAddOn: config.microfiberMoppingAddOn,
+            warrantyFees: config.warrantyFees,
+            frequencyMetadata: config.frequencyMetadata,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      const document = response.data;
-      if (!document.config) {
-        console.warn('⚠️ SaniClean document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendSanicleanConfig;
-      setBackendConfig(config);
-
-      console.log('📊 [SaniClean] Active backend config received:', config);
-      updateFormWithConfig(config, forceRefresh);
-
-      // ✅ Clear all custom overrides when refreshing config
-      if (forceRefresh) {
-        setForm(prev => ({
-          ...prev,
-          customBaseService: undefined,
-          customTripCharge: undefined,
-          customFacilityComponents: undefined,
-          customSoapUpgrade: undefined,
-          customExcessSoap: undefined,
-          customMicrofiberMopping: undefined,
-          customWarrantyFees: undefined,
-          customPaperOverage: undefined,
-          customWeeklyTotal: undefined,
-          customMonthlyTotal: undefined,
-          customContractTotal: undefined,
-        }));
-      }
-
+      console.warn('⚠️ No backend pricing available for SaniClean, using static fallback values');
     } catch (error) {
-      console.error('❌ [SaniClean] Failed to fetch config from backend:', error);
-
-      // Log the full error details for debugging
-      if (error instanceof Error) {
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
-      }
-
-      // Log any response details if it's a fetch error
-      if (error && typeof error === 'object' && 'response' in error) {
-        console.error('❌ Response status:', (error as any).response?.status);
-        console.error('❌ Response data:', (error as any).response?.data);
-      }
+      console.error('❌ Failed to fetch SaniClean config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -1020,8 +976,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ Clear all custom overrides when refreshing config
+          // ✅ FIXED: Only clear custom overrides on manual refresh
           if (forceRefresh) {
+            console.log('🔄 [SANICLEAN] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
               ...prev,
               customBaseService: undefined,
@@ -1124,7 +1081,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
 
   // Fetch on mount (used for baseline/override detection)
   useEffect(() => {
-    console.log('�Y"< [SANICLEAN-PRICING] Fetching backend prices for baseline/override detection');
+    console.log('�Y"< [SANICLEAN-PRICING] Fetching backend prices for baseline/override detection');
     fetchPricing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1189,7 +1146,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     setBaseline('warrantyFeePerDispenserPerWeek', (initial?.warrantyFeePerDispenserPerWeek ?? backendConfig.warrantyFees?.soapDispenserWarrantyFeePerWeek ?? backendConfig.warrantyFees?.airFreshenerDispenserWarrantyFeePerWeek));
     setBaseline('weeklyToMonthlyMultiplier', (initial?.weeklyToMonthlyMultiplier ?? backendConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier));
 
-    console.log('�o. [SANICLEAN-BASELINE] Initialized baseline values for logging:', baselineValues.current);
+    console.log('�o. [SANICLEAN-BASELINE] Initialized baseline values for logging:', baselineValues.current);
   }, [backendConfig, initial]);
 
   const pricingOverrides = useMemo(() => {

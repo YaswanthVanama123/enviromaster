@@ -205,92 +205,47 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   const [backendConfig, setBackendConfig] = useState<BackendElectrostaticSprayConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // Fetch pricing config from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("electrostaticSpray");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("electrostaticSpray");
+        if (backendData?.config) {
+          console.log('✅ [ElectrostaticSpray] Using cached pricing data from context');
+          const config = backendData.config as BackendElectrostaticSprayConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config, setForm, initialData, forceRefresh);
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ ElectrostaticSpray config not found in active services, trying fallback pricing...');
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("electrostaticSpray");
-          if (fallbackConfig?.config) {
-            console.log('✅ [ElectrostaticSpray] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config, setForm, initialData, forceRefresh);
-
-            // ✅ FIXED: Only clear custom overrides on manual refresh
-            if (forceRefresh) {
-              console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
-              setForm((prev: any) => ({
-                ...prev,
-                customRatePerRoom: undefined,
-                customRatePerThousandSqFt: undefined,
-                customTripChargePerVisit: undefined,
-                customServiceCharge: undefined,
-                customPerVisitPrice: undefined,
-                customMonthlyRecurring: undefined,
-                customContractTotal: undefined,
-                customFirstMonthTotal: undefined,
-              }));
-            }
-
-            console.log('✅ ElectrostaticSpray FALLBACK CONFIG loaded from context:', {
-              standardSprayPricing: config.standardSprayPricing,
-              tripCharges: config.tripCharges,
-              frequencyMetadata: config.frequencyMetadata,
-            });
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
+            setForm((prev: any) => ({
+              ...prev,
+              customRatePerRoom: undefined,
+              customRatePerThousandSqFt: undefined,
+              customTripChargePerVisit: undefined,
+              customServiceCharge: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customContractTotal: undefined,
+              customFirstMonthTotal: undefined,
+            }));
           }
+
+          console.log('✅ ElectrostaticSpray CONFIG loaded from context:', {
+            standardSprayPricing: config.standardSprayPricing,
+            tripCharges: config.tripCharges,
+            frequencyMetadata: config.frequencyMetadata,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ ElectrostaticSpray document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendElectrostaticSprayConfig;
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(config, setForm, initialData, forceRefresh);
-
-      // ✅ FIXED: Only clear custom overrides on manual refresh
-      if (forceRefresh) {
-        console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
-        setForm((prev: any) => ({
-          ...prev,
-          customRatePerRoom: undefined,
-          customRatePerThousandSqFt: undefined,
-          customTripChargePerVisit: undefined,
-          customServiceCharge: undefined,
-          customPerVisitPrice: undefined,
-          customMonthlyRecurring: undefined,
-          customContractTotal: undefined,
-          customFirstMonthTotal: undefined,
-        }));
-      }
-
-      console.log('✅ ElectrostaticSpray ACTIVE CONFIG loaded from backend:', {
-        standardSprayPricing: config.standardSprayPricing,
-        tripCharges: config.tripCharges,
-        frequencyMetadata: config.frequencyMetadata,
-      });
+      console.warn('⚠️ No backend pricing available for ElectrostaticSpray, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch ElectrostaticSpray config from backend:', error);
+      console.error('❌ Failed to fetch ElectrostaticSpray config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {

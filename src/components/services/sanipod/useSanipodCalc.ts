@@ -451,65 +451,50 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     });
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      const response = await serviceConfigApi.getActive("sanipod");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("sanipod");
+        if (backendData?.config) {
+          console.log('✅ [SaniPod] Using cached pricing data from context');
+          const config = backendData.config as BackendSanipodConfig;
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ SaniPod config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [SaniPod] Error:', response?.error);
+          // ✅ Build active config from backend structure
+          const activeConfig = buildActiveConfig(config);
 
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("sanipod");
-          if (fallbackConfig?.config) {
-            console.log('✅ [SaniPod] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendSanipodConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(activeConfig);
 
-            // ✅ Build active config from backend structure
-            const activeConfig = buildActiveConfig(config);
-
-            setBackendConfig(config);
-            updateFormWithConfig(activeConfig);
-
-            console.log('✅ SaniPod FALLBACK CONFIG loaded from context');
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [SANIPOD] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              customExtraBagPrice: undefined,
+              customInstallRatePerPod: undefined,
+              customPodWeeklyPrice: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthTotal: undefined,
+              customContractTotal: undefined,
+            }));
           }
-        }
 
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
+          console.log('✅ SaniPod CONFIG loaded from context:', {
+            podSizes: activeConfig.podSizes,
+            extraBagPrice: activeConfig.extraBagPrice,
+            installCharge: activeConfig.installChargePerUnit,
+          });
+          return;
+        }
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = Array.isArray(response.data) ? response.data[0] : response.data;
- 
-       if (!document.config) {
-         console.warn('⚠️ SaniPod document has no config property');
-         return;
-       }
- 
-       const config = document.config as BackendSanipodConfig;
-
-      // ✅ Build active config from backend structure
-      const activeConfig = buildActiveConfig(config);
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(activeConfig);
-
-      console.log('✅ SaniPod FULL CONFIG loaded from backend successfully');
+      console.warn('⚠️ No backend pricing available for SaniPod, using static fallback values');
     } catch (error: any) {
-      console.error('❌ Failed to fetch SaniPod config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+      console.error('❌ Failed to fetch SaniPod config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -523,6 +508,22 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
           setBackendConfig(config);
           updateFormWithConfig(activeConfig);
+
+          // ✅ FIXED: Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [SANIPOD] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              customExtraBagPrice: undefined,
+              customInstallRatePerPod: undefined,
+              customPodWeeklyPrice: undefined,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthTotal: undefined,
+              customContractTotal: undefined,
+            }));
+          }
+
           return;
         }
       }

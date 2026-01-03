@@ -274,133 +274,64 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }));
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      const response = await serviceConfigApi.getActive("foamingDrain");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("foamingDrain");
+        if (backendData?.config) {
+          console.log('✅ [Foaming Drain] Using cached pricing data from context');
+          const config = backendData.config as BackendFoamingDrainConfig;
+          setBackendConfig(config);
+          updateStateWithConfig(config, forceRefresh);
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Foaming Drain config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [Foaming Drain] Error:', response?.error);
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("foamingDrain");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Foaming Drain] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendFoamingDrainConfig;
-            setBackendConfig(config);
-            updateStateWithConfig(config, forceRefresh);
-
-            // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
-            if (forceRefresh) {
-              console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
-              setState(prev => ({
-                ...prev,
-                // Clear custom RATE overrides
-                customRatePerDrain: undefined,
-                customAltBaseCharge: undefined,
-                customAltExtraPerDrain: undefined,
-                customVolumeWeeklyRate: undefined,
-                customVolumeBimonthlyRate: undefined,
-                customGreaseWeeklyRate: undefined,
-                customGreaseInstallRate: undefined,
-                customGreenWeeklyRate: undefined,
-                customGreenInstallRate: undefined,
-                customPlumbingAddonRate: undefined,
-                customFilthyMultiplier: undefined,
-                // Clear custom TOTAL overrides
-                customWeeklyService: undefined,
-                customInstallationTotal: undefined,
-                customMonthlyRecurring: undefined,
-                customFirstMonthPrice: undefined,
-                customContractTotal: undefined,
-              }));
-            }
-
-            console.log('✅ Foaming Drain FALLBACK CONFIG loaded from context:', {
-              standardPricing: config.standardPricing,
-              volumePricing: config.volumePricing,
-              addOns: config.addOns,
-              minimumChargePerVisit: config.minimumChargePerVisit,
-              installationMultipliers: config.installationMultipliers,
-              greenDrainPricing: config.greenDrainPricing,
-              greaseTrapPricing: config.greaseTrapPricing,
-              tripCharges: config.tripCharges,
-              frequencyMetadata: config.frequencyMetadata,
-              contract: config.contract,
-            });
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
+            setState(prev => ({
+              ...prev,
+              // Clear custom RATE overrides
+              customRatePerDrain: undefined,
+              customAltBaseCharge: undefined,
+              customAltExtraPerDrain: undefined,
+              customVolumeWeeklyRate: undefined,
+              customVolumeBimonthlyRate: undefined,
+              customGreaseWeeklyRate: undefined,
+              customGreaseInstallRate: undefined,
+              customGreenWeeklyRate: undefined,
+              customGreenInstallRate: undefined,
+              customPlumbingAddonRate: undefined,
+              customFilthyMultiplier: undefined,
+              // Clear custom TOTAL overrides
+              customWeeklyService: undefined,
+              customInstallationTotal: undefined,
+              customMonthlyRecurring: undefined,
+              customFirstMonthPrice: undefined,
+              customContractTotal: undefined,
+            }));
           }
+
+          console.log('✅ Foaming Drain CONFIG loaded from context:', {
+            standardPricing: config.standardPricing,
+            volumePricing: config.volumePricing,
+            addOns: config.addOns,
+            minimumChargePerVisit: config.minimumChargePerVisit,
+            installationMultipliers: config.installationMultipliers,
+            greenDrainPricing: config.greenDrainPricing,
+            greaseTrapPricing: config.greaseTrapPricing,
+            tripCharges: config.tripCharges,
+            frequencyMetadata: config.frequencyMetadata,
+            contract: config.contract,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Foaming Drain document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendFoamingDrainConfig;
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateStateWithConfig(config, forceRefresh);
-
-      // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
-      if (forceRefresh) {
-        console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
-        setState(prev => ({
-          ...prev,
-          // Clear custom RATE overrides
-          customRatePerDrain: undefined,
-          customAltBaseCharge: undefined,
-          customAltExtraPerDrain: undefined,
-          customVolumeWeeklyRate: undefined,
-          customVolumeBimonthlyRate: undefined,
-          customGreaseWeeklyRate: undefined,
-          customGreaseInstallRate: undefined,
-          customGreenWeeklyRate: undefined,
-          customGreenInstallRate: undefined,
-          customPlumbingAddonRate: undefined,
-          customFilthyMultiplier: undefined,
-          // Clear custom TOTAL overrides
-          customWeeklyService: undefined,
-          customInstallationTotal: undefined,
-          customMonthlyRecurring: undefined,
-          customFirstMonthPrice: undefined,
-          customContractTotal: undefined,
-        }));
-      }
-
-      console.log('✅ Foaming Drain FULL CONFIG loaded from backend:', {
-        standardPricing: config.standardPricing,
-        volumePricing: config.volumePricing,
-        addOns: config.addOns,
-        minimumChargePerVisit: config.minimumChargePerVisit,
-        installationMultipliers: config.installationMultipliers,
-        greenDrainPricing: config.greenDrainPricing,
-        greaseTrapPricing: config.greaseTrapPricing,
-        tripCharges: config.tripCharges,
-        frequencyMetadata: config.frequencyMetadata,
-        contract: config.contract,
-        contractLimits: `${config.contract?.minMonths}-${config.contract?.maxMonths} months`,
-      });
+      console.warn('⚠️ No backend pricing available for Foaming Drain, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Foaming Drain config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+      console.error('❌ Failed to fetch Foaming Drain config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -411,7 +342,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           setBackendConfig(config);
           updateStateWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Clear ALL custom overrides on manual refresh (both rates and totals)
+          // ✅ FIXED: Only clear custom overrides on manual refresh
           if (forceRefresh) {
             console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
             setState(prev => ({

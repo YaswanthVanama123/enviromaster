@@ -73,79 +73,55 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     }));
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
-  const fetchPricing = async () => {
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+  const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      const response = await serviceConfigApi.getActive("greaseTrap");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("greaseTrap");
+        if (backendData?.config) {
+          console.log('✅ [GreaseTrap] Using cached pricing data from context');
+          const config = backendData.config as BackendGreaseTrapConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(config);
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Grease Trap config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [Grease Trap] Error:', response?.error);
-
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("greaseTrap");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Grease Trap] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendGreaseTrapConfig;
-            setBackendConfig(config);
-            updateFormWithConfig(config);
-
-            console.log('✅ Grease Trap FALLBACK CONFIG loaded from context:', {
-              perTrapRate: config.perTrapRate,
-              perGallonRate: config.perGallonRate,
-              frequencyMultipliers: config.frequencyMultipliers,
-              contractLimits: config.contractLimits,
-              allowedFrequencies: config.allowedFrequencies,
-            });
-            return;
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [GREASE-TRAP] Manual refresh: Clearing all custom overrides');
+            // Note: Grease Trap doesn't have custom override fields in the current implementation
           }
+
+          console.log('✅ GreaseTrap CONFIG loaded from context:', {
+            perTrapRate: config.perTrapRate,
+            perGallonRate: config.perGallonRate,
+            frequencyMultipliers: config.frequencyMultipliers,
+            contractLimits: config.contractLimits,
+            allowedFrequencies: config.allowedFrequencies,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Grease Trap document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendGreaseTrapConfig;
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(config);
-
-      console.log('✅ Grease Trap FULL CONFIG loaded from backend:', {
-        perTrapRate: config.perTrapRate,
-        perGallonRate: config.perGallonRate,
-        frequencyMultipliers: config.frequencyMultipliers,
-        contractLimits: config.contractLimits,
-        allowedFrequencies: config.allowedFrequencies,
-      });
+      console.warn('⚠️ No backend pricing available for GreaseTrap, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Grease Trap config from backend:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      });
+      console.error('❌ Failed to fetch GreaseTrap config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("greaseTrap");
         if (fallbackConfig?.config) {
-          console.log('✅ [Grease Trap] Using backend pricing data from context after error');
+          console.log('✅ [GreaseTrap] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendGreaseTrapConfig;
           setBackendConfig(config);
           updateFormWithConfig(config);
+
+          // ✅ FIXED: Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [GREASE-TRAP] Manual refresh: Clearing all custom overrides');
+            // Note: Grease Trap doesn't have custom override fields in the current implementation
+          }
+
           return;
         }
       }

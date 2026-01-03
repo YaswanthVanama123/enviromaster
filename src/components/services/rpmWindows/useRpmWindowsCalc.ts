@@ -240,7 +240,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
   // ✅ Loading state for refresh button
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     forceRefreshRef.current = forceRefresh;
@@ -250,51 +250,46 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       skipInitialOverridesRef.current = true;
     }
     const shouldApplyConfig = !isEditMode.current || forceRefresh;
-    console.log('🔄 [RPM Windows] Fetching fresh configuration from backend...');
-
     try {
-      const response = await serviceConfigApi.getActive("rpmWindows");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("rpmWindows");
+        if (backendData?.config) {
+          console.log('✅ [RPM Windows] Using cached pricing data from context');
+          const config = backendData.config as BackendRpmConfig;
+          setBackendConfig(config);
 
-      console.log('📥 [RPM Windows] Backend response:', response);
+          if (!shouldApplyConfig) {
+            return;
+          }
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ RPM Windows config not found in active services, trying fallback pricing...');
-        console.warn('⚠️ [RPM Windows] Error:', response?.error);
+          const newBaseRates = {
+            small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
+            medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
+            large: config.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
+            trip: config.tripCharges?.standard ?? cfg.tripCharge,
+          };
 
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("rpmWindows");
-          if (fallbackConfig?.config) {
-            console.log('✅ [RPM Windows] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendRpmConfig;
-            setBackendConfig(config);
+          console.log('📊 [RPM Windows] Updating base rates from config:', newBaseRates);
+          setBaseWeeklyRates(newBaseRates);
 
-            if (!shouldApplyConfig) {
-              return;
-            }
+          // ✅ FORCE UPDATE FORM with backend values immediately
+          setForm(prev => ({
+            ...prev,
+            smallWindowRate: newBaseRates.small,
+            mediumWindowRate: newBaseRates.medium,
+            largeWindowRate: newBaseRates.large,
+            tripCharge: newBaseRates.trip,
+            // ✅ NEW: Update installation multipliers from backend
+            installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
+            installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
+          }));
 
-            const newBaseRates = {
-              small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
-              medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
-              large: config.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
-              trip: config.tripCharges?.standard ?? cfg.tripCharge,
-            };
-
-            console.log('📊 [RPM Windows] Updating base rates from fallback config:', newBaseRates);
-            setBaseWeeklyRates(newBaseRates);
-
-            // ✅ FORCE UPDATE FORM with backend values immediately
+          // ✅ Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [RPM-WINDOWS] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
               ...prev,
-              smallWindowRate: newBaseRates.small,
-              mediumWindowRate: newBaseRates.medium,
-              largeWindowRate: newBaseRates.large,
-              tripCharge: newBaseRates.trip,
-              // ✅ NEW: Update installation multipliers from backend
-              installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
-              installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
-              // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
               customPerVisitPrice: undefined,
               customMonthlyRecurring: undefined,
               customContractTotal: undefined,
@@ -303,86 +298,26 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
               customAnnualPrice: undefined,
             }));
             setManualOverrides({});
-
-            console.log('✅ RPM Windows FALLBACK CONFIG loaded from context:', config);
-            return;
           }
+
+          console.log('✅ RPM Windows CONFIG loaded from context:', {
+            windowRates: {
+              small: config.windowPricingBothSidesIncluded?.smallWindowPrice,
+              medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice,
+              large: config.windowPricingBothSidesIncluded?.largeWindowPrice,
+            },
+            installMultiplier: config.installPricing?.installationMultiplier,
+            minimumCharge: config.minimumChargePerVisit,
+            tripCharges: config.tripCharges,
+            frequencyMetadata: config.frequencyMetadata,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ RPM Windows document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendRpmConfig;
-
-      console.log('✅ [RPM Windows] Config found! Details:', {
-        serviceId: document.serviceId,
-        version: document.version,
-        isActive: document.isActive,
-        configKeys: Object.keys(config),
-      });
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-
-      if (!shouldApplyConfig) {
-        return;
-      }
-
-      // ✅ Store base weekly rates for frequency adjustment
-      const newBaseRates = {
-        small: config.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
-        medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
-        large: config.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate,
-        trip: config.tripCharges?.standard ?? cfg.tripCharge,
-      };
-
-      console.log('📊 [RPM Windows] Setting new base rates from backend:', newBaseRates);
-      console.log('📊 [RPM Windows] Previous rates were:', baseWeeklyRates);
-
-      setBaseWeeklyRates(newBaseRates);
-
-      // ✅ FORCE UPDATE FORM with backend values immediately (without frequency multiplier initially)
-      setForm(prev => ({
-        ...prev,
-        smallWindowRate: newBaseRates.small,
-        mediumWindowRate: newBaseRates.medium,
-        largeWindowRate: newBaseRates.large,
-        tripCharge: newBaseRates.trip,
-        // ✅ NEW: Update installation multipliers from backend
-        installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
-        installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
-        // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
-        customPerVisitPrice: undefined,
-        customMonthlyRecurring: undefined,
-        customContractTotal: undefined,
-        customInstallationFee: undefined,
-        customFirstMonthTotal: undefined,
-        customAnnualPrice: undefined,
-      }));
-      setManualOverrides({});
-
-      console.log('✅ RPM Windows config loaded from backend and form updated:', {
-        windowRates: {
-          small: config.windowPricingBothSidesIncluded?.smallWindowPrice,
-          medium: config.windowPricingBothSidesIncluded?.mediumWindowPrice,
-          large: config.windowPricingBothSidesIncluded?.largeWindowPrice,
-        },
-        installMultiplier: config.installPricing?.installationMultiplier,
-        minimumCharge: config.minimumChargePerVisit,
-        tripCharges: config.tripCharges,
-        frequencyMetadata: config.frequencyMetadata,
-      });
+      console.warn('⚠️ No backend pricing available for RPM Windows, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch RPM Windows config from backend:', error);
+      console.error('❌ Failed to fetch RPM Windows config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -415,14 +350,22 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
             // ✅ NEW: Update installation multipliers from backend
             installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
             installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
-            // ✅ CLEAR ALL CUSTOM OVERRIDES when refreshing config
-            customPerVisitPrice: undefined,
-            customMonthlyRecurring: undefined,
-            customContractTotal: undefined,
-            customInstallationFee: undefined,
-            customFirstMonthTotal: undefined,
-            customAnnualPrice: undefined,
           }));
+
+          // ✅ FIXED: Only clear custom overrides on manual refresh
+          if (forceRefresh) {
+            console.log('🔄 [RPM-WINDOWS] Manual refresh: Clearing all custom overrides');
+            setForm(prev => ({
+              ...prev,
+              customPerVisitPrice: undefined,
+              customMonthlyRecurring: undefined,
+              customContractTotal: undefined,
+              customInstallationFee: undefined,
+              customFirstMonthTotal: undefined,
+              customAnnualPrice: undefined,
+            }));
+            setManualOverrides({});
+          }
 
           return;
         }

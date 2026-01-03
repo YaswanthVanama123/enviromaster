@@ -349,60 +349,39 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
     });
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("saniscrub");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("saniscrub");
+        if (backendData?.config) {
+          console.log('✅ [SaniScrub] Using cached pricing data from context');
+          const config = backendData.config as BackendSaniscrubConfig;
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ SaniScrub config not found in active services, trying fallback pricing...');
+          // ✅ Build active config from backend structure
+          const activeConfig = buildActiveConfig(config);
 
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("saniscrub");
-          if (fallbackConfig?.config) {
-            console.log('✅ [SaniScrub] Using backend pricing data from context for inactive service');
-            const config = fallbackConfig.config as BackendSaniscrubConfig;
+          setBackendConfig(config);
+          updateFormWithConfig(activeConfig, forceRefresh);
 
-            // ✅ Build active config from backend structure
-            const activeConfig = buildActiveConfig(config);
-
-            setBackendConfig(config);
-            updateFormWithConfig(activeConfig, forceRefresh);
-
-            console.log('✅ SaniScrub FALLBACK CONFIG loaded from context');
-            return;
-          }
+          console.log('✅ SaniScrub CONFIG loaded from context:', {
+            monthlyPricing: config.monthlyPricing,
+            bimonthlyPricing: config.bimonthlyPricing,
+            quarterlyPricing: config.quarterlyPricing,
+            nonBathroomSqFtPricingRule: config.nonBathroomSqFtPricingRule,
+            installationPricing: config.installationPricing,
+            tripCharges: config.tripCharges,
+            frequencyMetadata: config.frequencyMetadata,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ SaniScrub document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendSaniscrubConfig;
-
-      // ✅ Build active config from backend structure
-      const activeConfig = buildActiveConfig(config);
-
-      // ✅ Store the ENTIRE backend config for use in calculations
-      setBackendConfig(config);
-      updateFormWithConfig(activeConfig, forceRefresh);
-
-
-      console.log('✅ SaniScrub ACTIVE CONFIG loaded from backend successfully');
+      console.warn('⚠️ No backend pricing available for SaniScrub, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch SaniScrub config from backend:', error);
+      console.error('❌ Failed to fetch SaniScrub config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
@@ -427,9 +406,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
     }
   };
 
-  // �o. Fetch pricing configuration on mount (used for baseline/override detection)
+  // �o. Fetch pricing configuration on mount (used for baseline/override detection)
   useEffect(() => {
-    console.log('�Y"< [SANISCRUB-PRICING] Fetching backend prices for baseline/override detection');
+    console.log('�Y"< [SANISCRUB-PRICING] Fetching backend prices for baseline/override detection');
     fetchPricing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -459,7 +438,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       twoTimesPerMonthDiscount: initial?.twoTimesPerMonthDiscount ?? backendActiveConfig.twoTimesPerMonthDiscountFlat,
     };
 
-    console.log('�o. [SANISCRUB-BASELINE] Initialized baseline values for logging/highlighting:', baselineValues.current);
+    console.log('�o. [SANISCRUB-BASELINE] Initialized baseline values for logging/highlighting:', baselineValues.current);
   }, [backendActiveConfig, initial]);
 
   const pricingOverrides = useMemo(() => {
@@ -748,7 +727,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
-          console.log("�Y\"? [SANISCRUB-BASELINE-LOG] Logging change for " + name + ":", {
+          console.log("�Y\"? [SANISCRUB-BASELINE-LOG] Logging change for " + name + ":", {
             baseline: baselineValue,
             newValue,
             change: newValue - baselineValue,

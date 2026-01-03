@@ -421,7 +421,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     });
   };
 
-  // ✅ Fetch COMPLETE pricing configuration from backend
+  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
   const fetchPricing = async (forceRefresh: boolean = false) => {
     const applyBackendConfig = (config: BackendStripWaxConfig, forceOverride: boolean = forceRefresh) => {
       const activeCfg = buildActiveConfig(config);
@@ -458,50 +458,40 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     };
     setIsLoadingConfig(true);
     try {
-      // First try to get active service config
-      const response = await serviceConfigApi.getActive("stripWax");
+      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+      if (servicesContext?.getBackendPricingForService) {
+        const backendData = servicesContext.getBackendPricingForService("stripWax");
+        if (backendData?.config) {
+          console.log('✅ [StripWax] Using cached pricing data from context');
+          const config = backendData.config as BackendStripWaxConfig;
 
-      // ✅ Check if response has error or no data
-      if (!response || response.error || !response.data) {
-        console.warn('⚠️ Strip Wax config not found in active services, trying fallback pricing...');
+          applyBackendConfig(config, forceRefresh);
 
-        // FALLBACK: Use context's backend pricing data for inactive services
-        if (servicesContext?.getBackendPricingForService) {
-          const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
-          if (fallbackConfig?.config) {
-            console.log('✅ [Strip Wax] Using backend pricing data from context for inactive service');
-            applyBackendConfig(fallbackConfig.config, forceRefresh);
-            console.log('✅ Strip Wax FALLBACK CONFIG loaded from context');
-            return;
-          }
+          console.log('✅ StripWax CONFIG loaded from context:', {
+            variants: {
+              standardFull: config.variants?.standardFull,
+              noSealant: config.variants?.noSealant,
+              wellMaintained: config.variants?.wellMaintained,
+            },
+            rateCategories: config.rateCategories,
+            frequencyMetadata: config.frequencyMetadata,
+          });
+          return;
         }
-
-        console.warn('⚠️ No backend pricing available, using static fallback values');
-        return;
       }
 
-      // ✅ Extract the actual document from response.data
-      const document = response.data;
-
-      if (!document.config) {
-        console.warn('⚠️ Strip Wax document has no config property');
-        return;
-      }
-
-      const config = document.config as BackendStripWaxConfig;
-
-      // ✅ Build active config from backend structure
-      applyBackendConfig(config, forceRefresh);
-      console.log('✅ Strip Wax ACTIVE CONFIG loaded from backend successfully');
+      console.warn('⚠️ No backend pricing available for StripWax, using static fallback values');
     } catch (error) {
-      console.error('❌ Failed to fetch Strip Wax config from backend:', error);
+      console.error('❌ Failed to fetch StripWax config from context:', error);
 
       // FALLBACK: Use context's backend pricing data
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
         if (fallbackConfig?.config) {
-          console.log('✅ [Strip Wax] Using backend pricing data from context after error');
-          applyBackendConfig(fallbackConfig.config, forceRefresh);
+          console.log('✅ [StripWax] Using backend pricing data from context after error');
+          const config = fallbackConfig.config as BackendStripWaxConfig;
+
+          applyBackendConfig(config, forceRefresh);
           return;
         }
       }
