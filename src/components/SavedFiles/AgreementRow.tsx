@@ -447,6 +447,11 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
 }, (prevProps, nextProps) => {
   // Custom comparison function for better performance
   // Only re-render if these specific props changed
+
+  // ✅ FIXED: Compare fileWatermarkStates Map for watermark toggle to work
+  const prevWatermarkStr = JSON.stringify(Array.from(prevProps.fileWatermarkStates.entries()));
+  const nextWatermarkStr = JSON.stringify(Array.from(nextProps.fileWatermarkStates.entries()));
+
   return (
     prevProps.agreement.id === nextProps.agreement.id &&
     prevProps.isExpanded === nextProps.isExpanded &&
@@ -455,7 +460,8 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
     prevProps.agreement.fileCount === nextProps.agreement.fileCount &&
     prevProps.isTrashView === nextProps.isTrashView &&
     JSON.stringify(prevProps.selectedFiles) === JSON.stringify(nextProps.selectedFiles) &&
-    JSON.stringify(prevProps.statusChangeLoading) === JSON.stringify(nextProps.statusChangeLoading)
+    JSON.stringify(prevProps.statusChangeLoading) === JSON.stringify(nextProps.statusChangeLoading) &&
+    prevWatermarkStr === nextWatermarkStr // ✅ FIXED: Compare watermark states
   );
 });
 

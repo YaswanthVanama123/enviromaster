@@ -105,6 +105,8 @@ export const FileRow = memo((props: FileRowProps) => {
     onStatusChange(file, e.target.value);
   }, [file, onStatusChange]);
   const handleWatermarkToggle = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation(); // Prevent event bubbling to parent elements
+    e.nativeEvent.stopImmediatePropagation(); // Stop other listeners on the same element
     onWatermarkToggle(file.id, e.target.checked);
   }, [file.id, onWatermarkToggle]);
 
@@ -247,11 +249,16 @@ export const FileRow = memo((props: FileRowProps) => {
             marginRight: '12px',
             transition: 'all 0.2s'
           }}
+          onClick={(e) => e.stopPropagation()} // Prevent parent click handlers
         >
           <input
             type="checkbox"
             checked={watermarkEnabled}
             onChange={handleWatermarkToggle}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent bubbling
+              // Don't preventDefault - let the checkbox toggle naturally
+            }}
             style={{
               width: '14px',
               height: '14px',
@@ -259,13 +266,20 @@ export const FileRow = memo((props: FileRowProps) => {
               accentColor: '#3b82f6'
             }}
           />
-          <span style={{
-            fontSize: '11px',
-            fontWeight: '500',
-            color: watermarkEnabled ? '#2563eb' : '#6b7280',
-            whiteSpace: 'nowrap',
-            userSelect: 'none'
-          }}>
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: '500',
+              color: watermarkEnabled ? '#2563eb' : '#6b7280',
+              whiteSpace: 'nowrap',
+              userSelect: 'none',
+              cursor: 'pointer'
+            }}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event bubbling
+              onWatermarkToggle(file.id, !watermarkEnabled);
+            }}
+          >
             {watermarkEnabled ? '💧 Draft' : '✨ Normal'}
           </span>
         </div>

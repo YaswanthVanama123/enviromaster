@@ -1,7 +1,9 @@
-/* AgreementRow.css - Responsive styles for agreement cards */
+/* AgreementRow.css - Responsive styles for agreement rows/cards */
+/* ✅ SCOPED: All styles are under .sf (SavedFiles) or .trash-view-page (TrashView) to prevent affecting ApprovalDocuments */
 
 /* Default styles - inherited from inline styles in component */
-.agreement-card {
+.sf .agreement-card,
+.trash-view-page .agreement-card {
   background: #fff;
   border: 1px solid #e6e6e6;
   border-radius: 10px;
@@ -10,21 +12,24 @@
   position: relative;
 }
 
-.agreement-header {
+.sf .agreement-header,
+.trash-view-page .agreement-header {
   display: flex;
   align-items: center;
   padding: 16px;
   cursor: pointer;
 }
 
-.agreement-main-content {
+.sf .agreement-main-content,
+.trash-view-page .agreement-main-content {
   display: flex;
   align-items: center;
   flex: 1;
   min-width: 0;
 }
 
-.agreement-actions {
+.sf .agreement-actions,
+.trash-view-page .agreement-actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -33,24 +38,28 @@
 
 /* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .agreement-header {
+  .sf .agreement-header,
+  .trash-view-page .agreement-header {
     padding: 14px;
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  .agreement-main-content {
+  .sf .agreement-main-content,
+  .trash-view-page .agreement-main-content {
     flex: 1 1 100%;
     min-width: 0;
   }
 
-  .agreement-actions {
+  .sf .agreement-actions,
+  .trash-view-page .agreement-actions {
     flex: 0 0 auto;
     gap: 6px;
     flex-wrap: wrap;
   }
 
-  .agreement-actions button {
+  .sf .agreement-actions button,
+  .trash-view-page .agreement-actions button {
     font-size: 11px !important;
     padding: 5px 6px !important;
   }
@@ -58,23 +67,27 @@
 
 /* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
-  .agreement-card {
+  .sf .agreement-card,
+  .trash-view-page .agreement-card {
     margin-bottom: 6px;
   }
 
-  .agreement-header {
+  .sf .agreement-header,
+  .trash-view-page .agreement-header {
     padding: 12px;
     flex-wrap: wrap;
     gap: 6px;
   }
 
-  .agreement-main-content {
+  .sf .agreement-main-content,
+  .trash-view-page .agreement-main-content {
     flex: 1 1 100%;
     min-width: 0;
     margin-bottom: 8px;
   }
 
-  .agreement-actions {
+  .sf .agreement-actions,
+  .trash-view-page .agreement-actions {
     flex: 1 1 100%;
     width: 100%;
     gap: 6px;
@@ -83,46 +96,54 @@
     margin-left: 40px;
   }
 
-  .agreement-actions button {
+  .sf .agreement-actions button,
+  .trash-view-page .agreement-actions button {
     font-size: 10px !important;
     padding: 5px 6px !important;
     gap: 3px !important;
   }
 
-  .agreement-actions button svg {
+  .sf .agreement-actions button svg,
+  .trash-view-page .agreement-actions button svg {
     font-size: 9px !important;
   }
 }
 
 /* Extra small viewports - max 480px */
 @media (max-width: 480px) {
-  .agreement-card {
+  .sf .agreement-card,
+  .trash-view-page .agreement-card {
     border-radius: 8px;
     margin-bottom: 6px;
   }
 
-  .agreement-header {
+  .sf .agreement-header,
+  .trash-view-page .agreement-header {
     padding: 10px;
     gap: 4px;
   }
 
-  .agreement-main-content {
+  .sf .agreement-main-content,
+  .trash-view-page .agreement-main-content {
     margin-bottom: 6px;
   }
 
-  .agreement-actions {
+  .sf .agreement-actions,
+  .trash-view-page .agreement-actions {
     gap: 4px;
     margin-left: 32px;
   }
 
-  .agreement-actions button {
+  .sf .agreement-actions button,
+  .trash-view-page .agreement-actions button {
     font-size: 9px !important;
     padding: 4px 5px !important;
     gap: 2px !important;
     border-radius: 4px !important;
   }
 
-  .agreement-actions button svg {
+  .sf .agreement-actions button svg,
+  .trash-view-page .agreement-actions button svg {
     font-size: 8px !important;
   }
 }

@@ -1,7 +1,9 @@
 /* FileRow.css - Responsive styles for file rows */
+/* ✅ SCOPED: All styles are under .sf (SavedFiles) or .trash-view-page (TrashView) to prevent affecting ApprovalDocuments */
 
 /* Default styles */
-.file-row {
+.sf .file-row,
+.trash-view-page .file-row {
   display: flex;
   align-items: center;
   padding: 12px;
@@ -11,12 +13,14 @@
   transition: all 0.2s ease;
 }
 
-.file-row-checkbox {
+.sf .file-row-checkbox,
+.trash-view-page .file-row-checkbox {
   margin-right: 12px;
   flex-shrink: 0;
 }
 
-.file-row-info {
+.sf .file-row-info,
+.trash-view-page .file-row-info {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -24,20 +28,23 @@
   min-width: 0;
 }
 
-.file-row-info-main {
+.sf .file-row-info-main,
+.trash-view-page .file-row-info-main {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.file-row-name {
+.sf .file-row-name,
+.trash-view-page .file-row-name {
   font-weight: 500;
   color: #374151;
   word-break: break-word;
 }
 
-.file-row-watermark {
+.sf .file-row-watermark,
+.trash-view-page .file-row-watermark {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -49,7 +56,8 @@
   flex-shrink: 0;
 }
 
-.file-row-actions {
+.sf .file-row-actions,
+.trash-view-page .file-row-actions {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
@@ -58,46 +66,56 @@
 
 /* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .file-row {
+  .sf .file-row,
+  .trash-view-page .file-row {
     padding: 10px;
     flex-wrap: wrap;
   }
 
-  .file-row-info {
+  .sf .file-row-info,
+  .trash-view-page .file-row-info {
     flex: 1 1 100%;
     margin-bottom: 8px;
   }
 
-  .file-row-info-main {
+  .sf .file-row-info-main,
+  .trash-view-page .file-row-info-main {
     gap: 6px;
   }
 
-  .file-row-name {
+  .sf .file-row-name,
+  .trash-view-page .file-row-name {
     font-size: 14px;
   }
 
-  .file-row-watermark {
+  .sf .file-row-watermark,
+  .trash-view-page .file-row-watermark {
     margin-right: 8px;
     padding: 3px 8px;
   }
 
-  .file-row-watermark span {
+  .sf .file-row-watermark span,
+  .trash-view-page .file-row-watermark span {
     font-size: 10px !important;
   }
 
-  .file-row-actions {
+  .sf .file-row-actions,
+  .trash-view-page .file-row-actions {
     gap: 5px;
     margin-left: 26px;
   }
 
-  .file-row-actions .iconbtn {
+  .sf .file-row-actions .iconbtn,
+  .trash-view-page .file-row-actions .iconbtn {
     width: 28px !important;
     height: 28px !important;
     font-size: 12px !important;
   }
 
-  .file-row-actions select,
-  .file-row-actions span {
+  .sf .file-row-actions select,
+  .sf .file-row-actions span,
+  .trash-view-page .file-row-actions select,
+  .trash-view-page .file-row-actions span {
     font-size: 10px !important;
     padding: 3px 6px !important;
     min-width: 100px !important;
@@ -106,86 +124,103 @@
 
 /* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
-  .file-row {
+  .sf .file-row,
+  .trash-view-page .file-row {
     padding: 10px;
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  .file-row-checkbox {
+  .sf .file-row-checkbox,
+  .trash-view-page .file-row-checkbox {
     margin-right: 8px;
   }
 
-  .file-row-checkbox svg {
+  .sf .file-row-checkbox svg,
+  .trash-view-page .file-row-checkbox svg {
     font-size: 12px !important;
   }
 
-  .file-row-info {
+  .sf .file-row-info,
+  .trash-view-page .file-row-info {
     flex: 1 1 100%;
     min-width: 0;
   }
 
-  .file-row-info-main {
+  .sf .file-row-info-main,
+  .trash-view-page .file-row-info-main {
     gap: 4px;
     align-items: flex-start;
   }
 
-  .file-row-info-main svg {
+  .sf .file-row-info-main svg,
+  .trash-view-page .file-row-info-main svg {
     font-size: 14px !important;
     flex-shrink: 0;
   }
 
-  .file-row-name {
+  .sf .file-row-name,
+  .trash-view-page .file-row-name {
     font-size: 13px;
     flex: 1 1 auto;
     min-width: 0;
   }
 
-  .file-row-info-main span[style*="fontSize: '12px'"] {
+  .sf .file-row-info-main span[style*="fontSize: '12px'"],
+  .trash-view-page .file-row-info-main span[style*="fontSize: '12px'"] {
     font-size: 11px !important;
   }
 
-  .file-row-info-main span[style*="padding: '2px 6px'"] {
+  .sf .file-row-info-main span[style*="padding: '2px 6px'"],
+  .trash-view-page .file-row-info-main span[style*="padding: '2px 6px'"] {
     font-size: 10px !important;
     padding: 2px 4px !important;
     white-space: nowrap;
   }
 
-  .file-row-watermark {
+  .sf .file-row-watermark,
+  .trash-view-page .file-row-watermark {
     margin-right: 0;
     margin-left: 20px;
     padding: 3px 6px;
     width: fit-content;
   }
 
-  .file-row-watermark input {
+  .sf .file-row-watermark input,
+  .trash-view-page .file-row-watermark input {
     width: 12px !important;
     height: 12px !important;
   }
 
-  .file-row-watermark span {
+  .sf .file-row-watermark span,
+  .trash-view-page .file-row-watermark span {
     font-size: 10px !important;
   }
 
-  .file-row-actions {
+  .sf .file-row-actions,
+  .trash-view-page .file-row-actions {
     flex: 1 1 100%;
     margin-left: 20px;
     gap: 4px;
     justify-content: flex-start;
   }
 
-  .file-row-actions .iconbtn {
+  .sf .file-row-actions .iconbtn,
+  .trash-view-page .file-row-actions .iconbtn {
     width: 28px !important;
     height: 28px !important;
     font-size: 12px !important;
   }
 
-  .file-row-actions .iconbtn svg {
+  .sf .file-row-actions .iconbtn svg,
+  .trash-view-page .file-row-actions .iconbtn svg {
     font-size: 11px !important;
   }
 
-  .file-row-actions select,
-  .file-row-actions span {
+  .sf .file-row-actions select,
+  .sf .file-row-actions span,
+  .trash-view-page .file-row-actions select,
+  .trash-view-page .file-row-actions span {
     font-size: 10px !important;
     padding: 3px 6px !important;
     min-width: 90px !important;
@@ -194,72 +229,88 @@
 
 /* Extra small viewports - max 480px */
 @media (max-width: 480px) {
-  .file-row {
+  .sf .file-row,
+  .trash-view-page .file-row {
     padding: 8px;
     gap: 6px;
   }
 
-  .file-row-checkbox {
+  .sf .file-row-checkbox,
+  .trash-view-page .file-row-checkbox {
     margin-right: 6px;
   }
 
-  .file-row-checkbox svg {
+  .sf .file-row-checkbox svg,
+  .trash-view-page .file-row-checkbox svg {
     font-size: 11px !important;
   }
 
-  .file-row-info-main {
+  .sf .file-row-info-main,
+  .trash-view-page .file-row-info-main {
     gap: 3px;
   }
 
-  .file-row-info-main svg {
+  .sf .file-row-info-main svg,
+  .trash-view-page .file-row-info-main svg {
     font-size: 13px !important;
   }
 
-  .file-row-name {
+  .sf .file-row-name,
+  .trash-view-page .file-row-name {
     font-size: 12px;
   }
 
-  .file-row-info-main span[style*="fontSize: '12px'"] {
+  .sf .file-row-info-main span[style*="fontSize: '12px'"],
+  .trash-view-page .file-row-info-main span[style*="fontSize: '12px'"] {
     font-size: 10px !important;
   }
 
-  .file-row-info-main span[style*="padding: '2px 6px'"] {
+  .sf .file-row-info-main span[style*="padding: '2px 6px'"],
+  .trash-view-page .file-row-info-main span[style*="padding: '2px 6px'"] {
     font-size: 9px !important;
     padding: 1px 3px !important;
   }
 
-  .file-row-watermark {
+  .sf .file-row-watermark,
+  .trash-view-page .file-row-watermark {
     margin-left: 17px;
     padding: 2px 5px;
   }
 
-  .file-row-watermark input {
+  .sf .file-row-watermark input,
+  .trash-view-page .file-row-watermark input {
     width: 11px !important;
     height: 11px !important;
   }
 
-  .file-row-watermark span {
+  .sf .file-row-watermark span,
+  .trash-view-page .file-row-watermark span {
     font-size: 9px !important;
   }
 
-  .file-row-actions {
+  .sf .file-row-actions,
+  .trash-view-page .file-row-actions {
     margin-left: 17px;
     gap: 3px;
   }
 
-  .file-row-actions .iconbtn {
+  .sf .file-row-actions .iconbtn,
+  .trash-view-page .file-row-actions .iconbtn {
     width: 26px !important;
     height: 26px !important;
     font-size: 11px !important;
     border-radius: 6px !important;
   }
 
-  .file-row-actions .iconbtn svg {
+  .sf .file-row-actions .iconbtn svg,
+  .trash-view-page .file-row-actions .iconbtn svg {
     font-size: 10px !important;
   }
 
-  .file-row-actions select,
-  .file-row-actions span {
+  .sf .file-row-actions select,
+  .sf .file-row-actions span,
+  .trash-view-page .file-row-actions select,
+  .trash-view-page .file-row-actions span {
     font-size: 9px !important;
     padding: 2px 5px !important;
     min-width: 80px !important;

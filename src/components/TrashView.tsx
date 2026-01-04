@@ -394,7 +394,7 @@ export default function TrashView() {
   }, [groups]);
 
   return (
-    <div>
+    <div className="trash-view-page">
       <div
         className="trash-view-header"
         style={{

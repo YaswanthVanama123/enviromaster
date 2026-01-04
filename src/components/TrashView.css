@@ -1,31 +1,32 @@
 /* TrashView.css - Responsive styles for trash view */
+/* ✅ SCOPED: All styles are under .trash-view-page to prevent affecting other pages */
 
-.trash-view-container {
+.trash-view-page .trash-view-container {
   display: flex;
   gap: 24px;
   padding: 24px;
 }
 
-.trash-view-main {
+.trash-view-page .trash-view-main {
   flex: 1;
   min-width: 0;
 }
 
-.trash-view-header {
+.trash-view-page .trash-view-header {
   background: #fff;
   padding: 24px 24px 16px;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 0;
 }
 
-.trash-view-header-content {
+.trash-view-page .trash-view-header-content {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
 }
 
-.trash-view-icon {
+.trash-view-page .trash-view-icon {
   width: 32px;
   height: 32px;
   border-radius: 8px;
@@ -37,27 +38,27 @@
   flex-shrink: 0;
 }
 
-.trash-view-title {
+.trash-view-page .trash-view-title {
   margin: 0;
   fontSize: 24px;
   fontWeight: 600;
   color: #111827;
 }
 
-.trash-view-description {
+.trash-view-page .trash-view-description {
   margin: 0;
   fontSize: 14px;
   color: #6b7280;
 }
 
-.trash-view-search-bar {
+.trash-view-page .trash-view-search-bar {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
   align-items: center;
 }
 
-.trash-view-search-input {
+.trash-view-page .trash-view-search-input {
   flex: 1;
   padding: 10px 16px;
   border: 1px solid #d1d5db;
@@ -65,7 +66,7 @@
   font-size: 14px;
 }
 
-.trash-view-select-all {
+.trash-view-page .trash-view-select-all {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -75,7 +76,7 @@
   white-space: nowrap;
 }
 
-.trash-view-modal-overlay {
+.trash-view-page .trash-view-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -88,7 +89,7 @@
   z-index: 9999;
 }
 
-.trash-view-modal-content {
+.trash-view-page .trash-view-modal-content {
   background: white;
   padding: 24px;
   border-radius: 8px;
@@ -99,49 +100,49 @@
 
 /* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .trash-view-container {
+  .trash-view-page .trash-view-container {
     gap: 16px;
     padding: 16px;
     flex-direction: column;
   }
 
-  .trash-view-header {
+  .trash-view-page .trash-view-header {
     padding: 20px 16px 12px;
   }
 
-  .trash-view-header-content {
+  .trash-view-page .trash-view-header-content {
     gap: 10px;
   }
 
-  .trash-view-icon {
+  .trash-view-page .trash-view-icon {
     width: 28px;
     height: 28px;
     font-size: 18px;
   }
 
-  .trash-view-title {
+  .trash-view-page .trash-view-title {
     font-size: 22px !important;
   }
 
-  .trash-view-description {
+  .trash-view-page .trash-view-description {
     font-size: 13px !important;
   }
 
-  .trash-view-search-bar {
+  .trash-view-page .trash-view-search-bar {
     flex-wrap: wrap;
     gap: 10px;
   }
 
-  .trash-view-search-input {
+  .trash-view-page .trash-view-search-input {
     flex: 1 1 100%;
     min-width: 0;
   }
 
-  .trash-view-select-all {
+  .trash-view-page .trash-view-select-all {
     font-size: 13px;
   }
 
-  .trash-view-modal-content {
+  .trash-view-page .trash-view-modal-content {
     padding: 20px;
     width: 85%;
   }
@@ -149,173 +150,173 @@
 
 /* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
-  .trash-view-container {
+  .trash-view-page .trash-view-container {
     gap: 12px;
     padding: 12px;
     flex-direction: column;
   }
 
-  .trash-view-header {
+  .trash-view-page .trash-view-header {
     padding: 16px 12px 10px;
   }
 
-  .trash-view-header-content {
+  .trash-view-page .trash-view-header-content {
     gap: 8px;
     flex-wrap: wrap;
   }
 
-  .trash-view-icon {
+  .trash-view-page .trash-view-icon {
     width: 26px;
     height: 26px;
     font-size: 16px;
   }
 
-  .trash-view-title {
+  .trash-view-page .trash-view-title {
     font-size: 20px !important;
   }
 
-  .trash-view-description {
+  .trash-view-page .trash-view-description {
     font-size: 12px !important;
     line-height: 1.4;
   }
 
-  .trash-view-search-bar {
+  .trash-view-page .trash-view-search-bar {
     flex-direction: column;
     gap: 8px;
     align-items: stretch;
   }
 
-  .trash-view-search-input {
+  .trash-view-page .trash-view-search-input {
     width: 100%;
     padding: 8px 12px;
     font-size: 13px;
   }
 
-  .trash-view-select-all {
+  .trash-view-page .trash-view-select-all {
     font-size: 12px;
     justify-content: flex-start;
   }
 
-  .trash-view-modal-content {
+  .trash-view-page .trash-view-modal-content {
     padding: 18px;
     width: 90%;
     max-width: 100%;
   }
 
-  .trash-view-modal-content h3 {
+  .trash-view-page .trash-view-modal-content h3 {
     font-size: 18px !important;
     margin-bottom: 12px !important;
   }
 
-  .trash-view-modal-content p {
+  .trash-view-page .trash-view-modal-content p {
     font-size: 14px !important;
     margin-bottom: 12px !important;
   }
 
-  .trash-view-modal-content input[type="text"] {
+  .trash-view-page .trash-view-modal-content input[type="text"] {
     font-size: 13px !important;
     padding: 8px !important;
   }
 
-  .trash-view-modal-content button {
+  .trash-view-page .trash-view-modal-content button {
     padding: 8px !important;
     font-size: 13px !important;
   }
 
   /* Delete confirmation checkbox section */
-  .trash-view-modal-content > div[style*="background: #fef2f2"] {
+  .trash-view-page .trash-view-modal-content > div[style*="background: #fef2f2"] {
     padding: 10px !important;
     margin-bottom: 12px !important;
   }
 
-  .trash-view-modal-content input[type="checkbox"] {
+  .trash-view-page .trash-view-modal-content input[type="checkbox"] {
     width: 16px !important;
     height: 16px !important;
   }
 
-  .trash-view-modal-content label {
+  .trash-view-page .trash-view-modal-content label {
     font-size: 12px !important;
   }
 }
 
 /* Extra small viewports - max 480px */
 @media (max-width: 480px) {
-  .trash-view-container {
+  .trash-view-page .trash-view-container {
     padding: 10px;
     gap: 10px;
   }
 
-  .trash-view-header {
+  .trash-view-page .trash-view-header {
     padding: 14px 10px 8px;
   }
 
-  .trash-view-header-content {
+  .trash-view-page .trash-view-header-content {
     gap: 6px;
   }
 
-  .trash-view-icon {
+  .trash-view-page .trash-view-icon {
     width: 24px;
     height: 24px;
     font-size: 14px;
   }
 
-  .trash-view-title {
+  .trash-view-page .trash-view-title {
     font-size: 18px !important;
   }
 
-  .trash-view-description {
+  .trash-view-page .trash-view-description {
     font-size: 11px !important;
   }
 
-  .trash-view-search-bar {
+  .trash-view-page .trash-view-search-bar {
     gap: 6px;
   }
 
-  .trash-view-search-input {
+  .trash-view-page .trash-view-search-input {
     padding: 7px 10px;
     font-size: 12px;
   }
 
-  .trash-view-select-all {
+  .trash-view-page .trash-view-select-all {
     font-size: 11px;
   }
 
-  .trash-view-modal-content {
+  .trash-view-page .trash-view-modal-content {
     padding: 16px;
     width: 95%;
   }
 
-  .trash-view-modal-content h3 {
+  .trash-view-page .trash-view-modal-content h3 {
     font-size: 16px !important;
     margin-bottom: 10px !important;
   }
 
-  .trash-view-modal-content p {
+  .trash-view-page .trash-view-modal-content p {
     font-size: 13px !important;
     margin-bottom: 10px !important;
   }
 
-  .trash-view-modal-content input[type="text"] {
+  .trash-view-page .trash-view-modal-content input[type="text"] {
     font-size: 12px !important;
     padding: 7px !important;
   }
 
-  .trash-view-modal-content button {
+  .trash-view-page .trash-view-modal-content button {
     padding: 7px !important;
     font-size: 12px !important;
   }
 
-  .trash-view-modal-content > div[style*="background: #fef2f2"] {
+  .trash-view-page .trash-view-modal-content > div[style*="background: #fef2f2"] {
     padding: 8px !important;
     margin-bottom: 10px !important;
   }
 
-  .trash-view-modal-content input[type="checkbox"] {
+  .trash-view-page .trash-view-modal-content input[type="checkbox"] {
     width: 14px !important;
     height: 14px !important;
   }
 
-  .trash-view-modal-content label {
+  .trash-view-page .trash-view-modal-content label {
     font-size: 11px !important;
   }
 }
