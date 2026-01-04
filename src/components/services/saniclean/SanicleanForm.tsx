@@ -513,7 +513,7 @@ export const SanicleanForm: React.FC<
           orderNo: FIELD_ORDER.pricingMode,
           label: "Pricing Mode",
           type: "text" as const,
-          value: form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Fixture Charge",
+          value: form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge",
         },
 
         location: {

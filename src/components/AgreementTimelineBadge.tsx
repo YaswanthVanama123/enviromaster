@@ -151,7 +151,12 @@ export function AgreementTimelineBadge({
           <FontAwesomeIcon icon={getStatusIcon()} className="timeline-badge-icon" />
           <div className="timeline-badge-text">
             <span className="timeline-badge-status">{getStatusText()}</span>
-            <span className="timeline-badge-days">{getDaysText()}</span>
+            {daysRemaining !== null && (
+              <>
+                <span style={{ opacity: 0.5, fontSize: '10px' }}>•</span>
+                <span className="timeline-badge-days">{getDaysText()}</span>
+              </>
+            )}
           </div>
         </div>
         {showCalendarIcon && (
