@@ -693,8 +693,17 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.frequency = "weekly";
   }
 
-  if (structuredData.installFrequency !== undefined && typeof structuredData.installFrequency === 'string') {
-    formState.installFrequency = structuredData.installFrequency;
+  // ✅ FIXED: Extract installFrequency from object or string format
+  if (structuredData.installFrequency !== undefined) {
+    if (typeof structuredData.installFrequency === 'string') {
+      formState.installFrequency = structuredData.installFrequency;
+    } else if (typeof structuredData.installFrequency === 'object' && structuredData.installFrequency !== null) {
+      // Extract from object format: { value: "Bimonthly" } → "bimonthly"
+      const installFreqValue = structuredData.installFrequency.value || structuredData.installFrequency.frequencyKey;
+      if (installFreqValue && typeof installFreqValue === 'string') {
+        formState.installFrequency = installFreqValue.toLowerCase(); // "Bimonthly" → "bimonthly"
+      }
+    }
   }
   if (structuredData.location !== undefined && typeof structuredData.location === 'string') {
     formState.location = structuredData.location;
@@ -782,8 +791,19 @@ export function transformFoamingDrainData(structuredData: any): any {
   if (formState.frequency === undefined && structuredData.frequencyDisplay?.value) {
     formState.frequency = structuredData.frequencyDisplay.value.toLowerCase();
   }
-  if (formState.installFrequency === undefined && structuredData.installFrequencyDisplay?.value) {
-    formState.installFrequency = structuredData.installFrequencyDisplay.value.toLowerCase();
+  // ✅ FIXED: Fallback for installFrequency - check both object and display formats
+  if (formState.installFrequency === undefined) {
+    // Try installFrequencyDisplay first (newer format)
+    if (structuredData.installFrequencyDisplay?.value) {
+      formState.installFrequency = structuredData.installFrequencyDisplay.value.toLowerCase();
+    }
+    // Try direct installFrequency object (if not already extracted)
+    else if (structuredData.installFrequency && typeof structuredData.installFrequency === 'object') {
+      const installFreqValue = structuredData.installFrequency.value || structuredData.installFrequency.frequencyKey;
+      if (installFreqValue && typeof installFreqValue === 'string') {
+        formState.installFrequency = installFreqValue.toLowerCase();
+      }
+    }
   }
   if (formState.location === undefined && structuredData.locationDisplay?.value) {
     formState.location = structuredData.locationDisplay.value.includes("Inside") ? "beltway" : "standard";

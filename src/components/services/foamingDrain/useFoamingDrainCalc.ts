@@ -230,11 +230,23 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       hasInitialValue: !!initialData?.contractMonths
     });
 
+    // ✅ FIXED: Extract frequency and installFrequency values from saved object format
+    const frequencyValue = typeof initialData?.frequency === 'object' && initialData.frequency !== null && 'frequencyKey' in initialData.frequency
+      ? (initialData.frequency as any).frequencyKey
+      : initialData?.frequency;
+
+    const installFrequencyValue = typeof initialData?.installFrequency === 'object' && initialData.installFrequency !== null && 'value' in initialData.installFrequency
+      ? ((initialData.installFrequency as any).value as string).toLowerCase()
+      : initialData?.installFrequency;
+
     return {
       ...DEFAULT_FOAMING_DRAIN_FORM_STATE,
       ...initialData,
       serviceId: "foamingDrain",
       contractMonths: defaultContractMonths,
+      // ✅ Override with extracted string values
+      ...(frequencyValue && { frequency: frequencyValue }),
+      ...(installFrequencyValue && { installFrequency: installFrequencyValue as "weekly" | "bimonthly" }),
     };
   });
 
