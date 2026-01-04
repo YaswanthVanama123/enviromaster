@@ -284,6 +284,19 @@ export default function TrashView() {
   const confirmPermanentDelete = async () => {
     if (!itemToDelete || !isDeleteConfirmed) return;
 
+    // ✅ ADMIN CHECK: Permanent delete requires admin access
+    if (!isInAdminContext) {
+      setToastMessage({
+        message: "⚠️ Admin access required to permanently delete items. Please access this page from the Admin Panel to perform permanent deletions.",
+        type: "error"
+      });
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
+      setDeleteConfirmText('');
+      setDeleteCheckboxChecked(false);
+      return;
+    }
+
     try {
       console.log(`🗑️ [TRASH] Permanently deleting ${itemToDelete.type}: ${itemToDelete.id}`);
 
