@@ -80,6 +80,7 @@
   transform:translateY(-8px);
   pointer-events:none;
   transition:opacity .18s ease, transform .18s ease;
+  z-index:1002; /* ✅ FIXED: Ensure menu is above backdrop */
 }
 .mobilemenu--open{
   opacity:1;
@@ -99,6 +100,7 @@
   font-weight:600;
   font-size:15px;
   color:#222;
+  position:relative; /* ✅ FIXED: Create stacking context for clickable links */
 }
 .mobilemenu__item.active{
   background:#c00000;
@@ -108,6 +110,7 @@
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.08);
+  z-index:1001; /* ✅ FIXED: Backdrop below menu but above rest of page */
 }
 
 /* Breakpoints */
