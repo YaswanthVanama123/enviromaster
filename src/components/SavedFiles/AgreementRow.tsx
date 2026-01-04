@@ -10,6 +10,7 @@ import {
 import type { SavedFileGroup, SavedFileListItem } from "../../backendservice/api/pdfApi";
 import { FileRow } from "./FileRow";
 import AgreementTimelineBadge from "../AgreementTimelineBadge";
+import "./AgreementRow.css";
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -127,15 +128,19 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
   const handleDateChange = useCallback((newDate: string) => onDateChange(agreement.id, newDate), [agreement.id, onDateChange]);
 
   return (
-    <div style={{
-      background: '#fff',
-      border: '1px solid #e6e6e6',
-      borderRadius: '10px',
-      marginBottom: '8px', // ✅ RESTORED: Original spacing
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-      position: 'relative'
-    }}>
+    <div
+      className="agreement-card"
+      style={{
+        background: '#fff',
+        border: '1px solid #e6e6e6',
+        borderRadius: '10px',
+        marginBottom: '8px', // ✅ RESTORED: Original spacing
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+        position: 'relative'
+      }}
+    >
       <div
+        className="agreement-header"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -144,42 +149,44 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
           borderBottom: isExpanded ? '1px solid #f0f0f0' : 'none'
         }}
       >
-        {/* Agreement checkbox */}
-        <div style={{ marginRight: '12px' }} onClick={(e) => e.stopPropagation()}>
+        {/* Main content area - checkbox, expand, folder, title */}
+        <div className="agreement-main-content">
+          {/* Agreement checkbox */}
+          <div style={{ marginRight: '12px' }} onClick={(e) => e.stopPropagation()}>
+            <FontAwesomeIcon
+              icon={selectionState === 'none' ? faSquare : faCheckSquare}
+              style={{
+                color: selectionState !== 'none' ? '#3b82f6' : '#d1d5db',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+              onClick={handleToggleSelection}
+            />
+          </div>
+
+          {/* Expand/collapse arrow */}
           <FontAwesomeIcon
-            icon={selectionState === 'none' ? faSquare : faCheckSquare}
+            icon={isExpanded ? faChevronDown : faChevronRight}
             style={{
-              color: selectionState !== 'none' ? '#3b82f6' : '#d1d5db',
-              cursor: 'pointer',
-              fontSize: '16px'
+              color: '#6b7280',
+              fontSize: '14px',
+              marginRight: '8px'
             }}
-            onClick={handleToggleSelection}
+            onClick={handleToggleExpand}
           />
-        </div>
 
-        {/* Expand/collapse arrow */}
-        <FontAwesomeIcon
-          icon={isExpanded ? faChevronDown : faChevronRight}
-          style={{
-            color: '#6b7280',
-            fontSize: '14px',
-            marginRight: '8px'
-          }}
-          onClick={handleToggleExpand}
-        />
+          {/* Folder icon */}
+          <FontAwesomeIcon
+            icon={isExpanded ? faFolderOpen : faFolder}
+            style={{
+              color: '#f59e0b',
+              fontSize: '18px',
+              marginRight: '12px'
+            }}
+          />
 
-        {/* Folder icon */}
-        <FontAwesomeIcon
-          icon={isExpanded ? faFolderOpen : faFolder}
-          style={{
-            color: '#f59e0b',
-            fontSize: '18px',
-            marginRight: '12px'
-          }}
-        />
-
-        {/* Agreement title and metadata */}
-        <div style={{ flex: 1 }} onClick={handleToggleExpand}>
+          {/* Agreement title and metadata */}
+          <div style={{ flex: 1 }} onClick={handleToggleExpand}>
           <span style={{
             fontWeight: '600',
             fontSize: '16px',
@@ -232,9 +239,10 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
           </div>
         )}
       </div>
+        </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="agreement-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {agreement.startDate && agreement.contractMonths && (
             <AgreementTimelineBadge
               startDate={agreement.startDate}

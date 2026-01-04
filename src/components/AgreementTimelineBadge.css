@@ -318,15 +318,20 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+
+/* Medium viewports (tablets) - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
   .timeline-badge-compact {
     padding: 3px 8px;
     font-size: 11px;
-    gap: 4px;
+    gap: 5px;
+    max-width: 100%;
+    white-space: normal;
   }
 
-  .timeline-badge-icon {
-    font-size: 11px;
+  .timeline-badge-text {
+    gap: 4px;
+    flex-wrap: wrap;
   }
 
   .timeline-badge-status {
@@ -339,12 +344,147 @@
 
   .timeline-calendar-btn {
     font-size: 11px;
-    padding: 2px 4px;
+    padding: 3px 5px;
+  }
+
+  .timeline-date-picker-popup {
+    min-width: 190px;
+  }
+}
+
+/* Small viewports (mobile) - max 768px */
+@media (max-width: 768px) {
+  .timeline-badge-compact {
+    padding: 4px 6px;
+    font-size: 10px;
+    gap: 4px;
+    max-width: 100%;
+    white-space: normal;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .timeline-badge-content {
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .timeline-badge-icon {
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .timeline-badge-text {
+    gap: 4px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .timeline-badge-status {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .timeline-badge-days {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .timeline-badge-calendar {
+    margin-left: 2px;
+    padding-left: 4px;
+    flex-shrink: 0;
+  }
+
+  .timeline-calendar-btn {
+    font-size: 10px;
+    padding: 2px 3px;
   }
 
   .timeline-date-picker-popup {
     right: auto;
     left: 0;
-    min-width: 180px;
+    min-width: 170px;
+    max-width: 90vw;
+    padding: 10px;
+  }
+
+  .timeline-date-picker-popup label {
+    font-size: 10px;
+    margin-bottom: 5px;
+  }
+
+  .timeline-date-picker-popup input[type="date"] {
+    padding: 6px 8px;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .timeline-date-actions {
+    gap: 5px;
+  }
+
+  .timeline-date-save,
+  .timeline-date-cancel {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Extra small viewports - max 480px */
+@media (max-width: 480px) {
+  .timeline-badge-compact {
+    padding: 3px 5px;
+    font-size: 9px;
+    gap: 3px;
+  }
+
+  .timeline-badge-icon {
+    font-size: 9px;
+  }
+
+  .timeline-badge-status {
+    font-size: 9px;
+  }
+
+  .timeline-badge-days {
+    font-size: 8px;
+  }
+
+  .timeline-badge-calendar {
+    margin-left: 1px;
+    padding-left: 3px;
+  }
+
+  .timeline-calendar-btn {
+    font-size: 9px;
+    padding: 2px;
+  }
+
+  .timeline-date-picker-popup {
+    min-width: 160px;
+    padding: 8px;
+  }
+
+  .timeline-date-picker-popup label {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+
+  .timeline-date-picker-popup input[type="date"] {
+    padding: 5px 6px;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .timeline-date-actions {
+    gap: 4px;
+  }
+
+  .timeline-date-save,
+  .timeline-date-cancel {
+    padding: 4px 8px;
+    font-size: 10px;
   }
 }

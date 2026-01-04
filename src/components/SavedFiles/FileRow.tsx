@@ -8,6 +8,7 @@ import {
   faTrash, faRedo
 } from "@fortawesome/free-solid-svg-icons";
 import type { SavedFileListItem } from "../../backendservice/api/pdfApi";
+import "./FileRow.css";
 
 const EXISTING_STATUSES: { value: string; label: string; color: string; canManuallySelect: boolean }[] = [
   { value: 'draft', label: 'Draft', color: '#6b7280', canManuallySelect: false },
@@ -123,6 +124,7 @@ export const FileRow = memo((props: FileRowProps) => {
 
   return (
     <div
+      className="file-row"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -136,7 +138,7 @@ export const FileRow = memo((props: FileRowProps) => {
       }}
     >
       {/* File checkbox */}
-      <div style={{ marginRight: '12px' }}>
+      <div className="file-row-checkbox" style={{ marginRight: '12px' }}>
         <FontAwesomeIcon
           icon={isSelected ? faCheckSquare : faSquare}
           style={{
@@ -149,8 +151,8 @@ export const FileRow = memo((props: FileRowProps) => {
       </div>
 
       {/* File info */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="file-row-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="file-row-info-main" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <FontAwesomeIcon
           icon={faFileAlt}
           style={{
@@ -164,10 +166,13 @@ export const FileRow = memo((props: FileRowProps) => {
             fontSize: '16px'
           }}
         />
-        <span style={{
-          fontWeight: '500',
-          color: '#374151'
-        }}>
+        <span
+          className="file-row-name"
+          style={{
+            fontWeight: '500',
+            color: '#374151'
+          }}
+        >
           {file.fileName}
         </span>
         {file.hasPdf && (
@@ -229,17 +234,20 @@ export const FileRow = memo((props: FileRowProps) => {
 
       {/* Watermark toggle (only for version PDFs) */}
       {file.fileType === 'version_pdf' && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 10px',
-          background: watermarkEnabled ? 'rgba(59, 130, 246, 0.1)' : '#f3f4f6',
-          border: `1px solid ${watermarkEnabled ? '#60a5fa' : '#d1d5db'}`,
-          borderRadius: '6px',
-          marginRight: '12px',
-          transition: 'all 0.2s'
-        }}>
+        <div
+          className="file-row-watermark"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '4px 10px',
+            background: watermarkEnabled ? 'rgba(59, 130, 246, 0.1)' : '#f3f4f6',
+            border: `1px solid ${watermarkEnabled ? '#60a5fa' : '#d1d5db'}`,
+            borderRadius: '6px',
+            marginRight: '12px',
+            transition: 'all 0.2s'
+          }}
+        >
           <input
             type="checkbox"
             checked={watermarkEnabled}
@@ -264,7 +272,7 @@ export const FileRow = memo((props: FileRowProps) => {
       )}
 
       {/* File actions */}
-      <div style={{ display: 'flex', gap: '6px' }}>
+      <div className="file-row-actions" style={{ display: 'flex', gap: '6px' }}>
         {!isTrashView && canEdit && (
           <button
             className="iconbtn"
