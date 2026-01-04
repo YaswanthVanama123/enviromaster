@@ -53,6 +53,25 @@ const STATUS_LABEL: Record<FileStatus, string> = {
 
 // ✅ REMOVED: FileRow component now imported from separate file for better performance
 
+// ✅ NEW: Status configuration helper function
+const getStatusConfig = (status: string) => {
+  const EXISTING_STATUSES = [
+    { value: 'draft', label: 'Draft', color: '#6b7280', canManuallySelect: false },
+    { value: 'saved', label: 'Saved', color: '#059669', canManuallySelect: false },
+    { value: 'uploaded', label: 'Uploaded', color: '#3b82f6', canManuallySelect: false },
+    { value: 'processing', label: 'Processing', color: '#f59e0b', canManuallySelect: false },
+    { value: 'completed', label: 'Completed', color: '#10b981', canManuallySelect: false },
+    { value: 'failed', label: 'Failed', color: '#ef4444', canManuallySelect: false },
+    { value: 'pending_approval', label: 'Pending Approval', color: '#f59e0b', canManuallySelect: true },
+    { value: 'approved_salesman', label: 'Approved by Salesman', color: '#3b82f6', canManuallySelect: true },
+    { value: 'approved_admin', label: 'Approved by Admin', color: '#10b981', canManuallySelect: true },
+    { value: 'attached', label: 'Attached File', color: '#8b5cf6', canManuallySelect: false },
+  ];
+
+  const config = EXISTING_STATUSES.find(s => s.value === status);
+  return config || { value: status, label: status, color: '#6b7280', canManuallySelect: false };
+};
+
 // ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads across React Strict Mode remounts
 let hasInitiallyLoaded = false;
 

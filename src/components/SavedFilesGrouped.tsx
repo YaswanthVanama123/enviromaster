@@ -145,9 +145,9 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     console.log('Date change not implemented in SavedFilesGrouped');
   }, []);
 
-  // ✅ NEW: Wrapper for handleStatusUpdate to match VirtualizedAgreementList signature
+  // ✅ FIXED: Wrapper for handleStatusUpdate to match VirtualizedAgreementList signature
   const handleStatusChange = useCallback((file: SavedFileListItem, newStatus: string) => {
-    handleStatusUpdate(file.id, newStatus, file.fileType === 'main_pdf');
+    handleStatusUpdate(file.id, newStatus, file.fileType);
   }, []);
 
   const navigate = useNavigate();
@@ -574,17 +574,23 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     }
   };
 
-  // ✅ NEW: Handle status update for files/agreements
-  const handleStatusUpdate = async (fileId: string, newStatus: string, isAgreement = false) => {
+  // ✅ FIXED: Handle status update for files/agreements with correct API methods
+  const handleStatusUpdate = async (fileId: string, newStatus: string, fileType?: string) => {
     setUpdatingStatus(prev => ({ ...prev, [fileId]: true }));
     try {
-      if (isAgreement) {
-        await pdfApi.updateDocumentStatus(fileId, newStatus);
+      console.log(`📊 [STATUS-UPDATE] Updating ${fileType || 'unknown'} file ${fileId} to status: ${newStatus}`);
+
+      // ✅ FIXED: Use correct API method based on file type
+      if (fileType === 'version_pdf') {
+        await pdfApi.updateVersionStatus(fileId, newStatus);
+      } else if (fileType === 'attached_pdf') {
+        await manualUploadApi.updateStatus(fileId, newStatus);
       } else {
-        // For attached files, we would need to add a separate API endpoint
-        // For now, treat all as agreement status updates
+        // For main_pdf, agreements, or version_log, use document status API
         await pdfApi.updateDocumentStatus(fileId, newStatus);
       }
+
+      console.log(`✅ [STATUS-UPDATE] Successfully updated status for ${fileId}`);
 
       // Update local state
       setGroups(prevGroups =>
