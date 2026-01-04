@@ -1441,6 +1441,94 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     });
   };
 
+  // ✅ NEW: Initialize - clear any inconsistent quantities on mount if checkboxes are unchecked
+  const hasInitialized = useRef(false);
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    // Check for inconsistent state and fix it immediately
+    const updates: Partial<SanicleanFormState> = {};
+
+    if (!form.addUrinalComponents && (form.urinalScreensQty > 0 || form.urinalMatsQty > 0)) {
+      console.log('🧹 [SANICLEAN-INIT] Fixing inconsistent urinal components state on load');
+      updates.urinalScreensQty = 0;
+      updates.urinalMatsQty = 0;
+    }
+
+    if (!form.addMaleToiletComponents && (form.toiletClipsQty > 0 || form.seatCoverDispensersQty > 0)) {
+      console.log('🧹 [SANICLEAN-INIT] Fixing inconsistent male toilet components state on load');
+      updates.toiletClipsQty = 0;
+      updates.seatCoverDispensersQty = 0;
+    }
+
+    if (!form.addFemaleToiletComponents && form.sanipodsQty > 0) {
+      console.log('🧹 [SANICLEAN-INIT] Fixing inconsistent female toilet components state on load');
+      updates.sanipodsQty = 0;
+    }
+
+    if (!form.addMicrofiberMopping && form.microfiberBathrooms > 0) {
+      console.log('🧹 [SANICLEAN-INIT] Fixing inconsistent microfiber mopping state on load');
+      updates.microfiberBathrooms = 0;
+    }
+
+    // Apply all fixes at once if any were needed
+    if (Object.keys(updates).length > 0) {
+      setForm(prev => ({ ...prev, ...updates }));
+    }
+  }, []); // Run once on mount
+
+  // ✅ NEW: Auto-clear quantities when facility component checkboxes are toggled OFF
+  useEffect(() => {
+    if (!hasInitialized.current) return; // Skip until after initialization
+
+    if (!form.addUrinalComponents && (form.urinalScreensQty > 0 || form.urinalMatsQty > 0)) {
+      console.log('🧹 [SANICLEAN-AUTO-CLEAR] Urinal components unchecked, clearing quantities');
+      setForm(prev => ({
+        ...prev,
+        urinalScreensQty: 0,
+        urinalMatsQty: 0
+      }));
+    }
+  }, [form.addUrinalComponents]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return; // Skip until after initialization
+
+    if (!form.addMaleToiletComponents && (form.toiletClipsQty > 0 || form.seatCoverDispensersQty > 0)) {
+      console.log('🧹 [SANICLEAN-AUTO-CLEAR] Male toilet components unchecked, clearing quantities');
+      setForm(prev => ({
+        ...prev,
+        toiletClipsQty: 0,
+        seatCoverDispensersQty: 0
+      }));
+    }
+  }, [form.addMaleToiletComponents]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return; // Skip until after initialization
+
+    if (!form.addFemaleToiletComponents && form.sanipodsQty > 0) {
+      console.log('🧹 [SANICLEAN-AUTO-CLEAR] Female toilet components unchecked, clearing quantities');
+      setForm(prev => ({
+        ...prev,
+        sanipodsQty: 0
+      }));
+    }
+  }, [form.addFemaleToiletComponents]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return; // Skip until after initialization
+
+    if (!form.addMicrofiberMopping && form.microfiberBathrooms > 0) {
+      console.log('🧹 [SANICLEAN-AUTO-CLEAR] Microfiber mopping unchecked, clearing bathrooms');
+      setForm(prev => ({
+        ...prev,
+        microfiberBathrooms: 0
+      }));
+    }
+  }, [form.addMicrofiberMopping]);
+
   const setField = (field: keyof SanicleanFormState, value: any) => {
     updateForm({ [field]: value });
   };

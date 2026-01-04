@@ -483,17 +483,18 @@ export const SanicleanForm: React.FC<
         customMonthlyTotal: form.customMonthlyTotal,
         customContractTotal: form.customContractTotal,
 
+        // ✅ FIXED: Zero out quantities when facility component checkboxes are unchecked
         addUrinalComponents: form.addUrinalComponents,
-        urinalScreensQty: form.urinalScreensQty,
-        urinalMatsQty: form.urinalMatsQty,
+        urinalScreensQty: form.addUrinalComponents ? form.urinalScreensQty : 0,
+        urinalMatsQty: form.addUrinalComponents ? form.urinalMatsQty : 0,
         addMaleToiletComponents: form.addMaleToiletComponents,
-        toiletClipsQty: form.toiletClipsQty,
-        seatCoverDispensersQty: form.seatCoverDispensersQty,
+        toiletClipsQty: form.addMaleToiletComponents ? form.toiletClipsQty : 0,
+        seatCoverDispensersQty: form.addMaleToiletComponents ? form.seatCoverDispensersQty : 0,
         addFemaleToiletComponents: form.addFemaleToiletComponents,
-        sanipodsQty: form.sanipodsQty,
+        sanipodsQty: form.addFemaleToiletComponents ? form.sanipodsQty : 0,
         warrantyDispensers: form.warrantyDispensers,
         addMicrofiberMopping: form.addMicrofiberMopping,
-        microfiberBathrooms: form.microfiberBathrooms,
+        microfiberBathrooms: form.addMicrofiberMopping ? form.microfiberBathrooms : 0,
 
         // Red/Green Line pricing data (weekly pricing)
         perVisitBase: quote.breakdown.baseService,  // Raw base service weekly
