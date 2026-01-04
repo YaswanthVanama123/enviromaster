@@ -383,11 +383,18 @@ export const SanicleanForm: React.FC<
       addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal, EXTRA_ORDER.warranty);
       addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal, EXTRA_ORDER.microfiber);
         if (form.mainServiceFrequency !== "oneTime") {
-          if (form.pricingMode === "per_item_charge") {
+          // ✅ FIXED: Only show Facility Components Frequency if any facility components are enabled
+          const hasFacilityComponents = form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents;
+
+          if (form.pricingMode === "per_item_charge" && hasFacilityComponents) {
             addLineExtra("Facility Components Frequency", facilityFrequencyLabel, "line", EXTRA_ORDER.facilityFrequency, "wide");
           }
           addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold", EXTRA_ORDER.baseServiceMonthly, "wide");
-          addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
+
+          // ✅ FIXED: Only show Facility Components Monthly Total if there are actual components
+          if (hasFacilityComponents) {
+            addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
+          }
         }
 
       const includedItems = Array.isArray(quote.included)
