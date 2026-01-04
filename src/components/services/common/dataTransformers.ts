@@ -566,6 +566,14 @@ export function transformSanicleanData(structuredData: any): any {
     }
   });
 
+  // ✅ FIXED: Extract All-Inclusive quantity fields (excess soap and paper spend)
+  if (structuredData.excessSoapGallonsPerWeek !== undefined) {
+    formState.excessSoapGallonsPerWeek = normalizeStructuredValue(structuredData.excessSoapGallonsPerWeek);
+  }
+  if (structuredData.estimatedPaperSpendPerWeek !== undefined) {
+    formState.estimatedPaperSpendPerWeek = normalizeStructuredValue(structuredData.estimatedPaperSpendPerWeek);
+  }
+
   const facilityComponentsValue = normalizeStructuredValue(structuredData.facilityComponents);
   if (facilityComponentsValue !== undefined) {
     formState.customFacilityComponents = facilityComponentsValue;

@@ -60,10 +60,12 @@ const EXTRA_ORDER = {
   sanipods: 17,
   warranty: 18,
   microfiber: 19,
+  excessSoap: 20, // ✅ ADDED: For All-Inclusive excess soap charges
   baseServiceMonthly: 22,
   facilityComponentsMonthly: 23,
   facilityFrequency: 24,
   includedItems: 25,
+  paperOverage: 26, // ✅ ADDED: For All-Inclusive paper overage
 };
 
 function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): number {
@@ -382,6 +384,29 @@ export const SanicleanForm: React.FC<
       addAtChargeExtra("SaniPods", form.sanipodsQty, form.sanipodServiceMonthly, sanipodsTotal, EXTRA_ORDER.sanipods);
       addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal, EXTRA_ORDER.warranty);
       addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal, EXTRA_ORDER.microfiber);
+
+      // ✅ FIXED: Add excess soap to PDF for All-Inclusive mode
+      if (form.pricingMode === "all_inclusive" && form.excessSoapGallonsPerWeek > 0 && extraSoapWeekly > 0) {
+        addAtChargeExtra(
+          "Excess Soap",
+          form.excessSoapGallonsPerWeek,
+          extraSoapRatePerGallon,
+          extraSoapWeekly,
+          EXTRA_ORDER.excessSoap
+        );
+      }
+
+      // ✅ FIXED: Add paper overage to PDF for All-Inclusive mode
+      // Show the actual paper overage charge (spend - credit)
+      if (form.pricingMode === "all_inclusive" && paperOveragePerWeek > 0) {
+        addLineExtra(
+          "Paper Overage",
+          paperOveragePerWeek,
+          "line",
+          EXTRA_ORDER.paperOverage
+        );
+      }
+
         if (form.mainServiceFrequency !== "oneTime") {
           // ✅ FIXED: Only show Facility Components Frequency if any facility components are enabled
           const hasFacilityComponents = form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents;
@@ -452,7 +477,11 @@ export const SanicleanForm: React.FC<
         luxuryUpgradeQty: form.luxuryUpgradeQty,
         excessStandardSoapRate: form.excessStandardSoapRate,
         excessLuxurySoapRate: form.excessLuxurySoapRate,
+        // ✅ FIXED: Save excess soap gallons for All-Inclusive edit mode and PDF
+        excessSoapGallonsPerWeek: form.excessSoapGallonsPerWeek,
         paperCreditPerFixture: form.paperCreditPerFixture,
+        // ✅ FIXED: Save paper spend for All-Inclusive edit mode and PDF
+        estimatedPaperSpendPerWeek: form.estimatedPaperSpendPerWeek,
         microfiberMoppingPerBathroom: form.microfiberMoppingPerBathroom,
 
         insideBeltwayRatePerFixture: form.insideBeltwayRatePerFixture,
