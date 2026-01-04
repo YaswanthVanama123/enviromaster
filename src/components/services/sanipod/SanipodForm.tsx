@@ -131,9 +131,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const prevDataRef = useRef<string>("");
 
   // Calculate effective rate per pod for payload
-  const effectiveRate = form.podQuantity > 0 && calc.monthly > 0
-    ? calc.monthly / form.podQuantity
-    : calc.effectiveRatePerPod || 0;
+  // ✅ FIXED: Use calc.effectiveRatePerPod directly (only pod service cost, not bags/install)
+  const effectiveRate = calc.effectiveRatePerPod;
 
   // Determine if frequency is visit-based (not monthly billing)
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
@@ -297,7 +296,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           type: "calc" as const,
           qty: form.podQuantity,
           rate: effectiveRate,
-          total: calc.perVisit,
+          total: form.podQuantity * effectiveRate, // ✅ FIXED: Pod service only (not perVisit which includes bags)
         },
 
         // Extra bags (if any)
