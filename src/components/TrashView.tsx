@@ -14,6 +14,7 @@ import {
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import DocumentSidebar from "./DocumentSidebar";
 import "./SavedFiles.css";
+import "./TrashView.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 // ✅ OPTIMIZED: Memoized components for fast rendering
 import { AgreementRow } from "./SavedFiles/AgreementRow";
@@ -394,62 +395,84 @@ export default function TrashView() {
 
   return (
     <div>
-      <div style={{
-        background: '#fff',
-        padding: '24px 24px 16px',
-        borderBottom: '1px solid #e5e7eb',
-        marginBottom: '0'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '8px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: '#fef2f2',
+      <div
+        className="trash-view-header"
+        style={{
+          background: '#fff',
+          padding: '24px 24px 16px',
+          borderBottom: '1px solid #e5e7eb',
+          marginBottom: '0'
+        }}
+      >
+        <div
+          className="trash-view-header-content"
+          style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+            gap: '12px',
+            marginBottom: '8px'
+          }}
+        >
+          <div
+            className="trash-view-icon"
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: '#fef2f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
             🗑️
           </div>
-          <h1 style={{
-            margin: 0,
-            fontSize: '24px',
-            fontWeight: '600',
-            color: '#111827'
-          }}>
+          <h1
+            className="trash-view-title"
+            style={{
+              margin: 0,
+              fontSize: '24px',
+              fontWeight: '600',
+              color: '#111827'
+            }}
+          >
             Trash
           </h1>
         </div>
-        <p style={{
-          margin: 0,
-          fontSize: '14px',
-          color: '#6b7280'
-        }}>
+        <p
+          className="trash-view-description"
+          style={{
+            margin: 0,
+            fontSize: '14px',
+            color: '#6b7280'
+          }}
+        >
           View and manage deleted agreements and files. Items in trash can be restored or permanently deleted.
         </p>
       </div>
 
-      <div style={{
-        display: 'flex',
-        gap: '24px',
-        padding: '24px'
-      }}>
+      <div
+        className="trash-view-container"
+        style={{
+          display: 'flex',
+          gap: '24px',
+          padding: '24px'
+        }}
+      >
         {/* Main Content */}
-        <div style={{ flex: 1 }}>
+        <div className="trash-view-main" style={{ flex: 1 }}>
           {/* ✅ Search and filters */}
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            marginBottom: '16px',
-            alignItems: 'center'
-          }}>
+          <div
+            className="trash-view-search-bar"
+            style={{
+              display: 'flex',
+              gap: '12px',
+              marginBottom: '16px',
+              alignItems: 'center'
+            }}
+          >
             <input
+              className="trash-view-search-input"
               type="text"
               placeholder="Search deleted items..."
               value={query}
@@ -465,14 +488,17 @@ export default function TrashView() {
                 fontSize: '14px'
               }}
             />
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: '#374151'
-            }}>
+            <label
+              className="trash-view-select-all"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#374151'
+              }}
+            >
               <input type="checkbox" />
               <FontAwesomeIcon icon={faCheckSquare} style={{ fontSize: '14px' }} />
               Select All
@@ -575,6 +601,7 @@ export default function TrashView() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && itemToDelete && (
         <div
+          className="trash-view-modal-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -594,6 +621,7 @@ export default function TrashView() {
           }}
         >
           <div
+            className="trash-view-modal-content"
             style={{
               background: 'white',
               padding: '24px',
