@@ -806,8 +806,7 @@ export default function AdminPanel() {
 
             {/* Right Sidebar */}
             <aside className="dashboard-sidebar">
-              {/* Upload Card */}
-              <div className="sidebar-card upload-card-modern">
+              {/* <div className="sidebar-card upload-card-modern">
                 <button
                   className="upload-btn-large"
                   onClick={() => handleTabChange("manual-uploads")}
@@ -819,7 +818,7 @@ export default function AdminPanel() {
                   <span className="upload-info-label">Last uploaded on</span>
                   <div className="upload-info-date">{formatUploadDate(lastUploadDate)}</div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Pie Chart Card */}
               <div className="sidebar-card pie-chart-card">
