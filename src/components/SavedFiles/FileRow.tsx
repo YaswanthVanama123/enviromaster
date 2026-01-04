@@ -107,8 +107,10 @@ export const FileRow = memo((props: FileRowProps) => {
   const handleWatermarkToggle = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation(); // Prevent event bubbling to parent elements
     e.nativeEvent.stopImmediatePropagation(); // Stop other listeners on the same element
-    onWatermarkToggle(file.id, e.target.checked);
-  }, [file.id, onWatermarkToggle]);
+    const newValue = e.target.checked;
+    console.log(`💧 [FileRow-WATERMARK] File ${file.id}: current=${watermarkEnabled}, new=${newValue}`);
+    onWatermarkToggle(file.id, newValue);
+  }, [file.id, onWatermarkToggle]); // ✅ FIXED: Don't include watermarkEnabled in deps to avoid recreating callback
 
   const canEdit = useMemo(() =>
     file.fileType === 'main_pdf' || (file.fileType === 'version_pdf' && file.isLatestVersion === true),
@@ -255,10 +257,6 @@ export const FileRow = memo((props: FileRowProps) => {
             type="checkbox"
             checked={watermarkEnabled}
             onChange={handleWatermarkToggle}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent bubbling
-              // Don't preventDefault - let the checkbox toggle naturally
-            }}
             style={{
               width: '14px',
               height: '14px',
@@ -274,10 +272,6 @@ export const FileRow = memo((props: FileRowProps) => {
               whiteSpace: 'nowrap',
               userSelect: 'none',
               cursor: 'pointer'
-            }}
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent event bubbling
-              onWatermarkToggle(file.id, !watermarkEnabled);
             }}
           >
             {watermarkEnabled ? '💧 Draft' : '✨ Normal'}
@@ -422,6 +416,17 @@ export const FileRow = memo((props: FileRowProps) => {
         )}
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // ✅ FIXED: Custom comparison to ensure watermark toggle triggers re-render
+  return (
+    prevProps.file.id === nextProps.file.id &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.statusChangeLoading === nextProps.statusChangeLoading &&
+    prevProps.watermarkEnabled === nextProps.watermarkEnabled && // ✅ CRITICAL: Check watermark state
+    prevProps.isTrashView === nextProps.isTrashView &&
+    prevProps.file.status === nextProps.file.status &&
+    prevProps.file.fileName === nextProps.file.fileName
   );
 });
 
