@@ -763,6 +763,7 @@
   .home__bottom-section {
     grid-template-columns: 1fr;
     gap: 20px;
+    margin-top: 24px; /* ✅ FIXED: Add spacing between cards and chart on tablets */
   }
 
   /* ✅ FIXED: Reduce chart header spacing on tablets */
@@ -843,6 +844,7 @@
 
   .home__bottom-section {
     grid-template-columns: 1fr;
+    margin-top: 32px; /* ✅ FIXED: Add spacing between cards and chart */
   }
 }
 
@@ -876,6 +878,11 @@
     min-height: auto;
   }
 
+  /* ✅ FIXED: Add spacing and adjust chart height on mobile */
+  .home__bottom-section {
+    margin-top: 28px;
+  }
+
   /* ✅ FIXED: Reduce chart header spacing on mobile to prevent bar overlap */
   .home__chart-header {
     margin-bottom: 20px;
@@ -893,18 +900,18 @@
   }
 
   .home__chart {
-    height: 220px;
-    padding: 24px 0 36px; /* ✅ FIXED: Increased bottom padding to prevent label cutoff on mobile */
+    height: 200px; /* ✅ FIXED: Reduced from 220px to prevent overflow */
+    padding: 20px 0 36px; /* ✅ FIXED: Increased bottom padding to prevent label cutoff on mobile */
     gap: 8px;
   }
 
   .home__chart-bar-group {
-    max-height: 200px;
+    max-height: 180px; /* ✅ FIXED: Reduced to match new chart height */
     gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
-    max-height: 180px;
+    max-height: 160px; /* ✅ FIXED: Reduced to match new bar group height */
   }
 
   .home__chart-label {
@@ -1022,6 +1029,11 @@
     font-size: 14px;
   }
 
+  /* ✅ FIXED: Add spacing and adjust chart height on extra small screens */
+  .home__bottom-section {
+    margin-top: 24px;
+  }
+
   /* ✅ FIXED: Further reduce chart header spacing on extra small screens */
   .home__chart-header {
     margin-bottom: 16px;
@@ -1038,18 +1050,18 @@
   }
 
   .home__chart {
-    height: 180px;
-    padding: 20px 0 40px; /* ✅ FIXED: Maximum bottom padding for very small screens to prevent label cutoff */
+    height: 170px; /* ✅ FIXED: Further reduced to prevent overflow on small screens */
+    padding: 18px 0 38px; /* ✅ FIXED: Maximum bottom padding for very small screens to prevent label cutoff */
     gap: 6px;
   }
 
   .home__chart-bar-group {
-    max-height: 160px;
+    max-height: 150px; /* ✅ FIXED: Reduced to match new chart height */
     gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
-    max-height: 140px;
+    max-height: 130px; /* ✅ FIXED: Reduced to match new bar group height */
   }
 
   .home__chart-label {
