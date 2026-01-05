@@ -125,7 +125,7 @@
 }
 
 .ad__table thead th {
-  background: #f5f6f8;
+  background: #f5f6f8 !important; /* ✅ FIXED: Ensure consistent background for all columns including Actions */
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #e0e0e0;
