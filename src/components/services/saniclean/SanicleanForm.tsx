@@ -620,7 +620,17 @@ export const SanicleanForm: React.FC<
   const contractTotal = quote.contractTotal;
 
   return (
-    <div className="svc-card">
+    <div className="svc-card" style={{ position: 'relative' }}>
+      {/* Loading Overlay */}
+      {isLoadingConfig && (
+        <div className="svc-loading-overlay">
+          <div className="svc-loading-spinner">
+            <span className="svc-sr-only">Loading configuration...</span>
+          </div>
+          <p className="svc-loading-text">Loading configuration...</p>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>

@@ -380,7 +380,17 @@ export const SaniscrubForm: React.FC<
 
 
   return (
-    <div className="svc-card">
+    <div className="svc-card" style={{ position: 'relative' }}>
+      {/* Loading Overlay */}
+      {isLoadingConfig && (
+        <div className="svc-loading-overlay">
+          <div className="svc-loading-spinner">
+            <span className="svc-sr-only">Loading configuration...</span>
+          </div>
+          <p className="svc-loading-text">Loading configuration...</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="svc-h-row">
         <div className="svc-h">SANISCRUB</div>
