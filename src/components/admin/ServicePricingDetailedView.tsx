@@ -1742,30 +1742,30 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       categories.installation = [];
 
       // Frequency Settings
-      const freqSchedules = getValue(["frequencySchedules"]) || {};
-      categories.frequencySettings = [
-        {
-          label: "Weekly - Visits Per Year",
-          value: freqSchedules.weekly?.visitsPerYear ?? 0,
-          path: ["frequencySchedules", "weekly", "visitsPerYear"],
-          unit: "visits/year",
-          description: "Number of weekly service visits per year (typically 52)",
-        },
-        {
-          label: "Biweekly - Visits Per Year",
-          value: freqSchedules.biweekly?.visitsPerYear ?? 0,
-          path: ["frequencySchedules", "biweekly", "visitsPerYear"],
-          unit: "visits/year",
-          description: "Number of biweekly service visits per year (typically 26)",
-        },
-        {
-          label: "Monthly - Visits Per Year",
-          value: freqSchedules.monthly?.visitsPerYear ?? 0,
-          path: ["frequencySchedules", "monthly", "visitsPerYear"],
-          unit: "visits/year",
-          description: "Number of monthly service visits per year (typically 12)",
-        },
-      ];
+      // const freqSchedules = getValue(["frequencySchedules"]) || {};
+      // categories.frequencySettings = [
+      //   {
+      //     label: "Weekly - Visits Per Year",
+      //     value: freqSchedules.weekly?.visitsPerYear ?? 0,
+      //     path: ["frequencySchedules", "weekly", "visitsPerYear"],
+      //     unit: "visits/year",
+      //     description: "Number of weekly service visits per year (typically 52)",
+      //   },
+      //   {
+      //     label: "Biweekly - Visits Per Year",
+      //     value: freqSchedules.biweekly?.visitsPerYear ?? 0,
+      //     path: ["frequencySchedules", "biweekly", "visitsPerYear"],
+      //     unit: "visits/year",
+      //     description: "Number of biweekly service visits per year (typically 26)",
+      //   },
+      //   {
+      //     label: "Monthly - Visits Per Year",
+      //     value: freqSchedules.monthly?.visitsPerYear ?? 0,
+      //     path: ["frequencySchedules", "monthly", "visitsPerYear"],
+      //     unit: "visits/year",
+      //     description: "Number of monthly service visits per year (typically 12)",
+      //   },
+      // ];
 
       // Billing Conversions (Frequency Metadata)
       const freqMeta = getValue(["frequencyMetadata"]) || {};
@@ -2586,7 +2586,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "podRates", label: "Pod Rates", icon: faTrash },
         { key: "extraBags", label: "Extra Bags", icon: faShoppingBag },
         { key: "standaloneService", label: "Standalone Service", icon: faStar },
-        { key: "frequencySettings", label: "Service Frequencies", icon: faCalendar },
+        // { key: "frequencySettings", label: "Service Frequencies", icon: faCalendar },
         { key: "sanipodBillingConversions", label: "Billing Conversions", icon: faSync },
         // { key: "sanipodContractTerms", label: "Contract Terms", icon: faClipboard },
         // { key: "sanipodRateTiers", label: "Rate Tiers", icon: faDollarSign },

@@ -154,20 +154,24 @@ body::-webkit-scrollbar,
 }
 
 .formfilling__loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  margin: 0;
-  padding: 0;
+  position: fixed !important; /* ✅ FIXED: Force fixed positioning */
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important; /* ✅ FIXED: Force full viewport width */
+  height: 100vh !important; /* ✅ FIXED: Force full viewport height */
+  margin: 0 !important;
+  padding: 0 !important;
   background: rgba(15, 23, 42, 0.75); /* ✅ Dark semi-transparent background for better spinner visibility */
   backdrop-filter: blur(8px);
-  display: flex;
-  align-items: flex-start; /* ✅ Changed from center to flex-start for top positioning */
-  justify-content: center;
-  padding-top: 80px; /* ✅ Added padding from top to position spinner below edit header */
-  z-index: 9999; /* ✅ Highest z-index to ensure it's on top of everything including edit header */
+  display: flex !important;
+  align-items: center !important; /* ✅ FIXED: Center vertically */
+  justify-content: center !important; /* ✅ FIXED: Center horizontally */
+  z-index: 99999 !important; /* ✅ FIXED: Maximum z-index to ensure it's on top */
+  box-sizing: border-box;
+  overflow: hidden;
+  transform: translateZ(0); /* ✅ FIXED: Create new stacking context */
 }
 
 .formfilling__spinner {
