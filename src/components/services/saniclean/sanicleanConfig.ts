@@ -23,6 +23,7 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
       electrostaticSpray: true, // Free electrostatic spray
       airFreshenerService: true, // Free air freshener service (no warranty)
       soapService: true, // Free soap service (no warranty)
+      fragranceBar: true, // Fragrance Bar included
     },
     waivedFees: {
       tripCharge: true, // Trip charge waived

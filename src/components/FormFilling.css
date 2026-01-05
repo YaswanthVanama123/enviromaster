@@ -161,25 +161,26 @@ body::-webkit-scrollbar,
   bottom: 0;
   margin: 0;
   padding: 0;
-  background: rgba(255, 255, 255, 0.98); /* ✅ White background for better visibility */
-  backdrop-filter: blur(3px);
+  background: rgba(15, 23, 42, 0.75); /* ✅ Dark semi-transparent background for better spinner visibility */
+  backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* ✅ Changed from center to flex-start for top positioning */
   justify-content: center;
+  padding-top: 80px; /* ✅ Added padding from top to position spinner below edit header */
   z-index: 9999; /* ✅ Highest z-index to ensure it's on top of everything including edit header */
 }
 
 .formfilling__spinner {
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
-  border: 6px solid rgba(15, 23, 42, 0.15);
+  border: 8px solid rgba(255, 255, 255, 0.2);
   border-top-color: #ff4500;
   border-right-color: #ff6b35;
-  border-bottom-color: #2563eb;
-  border-left-color: rgba(15, 23, 42, 0.2);
+  border-bottom-color: #38bdf8;
+  border-left-color: #fbbf24;
   animation: spinner-spin 0.9s ease-in-out infinite;
-  box-shadow: 0 0 24px rgba(255, 69, 0, 0.3);
+  box-shadow: 0 0 40px rgba(255, 69, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;

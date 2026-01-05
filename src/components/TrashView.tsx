@@ -55,8 +55,8 @@ export default function TrashView() {
   const normalizedDeleteText = deleteConfirmText.trim().toUpperCase();
   const isDeleteConfirmed = normalizedDeleteText === 'DELETE' && deleteCheckboxChecked; // ✅ Require both
 
-  // ✅ Watermark state (not used in trash but needed for AgreementRow compatibility)
-  const [fileWatermarkStates] = useState<Map<string, boolean>>(new Map());
+  // ✅ Watermark state for controlling Normal/Draft mode
+  const [fileWatermarkStates, setFileWatermarkStates] = useState<Map<string, boolean>>(new Map());
   const [updatingStatus] = useState<Record<string, boolean>>({});
 
   const navigate = useNavigate();
@@ -332,6 +332,16 @@ export default function TrashView() {
     }
   };
 
+  // ✅ Watermark toggle handler - updates Normal/Draft mode state
+  const handleWatermarkToggle = useCallback((fileId: string, checked: boolean) => {
+    console.log(`💧 [TRASH-WATERMARK] Toggling watermark for file ${fileId}: ${checked}`);
+    setFileWatermarkStates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(fileId, checked);
+      return newMap;
+    });
+  }, []);
+
   // ✅ Placeholder handlers (not used in trash view)
   const handleAddFile = () => {};
   const handleEditAgreement = () => {};
@@ -340,7 +350,6 @@ export default function TrashView() {
   const handleEdit = () => {};
   const handleZohoUpload = () => {};
   const handleStatusChange = () => {};
-  const handleWatermarkToggle = () => {};
 
   // ✅ Calculate statistics
   const statusCounts = useMemo(() => {

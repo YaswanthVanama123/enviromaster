@@ -580,6 +580,7 @@ function calculateAllInclusive(
       "Electrostatic spray (free)",
       "Air freshener service (no warranty fee)",
       "Soap service (no warranty fee)",
+      "Fragrance Bar",
       `Paper credit: $${paperCredit.toFixed(2)}/week`,
     ],
     excluded: [
