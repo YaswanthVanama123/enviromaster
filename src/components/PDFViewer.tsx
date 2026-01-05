@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle, faLightbulb, faFileAlt, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle, faLightbulb, faFileAlt, faPencilAlt, faDownload, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
@@ -436,8 +436,19 @@ export default function PDFViewer() {
             className="pdf-viewer__btn pdf-viewer__btn--download"
             disabled={downloading}
             title={isLogFile ? "Download Log File" : "Download PDF"}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            {downloading ? "⏳ Downloading..." : "⬇️ Download"}
+            {downloading ? (
+              <>
+                <FontAwesomeIcon icon={faSpinner} spin />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faDownload} />
+                Download
+              </>
+            )}
           </button>
         </div>
       </div>
