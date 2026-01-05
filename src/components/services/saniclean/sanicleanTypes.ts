@@ -38,6 +38,7 @@ export interface SanicleanPricingConfig {
       electrostaticSpray: boolean; // true (free)
       airFreshenerService: boolean; // true (free, no warranty)
       soapService: boolean; // true (free, no warranty)
+      fragranceBar: boolean; // true (Fragrance Bar included)
     };
     waivedFees: {
       tripCharge: boolean; // true

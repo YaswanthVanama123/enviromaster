@@ -879,7 +879,17 @@ const getKitchenLarge = (): number => {
   };
 
   return (
-    <div className="svc-card svc-card-wide refresh-rps">
+    <div className="svc-card svc-card-wide refresh-rps" style={{ position: 'relative' }}>
+      {/* Loading Overlay */}
+      {isLoadingConfig && (
+        <div className="svc-loading-overlay">
+          <div className="svc-loading-spinner">
+            <span className="svc-sr-only">Loading configuration...</span>
+          </div>
+          <p className="svc-loading-text">Loading configuration...</p>
+        </div>
+      )}
+
       <div className="svc-h-row">
         <div className="svc-h">REFRESH POWER SCRUB</div>
         <div className="svc-h-actions">

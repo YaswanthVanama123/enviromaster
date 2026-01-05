@@ -899,6 +899,12 @@ function FormFillingContent() {
   const [payload, setPayload] = useState<FormPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
+
+  // ✅ DEBUG: Track loading state changes
+  useEffect(() => {
+    console.log("🔄 [LOADING STATE CHANGED]", { loading });
+  }, [loading]);
+
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
@@ -1095,6 +1101,7 @@ function FormFillingContent() {
 
   // ✅ PERFORMANCE FIX: Prevent duplicate initial API calls in React 18 Strict Mode
   const hasInitiallyFetched = useRef(false);
+  const previousDocId = useRef<string | null>(null); // Track previous document ID to detect changes
 
   // Handle back navigation
   const handleBack = () => {
@@ -1149,6 +1156,17 @@ function FormFillingContent() {
     // We use a ref to track if we've already fetched for this document
     const currentDocId = urlId || locationState.id;
 
+    // ✅ FIX: Only reset hasInitiallyFetched when document ID actually changes
+    // This ensures the loading spinner displays when navigating to a different document
+    // but prevents double-fetching in React 18 Strict Mode for the same document
+    if (previousDocId.current !== currentDocId) {
+      hasInitiallyFetched.current = false;
+      previousDocId.current = currentDocId;
+      console.log("🔄 [FETCH RESET] Document ID changed, reset hasInitiallyFetched for new document:", currentDocId);
+    } else {
+      console.log("⏭️ [FETCH SKIP] Same document ID, keeping hasInitiallyFetched:", currentDocId);
+    }
+
     // Extract editing and id from location.state inside useEffect to ensure fresh values
     const { editing = false, id } = locationState;
 
@@ -1192,6 +1210,7 @@ function FormFillingContent() {
       });
 
       hasInitiallyFetched.current = true; // Mark as fetched BEFORE the fetch
+      console.log("🔄 [LOADING] Setting loading to TRUE - starting data fetch");
       setLoading(true);
       try {
         let json;
@@ -1299,6 +1318,7 @@ function FormFillingContent() {
       } catch (err) {
         console.error("Error fetching headers:", err);
       } finally {
+        console.log("🔄 [LOADING] Setting loading to FALSE - data fetch complete");
         setLoading(false);
       }
     };
@@ -2235,13 +2255,27 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         </div>
       )}
 
+        {/* ✅ LOADING SPINNER: Shows during initial data fetch */}
         {loading && (
           <div className="formfilling__loading-overlay" role="status" aria-live="polite">
-            <div className="formfilling__spinner">
-              <span className="formfilling__sr-only">Loading form data…</span>
+            {console.log("🎨 [RENDERING] Loading overlay is being rendered - loading state is TRUE")}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+              <div className="formfilling__spinner">
+                <span className="formfilling__sr-only">Loading form data…</span>
+              </div>
+              <div style={{
+                color: 'white',
+                fontSize: '20px',
+                fontWeight: '600',
+                textAlign: 'center',
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+              }}>
+                Loading Agreement Data...
+              </div>
             </div>
           </div>
         )}
+        {console.log("🎨 [RENDERING] Loading overlay check - loading state:", loading)}
 
         {/* ✅ PERFORMANCE FIX: Skeleton loader to prevent layout shift */}
         {loading && (
