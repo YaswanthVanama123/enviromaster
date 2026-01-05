@@ -11,6 +11,7 @@ import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
 import EmailTemplateManager from "./admin/EmailTemplateManager";
 import AgreementTimelineBadge from "./AgreementTimelineBadge";
+import TrashView from "./TrashView"; // ✅ NEW: Import TrashView component
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt,
@@ -25,12 +26,13 @@ import {
   faFolder,
   faFolderOpen,
   faChevronRight,
-  faEnvelope
+  faEnvelope,
+  faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
 // type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details" | "email-template";
-type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template" | "trash";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -76,7 +78,7 @@ export default function AdminPanel() {
     if (!tab) return "dashboard";
 
     // const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details", "email-template"];
-    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template"];
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template", "trash"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
 
@@ -448,6 +450,8 @@ export default function AdminPanel() {
         return "Pricing Details";
       case "email-template":
         return "Email Template";
+      case "trash":
+        return "Trash";
       default:
         return "Dashboard";
     }
@@ -468,6 +472,17 @@ export default function AdminPanel() {
     if (selectedDateFrom && selectedDateTo) {
       setShowDatePicker(false);
     }
+  };
+
+  // ✅ NEW: Handle closing date picker - revert to "This Month" if dates not selected
+  const handleDatePickerClose = () => {
+    if (!selectedDateFrom || !selectedDateTo) {
+      // If dates aren't fully selected, revert back to "This Month"
+      setPieTimeFilter("This Month");
+      setSelectedDateFrom(null);
+      setSelectedDateTo(null);
+    }
+    setShowDatePicker(false);
   };
 
   return (
@@ -540,6 +555,13 @@ export default function AdminPanel() {
         >
           Manual Uploads
         </button> */}
+        <button
+          className={`secondary-nav-item ${activeTab === "trash" ? "active" : ""}`}
+          onClick={() => handleTabChange("trash")}
+        >
+          <FontAwesomeIcon icon={faTrash} size="lg" />
+          Trash
+        </button>
         <button
           className={`secondary-nav-item ${activeTab === "pricing-details" ? "active" : ""}`}
           onClick={() => handleTabChange("pricing-details")}
@@ -713,16 +735,6 @@ export default function AdminPanel() {
                                   <span style={{ color: '#6b7280', fontSize: '12px' }}>
                                     ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
                                   </span>
-                                  {/* ✅ NEW: Agreement Timeline Badge */}
-                                  {agreement.startDate && agreement.contractMonths && (
-                                    <AgreementTimelineBadge
-                                      startDate={agreement.startDate}
-                                      contractMonths={agreement.contractMonths}
-                                      compact={true}
-                                      showCalendarIcon={false}
-                                      agreementId={agreement.id}
-                                    />
-                                  )}
                                 </div>
                               </td>
                               <td>Agreement</td>
@@ -734,7 +746,18 @@ export default function AdminPanel() {
                                    agreement.agreementStatus === "draft" ? "Draft" : "Saved"}
                                 </span>
                               </td>
-                              <td></td>
+                              <td>
+                                {/* ✅ MOVED: Agreement Timeline Badge to right side */}
+                                {agreement.startDate && agreement.contractMonths && (
+                                  <AgreementTimelineBadge
+                                    startDate={agreement.startDate}
+                                    contractMonths={agreement.contractMonths}
+                                    compact={true}
+                                    showCalendarIcon={false}
+                                    agreementId={agreement.id}
+                                  />
+                                )}
+                              </td>
                             </tr>
 
                             {/* Agreement Files - Only show when expanded and limit to 3 files per agreement */}
@@ -837,7 +860,7 @@ export default function AdminPanel() {
                 </div>
 
                 {showDatePicker && (
-                  <div className="date-picker-overlay" onClick={() => setShowDatePicker(false)}>
+                  <div className="date-picker-overlay" onClick={handleDatePickerClose}>
                     <div className="date-picker-modal" onClick={(e) => e.stopPropagation()}>
                       <h3 className="date-picker-title">Select Date Range</h3>
 
@@ -884,7 +907,7 @@ export default function AdminPanel() {
                         </button>
                         <button
                           className="date-picker-close"
-                          onClick={() => setShowDatePicker(false)}
+                          onClick={handleDatePickerClose}
                         >
                           Cancel
                         </button>
@@ -1016,6 +1039,12 @@ export default function AdminPanel() {
         {activeTab === "email-template" && (
           <div className="tab-content-full">
             <EmailTemplateManager />
+          </div>
+        )}
+
+        {activeTab === "trash" && (
+          <div className="tab-content-full">
+            <TrashView />
           </div>
         )}
       </main>
