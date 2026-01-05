@@ -1,73 +1,517 @@
-# React + TypeScript + Vite
+# EnviroMaster Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com)
+[![React](https://img.shields.io/badge/React-19.1.1-61DAFB?logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-7.1.14-646CFF?logo=vite)](https://vitejs.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Currently, two official plugins are available:
+Modern, responsive React frontend for the EnviroMaster application with automated CI/CD pipeline and Vercel deployment.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🚀 Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- ⚡ **Lightning Fast** - Built with Vite for instant HMR and optimized production builds
+- 📱 **Fully Responsive** - Mobile-first design that works on all devices
+- 🔐 **Secure** - Security headers, HTTPS, and best practices
+- 🎨 **Modern UI** - Clean interface with FontAwesome and React Icons
+- 🚀 **CI/CD Pipeline** - Automated deployment with GitHub Actions ⭐
+- 🔄 **Auto Deploy** - Push to GitHub → Automatic deployment to Vercel
+- 📊 **Optimized** - Code splitting, lazy loading, and asset optimization
+- 🧪 **Type Safe** - Full TypeScript support with strict type checking
+- 🌐 **Global CDN** - Distributed worldwide via Vercel Edge Network
+- ✅ **Quality Checks** - Automated linting, type checking, and testing
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📋 Table of Contents
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- [Quick Start](#quick-start)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Project Structure](#project-structure)
+- [Scripts](#scripts)
+- [Environment Variables](#environment-variables)
+- [Tech Stack](#tech-stack)
+- [Documentation](#documentation)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🏃 Quick Start
+
+### Prerequisites
+
+- Node.js 20.x or higher
+- npm or yarn
+- Backend API running (see backend repository)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd enviromaster
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env
+
+# Update .env with your backend URL
+# VITE_API_BASE_URL=http://localhost:5000
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 💻 Development
+
+### Development Server
+
+```bash
+# Start dev server with HMR
+npm run dev
+
+# Start on specific port
+PORT=3000 npm run dev
 ```
+
+### Type Checking
+
+```bash
+# Run TypeScript type checker
+npm run type-check
+```
+
+### Linting
+
+```bash
+# Run ESLint
+npm run lint
+
+# Fix auto-fixable issues
+npm run lint:fix
+```
+
+### Testing
+
+```bash
+# Run tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+---
+
+## 🚀 Deployment
+
+### Option 1: GitHub Actions CI/CD (Recommended) ⭐
+
+Fully automated deployment with quality checks on every push to `main`:
+
+**Setup (one-time):**
+1. Create Vercel project and get credentials
+2. Add GitHub Secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)
+3. Push to main branch
+
+**What happens automatically:**
+1. ✅ Runs linting and type checking
+2. ✅ Runs tests
+3. ✅ Builds production bundle
+4. ✅ Deploys to Vercel
+5. ✅ Runs Lighthouse performance test
+6. ✅ Sends deployment notification
+
+**Detailed Setup:** See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)
+
+### Option 2: Vercel Dashboard (Quick Setup)
+
+**Quick Deploy (5 minutes):**
+
+1. Push code to GitHub
+2. Go to [vercel.com/new](https://vercel.com/new)
+3. Import your repository
+4. Add environment variable: `VITE_API_BASE_URL`
+5. Click Deploy
+
+**Auto-deploys on push** - Vercel's built-in Git integration automatically deploys on every push to `main`.
+
+**Detailed Instructions:**
+- **Quick Start**: See [VERCEL_QUICK_START.md](VERCEL_QUICK_START.md)
+- **Full Guide**: See [VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md)
+- **Summary**: See [DEPLOYMENT_COMPLETE.md](DEPLOYMENT_COMPLETE.md)
+
+### Deployment Features
+
+- 🚀 **Automatic deployments** on push to main
+- 🔍 **Quality checks** (linting, type checking, tests)
+- 📊 **Performance testing** with Lighthouse
+- 🌐 **Preview deployments** for pull requests
+- 🔄 **Instant rollback** to previous versions
+- 📈 **Deployment notifications** and status updates
+- 🌍 **Global CDN** with 100+ edge locations
+
+---
+
+## 📁 Project Structure
+
+```
+enviromaster/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml     # CI/CD pipeline configuration
+├── public/                 # Static assets
+├── src/
+│   ├── assets/            # Images, fonts, etc.
+│   ├── components/        # React components
+│   ├── pages/             # Page components
+│   ├── hooks/             # Custom React hooks
+│   ├── services/          # API services
+│   ├── utils/             # Utility functions
+│   ├── types/             # TypeScript types
+│   ├── App.tsx            # Main App component
+│   └── main.tsx           # Entry point
+├── .env.example           # Environment variables template
+├── .gitignore             # Git ignore rules
+├── .vercelignore          # Vercel deployment exclusions
+├── vercel.json            # Vercel configuration
+├── vite.config.ts         # Vite configuration
+├── tsconfig.json          # TypeScript configuration
+├── package.json           # Dependencies and scripts
+├── README.md              # This file
+├── GITHUB_ACTIONS_SETUP.md     # CI/CD setup guide
+├── VERCEL_DEPLOYMENT_GUIDE.md  # Vercel deployment guide
+├── VERCEL_QUICK_START.md       # Quick deployment guide
+├── DEPLOYMENT_COMPLETE.md      # Deployment summary
+└── PERFORMANCE_GUIDE.md        # Performance optimization guide
+```
+
+---
+
+## 📜 Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server with HMR |
+| `npm run build` | Build for production |
+| `npm run build:prod` | Build with production environment |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Fix ESLint errors automatically |
+| `npm test` | Run tests once |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run type-check` | Run TypeScript type checker |
+| `npm run clean` | Clean build cache and dist folder |
+| `npm run vercel-build` | Build script for Vercel deployment |
+
+---
+
+## 🔧 Environment Variables
+
+### Required Variables
+
+Create a `.env` file based on `.env.example`:
+
+```bash
+# Backend API URL (NO trailing slash!)
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+### Environment-Specific URLs
+
+```bash
+# Local Development
+VITE_API_BASE_URL=http://localhost:5000
+
+# Staging
+VITE_API_BASE_URL=https://staging-api.yourdomain.com
+
+# Production
+VITE_API_BASE_URL=https://api.yourdomain.com
+```
+
+### Accessing in Code
+
+```typescript
+// ✅ Correct (Vite)
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+// ❌ Wrong
+const apiUrl = process.env.VITE_API_BASE_URL;
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Core
+- **React 19.1.1** - UI library
+- **TypeScript 5.9.3** - Type safety
+- **Vite 7.1.14** - Build tool and dev server
+- **React Router DOM 7.9.5** - Client-side routing
+
+### UI & Icons
+- **FontAwesome 7.1.0** - Icon library
+- **React Icons 5.5.0** - Additional icons
+- **React Window 1.8.11** - Virtualization for large lists
+
+### HTTP & State
+- **Axios 1.13.2** - HTTP client
+
+### Development Tools
+- **ESLint 9.36.0** - Code linting
+- **TypeScript ESLint 8.45.0** - TypeScript linting
+- **Vitest 4.0.16** - Unit testing
+
+---
+
+## 📦 Build Optimizations
+
+### Code Splitting
+
+Configured in `vite.config.ts`:
+- **react-vendor**: React, React DOM, React Router
+- **icons**: FontAwesome, React Icons
+- **http**: Axios
+
+### Asset Organization
+- Images: `assets/img/[name]-[hash][extname]`
+- Fonts: `assets/fonts/[name]-[hash][extname]`
+- JavaScript: `assets/js/[name]-[hash].js`
+
+### Performance Features
+- ✅ Tree shaking (removes unused code)
+- ✅ Minification (reduces bundle size)
+- ✅ CSS code splitting
+- ✅ Long-term caching (1 year for assets)
+- ✅ Dependency pre-bundling
+- ✅ Modern browser target (smaller bundles)
+
+---
+
+## 🔒 Security
+
+### Headers Configured (vercel.json)
+
+- `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
+- `X-Frame-Options: DENY` - Prevents clickjacking
+- `X-XSS-Protection: 1; mode=block` - XSS protection
+- `Referrer-Policy: strict-origin-when-cross-origin` - Referrer control
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()` - Feature restrictions
+
+### Best Practices
+
+- ✅ HTTPS only in production
+- ✅ Environment variables for sensitive data
+- ✅ No secrets in source code
+- ✅ CORS properly configured
+- ✅ Secure headers enabled
+
+---
+
+## 📚 Documentation
+
+### Deployment Guides
+- **[GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)** - CI/CD pipeline setup guide ⭐
+- **[VERCEL_QUICK_START.md](VERCEL_QUICK_START.md)** - 5-minute deployment guide
+- **[VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md)** - Comprehensive deployment guide
+- **[DEPLOYMENT_COMPLETE.md](DEPLOYMENT_COMPLETE.md)** - Configuration summary
+- **[PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md)** - Performance optimization guide
+
+### Configuration Files
+- **[.github/workflows/deploy.yml](.github/workflows/deploy.yml)** - GitHub Actions CI/CD workflow
+- **[vercel.json](vercel.json)** - Vercel platform configuration
+- **[vite.config.ts](vite.config.ts)** - Build and dev server configuration
+- **[.env.example](.env.example)** - Environment variables template
+
+---
+
+## 🧪 Testing
+
+### Run Tests
+
+```bash
+# Run all tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+### Write Tests
+
+```typescript
+// Example test
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import App from './App';
+
+describe('App', () => {
+  it('renders without crashing', () => {
+    render(<App />);
+    expect(screen.getByText(/EnviroMaster/i)).toBeInTheDocument();
+  });
+});
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### Build Fails with TypeScript Errors
+```bash
+# Check for type errors
+npm run type-check
+
+# Fix errors and rebuild
+npm run build
+```
+
+#### Environment Variable is Undefined
+```bash
+# Ensure variable starts with VITE_ prefix
+VITE_API_BASE_URL=http://localhost:5000
+
+# Restart dev server after changing .env
+npm run dev
+```
+
+#### CORS Errors
+Backend must allow your frontend domain:
+```javascript
+// backend/src/app.js
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://your-app.vercel.app',
+];
+```
+
+#### Port Already in Use
+```bash
+# Use different port
+PORT=3000 npm run dev
+
+# Or kill process using port 5173
+lsof -ti:5173 | xargs kill
+```
+
+---
+
+## 🤝 Contributing
+
+### Development Workflow
+
+1. Create a new branch
+```bash
+git checkout -b feature/my-feature
+```
+
+2. Make your changes
+3. Run tests and linting
+```bash
+npm run type-check
+npm run lint:fix
+npm test
+```
+
+4. Commit and push
+```bash
+git add .
+git commit -m "feat: add new feature"
+git push origin feature/my-feature
+```
+
+5. Create Pull Request on GitHub
+
+### Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `style:` - Code style changes (formatting, etc.)
+- `refactor:` - Code refactoring
+- `test:` - Test changes
+- `chore:` - Build/tooling changes
+
+---
+
+## 📈 Performance
+
+### Lighthouse Scores (Target)
+
+- **Performance**: > 90
+- **Accessibility**: > 90
+- **Best Practices**: > 90
+- **SEO**: > 90
+
+### Monitoring
+
+- **Vercel Analytics** - Real-time metrics (enable in dashboard)
+- **Web Vitals** - Core performance metrics
+- **Build Time** - Optimized for fast builds
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🔗 Links
+
+- **Backend Repository**: [enviro-bckend](../enviro-bckend)
+- **Vercel Dashboard**: [vercel.com/dashboard](https://vercel.com/dashboard)
+- **Vite Documentation**: [vitejs.dev](https://vitejs.dev/)
+- **React Documentation**: [react.dev](https://react.dev/)
+
+---
+
+## 📞 Support
+
+### Documentation
+- 📖 Quick Start: [VERCEL_QUICK_START.md](VERCEL_QUICK_START.md)
+- 📚 Full Guide: [VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md)
+
+### Community
+- 💬 Vercel Discord: [vercel.com/discord](https://vercel.com/discord)
+- 🐛 GitHub Issues: [Create an issue](https://github.com/your-org/enviromaster/issues)
+
+---
+
+## ✨ Status
+
+- **Development**: ✅ Active
+- **Deployment**: ✅ Configured
+- **Production**: 🟢 Ready
+
+**Last Updated**: January 2026
+
+---
+
+**Built with ❤️ using React, TypeScript, and Vite**

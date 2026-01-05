@@ -1,0 +1,60 @@
+# Vercel Ignore File
+# Files and directories to exclude from deployment
+
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Testing
+coverage
+.nyc_output
+
+# Build (will be rebuilt by Vercel)
+dist
+build
+.cache
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Config files (not needed for build)
+.eslintcache
+.eslintrc
+.prettierrc
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+vitest.config.ts
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp
+temp
+*.tmp

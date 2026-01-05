@@ -1,14 +1,20 @@
 {
   "name": "enviromaster",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "NODE_ENV=production tsc -b && vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "vitest run",
-    "preview": "vite preview"
+    "test:watch": "vitest",
+    "preview": "vite preview",
+    "type-check": "tsc -b --noEmit",
+    "clean": "rm -rf dist node_modules/.vite",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
