@@ -506,7 +506,13 @@ export default function TrashView() {
           </div>
 
           {/* Loading/Error states */}
-          {loading && <div className="sf__loading">Loading deleted items...</div>}
+          {loading && (
+            <div className="sf__loading-overlay">
+              <div className="sf__spinner">
+                <span className="sf__sr-only">Loading deleted items…</span>
+              </div>
+            </div>
+          )}
           {error && <div className="sf__error">{error}</div>}
           {!loading && !error && groups.length === 0 && (
             <div className="sf__empty">

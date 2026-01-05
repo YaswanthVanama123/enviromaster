@@ -90,6 +90,7 @@ export default function SavedFilesAgreements() {
   const [query, setQuery] = useState("");
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'yet-to-start' | 'active' | 'inactive'>('all'); // ✅ NEW: Timeline filter
   const [loading, setLoading] = useState(false);
+  const [emailTemplateLoading, setEmailTemplateLoading] = useState(false); // ✅ NEW: Email template loading state
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
@@ -447,6 +448,7 @@ export default function SavedFilesAgreements() {
 
       try {
         isLoadingEmailTemplate = true;
+        setEmailTemplateLoading(true); // ✅ NEW: Show loading spinner
         console.log('📧 [EMAIL-TEMPLATE] Loading email template from API...');
 
         const template = await emailTemplateApi.getActiveTemplate();
@@ -472,6 +474,7 @@ export default function SavedFilesAgreements() {
         setDefaultEmailTemplate(fallbackTemplate);
       } finally {
         isLoadingEmailTemplate = false;
+        setEmailTemplateLoading(false); // ✅ NEW: Hide loading spinner
       }
     };
 
@@ -968,9 +971,9 @@ export default function SavedFilesAgreements() {
             }}
           >
             <option value="all">All Agreements</option>
-            <option value="yet-to-start">⏳ Yet to Start</option>
-            <option value="active">✅ Active</option>
-            <option value="inactive">❌ Inactive</option>
+            <option value="yet-to-start">Yet to Start</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
 
@@ -1243,6 +1246,15 @@ export default function SavedFilesAgreements() {
           type={toastMessage.type}
           onClose={() => setToastMessage(null)}
         />
+      )}
+
+      {/* Email template loading overlay */}
+      {emailTemplateLoading && (
+        <div className="sf__loading-overlay">
+          <div className="sf__spinner">
+            <span className="sf__sr-only">Loading email template…</span>
+          </div>
+        </div>
       )}
 
       {/* Email Composer Modal */}

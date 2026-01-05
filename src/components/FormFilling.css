@@ -133,44 +133,63 @@ body::-webkit-scrollbar,
 
 .formfilling__saving-overlay {
   position: fixed;
-  inset: 0;
+  bottom: 80px; /* Position near the save buttons */
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
-  padding: 0;
-  background: rgba(15, 23, 42, 0.78);
-  backdrop-filter: blur(2px);
+  padding: 16px 32px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   z-index: 5000; /* ✅ Above content but below modals (9999) */
 }
 
 .formfilling__loading-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   margin: 0;
   padding: 0;
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(1px);
+  background: rgba(255, 255, 255, 0.98); /* ✅ White background for better visibility */
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5000; /* ✅ Above content but below modals (9999) */
+  z-index: 9999; /* ✅ Highest z-index to ensure it's on top of everything including edit header */
 }
 
 .formfilling__spinner {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  border: 6px solid rgba(255, 255, 255, 0.18);
-  border-top-color: #2dd4bf;
-  border-right-color: #38bdf8;
-  border-bottom-color: #fff;
-  border-left-color: rgba(255, 255, 255, 0.2);
+  border: 6px solid rgba(15, 23, 42, 0.15);
+  border-top-color: #ff4500;
+  border-right-color: #ff6b35;
+  border-bottom-color: #2563eb;
+  border-left-color: rgba(15, 23, 42, 0.2);
   animation: spinner-spin 0.9s ease-in-out infinite;
-  box-shadow: 0 0 24px rgba(14, 165, 233, 0.6);
+  box-shadow: 0 0 24px rgba(255, 69, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ✅ Smaller spinner for save overlay at bottom */
+.formfilling__saving-overlay .formfilling__spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-right-color: #2dd4bf;
+  border-bottom-color: #38bdf8;
+  border-left-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.5);
 }
 
 .formfilling__sr-only {
@@ -1032,6 +1051,18 @@ body::-webkit-scrollbar,
 
   .contract-card {
     padding: 20px;
+  }
+
+  /* ✅ Save loader responsive for mobile */
+  .formfilling__saving-overlay {
+    bottom: 60px;
+    padding: 12px 24px;
+  }
+
+  .formfilling__saving-overlay .formfilling__spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 4px;
   }
 
   /* Status banner responsive */

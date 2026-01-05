@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolder, faFolderOpen, faChevronDown, faChevronRight,
   faPlus, faCheckSquare, faSquare, faCloudUploadAlt,
-  faTrash, faPencilAlt, faRedo
+  faTrash, faPencilAlt, faRedo, faFileAlt
 } from "@fortawesome/free-solid-svg-icons";
 import type { SavedFileGroup, SavedFileListItem } from "../../backendservice/api/pdfApi";
 import { FileRow } from "./FileRow";
@@ -211,9 +211,13 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
                 padding: '2px 6px',
                 borderRadius: '4px',
                 fontSize: '11px',
-                fontWeight: '600'
+                fontWeight: '600',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
               }}>
-                📤 Bigin
+                <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
+                Bigin
               </span>
             )}
             {agreement.isDraftOnly && (
@@ -223,9 +227,13 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
                 padding: '2px 6px',
                 borderRadius: '4px',
                 fontSize: '11px',
-                fontWeight: '600'
+                fontWeight: '600',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
               }}>
-                📝 {getStatusConfig('draft').label}
+                <FontAwesomeIcon icon={faFileAlt} style={{ fontSize: '10px' }} />
+                {getStatusConfig('draft').label}
               </span>
           )}
         </div>

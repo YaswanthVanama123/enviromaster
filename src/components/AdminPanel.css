@@ -996,12 +996,12 @@
   }
 
   .dashboard-grid {
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 1fr;
     gap: 24px;
   }
 
   .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
   }
 
@@ -1030,6 +1030,16 @@
     font-size: 20px;
   }
 
+  .modern-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+
+  .modern-table {
+    min-width: 700px;
+  }
+
   .modern-table thead th {
     font-size: 12px;
     padding: 14px 16px;
@@ -1055,40 +1065,42 @@
 @media (max-width: 768px) {
   .modern-top-nav {
     padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 12px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
   }
 
   .nav-left {
-    gap: 16px;
-    flex: 1 1 100%;
+    gap: 12px;
+    flex: 1 1 auto;
     min-width: 0;
   }
 
   .brand-section {
-    gap: 10px;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .brand-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
     border-radius: 10px;
   }
 
   .brand-name {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .page-title {
-    font-size: 18px;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .nav-center {
-    order: 3;
-    flex: 1 1 100%;
-    max-width: 100%;
-    margin-top: 8px;
+    display: none;
   }
 
   .modern-search {
@@ -1349,11 +1361,14 @@
   }
 
   .brand-name {
-    font-size: 14px;
+    display: none;
   }
 
   .page-title {
-    font-size: 16px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .modern-search {

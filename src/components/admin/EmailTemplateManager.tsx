@@ -99,14 +99,6 @@ export const EmailTemplateManager: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="email-template-manager">
-        <div className="email-template-loading">Loading email template...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="email-template-manager">
       <div className="email-template-header">
@@ -206,6 +198,15 @@ export const EmailTemplateManager: React.FC = () => {
           type={toastMessage.type}
           onClose={() => setToastMessage(null)}
         />
+      )}
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="email-template-loading-overlay">
+          <div className="email-template-spinner">
+            <span className="email-template-sr-only">Loading email template…</span>
+          </div>
+        </div>
       )}
     </div>
   );

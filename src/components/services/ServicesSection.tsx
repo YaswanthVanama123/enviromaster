@@ -1,4 +1,6 @@
 import React, { useState, useImperativeHandle, forwardRef, useMemo, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import "./ServicesSection.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
 
@@ -468,7 +470,10 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                   display: isServiceVisible(config.serviceId) ? 'block' : 'none'
                 }}
               >
-                <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>⚠️ Service Not Available</div>
+                <div style={{ fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#ffc107' }} />
+                  Service Not Available
+                </div>
                 <div>Service ID: {config.serviceId}</div>
                 <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
                   This service ({config.label || config.serviceId}) is configured in the backend but doesn't have a corresponding form component.
