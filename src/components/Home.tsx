@@ -508,7 +508,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="home__hero">
         <div className="home__hero-content">
-          <h1 className="home__title">Welcome to EnviroMaster</h1>
+          <h1 className="home__title">Welcome to Enviro-Master</h1>
           <p className="home__subtitle">
             Professional Agreement Management System
           </p>
