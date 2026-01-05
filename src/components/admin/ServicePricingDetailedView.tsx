@@ -4,6 +4,15 @@ import React, { useState, useEffect } from "react";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import { Toast } from "./Toast";
 import "./ServicePricingDetailedView.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faWindowMaximize, faBolt, faDollarSign, faTimes, faSync,
+  faRuler, faCalendar, faWind, faCar, faDroplet, faChartBar,
+  faOilCan, faLeaf, faPlus, faBroom, faBuilding, faLandmark,
+  faStar, faClock, faCity, faTree, faBox, faStore, faSoap,
+  faTicket, faCheck, faClipboard, faTrash, faShoppingBag,
+  faShower, faWandMagicSparkles, faUtensils
+} from '@fortawesome/free-solid-svg-icons';
 
 interface ServicePricingDetailedViewProps {
   service: ServiceConfig;
@@ -2487,135 +2496,135 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   const categories = getFieldsByCategory();
 
   // Dynamic tabs based on service type
-  const getTabs = (): { key: TabKey; label: string; icon: string }[] => {
+  const getTabs = (): { key: TabKey; label: string; icon: any }[] => {
     if (service.serviceId === "rpmWindows") {
       return [
-        { key: "windowRates", label: "Window Rates", icon: "🪟" },
-        { key: "installMultipliers", label: "Install Multiplier", icon: "⚡" },
-        { key: "minimumAndTripCharges", label: "Minimum & Trip Charges", icon: "💵" },
-        { key: "frequencyPriceMultipliers", label: "Frequency Multipliers", icon: "✖️" },
-        { key: "frequencyConversions", label: "Billing Conversions", icon: "🔄" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "windowRates", label: "Window Rates", icon: faWindowMaximize },
+        { key: "installMultipliers", label: "Install Multiplier", icon: faBolt },
+        { key: "minimumAndTripCharges", label: "Minimum & Trip Charges", icon: faDollarSign },
+        { key: "frequencyPriceMultipliers", label: "Frequency Multipliers", icon: faTimes },
+        { key: "frequencyConversions", label: "Billing Conversions", icon: faSync },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "carpetCleaning") {
       return [
-        { key: "unitPricing", label: "Unit Pricing", icon: "📐" },
-        { key: "minimums", label: "Minimums", icon: "💵" },
-        { key: "carpetInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
-        { key: "frequencyMeta", label: "Service Frequencies", icon: "📅" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "unitPricing", label: "Unit Pricing", icon: faRuler },
+        { key: "minimums", label: "Minimums", icon: faDollarSign },
+        { key: "carpetInstallMultipliers", label: "Install Multipliers", icon: faBolt },
+        { key: "frequencyMeta", label: "Service Frequencies", icon: faCalendar },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "electrostaticSpray") {
       return [
-        { key: "sprayRates", label: "Spray Rates", icon: "💨" },
-        { key: "sprayTripCharges", label: "Trip Charges", icon: "🚗" },
-        { key: "sprayFrequencyConversions", label: "Frequency Conversions", icon: "🔄" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "sprayRates", label: "Spray Rates", icon: faWind },
+        { key: "sprayTripCharges", label: "Trip Charges", icon: faCar },
+        { key: "sprayFrequencyConversions", label: "Frequency Conversions", icon: faSync },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "foamingDrain") {
       return [
-        { key: "standardRates", label: "Standard Rates", icon: "💧" },
-        { key: "volumePricing", label: "Volume Pricing", icon: "📊" },
-        { key: "greaseTrap", label: "Grease Trap", icon: "🛢️" },
-        { key: "greenDrain", label: "Green Drain", icon: "🌿" },
-        { key: "addonsMultipliers", label: "Add-ons & Multipliers", icon: "➕" },
-        // { key: "tripCharges", label: "Trip Charges", icon: "🚗" },
-        { key: "billingConversions", label: "Billing Conversions", icon: "🔄" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "standardRates", label: "Standard Rates", icon: faDroplet },
+        { key: "volumePricing", label: "Volume Pricing", icon: faChartBar },
+        { key: "greaseTrap", label: "Grease Trap", icon: faOilCan },
+        { key: "greenDrain", label: "Green Drain", icon: faLeaf },
+        { key: "addonsMultipliers", label: "Add-ons & Multipliers", icon: faPlus },
+        // { key: "tripCharges", label: "Trip Charges", icon: faCar },
+        { key: "billingConversions", label: "Billing Conversions", icon: faSync },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "microfiberMopping") {
       return [
-        { key: "basicRates", label: "Basic Rates", icon: "🧹" },
-        { key: "hugeBathrooms", label: "Huge Bathrooms", icon: "🏢" },
-        { key: "extraAreas", label: "Extra Areas", icon: "🏛️" },
-        { key: "standalonePricing", label: "Standalone Service", icon: "⭐" },
-        { key: "moppingMetadata", label: "Billing Conversions", icon: "🔄" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "basicRates", label: "Basic Rates", icon: faBroom },
+        { key: "hugeBathrooms", label: "Huge Bathrooms", icon: faBuilding },
+        { key: "extraAreas", label: "Extra Areas", icon: faLandmark },
+        { key: "standalonePricing", label: "Standalone Service", icon: faStar },
+        { key: "moppingMetadata", label: "Billing Conversions", icon: faSync },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "pureJanitorial") {
       return [
-        { key: "baseRates", label: "Base Rates", icon: "🕐" },
-        { key: "shortJobPricing", label: "Short Job Pricing", icon: "⚡" },
-        { key: "serviceMultipliers", label: "Service Multipliers", icon: "✖️" },
-        { key: "monthlyConversions", label: "Monthly Conversions", icon: "📅" },
-        // { key: "contractSettings", label: "Contract Terms", icon: "📋" },
-        { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: "🧹" },
-        { key: "smoothBreakdown", label: "Smooth Breakdown Pricing", icon: "📊" },
-        // { key: "rateTiers", label: "Rate Tiers", icon: "💰" },
+        { key: "baseRates", label: "Base Rates", icon: faClock },
+        { key: "shortJobPricing", label: "Short Job Pricing", icon: faBolt },
+        { key: "serviceMultipliers", label: "Service Multipliers", icon: faTimes },
+        { key: "monthlyConversions", label: "Monthly Conversions", icon: faCalendar },
+        // { key: "contractSettings", label: "Contract Terms", icon: faClipboard },
+        { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: faBroom },
+        { key: "smoothBreakdown", label: "Smooth Breakdown Pricing", icon: faChartBar },
+        // { key: "rateTiers", label: "Rate Tiers", icon: faDollarSign },
       ];
     }
 
     if (service.serviceId === "saniclean") {
       return [
-        { key: "insideBeltway", label: "Inside Beltway", icon: "🏙️" },
-        { key: "outsideBeltway", label: "Outside Beltway", icon: "🌳" },
-        { key: "allInclusive", label: "All-Inclusive Package", icon: "📦" },
-        { key: "smallFacility", label: "Small Facility", icon: "🏪" },
-        { key: "soapUpgrades", label: "Soap Upgrades", icon: "🧴" },
-        { key: "warrantyCredits", label: "Warranty & Credits", icon: "🎫" },
-        { key: "includedItems", label: "Included Items", icon: "✅" },
-        { key: "monthlyAddOns", label: "Monthly Add-Ons", icon: "📋" },
-        { key: "microfiberMoppingAddon", label: "Microfiber Mopping", icon: "🧹" },
-        { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: "🔄" },
-        // { key: "sanicleanRateTiers", label: "Rate Tiers", icon: "💰" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "insideBeltway", label: "Inside Beltway", icon: faCity },
+        { key: "outsideBeltway", label: "Outside Beltway", icon: faTree },
+        { key: "allInclusive", label: "All-Inclusive Package", icon: faBox },
+        { key: "smallFacility", label: "Small Facility", icon: faStore },
+        { key: "soapUpgrades", label: "Soap Upgrades", icon: faSoap },
+        { key: "warrantyCredits", label: "Warranty & Credits", icon: faTicket },
+        { key: "includedItems", label: "Included Items", icon: faCheck },
+        { key: "monthlyAddOns", label: "Monthly Add-Ons", icon: faClipboard },
+        { key: "microfiberMoppingAddon", label: "Microfiber Mopping", icon: faBroom },
+        { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: faSync },
+        // { key: "sanicleanRateTiers", label: "Rate Tiers", icon: faDollarSign },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "sanipod") {
       return [
-        { key: "podRates", label: "Pod Rates", icon: "🗑️" },
-        { key: "extraBags", label: "Extra Bags", icon: "🛍️" },
-        { key: "standaloneService", label: "Standalone Service", icon: "⭐" },
-        { key: "frequencySettings", label: "Service Frequencies", icon: "📅" },
-        { key: "sanipodBillingConversions", label: "Billing Conversions", icon: "🔄" },
-        // { key: "sanipodContractTerms", label: "Contract Terms", icon: "📋" },
-        // { key: "sanipodRateTiers", label: "Rate Tiers", icon: "💰" },
+        { key: "podRates", label: "Pod Rates", icon: faTrash },
+        { key: "extraBags", label: "Extra Bags", icon: faShoppingBag },
+        { key: "standaloneService", label: "Standalone Service", icon: faStar },
+        { key: "frequencySettings", label: "Service Frequencies", icon: faCalendar },
+        { key: "sanipodBillingConversions", label: "Billing Conversions", icon: faSync },
+        // { key: "sanipodContractTerms", label: "Contract Terms", icon: faClipboard },
+        // { key: "sanipodRateTiers", label: "Rate Tiers", icon: faDollarSign },
       ];
     }
 
     if (service.serviceId === "saniscrub") {
       return [
-        { key: "fixtureRates", label: "Fixture Rates", icon: "🚿" },
-        { key: "saniscrubMinimums", label: "Minimums", icon: "💵" },
-        { key: "nonBathroomPricing", label: "Non-Bathroom Areas", icon: "🏛️" },
-        { key: "saniscrubInstallMultipliers", label: "Install Multipliers", icon: "⚡" },
-        { key: "serviceFrequencies", label: "Service Frequencies", icon: "📅" },
-        { key: "discountsAndFees", label: "Discounts & Fees", icon: "🎟️" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "fixtureRates", label: "Fixture Rates", icon: faShower },
+        { key: "saniscrubMinimums", label: "Minimums", icon: faDollarSign },
+        { key: "nonBathroomPricing", label: "Non-Bathroom Areas", icon: faLandmark },
+        { key: "saniscrubInstallMultipliers", label: "Install Multipliers", icon: faBolt },
+        { key: "serviceFrequencies", label: "Service Frequencies", icon: faCalendar },
+        { key: "discountsAndFees", label: "Discounts & Fees", icon: faTicket },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
     if (service.serviceId === "stripWax") {
       return [
-        { key: "standardFull", label: "Standard Full", icon: "🌟" },
-        { key: "noSealant", label: "No Sealant", icon: "💧" },
-        { key: "wellMaintained", label: "Well Maintained", icon: "✨" },
-        { key: "stripWaxContractTerms", label: "Contract Terms", icon: "📋" },
-        { key: "stripWaxBillingConversions", label: "Billing Conversions", icon: "🔄" },
-        // { key: "stripWaxRateTiers", label: "Rate Tiers", icon: "💰" },
+        { key: "standardFull", label: "Standard Full", icon: faStar },
+        { key: "noSealant", label: "No Sealant", icon: faDroplet },
+        { key: "wellMaintained", label: "Well Maintained", icon: faWandMagicSparkles },
+        { key: "stripWaxContractTerms", label: "Contract Terms", icon: faClipboard },
+        { key: "stripWaxBillingConversions", label: "Billing Conversions", icon: faSync },
+        // { key: "stripWaxRateTiers", label: "Rate Tiers", icon: faDollarSign },
       ];
     }
 
     if (service.serviceId === "refreshPowerScrub") {
       return [
-        { key: "defaultRates", label: "Default Rates", icon: "💵" },
-        { key: "kitchenPricing", label: "Kitchen Pricing", icon: "🍳" },
-        { key: "fohPricing", label: "Front of House", icon: "🏛️" },
-        { key: "patioPricing", label: "Patio Pricing", icon: "🌿" },
-        { key: "sqftPricing", label: "Square Footage", icon: "📐" },
-        { key: "scrubFrequencyConversions", label: "Billing Conversions", icon: "🔄" },
-        // { key: "contractTerms", label: "Contract Terms", icon: "📋" },
+        { key: "defaultRates", label: "Default Rates", icon: faDollarSign },
+        { key: "kitchenPricing", label: "Kitchen Pricing", icon: faUtensils },
+        { key: "fohPricing", label: "Front of House", icon: faLandmark },
+        { key: "patioPricing", label: "Patio Pricing", icon: faLeaf },
+        { key: "sqftPricing", label: "Square Footage", icon: faRuler },
+        { key: "scrubFrequencyConversions", label: "Billing Conversions", icon: faSync },
+        // { key: "contractTerms", label: "Contract Terms", icon: faClipboard },
       ];
     }
 
@@ -2643,7 +2652,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
             className={`spd__tab ${activeTab === tab.key ? "spd__tab--active" : ""}`}
             onClick={() => setActiveTab(tab.key)}
           >
-            <span className="spd__tab-icon">{tab.icon}</span>
+            <span className="spd__tab-icon"><FontAwesomeIcon icon={tab.icon} /></span>
             <span>{tab.label}</span>
           </button>
         ))}

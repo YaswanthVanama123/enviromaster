@@ -390,7 +390,13 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
   }, [catalog]);
 
   if (loading) {
-    return <div className="pcm-loading" style={styles.loading}>Loading product catalog...</div>;
+    return (
+      <div className="pcm-loading-overlay">
+        <div className="pcm-spinner">
+          <span className="pcm-sr-only">Loading product catalog…</span>
+        </div>
+      </div>
+    );
   }
 
   if (!catalog) {

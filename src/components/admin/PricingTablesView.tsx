@@ -7,6 +7,8 @@ import type { Product } from "../../backendservice/types/productCatalog.types";
 import { Toast } from "./Toast";
 import { ServicePricingDetailedView } from "./ServicePricingDetailedView";
 import "./PricingTablesView.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faWindowMaximize } from '@fortawesome/free-solid-svg-icons';
 
 // Utility function to truncate text
 const truncateText = (text: string | undefined, maxLength: number): string => {
@@ -1031,7 +1033,7 @@ export const PricingTablesView: React.FC = () => {
                 className="pricing-view-all-fields-btn"
                 onClick={() => setDetailedViewService(selectedServiceData)}
               >
-                🪟 View All Fields (Organized)
+                <FontAwesomeIcon icon={faWindowMaximize} /> View All Fields (Organized)
               </button>
             </div>
 
