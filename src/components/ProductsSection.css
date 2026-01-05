@@ -4,6 +4,9 @@
   padding: 0 12px;
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .prod__ribbon { position: relative; }
@@ -19,6 +22,7 @@
   border: 1.4px solid #000;
   margin-bottom: 10px;
   position: relative;
+  box-sizing: border-box;
 }
 .prod__title--hasActions { padding-right: 160px; }
 .prod__title-actions {
@@ -43,7 +47,12 @@
 }
 .prod__add:hover{ background:#ffecec; }
 
-.table-desktop { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-desktop {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
 .table-desktop .grid10 {
   width: max(1120px, 100%);
   table-layout: auto;
@@ -121,17 +130,20 @@
 }
 .row-remove:hover{ background:#eee; }
 
-.gwrap{ margin-bottom: 18px; }
+.gwrap{ margin-bottom: 18px; box-sizing: border-box; width: 100%; max-width: 100%; overflow-x: hidden; }
 .gactions{
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin: 6px 2px 8px;
+  flex-wrap: wrap;
 }
 .gtable {
   width: 100%;
   border-collapse: separate; border-spacing: 0;
   border-left: 2px solid #000; border-right: 2px solid #000; border-bottom: 2px solid #000;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 .gtable thead th {
   background: #dae9f8; color: #c20000; font-weight: 800; font-size: 14px;
@@ -140,13 +152,188 @@
 .gtable thead th:first-child { border-left: 1px solid #000; }
 .gtable td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 8px; background: #fff; }
 
+/* ✅ ENHANCED: Comprehensive responsive design without breaking UI */
+
+/* Keep desktop view above 1024px */
 @media (min-width:1025px){
   .gwrap { display:none; }
 }
+
+/* Tablet view (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .prod {
+    padding: 0 10px;
+    margin: 16px auto 24px;
+  }
+
+  .prod__title {
+    font-size: 18px;
+    padding: 9px 7px;
+  }
+
+  .prod__title--hasActions {
+    padding-right: 150px;
+  }
+
+  .prod__add {
+    font-size: 11px;
+    padding: 5px 9px;
+  }
+
+  /* Make table scrollable on tablets */
+  .table-desktop {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-desktop .grid10 {
+    min-width: 900px; /* Reduced from 1120px to prevent overflow */
+  }
+
+  .h {
+    padding: 7px 7px;
+    font-size: 13px;
+  }
+
+  .th-edit {
+    padding: 5px 28px 5px 7px;
+    min-width: 130px;
+  }
+
+  .grid10 td {
+    padding: 5px 5px;
+    font-size: 13px;
+  }
+
+  .gtable thead th {
+    font-size: 13px;
+    padding: 7px 9px;
+  }
+
+  .gtable td {
+    padding: 5px 7px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile/tablet transition */
 @media (max-width:1024px){
   .table-desktop { display:none; }
   .prod__ribbon .prod__title-actions { display:none; }
 }
+
+/* Mobile view (max 768px) */
+@media (max-width: 768px) {
+  .prod {
+    padding: 0 8px;
+    margin: 14px auto 20px;
+  }
+
+  .prod__title {
+    font-size: 16px;
+    padding: 8px 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .gwrap {
+    margin-bottom: 16px;
+  }
+
+  .gactions {
+    gap: 6px;
+    margin: 5px 1px 6px;
+  }
+
+  .prod__add {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 12px;
+  }
+
+  .gtable thead th {
+    font-size: 12px;
+    padding: 6px 7px;
+  }
+
+  .gtable td {
+    padding: 5px 6px;
+    font-size: 12px;
+  }
+
+  .in {
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .name-edit {
+    font-size: 12px;
+  }
+
+  .row-remove,
+  .th-remove {
+    width: 18px;
+    height: 18px;
+    line-height: 16px;
+    font-size: 12px;
+  }
+}
+
+/* Extra small mobile */
 @media (max-width:600px){
-  .in { height:32px; }
+  .prod {
+    padding: 0 6px;
+    margin: 12px auto 18px;
+  }
+
+  .prod__title {
+    font-size: 15px;
+    padding: 7px 5px;
+  }
+
+  .gwrap {
+    margin-bottom: 14px;
+  }
+
+  .gactions {
+    gap: 5px;
+    margin: 4px 0 5px;
+    justify-content: center;
+  }
+
+  .prod__add {
+    font-size: 10px;
+    padding: 4px 7px;
+  }
+
+  .gtable thead th {
+    font-size: 11px;
+    padding: 5px 5px;
+  }
+
+  .gtable td {
+    padding: 4px 4px;
+    font-size: 11px;
+  }
+
+  .gtable td.label {
+    font-size: 12px;
+  }
+
+  .in {
+    height: 32px;
+    font-size: 12px;
+    padding: 4px 3px 2px;
+  }
+
+  .name-edit {
+    font-size: 11px;
+  }
+
+  .row-remove,
+  .th-remove {
+    width: 16px;
+    height: 16px;
+    line-height: 14px;
+    font-size: 11px;
+  }
 }

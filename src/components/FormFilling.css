@@ -1365,3 +1365,375 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 12px;
   }
 }
+
+/* ✅ ENHANCED: Comprehensive responsive design for tablets and mobile */
+
+/* Tablet view (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .center-align {
+    margin: 24px;
+  }
+
+  .edit-mode-header {
+    padding: 10px 18px;
+  }
+
+  .edit-back-button {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  .edit-mode-container {
+    padding-top: 56px;
+  }
+
+  .formfilling__actions {
+    margin-top: 28px;
+    padding: 20px;
+    gap: 14px;
+  }
+
+  .formfilling__draftBtn,
+  .formfilling__saveBtn {
+    padding: 11px 22px;
+    font-size: 15px;
+  }
+
+  .formfilling__loading {
+    padding: 36px;
+    font-size: 17px;
+  }
+
+  /* Contract summary responsive */
+  .contract-summary-section {
+    margin: 20px;
+  }
+
+  .contract-card {
+    padding: 22px;
+  }
+
+  .card-title {
+    font-size: 17px;
+    margin-bottom: 16px;
+  }
+
+  .contract-label {
+    font-size: 13px;
+  }
+
+  .contract-input {
+    padding: 9px 13px;
+    font-size: 14px;
+  }
+
+  .custom-dropdown-trigger {
+    padding: 9px 13px;
+    font-size: 14px;
+  }
+
+  .total-amount {
+    font-size: 42px;
+  }
+
+  .total-label {
+    font-size: 15px;
+  }
+
+  .total-breakdown {
+    font-size: 13px;
+  }
+
+  /* Payment options responsive */
+  .formfilling__payment-options {
+    padding: 20px;
+  }
+
+  .formfilling__payment-options h3 {
+    font-size: 18px;
+  }
+
+  .payment-option {
+    padding: 16px 18px;
+  }
+
+  .payment-option-title {
+    font-size: 15px;
+  }
+
+  .payment-option-description {
+    font-size: 13px;
+  }
+}
+
+/* Extra small mobile (max 480px) */
+@media (max-width: 480px) {
+  .center-align {
+    margin: 16px;
+  }
+
+  .edit-mode-header {
+    padding: 8px 12px;
+  }
+
+  .edit-back-button {
+    padding: 6px 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .edit-back-button svg {
+    font-size: 14px;
+  }
+
+  .edit-mode-container {
+    padding-top: 52px;
+  }
+
+  .formfilling__actions {
+    flex-direction: column;
+    margin-top: 24px;
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .formfilling__draftBtn,
+  .formfilling__saveBtn {
+    width: 100%;
+    padding: 11px 18px;
+    font-size: 14px;
+  }
+
+  .formfilling__loading {
+    padding: 28px 16px;
+    font-size: 16px;
+  }
+
+  /* Spinner responsive */
+  .formfilling__spinner {
+    width: 72px;
+    height: 72px;
+    border-width: 6px;
+  }
+
+  .formfilling__saving-overlay {
+    bottom: 50px;
+    padding: 10px 20px;
+  }
+
+  .formfilling__saving-overlay .formfilling__spinner {
+    width: 36px;
+    height: 36px;
+    border-width: 3px;
+  }
+
+  /* Contract summary responsive */
+  .contract-summary-section {
+    margin: 12px;
+  }
+
+  .contract-summary-header h2 {
+    font-size: 18px;
+  }
+
+  .contract-card {
+    padding: 16px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .contract-label {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .label-icon {
+    font-size: 13px;
+  }
+
+  .label-hint {
+    font-size: 11px;
+  }
+
+  .contract-input {
+    padding: 8px 11px;
+    font-size: 13px;
+  }
+
+  .contract-input-with-prefix .input-prefix {
+    font-size: 13px;
+  }
+
+  .custom-dropdown-trigger {
+    padding: 8px 11px;
+    font-size: 13px;
+  }
+
+  .dropdown-value {
+    font-size: 13px;
+  }
+
+  .dropdown-option {
+    padding: 10px 11px;
+    font-size: 13px;
+  }
+
+  .recommended-badge {
+    font-size: 11px;
+  }
+
+  /* Status banner responsive */
+  .pricing-status-banner {
+    padding: 14px 16px;
+  }
+
+  .status-icon {
+    font-size: 24px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .status-title {
+    font-size: 15px;
+  }
+
+  .status-subtitle {
+    font-size: 12px;
+  }
+
+  .value-label {
+    font-size: 11px;
+  }
+
+  .value-amount {
+    font-size: 15px;
+  }
+
+  /* Total section responsive */
+  .contract-total-section {
+    padding: 18px;
+  }
+
+  .total-label {
+    font-size: 13px;
+  }
+
+  .total-amount {
+    font-size: 32px;
+  }
+
+  .total-breakdown {
+    font-size: 11px;
+  }
+
+  .charges-included {
+    font-size: 10px;
+  }
+
+  /* Breakdown responsive */
+  .breakdown-label {
+    font-size: 12px;
+  }
+
+  .breakdown-value {
+    font-size: 13px;
+  }
+
+  /* Frequency dropdown responsive */
+  .frequency-dropdown-trigger {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .frequency-value {
+    font-size: 12px;
+  }
+
+  .freq-label {
+    font-size: 12px;
+  }
+
+  .freq-description {
+    font-size: 11px;
+  }
+
+  /* Timeline responsive */
+  .timeline-header label {
+    font-size: 12px;
+  }
+
+  .expiry-status-badge {
+    padding: 8px 10px;
+  }
+
+  .badge-title {
+    font-size: 12px;
+  }
+
+  .badge-subtitle {
+    font-size: 11px;
+  }
+
+  .timeline-bar {
+    height: 8px;
+  }
+
+  .timeline-labels {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .stat-labels {
+    font-size: 11px;
+  }
+
+  .stat-values {
+    font-size: 12px;
+  }
+
+  /* Payment options responsive */
+  .formfilling__payment-options {
+    padding: 16px;
+    margin: 16px 0;
+  }
+
+  .formfilling__payment-options-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .formfilling__payment-options h3 {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .formfilling__payment-options p {
+    font-size: 12px;
+  }
+
+  .formfilling__payment-option-current {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .formfilling__payment-options-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .payment-option {
+    padding: 14px 14px;
+  }
+
+  .payment-option-title {
+    font-size: 14px;
+  }
+
+  .payment-option-description {
+    font-size: 12px;
+  }
+}
