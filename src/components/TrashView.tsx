@@ -431,10 +431,11 @@ export default function TrashView() {
               background: '#fef2f2',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              color: '#dc2626'
             }}
           >
-            🗑️
+            <FontAwesomeIcon icon={faTrash} style={{ fontSize: '16px' }} />
           </div>
           <h1
             className="trash-view-title"
