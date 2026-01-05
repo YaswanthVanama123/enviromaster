@@ -933,13 +933,6 @@ export default function SavedFilesAgreements() {
 
   return (
     <section className="sf">
-      {isUploadingFiles && (
-        <div className="sf__saving-overlay" role="status" aria-live="polite">
-          <div className="sf__spinner">
-            <span className="sf__sr-only">Uploading files to agreement…</span>
-          </div>
-        </div>
-      )}
       <div className="sf__toolbar">
         <div className="sf__search">
           <input
@@ -1246,15 +1239,6 @@ export default function SavedFilesAgreements() {
           type={toastMessage.type}
           onClose={() => setToastMessage(null)}
         />
-      )}
-
-      {/* Email template loading overlay */}
-      {emailTemplateLoading && (
-        <div className="sf__loading-overlay">
-          <div className="sf__spinner">
-            <span className="sf__sr-only">Loading email template…</span>
-          </div>
-        </div>
       )}
 
       {/* Email Composer Modal */}

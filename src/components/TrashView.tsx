@@ -505,19 +505,97 @@ export default function TrashView() {
             </label>
           </div>
 
-          {/* Loading/Error states */}
-          {loading && (
-            <div className="sf__loading-overlay">
-              <div className="sf__spinner">
-                <span className="sf__sr-only">Loading deleted items…</span>
-              </div>
-            </div>
-          )}
+          {/* Error state */}
           {error && <div className="sf__error">{error}</div>}
           {!loading && !error && groups.length === 0 && (
             <div className="sf__empty">
               {query ? `No deleted items found matching "${query}"` : "Trash is empty"}
             </div>
+          )}
+
+          {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
+          {loading && (
+            <>
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div
+                  key={`skeleton-${idx}`}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #e6e6e6',
+                    borderRadius: '10px',
+                    marginBottom: '8px',
+                    height: '62px',
+                    padding: '16px',
+                    animation: 'pulse 1.5s ease-in-out infinite'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Checkbox skeleton */}
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      background: '#e5e7eb',
+                      borderRadius: '4px'
+                    }} />
+
+                    {/* Arrow skeleton */}
+                    <div style={{
+                      width: '14px',
+                      height: '14px',
+                      background: '#e5e7eb',
+                      borderRadius: '4px'
+                    }} />
+
+                    {/* Folder icon skeleton */}
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
+                      background: '#fef3c7',
+                      borderRadius: '4px'
+                    }} />
+
+                    {/* Title skeleton */}
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        height: '16px',
+                        background: '#e5e7eb',
+                        borderRadius: '4px',
+                        width: '60%',
+                        marginBottom: '6px'
+                      }} />
+                      <div style={{
+                        height: '12px',
+                        background: '#f3f4f6',
+                        borderRadius: '4px',
+                        width: '40%'
+                      }} />
+                    </div>
+
+                    {/* Action buttons skeleton */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{
+                        width: '60px',
+                        height: '28px',
+                        background: '#fef2f2',
+                        borderRadius: '6px'
+                      }} />
+                      <div style={{
+                        width: '60px',
+                        height: '28px',
+                        background: '#fef3c7',
+                        borderRadius: '6px'
+                      }} />
+                      <div style={{
+                        width: '80px',
+                        height: '28px',
+                        background: '#dbeafe',
+                        borderRadius: '6px'
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
 
           {/* ✅ OPTIMIZED: Memoized components with lazy rendering */}

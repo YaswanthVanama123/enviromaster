@@ -1,5 +1,59 @@
 /* BackupStatisticsView.css - Responsive styles */
 
+/* Inline loading state - shows in content area */
+.bsv-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  min-height: 400px;
+}
+
+.bsv-spinner-inline {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 5px solid rgba(15, 23, 42, 0.15);
+  border-top-color: #14b8a6;
+  border-right-color: #5eead4;
+  border-bottom-color: #0d9488;
+  border-left-color: rgba(15, 23, 42, 0.2);
+  animation: bsv-spinner-spin 0.9s linear infinite;
+  box-shadow: 0 0 22px rgba(20, 184, 166, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.bsv-loading-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.bsv-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@keyframes bsv-spinner-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 /* Medium devices (tablets, 769px to 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .bsv-grid {

@@ -89,7 +89,8 @@ export default function AdminLogin() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/admin/reset-password`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      const response = await fetch(`${API_BASE_URL}/api/admin/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
