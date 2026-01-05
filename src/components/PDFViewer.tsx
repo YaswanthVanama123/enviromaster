@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faExclamationTriangle, faLightbulb, faFileAlt, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
@@ -335,13 +337,19 @@ export default function PDFViewer() {
     return (
       <div className="pdf-viewer">
         <div className="pdf-viewer__error">
-          <h2>⚠️ {isLogFile ? 'Log File' : 'PDF'} Viewing Error</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+            <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#f59e0b' }} />
+            {isLogFile ? 'Log File' : 'PDF'} Viewing Error
+          </h2>
           <p className="error-message">{error || `Unable to load ${isLogFile ? 'log file' : 'PDF'}`}</p>
 
           {/* ✅ NEW: Show detailed suggestions if available */}
           {errorDetails?.suggestions && (
             <div className="error-suggestions">
-              <h3>💡 Suggested Solutions:</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FontAwesomeIcon icon={faLightbulb} style={{ color: '#f59e0b' }} />
+                Suggested Solutions:
+              </h3>
               <ul>
                 {errorDetails.suggestions.map((suggestion: string, index: number) => (
                   <li key={index}>{suggestion}</li>
@@ -353,7 +361,10 @@ export default function PDFViewer() {
           {/* ✅ NEW: Show document info if available */}
           {errorDetails?.documentInfo && (
             <div className="document-info">
-              <h3>📄 Document Information:</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FontAwesomeIcon icon={faFileAlt} style={{ color: '#3b82f6' }} />
+                Document Information:
+              </h3>
               <ul>
                 <li><strong>Title:</strong> {errorDetails.documentInfo.title}</li>
                 <li><strong>Status:</strong> {errorDetails.documentInfo.status}</li>
@@ -371,8 +382,10 @@ export default function PDFViewer() {
                 onClick={handleEdit}
                 className="pdf-viewer__btn pdf-viewer__btn--primary"
                 title="Try regenerating the PDF by editing and saving again"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                ✏️ Edit & Regenerate PDF
+                <FontAwesomeIcon icon={faPencilAlt} />
+                Edit & Regenerate PDF
               </button>
             )}
           </div>
