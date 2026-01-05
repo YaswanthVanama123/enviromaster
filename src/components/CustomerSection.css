@@ -100,14 +100,181 @@
 }
 .cua2__removeBtn:hover{ background:#eee; }
 
+/* ✅ ENHANCED: Comprehensive responsive design for tablets and mobile */
+
+/* Medium viewports (tablets) - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .cua2 {
+    grid-template-columns: 200px 1fr;
+    column-gap: 24px;
+    padding: 10px 6px 6px;
+  }
+
+  .cua2__logo-img {
+    width: 140px;
+    height: 90px;
+  }
+
+  .cua2__title {
+    font-size: 15px;
+  }
+
+  .cua2__addBtn {
+    font-size: 11px;
+    padding: 5px 9px;
+  }
+
+  .cua2__fields {
+    gap: 9px 24px;
+  }
+
+  .cua2__labelText,
+  .cua2__labelEdit {
+    font-size: 11px;
+  }
+
+  .cua2__value {
+    font-size: 13px;
+    padding: 5px 5px 2px;
+  }
+}
+
+/* Existing custom breakpoint - kept for backwards compatibility */
 @media (max-width: 880px){
   .cua2{ grid-template-columns:180px 1fr; }
   .cua2__fields{ gap:8px 20px; }
 }
+
+/* Small viewports (mobile) - max 768px */
+@media (max-width: 768px) {
+  .cua2 {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+    padding: 10px 6px 6px;
+  }
+
+  .cua2__logo {
+    padding-left: 0;
+    justify-items: center;
+    min-height: 100px;
+  }
+
+  .cua2__logo-img {
+    width: 130px;
+    height: 85px;
+  }
+
+  .cua2__headerRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .cua2__title {
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .cua2__addBtn {
+    font-size: 11px;
+    padding: 5px 8px;
+    align-self: flex-start;
+  }
+
+  .cua2__fields {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .cua2__field {
+    grid-template-columns: auto 1fr;
+    column-gap: 6px;
+  }
+
+  .cua2__labelText,
+  .cua2__labelEdit {
+    font-size: 11px;
+  }
+
+  .cua2__value {
+    font-size: 13px;
+    padding: 5px 5px 2px;
+  }
+
+  .cua2__removeBtn {
+    width: 18px;
+    height: 18px;
+    line-height: 16px;
+  }
+}
+
+/* Existing custom breakpoint - kept for backwards compatibility */
 @media (max-width: 640px){
   .cua2{ grid-template-columns:1fr; row-gap:10px; }
   .cua2__logo{ padding-left:0; }
   .cua2__fields{ grid-template-columns:1fr; }
   .cua2__headerRow{ flex-direction:column; align-items:flex-start; gap:6px; }
 }
- 
+
+/* Extra small viewports - max 480px */
+@media (max-width: 480px) {
+  .cua2 {
+    padding: 8px 4px 4px;
+    row-gap: 10px;
+  }
+
+  .cua2__logo {
+    min-height: 80px;
+  }
+
+  .cua2__logo-img {
+    width: 120px;
+    height: 75px;
+  }
+
+  .cua2__headerRow {
+    gap: 6px;
+  }
+
+  .cua2__title {
+    font-size: 13px;
+  }
+
+  .cua2__addBtn {
+    font-size: 10px;
+    padding: 4px 7px;
+    border-radius: 12px;
+  }
+
+  .cua2__fields {
+    gap: 8px;
+  }
+
+  .cua2__field {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 4px;
+  }
+
+  .cua2__labelText,
+  .cua2__labelEdit {
+    font-size: 10px;
+  }
+
+  .cua2__value {
+    font-size: 12px;
+    padding: 4px 4px 2px;
+    border-bottom-width: 1.5px;
+  }
+
+  .cua2__value--withBtn {
+    padding-right: 24px;
+  }
+
+  .cua2__removeBtn {
+    width: 16px;
+    height: 16px;
+    line-height: 14px;
+    font-size: 11px;
+  }
+}
