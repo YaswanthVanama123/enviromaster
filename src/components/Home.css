@@ -200,6 +200,7 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: visible; /* ✅ FIXED: Allow labels to be fully visible */
 }
 
 .home__chart-header {
@@ -235,7 +236,7 @@
   justify-content: space-around;
   height: 320px;
   gap: 12px;
-  padding: 40px 0 20px;
+  padding: 40px 0 30px; /* ✅ FIXED: Increased bottom padding to prevent label cutoff */
   border-bottom: 2px solid #e5e7eb;
   margin-bottom: 20px;
   position: relative;
@@ -256,9 +257,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end; /* ✅ FIXED: Align items to bottom */
   gap: 8px;
   max-height: 300px; /* ✅ Prevent bar groups from exceeding container */
   overflow: visible; /* ✅ FIXED: Allow tooltips to overflow without being cut off */
+  min-width: 0; /* ✅ FIXED: Allow flex items to shrink properly */
 }
 
 .home__chart-bars {
@@ -362,6 +365,9 @@
   font-weight: 600;
   color: #6b7280;
   margin-top: 4px;
+  white-space: nowrap; /* ✅ FIXED: Prevent label text from wrapping */
+  text-align: center; /* ✅ FIXED: Center align labels */
+  min-width: 30px; /* ✅ FIXED: Ensure minimum width for labels */
 }
 
 .home__chart-legend {
@@ -776,12 +782,13 @@
 
   .home__chart {
     height: 280px;
-    padding: 30px 0 18px;
+    padding: 30px 0 32px; /* ✅ FIXED: Increased bottom padding for labels */
     gap: 10px;
   }
 
   .home__chart-bar-group {
     max-height: 260px;
+    gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
@@ -790,6 +797,7 @@
 
   .home__chart-label {
     font-size: 12px;
+    margin-top: 6px; /* ✅ FIXED: Increased margin for better spacing */
   }
 
   .home__chart-legend {
@@ -886,12 +894,13 @@
 
   .home__chart {
     height: 220px;
-    padding: 24px 0 16px;
+    padding: 24px 0 36px; /* ✅ FIXED: Increased bottom padding to prevent label cutoff on mobile */
     gap: 8px;
   }
 
   .home__chart-bar-group {
     max-height: 200px;
+    gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
@@ -900,6 +909,7 @@
 
   .home__chart-label {
     font-size: 11px;
+    margin-top: 6px; /* ✅ FIXED: Increased margin for better spacing */
   }
 
   .home__chart-legend {
@@ -1029,12 +1039,13 @@
 
   .home__chart {
     height: 180px;
-    padding: 20px 0 14px;
+    padding: 20px 0 40px; /* ✅ FIXED: Maximum bottom padding for very small screens to prevent label cutoff */
     gap: 6px;
   }
 
   .home__chart-bar-group {
     max-height: 160px;
+    gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
@@ -1043,6 +1054,7 @@
 
   .home__chart-label {
     font-size: 10px;
+    margin-top: 8px; /* ✅ FIXED: Maximum margin for very small screens */
   }
 
   .home__chart-tooltip {
