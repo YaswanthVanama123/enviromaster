@@ -1,13 +1,12 @@
 # EnviroMaster Frontend
 
-[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![Vercel Deployment](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com)
 [![React](https://img.shields.io/badge/React-19.1.1-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-7.1.14-646CFF?logo=vite)](https://vitejs.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Modern, responsive React frontend for the EnviroMaster application with automated CI/CD pipeline and Vercel deployment.
+Modern, responsive React frontend for the EnviroMaster application with automated Vercel deployment.
 
 ---
 
@@ -17,12 +16,11 @@ Modern, responsive React frontend for the EnviroMaster application with automate
 - 📱 **Fully Responsive** - Mobile-first design that works on all devices
 - 🔐 **Secure** - Security headers, HTTPS, and best practices
 - 🎨 **Modern UI** - Clean interface with FontAwesome and React Icons
-- 🚀 **CI/CD Pipeline** - Automated deployment with GitHub Actions ⭐
 - 🔄 **Auto Deploy** - Push to GitHub → Automatic deployment to Vercel
 - 📊 **Optimized** - Code splitting, lazy loading, and asset optimization
 - 🧪 **Type Safe** - Full TypeScript support with strict type checking
 - 🌐 **Global CDN** - Distributed worldwide via Vercel Edge Network
-- ✅ **Quality Checks** - Automated linting, type checking, and testing
+- 🚀 **Preview Deployments** - Automatic preview URLs for pull requests
 
 ---
 
@@ -124,51 +122,41 @@ npm run preview
 
 ## 🚀 Deployment
 
-### Option 1: GitHub Actions CI/CD (Recommended) ⭐
+### Vercel Built-in CI/CD (Recommended) ⭐
 
-Fully automated deployment with quality checks on every push to `main`:
-
-**Setup (one-time):**
-1. Create Vercel project and get credentials
-2. Add GitHub Secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)
-3. Push to main branch
-
-**What happens automatically:**
-1. ✅ Runs linting and type checking
-2. ✅ Runs tests
-3. ✅ Builds production bundle
-4. ✅ Deploys to Vercel
-5. ✅ Runs Lighthouse performance test
-6. ✅ Sends deployment notification
-
-**Detailed Setup:** See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)
-
-### Option 2: Vercel Dashboard (Quick Setup)
+Vercel provides automatic CI/CD through GitHub integration - no additional configuration needed!
 
 **Quick Deploy (5 minutes):**
 
 1. Push code to GitHub
 2. Go to [vercel.com/new](https://vercel.com/new)
-3. Import your repository
+3. Import your GitHub repository
 4. Add environment variable: `VITE_API_BASE_URL`
 5. Click Deploy
 
-**Auto-deploys on push** - Vercel's built-in Git integration automatically deploys on every push to `main`.
+**Automatic Features:**
+- ✅ **Auto-deploy on push** - Every commit to `main` triggers deployment
+- ✅ **Preview deployments** - Every PR gets a unique preview URL
+- ✅ **Build caching** - Faster subsequent builds
+- ✅ **Global CDN** - Instant deployment to 100+ edge locations
+- ✅ **SSL/HTTPS** - Automatic certificate provisioning
+- ✅ **Rollback** - One-click rollback to previous deployments
+- ✅ **Environment variables** - Separate configs for production/preview/development
 
 **Detailed Instructions:**
 - **Quick Start**: See [VERCEL_QUICK_START.md](VERCEL_QUICK_START.md)
 - **Full Guide**: See [VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md)
 - **Summary**: See [DEPLOYMENT_COMPLETE.md](DEPLOYMENT_COMPLETE.md)
 
-### Deployment Features
+### Production Configuration
 
-- 🚀 **Automatic deployments** on push to main
-- 🔍 **Quality checks** (linting, type checking, tests)
-- 📊 **Performance testing** with Lighthouse
-- 🌐 **Preview deployments** for pull requests
-- 🔄 **Instant rollback** to previous versions
-- 📈 **Deployment notifications** and status updates
-- 🌍 **Global CDN** with 100+ edge locations
+All production optimizations are already configured:
+- ✅ Code splitting (React, Icons, HTTP clients)
+- ✅ Asset optimization (images, fonts, JS)
+- ✅ Security headers
+- ✅ Long-term caching (1 year for immutable assets)
+- ✅ Modern browser targeting
+- ✅ CSS minification and code splitting
 
 ---
 
@@ -176,9 +164,6 @@ Fully automated deployment with quality checks on every push to `main`:
 
 ```
 enviromaster/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml     # CI/CD pipeline configuration
 ├── public/                 # Static assets
 ├── src/
 │   ├── assets/            # Images, fonts, etc.
@@ -198,7 +183,6 @@ enviromaster/
 ├── tsconfig.json          # TypeScript configuration
 ├── package.json           # Dependencies and scripts
 ├── README.md              # This file
-├── GITHUB_ACTIONS_SETUP.md     # CI/CD setup guide
 ├── VERCEL_DEPLOYMENT_GUIDE.md  # Vercel deployment guide
 ├── VERCEL_QUICK_START.md       # Quick deployment guide
 ├── DEPLOYMENT_COMPLETE.md      # Deployment summary
@@ -331,14 +315,12 @@ Configured in `vite.config.ts`:
 ## 📚 Documentation
 
 ### Deployment Guides
-- **[GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)** - CI/CD pipeline setup guide ⭐
 - **[VERCEL_QUICK_START.md](VERCEL_QUICK_START.md)** - 5-minute deployment guide
 - **[VERCEL_DEPLOYMENT_GUIDE.md](VERCEL_DEPLOYMENT_GUIDE.md)** - Comprehensive deployment guide
 - **[DEPLOYMENT_COMPLETE.md](DEPLOYMENT_COMPLETE.md)** - Configuration summary
 - **[PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md)** - Performance optimization guide
 
 ### Configuration Files
-- **[.github/workflows/deploy.yml](.github/workflows/deploy.yml)** - GitHub Actions CI/CD workflow
 - **[vercel.json](vercel.json)** - Vercel platform configuration
 - **[vite.config.ts](vite.config.ts)** - Build and dev server configuration
 - **[.env.example](.env.example)** - Environment variables template
