@@ -190,6 +190,53 @@
 }
 
 /* Responsive */
+
+/* Medium viewports (tablets) - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .email-composer-modal {
+    width: 92%;
+    max-width: 650px;
+  }
+
+  .email-composer-header {
+    padding: 18px;
+  }
+
+  .email-composer-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .email-composer-body {
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .email-composer-field label {
+    font-size: 0.85rem;
+  }
+
+  .email-composer-field input,
+  .email-composer-field textarea {
+    padding: 9px 11px;
+    font-size: 0.85rem;
+  }
+
+  .email-composer-field textarea {
+    min-height: 100px;
+  }
+
+  .email-composer-footer {
+    padding: 18px;
+    gap: 10px;
+  }
+
+  .email-composer-btn {
+    padding: 9px 18px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .email-composer-modal {
     width: 95%;
@@ -202,12 +249,92 @@
     padding: 16px;
   }
 
+  .email-composer-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .email-composer-body {
+    gap: 12px;
+  }
+
+  .email-composer-field label {
+    font-size: 0.8rem;
+  }
+
+  .email-composer-field input,
+  .email-composer-field textarea {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .email-composer-field textarea {
+    min-height: 90px;
+  }
+
   .email-composer-footer {
     flex-direction: column;
+    gap: 8px;
   }
 
   .email-composer-btn {
     width: 100%;
     justify-content: center;
+    padding: 10px 16px;
+  }
+}
+
+/* Extra small viewports - max 480px */
+@media (max-width: 480px) {
+  .email-composer-modal {
+    width: 98%;
+    max-height: 98vh;
+    border-radius: 6px;
+  }
+
+  .email-composer-header,
+  .email-composer-body,
+  .email-composer-footer {
+    padding: 12px;
+  }
+
+  .email-composer-header h2 {
+    font-size: 1rem;
+    gap: 6px;
+  }
+
+  .email-composer-close {
+    font-size: 1.3rem;
+  }
+
+  .email-composer-body {
+    gap: 10px;
+  }
+
+  .email-composer-field label {
+    font-size: 0.75rem;
+  }
+
+  .email-composer-field input,
+  .email-composer-field textarea {
+    padding: 7px 9px;
+    font-size: 0.75rem;
+  }
+
+  .email-composer-field textarea {
+    min-height: 80px;
+  }
+
+  .email-composer-attachment {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+
+  .email-composer-footer {
+    gap: 6px;
+  }
+
+  .email-composer-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
 }

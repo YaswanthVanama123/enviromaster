@@ -117,9 +117,103 @@
 .desktop{ display:flex; }
 .mobile{ display:none; }
 
+/* ✅ ENHANCED: Comprehensive responsive design */
+
+/* Medium viewports (tablets) - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .topnav {
+    padding: 9px 14px;
+    gap: 10px;
+  }
+
+  .topnav__logo {
+    height: 38px;
+  }
+
+  .topnav__item {
+    padding: 7px 14px;
+    font-size: 14px;
+  }
+
+  .topnav__menu {
+    gap: 8px;
+  }
+}
+
+/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px){
-  .topnav{ padding:8px 12px; }
-  .topnav__logo{ height:36px; }
-  .desktop{ display:none; }
-  .mobile{ display:flex; }
+  .topnav {
+    padding: 8px 12px;
+  }
+
+  .topnav__logo {
+    height: 36px;
+  }
+
+  .desktop {
+    display: none;
+  }
+
+  .mobile {
+    display: flex;
+  }
+
+  .topnav__hamburger {
+    width: 36px;
+    height: 32px;
+    gap: 4px;
+  }
+
+  .topnav__hamburger span {
+    width: 18px;
+  }
+
+  .mobilemenu {
+    top: 52px;
+    right: 10px;
+    width: 200px;
+    padding: 6px;
+  }
+
+  .mobilemenu__item {
+    padding: 11px 9px;
+    font-size: 14px;
+  }
+}
+
+/* Extra small viewports - max 480px */
+@media (max-width: 480px) {
+  .topnav {
+    padding: 6px 10px;
+    gap: 8px;
+  }
+
+  .topnav__logo {
+    height: 32px;
+  }
+
+  .topnav__hamburger {
+    width: 34px;
+    height: 30px;
+    gap: 3px;
+  }
+
+  .topnav__hamburger span {
+    width: 16px;
+    height: 1.5px;
+  }
+
+  .mobilemenu {
+    top: 48px;
+    right: 8px;
+    width: 180px;
+    padding: 5px;
+    border-radius: 10px;
+  }
+
+  .mobilemenu__item {
+    padding: 10px 8px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
 }
