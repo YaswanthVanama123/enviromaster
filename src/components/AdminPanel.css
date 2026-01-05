@@ -996,12 +996,12 @@
   }
 
   .dashboard-grid {
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: 1fr;
     gap: 24px;
   }
 
   .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
   }
 
@@ -1028,6 +1028,16 @@
 
   .section-heading {
     font-size: 20px;
+  }
+
+  .modern-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+
+  .modern-table {
+    min-width: 700px;
   }
 
   .modern-table thead th {
