@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt, faEye, faDownload, faEnvelope,
   faPencilAlt, faUpload, faCheckSquare, faSquare,
-  faTrash, faRedo
+  faTrash, faRedo, faPaperclip, faTint, faStar
 } from "@fortawesome/free-solid-svg-icons";
 import type { SavedFileListItem } from "../../backendservice/api/pdfApi";
 import "./FileRow.css";
@@ -180,12 +180,13 @@ export const FileRow = memo((props: FileRowProps) => {
           {file.fileName}
         </span>
         {file.hasPdf && (
-          <span style={{
-            fontSize: '12px',
-            color: '#10b981'
-          }}>
-            📎
-          </span>
+          <FontAwesomeIcon
+            icon={faPaperclip}
+            style={{
+              fontSize: '12px',
+              color: '#10b981'
+            }}
+          />
         )}
         <span style={{
           fontSize: '12px',
@@ -271,10 +272,17 @@ export const FileRow = memo((props: FileRowProps) => {
               color: watermarkEnabled ? '#2563eb' : '#6b7280',
               whiteSpace: 'nowrap',
               userSelect: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
           >
-            {watermarkEnabled ? '💧 Draft' : '✨ Normal'}
+            <FontAwesomeIcon
+              icon={watermarkEnabled ? faTint : faStar}
+              style={{ fontSize: '10px' }}
+            />
+            {watermarkEnabled ? 'Draft' : 'Normal'}
           </span>
         </div>
       )}
