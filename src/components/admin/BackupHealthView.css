@@ -1,5 +1,59 @@
 /* BackupHealthView.css - Responsive styles */
 
+/* Inline loading state - shows in content area */
+.bhv-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  min-height: 400px;
+}
+
+.bhv-spinner-inline {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 5px solid rgba(15, 23, 42, 0.15);
+  border-top-color: #f97316;
+  border-right-color: #fb923c;
+  border-bottom-color: #ea580c;
+  border-left-color: rgba(15, 23, 42, 0.2);
+  animation: bhv-spinner-spin 0.9s linear infinite;
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.bhv-loading-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.bhv-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@keyframes bhv-spinner-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 /* Medium devices (tablets, 769px to 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .bhv-overall-health {

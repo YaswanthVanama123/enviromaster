@@ -1,18 +1,16 @@
 /* ServiceConfigManager.css - Responsive styles */
 
-/* Loading spinner overlay */
-.scm-loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.98);
+/* Inline loading state - shows in content area */
+.scm-loading-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(3px);
+  padding: 80px 20px;
+  min-height: 400px;
 }
 
-.scm-spinner {
+.scm-spinner-inline {
   width: 64px;
   height: 64px;
   border-radius: 50%;
@@ -26,6 +24,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 16px;
+}
+
+.scm-loading-text {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .scm-sr-only {

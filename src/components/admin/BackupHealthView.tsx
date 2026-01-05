@@ -224,7 +224,10 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
   if (loading) {
     return (
       <div className="bhv-loading-state" style={styles.loadingState}>
-        <div>Checking system health...</div>
+        <div className="bhv-spinner-inline">
+          <span className="bhv-sr-only">Checking system health…</span>
+        </div>
+        <p className="bhv-loading-text">Checking system health...</p>
       </div>
     );
   }

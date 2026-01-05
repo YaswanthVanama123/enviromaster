@@ -248,7 +248,10 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
   if (loading) {
     return (
       <div className="bsv-loading-state" style={styles.loadingState}>
-        <div>Loading statistics...</div>
+        <div className="bsv-spinner-inline">
+          <span className="bsv-sr-only">Loading statistics…</span>
+        </div>
+        <p className="bsv-loading-text">Loading statistics...</p>
       </div>
     );
   }

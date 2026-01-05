@@ -287,7 +287,10 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
   if (loading) {
     return (
       <div className="blv-loading-state" style={styles.loadingState}>
-        <div>Loading backups...</div>
+        <div className="blv-spinner-inline">
+          <span className="blv-sr-only">Loading backups…</span>
+        </div>
+        <p className="blv-loading-text">Loading backups...</p>
       </div>
     );
   }
