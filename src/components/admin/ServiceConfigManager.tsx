@@ -91,7 +91,13 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
   };
 
   if (loading) {
-    return <div className="scm-loading" style={styles.loading}>Loading service configs...</div>;
+    return (
+      <div className="scm-loading-overlay">
+        <div className="scm-spinner">
+          <span className="scm-sr-only">Loading service configs…</span>
+        </div>
+      </div>
+    );
   }
 
   return (
