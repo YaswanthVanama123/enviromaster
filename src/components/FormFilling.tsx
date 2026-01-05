@@ -9,7 +9,10 @@ import {
   faSquareParking,
   faExclamationTriangle,
   faCheckCircle,
-  faBullseye
+  faBullseye,
+  faStar,
+  faCircle,
+  faCalendarCheck
 } from "@fortawesome/free-solid-svg-icons";
 import CustomerSection from "./CustomerSection";
 import ProductsSection from "./products/ProductsSection";
@@ -484,7 +487,12 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                         onClick={() => handleContractMonthsChange(months)}
                       >
                         {months} {months === 1 ? 'Month' : 'Months'}
-                        {months === 36 && <span className="recommended-badge">⭐ Recommended</span>}
+                        {months === 36 && (
+                          <span className="recommended-badge">
+                            <FontAwesomeIcon icon={faStar} style={{ marginRight: '4px' }} />
+                            Recommended
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -534,11 +542,11 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 <div className={`expiry-status-badge expiry-status-${expiryStatus}`}>
                   <div className="badge-content">
                     <div className="badge-icon">
-                      {expiryStatus === 'yet-to-start' && '📅'}
-                      {expiryStatus === 'expired' && '🔴'}
-                      {expiryStatus === 'critical' && '🔴'}
-                      {expiryStatus === 'warning' && '⚠️'}
-                      {expiryStatus === 'safe' && '✅'}
+                      {expiryStatus === 'yet-to-start' && <FontAwesomeIcon icon={faCalendarCheck} />}
+                      {expiryStatus === 'expired' && <FontAwesomeIcon icon={faCircle} />}
+                      {expiryStatus === 'critical' && <FontAwesomeIcon icon={faCircle} />}
+                      {expiryStatus === 'warning' && <FontAwesomeIcon icon={faExclamationTriangle} />}
+                      {expiryStatus === 'safe' && <FontAwesomeIcon icon={faCheckCircle} />}
                     </div>
                     <div className="badge-info">
                       <div className="badge-title">
