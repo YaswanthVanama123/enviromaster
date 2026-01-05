@@ -8,6 +8,7 @@ import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
 import { PricingBackupManager } from "./PricingBackupManager";
 import { MdAttachMoney, MdSettings, MdInventory, MdBackup } from "react-icons/md";
+import "./AdminDashboard.css";
 
 type TabType = "pricing" | "services" | "products" | "backup";
 
@@ -112,21 +113,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div style={styles.container}>
       {!isEmbedded && (
-        <div style={styles.topBar}>
-          <div style={styles.topBarLeft}>
-            <h1 style={styles.logo}>Enviro-Master Admin</h1>
+        <div className="admin-dashboard-top-bar" style={styles.topBar}>
+          <div className="admin-dashboard-top-bar-left" style={styles.topBarLeft}>
+            <h1 className="admin-dashboard-logo" style={styles.logo}>Enviro-Master Admin</h1>
             <div style={styles.userInfo}>
-              <span style={styles.userName}>{user.username}</span>
+              <span className="admin-dashboard-user-name" style={styles.userName}>{user.username}</span>
             </div>
           </div>
-          <button style={styles.logoutButton} onClick={logout}>
+          <button className="admin-dashboard-logout-button" style={styles.logoutButton} onClick={logout}>
             Logout
           </button>
         </div>
       )}
 
-      <div style={styles.navigation}>
+      <div className="admin-dashboard-navigation" style={styles.navigation}>
         <button
+          className="admin-dashboard-nav-button"
           style={{
             ...styles.navButton,
             ...(activeTab === "pricing" ? styles.navButtonActive : {}),
@@ -136,6 +138,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <MdAttachMoney size={20} style={{ marginRight: "8px" }} /> Pricing Tables
         </button>
         <button
+          className="admin-dashboard-nav-button"
           style={{
             ...styles.navButton,
             ...(activeTab === "services" ? styles.navButtonActive : {}),
@@ -145,6 +148,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <MdSettings size={20} style={{ marginRight: "8px" }} /> Service Configs
         </button>
         <button
+          className="admin-dashboard-nav-button"
           style={{
             ...styles.navButton,
             ...(activeTab === "products" ? styles.navButtonActive : {}),
@@ -154,6 +158,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <MdInventory size={20} style={{ marginRight: "8px" }} /> Product Catalog
         </button>
         <button
+          className="admin-dashboard-nav-button"
           style={{
             ...styles.navButton,
             ...(activeTab === "backup" ? styles.navButtonActive : {}),

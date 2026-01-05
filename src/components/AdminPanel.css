@@ -949,66 +949,723 @@
   box-shadow: none;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
+/* Responsive Design - Enhanced */
+
+/* Medium viewports (tablets) - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .modern-top-nav {
+    padding: 14px 24px;
+  }
+
+  .nav-left {
+    gap: 24px;
+  }
+
+  .brand-name {
+    font-size: 16px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+
+  .nav-center {
+    max-width: 400px;
+  }
+
+  .modern-search {
+    padding: 11px 18px;
+  }
+
+  .modern-search input {
+    font-size: 14px;
+  }
+
+  .secondary-nav {
+    padding: 18px 24px;
+    gap: 10px;
+  }
+
+  .secondary-nav-item {
+    padding: 11px 24px;
+    font-size: 14px;
+  }
+
+  .modern-content {
+    padding: 28px 24px 40px 24px;
+  }
+
   .dashboard-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
   }
 
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .stat-card-modern {
+    padding: 24px;
+  }
+
+  .stat-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .stat-number {
+    font-size: 30px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+
+  .recent-section {
+    padding: 28px;
+  }
+
+  .section-heading {
+    font-size: 20px;
+  }
+
+  .modern-table thead th {
+    font-size: 12px;
+    padding: 14px 16px;
+  }
+
+  .modern-table tbody td {
+    font-size: 13px;
+    padding: 18px 16px;
+  }
+
+  .action-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pie-chart-card,
+  .sidebar-card {
+    padding: 28px;
   }
 }
 
+/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .modern-top-nav {
     padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .nav-left {
     gap: 16px;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .brand-section {
+    gap: 10px;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .brand-name {
+    font-size: 16px;
   }
 
   .page-title {
     font-size: 18px;
   }
 
+  .nav-center {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: 100%;
+    margin-top: 8px;
+  }
+
   .modern-search {
     padding: 10px 16px;
+    border-radius: 12px;
+  }
+
+  .modern-search input {
+    font-size: 14px;
+  }
+
+  .nav-right {
+    flex: 0 0 auto;
+  }
+
+  .user-section {
+    padding: 6px 12px 6px 6px;
+    border-radius: 12px;
+  }
+
+  .user-avatar-modern {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  .user-name-modern {
+    display: none;
+  }
+
+  .user-dropdown-menu {
+    right: 0;
+    top: 52px;
   }
 
   .secondary-nav {
-    padding: 0 16px 12px 16px;
+    padding: 12px 16px;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .secondary-nav::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .secondary-nav::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .secondary-nav::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+
+  .secondary-nav-item {
+    padding: 10px 20px;
+    font-size: 13px;
+    border-radius: 12px;
+    flex-shrink: 0;
   }
 
   .modern-content {
     padding: 16px;
   }
 
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .stat-card-modern {
     padding: 20px;
+    border-radius: 16px;
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .stat-icon svg {
+    width: 24px;
+    height: 24px;
   }
 
   .stat-number {
     font-size: 28px;
   }
 
+  .stat-label {
+    font-size: 13px;
+  }
+
   .recent-section {
     padding: 20px;
+    border-radius: 16px;
+  }
+
+  .section-header {
+    margin-bottom: 20px;
+  }
+
+  .section-heading {
+    font-size: 18px;
+  }
+
+  .view-all-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .modern-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+
+  .modern-table {
+    min-width: 700px;
   }
 
   .modern-table thead th {
-    font-size: 12px;
+    font-size: 11px;
     padding: 12px 10px;
+    letter-spacing: 0.3px;
   }
 
   .modern-table tbody td {
     font-size: 13px;
     padding: 14px 10px;
+  }
+
+  .action-buttons-group {
+    gap: 6px;
+  }
+
+  .action-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .status-pill {
+    padding: 6px 12px;
+    font-size: 11px;
+    border-radius: 16px;
+  }
+
+  .agreement-header-admin td,
+  .file-row-admin td {
+    padding: 10px 8px !important;
+    font-size: 12px;
+  }
+
+  .file-row-admin .action-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .dashboard-sidebar {
+    gap: 20px;
+  }
+
+  .sidebar-card {
+    padding: 24px;
+    border-radius: 16px;
+  }
+
+  .pie-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .pie-chart-title {
+    font-size: 17px;
+  }
+
+  .pie-filter-dropdown {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .pie-chart-svg {
+    max-width: 180px;
+  }
+
+  .legend-item {
+    padding: 10px;
+  }
+
+  .legend-label {
+    font-size: 13px;
+  }
+
+  .legend-value {
+    font-size: 15px;
+  }
+
+  .date-picker-modal {
+    padding: 24px;
+    max-width: 90%;
+  }
+
+  .date-picker-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .date-picker-input {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .date-picker-apply,
+  .date-picker-close {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .tab-content-full {
+    border-radius: 16px;
+    min-height: calc(100vh - 180px);
+  }
+}
+
+/* Extra small viewports - max 480px */
+@media (max-width: 480px) {
+  .modern-top-nav {
+    padding: 10px 12px;
+  }
+
+  .nav-left {
+    gap: 12px;
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .brand-name {
+    font-size: 14px;
+  }
+
+  .page-title {
+    font-size: 16px;
+  }
+
+  .modern-search {
+    padding: 9px 14px;
+    border-radius: 10px;
+  }
+
+  .modern-search input {
+    font-size: 13px;
+  }
+
+  .user-section {
+    padding: 5px 10px 5px 5px;
+  }
+
+  .user-avatar-modern {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .dropdown-icon {
+    font-size: 12px;
+  }
+
+  .secondary-nav {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .secondary-nav-item {
+    padding: 9px 16px;
+    font-size: 12px;
+    border-radius: 10px;
+    gap: 6px;
+  }
+
+  .secondary-nav-item svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .modern-content {
+    padding: 12px;
+  }
+
+  .dashboard-grid {
+    gap: 16px;
+  }
+
+  .stats-grid {
+    gap: 12px;
+  }
+
+  .stat-card-modern {
+    padding: 16px;
+    border-radius: 12px;
+    gap: 16px;
+  }
+
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .stat-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .stat-number {
+    font-size: 24px;
+    margin-bottom: 2px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .recent-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .section-header {
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-heading {
+    font-size: 16px;
+  }
+
+  .view-all-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .modern-table-wrapper {
+    border-radius: 8px;
+    margin-left: -12px;
+    margin-right: -12px;
+    border-left: none;
+    border-right: none;
+  }
+
+  .modern-table {
+    min-width: 600px;
+  }
+
+  .modern-table thead th {
+    font-size: 10px;
+    padding: 10px 8px;
+  }
+
+  .modern-table tbody td {
+    font-size: 12px;
+    padding: 12px 8px;
+  }
+
+  .action-buttons-group {
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .action-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .status-pill {
+    padding: 5px 10px;
+    font-size: 10px;
+    border-radius: 12px;
+  }
+
+  .agreement-header-admin td,
+  .file-row-admin td {
+    padding: 8px 6px !important;
+    font-size: 11px;
+  }
+
+  .file-row-admin .action-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dashboard-sidebar {
+    gap: 16px;
+  }
+
+  .sidebar-card {
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .pie-chart-header {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .pie-chart-title {
+    font-size: 15px;
+  }
+
+  .pie-filter-dropdown {
+    padding: 9px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .pie-chart-container {
+    padding: 16px 0;
+  }
+
+  .pie-chart-svg {
+    max-width: 160px;
+  }
+
+  .pie-chart-legend {
+    gap: 10px;
+  }
+
+  .legend-item {
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .legend-label {
+    font-size: 12px;
+  }
+
+  .legend-value {
+    font-size: 14px;
+  }
+
+  .date-picker-modal {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .date-picker-title {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .date-range-inputs {
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .date-label {
+    font-size: 13px;
+  }
+
+  .date-picker-input {
+    padding: 11px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  .date-picker-actions {
+    gap: 10px;
+    flex-direction: column-reverse;
+  }
+
+  .date-picker-apply,
+  .date-picker-close {
+    width: 100%;
+    padding: 11px 18px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  .tab-content-full {
+    border-radius: 12px;
+    min-height: calc(100vh - 160px);
+  }
+
+  .table-empty {
+    padding: 36px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .secondary-nav-item.active {
+    transform: none;
+  }
+
+  .secondary-nav-item:hover {
+    transform: none;
+  }
+
+  .stat-card-modern:hover {
+    transform: none;
+  }
+
+  .view-all-btn:hover {
+    transform: none;
+  }
+
+  .action-btn:hover {
+    transform: none;
+  }
+
+  .legend-item:hover {
+    transform: none;
+  }
+}
+
+/* Scrollbar styling for webkit browsers */
+@media (max-width: 768px) {
+  .modern-table-wrapper::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .modern-table-wrapper::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+  }
+
+  .modern-table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+}
+
+/* Animation for skeleton loaders */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 

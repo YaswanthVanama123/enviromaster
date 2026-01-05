@@ -1,0 +1,290 @@
+/* ServiceConfigManager.css - Responsive styles */
+
+/* Medium devices (tablets, 769px to 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .scm-container {
+    padding: 20px !important;
+  }
+
+  .scm-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  .scm-card {
+    padding: 18px !important;
+  }
+
+  .scm-title {
+    font-size: 22px !important;
+  }
+
+  .scm-subtitle {
+    font-size: 13px !important;
+  }
+
+  .scm-card-title {
+    font-size: 17px !important;
+  }
+
+  .scm-modal-content {
+    width: 85% !important;
+    padding: 20px !important;
+  }
+}
+
+/* Small devices (phones, up to 768px) */
+@media (max-width: 768px) {
+  .scm-container {
+    padding: 16px !important;
+  }
+
+  .scm-header {
+    margin-bottom: 20px !important;
+  }
+
+  .scm-title {
+    font-size: 20px !important;
+  }
+
+  .scm-subtitle {
+    font-size: 13px !important;
+  }
+
+  .scm-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .scm-card {
+    padding: 16px !important;
+  }
+
+  .scm-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .scm-card-badges {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .scm-card-title {
+    font-size: 16px !important;
+  }
+
+  .scm-card-service-id {
+    font-size: 11px !important;
+  }
+
+  .scm-card-description {
+    font-size: 13px !important;
+  }
+
+  .scm-edit-button {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+
+  .scm-modal-content {
+    width: 95% !important;
+    padding: 20px !important;
+    max-height: 95vh !important;
+  }
+
+  .scm-modal-header h3 {
+    font-size: 18px !important;
+  }
+
+  .scm-label {
+    font-size: 13px !important;
+  }
+
+  .scm-input,
+  .scm-textarea {
+    padding: 10px !important;
+    font-size: 14px !important;
+  }
+
+  .scm-modal-actions {
+    flex-direction: column-reverse !important;
+    gap: 10px !important;
+  }
+
+  .scm-cancel-button,
+  .scm-save-button {
+    width: 100% !important;
+    padding: 12px 20px !important;
+  }
+}
+
+/* Extra small devices (phones, up to 480px) */
+@media (max-width: 480px) {
+  .scm-container {
+    padding: 12px !important;
+  }
+
+  .scm-header {
+    margin-bottom: 16px !important;
+  }
+
+  .scm-title {
+    font-size: 18px !important;
+  }
+
+  .scm-subtitle {
+    font-size: 12px !important;
+  }
+
+  .scm-grid {
+    gap: 12px !important;
+  }
+
+  .scm-card {
+    padding: 14px !important;
+  }
+
+  .scm-card-title {
+    font-size: 15px !important;
+  }
+
+  .scm-card-service-id {
+    font-size: 10px !important;
+  }
+
+  .scm-card-description {
+    font-size: 12px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .scm-active-badge,
+  .scm-version-badge {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .scm-tag {
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+  }
+
+  .scm-tag-container {
+    gap: 4px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .scm-edit-button {
+    padding: 9px !important;
+    font-size: 13px !important;
+  }
+
+  .scm-modal-content {
+    width: 96% !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+  }
+
+  .scm-modal-header {
+    margin-bottom: 20px !important;
+  }
+
+  .scm-modal-header h3 {
+    font-size: 16px !important;
+  }
+
+  .scm-close-button {
+    font-size: 20px !important;
+  }
+
+  .scm-form-group {
+    margin-bottom: 14px !important;
+  }
+
+  .scm-label {
+    font-size: 12px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .scm-input,
+  .scm-textarea {
+    padding: 9px 10px !important;
+    font-size: 13px !important;
+  }
+
+  .scm-checkbox-label {
+    font-size: 13px !important;
+  }
+
+  .scm-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .scm-modal-actions {
+    margin-top: 20px !important;
+    gap: 8px !important;
+  }
+
+  .scm-cancel-button,
+  .scm-save-button {
+    padding: 11px 16px !important;
+    font-size: 13px !important;
+  }
+
+  .scm-error {
+    padding: 10px !important;
+    font-size: 13px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .scm-loading {
+    padding: 30px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Hover effects - only for devices that support hover */
+@media (hover: hover) {
+  .scm-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .scm-edit-button:hover {
+    background-color: #1d4ed8 !important;
+  }
+
+  .scm-close-button:hover {
+    color: #333 !important;
+  }
+
+  .scm-cancel-button:hover {
+    background-color: #f9f9f9 !important;
+  }
+
+  .scm-save-button:hover {
+    background-color: #1d4ed8 !important;
+  }
+
+  .scm-save-button:disabled:hover {
+    background-color: #2563eb !important;
+  }
+}
+
+/* Fix modal overlay on mobile */
+@media (max-width: 768px) {
+  .scm-modal {
+    padding: 10px !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+  }
+}
+
+/* Ensure input fields don't zoom on iOS */
+@media (max-width: 480px) {
+  .scm-input,
+  .scm-textarea {
+    font-size: 16px !important;
+  }
+}

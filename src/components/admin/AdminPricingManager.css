@@ -1,0 +1,382 @@
+/* AdminPricingManager Responsive Styles */
+
+/* Medium devices (tablets, 769px to 1024px) */
+@media (max-width: 1024px) {
+  .apm-container {
+    padding: 20px !important;
+  }
+
+  .apm-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+
+  .apm-title {
+    font-size: 24px !important;
+  }
+
+  .apm-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  .apm-service-card {
+    padding: 20px !important;
+  }
+
+  .apm-form-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .apm-config-panel {
+    max-height: 500px !important;
+  }
+
+  .apm-table-wrapper {
+    overflow-x: auto !important;
+  }
+
+  .apm-table {
+    min-width: 600px !important;
+  }
+}
+
+/* Small devices (landscape phones, 481px to 768px) */
+@media (max-width: 768px) {
+  .apm-container {
+    padding: 16px !important;
+  }
+
+  .apm-header {
+    margin-bottom: 20px !important;
+  }
+
+  .apm-title {
+    font-size: 22px !important;
+  }
+
+  .apm-subtitle {
+    font-size: 13px !important;
+  }
+
+  .apm-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .apm-service-card {
+    padding: 18px !important;
+  }
+
+  .apm-card-title {
+    font-size: 16px !important;
+  }
+
+  .apm-card-description {
+    font-size: 13px !important;
+  }
+
+  .apm-card-meta {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .apm-card-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .apm-view-form-button,
+  .apm-edit-config-button {
+    width: 100% !important;
+  }
+
+  .apm-form-container {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .apm-form-wrapper,
+  .apm-config-panel {
+    padding: 18px !important;
+  }
+
+  .apm-panel-title {
+    font-size: 16px !important;
+  }
+
+  .apm-code-block {
+    font-size: 11px !important;
+    padding: 12px !important;
+  }
+
+  .apm-family-section {
+    padding: 18px !important;
+  }
+
+  .apm-family-title {
+    font-size: 18px !important;
+  }
+
+  .apm-table {
+    min-width: 500px !important;
+  }
+
+  .apm-th,
+  .apm-td {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+
+  .apm-th {
+    font-size: 12px !important;
+  }
+
+  .apm-top-actions {
+    margin-bottom: 20px !important;
+  }
+
+  .apm-view-button {
+    width: 100% !important;
+    padding: 12px 20px !important;
+  }
+}
+
+/* Extra small devices (portrait phones, up to 480px) */
+@media (max-width: 480px) {
+  .apm-container {
+    padding: 12px !important;
+  }
+
+  .apm-header {
+    margin-bottom: 16px !important;
+  }
+
+  .apm-title {
+    font-size: 20px !important;
+  }
+
+  .apm-subtitle {
+    font-size: 12px !important;
+  }
+
+  .apm-loading {
+    padding: 40px 16px !important;
+    font-size: 14px !important;
+  }
+
+  .apm-error,
+  .apm-success {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+
+  .apm-grid {
+    gap: 12px !important;
+  }
+
+  .apm-service-card {
+    padding: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  .apm-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px;
+    margin-bottom: 10px !important;
+  }
+
+  .apm-card-title {
+    font-size: 15px !important;
+  }
+
+  .apm-active-badge {
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .apm-card-description {
+    font-size: 12px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .apm-card-meta {
+    font-size: 12px !important;
+  }
+
+  .apm-card-actions {
+    gap: 6px !important;
+  }
+
+  .apm-view-form-button,
+  .apm-edit-config-button {
+    padding: 10px !important;
+    font-size: 13px !important;
+  }
+
+  .apm-back-button {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  .apm-form-container {
+    gap: 14px !important;
+  }
+
+  .apm-form-wrapper,
+  .apm-config-panel {
+    padding: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  .apm-panel-title {
+    font-size: 15px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .apm-config-info {
+    margin-bottom: 20px !important;
+  }
+
+  .apm-info-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 6px 0 !important;
+    gap: 4px;
+  }
+
+  .apm-info-label,
+  .apm-info-value {
+    font-size: 12px !important;
+  }
+
+  .apm-code {
+    font-size: 11px !important;
+  }
+
+  .apm-section-title {
+    font-size: 13px !important;
+    margin-top: 16px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .apm-code-block {
+    font-size: 10px !important;
+    padding: 10px !important;
+    max-height: 300px !important;
+  }
+
+  .apm-editor-container {
+    padding: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  .apm-editor-info {
+    padding: 10px 12px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .apm-info-text {
+    font-size: 13px !important;
+  }
+
+  .apm-json-editor {
+    padding: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .apm-editor-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+    margin-top: 14px !important;
+  }
+
+  .apm-cancel-button,
+  .apm-save-button {
+    width: 100% !important;
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+  }
+
+  .apm-no-form {
+    padding: 30px !important;
+    font-size: 14px !important;
+  }
+
+  .apm-product-grid {
+    gap: 24px !important;
+  }
+
+  .apm-family-section {
+    padding: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  .apm-family-title {
+    font-size: 16px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .apm-table {
+    min-width: 400px !important;
+  }
+
+  .apm-th {
+    padding: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .apm-td {
+    padding: 8px !important;
+    font-size: 12px !important;
+  }
+
+  .apm-top-actions {
+    margin-bottom: 16px !important;
+  }
+
+  .apm-view-button {
+    font-size: 13px !important;
+  }
+}
+
+/* Landscape orientation adjustments for small devices */
+@media (max-width: 768px) and (orientation: landscape) {
+  .apm-container {
+    padding: 16px !important;
+  }
+
+  .apm-form-container {
+    grid-template-columns: 1fr 350px !important;
+  }
+
+  .apm-config-panel {
+    max-height: calc(100vh - 160px) !important;
+  }
+}
+
+/* Very small devices adjustment (320px and below) */
+@media (max-width: 320px) {
+  .apm-container {
+    padding: 10px !important;
+  }
+
+  .apm-title {
+    font-size: 18px !important;
+  }
+
+  .apm-service-card {
+    padding: 14px !important;
+  }
+
+  .apm-card-title {
+    font-size: 14px !important;
+  }
+
+  .apm-table {
+    min-width: 350px !important;
+  }
+}

@@ -15,11 +15,19 @@
   position: relative;
   white-space: nowrap;
   border: 1px solid;
+  z-index: 1; /* ✅ NEW: Ensure badge is above table cells */
 }
 
 .timeline-badge-compact:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 2; /* ✅ NEW: Increase z-index on hover */
+}
+
+/* ✅ NEW: When date picker is open, keep badge elevated */
+.timeline-badge-compact:has(.timeline-date-picker-popup) {
+  z-index: 999998 !important;
+  transform: translateY(-1px);
 }
 
 /* Color Coding - Matching folder structure style with green/yellow/red */
@@ -103,6 +111,7 @@
   margin-left: 4px;
   padding-left: 6px;
   border-left: 1px solid rgba(0, 0, 0, 0.15);
+  z-index: 1; /* ✅ NEW: Ensure calendar container is above other elements */
 }
 
 .timeline-calendar-btn {
@@ -140,17 +149,18 @@
   padding: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   min-width: 200px;
-  animation: slideDown 0.15s ease;
+  animation: fadeIn 0.15s ease; /* ✅ FIXED: Changed from slideDown to fadeIn to prevent transform conflicts */
+  pointer-events: auto; /* ✅ NEW: Ensure popup is always interactive */
+  will-change: opacity; /* ✅ NEW: Optimize animation performance */
 }
 
-@keyframes slideDown {
+/* ✅ FIXED: Removed transform from animation to prevent stacking context issues */
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

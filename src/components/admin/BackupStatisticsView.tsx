@@ -9,6 +9,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { backupUtils } from '../../backendservice/api/pricingBackupApi';
 import type { BackupStatistics } from '../../backendservice/types/pricingBackup.types';
+import './BackupStatisticsView.css';
 
 interface BackupStatisticsViewProps {
   statistics: BackupStatistics | null;
@@ -246,7 +247,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
 
   if (loading) {
     return (
-      <div style={styles.loadingState}>
+      <div className="bsv-loading-state" style={styles.loadingState}>
         <div>Loading statistics...</div>
       </div>
     );
@@ -254,7 +255,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
 
   if (error) {
     return (
-      <div style={styles.errorState}>
+      <div className="bsv-error-state" style={styles.errorState}>
         <strong>Error loading statistics:</strong> {error}
         <button
           onClick={onRefresh}
@@ -277,7 +278,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
 
   if (!processedStats) {
     return (
-      <div style={styles.loadingState}>
+      <div className="bsv-loading-state" style={styles.loadingState}>
         <div>No statistics available</div>
       </div>
     );
@@ -297,20 +298,21 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
     : 0;
 
   return (
-    <div style={styles.container}>
+    <div className="bsv-container" style={styles.container}>
       {/* Overview Cards */}
-      <div style={styles.grid}>
+      <div className="bsv-grid" style={styles.grid}>
         {/* Total Backups */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h3 style={styles.cardTitle}>Total Backups</h3>
-            <div style={styles.cardIcon}><FontAwesomeIcon icon={faBox} /></div>
+        <div className="bsv-card" style={styles.card}>
+          <div className="bsv-card-header" style={styles.cardHeader}>
+            <h3 className="bsv-card-title" style={styles.cardTitle}>Total Backups</h3>
+            <div className="bsv-card-icon" style={styles.cardIcon}><FontAwesomeIcon icon={faBox} /></div>
           </div>
-          <div style={styles.statValue}>{processedStats?.totalBackups || 0}</div>
-          <div style={styles.statLabel}>Across {processedStats?.uniqueChangeDays || 0} change days</div>
+          <div className="bsv-stat-value" style={styles.statValue}>{processedStats?.totalBackups || 0}</div>
+          <div className="bsv-stat-label" style={styles.statLabel}>Across {processedStats?.uniqueChangeDays || 0} change days</div>
           {(processedStats?.uniqueChangeDays || 0) <= 10 && (
-            <div style={styles.progressBar}>
+            <div className="bsv-progress-bar" style={styles.progressBar}>
               <div
+                className="bsv-progress-fill"
                 style={{
                   ...styles.progressFill,
                   width: `${((processedStats?.uniqueChangeDays || 0) / 10) * 100}%`
@@ -318,58 +320,60 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
               />
             </div>
           )}
-          <div style={styles.statSubtext}>
+          <div className="bsv-stat-subtext" style={styles.statSubtext}>
             {processedStats?.retentionCompliance ? 'Within retention limit' : 'Exceeds retention limit'}
           </div>
         </div>
 
         {/* Storage Efficiency */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h3 style={styles.cardTitle}>Storage Efficiency</h3>
-            <div style={styles.cardIcon}><FontAwesomeIcon icon={faHdd} /></div>
+        <div className="bsv-card" style={styles.card}>
+          <div className="bsv-card-header" style={styles.cardHeader}>
+            <h3 className="bsv-card-title" style={styles.cardTitle}>Storage Efficiency</h3>
+            <div className="bsv-card-icon" style={styles.cardIcon}><FontAwesomeIcon icon={faHdd} /></div>
           </div>
-          <div style={styles.statValue}>{processedStats?.avgSavingsPercent || 0}%</div>
-          <div style={styles.statLabel}>Average compression savings</div>
-          <div style={styles.progressBar}>
+          <div className="bsv-stat-value" style={styles.statValue}>{processedStats?.avgSavingsPercent || 0}%</div>
+          <div className="bsv-stat-label" style={styles.statLabel}>Average compression savings</div>
+          <div className="bsv-progress-bar" style={styles.progressBar}>
             <div
+              className="bsv-progress-fill"
               style={{
                 ...styles.progressFill,
                 width: `${processedStats?.avgSavingsPercent || 0}%`
               }}
             />
           </div>
-          <div style={styles.statSubtext}>
+          <div className="bsv-stat-subtext" style={styles.statSubtext}>
             Saved {backupUtils.formatFileSize(processedStats?.totalSavings || 0)} total
           </div>
         </div>
 
         {/* Total Size */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h3 style={styles.cardTitle}>Storage Usage</h3>
-            <div style={styles.cardIcon}><FontAwesomeIcon icon={faChartBar} /></div>
+        <div className="bsv-card" style={styles.card}>
+          <div className="bsv-card-header" style={styles.cardHeader}>
+            <h3 className="bsv-card-title" style={styles.cardTitle}>Storage Usage</h3>
+            <div className="bsv-card-icon" style={styles.cardIcon}><FontAwesomeIcon icon={faChartBar} /></div>
           </div>
-          <div style={styles.statValue}>
+          <div className="bsv-stat-value" style={styles.statValue}>
             {backupUtils.formatFileSize(processedStats?.sizeStatistics?.totalCompressedSize || 0)}
           </div>
-          <div style={styles.statLabel}>Total compressed storage</div>
-          <div style={styles.statSubtext}>
+          <div className="bsv-stat-label" style={styles.statLabel}>Total compressed storage</div>
+          <div className="bsv-stat-subtext" style={styles.statSubtext}>
             Average: {backupUtils.formatFileSize(processedStats?.avgBackupSize || 0)} per backup
           </div>
-          <div style={styles.statSubtext}>
+          <div className="bsv-stat-subtext" style={styles.statSubtext}>
             Original size: {backupUtils.formatFileSize(processedStats?.sizeStatistics?.totalOriginalSize || 0)}
           </div>
         </div>
 
         {/* System Health */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h3 style={styles.cardTitle}>System Health</h3>
-            <div style={styles.cardIcon}><FontAwesomeIcon icon={faHeartbeat} /></div>
+        <div className="bsv-card" style={styles.card}>
+          <div className="bsv-card-header" style={styles.cardHeader}>
+            <h3 className="bsv-card-title" style={styles.cardTitle}>System Health</h3>
+            <div className="bsv-card-icon" style={styles.cardIcon}><FontAwesomeIcon icon={faHeartbeat} /></div>
           </div>
           <div>
             <span
+              className="bsv-health-indicator"
               style={{
                 ...styles.healthIndicator,
                 ...(processedStats?.systemHealth?.isHealthy
@@ -384,11 +388,11 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
             </span>
           </div>
           {(processedStats?.systemHealth?.warnings?.length || 0) > 0 && (
-            <div style={styles.warningsList}>
+            <div className="bsv-warnings-list" style={styles.warningsList}>
               {processedStats.systemHealth?.warnings?.map((warning, index) => (
-                <div key={index} style={styles.warningItem}>
-                  <div style={styles.warningIcon}><FontAwesomeIcon icon={faExclamationTriangle} /></div>
-                  <div style={styles.warningText}>{warning}</div>
+                <div key={index} className="bsv-warning-item" style={styles.warningItem}>
+                  <div className="bsv-warning-icon" style={styles.warningIcon}><FontAwesomeIcon icon={faExclamationTriangle} /></div>
+                  <div className="bsv-warning-text" style={styles.warningText}>{warning}</div>
                 </div>
               )) || []}
             </div>
@@ -397,17 +401,18 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
       </div>
 
       {/* Backup Triggers Chart */}
-      <div style={styles.chartContainer}>
-        <h3 style={styles.chartTitle}>Backup Triggers</h3>
-        <div style={styles.card}>
-          <div style={styles.triggerChart}>
+      <div className="bsv-chart-container" style={styles.chartContainer}>
+        <h3 className="bsv-chart-title" style={styles.chartTitle}>Backup Triggers</h3>
+        <div className="bsv-card" style={styles.card}>
+          <div className="bsv-trigger-chart" style={styles.triggerChart}>
             {(processedStats?.triggerStatistics || []).map((trigger, index) => (
-              <div key={trigger._id} style={styles.triggerItem}>
-                <div style={styles.triggerLabel}>
+              <div key={trigger._id} className="bsv-trigger-item" style={styles.triggerItem}>
+                <div className="bsv-trigger-label" style={styles.triggerLabel}>
                   {backupUtils.formatBackupTrigger(trigger._id)}
                 </div>
-                <div style={styles.triggerBar}>
+                <div className="bsv-trigger-bar" style={styles.triggerBar}>
                   <div
+                    className="bsv-trigger-fill"
                     style={{
                       ...styles.triggerFill,
                       width: maxTriggerCount > 0 ? `${(trigger.count / maxTriggerCount) * 100}%` : '0%',
@@ -415,7 +420,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
                     }}
                   />
                 </div>
-                <div style={styles.triggerCount}>{trigger.count}</div>
+                <div className="bsv-trigger-count" style={styles.triggerCount}>{trigger.count}</div>
               </div>
             ))}
           </div>
@@ -423,26 +428,26 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
       </div>
 
       {/* Recent Backups */}
-      <div style={styles.recentBackupsContainer}>
-        <h3 style={styles.chartTitle}>Recent Backups</h3>
-        <div style={styles.card}>
+      <div className="bsv-recent-backups-container" style={styles.recentBackupsContainer}>
+        <h3 className="bsv-chart-title" style={styles.chartTitle}>Recent Backups</h3>
+        <div className="bsv-card" style={styles.card}>
           {(processedStats?.recentBackups?.length || 0) === 0 ? (
             <div style={{ textAlign: 'center', color: '#6b7280', padding: '24px' }}>
               No recent backups available
             </div>
           ) : (
-            <div style={styles.recentBackupsList}>
+            <div className="bsv-recent-backups-list" style={styles.recentBackupsList}>
               {(processedStats?.recentBackups || []).map((backup, index) => (
-                <div key={backup.changeDayId} style={styles.recentBackupItem}>
-                  <div style={styles.recentBackupInfo}>
-                    <div style={styles.recentBackupDate}>
+                <div key={backup.changeDayId} className="bsv-recent-backup-item" style={styles.recentBackupItem}>
+                  <div className="bsv-recent-backup-info" style={styles.recentBackupInfo}>
+                    <div className="bsv-recent-backup-date" style={styles.recentBackupDate}>
                       {backupUtils.formatChangeDay(backup.changeDay)}
                     </div>
-                    <div style={styles.recentBackupTrigger}>
+                    <div className="bsv-recent-backup-trigger" style={styles.recentBackupTrigger}>
                       {backupUtils.formatBackupTrigger(backup.backupTrigger)}
                     </div>
                   </div>
-                  <div style={styles.recentBackupCounts}>
+                  <div className="bsv-recent-backup-counts" style={styles.recentBackupCounts}>
                     <div>
                       PF: {backup.snapshotMetadata?.documentCounts?.priceFixCount || 0} |
                       PC: {backup.snapshotMetadata?.documentCounts?.productCatalogCount || 0} |
@@ -457,40 +462,40 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
       </div>
 
       {/* Compression Details */}
-      <div style={styles.chartContainer}>
-        <h3 style={styles.chartTitle}>Compression Analysis</h3>
-        <div style={styles.card}>
-          <div style={styles.grid}>
+      <div className="bsv-chart-container" style={styles.chartContainer}>
+        <h3 className="bsv-chart-title" style={styles.chartTitle}>Compression Analysis</h3>
+        <div className="bsv-card" style={styles.card}>
+          <div className="bsv-grid" style={styles.grid}>
             <div>
-              <div style={styles.statLabel}>Best Compression</div>
-              <div style={styles.statValue}>
+              <div className="bsv-stat-label" style={styles.statLabel}>Best Compression</div>
+              <div className="bsv-stat-value" style={styles.statValue}>
                 {processedStats?.sizeStatistics?.minCompressionRatio
                   ? Math.round((1 - processedStats.sizeStatistics.minCompressionRatio) * 100)
                   : 0}%
               </div>
-              <div style={styles.statSubtext}>
+              <div className="bsv-stat-subtext" style={styles.statSubtext}>
                 Ratio: {processedStats?.sizeStatistics?.minCompressionRatio?.toFixed(2) || 'N/A'}
               </div>
             </div>
             <div>
-              <div style={styles.statLabel}>Worst Compression</div>
-              <div style={styles.statValue}>
+              <div className="bsv-stat-label" style={styles.statLabel}>Worst Compression</div>
+              <div className="bsv-stat-value" style={styles.statValue}>
                 {processedStats?.sizeStatistics?.maxCompressionRatio
                   ? Math.round((1 - processedStats.sizeStatistics.maxCompressionRatio) * 100)
                   : 0}%
               </div>
-              <div style={styles.statSubtext}>
+              <div className="bsv-stat-subtext" style={styles.statSubtext}>
                 Ratio: {processedStats?.sizeStatistics?.maxCompressionRatio?.toFixed(2) || 'N/A'}
               </div>
             </div>
             <div>
-              <div style={styles.statLabel}>Average Compression</div>
-              <div style={styles.statValue}>
+              <div className="bsv-stat-label" style={styles.statLabel}>Average Compression</div>
+              <div className="bsv-stat-value" style={styles.statValue}>
                 {processedStats?.sizeStatistics?.avgCompressionRatio
                   ? Math.round((1 - processedStats.sizeStatistics.avgCompressionRatio) * 100)
                   : 0}%
               </div>
-              <div style={styles.statSubtext}>
+              <div className="bsv-stat-subtext" style={styles.statSubtext}>
                 Ratio: {processedStats?.sizeStatistics?.avgCompressionRatio?.toFixed(2) || 'N/A'}
               </div>
             </div>

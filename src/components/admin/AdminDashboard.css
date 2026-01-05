@@ -1,0 +1,150 @@
+/* AdminDashboard.css - Responsive styles for admin dashboard */
+/* ✅ SCOPED: Styles only apply to AdminDashboard component */
+
+/* Medium viewports (tablets) - 769px to 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-dashboard-top-bar {
+    padding: 14px 20px !important;
+  }
+
+  .admin-dashboard-top-bar-left {
+    gap: 16px !important;
+  }
+
+  .admin-dashboard-logo {
+    font-size: 18px !important;
+  }
+
+  .admin-dashboard-user-name {
+    font-size: 13px !important;
+  }
+
+  .admin-dashboard-logout-button {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+  }
+
+  .admin-dashboard-navigation {
+    padding: 14px 20px !important;
+    gap: 6px !important;
+  }
+
+  .admin-dashboard-nav-button {
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+  }
+
+  .admin-dashboard-nav-button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Small viewports (mobile) - max 768px */
+@media (max-width: 768px) {
+  .admin-dashboard-top-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 12px 16px !important;
+    gap: 12px !important;
+  }
+
+  .admin-dashboard-top-bar-left {
+    width: 100%;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+
+  .admin-dashboard-logo {
+    font-size: 16px !important;
+  }
+
+  .admin-dashboard-user-name {
+    font-size: 12px !important;
+  }
+
+  .admin-dashboard-logout-button {
+    width: 100%;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    text-align: center;
+  }
+
+  .admin-dashboard-navigation {
+    padding: 12px 16px !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .admin-dashboard-navigation::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .admin-dashboard-navigation::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+  }
+
+  .admin-dashboard-navigation::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+
+  .admin-dashboard-nav-button {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    flex-shrink: 0;
+  }
+
+  .admin-dashboard-nav-button svg {
+    width: 16px !important;
+    height: 16px !important;
+    margin-right: 6px !important;
+  }
+}
+
+/* Extra small viewports - max 480px */
+@media (max-width: 480px) {
+  .admin-dashboard-top-bar {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  .admin-dashboard-top-bar-left {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .admin-dashboard-logo {
+    font-size: 15px !important;
+  }
+
+  .admin-dashboard-user-name {
+    font-size: 11px !important;
+  }
+
+  .admin-dashboard-logout-button {
+    padding: 7px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .admin-dashboard-navigation {
+    padding: 10px 12px !important;
+    gap: 5px !important;
+  }
+
+  .admin-dashboard-nav-button {
+    padding: 7px 12px !important;
+    font-size: 11px !important;
+  }
+
+  .admin-dashboard-nav-button svg {
+    width: 14px !important;
+    height: 14px !important;
+    margin-right: 5px !important;
+  }
+}

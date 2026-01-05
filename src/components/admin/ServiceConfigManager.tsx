@@ -6,6 +6,7 @@ import { useServiceConfigs } from "../../backendservice/hooks";
 import type { ServiceConfig, UpdateServiceConfigPayload } from "../../backendservice/types/serviceConfig.types";
 import { Toast } from "./Toast";
 import type { ToastType } from "./Toast";
+import "./ServiceConfigManager.css";
 
 interface ServiceConfigManagerProps {
   modalType?: string;
@@ -90,42 +91,42 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
   };
 
   if (loading) {
-    return <div style={styles.loading}>Loading service configs...</div>;
+    return <div className="scm-loading" style={styles.loading}>Loading service configs...</div>;
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Service Config Manager</h2>
-        <p style={styles.subtitle}>Manage pricing configurations for all services</p>
+    <div className="scm-container" style={styles.container}>
+      <div className="scm-header" style={styles.header}>
+        <h2 className="scm-title" style={styles.title}>Service Config Manager</h2>
+        <p className="scm-subtitle" style={styles.subtitle}>Manage pricing configurations for all services</p>
       </div>
 
-      {error && <div style={styles.error}>{error}</div>}
+      {error && <div className="scm-error" style={styles.error}>{error}</div>}
 
-      <div style={styles.grid}>
+      <div className="scm-grid" style={styles.grid}>
         {configs.map((config) => (
-          <div key={config._id} style={styles.card}>
-            <div style={styles.cardHeader}>
+          <div key={config._id} className="scm-card" style={styles.card}>
+            <div className="scm-card-header" style={styles.cardHeader}>
               <div>
-                <h3 style={styles.cardTitle}>{config.label}</h3>
-                <p style={styles.cardServiceId}>{config.serviceId}</p>
+                <h3 className="scm-card-title" style={styles.cardTitle}>{config.label}</h3>
+                <p className="scm-card-service-id" style={styles.cardServiceId}>{config.serviceId}</p>
               </div>
-              <div style={styles.cardBadges}>
-                {config.isActive && <span style={styles.activeBadge}>Active</span>}
-                <span style={styles.versionBadge}>v{config.version}</span>
+              <div className="scm-card-badges" style={styles.cardBadges}>
+                {config.isActive && <span className="scm-active-badge" style={styles.activeBadge}>Active</span>}
+                <span className="scm-version-badge" style={styles.versionBadge}>v{config.version}</span>
               </div>
             </div>
-            <p style={styles.cardDescription}>{config.description}</p>
+            <p className="scm-card-description" style={styles.cardDescription}>{config.description}</p>
             {config.tags && config.tags.length > 0 && (
-              <div style={styles.tagContainer}>
+              <div className="scm-tag-container" style={styles.tagContainer}>
                 {config.tags.map((tag) => (
-                  <span key={tag} style={styles.tag}>
+                  <span key={tag} className="scm-tag" style={styles.tag}>
                     {tag}
                   </span>
                 ))}
               </div>
             )}
-            <button style={styles.editButton} onClick={() => openEditModal(config)}>
+            <button className="scm-edit-button" style={styles.editButton} onClick={() => openEditModal(config)}>
               Edit Configuration
             </button>
           </div>
@@ -133,59 +134,63 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
       </div>
 
       {editingConfig && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
+        <div className="scm-modal" style={styles.modal}>
+          <div className="scm-modal-content" style={styles.modalContent}>
+            <div className="scm-modal-header" style={styles.modalHeader}>
               <h3>Edit Service Config</h3>
-              <button style={styles.closeButton} onClick={handleCancel}>
+              <button className="scm-close-button" style={styles.closeButton} onClick={handleCancel}>
                 ✕
               </button>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Label</label>
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-label" style={styles.label}>Label</label>
               <input
                 type="text"
                 value={formData.label || ""}
                 onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                className="scm-input"
                 style={styles.input}
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Description</label>
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-label" style={styles.label}>Description</label>
               <textarea
                 value={formData.description || ""}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="scm-textarea"
                 style={styles.textarea}
                 rows={3}
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Version</label>
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-label" style={styles.label}>Version</label>
               <input
                 type="text"
                 value={formData.version || ""}
                 onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                className="scm-input"
                 style={styles.input}
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.checkboxLabel}>
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-checkbox-label" style={styles.checkboxLabel}>
                 <input
                   type="checkbox"
                   checked={formData.isActive || false}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="scm-checkbox"
                   style={styles.checkbox}
                 />
                 <span>Active</span>
               </label>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Tags (comma-separated)</label>
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-label" style={styles.label}>Tags (comma-separated)</label>
               <input
                 type="text"
                 value={formData.tags?.join(", ") || ""}
@@ -195,16 +200,17 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
                     tags: e.target.value.split(",").map((t) => t.trim()),
                   })
                 }
+                className="scm-input"
                 style={styles.input}
                 placeholder="restroom, hygiene, core-service"
               />
             </div>
 
-            <div style={styles.modalActions}>
-              <button style={styles.cancelButton} onClick={handleCancel}>
+            <div className="scm-modal-actions" style={styles.modalActions}>
+              <button className="scm-cancel-button" style={styles.cancelButton} onClick={handleCancel}>
                 Cancel
               </button>
-              <button style={styles.saveButton} onClick={handleSave} disabled={saving}>
+              <button className="scm-save-button" style={styles.saveButton} onClick={handleSave} disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
               </button>
             </div>

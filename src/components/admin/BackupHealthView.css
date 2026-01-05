@@ -1,0 +1,324 @@
+/* BackupHealthView.css - Responsive styles */
+
+/* Medium devices (tablets, 769px to 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .bhv-overall-health {
+    padding: 28px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .bhv-health-icon {
+    font-size: 42px !important;
+    margin-right: 14px !important;
+  }
+
+  .bhv-health-text {
+    font-size: 22px !important;
+  }
+
+  .bhv-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 20px !important;
+    margin-bottom: 28px !important;
+  }
+
+  .bhv-card {
+    padding: 20px !important;
+  }
+
+  .bhv-card-title {
+    font-size: 15px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .bhv-check-item {
+    padding: 10px 0 !important;
+  }
+
+  .bhv-check-label {
+    font-size: 13px !important;
+  }
+
+  .bhv-check-value {
+    font-size: 13px !important;
+  }
+
+  .bhv-status-badge {
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+  }
+
+  .bhv-refresh-button {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Small devices (phones, up to 768px) */
+@media (max-width: 768px) {
+  .bhv-overall-health {
+    flex-direction: column !important;
+    padding: 24px !important;
+    margin-bottom: 24px !important;
+    text-align: center;
+  }
+
+  .bhv-health-icon {
+    font-size: 40px !important;
+    margin-right: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .bhv-health-text {
+    font-size: 20px !important;
+  }
+
+  .bhv-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .bhv-card {
+    padding: 18px !important;
+  }
+
+  .bhv-card-title {
+    font-size: 15px !important;
+    margin-bottom: 12px !important;
+    gap: 6px !important;
+  }
+
+  .bhv-check-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 10px 0 !important;
+  }
+
+  .bhv-check-label {
+    font-size: 13px !important;
+  }
+
+  .bhv-check-value {
+    font-size: 13px !important;
+  }
+
+  .bhv-status-badge {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .bhv-recent-backup-container {
+    margin-top: 14px !important;
+    padding: 14px !important;
+  }
+
+  .bhv-recent-backup-title {
+    font-size: 13px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .bhv-recent-backup-row {
+    font-size: 12px !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .bhv-warnings-container {
+    margin-top: 20px !important;
+  }
+
+  .bhv-warning-item {
+    padding: 10px 14px !important;
+    gap: 10px !important;
+  }
+
+  .bhv-warning-icon {
+    font-size: 15px !important;
+  }
+
+  .bhv-warning-text {
+    font-size: 13px !important;
+  }
+
+  .bhv-refresh-button {
+    padding: 10px 18px !important;
+    font-size: 14px !important;
+    width: 100%;
+    margin-bottom: 20px !important;
+  }
+
+  .bhv-loading-state {
+    padding: 40px 20px !important;
+  }
+
+  .bhv-error-state {
+    padding: 14px !important;
+    font-size: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .bhv-progress-bar {
+    margin-top: 10px !important;
+  }
+}
+
+/* Extra small devices (phones, up to 480px) */
+@media (max-width: 480px) {
+  .bhv-overall-health {
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    border-radius: 10px !important;
+  }
+
+  .bhv-health-icon {
+    font-size: 36px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .bhv-health-text {
+    font-size: 18px !important;
+  }
+
+  .bhv-grid {
+    gap: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .bhv-card {
+    padding: 16px !important;
+    border-radius: 6px !important;
+  }
+
+  .bhv-card-title {
+    font-size: 14px !important;
+    margin-bottom: 12px !important;
+    gap: 6px !important;
+  }
+
+  .bhv-card-title svg {
+    font-size: 14px !important;
+  }
+
+  .bhv-check-item {
+    padding: 9px 0 !important;
+    gap: 6px !important;
+  }
+
+  .bhv-check-label {
+    font-size: 12px !important;
+  }
+
+  .bhv-check-value {
+    font-size: 12px !important;
+  }
+
+  .bhv-status-badge {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .bhv-status-badge svg {
+    font-size: 9px !important;
+  }
+
+  .bhv-recent-backup-container {
+    margin-top: 12px !important;
+    padding: 12px !important;
+    border-radius: 5px !important;
+  }
+
+  .bhv-recent-backup-title {
+    font-size: 12px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .bhv-recent-backup-details {
+    gap: 3px !important;
+  }
+
+  .bhv-recent-backup-row {
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+
+  .bhv-warnings-container {
+    margin-top: 18px !important;
+  }
+
+  .bhv-warning-item {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    border-radius: 5px !important;
+  }
+
+  .bhv-warning-icon {
+    font-size: 14px !important;
+    margin-top: 0 !important;
+  }
+
+  .bhv-warning-text {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  .bhv-warnings-list {
+    gap: 6px !important;
+  }
+
+  .bhv-refresh-button {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    border-radius: 5px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .bhv-loading-state {
+    padding: 36px 16px !important;
+    font-size: 14px !important;
+  }
+
+  .bhv-error-state {
+    padding: 12px !important;
+    font-size: 13px !important;
+    margin-bottom: 18px !important;
+    border-radius: 5px !important;
+  }
+
+  .bhv-error-state button {
+    margin-left: 0 !important;
+    margin-top: 8px !important;
+    display: block;
+    width: 100%;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .bhv-progress-bar {
+    height: 6px !important;
+    margin-top: 8px !important;
+  }
+}
+
+/* Hover effects - only for devices that support hover */
+@media (hover: hover) {
+  .bhv-refresh-button:hover {
+    background-color: #2563eb !important;
+  }
+
+  .bhv-refresh-button:disabled:hover {
+    background-color: #3b82f6 !important;
+  }
+
+  .bhv-card:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  }
+}
+
+/* Ensure proper spacing on small screens */
+@media (max-width: 768px) {
+  .bhv-container > div:last-child {
+    margin-top: 24px !important;
+  }
+}

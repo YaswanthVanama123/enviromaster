@@ -1,0 +1,471 @@
+/* ProductCatalogManager.css - Responsive styles for ProductCatalogManager component */
+
+/* Medium devices (tablets, 769px to 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  /* Container adjustments */
+  .pcm-container {
+    padding: 20px !important;
+  }
+
+  /* Header adjustments */
+  .pcm-title {
+    font-size: 22px !important;
+  }
+
+  .pcm-subtitle {
+    font-size: 13px !important;
+  }
+
+  /* Family grid - reduce columns */
+  .pcm-family-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  /* Family card adjustments */
+  .pcm-family-card {
+    padding: 14px !important;
+  }
+
+  .pcm-family-title {
+    font-size: 15px !important;
+  }
+
+  /* Modal adjustments */
+  .pcm-modal-content {
+    width: 85% !important;
+    padding: 20px !important;
+    max-height: 85vh !important;
+  }
+
+  /* Form grid - reduce columns */
+  .pcm-form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .pcm-detail-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  /* Table adjustments */
+  .pcm-th,
+  .pcm-td {
+    padding: 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Button adjustments */
+  .pcm-add-product-btn,
+  .pcm-view-button,
+  .pcm-modal-save-button,
+  .pcm-modal-cancel-button,
+  .pcm-edit-button,
+  .pcm-delete-button {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Small devices (mobile landscape, 481px to 768px) */
+@media (max-width: 768px) {
+  /* Container adjustments */
+  .pcm-container {
+    padding: 16px !important;
+  }
+
+  /* Header - stack vertically */
+  .pcm-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .pcm-title {
+    font-size: 20px !important;
+  }
+
+  .pcm-subtitle {
+    font-size: 12px !important;
+  }
+
+  /* Search input */
+  .pcm-search-input {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+
+  /* Family grid - single column */
+  .pcm-family-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Family card adjustments */
+  .pcm-family-card {
+    padding: 12px !important;
+  }
+
+  .pcm-family-title {
+    font-size: 14px !important;
+  }
+
+  .pcm-product-count {
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+  }
+
+  .pcm-family-key {
+    font-size: 11px !important;
+  }
+
+  /* Product section header */
+  .pcm-product-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .pcm-product-header h3 {
+    font-size: 16px !important;
+  }
+
+  .pcm-close-button {
+    width: 100% !important;
+  }
+
+  /* Table wrapper - enable horizontal scroll */
+  .pcm-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Table adjustments */
+  .pcm-table {
+    min-width: 900px !important;
+  }
+
+  .pcm-th,
+  .pcm-td {
+    padding: 8px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .pcm-view-button {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .pcm-code {
+    font-size: 11px !important;
+    padding: 2px 4px !important;
+  }
+
+  /* Modal adjustments */
+  .pcm-modal-content {
+    width: 95% !important;
+    padding: 16px !important;
+    max-height: 90vh !important;
+  }
+
+  .pcm-modal-header {
+    margin-bottom: 16px !important;
+  }
+
+  .pcm-modal-header h3 {
+    font-size: 18px !important;
+  }
+
+  .pcm-modal-close-button {
+    font-size: 20px !important;
+  }
+
+  /* Form grid - single column */
+  .pcm-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .pcm-detail-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .pcm-form-label {
+    font-size: 12px !important;
+  }
+
+  .pcm-form-input {
+    padding: 9px 11px !important;
+    font-size: 13px !important;
+  }
+
+  .pcm-detail-label {
+    font-size: 11px !important;
+  }
+
+  .pcm-detail-value {
+    font-size: 13px !important;
+  }
+
+  /* Modal actions - stack on smaller screens */
+  .pcm-modal-actions {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .pcm-modal-actions button {
+    width: 100% !important;
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+  }
+
+  /* Confirmation modal */
+  .pcm-confirmation-modal {
+    width: 95% !important;
+  }
+
+  .pcm-confirmation-title {
+    font-size: 18px !important;
+  }
+
+  .pcm-confirmation-text {
+    font-size: 14px !important;
+  }
+
+  .pcm-confirmation-actions {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .pcm-confirmation-actions button {
+    width: 100% !important;
+  }
+}
+
+/* Extra small devices (mobile portrait, up to 480px) */
+@media (max-width: 480px) {
+  /* Container adjustments */
+  .pcm-container {
+    padding: 12px !important;
+  }
+
+  /* Header */
+  .pcm-title {
+    font-size: 18px !important;
+  }
+
+  .pcm-subtitle {
+    font-size: 11px !important;
+  }
+
+  /* Search input */
+  .pcm-search-input {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Family grid */
+  .pcm-family-grid {
+    gap: 12px !important;
+    margin-bottom: 24px !important;
+  }
+
+  /* Family card */
+  .pcm-family-card {
+    padding: 10px !important;
+  }
+
+  .pcm-family-title {
+    font-size: 13px !important;
+  }
+
+  .pcm-product-count {
+    font-size: 10px !important;
+    padding: 2px 5px !important;
+  }
+
+  .pcm-family-key {
+    font-size: 10px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .pcm-add-product-btn {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Product section */
+  .pcm-product-section {
+    margin-top: 24px !important;
+  }
+
+  .pcm-product-header h3 {
+    font-size: 14px !important;
+  }
+
+  .pcm-close-button {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Table */
+  .pcm-table {
+    min-width: 800px !important;
+  }
+
+  .pcm-th,
+  .pcm-td {
+    padding: 6px !important;
+    font-size: 10px !important;
+  }
+
+  .pcm-view-button {
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .pcm-code {
+    font-size: 10px !important;
+    padding: 1px 3px !important;
+  }
+
+  .pcm-active-tag,
+  .pcm-inactive-tag {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+  }
+
+  /* Modal */
+  .pcm-modal-content {
+    padding: 14px !important;
+  }
+
+  .pcm-modal-header {
+    margin-bottom: 14px !important;
+  }
+
+  .pcm-modal-header h3 {
+    font-size: 16px !important;
+  }
+
+  .pcm-modal-close-button {
+    font-size: 18px !important;
+  }
+
+  /* Form grid */
+  .pcm-form-grid,
+  .pcm-detail-grid {
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .pcm-form-label {
+    font-size: 11px !important;
+  }
+
+  .pcm-form-input {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .pcm-detail-label {
+    font-size: 10px !important;
+  }
+
+  .pcm-detail-value {
+    font-size: 12px !important;
+  }
+
+  .pcm-checkbox-label {
+    font-size: 12px !important;
+  }
+
+  .pcm-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* Modal actions */
+  .pcm-modal-actions button {
+    padding: 9px 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Confirmation modal */
+  .pcm-confirmation-header {
+    padding: 16px 20px !important;
+  }
+
+  .pcm-confirmation-title {
+    font-size: 16px !important;
+  }
+
+  .pcm-confirmation-body {
+    padding: 20px !important;
+  }
+
+  .pcm-confirmation-text {
+    font-size: 13px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .pcm-product-info-box {
+    padding: 14px !important;
+  }
+
+  .pcm-product-info-row {
+    font-size: 12px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .pcm-warning-text {
+    font-size: 12px !important;
+  }
+
+  .pcm-confirmation-actions {
+    padding: 16px 20px !important;
+  }
+
+  .pcm-confirmation-actions button {
+    padding: 9px 16px !important;
+    font-size: 12px !important;
+  }
+
+  /* Yes/No labels */
+  .pcm-yes-label,
+  .pcm-no-label {
+    font-size: 11px !important;
+    padding: 3px 8px !important;
+  }
+
+  /* Error and success messages */
+  .pcm-error,
+  .pcm-success {
+    padding: 10px !important;
+    font-size: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Loading message */
+  .pcm-loading {
+    padding: 30px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Utility class for horizontal scroll hint on mobile */
+@media (max-width: 768px) {
+  .pcm-table-wrapper::after {
+    content: '← Scroll for more →';
+    display: block;
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: #666;
+    background-color: #f9fafb;
+    border-top: 1px solid #e5e5e5;
+  }
+}

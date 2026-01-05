@@ -1,0 +1,356 @@
+/* PricingTablesView.css - Responsive Styles for Small and Medium Devices */
+
+/* Medium devices (tablets, 769px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .pricing-container {
+    padding: 16px !important;
+  }
+
+  .pricing-section {
+    padding: 16px !important;
+  }
+
+  .pricing-section-title {
+    font-size: 20px !important;
+  }
+
+  .pricing-tab-bar {
+    gap: 6px !important;
+  }
+
+  .pricing-tab {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+  }
+
+  .pricing-table-title {
+    font-size: 18px !important;
+  }
+
+  .pricing-table-subtitle {
+    font-size: 13px !important;
+  }
+
+  .pricing-th {
+    padding: 12px 14px !important;
+    font-size: 12px !important;
+  }
+
+  .pricing-td {
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+  }
+
+  .pricing-view-all-fields-btn {
+    padding: 10px 20px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Small devices (mobile landscape, 481px - 768px) */
+@media (max-width: 768px) {
+  .pricing-container {
+    padding: 12px !important;
+  }
+
+  .pricing-section {
+    padding: 12px !important;
+    border-radius: 8px !important;
+  }
+
+  .pricing-section-title {
+    font-size: 18px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .pricing-tab-bar {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .pricing-tab {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    flex: 1 1 auto !important;
+    min-width: calc(33.333% - 4px) !important;
+    text-align: center !important;
+  }
+
+  .pricing-table-container {
+    margin-bottom: 12px !important;
+  }
+
+  .pricing-table-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
+  }
+
+  .pricing-table-title {
+    font-size: 16px !important;
+  }
+
+  .pricing-table-subtitle {
+    font-size: 12px !important;
+  }
+
+  .pricing-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .pricing-table {
+    min-width: 800px !important;
+  }
+
+  .pricing-th {
+    padding: 10px 12px !important;
+    font-size: 11px !important;
+  }
+
+  .pricing-td {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .pricing-code {
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+  }
+
+  .pricing-price,
+  .pricing-price-value {
+    font-size: 14px !important;
+  }
+
+  .pricing-input {
+    width: 100px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+
+  .pricing-action-buttons {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .pricing-edit-btn,
+  .pricing-save-btn,
+  .pricing-cancel-btn {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .pricing-view-all-fields-btn {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    width: 100% !important;
+  }
+
+  .pricing-badge-active,
+  .pricing-badge-inactive {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+
+  .pricing-success-banner {
+    padding: 12px !important;
+    font-size: 14px !important;
+  }
+
+  .pricing-error-box {
+    padding: 16px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Extra small devices (mobile portrait, ≤480px) */
+@media (max-width: 480px) {
+  .pricing-container {
+    padding: 8px !important;
+  }
+
+  .pricing-section {
+    padding: 10px !important;
+    border-radius: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .pricing-section-title {
+    font-size: 16px !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .pricing-tab-bar {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .pricing-tab {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    flex: 1 1 auto !important;
+    min-width: calc(50% - 4px) !important;
+    text-align: center !important;
+  }
+
+  .pricing-table-container {
+    margin-bottom: 10px !important;
+  }
+
+  .pricing-table-header {
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+    margin-bottom: 12px !important;
+  }
+
+  .pricing-table-title {
+    font-size: 15px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .pricing-table-subtitle {
+    font-size: 11px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .pricing-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 6px !important;
+  }
+
+  .pricing-table {
+    min-width: 700px !important;
+  }
+
+  .pricing-th {
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+  }
+
+  .pricing-td {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .pricing-code {
+    font-size: 10px !important;
+    padding: 2px 5px !important;
+  }
+
+  .pricing-price {
+    font-size: 13px !important;
+  }
+
+  .pricing-price-value {
+    font-size: 14px !important;
+  }
+
+  .pricing-input {
+    width: 90px !important;
+    padding: 5px 8px !important;
+    font-size: 12px !important;
+  }
+
+  .pricing-action-buttons {
+    flex-direction: column !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+
+  .pricing-edit-btn,
+  .pricing-save-btn,
+  .pricing-cancel-btn {
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+    width: 100% !important;
+  }
+
+  .pricing-view-all-fields-btn {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    width: 100% !important;
+  }
+
+  .pricing-badge-active,
+  .pricing-badge-inactive {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .pricing-success-banner {
+    padding: 10px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+
+  .pricing-error-box {
+    padding: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .pricing-loading-text {
+    font-size: 14px !important;
+  }
+
+  .pricing-spinner {
+    width: 40px !important;
+    height: 40px !important;
+    border-width: 3px !important;
+  }
+}
+
+/* Horizontal scroll hint for small devices */
+@media (max-width: 768px) {
+  .pricing-table-wrapper::after {
+    content: "← Scroll horizontally to see more →";
+    display: block;
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: #6b7280;
+    background-color: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
+/* Very small devices - additional compaction */
+@media (max-width: 360px) {
+  .pricing-container {
+    padding: 6px !important;
+  }
+
+  .pricing-section {
+    padding: 8px !important;
+  }
+
+  .pricing-section-title {
+    font-size: 14px !important;
+  }
+
+  .pricing-tab {
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .pricing-table-title {
+    font-size: 14px !important;
+  }
+
+  .pricing-th {
+    padding: 6px 8px !important;
+    font-size: 9px !important;
+  }
+
+  .pricing-td {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+  }
+}
