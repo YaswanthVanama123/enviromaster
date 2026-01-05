@@ -30,16 +30,33 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Manual chunking for better caching
-        manualChunks: {
-          // Vendor chunk for React and React-DOM
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+manualChunks(id) {
+  if (!id.includes('node_modules')) return;
 
-          // Icons chunk
-          'icons': ['@fortawesome/react-fontawesome', '@fortawesome/free-solid-svg-icons', 'react-icons'],
+  // React vendor bundle
+  if (
+    id.includes('/react/') ||
+    id.includes('/react-dom/') ||
+    id.includes('/react-router/') ||
+    id.includes('/react-router-dom/')
+  ) {
+    return 'react-vendor';
+  }
 
-          // HTTP client chunk
-          'http': ['axios'],
-        },
+  // Icons bundle
+  if (
+    id.includes('/@fortawesome/') ||
+    id.includes('react-icons')
+  ) {
+    return 'icons';
+  }
+
+  // HTTP bundle
+  if (id.includes('/axios/')) {
+    return 'http';
+  }
+},
+
 
         // Asset file naming for better caching
         assetFileNames: (assetInfo) => {

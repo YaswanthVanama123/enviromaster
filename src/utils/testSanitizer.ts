@@ -13,7 +13,7 @@ export function runSanitizationTests() {
   const tests = [
     {
       name: 'Smart Quotes',
-      input: '"Hello "World" with 'single' quotes"',
+      input: `"Hello \"World\" with 'single' quotes"`,
       expected: '"Hello "World" with \'single\' quotes"',
     },
     {
