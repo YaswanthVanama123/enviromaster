@@ -384,6 +384,17 @@ export default function Home() {
     }
   };
 
+  // ✅ NEW: Handle closing date picker - revert to "This Month" if dates not selected
+  const handleDatePickerClose = () => {
+    if (!selectedDateFrom || !selectedDateTo) {
+      // If dates aren't fully selected, revert back to "This Month"
+      setTimeFilter("This Month");
+      setSelectedDateFrom(null);
+      setSelectedDateTo(null);
+    }
+    setShowDatePicker(false);
+  };
+
   const agreementOptions = [
     {
       id: "create",
@@ -556,7 +567,7 @@ export default function Home() {
             </div>
 
             {showDatePicker && (
-              <div className="home__date-picker-overlay" onClick={() => setShowDatePicker(false)}>
+              <div className="home__date-picker-overlay" onClick={handleDatePickerClose}>
                 <div className="home__date-picker-modal" onClick={(e) => e.stopPropagation()}>
                   <h3 className="home__date-picker-title">Select Date Range</h3>
 
@@ -603,7 +614,7 @@ export default function Home() {
                     </button>
                     <button
                       className="home__date-picker-close"
-                      onClick={() => setShowDatePicker(false)}
+                      onClick={handleDatePickerClose}
                     >
                       Cancel
                     </button>
