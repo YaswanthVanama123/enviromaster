@@ -968,9 +968,9 @@ export default function SavedFilesAgreements() {
             }}
           >
             <option value="all">All Agreements</option>
-            <option value="yet-to-start">⏳ Yet to Start</option>
-            <option value="active">✅ Active</option>
-            <option value="inactive">❌ Inactive</option>
+            <option value="yet-to-start">Yet to Start</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
 
