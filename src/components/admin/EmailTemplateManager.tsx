@@ -113,82 +113,94 @@ export const EmailTemplateManager: React.FC = () => {
       </div>
 
       <div className="email-template-form">
-        {/* Subject Field */}
-        <div className="email-template-field">
-          <label htmlFor="subject">
-            Email Subject
-            <span className="required">*</span>
-          </label>
-          <input
-            id="subject"
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Enter email subject..."
-            disabled={saving}
-            className="email-template-input"
-          />
-          <small className="field-hint">This subject will be pre-filled when sending emails</small>
-        </div>
-
-        {/* Body Field */}
-        <div className="email-template-field">
-          <label htmlFor="body">
-            Email Body
-            <span className="required">*</span>
-          </label>
-          <textarea
-            id="body"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Enter email body..."
-            rows={15}
-            disabled={saving}
-            className="email-template-textarea"
-          />
-          <small className="field-hint">
-            This message will be pre-filled when sending emails. Salesmen can edit it before sending.
-          </small>
-        </div>
-
-        {/* Template Variables Info */}
-        <div className="email-template-variables">
-          <h3>Template Tips</h3>
-          <ul>
-            <li>Keep the message professional and concise</li>
-            <li>Salesmen can customize this template before sending</li>
-            <li>The PDF attachment will be added automatically</li>
-            <li>Changes take effect immediately for all users</li>
-          </ul>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="email-template-actions">
-          <button
-            type="button"
-            className="email-template-btn email-template-btn--reset"
-            onClick={handleReset}
-            disabled={!hasChanges || saving}
-          >
-            <FontAwesomeIcon icon={faUndo} />
-            Discard Changes
-          </button>
-          <button
-            type="button"
-            className="email-template-btn email-template-btn--save"
-            onClick={handleSave}
-            disabled={!hasChanges || saving}
-          >
-            <FontAwesomeIcon icon={faSave} />
-            {saving ? 'Saving...' : 'Save Template'}
-          </button>
-        </div>
-
-        {/* Last Updated Info */}
-        {template && (
-          <div className="email-template-meta">
-            Last updated: {new Date(template.updatedAt).toLocaleString()}
+        {/* Loading State - Show spinner in place of form fields */}
+        {loading ? (
+          <div className="email-template-loading-state">
+            <div className="email-template-spinner-inline">
+              <span className="email-template-sr-only">Loading email template…</span>
+            </div>
+            <p className="email-template-loading-text">Loading template data...</p>
           </div>
+        ) : (
+          <>
+            {/* Subject Field */}
+            <div className="email-template-field">
+              <label htmlFor="subject">
+                Email Subject
+                <span className="required">*</span>
+              </label>
+              <input
+                id="subject"
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Enter email subject..."
+                disabled={saving}
+                className="email-template-input"
+              />
+              <small className="field-hint">This subject will be pre-filled when sending emails</small>
+            </div>
+
+            {/* Body Field */}
+            <div className="email-template-field">
+              <label htmlFor="body">
+                Email Body
+                <span className="required">*</span>
+              </label>
+              <textarea
+                id="body"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Enter email body..."
+                rows={15}
+                disabled={saving}
+                className="email-template-textarea"
+              />
+              <small className="field-hint">
+                This message will be pre-filled when sending emails. Salesmen can edit it before sending.
+              </small>
+            </div>
+
+            {/* Template Variables Info */}
+            <div className="email-template-variables">
+              <h3>Template Tips</h3>
+              <ul>
+                <li>Keep the message professional and concise</li>
+                <li>Salesmen can customize this template before sending</li>
+                <li>The PDF attachment will be added automatically</li>
+                <li>Changes take effect immediately for all users</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="email-template-actions">
+              <button
+                type="button"
+                className="email-template-btn email-template-btn--reset"
+                onClick={handleReset}
+                disabled={!hasChanges || saving}
+              >
+                <FontAwesomeIcon icon={faUndo} />
+                Discard Changes
+              </button>
+              <button
+                type="button"
+                className="email-template-btn email-template-btn--save"
+                onClick={handleSave}
+                disabled={!hasChanges || saving}
+              >
+                <FontAwesomeIcon icon={faSave} />
+                {saving ? 'Saving...' : 'Save Template'}
+              </button>
+            </div>
+
+            {/* Last Updated Info */}
+            {template && (
+              <div className="email-template-meta">
+                Last updated: {new Date(template.updatedAt).toLocaleString()}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -198,15 +210,6 @@ export const EmailTemplateManager: React.FC = () => {
           type={toastMessage.type}
           onClose={() => setToastMessage(null)}
         />
-      )}
-
-      {/* Loading overlay */}
-      {loading && (
-        <div className="email-template-loading-overlay">
-          <div className="email-template-spinner">
-            <span className="email-template-sr-only">Loading email template…</span>
-          </div>
-        </div>
       )}
     </div>
   );
