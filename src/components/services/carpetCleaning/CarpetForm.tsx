@@ -933,16 +933,8 @@ export const CarpetForm: React.FC<
             <select
               className="svc-in"
               name="contractMonths"
-              value={form.contractMonths}
+              value={form.contractMonths} 
               onChange={onChange}
-              style={{
-                borderBottom: '2px solid #000',
-                borderTop: 'none',
-                borderLeft: 'none',
-                borderRight: 'none',
-                backgroundColor: 'transparent',
-                padding: '4px 20px 4px 4px'
-              }}
             >
               {getContractOptions(form.frequency).map((m) => (
                 <option key={m} value={m}>

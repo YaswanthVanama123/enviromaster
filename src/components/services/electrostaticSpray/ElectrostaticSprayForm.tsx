@@ -982,14 +982,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   className="svc-in"
                   value={form.contractMonths}
                   onChange={onChange}
-                  style={{
-                    borderBottom: '2px solid #000',
-                    borderTop: 'none',
-                    borderLeft: 'none',
-                    borderRight: 'none',
-                    backgroundColor: 'transparent',
-                    padding: '4px 20px 4px 4px'
-                  }}
                 >
                   {contractMonthOptions.map((m) => (
                     <option key={m} value={m}>
