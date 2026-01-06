@@ -473,7 +473,7 @@ export default function PDFViewer() {
           </pre>
         ) : (
           <iframe
-            src={pdfUrl}
+            src={`${pdfUrl}#view=FitH&toolbar=1&navpanes=0&scrollbar=1`}
             className="pdf-viewer__iframe"
             title="PDF Viewer"
           />

@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import './ServiceAgreement.css';
 import logo from "../../assets/em-logo.png";
 import { addTextChange } from '../../utils/fileLogger';
+import { serviceAgreementTemplateApi } from '../../backendservice/api/serviceAgreementTemplateApi';
+import type { ServiceAgreementTemplate } from '../../backendservice/api/serviceAgreementTemplateApi';
 
 interface ServiceAgreementProps {
   /** Optional callback so the parent form can capture the agreement fields. */
@@ -12,6 +14,10 @@ interface ServiceAgreementProps {
   logoAlt?: string;
   /** ✅ Optional initial data for editing existing agreements */
   initialData?: ServiceAgreementData;
+  /** ⚡ OPTIMIZED: Optional template data from combined API call (avoids separate fetch) */
+  templateData?: ServiceAgreementTemplate | null;
+  /** ⚡ OPTIMIZED: Loading state for template data (prevents premature separate fetch) */
+  templateLoading?: boolean;
 }
 
 export interface ServiceAgreementData {
@@ -58,20 +64,23 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
   logoSrc,
   logoAlt,
   initialData, // ✅ Accept initial data prop
+  templateData, // ⚡ OPTIMIZED: Accept template data from combined API call
+  templateLoading = false, // ⚡ OPTIMIZED: Accept loading state (default false for backward compatibility)
 }) => {
   // ✅ Initialize showAgreement from initialData if provided
-  const [showAgreement, setShowAgreement] = useState(initialData?.includeInPdf ?? false);
+  const [showAgreement, setShowAgreement] = useState(initialData?.includeInPdf ?? true);
+  // ⚡ OPTIMIZED: Only show loading if we're waiting for template (not editing and template is loading)
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(!initialData && templateLoading);
   const [agreementData, setAgreementData] = useState<ServiceAgreementData>(() => {
-    // ✅ If initialData is provided, use it; otherwise use defaults
+    // ✅ If initialData is provided, use it (editing existing agreement)
     if (initialData) {
       return initialData;
     }
 
-    // Default values when creating new agreement
+    // ✅ CHANGED: Return empty defaults - will be filled by template fetch
     return {
-      // ✅ NEW: Default to false - only include when checkbox is checked
-      includeInPdf: false,
-      retainDispensers: true, // ✅ CHANGED: Default to checked
+      includeInPdf: true,
+      retainDispensers: true,
       disposeDispensers: false,
       customerContactName: '',
       customerSignature: '',
@@ -81,39 +90,137 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
       emSignatureDate: '',
       insideSalesRepresentative: '',
       emSalesRepresentative: '',
-      // Default terms
-      term1: 'All dispensers installed under this Agreement are owned by and shall remain the property of Enviro-Master Services, here noted as the Company. Damage to any Company dispenser due to vandalism, abuse, or theft, Company will replace the dispenser(s) at the then current replacement rate.',
-      term2: "Enviro-Master Promise of Good Service. In the event that Customer: (1) provides a written material complaint to Company; (2) Company does not cure, address or resolve the Complaint within a fifteen-day period of receipt; and, 3) Customer has paid all fees and provided Company the opportunity to retrieve its dispensers from Customer premises in good condition – Customer may then terminate Company's services by providing thirty (30) days written notice of its intention to do so.",
-      term3: "Payment Terms. If Customer has elected credit card payment through Company's eBill program, customer agrees to submit payment by the first business day of each month for Company's services/products provided in the previous month. If Customer has elected Net 30 payment terms, then Company will invoice Customer on the first business day of each month for services/products provided during the previous month. Customer agrees to pay monthly statement no later than the first business day of the following month. If the outstanding balance is not paid in full within 45 days of billing, Company has the right to terminate this Agreement. All invoices shall be deemed true and correct unless Customer provides a written objection to an invoice to Company within thirty (30) days of the due date of such invoice. Any invoice not paid within thirty (30) days of billing shall be subject to a finance charge equal to 1.5 percent per month or the highest amount allowed by law, whichever is less. Should any check remittance be returned for insufficient funds (\"ISF\"), Customer expressly authorizes Company to electronically debit or draft from its bank account the amount of such check remittance, plus any ISF fees incurred by Company. Customer agrees to pay all reasonable attorney fees and costs to enforce this Agreement. Company may increase charges from time to time by notifying Customer in writing which may be on Customer's invoice or monthly statement. Customer agrees to pay a $10 charge for each incident in which Customer refuses Company's scheduled services.",
-      term4: "Indemnification. Customer shall protect, defend, indemnify, and hold Company harmless from all third-party claims, losses, damages, costs, and expenses (including attorney's fees) and which arise in connection with this Agreement and with Customer's interim cleaning and use of any products in its restroom facilities. The Customer acknowledges and understands that Enviro-Master makes no additional representations of any kind or nature regarding the use of the Vaporizer/Sani-Guard disinfectants beyond those made by the manufacturer as to its EPA registration status and safety.",
-      term5: "Expiration/Termination. Upon the expiration or termination of this Agreement, Customer shall remit any unpaid charges and immediately, permit Company to retrieve all dispensers on its premises. Company has no obligation to reinstall Customer's dispensers. Company is not liable for damages to Customer's property (except for gross negligence) should Company removes its dispensers. If this Agreement is terminated early for any reason, other than under the Enviro- Master Promise of Good Service, Customer will pay Company, as liquidated damages, 50% of its average weekly invoice (over the previous thirteen-week period) and multiplied by the number of weeks remaining in the unexpired Agreement term, plus the replacement cost of all dispensers in service.",
-      term6: "Install Warranty/Scope of Service. Company's install warranty to repair or replace dispensers refers to normal wear and tear, manufacture malfunction or defect. Company's warranty does not cover vandalism or abuse. Company will perform all work set forth in its cleaning/sanitizing scope of service for Customer in a good and workman-like manner.",
-      term7: "Sale of Customer Business. If Customer sells or transfers its business (whether by asset sale, stock sale or otherwise), new owner or operator will assume this agreement.",
-      noteText: "Agreement term shall be for thirty-six (36) months from execution and shall automatically renew for another like term unless Enviro-Master is provided written notice of Customer's desire to discontinue service thirty (30) days prior to expiration of any term. This Agreement is subject to the terms and conditions on its reverse side.",
-      // Default labels
-      titleText: "SERVICE AGREEMENT",
-      subtitleText: "Terms and Conditions",
-      retainDispensersLabel: "Customer desires to retain existing dispensers",
-      disposeDispensersLabel: "Customer desires to dispose of existing dispensers",
-      emSalesRepLabel: "EM Sales Representative",
-      insideSalesRepLabel: "Inside SalesRepresentative",
-      authorityText: "I HEREBY REPRESENT THAT I HAVE THE AUTHORITY TO SIGN THIS AGREEMENT:",
-      customerContactLabel: "Customer Contact Name:",
-      customerSignatureLabel: "Signature:",
-      customerDateLabel: "Date:",
-      emFranchiseeLabel: "EM Franchisee:",
-      emSignatureLabel: "Signature:",
-      emDateLabel: "Date:",
-      // pageNumberText: "Page #2",
+      // Temporary defaults - will be replaced by template
+      term1: '',
+      term2: '',
+      term3: '',
+      term4: '',
+      term5: '',
+      term6: '',
+      term7: '',
+      noteText: '',
+      titleText: 'SERVICE AGREEMENT',
+      subtitleText: 'Terms and Conditions',
+      retainDispensersLabel: 'Customer desires to retain existing dispensers',
+      disposeDispensersLabel: 'Customer desires to dispose of existing dispensers',
+      emSalesRepLabel: 'EM Sales Representative',
+      insideSalesRepLabel: 'Inside SalesRepresentative',
+      authorityText: 'I HEREBY REPRESENT THAT I HAVE THE AUTHORITY TO SIGN THIS AGREEMENT:',
+      customerContactLabel: 'Customer Contact Name:',
+      customerSignatureLabel: 'Signature:',
+      customerDateLabel: 'Date:',
+      emFranchiseeLabel: 'EM Franchisee:',
+      emSignatureLabel: 'Signature:',
+      emDateLabel: 'Date:',
+      pageNumberText: 'PAGE 4',
     };
   });
+
+  // ⚡ OPTIMIZED: Load template data (from prop or backend fetch)
+  useEffect(() => {
+    const loadTemplate = async () => {
+      // Skip if we have initialData (editing mode)
+      if (initialData) {
+        console.log('📄 [SERVICE-AGREEMENT] Using initial data from edit mode');
+        return;
+      }
+
+      // ⚡ OPTIMIZED: Use template data from props if available (from combined API call)
+      if (templateData) {
+        console.log('⚡ [SERVICE-AGREEMENT] Using template from combined API call (no separate fetch needed)');
+
+        // Update agreement data with template values
+        setAgreementData(prev => ({
+          ...prev,
+          term1: templateData.term1,
+          term2: templateData.term2,
+          term3: templateData.term3,
+          term4: templateData.term4,
+          term5: templateData.term5,
+          term6: templateData.term6,
+          term7: templateData.term7,
+          noteText: templateData.noteText,
+          titleText: templateData.titleText,
+          subtitleText: templateData.subtitleText,
+          retainDispensersLabel: templateData.retainDispensersLabel,
+          disposeDispensersLabel: templateData.disposeDispensersLabel,
+          emSalesRepLabel: templateData.emSalesRepLabel,
+          insideSalesRepLabel: templateData.insideSalesRepLabel,
+          authorityText: templateData.authorityText,
+          customerContactLabel: templateData.customerContactLabel,
+          customerSignatureLabel: templateData.customerSignatureLabel,
+          customerDateLabel: templateData.customerDateLabel,
+          emFranchiseeLabel: templateData.emFranchiseeLabel,
+          emSignatureLabel: templateData.emSignatureLabel,
+          emDateLabel: templateData.emDateLabel,
+          pageNumberText: templateData.pageNumberText,
+        }));
+
+        setIsLoadingTemplate(false);
+        return;
+      }
+
+      // ⚡ CRITICAL: Wait if parent is still loading combined data - DON'T fetch separately yet!
+      if (templateLoading) {
+        console.log('⏳ [SERVICE-AGREEMENT] Waiting for combined API call to complete...');
+        setIsLoadingTemplate(true);
+        return;
+      }
+
+      // ⚠️ FALLBACK: Fetch from backend only if parent finished loading but no template provided
+      // This shouldn't normally happen if parent uses the optimized hook
+      if (!templateData && !templateLoading) {
+        console.warn('⚠️ [SERVICE-AGREEMENT] Parent finished loading but no template provided - fetching separately (fallback)');
+        try {
+          setIsLoadingTemplate(true);
+          const template = await serviceAgreementTemplateApi.getActiveTemplate();
+
+          console.log('✅ [SERVICE-AGREEMENT] Template loaded via fallback fetch');
+
+          // Update agreement data with template values
+          setAgreementData(prev => ({
+            ...prev,
+            term1: template.term1,
+            term2: template.term2,
+            term3: template.term3,
+            term4: template.term4,
+            term5: template.term5,
+            term6: template.term6,
+            term7: template.term7,
+            noteText: template.noteText,
+            titleText: template.titleText,
+            subtitleText: template.subtitleText,
+            retainDispensersLabel: template.retainDispensersLabel,
+            disposeDispensersLabel: template.disposeDispensersLabel,
+            emSalesRepLabel: template.emSalesRepLabel,
+            insideSalesRepLabel: template.insideSalesRepLabel,
+            authorityText: template.authorityText,
+            customerContactLabel: template.customerContactLabel,
+            customerSignatureLabel: template.customerSignatureLabel,
+            customerDateLabel: template.customerDateLabel,
+            emFranchiseeLabel: template.emFranchiseeLabel,
+            emSignatureLabel: template.emSignatureLabel,
+            emDateLabel: template.emDateLabel,
+            pageNumberText: template.pageNumberText,
+          }));
+        } catch (error) {
+          console.error('❌ [SERVICE-AGREEMENT] Failed to load template:', error);
+          // Keep existing default values if template fetch fails
+        } finally {
+          setIsLoadingTemplate(false);
+        }
+      }
+    };
+
+    loadTemplate();
+  }, [initialData, templateData, templateLoading]); // ⚡ OPTIMIZED: Depend on templateLoading to know when to stop waiting
 
   // ✅ NEW: Track original term values for change logging
   const originalTermsRef = useRef<Record<string, string>>({});
 
-  // Initialize original terms on first render
+  // Initialize original terms after data is loaded (either from template or initialData)
   useEffect(() => {
-    if (Object.keys(originalTermsRef.current).length === 0) {
+    if (Object.keys(originalTermsRef.current).length === 0 && agreementData.term1) {
       originalTermsRef.current = {
         term1: agreementData.term1,
         term2: agreementData.term2,
@@ -127,7 +234,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         subtitleText: agreementData.subtitleText,
       };
     }
-  }, []); // Only run once on mount
+  }, [agreementData]); // Re-run when agreementData changes (after template loads)
 
   const prevDataRef = useRef<string>('');
 
@@ -256,8 +363,46 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         </label>
       </div>
 
-      {/* Agreement Content - Only show when checkbox is checked */}
-      {showAgreement && (
+      {/* Loading State - Show while fetching template */}
+      {isLoadingTemplate && showAgreement && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 20px',
+          background: '#fff',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid #f3f4f6',
+            borderTopColor: '#059669',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite'
+          }}></div>
+          <p style={{
+            marginTop: '16px',
+            fontSize: '14px',
+            color: '#6b7280',
+            fontWeight: '500'
+          }}>
+            Loading service agreement template...
+          </p>
+          <style>
+            {`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}
+          </style>
+        </div>
+      )}
+
+      {/* Agreement Content - Only show when checkbox is checked and template loaded */}
+      {showAgreement && !isLoadingTemplate && (
         <div className="sa-page" role="group" aria-label="Service Agreement">
           <header className="sa-header">
             <div className="sa-logo" aria-label="Enviro-Master logo">

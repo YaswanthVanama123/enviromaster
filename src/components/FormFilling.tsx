@@ -33,6 +33,7 @@ import { useAllServicePricing } from "../backendservice/hooks";
 import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
 import { ServiceAgreement } from "./ServiceAgreement";
 import type { ServiceAgreementData } from "./ServiceAgreement/ServiceAgreement";
+import type { ServiceAgreementTemplate } from "../backendservice/api/serviceAgreementTemplateApi";
 import { REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID } from "./services/refreshPowerScrub/refreshPowerScrubDraftPayload";
 
 type HeaderRow = {
@@ -880,7 +881,13 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
 }
 
 // ✅ NEW: Helper component to access ServicesContext inside FormFilling
-function FormFillingContent() {
+function FormFillingContent({
+  serviceAgreementTemplate,
+  templateLoading,
+}: {
+  serviceAgreementTemplate: ServiceAgreementTemplate | null;
+  templateLoading: boolean;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { id: urlId } = useParams<{ id: string }>();
@@ -2508,6 +2515,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             <ServiceAgreement
               onAgreementChange={setAgreementData}
               initialData={payload.serviceAgreement} // ✅ Pass loaded service agreement data for editing
+              templateData={serviceAgreementTemplate} // ⚡ OPTIMIZED: Pass template from combined API call
+              templateLoading={templateLoading} // ⚡ OPTIMIZED: Pass loading state to prevent separate fetch
             />
 
             <div className="formfilling__actions">
@@ -2602,12 +2611,15 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
 // ✅ Export the main component as default (with ServicesProvider wrapper)
 export default function FormFilling() {
-  // Fetch all service pricing data for context provider
-  const { pricingData } = useAllServicePricing();
+  // ⚡ OPTIMIZED: Fetch all service pricing data + service agreement template in one API call
+  const { pricingData, templateData, loading: templateLoading } = useAllServicePricing();
 
   return (
     <ServicesProvider backendPricingData={pricingData}>
-      <FormFillingContent />
+      <FormFillingContent
+        serviceAgreementTemplate={templateData}
+        templateLoading={templateLoading}
+      />
     </ServicesProvider>
   );
 }
