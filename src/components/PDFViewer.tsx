@@ -335,6 +335,23 @@ export default function PDFViewer() {
     }
   };
 
+  // ⚡ NEW: Open log file (text content) in new tab for mobile devices
+  const handleOpenLogFileInNewTab = () => {
+    if (textContent) {
+      // Create a blob from text content
+      const blob = new Blob([textContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+
+      // Open in new tab
+      window.open(url, '_blank');
+
+      // Clean up blob URL after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    }
+  };
+
   if (loading) {
     return (
       <div className="pdf-viewer">
@@ -467,67 +484,116 @@ export default function PDFViewer() {
       </div>
 
       <div className="pdf-viewer__container">
-        {/* ✅ NEW: Show text content for log files (TXT) */}
-        {isLogFile && textContent ? (
-          <pre className="pdf-viewer__text-content" style={{
-            padding: '20px',
-            backgroundColor: '#1e1e1e',
-            color: '#d4d4d4',
-            fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-            fontSize: '13px',
-            lineHeight: '1.5',
-            overflow: 'auto',
-            height: '100%',
-            margin: 0,
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
-          }}>
-            {textContent}
-          </pre>
-        ) : isMobileDevice() ? (
-          // ⚡ FIXED: Mobile devices - Show "Open PDF" button instead of embedded viewer
-          // iOS Safari doesn't handle blob URLs in iframes well, causing "page 1 only" issue
-          <div className="pdf-viewer__mobile-message">
-            <div className="mobile-pdf-icon">
-              <FontAwesomeIcon icon={faFileAlt} size="3x" style={{ color: '#3b82f6' }} />
+        {/* ⚡ FIXED: Check mobile device FIRST, then handle log files vs PDFs */}
+        {isMobileDevice() ? (
+          // ⚡ MOBILE: Show "Open in Browser" button for both PDFs and log files
+          isLogFile && textContent ? (
+            // Log files on mobile - Show button to open text file
+            <div className="pdf-viewer__mobile-message">
+              <div className="mobile-pdf-icon">
+                <FontAwesomeIcon icon={faFileAlt} size="3x" style={{ color: '#10b981' }} />
+              </div>
+              <h3>Log File Ready to View</h3>
+              <p>
+                For the best viewing experience on mobile devices,
+                open the log file in your browser's native text viewer.
+              </p>
+              <button
+                onClick={handleOpenLogFileInNewTab}
+                className="pdf-viewer__btn pdf-viewer__btn--primary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '16px',
+                  padding: '14px 24px',
+                  margin: '20px auto 10px',
+                }}
+              >
+                <FontAwesomeIcon icon={faExternalLinkAlt} />
+                Open Log File in Browser
+              </button>
+              <p className="mobile-pdf-note">
+                This will open the log file as text in a new tab.
+              </p>
             </div>
-            <h3>PDF Ready to View</h3>
-            <p>
-              For the best viewing experience on mobile devices,
-              open the PDF in your browser's native viewer.
-            </p>
-            <button
-              onClick={handleOpenPdfInNewTab}
-              className="pdf-viewer__btn pdf-viewer__btn--primary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '16px',
-                padding: '14px 24px',
-                margin: '20px auto 10px',
-              }}
-            >
-              <FontAwesomeIcon icon={faExternalLinkAlt} />
-              Open PDF in Browser
-            </button>
-            <p className="mobile-pdf-note">
-              This will open the full PDF with all pages in a new tab.
-            </p>
-          </div>
+          ) : pdfUrl ? (
+            // PDFs and attached files on mobile - Show button to open PDF
+            <div className="pdf-viewer__mobile-message">
+              <div className="mobile-pdf-icon">
+                <FontAwesomeIcon
+                  icon={faFileAlt}
+                  size="3x"
+                  style={{
+                    color: documentType === 'manual-upload' || documentType === 'attached-file'
+                      ? '#f59e0b'  // Orange for manual/attached files
+                      : '#3b82f6'  // Blue for version/agreement PDFs
+                  }}
+                />
+              </div>
+              <h3>
+                {documentType === 'manual-upload' || documentType === 'attached-file'
+                  ? 'Uploaded File Ready to View'
+                  : 'PDF Ready to View'}
+              </h3>
+              <p>
+                For the best viewing experience on mobile devices,
+                open the {documentType === 'manual-upload' || documentType === 'attached-file' ? 'file' : 'PDF'} in your browser's native viewer.
+              </p>
+              <button
+                onClick={handleOpenPdfInNewTab}
+                className="pdf-viewer__btn pdf-viewer__btn--primary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '16px',
+                  padding: '14px 24px',
+                  margin: '20px auto 10px',
+                }}
+              >
+                <FontAwesomeIcon icon={faExternalLinkAlt} />
+                {documentType === 'manual-upload' || documentType === 'attached-file'
+                  ? 'Open File in Browser'
+                  : 'Open PDF in Browser'}
+              </button>
+              <p className="mobile-pdf-note">
+                This will open the full {documentType === 'manual-upload' || documentType === 'attached-file' ? 'file' : 'PDF'} with all pages in a new tab.
+              </p>
+            </div>
+          ) : null
         ) : (
-          // ⚡ DESKTOP: Show embedded iframe viewer
-          // FIXED: Removed page=1 lock, enabled toolbar for navigation
-          <iframe
-            src={`${pdfUrl}#toolbar=1&navpanes=0`}
-            className="pdf-viewer__iframe"
-            title="PDF Viewer"
-            style={{
-              width: '100%',
+          // ⚡ DESKTOP: Show embedded viewer (text for logs, iframe for PDFs)
+          isLogFile && textContent ? (
+            // Log files on desktop - Show text viewer
+            <pre className="pdf-viewer__text-content" style={{
+              padding: '20px',
+              backgroundColor: '#1e1e1e',
+              color: '#d4d4d4',
+              fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+              fontSize: '13px',
+              lineHeight: '1.5',
+              overflow: 'auto',
               height: '100%',
-              border: 'none',
-            }}
-          />
+              margin: 0,
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word'
+            }}>
+              {textContent}
+            </pre>
+          ) : pdfUrl ? (
+            // PDFs and attached files on desktop - Show iframe
+            <iframe
+              src={`${pdfUrl}#toolbar=1&navpanes=0`}
+              className="pdf-viewer__iframe"
+              title="PDF Viewer"
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+            />
+          ) : null
         )}
       </div>
 
