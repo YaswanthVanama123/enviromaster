@@ -92,6 +92,27 @@
   background: #a00000;
 }
 
+/* ✅ NEW: Tab Content Visibility & Smooth Transitions */
+.product-tab-content {
+  display: none;
+}
+
+.product-tab-content--active {
+  display: block;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ===================================
    REFERENCE TABLES STYLES
    (Matching Existing Form UI)

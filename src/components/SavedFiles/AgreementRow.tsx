@@ -339,7 +339,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
                   handleZohoUpload();
                 }}
                 disabled={uploadableFiles.length === 0}
-                title={`Upload ${uploadableFiles.length} files to Zoho Bigin`}
+                title={`Upload ${uploadableFiles.length} files to Bigin`}
               >
                 <FontAwesomeIcon icon={faCloudUploadAlt} style={{ fontSize: '10px' }} />
                 Bigin

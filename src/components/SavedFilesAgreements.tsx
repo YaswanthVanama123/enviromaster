@@ -17,7 +17,7 @@ import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCheckSquare, faTrash
+  faCheckSquare, faTrash, faFileAlt, faUpload
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
@@ -1324,83 +1324,80 @@ export default function SavedFilesAgreements() {
             clearAllSelections();
             fetchAgreements(currentPage, query);
             setToastMessage({
-              message: `Successfully uploaded ${selectedFilesForBulkUpload.length} files to Zoho Bigin!`,
+              message: `Successfully uploaded ${selectedFilesForBulkUpload.length} files to Bigin!`,
               type: "success"
             });
           }}
         />
       )}
 
-      {/* ✅ NEW: File Upload Modal */}
+      {/* ✅ ENHANCED: File Upload Modal with Modern UI */}
       {fileUploadOpen && currentUploadAgreement && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: '12px',
-            padding: '24px',
-            maxWidth: '500px',
-            width: '90%'
-          }}>
-            <h3 style={{
-              margin: '0 0 16px',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#374151'
-            }}>
-              Add Files to: {currentUploadAgreement.agreementTitle}
+        <div className="file-upload-modal">
+          <div className="file-upload-modal__overlay" onClick={() => {
+            setFileUploadOpen(false);
+            setCurrentUploadAgreement(null);
+          }} />
+          <div className="file-upload-modal__content">
+            <h3 className="file-upload-modal__title">
+              <FontAwesomeIcon icon={faFileAlt} className="file-upload-modal__icon" />
+              Add Files to: <span className="file-upload-modal__agreement-name">{currentUploadAgreement.agreementTitle}</span>
             </h3>
 
-            <div style={{ marginBottom: '20px' }}>
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.jpg,.png"
-                onChange={(e) => handleFileUpload(e.target.files)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px dashed #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              />
-              <p style={{
-                fontSize: '12px',
-                color: '#6b7280',
-                marginTop: '8px',
-                marginBottom: '0'
-              }}>
-                Select one or more files to attach to this agreement
+            <div className="file-upload-modal__section">
+              <div className="file-upload-modal__file-input-wrapper">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                  className="file-upload-modal__file-input"
+                  id="file-upload-input"
+                />
+                <label
+                  htmlFor="file-upload-input"
+                  className="file-upload-modal__file-label"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.classList.add('file-upload-modal__file-label--dragging');
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.classList.add('file-upload-modal__file-label--dragging');
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.classList.remove('file-upload-modal__file-label--dragging');
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.currentTarget.classList.remove('file-upload-modal__file-label--dragging');
+
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                      handleFileUpload(files);
+                    }
+                  }}
+                >
+                  <FontAwesomeIcon icon={faFileAlt} className="file-upload-modal__file-icon" />
+                  <span className="file-upload-modal__file-text">
+                    Choose PDF Files or Drag & Drop
+                  </span>
+                </label>
+              </div>
+              <p className="file-upload-modal__hint">
+                Select one or more PDF files to attach to this agreement
               </p>
             </div>
 
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'flex-end'
-            }}>
+            <div className="file-upload-modal__actions">
               <button
                 type="button"
-                style={{
-                  background: '#f3f4f6',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
+                className="file-upload-modal__btn file-upload-modal__btn--cancel"
                 onClick={() => {
                   setFileUploadOpen(false);
                   setCurrentUploadAgreement(null);

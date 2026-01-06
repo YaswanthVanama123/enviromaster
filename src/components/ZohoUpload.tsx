@@ -902,14 +902,14 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         <h3>
           <FontAwesomeIcon icon={faUpload} />
           {bulkFiles && bulkFiles.length > 0
-            ? `Upload ${bulkFiles.length} Files to Zoho Bigin`
+            ? `Upload ${bulkFiles.length} Files to Bigin`
             : 'First-time Upload to Bigin'
           }
         </h3>
         <p>
           {bulkFiles && bulkFiles.length > 0
             ? `Upload ${bulkFiles.length} documents to your Zoho Bigin CRM.`
-            : "This agreement hasn't been uploaded to Zoho yet. Let's set it up!"
+            : "This agreement hasn't been uploaded to Bigin yet. Let's set it up!"
           }
         </p>
       </div>
@@ -1365,8 +1365,8 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
       ? "Creating deal and adding note..."
       : "Creating deal, adding note, and uploading files...";
     const uploadingSubtext = uploadMode === 'notes'
-      ? "Adding the note to the new Zoho deal."
-      : "Creating deal, adding note, and uploading files to Zoho.";
+      ? "Adding the note to the new Bigin deal."
+      : "Creating deal, adding note, and uploading files to Bigin.";
 
     return (
       <div className="zoho-upload__step zoho-upload__step--uploading">
@@ -1453,8 +1453,8 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
           >
             <FontAwesomeIcon icon={faUpload} />
             {selectedFiles.size > 0
-              ? `Upload ${selectedFiles.size} Selected Files to Zoho`
-              : 'Send Notes to Zoho'
+              ? `Upload ${selectedFiles.size} Selected File${selectedFiles.size !== 1 ? 's' : ''} to Bigin`
+              : 'Send Notes to Bigin'
             }
           </button>
         </div>
@@ -1480,7 +1480,7 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
             <FontAwesomeIcon icon={faUpload} />
             {selectedFiles.size > 0
               ? `Upload ${selectedFiles.size} Selected Files (Version ${uploadStatus?.mapping?.nextVersion})`
-              : `Send Notes to Zoho (Version ${uploadStatus?.mapping?.nextVersion})`
+              : `Send Notes to Bigin (Version ${uploadStatus?.mapping?.nextVersion})`
             }
           </button>
         </div>

@@ -956,3 +956,317 @@
     table-layout: auto;
   }
 }
+
+/* ===================================
+   FILE UPLOAD MODAL STYLES
+   Modern, clean design matching Zoho Upload modal
+   ================================= */
+
+/* Modal Container */
+.file-upload-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Overlay */
+.file-upload-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+/* Modal Content */
+.file-upload-modal__content {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-width: 540px;
+  width: 90%;
+  padding: 32px 28px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Title */
+.file-upload-modal__title {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.4;
+}
+
+.file-upload-modal__icon {
+  color: #c00000;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.file-upload-modal__agreement-name {
+  color: #c00000;
+  font-weight: 700;
+}
+
+/* Modal Section */
+.file-upload-modal__section {
+  margin-bottom: 24px;
+}
+
+/* File Input Wrapper */
+.file-upload-modal__file-input-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+/* Hidden File Input */
+.file-upload-modal__file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Custom File Upload Label */
+.file-upload-modal__file-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 160px;
+  padding: 24px;
+  border: 3px dashed #d1d5db;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-upload-modal__file-label::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(192, 0, 0, 0.03) 0%, rgba(192, 0, 0, 0.06) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.file-upload-modal__file-label:hover {
+  border-color: #c00000;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(192, 0, 0, 0.1);
+}
+
+.file-upload-modal__file-label:hover::before {
+  opacity: 1;
+}
+
+.file-upload-modal__file-label:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(192, 0, 0, 0.1);
+}
+
+/* ✅ NEW: Dragging state for drag & drop */
+.file-upload-modal__file-label--dragging {
+  border-color: #c00000 !important;
+  border-style: solid !important;
+  background: linear-gradient(135deg, #ffe4e4 0%, #ffd4d4 100%) !important;
+  transform: scale(1.02) !important;
+  box-shadow: 0 6px 20px rgba(192, 0, 0, 0.2) !important;
+}
+
+.file-upload-modal__file-label--dragging::before {
+  opacity: 1 !important;
+}
+
+.file-upload-modal__file-label--dragging .file-upload-modal__file-icon {
+  transform: scale(1.15) !important;
+  color: #a00000 !important;
+}
+
+.file-upload-modal__file-label--dragging .file-upload-modal__file-text {
+  color: #a00000 !important;
+  font-weight: 700 !important;
+}
+
+/* File Upload Icon */
+.file-upload-modal__file-icon {
+  font-size: 48px;
+  color: #c00000;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.file-upload-modal__file-label:hover .file-upload-modal__file-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(192, 0, 0, 0.2));
+}
+
+/* File Upload Text */
+.file-upload-modal__file-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.file-upload-modal__file-label:hover .file-upload-modal__file-text {
+  color: #c00000;
+}
+
+/* Hint Text */
+.file-upload-modal__hint {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Modal Actions */
+.file-upload-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+/* Modal Buttons */
+.file-upload-modal__btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.file-upload-modal__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Cancel Button */
+.file-upload-modal__btn--cancel {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  color: #1f2937;
+  border: 2px solid #d1d5db;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.file-upload-modal__btn--cancel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-color: #9ca3af;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.file-upload-modal__btn--cancel:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .file-upload-modal__content {
+    width: 95%;
+    padding: 24px 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .file-upload-modal__title {
+    font-size: 18px;
+    flex-wrap: wrap;
+  }
+
+  .file-upload-modal__file-label {
+    min-height: 140px;
+    padding: 20px;
+  }
+
+  .file-upload-modal__file-icon {
+    font-size: 40px;
+  }
+
+  .file-upload-modal__file-text {
+    font-size: 14px;
+  }
+
+  .file-upload-modal__hint {
+    font-size: 12px;
+  }
+
+  .file-upload-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .file-upload-modal__btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .file-upload-modal__content {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .file-upload-modal__file-label {
+    min-height: 120px;
+    padding: 16px;
+  }
+}
