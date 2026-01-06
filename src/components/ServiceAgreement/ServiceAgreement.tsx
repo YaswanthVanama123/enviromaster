@@ -60,7 +60,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
   initialData, // ✅ Accept initial data prop
 }) => {
   // ✅ Initialize showAgreement from initialData if provided
-  const [showAgreement, setShowAgreement] = useState(initialData?.includeInPdf ?? false);
+  const [showAgreement, setShowAgreement] = useState(initialData?.includeInPdf ?? true);
   const [agreementData, setAgreementData] = useState<ServiceAgreementData>(() => {
     // ✅ If initialData is provided, use it; otherwise use defaults
     if (initialData) {
@@ -69,8 +69,8 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
 
     // Default values when creating new agreement
     return {
-      // ✅ NEW: Default to false - only include when checkbox is checked
-      includeInPdf: false,
+      // ✅ CHANGED: Default to true - checkbox is checked by default
+      includeInPdf: true,
       retainDispensers: true, // ✅ CHANGED: Default to checked
       disposeDispensers: false,
       customerContactName: '',

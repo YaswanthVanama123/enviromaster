@@ -352,7 +352,13 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
             setPipelineName(pipelineResult.pipelines[0].value);
           }
           if (pipelineResult.stages?.length > 0) {
-            setStage(pipelineResult.stages[0].value);
+            // ✅ CHANGED: Try to find "Proposal/Price Quote" stage, otherwise use first stage
+            const proposalStage = pipelineResult.stages.find(s =>
+              s.label?.toLowerCase().includes('proposal') ||
+              s.label?.toLowerCase().includes('price quote')
+            );
+            setStage(proposalStage?.value || pipelineResult.stages[0].value);
+            console.log(`✅ Default stage set to: ${proposalStage?.label || pipelineResult.stages[0].label}`);
           }
         } else {
           console.error('Failed to load pipeline options:', pipelineResult.error);
