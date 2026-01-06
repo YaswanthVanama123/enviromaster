@@ -22,6 +22,11 @@ type LocationState = {
   includeDeleted?: boolean; // Support navigation from trash/log downloads
 };
 
+// ⚡ NEW: Detect if user is on mobile device
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
 export default function PDFViewer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -471,7 +476,32 @@ export default function PDFViewer() {
           }}>
             {textContent}
           </pre>
+        ) : isMobileDevice() ? (
+          // ⚡ MOBILE: Use object/embed for better mobile PDF support
+          <object
+            data={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+            type="application/pdf"
+            className="pdf-viewer__iframe"
+            style={{
+              width: '100%',
+              height: '100%',
+              minHeight: '200vh', // ⚡ Make container tall enough to hold multiple pages
+              border: 'none',
+            }}
+          >
+            <embed
+              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+              type="application/pdf"
+              style={{
+                width: '100%',
+                height: '100%',
+                minHeight: '200vh',
+                border: 'none',
+              }}
+            />
+          </object>
         ) : (
+          // ⚡ DESKTOP: Use iframe with standard parameters
           <iframe
             src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1&zoom=page-width`}
             className="pdf-viewer__iframe"
