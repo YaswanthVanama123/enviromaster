@@ -394,11 +394,10 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       ...initialData,
     };
 
-    // ✅ Initialize with global months ONLY if service starts with inputs
-    const isInitiallyActive = (initialData?.podQuantity || 0) > 0;
+    // ✅ FIXED: Always use global contract months if available (not just when initially active)
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 

@@ -183,11 +183,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       ...initial,
     };
 
-    // ✅ Initialize with global months ONLY if service starts with inputs
-    const isInitiallyActive = (initial?.areaSqFt || 0) > 0;
+    // ✅ FIXED: Always use global contract months if available (not just when initially active)
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 

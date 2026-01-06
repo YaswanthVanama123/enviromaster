@@ -745,11 +745,10 @@ export function useRefreshPowerScrubCalc(
       base.minimumVisit = initial.minimumVisit;
     }
 
-    // ✅ Initialize with global months ONLY if service starts with inputs
-    const isInitiallyActive = AREA_KEYS.some(area => (initial as any)?.[area]?.enabled);
+    // ✅ FIXED: Always use global contract months if available (not just when initially active)
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 
