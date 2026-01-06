@@ -580,18 +580,18 @@ export default function ApprovalDocuments() {
         <table className="ad__table">
           <thead>
             <tr>
-              <th className="w-40">
+              <th className="w-40" style={{ background: '#f5f6f8' }}>
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th>Agreement / File Name</th>
-              <th>Type</th>
-              <th>Updated</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th style={{ background: '#f5f6f8' }}>Agreement / File Name</th>
+              <th style={{ background: '#f5f6f8' }}>Type</th>
+              <th style={{ background: '#f5f6f8' }}>Updated</th>
+              <th style={{ background: '#f5f6f8' }}>Status</th>
+              <th style={{ background: '#f5f6f8' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -683,13 +683,14 @@ export default function ApprovalDocuments() {
                     </div>
                   </td>
                   <td>Agreement</td>
-                  <td>{timeAgo(agreement.latestUpdate)}</td>
+                  <td style={{ fontSize: "13px" }}>{timeAgo(agreement.latestUpdate)}</td>
                   {/* <td>
                     <span className={`status-badge status-badge--${getStatusClassName(agreement.agreementStatus)}`}>
                       {STATUS_LABEL[agreement.agreementStatus as FileStatus] || agreement.agreementStatus}
                     </span>
                   </td> */}
                   <td></td>
+                  <td></td> {/* ✅ FIXED: Added Actions column to match table header structure */}
                 </tr>
 
                 {/* Agreement Files - Only show when expanded */}
@@ -732,12 +733,13 @@ export default function ApprovalDocuments() {
                          file.fileType}
                       </span>
                     </td>
-                    <td>{timeAgo(file.updatedAt)}</td>
+                    <td style={{ fontSize: "11px" }}>{timeAgo(file.updatedAt)}</td>
                     <td>
                       <select
                         className="dropdown"
                         value={file.status}
                         onChange={(e) => changeFileStatus(file, e.target.value)}
+                        style={{ fontSize: "11px" }}
                         disabled={savingStatusId === file.id}
                       >
                         {getAvailableStatusesForDropdown(file.status, isInAdminContext).map(status => (

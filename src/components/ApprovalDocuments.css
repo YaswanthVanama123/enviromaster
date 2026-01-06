@@ -126,11 +126,18 @@
 
 .ad__table thead th {
   background: #f5f6f8 !important; /* ✅ FIXED: Ensure consistent background for all columns including Actions */
+  background-color: #f5f6f8 !important; /* ✅ Double ensure with background-color */
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #e0e0e0;
   height: 54px; /* ✅ OPTIMIZED: Explicit height for header */
   white-space: nowrap; /* ✅ Only prevent wrapping in headers */
+}
+
+/* ✅ FIXED: Explicitly target Actions column header to ensure it matches other headers */
+.ad__table thead tr th:last-child {
+  background: #f5f6f8 !important;
+  background-color: #f5f6f8 !important;
 }
 
 .ad__table tr:hover td {
