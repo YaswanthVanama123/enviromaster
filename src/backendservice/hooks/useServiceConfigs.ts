@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { serviceConfigApi } from "../api";
 import type { ServiceConfig, CreateServiceConfigPayload, UpdateServiceConfigPayload } from "../types/serviceConfig.types";
+import type { ServiceAgreementTemplate } from "../api/serviceAgreementTemplateApi";
 
 export function useServiceConfigs(serviceId?: string) {
   const [configs, setConfigs] = useState<ServiceConfig[]>([]);
@@ -105,11 +106,13 @@ export function useActiveServiceConfig(serviceId?: string) {
 }
 
 /**
- * Hook to fetch all service pricing data (both active and inactive).
+ * ⚡ OPTIMIZED: Hook to fetch all service pricing data + service agreement template in a single API call.
  * This replaces static fallback values for inactive services with real backend data.
+ * Also provides service agreement template to avoid separate fetches.
  */
 export function useAllServicePricing() {
   const [pricingData, setPricingData] = useState<ServiceConfig[]>([]);
+  const [templateData, setTemplateData] = useState<ServiceAgreementTemplate | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,14 +121,18 @@ export function useAllServicePricing() {
     setError(null);
 
     try {
-      const response = await serviceConfigApi.getAllPricing();
+      // ⚡ OPTIMIZED: Fetch both service configs and template in one API call
+      const combinedData = await serviceConfigApi.getAllPricing();
 
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setPricingData(response.data);
-      }
+      console.log('⚡ [USE-ALL-SERVICE-PRICING] Received combined data:', {
+        serviceConfigs: combinedData.serviceConfigs?.length || 0,
+        hasTemplate: !!combinedData.serviceAgreementTemplate
+      });
+
+      setPricingData(combinedData.serviceConfigs || []);
+      setTemplateData(combinedData.serviceAgreementTemplate || null);
     } catch (err) {
+      console.error('❌ [USE-ALL-SERVICE-PRICING] Error:', err);
       setError(err instanceof Error ? err.message : "Failed to fetch pricing data");
     }
 
@@ -143,6 +150,7 @@ export function useAllServicePricing() {
 
   return {
     pricingData,
+    templateData, // ⚡ NEW: Also return template data
     loading,
     error,
     refetch: fetchAllPricing,

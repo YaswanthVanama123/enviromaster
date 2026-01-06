@@ -10,6 +10,7 @@ import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
 import EmailTemplateManager from "./admin/EmailTemplateManager";
+import ServiceAgreementTemplateManager from "./admin/ServiceAgreementTemplateManager";
 import AgreementTimelineBadge from "./AgreementTimelineBadge";
 import TrashView from "./TrashView"; // ✅ NEW: Import TrashView component
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,12 +28,13 @@ import {
   faFolderOpen,
   faChevronRight,
   faEnvelope,
-  faTrash
+  faTrash,
+  faFileContract
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
 // type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details" | "email-template";
-type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template" | "trash";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template" | "service-agreement-template" | "trash";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -78,7 +80,7 @@ export default function AdminPanel() {
     if (!tab) return "dashboard";
 
     // const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details", "email-template"];
-    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template", "trash"];
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template", "service-agreement-template", "trash"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
 
@@ -450,6 +452,8 @@ export default function AdminPanel() {
         return "Pricing Details";
       case "email-template":
         return "Email Template";
+      case "service-agreement-template":
+        return "Service Agreement Template";
       case "trash":
         return "Trash";
       default:
@@ -575,6 +579,13 @@ export default function AdminPanel() {
         >
           <FontAwesomeIcon icon={faEnvelope} size="lg" />
           Email Template
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "service-agreement-template" ? "active" : ""}`}
+          onClick={() => handleTabChange("service-agreement-template")}
+        >
+          <FontAwesomeIcon icon={faFileContract} size="lg" />
+          Service Agreement
         </button>
       </nav>
 
@@ -1039,6 +1050,12 @@ export default function AdminPanel() {
         {activeTab === "email-template" && (
           <div className="tab-content-full">
             <EmailTemplateManager />
+          </div>
+        )}
+
+        {activeTab === "service-agreement-template" && (
+          <div className="tab-content-full">
+            <ServiceAgreementTemplateManager />
           </div>
         )}
 

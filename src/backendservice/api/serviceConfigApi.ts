@@ -6,6 +6,13 @@ import type {
   CreateServiceConfigPayload,
   UpdateServiceConfigPayload,
 } from "../types/serviceConfig.types";
+import type { ServiceAgreementTemplate } from "./serviceAgreementTemplateApi";
+
+// ⚡ NEW: Combined response type for optimized pricing + template fetch
+export interface ServicePricingWithTemplateResponse {
+  serviceConfigs: ServiceConfig[];
+  serviceAgreementTemplate: ServiceAgreementTemplate;
+}
 
 export const serviceConfigApi = {
   /**
@@ -48,18 +55,19 @@ export const serviceConfigApi = {
   },
 
   /**
-   * Get all service pricing data (both active and inactive)
+   * ⚡ OPTIMIZED: Get all service pricing data + service agreement template
    * This provides complete pricing information for all services,
    * allowing inactive services to use real backend data instead of static fallbacks
+   * ALSO includes service agreement template to reduce API calls
    */
   async getAllPricing() {
     const endpoint = "/api/service-configs/pricing";
-    console.log(`🌐 [API] GET ${endpoint} (fetching all service pricing data)`);
+    console.log(`⚡ [API] GET ${endpoint} (fetching all service pricing data + service agreement template)`);
 
     try {
-      const result = await apiClient.get<ServiceConfig[]>(endpoint);
-      console.log(`✅ [API] Response from ${endpoint}: ${result.length} services with pricing data`);
-      return result;
+      const result = await apiClient.get<ServicePricingWithTemplateResponse>(endpoint);
+      console.log(`✅ [API] Response from ${endpoint}: ${result.data?.serviceConfigs?.length} services + service agreement template`);
+      return result.data!;
     } catch (error) {
       console.error(`❌ [API] Error fetching ${endpoint}:`, error);
       throw error;
