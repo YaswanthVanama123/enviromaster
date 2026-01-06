@@ -713,10 +713,10 @@ export default function Home() {
                   })}
                 </div>
                 <div className="home__chart-legend">
-                  <div className="home__legend-item">
+                  {/* <div className="home__legend-item">
                     <span className="home__legend-dot home__legend-dot--done"></span>
                     Done
-                  </div>
+                  </div> */}
                   <div className="home__legend-item">
                     <span className="home__legend-dot home__legend-dot--pending"></span>
                     Pending
