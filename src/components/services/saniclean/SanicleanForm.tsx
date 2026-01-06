@@ -1949,14 +1949,6 @@ export const SanicleanForm: React.FC<
               name="contractMonths"
               value={contractMonths}
               onChange={onChange}
-              style={{
-                borderBottom: '2px solid #000',
-                borderTop: 'none',
-                borderLeft: 'none',
-                borderRight: 'none',
-                backgroundColor: 'transparent',
-                padding: '4px 20px 4px 4px'
-              }}
             >
               {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
                 <option key={m} value={m}>
