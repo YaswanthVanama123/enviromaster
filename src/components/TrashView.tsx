@@ -170,6 +170,7 @@ export default function TrashView() {
           fileName: file.title,
           documentType: documentType, // ✅ FIXED: Pass documentType for correct API selection
           watermark: watermark,
+          includeDeleted: true, // ✅ FIXED: Include deleted files for trash view (required for log files)
           source: "trash"
         }
       });
