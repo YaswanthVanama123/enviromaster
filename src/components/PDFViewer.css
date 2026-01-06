@@ -139,21 +139,22 @@
   justify-content: center;
   align-items: flex-start; /* ⚡ CHANGED: center → flex-start to allow natural scrolling */
   padding: 16px;
-  overflow-y: auto; /* ⚡ Enable vertical scrolling */
+  overflow-y: scroll; /* ⚡ Enable vertical scrolling */
   overflow-x: hidden; /* ⚡ Prevent horizontal scroll */
   -webkit-overflow-scrolling: touch; /* ⚡ Smooth scrolling on iOS */
+  position: relative;
 }
 
-.pdf-viewer__iframe {
+.pdf-viewer__iframe,
+.pdf-viewer__iframe object,
+.pdf-viewer__iframe embed {
   width: 100%;
   height: 100%; /* ⚡ Full height of container */
   min-height: 100vh; /* ⚡ Minimum viewport height to ensure scrolling works */
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  /* ⚡ Allow iframe internal scrolling */
-  overflow: scroll;
-  -webkit-overflow-scrolling: touch;
+  display: block;
 }
 
 .pdf-viewer__loading,
@@ -294,15 +295,17 @@
     overflow-y: scroll;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    height: calc(100vh - 170px); /* ⚡ Fixed height to enable scrolling */
+    height: auto; /* ⚡ Let content determine height */
+    min-height: calc(100vh - 170px);
   }
 
-  .pdf-viewer__iframe {
+  .pdf-viewer__iframe,
+  .pdf-viewer__iframe object,
+  .pdf-viewer__iframe embed {
     /* ⚡ ENHANCED: Full height to enable internal PDF scrolling */
-    height: 100%;
-    min-height: calc(100vh - 180px);
+    height: auto;
+    min-height: 150vh; /* ⚡ Taller than viewport to allow scrolling */
     width: 100%;
-    overflow: scroll; /* ⚡ Enable iframe internal scrolling */
   }
 
   .pdf-viewer__error h2 {
@@ -370,15 +373,17 @@
     overflow-y: scroll;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    height: calc(100vh - 180px); /* ⚡ Fixed height to enable scrolling */
+    height: auto; /* ⚡ Let content determine height */
+    min-height: calc(100vh - 180px);
   }
 
-  .pdf-viewer__iframe {
+  .pdf-viewer__iframe,
+  .pdf-viewer__iframe object,
+  .pdf-viewer__iframe embed {
     /* ⚡ ENHANCED: Full height to enable internal PDF scrolling */
-    height: 100%;
-    min-height: calc(100vh - 200px);
+    height: auto;
+    min-height: 150vh; /* ⚡ Taller than viewport to allow scrolling */
     width: 100%;
-    overflow: scroll; /* ⚡ Enable iframe internal scrolling */
   }
 
   .pdf-viewer__loading,
@@ -460,16 +465,18 @@
     overflow-y: scroll;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    height: calc(100vh - 190px); /* ⚡ Fixed height to enable scrolling */
+    height: auto; /* ⚡ Let content determine height */
+    min-height: calc(100vh - 190px);
   }
 
-  .pdf-viewer__iframe {
+  .pdf-viewer__iframe,
+  .pdf-viewer__iframe object,
+  .pdf-viewer__iframe embed {
     border-radius: 6px;
     /* ⚡ ENHANCED: Full height to enable internal PDF scrolling */
-    height: 100%;
-    min-height: calc(100vh - 220px);
+    height: auto;
+    min-height: 150vh; /* ⚡ Taller than viewport to allow scrolling */
     width: 100%;
-    overflow: scroll; /* ⚡ Enable iframe internal scrolling */
   }
 
   .pdf-viewer__loading,
