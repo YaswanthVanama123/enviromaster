@@ -184,9 +184,10 @@ type DollarCellProps = {
   value: number | "" | null | undefined;
   onChange?: (value: number | "") => void;
   readOnly?: boolean;
+  backgroundColor?: string; // ✅ NEW: Support custom background color for highlighting overrides
 };
 
-const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }: DollarCellProps) {
+const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, backgroundColor }: DollarCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
@@ -250,7 +251,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
   const defaultValue = cleanValue(value);
 
   return (
-    <div className="dcell">
+    <div className="dcell" style={{ backgroundColor: backgroundColor || 'white' }}>
       <span className="dollarColor">$</span>
       <input
         ref={inputRef}
@@ -265,8 +266,10 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly }:
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Only re-render if value actually changed
-  return prevProps.value === nextProps.value && prevProps.readOnly === nextProps.readOnly;
+  // Only re-render if value or backgroundColor actually changed
+  return prevProps.value === nextProps.value &&
+         prevProps.readOnly === nextProps.readOnly &&
+         prevProps.backgroundColor === nextProps.backgroundColor;
 });
 
 function PlainCell({ value }: { value?: string | number | null }) {
@@ -1758,6 +1761,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             onChange={(val) =>
                               updateRowField("products", rowProduct.id, {
                                 qty: val === "" ? undefined : (val as number),
+                                totalOverride: undefined, // ✅ Clear total override when qty changes
                               })
                             }
                           />
@@ -1770,10 +1774,20 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                                 : rowProduct.amountOverride ?? pProduct?.basePrice?.amount
                               ) ?? ""
                             }
+                            backgroundColor={
+                              (() => {
+                                const catalogPrice = pProduct?.basePrice?.amount ?? 0;
+                                const currentPrice = (pProduct?.familyKey === "paper"
+                                  ? rowProduct.unitPriceOverride ?? catalogPrice
+                                  : rowProduct.amountOverride ?? catalogPrice);
+                                return (currentPrice !== catalogPrice && catalogPrice !== 0) ? '#fffacd' : 'white';
+                              })()
+                            }
                             onChange={(val) => {
                               const field = pProduct?.familyKey === "paper" ? "unitPriceOverride" : "amountOverride";
                               updateRowField("products", rowProduct.id, {
                                 [field]: val === "" ? undefined : (val as number),
+                                totalOverride: undefined, // ✅ Clear total override when price changes
                               });
                             }}
                           />
@@ -1797,6 +1811,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                                 : getBigAmount(rowProduct, pProduct)
                               ) * getQty(rowProduct))) || ""
                             }
+                            backgroundColor={(() => {
+                              const catalogPrice = pProduct?.basePrice?.amount ?? 0;
+                              const qty = getQty(rowProduct);
+                              const calculatedTotal = catalogPrice * qty;
+                              const currentTotal = rowProduct.totalOverride ?? calculatedTotal;
+                              return (currentTotal !== calculatedTotal && calculatedTotal !== 0) ? '#fffacd' : 'white';
+                            })()}
                             onChange={(val) =>
                               updateRowField("products", rowProduct.id, {
                                 totalOverride:
@@ -1867,6 +1888,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             onChange={(val) =>
                               updateRowField("dispensers", rowDisp.id, {
                                 qty: val === "" ? undefined : (val as number),
+                                totalOverride: undefined, // ✅ Clear total override when qty changes
                               })
                             }
                           />
@@ -1878,6 +1900,11 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                               pDisp?.warrantyPricePerUnit?.amount ??
                               ""
                             }
+                            backgroundColor={(() => {
+                              const catalogPrice = pDisp?.warrantyPricePerUnit?.amount ?? 0;
+                              const currentPrice = rowDisp.warrantyPriceOverride ?? catalogPrice;
+                              return (currentPrice !== catalogPrice && catalogPrice !== 0) ? '#fffacd' : 'white';
+                            })()}
                             onChange={(val) =>
                               updateRowField("dispensers", rowDisp.id, {
                                 warrantyPriceOverride:
@@ -1893,10 +1920,16 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                               pDisp?.basePrice?.amount ??
                               ""
                             }
+                            backgroundColor={(() => {
+                              const catalogPrice = pDisp?.basePrice?.amount ?? 0;
+                              const currentPrice = rowDisp.replacementPriceOverride ?? catalogPrice;
+                              return (currentPrice !== catalogPrice && catalogPrice !== 0) ? '#fffacd' : 'white';
+                            })()}
                             onChange={(val) =>
                               updateRowField("dispensers", rowDisp.id, {
                                 replacementPriceOverride:
                                   val === "" ? undefined : (val as number),
+                                totalOverride: undefined, // ✅ Clear total override when replacement price changes
                               })
                             }
                           />
@@ -1918,6 +1951,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                               getDispReplacementPrice(rowDisp, pDisp) *
                                 getQty(rowDisp)) || ""
                             }
+                            backgroundColor={(() => {
+                              const catalogPrice = pDisp?.basePrice?.amount ?? 0;
+                              const qty = getQty(rowDisp);
+                              const calculatedTotal = catalogPrice * qty;
+                              const currentTotal = rowDisp.totalOverride ?? calculatedTotal;
+                              return (currentTotal !== calculatedTotal && calculatedTotal !== 0) ? '#fffacd' : 'white';
+                            })()}
                             onChange={(val) =>
                               updateRowField("dispensers", rowDisp.id, {
                                 totalOverride:
@@ -2141,6 +2181,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     onChange={(val) =>
                       updateRowField("products", row.id, {
                         qty: val === "" ? undefined : (val as number),
+                        totalOverride: undefined, // ✅ Clear total override when qty changes
                       })
                     }
                   />
@@ -2152,10 +2193,18 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         ? (row.unitPriceOverride ?? product?.basePrice?.amount ?? "")
                         : (row.amountOverride ?? product?.basePrice?.amount ?? "")
                     }
+                    backgroundColor={(() => {
+                      const catalogPrice = product?.basePrice?.amount ?? 0;
+                      const currentPrice = isSmallProduct
+                        ? (row.unitPriceOverride ?? catalogPrice)
+                        : (row.amountOverride ?? catalogPrice);
+                      return (currentPrice !== catalogPrice && catalogPrice !== 0) ? '#fffacd' : 'white';
+                    })()}
                     onChange={(val) => {
                       const field = isSmallProduct ? "unitPriceOverride" : "amountOverride";
                       updateRowField("products", row.id, {
                         [field]: val === "" ? undefined : (val as number),
+                        totalOverride: undefined, // ✅ Clear total override when price changes
                       });
                     }}
                   />
@@ -2179,6 +2228,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         : getBigAmount(row, product) * getQty(row)
                       )) || ""
                     }
+                    backgroundColor={(() => {
+                      const catalogPrice = product?.basePrice?.amount ?? 0;
+                      const qty = getQty(row);
+                      const calculatedTotal = catalogPrice * qty;
+                      const currentTotal = row.totalOverride ?? calculatedTotal;
+                      return (currentTotal !== calculatedTotal && calculatedTotal !== 0) ? '#fffacd' : 'white';
+                    })()}
                     onChange={(val) =>
                       updateRowField("products", row.id, {
                         totalOverride: val === "" ? undefined : (val as number),
@@ -2203,6 +2259,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   onChange={(val) =>
                     updateRowField("dispensers", row.id, {
                       qty: val === "" ? undefined : (val as number),
+                      totalOverride: undefined, // ✅ Clear total override when qty changes
                     })
                   }
                 />
@@ -2214,6 +2271,11 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     product?.warrantyPricePerUnit?.amount ??
                     ""
                   }
+                  backgroundColor={(() => {
+                    const catalogPrice = product?.warrantyPricePerUnit?.amount ?? 0;
+                    const currentPrice = row.warrantyPriceOverride ?? catalogPrice;
+                    return (currentPrice !== catalogPrice && catalogPrice !== 0) ? '#fffacd' : 'white';
+                  })()}
                   onChange={(val) =>
                     updateRowField("dispensers", row.id, {
                       warrantyPriceOverride:
@@ -2229,10 +2291,16 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     product?.basePrice?.amount ??
                     ""
                   }
+                  backgroundColor={(() => {
+                    const catalogPrice = product?.basePrice?.amount ?? 0;
+                    const currentPrice = row.replacementPriceOverride ?? catalogPrice;
+                    return (currentPrice !== catalogPrice && catalogPrice !== 0) ? '#fffacd' : 'white';
+                  })()}
                   onChange={(val) =>
                     updateRowField("dispensers", row.id, {
                       replacementPriceOverride:
                         val === "" ? undefined : (val as number),
+                      totalOverride: undefined, // ✅ Clear total override when replacement price changes
                     })
                   }
                 />
@@ -2253,6 +2321,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     row.totalOverride ??
                     getDispReplacementPrice(row, product) * getQty(row)
                   }
+                  backgroundColor={(() => {
+                    const catalogPrice = product?.basePrice?.amount ?? 0;
+                    const qty = getQty(row);
+                    const calculatedTotal = catalogPrice * qty;
+                    const currentTotal = row.totalOverride ?? calculatedTotal;
+                    return (currentTotal !== calculatedTotal && calculatedTotal !== 0) ? '#fffacd' : 'white';
+                  })()}
                   onChange={(val) =>
                     updateRowField("dispensers", row.id, {
                       totalOverride: val === "" ? undefined : (val as number),
