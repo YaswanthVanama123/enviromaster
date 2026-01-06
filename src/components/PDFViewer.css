@@ -133,29 +133,59 @@
 }
 /* End Watermark Toggle Styles */
 
+/* ⚡ NEW: Mobile PDF Viewer Message */
+.pdf-viewer__mobile-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.mobile-pdf-icon {
+  margin-bottom: 20px;
+}
+
+.pdf-viewer__mobile-message h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0 0 16px 0;
+}
+
+.pdf-viewer__mobile-message p {
+  font-size: 16px;
+  color: #d1d5db;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.mobile-pdf-note {
+  font-size: 14px !important;
+  color: #9ca3af !important;
+  font-style: italic;
+}
+
 .pdf-viewer__container {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* ⚡ CHANGED: center → flex-start to allow natural scrolling */
+  align-items: center; /* ⚡ FIXED: Back to center for proper alignment */
   padding: 16px;
-  overflow-y: scroll; /* ⚡ Enable vertical scrolling */
-  overflow-x: hidden; /* ⚡ Prevent horizontal scroll */
-  -webkit-overflow-scrolling: touch; /* ⚡ Smooth scrolling on iOS */
-  position: relative;
+  overflow: auto;
 }
 
-.pdf-viewer__iframe,
-.pdf-viewer__iframe object,
-.pdf-viewer__iframe embed {
+.pdf-viewer__iframe {
   width: 100%;
-  height: 100%; /* ⚡ Full height of container */
-  min-height: 100vh; /* ⚡ Minimum viewport height to ensure scrolling works */
+  height: 100%;
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  display: block;
 }
+
 
 .pdf-viewer__loading,
 .pdf-viewer__error {
@@ -291,21 +321,14 @@
 
   .pdf-viewer__container {
     padding: 14px;
-    /* ⚡ ENHANCED: Better scrolling support on tablets */
-    overflow-y: scroll;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    height: auto; /* ⚡ Let content determine height */
-    min-height: calc(100vh - 170px);
   }
 
-  .pdf-viewer__iframe,
-  .pdf-viewer__iframe object,
-  .pdf-viewer__iframe embed {
-    /* ⚡ ENHANCED: Full height to enable internal PDF scrolling */
-    height: auto;
-    min-height: 150vh; /* ⚡ Taller than viewport to allow scrolling */
-    width: 100%;
+  .pdf-viewer__mobile-message h3 {
+    font-size: 22px;
+  }
+
+  .pdf-viewer__mobile-message p {
+    font-size: 15px;
   }
 
   .pdf-viewer__error h2 {
@@ -369,21 +392,18 @@
 
   .pdf-viewer__container {
     padding: 12px;
-    /* ⚡ ENHANCED: Better scrolling support on mobile */
-    overflow-y: scroll;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    height: auto; /* ⚡ Let content determine height */
-    min-height: calc(100vh - 180px);
   }
 
-  .pdf-viewer__iframe,
-  .pdf-viewer__iframe object,
-  .pdf-viewer__iframe embed {
-    /* ⚡ ENHANCED: Full height to enable internal PDF scrolling */
-    height: auto;
-    min-height: 150vh; /* ⚡ Taller than viewport to allow scrolling */
-    width: 100%;
+  .pdf-viewer__mobile-message {
+    padding: 30px 20px;
+  }
+
+  .pdf-viewer__mobile-message h3 {
+    font-size: 20px;
+  }
+
+  .pdf-viewer__mobile-message p {
+    font-size: 14px;
   }
 
   .pdf-viewer__loading,
@@ -461,22 +481,22 @@
 
   .pdf-viewer__container {
     padding: 10px;
-    /* ⚡ ENHANCED: Better scrolling support on small mobile */
-    overflow-y: scroll;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    height: auto; /* ⚡ Let content determine height */
-    min-height: calc(100vh - 190px);
   }
 
-  .pdf-viewer__iframe,
-  .pdf-viewer__iframe object,
-  .pdf-viewer__iframe embed {
-    border-radius: 6px;
-    /* ⚡ ENHANCED: Full height to enable internal PDF scrolling */
-    height: auto;
-    min-height: 150vh; /* ⚡ Taller than viewport to allow scrolling */
-    width: 100%;
+  .pdf-viewer__mobile-message {
+    padding: 24px 16px;
+  }
+
+  .pdf-viewer__mobile-message h3 {
+    font-size: 18px;
+  }
+
+  .pdf-viewer__mobile-message p {
+    font-size: 13px;
+  }
+
+  .mobile-pdf-note {
+    font-size: 12px !important;
   }
 
   .pdf-viewer__loading,

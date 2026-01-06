@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle, faLightbulb, faFileAlt, faPencilAlt, faDownload, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle, faLightbulb, faFileAlt, faPencilAlt, faDownload, faSpinner, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "./admin/Toast";
 import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
@@ -327,6 +327,14 @@ export default function PDFViewer() {
     }
   };
 
+  // ⚡ FIXED: Open PDF in new tab for mobile devices (better experience)
+  const handleOpenPdfInNewTab = () => {
+    if (pdfUrl) {
+      // Open blob URL in new tab - mobile browsers handle this better than iframe
+      window.open(pdfUrl, '_blank');
+    }
+  };
+
   if (loading) {
     return (
       <div className="pdf-viewer">
@@ -477,40 +485,47 @@ export default function PDFViewer() {
             {textContent}
           </pre>
         ) : isMobileDevice() ? (
-          // ⚡ MOBILE: Use object/embed for better mobile PDF support
-          <object
-            data={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-            type="application/pdf"
-            className="pdf-viewer__iframe"
-            style={{
-              width: '100%',
-              height: '100%',
-              minHeight: '200vh', // ⚡ Make container tall enough to hold multiple pages
-              border: 'none',
-            }}
-          >
-            <embed
-              src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-              type="application/pdf"
+          // ⚡ FIXED: Mobile devices - Show "Open PDF" button instead of embedded viewer
+          // iOS Safari doesn't handle blob URLs in iframes well, causing "page 1 only" issue
+          <div className="pdf-viewer__mobile-message">
+            <div className="mobile-pdf-icon">
+              <FontAwesomeIcon icon={faFileAlt} size="3x" style={{ color: '#3b82f6' }} />
+            </div>
+            <h3>PDF Ready to View</h3>
+            <p>
+              For the best viewing experience on mobile devices,
+              open the PDF in your browser's native viewer.
+            </p>
+            <button
+              onClick={handleOpenPdfInNewTab}
+              className="pdf-viewer__btn pdf-viewer__btn--primary"
               style={{
-                width: '100%',
-                height: '100%',
-                minHeight: '200vh',
-                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '16px',
+                padding: '14px 24px',
+                margin: '20px auto 10px',
               }}
-            />
-          </object>
+            >
+              <FontAwesomeIcon icon={faExternalLinkAlt} />
+              Open PDF in Browser
+            </button>
+            <p className="mobile-pdf-note">
+              This will open the full PDF with all pages in a new tab.
+            </p>
+          </div>
         ) : (
-          // ⚡ DESKTOP: Use iframe with standard parameters
+          // ⚡ DESKTOP: Show embedded iframe viewer
+          // FIXED: Removed page=1 lock, enabled toolbar for navigation
           <iframe
-            src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&page=1&zoom=page-width`}
+            src={`${pdfUrl}#toolbar=1&navpanes=0`}
             className="pdf-viewer__iframe"
             title="PDF Viewer"
             style={{
               width: '100%',
               height: '100%',
               border: 'none',
-              overflow: 'auto',
             }}
           />
         )}
