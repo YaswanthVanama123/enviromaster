@@ -222,7 +222,7 @@ export interface SavedFileDetailsResponse {
   };
 }
 
-// ✅ ENHANCED: Version logs interfaces with overwriting support
+// ✅ ENHANCED: Version logs interfaces with overwriting support and cumulative history
 export interface VersionLogRequest {
   agreementId: string;
   versionId: string;
@@ -234,16 +234,61 @@ export interface VersionLogRequest {
   // ✅ NEW: Overwriting support for smart log management
   overwriteExisting?: boolean;
   overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
+  // ✅ NEW: Cumulative change history support
+  currentChanges?: Array<{
+    productKey: string;
+    productName: string;
+    productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
+    fieldType: string;
+    fieldDisplayName: string;
+    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+    // Numeric changes
+    originalValue?: number;
+    newValue?: number;
+    changeAmount?: number;
+    changePercentage?: number;
+    // ✅ NEW: Text changes
+    originalText?: string;
+    newText?: string;
+    quantity?: number;
+    frequency?: string;
+    timestamp: string;
+  }>;
+  allPreviousChanges?: Array<{
+    productKey: string;
+    productName: string;
+    productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
+    fieldType: string;
+    fieldDisplayName: string;
+    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+    // Numeric changes
+    originalValue?: number;
+    newValue?: number;
+    changeAmount?: number;
+    changePercentage?: number;
+    // ✅ NEW: Text changes
+    originalText?: string;
+    newText?: string;
+    quantity?: number;
+    frequency?: string;
+    timestamp: string;
+  }>;
+  // Keep for backward compatibility
   changes?: Array<{
     productKey: string;
     productName: string;
-    productType: 'product' | 'dispenser' | 'service';
+    productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    originalValue: number;
-    newValue: number;
-    changeAmount: number;
-    changePercentage: number;
+    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+    // Numeric changes
+    originalValue?: number;
+    newValue?: number;
+    changeAmount?: number;
+    changePercentage?: number;
+    // ✅ NEW: Text changes
+    originalText?: string;
+    newText?: string;
     quantity?: number;
     frequency?: string;
     timestamp: string;
@@ -262,7 +307,7 @@ export interface VersionLogResponse {
   } | null;
 }
 
-// ✅ SIMPLIFIED: Log document structure (separate collection)
+// ✅ SIMPLIFIED: Log document structure (separate collection) with cumulative history support
 export interface LogDocument {
   _id: string;
   agreementId: string;
@@ -276,16 +321,61 @@ export interface LogDocument {
   totalChanges: number;
   totalPriceImpact: number;
   hasSignificantChanges: boolean;
+  // ✅ NEW: Cumulative change history fields
+  currentChanges?: Array<{
+    productKey: string;
+    productName: string;
+    productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
+    fieldType: string;
+    fieldDisplayName: string;
+    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+    // Numeric changes
+    originalValue?: number;
+    newValue?: number;
+    changeAmount?: number;
+    changePercentage?: number;
+    // ✅ NEW: Text changes
+    originalText?: string;
+    newText?: string;
+    quantity?: number;
+    frequency?: string;
+    timestamp: string;
+  }>;
+  allPreviousChanges?: Array<{
+    productKey: string;
+    productName: string;
+    productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
+    fieldType: string;
+    fieldDisplayName: string;
+    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+    // Numeric changes
+    originalValue?: number;
+    newValue?: number;
+    changeAmount?: number;
+    changePercentage?: number;
+    // ✅ NEW: Text changes
+    originalText?: string;
+    newText?: string;
+    quantity?: number;
+    frequency?: string;
+    timestamp: string;
+  }>;
+  // Keep for backward compatibility
   changes: Array<{
     productKey: string;
     productName: string;
-    productType: 'product' | 'dispenser' | 'service';
+    productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    originalValue: number;
-    newValue: number;
-    changeAmount: number;
-    changePercentage: number;
+    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+    // Numeric changes
+    originalValue?: number;
+    newValue?: number;
+    changeAmount?: number;
+    changePercentage?: number;
+    // ✅ NEW: Text changes
+    originalText?: string;
+    newText?: string;
     quantity?: number;
     frequency?: string;
     timestamp: string;

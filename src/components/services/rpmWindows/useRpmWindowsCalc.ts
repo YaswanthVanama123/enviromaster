@@ -227,7 +227,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     const isInitiallyActive = (initial?.smallQty || 0) + (initial?.mediumQty || 0) + (initial?.largeQty || 0) > 0;
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 

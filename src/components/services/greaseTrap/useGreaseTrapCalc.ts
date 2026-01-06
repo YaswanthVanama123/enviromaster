@@ -49,7 +49,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     const isInitiallyActive = (initialData?.numberOfTraps || 0) > 0;
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 

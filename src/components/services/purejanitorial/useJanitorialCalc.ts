@@ -286,10 +286,24 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     return total;
   }, [customFields]);
 
-  const [form, setForm] = useState<JanitorialFormState>(() => ({
-    ...DEFAULT_FORM_STATE,
-    ...initialData,
-  }));
+  const [form, setForm] = useState<JanitorialFormState>(() => {
+    const baseForm = {
+      ...DEFAULT_FORM_STATE,
+      ...initialData,
+    };
+
+    // ✅ FIXED: Always use global contract months if available (not just when initially active)
+    const defaultContractMonths = initialData?.contractMonths
+      ? initialData.contractMonths
+      : servicesContext?.globalContractMonths
+        ? servicesContext.globalContractMonths
+        : cfg.minContractMonths ?? 12;
+
+    return {
+      ...baseForm,
+      contractMonths: defaultContractMonths,
+    };
+  });
 
   // ✅ State to store ALL backend config (NO hardcoded values in calculations)
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);

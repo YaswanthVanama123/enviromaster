@@ -898,7 +898,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     // ✅ NEW: Use global contract months as default if available, no initial value provided, AND service is active
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 

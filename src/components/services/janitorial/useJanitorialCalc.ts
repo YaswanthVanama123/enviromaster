@@ -104,7 +104,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     const isInitiallyActive = (initial?.baseHours || 0) > 0;
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : 12;
 

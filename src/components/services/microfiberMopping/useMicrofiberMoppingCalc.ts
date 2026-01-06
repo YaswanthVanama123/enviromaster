@@ -198,7 +198,7 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
 
   // Defaults
   frequency: cfg.defaultFrequency,
-  contractTermMonths: 12,
+  contractTermMonths: 36,
 
   hasExistingSaniService: true,
 
@@ -288,7 +288,7 @@ export function useMicrofiberMoppingCalc(
     // ✅ Only use global contract months if service starts active AND no initial value provided
     const defaultContractMonths = initialForm?.contractTermMonths
       ? initialForm.contractTermMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : DEFAULT_FORM.contractTermMonths;
 

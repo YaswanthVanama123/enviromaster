@@ -213,18 +213,14 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
                                (initialData?.greaseTrapCount || 0) +
                                (initialData?.greenDrainCount || 0) +
                                (initialData?.plumbingDrainCount || 0);
-    const isInitiallyActive = initialDrainCount > 0;
-
-    // ✅ Only use global contract months if service starts active AND no initial value provided
+    // ✅ FIXED: Always use global contract months if available (not just when initially active)
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : DEFAULT_FOAMING_DRAIN_FORM_STATE.contractMonths;
 
     console.log(`📅 [FOAMING-DRAIN-INIT] Initializing contract months:`, {
-      initialDrainCount,
-      isInitiallyActive,
       globalContractMonths: servicesContext?.globalContractMonths,
       defaultContractMonths,
       hasInitialValue: !!initialData?.contractMonths

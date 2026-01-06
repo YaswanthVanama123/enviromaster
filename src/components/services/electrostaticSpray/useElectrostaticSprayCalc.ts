@@ -192,7 +192,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     const isInitiallyActive = (initialData?.roomCount || 0) > 0 || (initialData?.squareFeet || 0) > 0;
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : cfg.minContractMonths;
 

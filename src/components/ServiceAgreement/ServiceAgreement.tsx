@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './ServiceAgreement.css';
 import logo from "../../assets/em-logo.png";
+import { addTextChange } from '../../utils/fileLogger';
 
 interface ServiceAgreementProps {
   /** Optional callback so the parent form can capture the agreement fields. */
@@ -70,7 +71,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
     return {
       // ✅ NEW: Default to false - only include when checkbox is checked
       includeInPdf: false,
-      retainDispensers: false,
+      retainDispensers: true, // ✅ CHANGED: Default to checked
       disposeDispensers: false,
       customerContactName: '',
       customerSignature: '',
@@ -106,6 +107,27 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
       // pageNumberText: "Page #2",
     };
   });
+
+  // ✅ NEW: Track original term values for change logging
+  const originalTermsRef = useRef<Record<string, string>>({});
+
+  // Initialize original terms on first render
+  useEffect(() => {
+    if (Object.keys(originalTermsRef.current).length === 0) {
+      originalTermsRef.current = {
+        term1: agreementData.term1,
+        term2: agreementData.term2,
+        term3: agreementData.term3,
+        term4: agreementData.term4,
+        term5: agreementData.term5,
+        term6: agreementData.term6,
+        term7: agreementData.term7,
+        noteText: agreementData.noteText,
+        titleText: agreementData.titleText,
+        subtitleText: agreementData.subtitleText,
+      };
+    }
+  }, []); // Only run once on mount
 
   const prevDataRef = useRef<string>('');
 
@@ -146,6 +168,49 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
   };
 
   const handleTextEdit = (field: keyof ServiceAgreementData, value: string) => {
+    // ✅ NEW: Log text changes for agreement terms
+    const fieldsToTrack = ['term1', 'term2', 'term3', 'term4', 'term5', 'term6', 'term7', 'noteText', 'titleText', 'subtitleText'];
+
+    if (fieldsToTrack.includes(field)) {
+      const originalValue = originalTermsRef.current[field] || '';
+
+      // Only log if the value actually changed
+      if (originalValue !== value && value.trim().length > 0) {
+        const fieldDisplayNames: Record<string, string> = {
+          term1: 'Agreement Term 1 (Property Ownership)',
+          term2: 'Agreement Term 2 (Promise of Good Service)',
+          term3: 'Agreement Term 3 (Payment Terms)',
+          term4: 'Agreement Term 4 (Indemnification)',
+          term5: 'Agreement Term 5 (Expiration/Termination)',
+          term6: 'Agreement Term 6 (Install Warranty)',
+          term7: 'Agreement Term 7 (Sale of Business)',
+          noteText: 'Agreement Note Text',
+          titleText: 'Agreement Title',
+          subtitleText: 'Agreement Subtitle',
+        };
+
+        console.log(`📝 [SERVICE-AGREEMENT] Text change detected for ${field}:`, {
+          from: originalValue.substring(0, 100) + (originalValue.length > 100 ? '...' : ''),
+          to: value.substring(0, 100) + (value.length > 100 ? '...' : ''),
+        });
+
+        addTextChange({
+          productKey: `serviceAgreement_${field}`,
+          productName: `Service Agreement - ${fieldDisplayNames[field] || field}`,
+          productType: 'agreement_text',
+          fieldType: field,
+          fieldDisplayName: fieldDisplayNames[field] || field,
+          originalText: originalValue,
+          newText: value,
+          quantity: 1,
+          frequency: '',
+        });
+
+        // Update the original value to the new value so subsequent edits track correctly
+        originalTermsRef.current[field] = value;
+      }
+    }
+
     setAgreementData(prev => ({
       ...prev,
       [field]: value,

@@ -6,13 +6,18 @@ import { pdfApi } from "../backendservice/api/pdfApi";
 interface FieldChange {
   productKey: string;
   productName: string;
-  productType: 'product' | 'dispenser' | 'service';
+  productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
   fieldType: string;
   fieldDisplayName: string;
-  originalValue: number;
-  newValue: number;
-  changeAmount: number;
-  changePercentage: number;
+  changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
+  // Numeric changes
+  originalValue?: number;
+  newValue?: number;
+  changeAmount?: number;
+  changePercentage?: number;
+  // ✅ NEW: Text changes
+  originalText?: string;
+  newText?: string;
   quantity?: number;
   frequency?: string;
   timestamp: string;
@@ -42,38 +47,75 @@ class FileLogger {
   addChange(change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>): void {
     const key = `${change.productKey}_${change.fieldType}`;
     const existingEntry = this.changes.get(key);
-    const resolvedOriginalValue = existingEntry
-      ? existingEntry.originalValue
-      : change.originalValue;
-    const changeAmount = change.newValue - resolvedOriginalValue;
-    const changePercentage = resolvedOriginalValue !== 0
-      ? (changeAmount / resolvedOriginalValue) * 100
-      : 0;
 
-    const fullChange: FieldChange = {
-      ...change,
-      originalValue: resolvedOriginalValue,
-      changeAmount,
-      changePercentage,
-      timestamp: new Date().toISOString()
-    };
+    // ✅ NEW: Handle text changes differently from numeric changes
+    if (change.changeType === 'text') {
+      // For text changes, preserve original text from first change
+      const resolvedOriginalText = existingEntry && existingEntry.originalText
+        ? existingEntry.originalText
+        : change.originalText || '';
 
-    if (existingEntry) {
-      console.log(`🔄 [FILE-LOGGER] REPLACING change for ${change.productName} - ${change.fieldDisplayName}:`, {
-      oldChange: `${existingEntry.originalValue} → ${existingEntry.newValue}`,
-        newChange: `${change.originalValue} → ${change.newValue}`,
-        note: 'Keeping baseline originalValue'
+      const fullChange: FieldChange = {
+        ...change,
+        originalText: resolvedOriginalText,
+        changeAmount: 0,
+        changePercentage: 0,
+        timestamp: new Date().toISOString()
+      };
+
+      if (existingEntry) {
+        console.log(`🔄 [FILE-LOGGER] REPLACING text change for ${change.productName} - ${change.fieldDisplayName}:`, {
+          oldChange: `"${existingEntry.originalText}" → "${existingEntry.newText}"`,
+          newChange: `"${change.originalText}" → "${change.newText}"`,
+          note: 'Keeping baseline originalText'
+        });
+      }
+
+      this.changes.set(key, fullChange);
+
+      console.log(`📝 [FILE-LOGGER] ${existingEntry ? 'Updated' : 'Added'} text change: ${change.productName} - ${change.fieldType}`, {
+        from: `"${resolvedOriginalText}"`,
+        to: `"${change.newText}"`
+      });
+    } else {
+      // Handle numeric changes (existing logic)
+      const resolvedOriginalValue = existingEntry && existingEntry.originalValue !== undefined
+        ? existingEntry.originalValue
+        : change.originalValue || 0;
+
+      const newValue = change.newValue || 0;
+      const changeAmount = newValue - resolvedOriginalValue;
+      const changePercentage = resolvedOriginalValue !== 0
+        ? (changeAmount / resolvedOriginalValue) * 100
+        : 0;
+
+      const fullChange: FieldChange = {
+        ...change,
+        changeType: 'numeric',
+        originalValue: resolvedOriginalValue,
+        newValue,
+        changeAmount,
+        changePercentage,
+        timestamp: new Date().toISOString()
+      };
+
+      if (existingEntry) {
+        console.log(`🔄 [FILE-LOGGER] REPLACING change for ${change.productName} - ${change.fieldDisplayName}:`, {
+          oldChange: `${existingEntry.originalValue} → ${existingEntry.newValue}`,
+          newChange: `${change.originalValue} → ${newValue}`,
+          note: 'Keeping baseline originalValue'
+        });
+      }
+
+      this.changes.set(key, fullChange);
+
+      console.log(`📝 [FILE-LOGGER] ${existingEntry ? 'Updated' : 'Added'} change: ${change.productName} - ${change.fieldType}`, {
+        from: resolvedOriginalValue,
+        to: newValue,
+        change: changeAmount,
+        changePercent: changePercentage.toFixed(2) + '%'
       });
     }
-
-    this.changes.set(key, fullChange);
-
-    console.log(`📝 [FILE-LOGGER] ${existingEntry ? 'Updated' : 'Added'} change: ${change.productName} - ${change.fieldType}`, {
-      from: resolvedOriginalValue,
-      to: change.newValue,
-      change: changeAmount,
-      changePercent: changePercentage.toFixed(2) + '%'
-    });
 
     console.log(`📝 [FILE-LOGGER] Total unique fields changed: ${this.changes.size}`);
   }
@@ -111,14 +153,14 @@ class FileLogger {
     return this.changes.size;
   }
 
-  // ✅ NEW: Create or overwrite log via API (separate Logs collection, store IDs in Agreement & Version)
+  // ✅ NEW: Create or overwrite log via API with cumulative change history
   async createLogFile(logData: Omit<LogData, 'changes'>, options: {
     overwriteExisting?: boolean;
     overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
   } = {}): Promise<any> {
-    const changes = this.getChanges();
+    const currentChanges = this.getChanges();
 
-    if (changes.length === 0) {
+    if (currentChanges.length === 0) {
       console.log('ℹ️ [FILE-LOGGER] No changes to log');
       return {
         success: true,
@@ -127,26 +169,79 @@ class FileLogger {
       };
     }
 
-    console.log(`📦 [FILE-LOGGER] Creating log with ${changes.length} unique field changes for version ${logData.versionNumber}`);
+    console.log(`📦 [FILE-LOGGER] Creating log with ${currentChanges.length} unique field changes for version ${logData.versionNumber}`);
 
     if (options.overwriteExisting) {
       console.log(`🔄 [FILE-LOGGER] Overwrite mode enabled - reason: ${options.overwriteReason}`);
     }
 
     try {
-      // ✅ NEW: Enhanced API call with overwriting support
-      const result = await pdfApi.createVersionLog({
+      // ✅ STEP 1: Fetch ALL logs for this agreement (including same version)
+      let previousChanges: FieldChange[] = [];
+
+      console.log(`🔍 [FILE-LOGGER] Fetching previous logs for agreement: ${logData.agreementId}`);
+
+      try {
+        const previousLogs = await pdfApi.getVersionLogs(logData.agreementId);
+
+        if (previousLogs.success && previousLogs.logs.length > 0) {
+          console.log(`📚 [FILE-LOGGER] Found ${previousLogs.logs.length} total log(s) for this agreement`);
+
+          // ✅ STEP 2: Include changes from:
+          // 1. All logs from previous versions (versionNumber < current)
+          // 2. All logs from SAME version that were created before now (for multiple edits of same version)
+          previousLogs.logs.forEach(log => {
+            const isFromPreviousVersion = log.versionNumber < logData.versionNumber;
+            const isFromSameVersionButEarlier = log.versionNumber === logData.versionNumber;
+
+            if (isFromPreviousVersion || isFromSameVersionButEarlier) {
+              // Prefer currentChanges, fallback to changes for backward compatibility
+              const logChanges = log.currentChanges && log.currentChanges.length > 0
+                ? log.currentChanges
+                : log.changes || [];
+
+              if (logChanges.length > 0) {
+                console.log(`📋 [FILE-LOGGER] Including ${logChanges.length} changes from version ${log.versionNumber} (${isFromPreviousVersion ? 'previous version' : 'same version, earlier save'})`);
+                previousChanges.push(...logChanges);
+              }
+            }
+          });
+
+          console.log(`✅ [FILE-LOGGER] Total previous changes collected: ${previousChanges.length}`);
+        } else {
+          console.log(`ℹ️ [FILE-LOGGER] No previous logs found - this is the first log for this agreement`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ [FILE-LOGGER] Failed to fetch previous logs, continuing without history:`, error);
+        // Continue without previous changes rather than failing
+      }
+
+      // ✅ STEP 3: Structure the log data with TWO sections
+      const structuredLogData = {
         ...logData,
-        changes,
+        currentChanges, // ✅ NEW: Current save changes only
+        allPreviousChanges: previousChanges, // ✅ NEW: All changes from previous logs (including earlier saves of same version)
+        changes: currentChanges, // Keep for backward compatibility
         // ✅ NEW: Pass overwriting options to backend
         overwriteExisting: options.overwriteExisting || false,
         overwriteReason: options.overwriteReason,
+      };
+
+      console.log(`📝 [FILE-LOGGER] Log structure:`, {
+        versionNumber: logData.versionNumber,
+        currentChangesCount: currentChanges.length,
+        previousChangesCount: previousChanges.length,
+        totalChangesInHistory: currentChanges.length + previousChanges.length
       });
 
-      console.log(`✅ [FILE-LOGGER] Log created:`, {
+      // ✅ STEP 4: Create the log via API
+      const result = await pdfApi.createVersionLog(structuredLogData);
+
+      console.log(`✅ [FILE-LOGGER] Log created successfully:`, {
         logId: result.log?.logId,
         fileName: result.log?.fileName,
-        totalChanges: result.log?.totalChanges,
+        currentChanges: result.log?.totalChanges,
+        historicalChanges: previousChanges.length,
         totalPriceImpact: result.log?.totalPriceImpact,
         hasSignificantChanges: result.log?.hasSignificantChanges
       });
@@ -204,6 +299,14 @@ export { fileLogger };
 // Helper functions for easier access
 export const addPriceChange = (change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>) => {
   fileLogger.addChange(change);
+};
+
+// ✅ NEW: Helper function for adding text changes (agreement text, descriptions, etc.)
+export const addTextChange = (change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>) => {
+  fileLogger.addChange({
+    ...change,
+    changeType: 'text'
+  });
 };
 
 export const clearPriceChanges = () => {
@@ -273,9 +376,10 @@ export const getAllVersionLogsForTesting = async (params?: {
 };
 
 // Utility function to get product type from family key
-export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispenser' | 'service' => {
+export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispenser' | 'service' | 'agreement_text' => {
   if (familyKey === 'dispensers') return 'dispenser';
   if (familyKey.includes('service') || familyKey.includes('Service')) return 'service';
+  if (familyKey === 'agreement_text' || familyKey.includes('agreement') || familyKey.includes('terms')) return 'agreement_text';
   return 'product';
 };
 
@@ -503,6 +607,18 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customMonthlyRecurring': 'Custom Monthly Recurring',
     'customAnnualPrice': 'Custom Annual Price',
     'customInstallationFee': 'Custom Installation Fee',
+
+    // ✅ NEW: Agreement text fields
+    'agreementTerms': 'Agreement Terms',
+    'serviceDescription': 'Service Description',
+    'specialConditions': 'Special Conditions',
+    'paymentTerms': 'Payment Terms',
+    'cancellationPolicy': 'Cancellation Policy',
+    'warrantyInfo': 'Warranty Information',
+    'customNotes': 'Custom Notes',
+    'legalDisclaimer': 'Legal Disclaimer',
+    'contractClause': 'Contract Clause',
+    'serviceScope': 'Service Scope',
 
     // Add more service fields as needed...
   };

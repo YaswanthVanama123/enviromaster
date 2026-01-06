@@ -283,7 +283,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
     // ✅ Only use global contract months if service starts active AND no initial value provided
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
-      : (isInitiallyActive && servicesContext?.globalContractMonths)
+      : servicesContext?.globalContractMonths
         ? servicesContext.globalContractMonths
         : DEFAULT_FORM.contractMonths;
 
