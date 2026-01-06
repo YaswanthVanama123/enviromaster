@@ -139,7 +139,7 @@
   justify-content: center;
   align-items: center;
   padding: 16px;
-  overflow: hidden;
+  overflow: auto; /* ⚡ CHANGED: hidden → auto to allow scrolling on mobile */
 }
 
 .pdf-viewer__iframe {
@@ -148,6 +148,9 @@
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  /* ⚡ NEW: Ensure iframe allows scrolling on mobile devices */
+  -webkit-overflow-scrolling: touch;
+  overflow: auto;
 }
 
 .pdf-viewer__loading,
@@ -284,6 +287,14 @@
 
   .pdf-viewer__container {
     padding: 14px;
+    /* ⚡ NEW: Ensure vertical scrolling on tablets */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .pdf-viewer__iframe {
+    /* ⚡ NEW: Allow iframe to scroll independently on tablets */
+    min-height: calc(100vh - 180px);
   }
 
   .pdf-viewer__error h2 {
@@ -347,6 +358,14 @@
 
   .pdf-viewer__container {
     padding: 12px;
+    /* ⚡ NEW: Ensure vertical scrolling on mobile */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .pdf-viewer__iframe {
+    /* ⚡ NEW: Allow iframe to scroll independently on mobile */
+    min-height: calc(100vh - 200px);
   }
 
   .pdf-viewer__loading,
@@ -424,10 +443,15 @@
 
   .pdf-viewer__container {
     padding: 10px;
+    /* ⚡ NEW: Ensure vertical scrolling on small mobile */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .pdf-viewer__iframe {
     border-radius: 6px;
+    /* ⚡ NEW: Allow iframe to scroll independently on small mobile */
+    min-height: calc(100vh - 220px);
   }
 
   .pdf-viewer__loading,
