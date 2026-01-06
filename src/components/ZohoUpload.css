@@ -139,27 +139,34 @@
 .zoho-upload__form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .zoho-upload__section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
+/* ✅ ENHANCED: Select Company Label/Header */
 .zoho-upload__label {
-  font-weight: 600;
-  color: #374151;
-  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 15px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-left: 4px solid #c00000;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .zoho-upload__label svg {
-  color: #6b7280;
-  font-size: 12px;
+  color: #c00000;
+  font-size: 16px;
 }
 
 .zoho-upload__input,
@@ -198,69 +205,157 @@
   gap: 8px;
 }
 
-/* Search */
+/* ✅ ENHANCED: Search Input */
 .zoho-upload__search {
   position: relative;
+  margin-bottom: 4px;
 }
 
 .zoho-upload__search .search-icon {
   position: absolute;
-  left: 12px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6b7280;
-  font-size: 14px;
+  color: #9ca3af;
+  font-size: 16px;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  z-index: 1;
 }
 
 .zoho-upload__search-input {
-  padding-left: 38px;
+  width: 100%;
+  padding: 14px 16px 14px 46px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  font-family: Inter, system-ui, sans-serif;
 }
 
-/* Companies List */
+.zoho-upload__search-input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.zoho-upload__search-input:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.zoho-upload__search-input:focus {
+  outline: none;
+  border-color: #c00000;
+  box-shadow: 0 0 0 4px rgba(192, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.zoho-upload__search-input:focus + .search-icon,
+.zoho-upload__search:focus-within .search-icon {
+  color: #c00000;
+}
+
+/* ✅ ENHANCED: Companies List Container */
 .zoho-upload__companies {
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafbfc;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 6px;
 }
 
+/* Custom Scrollbar for Companies List */
+.zoho-upload__companies::-webkit-scrollbar {
+  width: 8px;
+}
+
+.zoho-upload__companies::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.zoho-upload__companies::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.zoho-upload__companies::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ✅ ENHANCED: Individual Company Item */
 .zoho-upload__company {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 16px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: #ffffff;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .zoho-upload__company:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .zoho-upload__company:hover {
-  background: #f3f4f6;
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .zoho-upload__company.selected {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.zoho-upload__company.selected:hover {
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  border-color: #2563eb;
 }
 
 .zoho-upload__company .company-name {
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 2px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.zoho-upload__company.selected .company-name {
+  color: #1e40af;
 }
 
 .zoho-upload__company .company-info {
-  font-size: 12px;
+  font-size: 13px;
   color: #6b7280;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.zoho-upload__company.selected .company-info {
+  color: #1e40af;
+  opacity: 0.8;
 }
 
 .zoho-upload__no-results {
-  padding: 20px;
+  padding: 24px 20px;
   text-align: center;
-  color: #6b7280;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 500;
   font-style: italic;
+  background: #ffffff;
+  border-radius: 8px;
+  margin: 6px;
 }
 
 /* Create Company Form */
@@ -380,15 +475,25 @@
   border-color: #a00000;
 }
 
+/* ✅ ENHANCED: Secondary Button (Create New Company) */
 .zoho-upload__btn--secondary {
-  background: #f9fafb;
-  color: #374151;
-  border-color: #d1d5db;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  color: #1f2937;
+  border: 2px solid #d1d5db;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .zoho-upload__btn--secondary:hover:not(:disabled) {
-  background: #f3f4f6;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border-color: #9ca3af;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.zoho-upload__btn--secondary svg {
+  color: #c00000;
+  font-size: 14px;
 }
 
 .zoho-upload__button-group {

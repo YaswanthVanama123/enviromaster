@@ -1251,7 +1251,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
               fontWeight: '600',
               color: '#374151'
             }}>
-              Upload {selectedFilesForBulkUpload.length} Files to Zoho Bigin
+              Upload {selectedFilesForBulkUpload.length} Files to Bigin
             </h3>
 
             <div style={{
@@ -1284,7 +1284,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
               color: '#6b7280',
               marginBottom: '20px'
             }}>
-              This will upload all selected files to Zoho Bigin. Each file will be processed individually.
+              This will upload all selected files to Bigin. Each file will be processed individually.
             </p>
 
             <div style={{
@@ -1331,7 +1331,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                     clearAllSelections();
 
                     setToastMessage({
-                      message: `Successfully uploaded ${selectedFilesForBulkUpload.length} files to Zoho Bigin!`,
+                      message: `Successfully uploaded ${selectedFilesForBulkUpload.length} files to Bigin!`,
                       type: "success"
                     });
 

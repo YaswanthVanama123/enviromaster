@@ -2279,11 +2279,18 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
       {!loading && (
         <>
-          {currentTab === 'form' && (
-            isDesktop ? DesktopTable() : GroupedTables()
-          )}
-          {currentTab === 'products' && ProductsReferenceTable}
-          {currentTab === 'dispensers' && DispensersReferenceTable}
+          {/* ✅ FIXED: Always render all tabs, use CSS display to show/hide based on active tab */}
+          <div className={`product-tab-content ${currentTab === 'form' ? 'product-tab-content--active' : ''}`}>
+            {isDesktop ? DesktopTable() : GroupedTables()}
+          </div>
+
+          <div className={`product-tab-content ${currentTab === 'products' ? 'product-tab-content--active' : ''}`}>
+            {ProductsReferenceTable}
+          </div>
+
+          <div className={`product-tab-content ${currentTab === 'dispensers' ? 'product-tab-content--active' : ''}`}>
+            {DispensersReferenceTable}
+          </div>
         </>
       )}
     </section>
