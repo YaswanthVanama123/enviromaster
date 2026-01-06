@@ -766,34 +766,38 @@
     margin-top: 24px; /* ✅ FIXED: Add spacing between cards and chart on tablets */
   }
 
-  /* ✅ FIXED: Reduce chart header spacing on tablets */
-  .home__chart-header {
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-  }
-
+  /* ✅ FIXED: Increase chart section height on tablets */
   .home__chart-section {
     padding: 20px;
+    min-height: 480px; /* ✅ NEW: Ensure enough vertical space for dropdown + chart */
+  }
+
+  /* ✅ FIXED: Increase chart header spacing on tablets to prevent overlap */
+  .home__chart-header {
+    margin-bottom: 70px; /* ✅ FIXED: Increased from 24px to 70px for proper spacing */
+    padding-bottom: 12px;
   }
 
   .home__filter-dropdown {
     padding: 9px 14px;
     font-size: 14px;
+    margin-bottom: 15px; /* ✅ NEW: Additional spacing below dropdown */
   }
 
   .home__chart {
-    height: 280px;
-    padding: 30px 0 32px; /* ✅ FIXED: Increased bottom padding for labels */
+    height: 250px; /* ✅ FIXED: Reduced to fit within allocated space */
+    padding: 20px 0 32px; /* ✅ FIXED: Adjusted padding */
     gap: 10px;
+    margin-top: 0; /* ✅ NEW: Ensure chart starts below header */
   }
 
   .home__chart-bar-group {
-    max-height: 260px;
+    max-height: 220px; /* ✅ FIXED: Reduced to match new chart height */
     gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
-    max-height: 240px;
+    max-height: 200px; /* ✅ FIXED: Reduced to match new bar group height */
   }
 
   .home__chart-label {
@@ -883,35 +887,39 @@
     margin-top: 28px;
   }
 
-  /* ✅ FIXED: Reduce chart header spacing on mobile to prevent bar overlap */
-  .home__chart-header {
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-  }
-
+  /* ✅ FIXED: Increase chart section overall height and padding on mobile */
   .home__chart-section {
     padding: 18px;
+    min-height: 450px; /* ✅ NEW: Ensure enough vertical space for dropdown + chart */
+  }
+
+  /* ✅ FIXED: Increase chart header spacing significantly to prevent bar overlap with dropdown */
+  .home__chart-header {
+    margin-bottom: 100px; /* ✅ FIXED: Increased from 50px to 100px for proper spacing */
+    padding-bottom: 15px;
   }
 
   .home__filter-dropdown {
     padding: 8px 12px;
     font-size: 13px;
     width: 100%;
+    margin-bottom: 20px; /* ✅ NEW: Additional spacing below dropdown */
   }
 
   .home__chart {
-    height: 200px; /* ✅ FIXED: Reduced from 220px to prevent overflow */
-    padding: 20px 0 36px; /* ✅ FIXED: Increased bottom padding to prevent label cutoff on mobile */
+    height: 180px; /* ✅ FIXED: Reduced height to fit within allocated space */
+    padding: 10px 0 36px; /* ✅ FIXED: Reduced top padding, maintained bottom padding */
     gap: 8px;
+    margin-top: 0; /* ✅ NEW: Ensure chart starts below header */
   }
 
   .home__chart-bar-group {
-    max-height: 180px; /* ✅ FIXED: Reduced to match new chart height */
+    max-height: 150px; /* ✅ FIXED: Reduced to match new chart height */
     gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
-    max-height: 160px; /* ✅ FIXED: Reduced to match new bar group height */
+    max-height: 130px; /* ✅ FIXED: Reduced to match new bar group height */
   }
 
   .home__chart-label {
@@ -1034,34 +1042,38 @@
     margin-top: 24px;
   }
 
-  /* ✅ FIXED: Further reduce chart header spacing on extra small screens */
-  .home__chart-header {
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-  }
-
+  /* ✅ FIXED: Increase chart section height on extra small screens */
   .home__chart-section {
     padding: 16px;
+    min-height: 200px; /* ✅ NEW: Ensure enough vertical space for dropdown + chart */
+  }
+
+  /* ✅ FIXED: Increase chart header spacing significantly on extra small screens */
+  .home__chart-header {
+    margin-bottom: 90px; /* ✅ FIXED: Increased from 16px to 90px for proper spacing */
+    padding-bottom: 10px;
   }
 
   .home__filter-dropdown {
     padding: 7px 10px;
     font-size: 12px;
+    margin-bottom: 15px; /* ✅ NEW: Additional spacing below dropdown */
   }
 
   .home__chart {
-    height: 170px; /* ✅ FIXED: Further reduced to prevent overflow on small screens */
-    padding: 18px 0 38px; /* ✅ FIXED: Maximum bottom padding for very small screens to prevent label cutoff */
+    height: 260px; /* ✅ FIXED: Reduced to fit within allocated space */
+    padding: 8px 0 38px; /* ✅ FIXED: Reduced top padding, maintained bottom padding */
     gap: 6px;
+    margin-top: 0; /* ✅ NEW: Ensure chart starts below header */
   }
 
   .home__chart-bar-group {
-    max-height: 150px; /* ✅ FIXED: Reduced to match new chart height */
+    max-height: 130px; /* ✅ FIXED: Reduced to match new chart height */
     gap: 6px; /* ✅ FIXED: Add gap between bars and labels */
   }
 
   .home__chart-bar {
-    max-height: 130px; /* ✅ FIXED: Reduced to match new bar group height */
+    max-height: 110px; /* ✅ FIXED: Reduced to match new bar group height */
   }
 
   .home__chart-label {
