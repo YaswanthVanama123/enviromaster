@@ -27,6 +27,18 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
+// ⚡ NEW: Detect if user is on mobile or medium device (tablet)
+// Returns true for mobile phones, tablets, and screens <= 1024px
+const isMobileOrMediumDevice = () => {
+  // Check user agent for mobile/tablet devices
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  // Check screen width for tablets/medium devices (≤ 1024px)
+  const isMediumScreen = window.innerWidth <= 1024;
+
+  return isMobile || isMediumScreen;
+};
+
 export default function PDFViewer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -484,18 +496,18 @@ export default function PDFViewer() {
       </div>
 
       <div className="pdf-viewer__container">
-        {/* ⚡ FIXED: Check mobile device FIRST, then handle log files vs PDFs */}
-        {isMobileDevice() ? (
-          // ⚡ MOBILE: Show "Open in Browser" button for both PDFs and log files
+        {/* ⚡ FIXED: Check mobile OR medium device FIRST, then handle log files vs PDFs */}
+        {isMobileOrMediumDevice() ? (
+          // ⚡ MOBILE/TABLET: Show "Open in Browser" button for both PDFs and log files
           isLogFile && textContent ? (
-            // Log files on mobile - Show button to open text file
+            // Log files on mobile/tablet - Show button to open text file
             <div className="pdf-viewer__mobile-message">
               <div className="mobile-pdf-icon">
                 <FontAwesomeIcon icon={faFileAlt} size="3x" style={{ color: '#10b981' }} />
               </div>
               <h3>Log File Ready to View</h3>
               <p>
-                For the best viewing experience on mobile devices,
+                For the best viewing experience on mobile and tablet devices,
                 open the log file in your browser's native text viewer.
               </p>
               <button
@@ -518,7 +530,7 @@ export default function PDFViewer() {
               </p>
             </div>
           ) : pdfUrl ? (
-            // PDFs and attached files on mobile - Show button to open PDF
+            // PDFs and attached files on mobile/tablet - Show button to open PDF
             <div className="pdf-viewer__mobile-message">
               <div className="mobile-pdf-icon">
                 <FontAwesomeIcon
@@ -537,7 +549,7 @@ export default function PDFViewer() {
                   : 'PDF Ready to View'}
               </h3>
               <p>
-                For the best viewing experience on mobile devices,
+                For the best viewing experience on mobile and tablet devices,
                 open the {documentType === 'manual-upload' || documentType === 'attached-file' ? 'file' : 'PDF'} in your browser's native viewer.
               </p>
               <button
@@ -563,7 +575,7 @@ export default function PDFViewer() {
             </div>
           ) : null
         ) : (
-          // ⚡ DESKTOP: Show embedded viewer (text for logs, iframe for PDFs)
+          // ⚡ DESKTOP (> 1024px): Show embedded viewer (text for logs, iframe for PDFs)
           isLogFile && textContent ? (
             // Log files on desktop - Show text viewer
             <pre className="pdf-viewer__text-content" style={{
