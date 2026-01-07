@@ -1,6 +1,6 @@
 import React, { useState, useImperativeHandle, forwardRef, useMemo, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "./ServicesSection.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
 
@@ -331,7 +331,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       <section className="svc">
         <div className="svc-title">SERVICES</div>
         <div style={{ padding: "20px", textAlign: "center" }}>
-          Loading services...
+          <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: "#3b82f6" }} />
         </div>
       </section>
     );

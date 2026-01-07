@@ -1,5 +1,7 @@
 // src/components/products/ProductsSection.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "./ProductsSection.css";
 import { useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
@@ -2348,7 +2350,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
       {loading && (
         <div className="loading-message">
-          Loading products...
+          <FontAwesomeIcon icon={faSpinner} spin size="2x" style={{ color: "#3b82f6" }} />
         </div>
       )}
 
