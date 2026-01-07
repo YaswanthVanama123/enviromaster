@@ -42,6 +42,13 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     useSanipodCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
+      setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
+    }
+  }, [servicesContext?.globalContractMonths]);
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

@@ -1,4 +1,4 @@
-import React, { useRef, useState, type ChangeEvent } from "react";
+import React, { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useSaniscrubCalc } from "./useSaniscrubCalc";
@@ -50,6 +50,13 @@ export const SaniscrubForm: React.FC<
   // ✅ UPDATED: Pass customFields to calculation hook
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig, pricingOverrides } = useSaniscrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
+      setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
+    }
+  }, [servicesContext?.globalContractMonths]);
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 

@@ -90,6 +90,13 @@ export const RefreshPowerScrubForm: React.FC<
   } = useRefreshPowerScrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
+      setContractMonths(servicesContext.globalContractMonths);
+    }
+  }, [servicesContext?.globalContractMonths]);
+
   // Save form data to context for form submission
   const prevDataRef = useRef<string>("");
 

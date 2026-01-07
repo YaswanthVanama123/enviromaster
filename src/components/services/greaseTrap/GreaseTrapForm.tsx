@@ -9,6 +9,13 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
   const { form, handleChange, quote } = useGreaseTrapCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
+      handleChange({ target: { name: 'contractMonths', value: String(servicesContext.globalContractMonths) } } as any);
+    }
+  }, [servicesContext?.globalContractMonths]);
+
   // Custom fields state - initialize with initialData if available
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []

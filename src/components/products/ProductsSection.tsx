@@ -634,7 +634,7 @@ function convertInitialToRows(
       if (product) {
         // Found matching product in catalog
         const row: ProductRow = {
-          id: `${bucket}-${Date.now()}-${index}`,
+          id: `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2)}_${index}`,
           productKey: product.key,
           isCustom: false,
         };
@@ -702,7 +702,7 @@ function convertInitialToRows(
       } else {
         // Product not found in catalog, treat as custom
         const row: ProductRow = {
-          id: `${bucket}-${Date.now()}-${index}`,
+          id: `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2)}_${index}`,
           productKey: null,
           isCustom: true,
           customName: name,

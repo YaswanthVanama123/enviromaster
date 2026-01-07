@@ -53,6 +53,14 @@ export const JanitorialForm: React.FC<
   // ✅ UPDATED: Pass customFields to calculation hook
   const { form, onChange, calc, refreshConfig, isLoadingConfig } = useJanitorialCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
+      onChange({ target: { name: 'contractMonths', value: String(servicesContext.globalContractMonths) } } as any);
+    }
+  }, [servicesContext?.globalContractMonths]);
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

@@ -66,6 +66,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const { state, quote, updateField, reset, refreshConfig, isLoadingConfig, backendConfig } =
     useFoamingDrainCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== state.contractMonths) {
+      updateField("contractMonths", servicesContext.globalContractMonths as any);
+    }
+  }, [servicesContext?.globalContractMonths]);
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing

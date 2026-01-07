@@ -42,6 +42,14 @@ export const MicrofiberMoppingForm: React.FC<
   // ✅ UPDATED: Pass customFields to calculation hook
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, activeConfig } = useMicrofiberMoppingCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
+
+  // ✅ NEW: Sync global contract months to individual service
+  useEffect(() => {
+    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractTermMonths) {
+      setForm({ ...form, contractTermMonths: servicesContext.globalContractMonths });
+    }
+  }, [servicesContext?.globalContractMonths]);
+
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
   // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
