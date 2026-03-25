@@ -9,7 +9,6 @@ import {
   faSquareParking,
   faExclamationTriangle,
   faCheckCircle,
-  faBullseye,
   faStar,
   faCircle,
   faCalendarCheck
@@ -189,7 +188,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const totalOriginal = getTotalOriginalPerVisit();
   const totalMinimum = getTotalMinimumPerVisit();
 
-  const [pricingIndicator, setpricingIndicator] = useState<'red' | 'green' | 'neutral'>('neutral');
+  const [pricingIndicator, setpricingIndicator] = useState<'red' | 'green'>('red');
   const [amountToGreenLine, setAmountToGreenLine] = useState(0);
   const [greenLineThreshold, setGreenLineThreshold] = useState(0);
   const [isMonthsDropdownOpen, setIsMonthsDropdownOpen] = useState(false);
@@ -246,26 +245,11 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
 
   // ✅ Calculate pricing indicator (Red/Green Line)
   useEffect(() => {
-    const threshold = totalMinimum * 1.30; // 30% above minimum
-    let indicator: 'red' | 'green' | 'neutral' = 'neutral';
-    let amountNeeded = 0;
-
-    if (totalOriginal <= totalMinimum) {
-      // Original is less than OR EQUAL to minimum - RED LINE (charging minimum, unprofitable)
-      indicator = 'red';
-      amountNeeded = threshold - totalOriginal;
-    } else if (totalOriginal >= threshold) {
-      // Original is 30%+ above minimum - GREEN LINE (profitable)
-      indicator = 'green';
-    } else {
-      // In between: show how much more to reach green line
-      indicator = 'neutral';
-      amountNeeded = threshold - totalOriginal;
-    }
-
+    const threshold = totalMinimum * 1.20; // 20% above original
+    const indicator: 'red' | 'green' = totalOriginal > threshold ? 'green' : 'red';
     setGreenLineThreshold(threshold);
     setpricingIndicator(indicator);
-    setAmountToGreenLine(amountNeeded);
+    setAmountToGreenLine(threshold - totalOriginal);
   }, [totalOriginal, totalMinimum]);
 
   // ✅ NEW: Calculate Agreement Expiry & Days Remaining with "Yet to Start" status
@@ -361,9 +345,8 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
         <h2>Contract Summary</h2>
       </div>
 
-      {/* ✅ NEW: Prominent Red/Green Line Status Banner at Top */}
-      {pricingIndicator !== 'neutral' && (
-        <div className={`pricing-status-banner ${pricingIndicator}-line-banner`}>
+      {/* ✅ Red/Green Line Status Banner */}
+      <div className={`pricing-status-banner ${pricingIndicator}-line-banner`}>
           <div className="status-banner-content">
             {pricingIndicator === 'red' ? (
               <>
@@ -372,7 +355,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 </span>
                 <div className="status-info">
                   <div className="status-title">Red Line Pricing</div>
-                  <div className="status-subtitle">At or below minimum - requires approval</div>
+                  <div className="status-subtitle">Below 20% above original - requires approval</div>
                 </div>
                 <div className="status-values">
                   <div className="status-value-item">
@@ -381,8 +364,8 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                   </div>
                   <div className="status-divider">≤</div>
                   <div className="status-value-item">
-                    <span className="value-label">Minimum</span>
-                    <span className="value-amount">${totalMinimum.toFixed(2)}</span>
+                    <span className="value-label">Target</span>
+                    <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
                   </div>
                 </div>
               </>
@@ -393,7 +376,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 </span>
                 <div className="status-info">
                   <div className="status-title">Green Line Pricing</div>
-                  <div className="status-subtitle">30%+ above minimum - auto approved</div>
+                  <div className="status-subtitle">20%+ above original - auto approved</div>
                 </div>
                 <div className="status-values">
                   <div className="status-value-item">
@@ -410,35 +393,6 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
             )}
           </div>
         </div>
-      )}
-
-      {/* ✅ NEW: Show target for neutral state */}
-      {pricingIndicator === 'neutral' && amountToGreenLine > 0 && (
-        <div className="pricing-status-banner neutral-line-banner">
-          <div className="status-banner-content">
-            <span className="status-icon">
-              <FontAwesomeIcon icon={faBullseye} />
-            </span>
-            <div className="status-info">
-              <div className="status-title">Near Green Line</div>
-              <div className="status-subtitle">
-                Add <strong>${amountToGreenLine.toFixed(2)}</strong> to reach profitable pricing
-              </div>
-            </div>
-            <div className="status-values">
-              <div className="status-value-item">
-                <span className="value-label">Current</span>
-                <span className="value-amount">${totalOriginal.toFixed(2)}</span>
-              </div>
-              <div className="status-divider">→</div>
-              <div className="status-value-item">
-                <span className="value-label">Target</span>
-                <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="contract-summary-grid">
         {/* ✅ Left Column: Contract Details */}
