@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationTriangle, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import "./ServicesSection.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
+import { ServicesReferenceSection } from "./ServicesReferenceSection";
 
 import { SanicleanForm } from "../services/saniclean/SanicleanForm";
 import { FoamingDrainForm }  from "../services/foamingDrain/FoamingDrainForm";
@@ -81,7 +82,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   const servicesContext = useServicesContextOptional();
 
   // Determine current active tab with validation
-  const validTabs = configs.map(c => c.serviceId);
+  const validTabs = ['reference', ...configs.map(c => c.serviceId)];
   const currentTab = activeTab && validTabs.includes(activeTab) ? activeTab : null;
 
   // State for which services are currently visible
@@ -326,6 +327,11 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   console.log('Grid Services:', gridServices.map(c => c.serviceId));
   console.log('Visible Services Set:', Array.from(visibleServices));
 
+  // ✅ Services Reference Table for Salespeople
+  const ServicesReferenceTable = useMemo(() => (
+    <ServicesReferenceSection configs={configs} />
+  ), [configs]);
+
   if (loading) {
     return (
       <section className="svc">
@@ -449,10 +455,20 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
               {config.label || config.serviceId}
             </button>
           ))}
+          <button
+            type="button"
+            className={`svc-tab svc-tab--ref ${currentTab === 'reference' ? 'svc-tab--active' : ''}`}
+            onClick={() => onTabChange('reference')}
+          >
+            Services Reference
+          </button>
         </div>
       )}
 
-      <div className="svc-grid">
+      {/* Services Reference Table */}
+      {currentTab === 'reference' && ServicesReferenceTable}
+
+      <div className="svc-grid" style={{ display: currentTab === 'reference' ? 'none' : undefined }}>
         {/* ✅ FIXED: Always render ALL services, use CSS display to show/hide based on tab */}
         {gridServices.map((config) => {
           const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
@@ -541,7 +557,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
       {/* ✅ FIXED: RefreshPowerScrub - always render if visible, use CSS to show/hide based on tab */}
       {refreshPowerScrubVisible && (
-        <div style={{ display: isServiceVisible('refreshPowerScrub') ? 'block' : 'none' }}>
+        <div style={{ display: (isServiceVisible('refreshPowerScrub') && currentTab !== 'reference') ? 'block' : 'none' }}>
           <RefreshPowerScrubForm
           initialData={(() => {
             // ✅ SIMPLIFIED: Since components don't remount anymore, use original logic

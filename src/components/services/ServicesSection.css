@@ -419,8 +419,21 @@
 
 
 
-@media (max-width:1100px){
-  .svc-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+/* ─── Services Reference tab button ──────────────────── */
+.svc-tab--ref {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+.svc-tab--ref:hover {
+  background: #eff6ff;
+}
+.svc-tab--ref.svc-tab--active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.svc-tab--ref.svc-tab--active:hover {
+  background: #1d4ed8;
 }
 @media (max-width:740px){
   .svc-grid{ grid-template-columns:1fr; }
