@@ -3,16 +3,44 @@
   font-display: swap;
 }
 
-/* ✅ DARK MODE FIX: Force white background on all form elements */
+/* ✅ DARK MODE FIX: Force light color-scheme so ALL native form controls
+   (inputs, selects, checkboxes, scrollbars) render in light mode even when
+   the OS is in dark mode.  This is the one property FormFilling was missing. */
 html, body, #root {
   min-height: 100vh;
   margin: 0;
   padding: 0;
+  color-scheme: light !important;          /* ← key fix: forces light native widgets */
   background-color: #ffffff !important;
   color: #000000 !important;
   /* ✅ Hide scrollbar while keeping scroll functionality */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* ✅ Explicitly style every form control so they are never
+   drawn with the dark-mode browser defaults.               */
+input,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="password"],
+input[type="tel"],
+input[type="date"],
+textarea,
+select {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Checkboxes and radio buttons use accent-color for the tick/fill colour */
+input[type="checkbox"],
+input[type="radio"] {
+  color-scheme: light;
+  accent-color: #c00000;
 }
 
 /* ✅ Hide scrollbar for Chrome, Safari and Opera */
