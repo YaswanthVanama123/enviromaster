@@ -352,6 +352,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 onChange={onChange}
               />
               <span>@</span>
+              <span>$</span>
               <input
                 name={form.serviceType === "recurringService" ? "customRecurringServiceRate" : "customOneTimeServiceRate"}
                 className="svc-in sm"
@@ -375,6 +376,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 }}
               />
               <span>=</span>
+              <span>$</span>
               <input
                 className="svc-in sm"
                 type="number"
@@ -402,6 +404,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 onChange={onChange}
               />
               <span>hrs @</span>
+              <span>$</span>
               <input
                 name="customVacuumingRatePerHour"
                 className="svc-in sm"
@@ -421,6 +424,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 }}
               />
               <span>=</span>
+              <span>$</span>
               <input
                 className="svc-in sm"
                 type="number"
@@ -448,6 +452,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 onChange={onChange}
               />
               <span>places @</span>
+              <span>$</span>
               <input
                 name="customDustingRatePerHour"
                 className="svc-in sm"
@@ -467,6 +472,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                 }}
               />
               <span>=</span>
+              <span>$</span>
               <input
                 className="svc-in sm"
                 type="number"
@@ -595,6 +601,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                     })}
                   />
                   <span>@</span>
+                  <span>$</span>
                   <input
                     className="svc-in sm"
                     type="number"
@@ -605,6 +612,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                     })}
                   />
                   <span>=</span>
+                  <span>$</span>
                   <input
                     className="svc-in sm"
                     type="number"

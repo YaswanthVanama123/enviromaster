@@ -595,6 +595,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     title="Number of rooms"
                   />
                   <span>@</span>
+                  <span>$</span>
                   <input
                     type="number"
                     min="0"
@@ -614,6 +615,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     title="Rate per room (editable - changes calculation)"
                   />
                   <span>=</span>
+                  <span>$</span>
                   <input
                     type="number"
                     min="0"
@@ -657,6 +659,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     title="Total square feet"
                   />
                   <span>@</span>
+                  <span>$</span>
                   <input
                     type="number"
                     min="0"
@@ -676,6 +679,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     title="Rate per 1000 sq ft (editable - changes calculation)"
                   />
                   <span>=</span>
+                  <span>$</span>
                   <input
                     type="number"
                     min="0"

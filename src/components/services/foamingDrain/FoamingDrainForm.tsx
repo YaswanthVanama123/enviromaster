@@ -960,6 +960,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
                 <span>@</span>
                 {/* RATE = Shows effective rate based on active pricing model */}
+                <span>$</span>
                 <input
                   type="number"
                   min="0"
@@ -989,6 +990,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
                 <span>=</span>
                 {/* TOTAL = Shows calculated total (0 when all-inclusive) */}
+                <span>$</span>
                 <input
                   readOnly
                   className="svc-in-box weekly-total-field"
@@ -1104,6 +1106,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
                 <span>@</span>
                 {/* RATE - EDITABLE */}
+                <span>$</span>
                 <input
                   type="number"
                   min={0}
@@ -1126,10 +1129,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
                 <span>=</span>
                 {/* TOTAL */}
+                <span>$</span>
                 <input
                   readOnly
                   className="svc-in field-qty"
-                  
+
                   value={formatAmount(greaseTotal)}
                 />
               </div>
@@ -1155,6 +1159,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
                 <span>@</span>
                 {/* RATE - EDITABLE */}
+                <span>$</span>
                 <input
                   type="number"
                   min={0}
@@ -1177,10 +1182,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 />
                 <span>=</span>
                 {/* TOTAL */}
+                <span>$</span>
                 <input
                   readOnly
                   className="svc-in field-qty"
-                  
+
                   value={formatAmount(greenTotal)}
                 />
               </div>

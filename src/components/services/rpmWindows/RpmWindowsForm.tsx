@@ -528,6 +528,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
           />
           <span>@</span>
+          <span>$</span>
           <input
             className="svc-in field-qty"
             name="smallWindowRate"
@@ -540,6 +541,7 @@ export const RpmWindowsForm: React.FC<
             style={getOverrideStyle(hasPricingOverride("smallWindowRate"))}
           />
           <span>=</span>
+          <span>$</span>
           <input
             className="svc-in-box field-qty"
             name="customSmallTotal"
@@ -575,6 +577,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
           />
           <span>@</span>
+          <span>$</span>
           <input
             className="svc-in field-qty"
             name="mediumWindowRate"
@@ -587,6 +590,7 @@ export const RpmWindowsForm: React.FC<
             style={getOverrideStyle(hasPricingOverride("mediumWindowRate"))}
           />
           <span>=</span>
+          <span>$</span>
           <input
             className="svc-in-box field-qty"
             name="customMediumTotal"
@@ -622,6 +626,7 @@ export const RpmWindowsForm: React.FC<
             onChange={onChange}
           />
           <span>@</span>
+          <span>$</span>
           <input
             className="svc-in field-qty"
             name="largeWindowRate"
@@ -634,6 +639,7 @@ export const RpmWindowsForm: React.FC<
             style={getOverrideStyle(hasPricingOverride("largeWindowRate"))}
           />
           <span>=</span>
+          <span>$</span>
           <input
             className="svc-in-box field-qty"
             name="customLargeTotal"

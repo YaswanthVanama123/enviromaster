@@ -518,6 +518,7 @@ export const SaniscrubForm: React.FC<
             onChange={onChange}
           />
           <span>@</span>
+          <span>$</span>
           <input
             className="svc-in field-qty"
             type="number"

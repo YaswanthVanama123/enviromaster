@@ -50,15 +50,17 @@ export default function RowCalc({
           />
           <span>@</span>
           {/* ✅ UPDATED: Rate input with onChange handler */}
+          <span>$</span>
           <input
             className="svc-in sm"
             name={row.rateName}
             value={rate}
             onChange={(e) => setRate(e.target.value)}
-            placeholder="Rate"
+            placeholder="0.00"
           />
           <span>=</span>
           {/* ✅ UPDATED: Total field - read-only, auto-calculated */}
+          <span>$</span>
           <input
             className="svc-in sm"
             name={row.totalName}
