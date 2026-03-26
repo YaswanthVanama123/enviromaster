@@ -1,9 +1,10 @@
 // src/components/admin/ServiceConfigManager.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useServiceConfigs } from "../../backendservice/hooks";
-import type { ServiceConfig, UpdateServiceConfigPayload } from "../../backendservice/types/serviceConfig.types";
+import type { ServiceConfig, UpdateServiceConfigPayload, ServiceImage, ServiceLink } from "../../backendservice/types/serviceConfig.types";
+import { serviceConfigApi } from "../../backendservice/api/serviceConfigApi";
 import { Toast } from "./Toast";
 import type { ToastType } from "./Toast";
 import "./ServiceConfigManager.css";
@@ -27,6 +28,10 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
   const [formData, setFormData] = useState<UpdateServiceConfigPayload>({});
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [newLinkLabel, setNewLinkLabel] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // URL-based modal management
   useEffect(() => {
@@ -65,7 +70,11 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
       version: config.version,
       isActive: config.isActive,
       tags: config.tags,
+      images: config.images ?? [],
+      links: config.links ?? [],
     });
+    setNewLinkLabel("");
+    setNewLinkUrl("");
   };
 
   const handleSave = async () => {
@@ -88,6 +97,59 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
   const handleCancel = () => {
     closeModal();
     setFormData({});
+  };
+
+  // ── Image upload ──────────────────────────────────────────────────────────
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingConfig?._id || !e.target.files?.[0]) return;
+    setUploading(true);
+    try {
+      const { url } = await serviceConfigApi.uploadImage(editingConfig._id, e.target.files[0]);
+      setFormData(prev => ({
+        ...prev,
+        images: [...(prev.images ?? []), { url, caption: "" }],
+      }));
+    } catch {
+      setToastMessage({ message: "Image upload failed.", type: "error" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleImageCaption = (idx: number, caption: string) => {
+    setFormData(prev => {
+      const imgs = [...(prev.images ?? [])];
+      imgs[idx] = { ...imgs[idx], caption };
+      return { ...prev, images: imgs };
+    });
+  };
+
+  const handleImageRemove = (idx: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: (prev.images ?? []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  // ── Link management ───────────────────────────────────────────────────────
+  const handleAddLink = () => {
+    const trimLabel = newLinkLabel.trim();
+    const trimUrl = newLinkUrl.trim();
+    if (!trimLabel || !trimUrl) return;
+    setFormData(prev => ({
+      ...prev,
+      links: [...(prev.links ?? []), { label: trimLabel, url: trimUrl }],
+    }));
+    setNewLinkLabel("");
+    setNewLinkUrl("");
+  };
+
+  const handleLinkRemove = (idx: number) => {
+    setFormData(prev => ({
+      ...prev,
+      links: (prev.links ?? []).filter((_, i) => i !== idx),
+    }));
   };
 
   if (loading) {
@@ -218,6 +280,77 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
                 style={styles.input}
                 placeholder="restroom, hygiene, core-service"
               />
+            </div>
+
+            {/* ── Images ── */}
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-label" style={styles.label}>Images</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageFileChange}
+                style={{ display: "none" }}
+              />
+              <button
+                type="button"
+                style={{ ...styles.uploadBtn, opacity: uploading ? 0.6 : 1 }}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? "Uploading…" : "+ Upload Image"}
+              </button>
+              {(formData.images ?? []).length > 0 && (
+                <div style={styles.imageGrid}>
+                  {(formData.images ?? []).map((img, idx) => (
+                    <div key={idx} style={styles.imageCard}>
+                      <img src={img.url.startsWith("/") ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${img.url}` : img.url} alt={img.caption || "service"} style={styles.imageThumbnail} />
+                      <input
+                        type="text"
+                        value={img.caption ?? ""}
+                        onChange={(e) => handleImageCaption(idx, e.target.value)}
+                        placeholder="Caption (optional)"
+                        style={styles.captionInput}
+                      />
+                      <button type="button" style={styles.removeImageBtn} onClick={() => handleImageRemove(idx)} title="Remove">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Links ── */}
+            <div className="scm-form-group" style={styles.formGroup}>
+              <label className="scm-label" style={styles.label}>Links</label>
+              <div style={styles.addLinkRow}>
+                <input
+                  type="text"
+                  value={newLinkLabel}
+                  onChange={e => setNewLinkLabel(e.target.value)}
+                  placeholder="Label (e.g. Product Sheet)"
+                  style={{ ...styles.input, flex: 1 }}
+                />
+                <input
+                  type="url"
+                  value={newLinkUrl}
+                  onChange={e => setNewLinkUrl(e.target.value)}
+                  placeholder="https://…"
+                  style={{ ...styles.input, flex: 2 }}
+                  onKeyDown={e => e.key === "Enter" && handleAddLink()}
+                />
+                <button type="button" style={styles.addLinkBtn} onClick={handleAddLink}>Add</button>
+              </div>
+              {(formData.links ?? []).length > 0 && (
+                <div style={styles.linkList}>
+                  {(formData.links ?? []).map((link, idx) => (
+                    <div key={idx} style={styles.linkItem}>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" style={styles.linkAnchor}>{link.label}</a>
+                      <span style={styles.linkUrl}>{link.url}</span>
+                      <button type="button" style={styles.removeLinkBtn} onClick={() => handleLinkRemove(idx)} title="Remove">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="scm-modal-actions" style={styles.modalActions}>
@@ -463,5 +596,121 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "14px",
     fontWeight: "500",
     cursor: "pointer",
+  },
+  uploadBtn: {
+    padding: "8px 14px",
+    backgroundColor: "#f8fafc",
+    border: "1.5px solid #e2e8f0",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    color: "#2563eb",
+    marginBottom: "10px",
+  },
+  imageGrid: {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    gap: "10px",
+    marginTop: "4px",
+  },
+  imageCard: {
+    position: "relative" as const,
+    border: "1.5px solid #e5e7eb",
+    borderRadius: "8px",
+    overflow: "hidden",
+    width: "140px",
+    display: "flex",
+    flexDirection: "column" as const,
+  },
+  imageThumbnail: {
+    width: "100%",
+    height: "90px",
+    objectFit: "cover" as const,
+    display: "block",
+  },
+  captionInput: {
+    border: "none",
+    borderTop: "1px solid #e5e7eb",
+    padding: "4px 6px",
+    fontSize: "11px",
+    outline: "none",
+    background: "#f9fafb",
+  },
+  removeImageBtn: {
+    position: "absolute" as const,
+    top: "4px",
+    right: "4px",
+    width: "20px",
+    height: "20px",
+    background: "rgba(0,0,0,0.55)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    fontSize: "10px",
+    cursor: "pointer",
+    lineHeight: "1",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addLinkRow: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "8px",
+    alignItems: "center",
+  },
+  addLinkBtn: {
+    padding: "8px 14px",
+    backgroundColor: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+  },
+  linkList: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "6px",
+  },
+  linkItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "7px 10px",
+    background: "#f8fafc",
+    border: "1.5px solid #e2e8f0",
+    borderRadius: "8px",
+    fontSize: "13px",
+  },
+  linkAnchor: {
+    fontWeight: "600",
+    color: "#2563eb",
+    textDecoration: "none",
+    flexShrink: 0,
+    maxWidth: "120px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  },
+  linkUrl: {
+    flex: 1,
+    color: "#6b7280",
+    fontSize: "11px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  },
+  removeLinkBtn: {
+    background: "none",
+    border: "none",
+    color: "#9ca3af",
+    cursor: "pointer",
+    fontSize: "13px",
+    padding: "2px 4px",
+    flexShrink: 0,
   },
 };

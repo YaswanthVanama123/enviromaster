@@ -10,7 +10,7 @@ import {
   faBox, faStore, faSoap, faTicket, faCheck,
   faClipboard, faTrash, faShoppingBag, faShower,
   faWandMagicSparkles, faUtensils, faCog, faLayerGroup,
-  faTag,
+  faTag, faImage, faLink, faExternalLinkAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
@@ -308,6 +308,53 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
                 </div>
               )}
             </>
+          )}
+
+          {/* ── Images gallery ── */}
+          {config.images && config.images.length > 0 && (
+            <div className="srf-media-section">
+              <div className="srf-media-header">
+                <FontAwesomeIcon icon={faImage} className="srf-media-icon" />
+                <span>Images</span>
+              </div>
+              <div className="srf-image-grid">
+                {config.images.map((img, idx) => {
+                  const src = img.url.startsWith("/")
+                    ? `${(import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:5000"}${img.url}`
+                    : img.url;
+                  return (
+                    <div key={idx} className="srf-image-card">
+                      <img src={src} alt={img.caption || "service image"} className="srf-image-thumb" />
+                      {img.caption && <p className="srf-image-caption">{img.caption}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Links ── */}
+          {config.links && config.links.length > 0 && (
+            <div className="srf-media-section">
+              <div className="srf-media-header">
+                <FontAwesomeIcon icon={faLink} className="srf-media-icon" />
+                <span>Links</span>
+              </div>
+              <div className="srf-links-list">
+                {config.links.map((link, idx) => (
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="srf-link-item"
+                  >
+                    <FontAwesomeIcon icon={faExternalLinkAlt} className="srf-link-icon" />
+                    <span className="srf-link-label">{link.label}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}

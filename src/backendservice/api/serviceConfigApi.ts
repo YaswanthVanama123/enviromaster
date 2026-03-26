@@ -101,4 +101,24 @@ export const serviceConfigApi = {
   async update(id: string, payload: UpdateServiceConfigPayload) {
     return apiClient.put<ServiceConfig>(`/api/service-configs/${id}/partial`, payload);
   },
+
+  /**
+   * Upload an image for a service config.
+   * Returns the public URL of the saved image.
+   */
+  async uploadImage(id: string, file: File, caption = ""): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("caption", caption);
+    const token = apiClient.getToken();
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:5000";
+    const res = await fetch(`${baseUrl}/api/service-configs/${id}/upload-image`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
+    const json = await res.json();
+    return { url: json.url };
+  },
 };
