@@ -96,6 +96,8 @@ export interface FoamingDrainFormState {
 
   // ✅ NEW: Custom fields from CustomFieldManager
   customFields?: any[];
+
+  applyMinimum?: boolean;
 }
 
 export interface FoamingDrainBreakdown {
@@ -152,4 +154,7 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
 
   // Minimum charge for redline/greenline indicator
   minimumChargePerVisit: number;
+
+  // Original contract total: baseline pricing table rates × current quantities (no custom overrides)
+  originalContractTotal: number;
 }

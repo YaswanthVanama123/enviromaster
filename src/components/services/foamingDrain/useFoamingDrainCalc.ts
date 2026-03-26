@@ -158,6 +158,7 @@ const DEFAULT_FOAMING_DRAIN_FORM_STATE: FoamingDrainFormState = {
   greenInstallRate: cfg.green.installPerDrain,
   plumbingAddonRate: cfg.plumbing.weeklyAddonPerDrain,
   filthyMultiplier: cfg.installationRules.filthyMultiplier,
+  applyMinimum: true,
 };
 
 function clamp(num: number, min: number, max: number): number {
@@ -785,7 +786,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     // ✅ NEW: Apply minimum charge per visit from backend ONLY when there's actual service
     const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? 50; // Default $50
     const weeklyServiceBeforeMin = round2(weeklyServiceRaw);
-    const weeklyService = weeklyServiceRaw > 0 ? Math.max(weeklyServiceBeforeMin, minimumChargePerVisit) : 0;
+    const weeklyService = weeklyServiceRaw > 0 ? (state.applyMinimum !== false ? Math.max(weeklyServiceBeforeMin, minimumChargePerVisit) : weeklyServiceBeforeMin) : 0;
     const tripCharge = 0; // Trip charge removed from math
     const weeklyTotal = weeklyService; // (service only)
 
@@ -906,7 +907,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     // ⚠️ CRITICAL: Always enforce minimum charge when there's actual service, even on custom overrides
     const customOrCalculated = state.customWeeklyService ?? weeklyService;
     const effectiveWeeklyService = weeklyServiceRaw > 0
-      ? Math.max(customOrCalculated, minimumChargePerVisit)
+      ? (state.applyMinimum !== false ? Math.max(customOrCalculated, minimumChargePerVisit) : customOrCalculated)
       : customOrCalculated; // If no service, don't enforce minimum (should be 0)
 
     let normalMonth = effectiveWeeklyService * frequencyMultiplier;
@@ -1052,6 +1053,44 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       // ✅ NEW: Export minimum charge for redline/greenline indicator
       minimumChargePerVisit,
+
+      // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+      originalContractTotal: (() => {
+        if (!weeklyServiceRaw) return 0;
+        const baselineStandardDrains = standardDrainsActive * activeConfig.standardDrainRate;
+        const baselineInstallDrains = installDrains > 0 && canUseInstallProgram
+          ? (state.installFrequency === "bimonthly"
+              ? activeConfig.volumePricing.bimonthlyRatePerDrain
+              : activeConfig.volumePricing.weeklyRatePerDrain) * installDrains
+          : 0;
+        const baselinePlumbing = state.needsPlumbing && plumbingDrains > 0
+          ? plumbingDrains * activeConfig.plumbing.weeklyAddonPerDrain
+          : 0;
+        const baselineGrease = greaseTraps > 0 ? greaseTraps * activeConfig.grease.weeklyRatePerTrap : 0;
+        const baselineGreen = greenDrains > 0 ? greenDrains * activeConfig.green.weeklyRatePerDrain : 0;
+        const baselineWeeklyRaw = baselineStandardDrains + baselineInstallDrains + baselinePlumbing + baselineGrease + baselineGreen;
+        const baselineWeekly = baselineWeeklyRaw > 0 ? (state.applyMinimum !== false ? Math.max(round2(baselineWeeklyRaw), minimumChargePerVisit) : round2(baselineWeeklyRaw)) : 0;
+        const baselineNormalMonth = baselineWeekly * frequencyMultiplier;
+        const freqLowerOct = frequency.toLowerCase();
+        let baselineContractRaw = 0;
+        if (freqLowerOct === "bimonthly") {
+          const contractVisitsForTerm = Math.round(contractMonths / 2);
+          baselineContractRaw = baselineWeekly * contractVisitsForTerm;
+        } else if (freqLowerOct === "quarterly") {
+          const totalVisits = Math.max(Math.floor(contractMonths / 3), 1);
+          baselineContractRaw = baselineWeekly * totalVisits;
+        } else if (freqLowerOct === "biannual") {
+          const totalVisits = Math.max(Math.floor(contractMonths / 6), 1);
+          baselineContractRaw = baselineWeekly * totalVisits;
+        } else if (freqLowerOct === "annual") {
+          const totalVisits = Math.max(Math.floor(contractMonths / 12), 1);
+          baselineContractRaw = baselineWeekly * totalVisits;
+        } else {
+          baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
+        }
+        // Add same custom/extra fields so comparison is purely based on rate changes
+        return round2(baselineContractRaw) + calcFieldsTotal + dollarFieldsTotal;
+      })(),
     };
 
     return quote;
@@ -1105,6 +1144,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.customMonthlyRecurring,
     state.customFirstMonthPrice,
     state.customContractTotal,
+    // ✅ NEW: Re-calculate when applyMinimum changes
+    state.applyMinimum,
     // ✅ NEW: Re-calculate when custom fields change
     calcFieldsTotal,
     dollarFieldsTotal,

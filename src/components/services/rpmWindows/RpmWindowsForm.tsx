@@ -241,6 +241,7 @@ export const RpmWindowsForm: React.FC<
         perVisitBase: calc.subtotal,  // Raw subtotal before minimum
         perVisit: calc.perVisit,  // Final per-visit price after minimum
         minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
+        originalContractTotal: calc.originalContractTotal,  // Baseline-rate contract total for greenline comparison
 
         // Persist editable pricing fields for edit mode
         smallWindowRate: form.smallWindowRate,
@@ -250,6 +251,7 @@ export const RpmWindowsForm: React.FC<
         installMultiplierFirstTime: form.installMultiplierFirstTime,
         installMultiplierClean: form.installMultiplierClean,
         contractMonths: form.contractMonths,
+        applyMinimum: form.applyMinimum !== false,
         customSmallTotal: form.customSmallTotal,
         customMediumTotal: form.customMediumTotal,
         customLargeTotal: form.customLargeTotal,
@@ -842,6 +844,23 @@ export const RpmWindowsForm: React.FC<
 
 
 
+      {/* Minimum Charge Per Visit */}
+      <div className="svc-row">
+        <label>Minimum Per Visit</label>
+        <div className="svc-row-right">
+          <span className="svc-small">${calc.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+          <label className="svc-inline" style={{ marginLeft: '10px' }}>
+            <input
+              type="checkbox"
+              name="applyMinimum"
+              checked={form.applyMinimum !== false}
+              onChange={onChange}
+            />
+            <span>Apply Minimum</span>
+          </label>
+        </div>
+      </div>
+
       {/* Per Visit Price – Show for ALL frequencies */}
       <div className="svc-row svc-row-charge">
         <label>Per Visit Price</label>
@@ -894,19 +913,7 @@ export const RpmWindowsForm: React.FC<
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {quote.perVisitPrice <= calc.minimumChargePerVisit ? (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🔴 Redline Pricing (At or Below Minimum)
-              </span>
-            ) : (
+            {calc.contractTotalRated > calc.originalContractTotal * 1.20 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',
@@ -916,7 +923,19 @@ export const RpmWindowsForm: React.FC<
                 borderRadius: '4px',
                 display: 'inline-block'
               }}>
-                🟢 Greenline Pricing (Above Minimum)
+                🟢 Greenline Pricing
+              </span>
+            ) : (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing
               </span>
             )}
           </div>

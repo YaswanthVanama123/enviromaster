@@ -334,6 +334,8 @@ export const JanitorialForm: React.FC<
 
         notes: form.notes || "", // Optional notes field
         customFields: customFields,
+        contractTotal: calc.contractTotal,
+        originalContractTotal: calc.originalContractTotal,
       } : null;
 
       const dataStr = JSON.stringify(data);
@@ -708,19 +710,7 @@ export const JanitorialForm: React.FC<
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {(calc?.perVisit || 0) <= (calc?.minimumChargePerVisit || 0) ? (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🔴 Redline Pricing (At or Below Minimum)
-              </span>
-            ) : (
+            {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',
@@ -730,7 +720,19 @@ export const JanitorialForm: React.FC<
                 borderRadius: '4px',
                 display: 'inline-block'
               }}>
-                🟢 Greenline Pricing (Above Minimum)
+                🟢 Greenline Pricing
+              </span>
+            ) : (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing
               </span>
             )}
           </div>

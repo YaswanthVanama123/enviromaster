@@ -258,6 +258,7 @@ export const CarpetForm: React.FC<
       installMultiplierClean: form.installMultiplierClean,
       unitSqFt: form.unitSqFt,
       useExactSqft: form.useExactSqft,
+      applyMinimum: form.applyMinimum !== false,
 
       // ✅ NEW: Save quantity inputs for proper loading in edit mode
       areaSqFt: form.areaSqFt,
@@ -269,6 +270,7 @@ export const CarpetForm: React.FC<
 
       // Ensure contract total is always saved (oneTime may hide contract row in UI)
       contractTotal: calc.contractTotal,
+      originalContractTotal: calc.originalContractTotal,
 
         // Red/Green Line pricing data
         perVisitBase: calc.perVisitBase,  // Raw price before minimum
@@ -535,6 +537,15 @@ export const CarpetForm: React.FC<
             />
           </div>
           <span className="svc-small">/ visit</span>
+          <label className="svc-inline" style={{ marginLeft: '10px' }}>
+            <input
+              type="checkbox"
+              name="applyMinimum"
+              checked={form.applyMinimum !== false}
+              onChange={onChange}
+            />
+            <span>Apply Minimum</span>
+          </label>
         </div>
       </div>
 
@@ -775,19 +786,7 @@ export const CarpetForm: React.FC<
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {calc.perVisitCharge <= (form.customPerVisitMinimum ?? form.perVisitMinimum) ? (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🔴 Redline Pricing (At or Below Minimum)
-              </span>
-            ) : (
+            {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',
@@ -797,7 +796,19 @@ export const CarpetForm: React.FC<
                 borderRadius: '4px',
                 display: 'inline-block'
               }}>
-                🟢 Greenline Pricing (Above Minimum)
+                🟢 Greenline Pricing
+              </span>
+            ) : (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing
               </span>
             )}
           </div>

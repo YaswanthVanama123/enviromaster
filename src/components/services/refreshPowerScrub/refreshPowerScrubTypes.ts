@@ -92,6 +92,8 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
   hourlyRateIsCustom?: boolean;
   minimumVisitIsCustom?: boolean;
 
+  applyMinimum?: boolean;
+
   // Global frequency and contract settings
   frequency: RefreshFrequency;
   contractMonths: number;

@@ -216,6 +216,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         contractMonths: form.contractMonths,
         isCombinedWithSaniClean: form.isCombinedWithSaniClean,
         // location: form.location,
+        applyMinimum: form.applyMinimum !== false,
 
         // Red/Green Line pricing data
         perVisitBase: calc.serviceCharge,  // Raw service charge before trip/minimum
@@ -377,6 +378,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         notes: form.notes || "",
         customFields: customFields,
+        contractTotal: calc.contractTotal,
+        originalContractTotal: calc.originalContractTotal,
         ...(form.frequency === "oneTime" ? { totalPrice: totalPriceValue } : {}),
       } : null;
 
@@ -813,6 +816,25 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )} */}
 
+          {/* Minimum Charge Per Visit */}
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Minimum Per Visit</span>
+            </div>
+            <div className="svc-field">
+              <span className="svc-small">${calc.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+              <label className="svc-inline" style={{ marginLeft: '10px' }}>
+                <input
+                  type="checkbox"
+                  name="applyMinimum"
+                  checked={form.applyMinimum !== false}
+                  onChange={onChange}
+                />
+                <span>Apply Minimum</span>
+              </label>
+            </div>
+          </div>
+
           {/* Per Visit Total */}
           <div className="svc-row">
             <div className="svc-label">
@@ -849,19 +871,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
               <div className="svc-field">
-                {calc.perVisit <= calc.minimumChargePerVisit ? (
-                  <span style={{
-                    color: '#d32f2f',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    padding: '4px 8px',
-                    backgroundColor: '#ffebee',
-                    borderRadius: '4px',
-                    display: 'inline-block'
-                  }}>
-                    🔴 Redline Pricing (At or Below Minimum)
-                  </span>
-                ) : (
+                {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
                   <span style={{
                     color: '#388e3c',
                     fontSize: '13px',
@@ -871,7 +881,19 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     borderRadius: '4px',
                     display: 'inline-block'
                   }}>
-                    🟢 Greenline Pricing (Above Minimum)
+                    🟢 Greenline Pricing
+                  </span>
+                ) : (
+                  <span style={{
+                    color: '#d32f2f',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    padding: '4px 8px',
+                    backgroundColor: '#ffebee',
+                    borderRadius: '4px',
+                    display: 'inline-block'
+                  }}>
+                    🔴 Redline Pricing
                   </span>
                 )}
               </div>

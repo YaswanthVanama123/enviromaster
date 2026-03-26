@@ -185,6 +185,7 @@ export const MicrofiberMoppingForm: React.FC<
         isAllInclusive: form.isAllInclusive,
         // location: form.location,
         needsParking: form.needsParking,
+        applyMinimum: form.applyMinimum !== false,
 
         // Red/Green Line pricing data
         perVisitBase: calc.perVisitPrice,  // Per-visit price
@@ -336,6 +337,8 @@ export const MicrofiberMoppingForm: React.FC<
 
         notes: form.notes || "",
         customFields: customFields,
+        contractTotal: calc.contractTotal,
+        originalContractTotal: calc.originalContractTotal,
       } : null;
 
       const dataStr = JSON.stringify(data);
@@ -978,6 +981,23 @@ export const MicrofiberMoppingForm: React.FC<
 
       {/* Summary block */}
       <div className="svc-summary">
+        {/* Minimum charge row */}
+        <div className="svc-row">
+          <label>Minimum Per Visit</label>
+          <div className="svc-row-right">
+            <span className="svc-small">${calc.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+            <label className="svc-inline" style={{ marginLeft: '10px' }}>
+              <input
+                type="checkbox"
+                name="applyMinimum"
+                checked={form.applyMinimum !== false}
+                onChange={onChange}
+              />
+              <span>Apply Minimum</span>
+            </label>
+          </div>
+        </div>
+
         {/* Per-visit service total - always shown */}
         <div className="svc-row">
           <label>Per-visit service total</label>
@@ -1012,19 +1032,7 @@ export const MicrofiberMoppingForm: React.FC<
           <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
             <label></label>
             <div className="svc-row-right">
-              {calc.perVisitPrice <= calc.minimumChargePerVisit ? (
-                <span style={{
-                  color: '#d32f2f',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  padding: '4px 8px',
-                  backgroundColor: '#ffebee',
-                  borderRadius: '4px',
-                  display: 'inline-block'
-                }}>
-                  🔴 Redline Pricing (At or Below Minimum)
-                </span>
-              ) : (
+              {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
                 <span style={{
                   color: '#388e3c',
                   fontSize: '13px',
@@ -1034,7 +1042,19 @@ export const MicrofiberMoppingForm: React.FC<
                   borderRadius: '4px',
                   display: 'inline-block'
                 }}>
-                  🟢 Greenline Pricing (Above Minimum)
+                  🟢 Greenline Pricing
+                </span>
+              ) : (
+                <span style={{
+                  color: '#d32f2f',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  padding: '4px 8px',
+                  backgroundColor: '#ffebee',
+                  borderRadius: '4px',
+                  display: 'inline-block'
+                }}>
+                  🔴 Redline Pricing
                 </span>
               )}
             </div>

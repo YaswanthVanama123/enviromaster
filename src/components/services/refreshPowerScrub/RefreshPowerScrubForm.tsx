@@ -78,6 +78,7 @@ export const RefreshPowerScrubForm: React.FC<
     setFrequency,
     setContractMonths,
     setNotes,
+    setApplyMinimum,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,
@@ -443,6 +444,7 @@ const getKitchenLarge = (): number => {
             contractTotal: totalServiceCost,
 
         notes: form.notes || "",
+        applyMinimum: form.applyMinimum !== false,
         customFields: customFields,
         draftPayload,
       } : null;
@@ -964,6 +966,21 @@ const getKitchenLarge = (): number => {
             style={{ backgroundColor: form.minimumVisitIsCustom ? '#fffacd' : 'white' }}
           />
         </div> */}
+      </div>
+
+      {/* Minimum Per Visit / Apply Minimum */}
+      <div className="rps-config-row">
+        <div className="rps-inline">
+          <span className="rps-label">Minimum: ${form.minimumVisit}</span>
+          <label className="svc-inline" style={{ marginLeft: '10px' }}>
+            <input
+              type="checkbox"
+              checked={form.applyMinimum !== false}
+              onChange={(e) => setApplyMinimum(e.target.checked)}
+            />
+            <span>Apply Minimum</span>
+          </label>
+        </div>
       </div>
 
       <div className="rps-wrap rps-wrap-full">

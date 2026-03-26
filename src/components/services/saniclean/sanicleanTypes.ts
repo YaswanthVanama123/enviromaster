@@ -279,6 +279,8 @@ export interface SanicleanFormState {
   customMonthlyTotal?: number;
   customContractTotal?: number;
   facilityComponentsMonthly?: number;
+
+  applyMinimum?: boolean;
 }
 
 // Result of SaniClean calculations

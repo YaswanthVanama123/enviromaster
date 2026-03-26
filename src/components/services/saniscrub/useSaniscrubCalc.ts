@@ -79,6 +79,7 @@ const DEFAULT_FORM: SaniscrubFormState = {
   installMultiplierDirty: cfg.installMultipliers.dirty,
   installMultiplierClean: cfg.installMultipliers.clean,
   twoTimesPerMonthDiscount: cfg.twoTimesPerMonthDiscountFlat,
+  applyMinimum: true,
 };
 
 function clampFrequency(f: string): SaniscrubFrequency {
@@ -623,6 +624,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         case "includeInstall":
         case "isDirtyInstall":
         case "useExactNonBathroomSqft":
+        case "applyMinimum":
           newFormState = {
             ...prev,
             [name]: type === "checkbox" ? !!checked : Boolean(value),
@@ -757,6 +759,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
     installOneTime,
     firstMonthTotal,
     contractTotal,
+    originalContractTotal,
     // ✅ NEW: Frequency-specific UI helpers
     frequency,
     isVisitBasedFrequency,
@@ -856,7 +859,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
 
       // Base amount with minimum applied (this is what shows in the "= $___" box)
       // ✅ ONLY apply minimum when there are actual fixtures
-      fixtureBaseAmount = fixtureCount > 0 ? Math.max(rawAmount, minimumAmount) : 0;
+      fixtureBaseAmount = fixtureCount > 0 ? (form.applyMinimum !== false ? Math.max(rawAmount, minimumAmount) : rawAmount) : 0;
 
       // ✅ FIXED: Calculate fixtureMonthly and fixturePerVisit based on frequency
       if (freq === "oneTime") {
@@ -1238,6 +1241,39 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       installOneTime,
       firstMonthTotal,
       contractTotal,
+      originalContractTotal: (() => {
+        // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × fixtureCount × visits × contractMonths
+        if (!serviceActive) return 0;
+        const baselineFixtureRate = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth"
+          ? activeConfig.fixtureRates.monthly
+          : freq === "bimonthly"
+          ? activeConfig.fixtureRates.bimonthly
+          : activeConfig.fixtureRates.quarterly; // quarterly, biannual, annual
+        const baselineMinimum = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth"
+          ? activeConfig.minimums.monthly
+          : freq === "bimonthly"
+          ? activeConfig.minimums.bimonthly
+          : activeConfig.minimums.quarterly;
+        const baselineRawAmount = fixtureCount > 0 ? fixtureCount * baselineFixtureRate : 0;
+        const baselineBaseAmount = fixtureCount > 0 ? (form.applyMinimum !== false ? Math.max(baselineRawAmount, baselineMinimum) : baselineRawAmount) : 0;
+        const baselinePerVisit = baselineBaseAmount;
+        const baselineMonthlyTwice = baselineBaseAmount * 2;
+        let baselineContractTotal = 0;
+        if (freq === "oneTime") {
+          baselineContractTotal = baselinePerVisit;
+        } else if (freq === "weekly" || freq === "biweekly") {
+          baselineContractTotal = contractMonths * monthlyVisits * baselinePerVisit;
+        } else if (freq === "monthly") {
+          baselineContractTotal = contractMonths * baselinePerVisit;
+        } else if (freq === "twicePerMonth") {
+          baselineContractTotal = contractMonths * baselineMonthlyTwice;
+        } else {
+          // bimonthly, quarterly, biannual, annual: visits-based
+          baselineContractTotal = totalVisitsForContract * baselinePerVisit;
+        }
+        // Add same custom/extra fields so comparison is purely based on rate changes
+        return baselineContractTotal + calcFieldsTotal + dollarFieldsTotal;
+      })(),
       frequency,
       isVisitBasedFrequency,
       monthsPerVisit,
@@ -1275,6 +1311,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
     // ✅ NEW: Re-calculate when custom fields change
     calcFieldsTotal,
     dollarFieldsTotal,
+    form.applyMinimum,
   ]);
 
   const quote: ServiceQuoteResult = useMemo(
@@ -1309,6 +1346,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       installOneTime,
       firstMonthTotal,
       contractTotal,
+      originalContractTotal,
       // ✅ NEW: Frequency-specific UI helpers
       frequency,
       isVisitBasedFrequency,

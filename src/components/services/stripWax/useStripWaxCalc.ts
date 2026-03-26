@@ -256,6 +256,9 @@ export interface StripWaxCalcResult {
   /** Contract total (same as annual). */
   contractTotal: number;
 
+  /** Original contract total: baseline pricing table rates × quantities (no overrides, no minimum). */
+  originalContractTotal: number;
+
   /** Raw area × rate before applying min charge. */
   rawPrice: number;
 }
@@ -279,6 +282,7 @@ const DEFAULT_FORM_STATE: StripWaxFormState = {
   wellMaintainedMinCharge: cfg.variants.wellMaintained.minCharge,
   redRateMultiplier: cfg.rateCategories.redRate.multiplier,
   greenRateMultiplier: cfg.rateCategories.greenRate.multiplier,
+  applyMinimum: true,
 };
 
 export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, customFields?: any[]) {
@@ -727,6 +731,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
         firstVisit: 0,
         ongoingMonthly: 0,
         contractTotal: 0,
+        originalContractTotal: 0,
         rawPrice: 0,
       };
     }
@@ -788,7 +793,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
 
     // ✅ DIRECT CALCULATION: Always use simple area × rate per sq ft with minimum applied
     const rawPriceRed = areaSqFt * ratePerSqFt;
-    const perVisitRed = Math.max(rawPriceRed, minCharge);
+    const perVisitRed = form.applyMinimum !== false ? Math.max(rawPriceRed, minCharge) : rawPriceRed;
 
     const perVisit = perVisitRed * rateCfg.multiplier;
 
@@ -850,6 +855,33 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       finalContractTotal: finalContractTotal.toFixed(2)
     });
 
+    // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+    // Use raw ratePerSqFt from backendConfig for the selected variant (no rate category multiplier)
+    const baselineVariantRatePerSqFt = activeConfig.variants[form.serviceVariant]?.ratePerSqFt ?? activeConfig.variants[activeConfig.defaultVariant]?.ratePerSqFt ?? 0;
+    const baselineVariantMinCharge = activeConfig.variants[form.serviceVariant]?.minCharge ?? activeConfig.variants[activeConfig.defaultVariant]?.minCharge ?? 0;
+    const baselineRawPrice = areaSqFt * baselineVariantRatePerSqFt;
+    // Apply same minimum floor so baseline reflects what would actually be charged at table rates
+    const baselinePerVisit = form.applyMinimum !== false ? Math.max(baselineRawPrice, baselineVariantMinCharge) : baselineRawPrice;
+    let originalContractTotal = 0;
+    if (form.frequency === "oneTime") {
+      originalContractTotal = baselinePerVisit;
+    } else if (isVisitBasedFrequency) {
+      let visitsPerYear: number;
+      if (activeConfig.annualFrequencies && activeConfig.annualFrequencies[form.frequency] !== undefined) {
+        visitsPerYear = activeConfig.annualFrequencies[form.frequency];
+      } else {
+        visitsPerYear = 1;
+      }
+      const totalVisits = (contractMonths / 12) * visitsPerYear;
+      originalContractTotal = totalVisits * baselinePerVisit;
+    } else {
+      originalContractTotal = monthlyVisits * baselinePerVisit * contractMonths;
+    }
+    // Add same custom/extra fields so comparison is purely based on rate changes
+    if (originalContractTotal > 0) {
+      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
+    }
+
     return {
       perVisit: finalPerVisit,
       monthly: finalMonthly,
@@ -857,6 +889,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       firstVisit: finalPerVisit,
       ongoingMonthly: finalOngoingMonthly,
       contractTotal: finalContractTotal,
+      originalContractTotal,
       rawPrice: rawPriceRed,
     };
   }, [
@@ -884,6 +917,7 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     // ✅ NEW: Re-calculate when custom fields change
     calcFieldsTotal,
     dollarFieldsTotal,
+    form.applyMinimum,
   ]);
 
   return {

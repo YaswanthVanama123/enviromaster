@@ -233,6 +233,8 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   customMonthlyRecurring?: number;
   customFirstMonthPrice?: number;
   customContractTotal?: number;
+
+  applyMinimum?: boolean;
 }
 
 /**
@@ -263,6 +265,7 @@ export interface MicrofiberMoppingCalcResult {
   firstMonthPrice: number;
   contractMonths: number;
   contractTotal: number;
+  originalContractTotal: number;
 
   // Minimum charge for redline/greenline indicator
   minimumChargePerVisit: number;

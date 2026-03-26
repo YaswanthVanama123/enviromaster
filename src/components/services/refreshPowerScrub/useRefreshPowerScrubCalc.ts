@@ -363,6 +363,7 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   minimumVisit: FALLBACK_DEFAULT_MIN,  // $475 minimum
   hourlyRateIsCustom: false,
   minimumVisitIsCustom: false,
+  applyMinimum: true,
 
   // Global contract settings
   contractMonths: 12,
@@ -421,7 +422,8 @@ function calcPerWorker(
   state: RefreshAreaCalcState,
   formGlobalRate: number,  // ✅ Use form's global hourly rate as fallback
   formMinimumVisit: number, // ✅ Use form's global minimum visit
-  backendConfig?: BackendRefreshPowerScrubConfig | null
+  backendConfig?: BackendRefreshPowerScrubConfig | null,
+  applyMinimum: boolean = true
 ): number {
   // ✅ PRIORITY: Use area rate first (user edited this field), then form global rate, then backend rate, then fallback
   const perWorkerRate = state.workerRate > 0
@@ -438,7 +440,7 @@ function calcPerWorker(
   const calculatedAmount = (state.workers || 0) * perWorkerRate;
 
   // Apply minimum if calculated amount is below minimum - ONLY when there are workers
-  return state.workers > 0 ? Math.max(calculatedAmount, minimumVisit) : 0;
+  return state.workers > 0 ? (applyMinimum ? Math.max(calculatedAmount, minimumVisit) : calculatedAmount) : 0;
 }
 
 /** Per Hour rule:
@@ -450,7 +452,8 @@ function calcPerHour(
   state: RefreshAreaCalcState,
   formGlobalRate: number,  // ✅ Use form's global hourly rate as fallback
   formMinimumVisit: number, // ✅ Use form's global minimum visit
-  backendConfig?: BackendRefreshPowerScrubConfig | null
+  backendConfig?: BackendRefreshPowerScrubConfig | null,
+  applyMinimum: boolean = true
 ): number {
   // ✅ PRIORITY: Use area rate first (user edited this field), then form global rate, then backend per-hour rate, then fallback
   const perHourRate = state.hourlyRate > 0
@@ -467,7 +470,7 @@ function calcPerHour(
   const calculatedAmount = (state.hours || 0) * perHourRate;
 
   // Apply minimum if calculated amount is below minimum - ONLY when there are hours
-  return state.hours > 0 ? Math.max(calculatedAmount, minimumVisit) : 0;
+  return state.hours > 0 ? (applyMinimum ? Math.max(calculatedAmount, minimumVisit) : calculatedAmount) : 0;
 }
 
 /** Sq-ft rule:
@@ -478,7 +481,8 @@ function calcPerHour(
 function calcSquareFootage(
   state: RefreshAreaCalcState,
   formMinimumVisit: number, // ✅ NEW: Use form's global minimum visit
-  backendConfig?: BackendRefreshPowerScrubConfig | null
+  backendConfig?: BackendRefreshPowerScrubConfig | null,
+  applyMinimum: boolean = true
 ): number {
   // ✅ FIXED: Use area's sq ft fixed fee if explicitly set (even if 0), otherwise use backend/fallback
   // Check if fixed fee has been explicitly set by comparing against default
@@ -506,7 +510,7 @@ function calcSquareFootage(
   // ✅ FIXED: Apply the fixed fee calculation even when there's 0 sq ft (if pricing type is set to squareFeet)
   // If user selected square footage pricing, they want to see the total including fixed fee
   const hasAnyValue = (state.insideSqFt || 0) > 0 || (state.outsideSqFt || 0) > 0 || fixedFee > 0;
-  return hasAnyValue ? Math.max(calculatedAmount, minimumVisit) : 0;
+  return hasAnyValue ? (applyMinimum ? Math.max(calculatedAmount, minimumVisit) : calculatedAmount) : 0;
 }
 
 /** Default / preset prices when no hours / sq-ft are supplied.
@@ -652,17 +656,17 @@ function calcAreaCost(
     case "perWorker":
       // Per worker pricing - labor only (trip added at visit level)
       // ✅ Pass form's global rates
-      return { cost: calcPerWorker(state, form.hourlyRate, form.minimumVisit, backendConfig), isPackage: false };
+      return { cost: calcPerWorker(state, form.hourlyRate, form.minimumVisit, backendConfig, form.applyMinimum !== false), isPackage: false };
 
     case "perHour":
       // Per hour pricing - labor only (trip added at visit level)
       // ✅ Pass form's global rates
-      return { cost: calcPerHour(state, form.hourlyRate, form.minimumVisit, backendConfig), isPackage: false };
+      return { cost: calcPerHour(state, form.hourlyRate, form.minimumVisit, backendConfig, form.applyMinimum !== false), isPackage: false };
 
     case "squareFeet":
       // Square footage pricing - service only (trip added at visit level)
       // ✅ Pass form's global minimum visit
-      return { cost: calcSquareFootage(state, form.minimumVisit, backendConfig), isPackage: false };
+      return { cost: calcSquareFootage(state, form.minimumVisit, backendConfig, form.applyMinimum !== false), isPackage: false };
 
     case "custom":
       // Custom amount - assume it's a package price (trip included)
@@ -1343,7 +1347,7 @@ const getAreaFieldFallback = (
 
     // ✅ REMOVED TRIP CHARGE LOGIC: No trip charge added since it's handled separately
     // Use areas subtotal as-is, only apply minimum visit if needed - ONLY when there's actual service
-    const calculatedPerVisit = areasSubtotal > 0 ? Math.max(areasSubtotal, form.minimumVisit) : 0;
+    const calculatedPerVisit = areasSubtotal > 0 ? (form.applyMinimum !== false ? Math.max(areasSubtotal, form.minimumVisit) : areasSubtotal) : 0;
 
     const rounded = Math.round(calculatedPerVisit * 100) / 100;
 
@@ -1428,12 +1432,19 @@ const getAreaFieldFallback = (
       monthlyRecurring,
       contractTotal: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
     };
-  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
+  }, [areaTotals, hasPackagePrice, form.minimumVisit, form.applyMinimum, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 
   const setNotes = (notes: string) => {
     setForm((prev) => ({
       ...prev,
       notes,
+    }));
+  };
+
+  const setApplyMinimum = (value: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      applyMinimum: value,
     }));
   };
 
@@ -1444,6 +1455,7 @@ const getAreaFieldFallback = (
     setFrequency,
     setContractMonths,
     setNotes,
+    setApplyMinimum,
     toggleAreaEnabled,
     setAreaField,
     areaTotals,

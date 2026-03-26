@@ -132,4 +132,6 @@ export interface RpmWindowsFormState extends BaseServiceFormState {
   customContractTotal?: number;         // override for Contract Total (renamed from customAnnualPrice)
   customFirstMonthTotal?: number;
   customAnnualPrice?: number;
+
+  applyMinimum?: boolean;
 }

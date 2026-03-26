@@ -223,6 +223,7 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
   extraAreaRatePerUnit: cfg.extraAreaPricing.extraAreaRatePerUnit,
   standaloneRatePerUnit: cfg.standalonePricing.standaloneRatePerUnit,
   dailyChemicalPerGallon: cfg.chemicalProducts.dailyChemicalPerGallon,
+  applyMinimum: true,
 } as MicrofiberMoppingFormState;
 
 // Helper function removed - will use backend config directly
@@ -915,6 +916,7 @@ export function useMicrofiberMoppingCalc(
           monthlyRecurring: 0,
           firstMonthPrice: 0,
           contractTotal: 0,
+          originalContractTotal: 0,
           minimumChargePerVisit: 0,
           isVisitBasedFrequency: false,
           monthsPerVisit: 1,
@@ -1106,7 +1108,7 @@ export function useMicrofiberMoppingCalc(
 
     // ✅ Apply minimum charge per visit from activeConfig (backend or fallback)
     const minimumChargePerVisit = activeConfig.minimumChargePerVisit;
-    const calculatedPerVisitWithMinimum = Math.max(calculatedPerVisitServiceTotal, minimumChargePerVisit);
+    const calculatedPerVisitWithMinimum = form.applyMinimum !== false ? Math.max(calculatedPerVisitServiceTotal, minimumChargePerVisit) : calculatedPerVisitServiceTotal;
 
     // Use custom override if set
     const perVisitPrice = form.customPerVisitPrice !== undefined
@@ -1220,6 +1222,68 @@ export function useMicrofiberMoppingCalc(
       firstMonthPrice,
       contractMonths,
       contractTotal: contractTotalWithCustomFields,  // ✅ UPDATED: Use contract total with custom fields
+      originalContractTotal: (() => {
+        // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+        const baselineBathroomRate = activeConfig.includedBathroomRate;
+        const baselineExtraAreaRatePerUnit = activeConfig.extraAreaPricing.extraAreaRatePerUnit;
+        const baselineStandaloneRatePerUnit = activeConfig.standalonePricing.standaloneRatePerUnit;
+
+        let baselineStandardBathroom = 0;
+        if (!isAllInclusive && form.hasExistingSaniService && bathroomCount > 0) {
+          baselineStandardBathroom = bathroomCount * baselineBathroomRate;
+        }
+        let baselineHugeBathroom = 0;
+        if (!isAllInclusive && form.hasExistingSaniService && form.isHugeBathroom && activeConfig.hugeBathroomPricing.enabled && hugeBathroomSqFt > 0) {
+          const units = Math.ceil(hugeBathroomSqFt / activeConfig.hugeBathroomPricing.sqFtUnit);
+          baselineHugeBathroom = units * activeConfig.hugeBathroomPricing.ratePerSqFt;
+        }
+
+        let baselineExtraArea = 0;
+        if (!isAllInclusive && extraAreaSqFt > 0) {
+          const unitSqFt = activeConfig.extraAreaPricing.extraAreaSqFtUnit;
+          const firstUnitRate = activeConfig.extraAreaPricing.singleLargeAreaRate;
+          const unitsInMinimum = Math.floor(firstUnitRate / baselineExtraAreaRatePerUnit);
+          const minimumCoverageSqFt = unitsInMinimum * unitSqFt;
+          if (extraAreaSqFt <= minimumCoverageSqFt) {
+            baselineExtraArea = firstUnitRate;
+          } else {
+            const totalUnits = Math.ceil(extraAreaSqFt / unitSqFt);
+            baselineExtraArea = totalUnits * baselineExtraAreaRatePerUnit;
+          }
+        }
+
+        let baselineStandalone = 0;
+        if (!isAllInclusive && standaloneSqFt > 0) {
+          const unitSqFt = activeConfig.standalonePricing.standaloneSqFtUnit;
+          const minimumRate = activeConfig.standalonePricing.standaloneMinimum;
+          const unitsInMinimum = Math.floor(minimumRate / baselineStandaloneRatePerUnit);
+          const minimumCoverageSqFt = unitsInMinimum * unitSqFt;
+          if (standaloneSqFt <= minimumCoverageSqFt) {
+            baselineStandalone = minimumRate;
+          } else {
+            const totalUnits = Math.ceil(standaloneSqFt / unitSqFt);
+            baselineStandalone = totalUnits * baselineStandaloneRatePerUnit;
+          }
+        }
+
+        const baselineRaw = baselineStandardBathroom + baselineHugeBathroom + baselineExtraArea + baselineStandalone;
+        const baselinePerVisit = form.applyMinimum !== false ? Math.max(baselineRaw, minimumChargePerVisit) : baselineRaw;
+        const baselineMonthlyService = baselinePerVisit * monthlyVisits;
+
+        let baselineContractTotal = 0;
+        if (freq === "oneTime") {
+          baselineContractTotal = baselinePerVisit;
+        } else if (isVisitBasedFrequency) {
+          const visitsPerYear = conv.annualMultiplier ?? 1;
+          const totalVisits = (contractMonths / 12) * visitsPerYear;
+          baselineContractTotal = totalVisits * baselinePerVisit;
+        } else {
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          baselineContractTotal = baselineMonthlyService + remainingMonths * baselineMonthlyService;
+        }
+        // Add same custom/extra fields so comparison is purely based on rate changes
+        return baselineContractTotal + calcFieldsTotal + dollarFieldsTotal;
+      })(),
       minimumChargePerVisit,
     };
 

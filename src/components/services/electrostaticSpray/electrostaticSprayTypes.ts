@@ -92,6 +92,8 @@ export interface ElectrostaticSprayFormState {
   customMonthlyRecurring?: number;
   customContractTotal?: number;
   customFirstMonthTotal?: number;
+
+  applyMinimum?: boolean;
 }
 
 export interface ElectrostaticSprayCalcResult {
@@ -103,6 +105,7 @@ export interface ElectrostaticSprayCalcResult {
   // Recurring calculations
   monthlyRecurring: number; // Based on frequency
   contractTotal: number; // Total for contract period
+  originalContractTotal: number; // Baseline pricing table rates × quantities (no overrides)
 
   // Breakdown info
   effectiveRate: number; // Effective rate per room or per 1000 sq ft

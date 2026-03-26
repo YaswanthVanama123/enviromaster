@@ -94,4 +94,6 @@ export interface CarpetFormState extends BaseServiceFormState {
   customFirstMonthPrice?: number;
   customContractTotal?: number;
   customInstallationFee?: number;
+
+  applyMinimum?: boolean;
 }

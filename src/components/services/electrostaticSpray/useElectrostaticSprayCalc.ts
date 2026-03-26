@@ -133,6 +133,7 @@ const DEFAULT_FORM_STATE: ElectrostaticSprayFormState = {
   ratePerRoom: cfg.ratePerRoom,
   ratePerThousandSqFt: cfg.ratePerThousandSqFt,
   tripChargePerVisit: cfg.tripCharges.standard,
+  applyMinimum: true,
 };
 
 export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSprayFormState>, customFields?: any[]) {
@@ -602,7 +603,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
                       (form.pricingMethod === "bySqFt" && form.squareFeet > 0);
 
     if (activeConfig.minimumChargePerVisit > 0 && hasService) {
-      calculatedServiceCharge = Math.max(calculatedServiceCharge, activeConfig.minimumChargePerVisit);
+      calculatedServiceCharge = form.applyMinimum !== false ? Math.max(calculatedServiceCharge, activeConfig.minimumChargePerVisit) : calculatedServiceCharge;
     } else if (!hasService) {
       calculatedServiceCharge = 0;
     }
@@ -662,12 +663,48 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
+    // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+    let originalContractTotal = 0;
+    if (hasService) {
+      const baselineRatePerRoom = activeConfig.standardSprayPricing.sprayRatePerRoom;
+      const baselineRatePerSqFtUnit = activeConfig.standardSprayPricing.sprayRatePerSqFtUnit;
+      let baselineServiceCharge = 0;
+      if (form.pricingMethod === "byRoom") {
+        baselineServiceCharge = form.roomCount * baselineRatePerRoom;
+      } else {
+        let calcSqFt = form.squareFeet;
+        if (!form.useExactCalculation) {
+          const minTier = activeConfig.standardSprayPricing.sqFtUnit;
+          calcSqFt = calcSqFt <= minTier ? minTier : Math.ceil(calcSqFt / minTier) * minTier;
+        }
+        const units = calcSqFt / activeConfig.standardSprayPricing.sqFtUnit;
+        baselineServiceCharge = units * baselineRatePerSqFtUnit;
+      }
+      if (activeConfig.minimumChargePerVisit > 0) {
+        baselineServiceCharge = form.applyMinimum !== false ? Math.max(baselineServiceCharge, activeConfig.minimumChargePerVisit) : baselineServiceCharge;
+      }
+      const baselinePerVisit = baselineServiceCharge + tripCharge;
+      const baselineMonthlyRecurring = baselinePerVisit * monthlyMultiplier;
+      if (form.frequency === "oneTime") {
+        originalContractTotal = baselinePerVisit;
+      } else if (isVisitBasedFrequency) {
+        const visitsPerYear = annualMultiplier;
+        const totalVisits = (form.contractMonths / 12) * visitsPerYear;
+        originalContractTotal = totalVisits * baselinePerVisit;
+      } else {
+        originalContractTotal = baselineMonthlyRecurring * form.contractMonths;
+      }
+      // Add same custom/extra fields so comparison is purely based on rate changes
+      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
+    }
+
     return {
       serviceCharge,
       tripCharge,
       perVisit,
       monthlyRecurring,
       contractTotal: contractTotalWithCustomFields,  // ✅ UPDATED: Return contract total with custom fields added
+      originalContractTotal,
       effectiveRate,
       pricingMethodUsed,
       // Frequency-specific UI helpers

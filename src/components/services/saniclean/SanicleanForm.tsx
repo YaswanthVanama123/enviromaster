@@ -525,6 +525,7 @@ export const SanicleanForm: React.FC<
         customWeeklyTotal: form.customWeeklyTotal,
         customMonthlyTotal: form.customMonthlyTotal,
         customContractTotal: form.customContractTotal,
+        applyMinimum: form.applyMinimum !== false,
 
         // ✅ FIXED: Zero out quantities when facility component checkboxes are unchecked
         addUrinalComponents: form.addUrinalComponents,
@@ -1581,6 +1582,23 @@ export const SanicleanForm: React.FC<
         PRICE BREAKDOWN
       </div>
 
+      {/* Minimum Charge */}
+      <div className="svc-row">
+        <label>Minimum Per Visit</label>
+        <div className="svc-row-right">
+          <span className="svc-small">${quote.minimumChargePerWeek?.toFixed(2) ?? "0.00"}</span>
+          <label className="svc-inline" style={{ marginLeft: '10px' }}>
+            <input
+              type="checkbox"
+              name="applyMinimum"
+              checked={form.applyMinimum !== false}
+              onChange={onChange}
+            />
+            <span>Apply Minimum</span>
+          </label>
+        </div>
+      </div>
+
       {/* Base Service */}
       <div className="svc-row">
         <label>Base Service</label>
@@ -1870,19 +1888,7 @@ export const SanicleanForm: React.FC<
         <div className="svc-row" style={{ paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {quote.weeklyTotal <= quote.minimumChargePerWeek ? (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🔴 Redline Pricing (At or Below Minimum)
-              </span>
-            ) : (
+            {(servicesContext?.getTotalAgreementAmount() ?? 0) > (servicesContext?.getTotalOriginalContractTotal() ?? 0) * 1.20 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',
@@ -1892,7 +1898,19 @@ export const SanicleanForm: React.FC<
                 borderRadius: '4px',
                 display: 'inline-block'
               }}>
-                🟢 Greenline Pricing (Above Minimum)
+                🟢 Greenline Pricing
+              </span>
+            ) : (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing
               </span>
             )}
           </div>

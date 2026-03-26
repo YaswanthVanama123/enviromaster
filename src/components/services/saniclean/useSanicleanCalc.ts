@@ -206,6 +206,8 @@ const DEFAULT_FORM: SanicleanFormState = {
   // Rate Tiers
   redRateMultiplier: SANICLEAN_CONFIG.rateTiers.redRate.multiplier,
   greenRateMultiplier: SANICLEAN_CONFIG.rateTiers.greenRate.multiplier,
+
+  applyMinimum: true,
 };
 
 // Frequency to multiplier mapping for billing calculations (backend-driven)
@@ -661,7 +663,7 @@ function calculatePerItemCharge(
   let tripChargeCalc = 0;
 
   if (isSmallFacility) {
-    baseServiceCalc = Math.max(baseServiceCalc, form.smallFacilityMinimum); // $50 minimum includes trip
+    baseServiceCalc = form.applyMinimum !== false ? Math.max(baseServiceCalc, form.smallFacilityMinimum) : baseServiceCalc; // $50 minimum includes trip
     tripChargeCalc = 0; // Already included in minimum
   } else {
     // Apply regional minimum

@@ -85,4 +85,6 @@ export interface StripWaxFormState {
   customContractTotal?: number;
   customRatePerSqFt?: number;  // Tracks manual overrides for highlight
   customMinCharge?: number;    // Tracks manual overrides for highlight
+
+  applyMinimum?: boolean;
 }

@@ -76,6 +76,7 @@ const DEFAULT_FORM: RpmWindowsFormState = {
   // ✅ NEW: Editable installation multipliers from config (will be overridden by backend)
   installMultiplierFirstTime: cfg.installMultiplierFirstTime,
   installMultiplierClean: cfg.installMultiplierClean,
+  applyMinimum: true,
 };
 
 function mapFrequency(v: string): RpmFrequencyKey {
@@ -656,6 +657,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           newFormState = { ...prev, includeMirrors: !!checked };
           break;
 
+        case "applyMinimum":
+          newFormState = { ...prev, applyMinimum: !!checked };
+          break;
+
         case "smallQty":
         case "mediumQty":
         case "largeQty":
@@ -993,7 +998,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     // - When service < minimum: installation = minimum × multiplier
     // - When service ≥ minimum: installation = service × multiplier
     const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? activeConfig.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
-    const weeklyWindowsWithMinimum = hasWindows ? Math.max(weeklyWindows, minimumChargePerVisit) : 0;
+    const weeklyWindowsWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(weeklyWindows, minimumChargePerVisit) : weeklyWindows) : 0;
 
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
@@ -1140,7 +1145,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     // ✅ NEW: Apply minimum charge per visit from backend ONLY when there are windows
     // CRITICAL: Apply minimum to EFFECTIVE per-visit (which includes custom override)
     // Note: minimumChargePerVisit is already defined earlier for installation calculation
-    const recurringPerVisitWithMinimum = hasWindows ? Math.max(effectivePerVisit, minimumChargePerVisit) : 0;
+    const recurringPerVisitWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(effectivePerVisit, minimumChargePerVisit) : effectivePerVisit) : 0;
 
     // ✅ RECALCULATE MONTHLY VALUES with minimum charge applied
     const standardMonthlyBillWithMinimum = recurringPerVisitWithMinimum * monthlyVisits;
@@ -1231,6 +1236,40 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
+    // ✅ ORIGINAL CONTRACT TOTAL: computed using baseline (pricing table) rates × current quantities
+    // Apply the SAME minimum floor as the current calculation so that when no price changes are made,
+    // originalContractTotal === contractTotalRated and the greenline comparison is 1:1.
+    const pricingTableSmall = backendConfig?.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate;
+    const pricingTableMedium = backendConfig?.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate;
+    const pricingTableLarge = backendConfig?.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate;
+
+    const baselineSmallRate = pricingTableSmall * freqMult;
+    const baselineMediumRate = pricingTableMedium * freqMult;
+    const baselineLargeRate = pricingTableLarge * freqMult;
+
+    const originalPerVisitWindows = hasWindows
+      ? form.smallQty * baselineSmallRate + form.mediumQty * baselineMediumRate + form.largeQty * baselineLargeRate
+      : 0;
+    const originalPerVisitRated = originalPerVisitWindows * (rateCfg?.multiplier ?? 1);
+    // Apply same minimum floor so baseline reflects what would actually be charged at table rates
+    const originalPerVisitWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(originalPerVisitRated, minimumChargePerVisit) : originalPerVisitRated) : 0;
+    const originalStandardMonthlyBill = originalPerVisitWithMinimum * monthlyVisits;
+
+    let originalContractTotal = 0;
+    if (contractMonths > 0 && hasWindows) {
+      if (freqKey === "oneTime") {
+        originalContractTotal = originalPerVisitWithMinimum;
+      } else if (isVisitBasedFrequency) {
+        const cycleMonths = getCycleMonths(freqKey, backendConfig);
+        const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
+        originalContractTotal = totalVisits * originalPerVisitWithMinimum;
+      } else {
+        originalContractTotal = originalStandardMonthlyBill * contractMonths;
+      }
+      // Add same custom/extra fields so comparison is purely based on rate changes
+      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
+    }
+
     return {
       effSmall,
       effMedium,
@@ -1245,6 +1284,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       monthlyBillRated: form.customMonthlyRecurring ?? displayMonthlyBillWithMinimum,
       contractTotalRated: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
       minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
+      originalContractTotal, // ✅ NEW: Contract total using baseline (pricing table) rates for greenline comparison
     };
   }, [
     backendConfig, // ✅ CRITICAL: Re-calculate when backend config loads!
@@ -1272,6 +1312,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     // ✅ NEW: Re-calculate when custom fields change
     calcFieldsTotal,
     dollarFieldsTotal,
+    form.applyMinimum,
   ]);
 
   const quote: ServiceQuoteResult = {

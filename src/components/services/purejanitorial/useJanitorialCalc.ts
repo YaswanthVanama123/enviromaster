@@ -81,6 +81,7 @@ export interface JanitorialCalcResult {
   firstVisit: number;
   ongoingMonthly: number;
   contractTotal: number;
+  originalContractTotal: number;
   minimumChargePerVisit: number; // ✅ NEW: Minimum charge for red/green line indicator
   breakdown: {
     manualHours: number;
@@ -725,6 +726,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         firstVisit: 0,
         ongoingMonthly: 0,
         contractTotal: 0,
+        originalContractTotal: 0,
         breakdown: {
           manualHours: 0,
           vacuumingHours: 0,
@@ -760,6 +762,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         firstVisit: totalPrice,
         ongoingMonthly: totalPrice,
         contractTotal: totalPrice,
+        originalContractTotal: totalPrice,
         breakdown: {
           manualHours,
           vacuumingHours,
@@ -866,6 +869,22 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       ? form.minHoursPerVisit * form.shortJobHourlyRate
       : form.minHoursPerVisit * form.baseHourlyRate;
 
+    // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+    const baselineHourlyRate = activeConfig.baseHourlyRate;
+    const baselineBillableHours = Math.max(totalHoursBase, activeConfig.minHoursPerVisit);
+    const baselinePerVisitRated = baselineBillableHours * baselineHourlyRate;
+    // Apply same minimum floor so baseline reflects what would actually be charged at table rates
+    const baselineMinimumCharge = activeConfig.minHoursPerVisit * baselineHourlyRate;
+    const baselinePerVisit = Math.max(baselinePerVisitRated, baselineMinimumCharge);
+    const baselineMonthly = baselinePerVisit * monthlyVisits;
+    let originalContractTotal = contractMonths <= 0
+      ? 0
+      : baselineMonthly + Math.max(contractMonths - 1, 0) * baselineMonthly;
+    // Add same custom/extra fields so comparison is purely based on rate changes
+    if (originalContractTotal > 0) {
+      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
+    }
+
     return {
       totalHours: totalHoursBase,
       perVisit: finalPerVisit,
@@ -877,6 +896,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       firstVisit: finalPerVisit,
       ongoingMonthly: finalRecurringMonthly, // ✅ Regular monthly recurring (no installation)
       contractTotal: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
+      originalContractTotal,
       minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
       breakdown: {
         manualHours,

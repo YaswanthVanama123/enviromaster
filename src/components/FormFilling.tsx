@@ -166,8 +166,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     globalContractMonths,
     setGlobalContractMonths,
     getTotalAgreementAmount,
-    getTotalOriginalPerVisit,
-    getTotalMinimumPerVisit,
+    getTotalOriginalContractTotal,
     globalTripCharge,
     setGlobalTripCharge,
     globalParkingCharge,
@@ -185,11 +184,10 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     };
 
   const totalAmount = getTotalAgreementAmount();
-  const totalOriginal = getTotalOriginalPerVisit();
-  const totalMinimum = getTotalMinimumPerVisit();
+  const totalCurrentContract = getTotalAgreementAmount();
+  const totalOriginalContract = getTotalOriginalContractTotal();
 
   const [pricingIndicator, setpricingIndicator] = useState<'red' | 'green'>('red');
-  const [amountToGreenLine, setAmountToGreenLine] = useState(0);
   const [greenLineThreshold, setGreenLineThreshold] = useState(0);
   const [isMonthsDropdownOpen, setIsMonthsDropdownOpen] = useState(false);
   const [isTripFreqDropdownOpen, setIsTripFreqDropdownOpen] = useState(false);
@@ -243,14 +241,12 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ✅ Calculate pricing indicator (Red/Green Line)
+  // Red/Green Line: currentContractTotal vs originalContractTotal × 1.20
   useEffect(() => {
-    const threshold = totalMinimum * 1.20; // 20% above original
-    const indicator: 'red' | 'green' = totalOriginal > threshold ? 'green' : 'red';
+    const threshold = totalOriginalContract * 1.20;
     setGreenLineThreshold(threshold);
-    setpricingIndicator(indicator);
-    setAmountToGreenLine(threshold - totalOriginal);
-  }, [totalOriginal, totalMinimum]);
+    setpricingIndicator(totalCurrentContract > threshold ? 'green' : 'red');
+  }, [totalCurrentContract, totalOriginalContract]);
 
   // ✅ NEW: Calculate Agreement Expiry & Days Remaining with "Yet to Start" status
   useEffect(() => {
@@ -345,54 +341,54 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
         <h2>Contract Summary</h2>
       </div>
 
-      {/* ✅ Red/Green Line Status Banner */}
+      {/* Red/Green Line Status Banner */}
       <div className={`pricing-status-banner ${pricingIndicator}-line-banner`}>
-          <div className="status-banner-content">
-            {pricingIndicator === 'red' ? (
-              <>
-                <span className="status-icon">
-                  <FontAwesomeIcon icon={faExclamationTriangle} />
-                </span>
-                <div className="status-info">
-                  <div className="status-title">Red Line Pricing</div>
-                  <div className="status-subtitle">Below 20% above original - requires approval</div>
+        <div className="status-banner-content">
+          {pricingIndicator === 'red' ? (
+            <>
+              <span className="status-icon">
+                <FontAwesomeIcon icon={faExclamationTriangle} />
+              </span>
+              <div className="status-info">
+                <div className="status-title">Red Line Pricing</div>
+                <div className="status-subtitle">Below 20% above original — requires approval</div>
+              </div>
+              <div className="status-values">
+                <div className="status-value-item">
+                  <span className="value-label">Current Contract</span>
+                  <span className="value-amount">${totalCurrentContract.toFixed(2)}</span>
                 </div>
-                <div className="status-values">
-                  <div className="status-value-item">
-                    <span className="value-label">Current</span>
-                    <span className="value-amount">${totalOriginal.toFixed(2)}</span>
-                  </div>
-                  <div className="status-divider">≤</div>
-                  <div className="status-value-item">
-                    <span className="value-label">Target</span>
-                    <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
-                  </div>
+                <div className="status-divider">≤</div>
+                <div className="status-value-item">
+                  <span className="value-label">Target (Original ×1.20)</span>
+                  <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
                 </div>
-              </>
-            ) : (
-              <>
-                <span className="status-icon">
-                  <FontAwesomeIcon icon={faCheckCircle} />
-                </span>
-                <div className="status-info">
-                  <div className="status-title">Green Line Pricing</div>
-                  <div className="status-subtitle">20%+ above original - auto approved</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="status-icon">
+                <FontAwesomeIcon icon={faCheckCircle} />
+              </span>
+              <div className="status-info">
+                <div className="status-title">Green Line Pricing</div>
+                <div className="status-subtitle">20%+ above original — auto approved</div>
+              </div>
+              <div className="status-values">
+                <div className="status-value-item">
+                  <span className="value-label">Current Contract</span>
+                  <span className="value-amount">${totalCurrentContract.toFixed(2)}</span>
                 </div>
-                <div className="status-values">
-                  <div className="status-value-item">
-                    <span className="value-label">Current</span>
-                    <span className="value-amount">${totalOriginal.toFixed(2)}</span>
-                  </div>
-                  <div className="status-divider">≥</div>
-                  <div className="status-value-item">
-                    <span className="value-label">Target</span>
-                    <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
-                  </div>
+                <div className="status-divider">≥</div>
+                <div className="status-value-item">
+                  <span className="value-label">Target (Original ×1.20)</span>
+                  <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
+      </div>
 
       <div className="contract-summary-grid">
         {/* ✅ Left Column: Contract Details */}
@@ -749,25 +745,25 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
 
           <div className="pricing-breakdown">
             <div className="breakdown-row">
-              <span className="breakdown-label">Original Per Visit</span>
-              <span className="breakdown-value original">${totalOriginal.toFixed(2)}</span>
+              <span className="breakdown-label">Original Contract Total</span>
+              <span className="breakdown-value original">${totalOriginalContract.toFixed(2)}</span>
             </div>
             <div className="breakdown-row">
-              <span className="breakdown-label">Minimum Threshold</span>
-              <span className="breakdown-value minimum">${totalMinimum.toFixed(2)}</span>
+              <span className="breakdown-label">Current Contract Total</span>
+              <span className="breakdown-value minimum">${totalCurrentContract.toFixed(2)}</span>
             </div>
             <div className="breakdown-row">
-              <span className="breakdown-label">Green Line Target (30%)</span>
+              <span className="breakdown-label">Green Line Target (+20%)</span>
               <span className="breakdown-value target">${greenLineThreshold.toFixed(2)}</span>
             </div>
 
             {/* Show profit margin */}
             <div className="breakdown-divider"></div>
             <div className="breakdown-row highlight">
-              <span className="breakdown-label">Profit Margin</span>
+              <span className="breakdown-label">Price Change</span>
               <span className={`breakdown-value profit ${pricingIndicator}`}>
-                {totalMinimum > 0
-                  ? `${(((totalOriginal - totalMinimum) / totalMinimum) * 100).toFixed(1)}%`
+                {totalOriginalContract > 0
+                  ? `${(((totalCurrentContract - totalOriginalContract) / totalOriginalContract) * 100).toFixed(1)}%`
                   : '0%'
                 }
               </span>
@@ -890,9 +886,8 @@ function FormFillingContent({
 
   // ✅ NEW: Access ServicesContext for pricing calculations
   const {
-    getTotalOriginalPerVisit,
-    getTotalMinimumPerVisit,
     getTotalAgreementAmount,
+    getTotalOriginalContractTotal,
     globalContractMonths,
     globalTripCharge,
     globalParkingCharge,
@@ -904,6 +899,9 @@ function FormFillingContent({
     setGlobalParkingCharge,
     setGlobalParkingChargeFrequency,
   } = useServicesContext();
+
+  const totalCurrentContract = getTotalAgreementAmount();
+  const totalOriginalContract = getTotalOriginalContractTotal();
 
   useEffect(() => {
     if (!payload) return;
@@ -920,36 +918,14 @@ function FormFillingContent({
 
   // ✅ NEW: Calculate pricing status (Red/Green Line) for approval workflow
   const calculatePricingStatus = useCallback((): 'red' | 'green' | 'neutral' => {
-    const totalOriginal = getTotalOriginalPerVisit();
-    const totalMinimum = getTotalMinimumPerVisit();
-    const threshold = totalMinimum * 1.30; // 30% above minimum
+    const threshold = totalOriginalContract * 1.20;
 
-    console.log(`💰 [PRICING-CALC] Values:`, {
-      totalOriginal,
-      totalMinimum,
-      threshold,
-      comparison: {
-        'isRedLine (orig <= min)': totalOriginal <= totalMinimum,
-        'isGreenLine (orig >= threshold)': totalOriginal >= threshold,
-        'difference': totalOriginal - totalMinimum,
-        'percentAboveMin': totalMinimum > 0 ? ((totalOriginal - totalMinimum) / totalMinimum * 100).toFixed(2) + '%' : 'N/A'
-      }
-    });
-
-    if (totalOriginal <= totalMinimum) {
-      // Red Line: at or below minimum (unprofitable)
-      console.log(`🔴 [PRICING-CALC] Result: RED LINE (${totalOriginal} <= ${totalMinimum})`);
-      return 'red';
-    } else if (totalOriginal >= threshold) {
-      // Green Line: 30%+ above minimum (profitable)
-      console.log(`🟢 [PRICING-CALC] Result: GREEN LINE (${totalOriginal} >= ${threshold})`);
+    if (totalCurrentContract > threshold) {
       return 'green';
     } else {
-      // Neutral: between minimum and green line threshold
-      console.log(`🟡 [PRICING-CALC] Result: NEUTRAL (${totalMinimum} < ${totalOriginal} < ${threshold})`);
-      return 'neutral';
+      return 'red';
     }
-  }, [getTotalOriginalPerVisit, getTotalMinimumPerVisit]);
+  }, [totalCurrentContract, totalOriginalContract]);
 
   const handleProductTotalsChange = useCallback((totals: ProductTotals) => {
     setProductTotals((prev) => {

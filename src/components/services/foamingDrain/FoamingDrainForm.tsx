@@ -239,11 +239,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         isAllInclusive: state.isAllInclusive,
         chargeGreaseTrapInstall: state.chargeGreaseTrapInstall,
         needsPlumbing: state.needsPlumbing,
+        applyMinimum: state.applyMinimum !== false,
 
         // Red/Green Line pricing data (weekly pricing)
         perVisitBase: quote.weeklyService,  // Weekly service total
         perVisit: quote.weeklyTotal,  // Weekly total including all charges
         minimumChargePerVisit: quote.minimumChargePerVisit,  // Minimum threshold
+        contractTotal: quote.contractTotal,
+        originalContractTotal: quote.originalContractTotal,
 
         frequency: {
           isDisplay: true,
@@ -1382,6 +1385,24 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
+          {/* Minimum Charge Per Visit */}
+          <div className="svc-row">
+            <div className="svc-label">
+              <span>Minimum Per Visit</span>
+            </div>
+            <div className="svc-field">
+              <span className="svc-small">${quote.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+              <label className="svc-inline" style={{ marginLeft: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={state.applyMinimum !== false}
+                  onChange={(e) => updateField("applyMinimum", e.target.checked)}
+                />
+                <span>Apply Minimum</span>
+              </label>
+            </div>
+          </div>
+
           {/* Per Visit Total */}
           <div className="svc-row">
             <div className="svc-label">
@@ -1422,19 +1443,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
               <div className="svc-field">
-                {quote.weeklyTotal <= quote.minimumChargePerVisit ? (
-                  <span style={{
-                    color: '#d32f2f',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    padding: '4px 8px',
-                    backgroundColor: '#ffebee',
-                    borderRadius: '4px',
-                    display: 'inline-block'
-                  }}>
-                    🔴 Redline Pricing (At or Below Minimum)
-                  </span>
-                ) : (
+                {quote.contractTotal > quote.originalContractTotal * 1.20 ? (
                   <span style={{
                     color: '#388e3c',
                     fontSize: '13px',
@@ -1444,7 +1453,19 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     borderRadius: '4px',
                     display: 'inline-block'
                   }}>
-                    🟢 Greenline Pricing (Above Minimum)
+                    🟢 Greenline Pricing
+                  </span>
+                ) : (
+                  <span style={{
+                    color: '#d32f2f',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    padding: '4px 8px',
+                    backgroundColor: '#ffebee',
+                    borderRadius: '4px',
+                    display: 'inline-block'
+                  }}>
+                    🔴 Redline Pricing
                   </span>
                 )}
               </div>

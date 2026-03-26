@@ -187,6 +187,7 @@ export const StripWaxForm: React.FC<
         serviceVariant: form.serviceVariant,
         rateCategory: form.rateCategory,
         contractMonths: form.contractMonths,
+        applyMinimum: form.applyMinimum !== false,
 
         // Red/Green Line pricing data
         rawPrice: calc.rawPrice,  // Raw price before minimum
@@ -300,6 +301,8 @@ export const StripWaxForm: React.FC<
 
         notes: "", // No notes field in Strip Wax
         customFields: customFields,
+        contractTotal: calc.contractTotal,
+        originalContractTotal: calc.originalContractTotal,
         ...(form.frequency === "oneTime" ? { totalPrice: totalPriceValue } : {}),
       } : null;
 
@@ -512,6 +515,15 @@ export const StripWaxForm: React.FC<
             />
           </div>
           <span className="svc-small">minimum</span>
+          <label className="svc-inline" style={{ marginLeft: '10px' }}>
+            <input
+              type="checkbox"
+              name="applyMinimum"
+              checked={form.applyMinimum !== false}
+              onChange={onChange}
+            />
+            <span>Apply Minimum</span>
+          </label>
         </div>
       </div>
 
@@ -601,19 +613,7 @@ export const StripWaxForm: React.FC<
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {calc.perVisit <= form.minCharge ? (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
-                🔴 Redline Pricing (At or Below Minimum)
-              </span>
-            ) : (
+            {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',
@@ -623,7 +623,19 @@ export const StripWaxForm: React.FC<
                 borderRadius: '4px',
                 display: 'inline-block'
               }}>
-                🟢 Greenline Pricing (Above Minimum)
+                🟢 Greenline Pricing
+              </span>
+            ) : (
+              <span style={{
+                color: '#d32f2f',
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 8px',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px',
+                display: 'inline-block'
+              }}>
+                🔴 Redline Pricing
               </span>
             )}
           </div>

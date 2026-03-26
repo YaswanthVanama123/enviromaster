@@ -55,6 +55,7 @@ const DEFAULT_FORM: CarpetFormState = {
   perVisitMinimum: cfg.perVisitMinimum,
   installMultiplierDirty: cfg.installMultipliers.dirty,
   installMultiplierClean: cfg.installMultipliers.clean,
+  applyMinimum: true,
 };
 
 // ✅ Helper function to transform backend frequencyMetadata to frontend format
@@ -513,6 +514,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         case "includeInstall":
         case "isDirtyInstall":
         case "useExactSqft":
+        case "applyMinimum":
           newFormState = {
             ...prev,
             [name]: type === "checkbox" ? !!checked : Boolean(value),
@@ -624,6 +626,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     perVisitCharge,
     monthlyTotal,
     contractTotal,
+    originalContractTotal,
     visitsPerYear,
     visitsPerMonth,
     perVisitTrip,
@@ -732,7 +735,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         }
       }
 
-      calculatedPerVisitCharge = Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum);
+      calculatedPerVisitCharge = form.applyMinimum !== false ? Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum) : calculatedPerVisitBase;
     }
 
     // Use custom override if set, otherwise use calculated
@@ -751,7 +754,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     // ✅ FIXED: Install = 3× dirty / 1× clean of MINIMUM PRICE (NOT calculated price)
     // Installation is the same for any frequency type
     // Use minimum price as base for installation fee calculation
-    const installationBasePrice = Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum);
+    const installationBasePrice = form.applyMinimum !== false ? Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum) : calculatedPerVisitBase;
     const calculatedInstallOneTime =
       serviceActive && form.includeInstall
         ? installationBasePrice *
@@ -1036,11 +1039,42 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     // Per-Visit Effective = normal per-visit service price (no install, no trip)
     const perVisitEffective = perVisitCharge;
 
+    // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+    // Uses baseConfig rates (no custom overrides, no minimum floor)
+    let originalContractTotal = 0;
+    if (serviceActive && contractMonths > 0) {
+      const baselineUnitSqFt = baseConfig.unitSqFt;
+      const baselineFirstUnitRate = baseConfig.firstUnitRate;
+      const baselineAdditionalUnitRate = baseConfig.additionalUnitRate;
+      let baselinePerVisitBase = 0;
+      if (areaSqFt <= baselineUnitSqFt) {
+        baselinePerVisitBase = baselineFirstUnitRate;
+      } else {
+        const extraSqFt = areaSqFt - baselineUnitSqFt;
+        if (form.useExactSqft) {
+          const ratePerSqFt = baselineAdditionalUnitRate / baselineUnitSqFt;
+          baselinePerVisitBase = baselineFirstUnitRate + (extraSqFt * ratePerSqFt);
+        } else {
+          const additionalBlocks = Math.ceil(extraSqFt / baselineUnitSqFt);
+          baselinePerVisitBase = baselineFirstUnitRate + (additionalBlocks * baselineAdditionalUnitRate);
+        }
+      }
+      if (freq === "oneTime") {
+        originalContractTotal = baselinePerVisitBase;
+      } else if (isVisitBasedFrequency) {
+        const totalVisits = totalVisitsForContract;
+        originalContractTotal = totalVisits * baselinePerVisitBase;
+      } else {
+        originalContractTotal = contractMonths * monthlyVisits * baselinePerVisitBase;
+      }
+    }
+
     return {
       perVisitBase,
       perVisitCharge,
       monthlyTotal: monthlyRecurring,
       contractTotal: contractTotalWithCustomFields,  // ✅ UPDATED: Return contract total with custom fields added
+      originalContractTotal,
       visitsPerYear,
       visitsPerMonth,
       perVisitTrip,
@@ -1081,6 +1115,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     // ✅ NEW: Re-calculate when custom fields change
     calcFieldsTotal,
     dollarFieldsTotal,
+    form.applyMinimum,
   ]);
 
   const quote: ServiceQuoteResult = useMemo(
@@ -1106,6 +1141,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       perVisitCharge,
       monthlyTotal,
       contractTotal,
+      originalContractTotal,
       visitsPerYear,
       visitsPerMonth,
       perVisitTrip,

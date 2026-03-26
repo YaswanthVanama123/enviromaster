@@ -44,9 +44,8 @@ interface ServicesContextValue {
   setGlobalContractMonths: (months: number) => void;
   getTotalAgreementAmount: () => number; // Sum of all service contract totals
 
-  // ✅ NEW: Red/Green Line Pricing Totals
-  getTotalOriginalPerVisit: () => number; // Sum of raw per-visit prices (before minimums)
-  getTotalMinimumPerVisit: () => number; // Sum of actual per-visit prices (after minimums)
+  // ✅ NEW: Contract Total comparison for greenline (sum of baseline-rate contract totals vs current)
+  getTotalOriginalContractTotal: () => number; // Sum of contract totals using pricing-table (baseline) rates
 
   // ✅ NEW: Global trip charge and parking charge
   globalTripCharge: number; // Trip charge per visit
@@ -276,125 +275,50 @@ export const ServicesProvider: React.FC<{
     return totalAmount;
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
-  // ✅ NEW: Helper function to calculate total original per-visit (actual charged prices)
-  const getTotalOriginalPerVisit = useCallback((): number => {
+  // ✅ NEW: Sum of contract totals using baseline (pricing-table) rates for greenline comparison.
+  // For services that export `originalContractTotal` (e.g. RPM Windows) we use it directly.
+  // For services that don't track the baseline yet we fall back to their current contractTotal,
+  // meaning those services contribute equally to both sides and don't affect the greenline ratio.
+  const getTotalOriginalContractTotal = useCallback((): number => {
     let totalOriginal = 0;
 
     Object.keys(servicesState).forEach((serviceName) => {
       const serviceData = servicesState[serviceName as keyof ServicesState];
 
-      // Check if service is active
       if (serviceData?.isActive) {
-        let originalPerVisit = 0;
+        let originalTotal = 0;
 
-        // Get the ACTUAL per-visit price being charged (not raw before minimum)
-        // This is the price after minimum has been applied
-
-        if (typeof serviceData.perVisitCharge === 'number') {
-          // Carpet uses perVisitCharge (after minimum)
-          originalPerVisit = serviceData.perVisitCharge;
-        } else if (typeof serviceData.perVisit === 'number') {
-          // Most services use perVisit (after minimum)
-          originalPerVisit = serviceData.perVisit;
-        } else if (serviceData.calc?.perVisit && typeof serviceData.calc.perVisit === 'number') {
-          // Some services store in calc object
-          originalPerVisit = serviceData.calc.perVisit;
-        } else if (serviceData.totals?.perVisit?.total && typeof serviceData.totals.perVisit.total === 'number') {
-          // SaniClean uses totals.perVisit.total
-          originalPerVisit = serviceData.totals.perVisit.total;
-        } else if (serviceData.totals?.perVisit?.amount && typeof serviceData.totals.perVisit.amount === 'number') {
-          // RPM Windows, Janitorial, SaniScrub, FoamingDrain use totals.perVisit.amount
-          originalPerVisit = serviceData.totals.perVisit.amount;
-        } else if (typeof serviceData.perVisitPrice === 'number') {
-          // Some services use perVisitPrice
-          originalPerVisit = serviceData.perVisitPrice;
+        // Prefer explicit baseline-rate contract total when available
+        if (typeof serviceData.originalContractTotal === 'number' && serviceData.originalContractTotal > 0) {
+          originalTotal = serviceData.originalContractTotal;
+        }
+        // Fall back to current contract total (treats service as "no change")
+        else if (typeof serviceData.contractTotal === 'number') {
+          originalTotal = serviceData.contractTotal;
+        } else if (serviceData.totals?.contract?.amount && typeof serviceData.totals.contract.amount === 'number') {
+          originalTotal = serviceData.totals.contract.amount;
+        } else if (serviceData.totals?.annual?.amount && typeof serviceData.totals.annual.amount === 'number') {
+          originalTotal = serviceData.totals.annual.amount;
         }
 
-        if (originalPerVisit > 0) {
-          totalOriginal += originalPerVisit;
-          console.log(`📊 [ORIGINAL CALC] ${serviceName}: $${originalPerVisit.toFixed(2)}`);
-        }
+        totalOriginal += originalTotal;
       }
     });
 
-    // ✅ Add global trip charge and parking charge to the original total
-    totalOriginal += globalTripCharge;
-    totalOriginal += globalParkingCharge;
+    // Trip/parking charges don't have a separate "original" – treat as unchanged
+    const tripChargeContractTotal = globalTripChargeFrequency === 0
+      ? globalTripCharge
+      : globalTripCharge * globalTripChargeFrequency * globalContractMonths;
+    const parkingChargeContractTotal = globalParkingChargeFrequency === 0
+      ? globalParkingCharge
+      : globalParkingCharge * globalParkingChargeFrequency * globalContractMonths;
 
-    if (globalTripCharge > 0) {
-      console.log(`📊 [ORIGINAL CALC] Global Trip Charge: $${globalTripCharge.toFixed(2)}`);
-    }
-    if (globalParkingCharge > 0) {
-      console.log(`📊 [ORIGINAL CALC] Global Parking Charge: $${globalParkingCharge.toFixed(2)}`);
-    }
+    totalOriginal += tripChargeContractTotal;
+    totalOriginal += parkingChargeContractTotal;
 
-    console.log(`📊 [ORIGINAL CALC] Total Original Per Visit: $${totalOriginal.toFixed(2)}`);
+    console.log(`📊 [ORIGINAL CONTRACT TOTAL] $${totalOriginal.toFixed(2)}`);
     return totalOriginal;
-  }, [servicesState, globalTripCharge, globalParkingCharge]);
-
-  // ✅ NEW: Helper function to calculate total minimum per-visit (sum of minimum thresholds)
-  const getTotalMinimumPerVisit = useCallback((): number => {
-    let totalMinimum = 0;
-
-    Object.keys(servicesState).forEach((serviceName) => {
-      const serviceData = servicesState[serviceName as keyof ServicesState];
-
-      // Check if service is active
-      if (serviceData?.isActive) {
-        let minimumThreshold = 0;
-
-        // Try to find the minimum price threshold configuration for each service
-        // Different services store this in different fields
-
-        // Priority 1: Top-level minimum charge per visit (most common)
-        if (typeof serviceData.minimumChargePerVisit === 'number') {
-          minimumThreshold = serviceData.minimumChargePerVisit;
-        }
-        // Priority 2: SaniScrub uses perVisitMinimum
-        else if (typeof serviceData.perVisitMinimum === 'number') {
-          minimumThreshold = serviceData.perVisitMinimum;
-        }
-        // Priority 3: SaniClean uses minimumChargePerWeek
-        else if (typeof serviceData.minimumChargePerWeek === 'number') {
-          minimumThreshold = serviceData.minimumChargePerWeek;
-        }
-        // Priority 4: Direct minimum field
-        else if (typeof serviceData.perVisitMinimum === 'number') {
-          minimumThreshold = serviceData.perVisitMinimum;
-        }
-        // Priority 5: Calc object with minimum
-        else if (serviceData.calc?.minimumChargePerVisit && typeof serviceData.calc.minimumChargePerVisit === 'number') {
-          minimumThreshold = serviceData.calc.minimumChargePerVisit;
-        }
-        // Priority 6: Totals minimum charge per week (SaniClean)
-        else if (serviceData.totals?.minimumChargePerWeek && typeof serviceData.totals.minimumChargePerWeek === 'number') {
-          minimumThreshold = serviceData.totals.minimumChargePerWeek;
-        }
-        // Priority 7: Minimum visit (Refresh Power Scrub)
-        else if (typeof serviceData.minimumVisit === 'number') {
-          minimumThreshold = serviceData.minimumVisit;
-        }
-        // Priority 8: Form-level minimum
-        else if (typeof serviceData.minCharge === 'number') {
-          minimumThreshold = serviceData.minCharge;
-        }
-        // Priority 9: Config minimum
-        else if (serviceData.config?.minimumChargePerVisit && typeof serviceData.config.minimumChargePerVisit === 'number') {
-          minimumThreshold = serviceData.config.minimumChargePerVisit;
-        }
-
-        if (minimumThreshold > 0) {
-          totalMinimum += minimumThreshold;
-          console.log(`📊 [MINIMUM THRESHOLD CALC] ${serviceName}: $${minimumThreshold.toFixed(2)}`);
-        } else {
-          console.warn(`⚠️ [MINIMUM THRESHOLD CALC] ${serviceName} is active but no minimum found. Available fields:`, Object.keys(serviceData));
-        }
-      }
-    });
-
-    console.log(`📊 [MINIMUM THRESHOLD CALC] Total Minimum Thresholds: $${totalMinimum.toFixed(2)}`);
-    return totalMinimum;
-  }, [servicesState]);
+  }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
   const value = useMemo<ServicesContextValue>(() => {
     // Computed: Is SaniClean in all-inclusive mode?
@@ -425,9 +349,8 @@ export const ServicesProvider: React.FC<{
       globalContractMonths,
       setGlobalContractMonths,
       getTotalAgreementAmount,
-      // ✅ NEW: Red/Green Line Pricing Totals
-      getTotalOriginalPerVisit,
-      getTotalMinimumPerVisit,
+      // ✅ NEW: Contract Total comparison for greenline
+      getTotalOriginalContractTotal,
       // ✅ NEW: Global trip charge and parking charge
       globalTripCharge,
       setGlobalTripCharge,
@@ -439,7 +362,7 @@ export const ServicesProvider: React.FC<{
       globalParkingChargeFrequency,
       setGlobalParkingChargeFrequency,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalPerVisit, getTotalMinimumPerVisit, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); // ✅ Keep dependencies - callbacks are stable
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); // ✅ Keep dependencies - callbacks are stable
 
   return (
     <ServicesContext.Provider value={value}>
