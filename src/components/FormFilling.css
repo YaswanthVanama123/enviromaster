@@ -557,6 +557,38 @@ body::-webkit-scrollbar,
   box-shadow: 0 4px 14px rgba(255, 132, 36, 0.25);
 }
 
+.formfilling__payment-note {
+  margin-top: 18px;
+}
+
+.formfilling__payment-note-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.formfilling__payment-note-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #fff;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.formfilling__payment-note-input:focus {
+  outline: none;
+  border-color: #ff8c42;
+  box-shadow: 0 0 0 3px rgba(255, 132, 36, 0.12);
+}
+
 .contract-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border-color: #d1d5db;

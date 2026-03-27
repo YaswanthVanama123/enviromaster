@@ -102,6 +102,7 @@ type AgreementPayload = {
   customerExecutedOn: string;
   additionalMonths: string;
   paymentOption?: PaymentOption;
+  paymentNote?: string;
   startDate?: string; // ✅ NEW: Agreement start date for expiry tracking
 };
 
@@ -868,6 +869,7 @@ function FormFillingContent({
   const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
   const [agreementData, setAgreementData] = useState<ServiceAgreementData | null>(null); // Service Agreement data
   const [paymentOption, setPaymentOption] = useState<PaymentOption>("online");
+  const [paymentNote, setPaymentNote] = useState<string>("");
 
   // ✅ NEW: Version dialog state for PDF versioning
   const [showVersionDialog, setShowVersionDialog] = useState(false);
@@ -907,6 +909,7 @@ function FormFillingContent({
     if (!payload) return;
     const option = payload.agreement?.paymentOption as PaymentOption | undefined;
     setPaymentOption(option ?? "online");
+    setPaymentNote(payload.agreement?.paymentNote ?? "");
 
     // ✅ NEW: Load start date from payload if available
     if (payload.agreement?.startDate) {
@@ -1244,6 +1247,7 @@ function FormFillingContent({
             additionalMonths:
               fromBackend.agreement?.additionalMonths ?? "",
             paymentOption: fromBackend.agreement?.paymentOption, // ✅ Include payment option for edit mode
+            paymentNote: fromBackend.agreement?.paymentNote ?? "",  // ✅ Include payment note for edit mode
             startDate: fromBackend.agreement?.startDate, // ✅ NEW: Include start date for expiry tracking
           },
           customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
@@ -1388,6 +1392,7 @@ function FormFillingContent({
       agreement: {
         ...agreementBase,
         paymentOption,
+        paymentNote,
         startDate: agreementStartDate, // ✅ NEW: Include start date for expiry tracking
       },
       serviceAgreement: agreementData, // Include Service Agreement data
@@ -2438,6 +2443,18 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
                     <span className="payment-option-description">{option.description}</span>
                   </label>
                 ))}
+              </div>
+
+              <div className="formfilling__payment-note">
+                <label className="formfilling__payment-note-label" htmlFor="paymentNote">Note</label>
+                <textarea
+                  id="paymentNote"
+                  className="formfilling__payment-note-input"
+                  value={paymentNote}
+                  onChange={(e) => setPaymentNote(e.target.value)}
+                  placeholder="Write anything..."
+                  rows={3}
+                />
               </div>
             </div>
 
