@@ -168,6 +168,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     setGlobalContractMonths,
     getTotalAgreementAmount,
     getTotalOriginalContractTotal,
+    allServicesOneTime,
     globalTripCharge,
     setGlobalTripCharge,
     globalParkingCharge,
@@ -397,6 +398,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
           <h3 className="card-title">Contract Details</h3>
 
           {/* Contract Duration */}
+          {!allServicesOneTime && (
           <div className="contract-field-group" ref={dropdownRef}>
             <label htmlFor="global-contract-months" className="contract-label">
               <span className="label-icon">
@@ -452,6 +454,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               )}
             </div>
           </div>
+          )}
 
           {/* ✅ NEW: Agreement Start Date */}
           <div className="contract-field-group">
@@ -778,7 +781,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
         <div className="total-label">Total Service Agreement Total</div>
         <div className="total-amount">${totalAmount.toFixed(2)}</div>
         <div className="total-breakdown">
-          Sum of all active service contract totals (includes Refresh Power Scrub cost) across {globalContractMonths} month agreement
+          Sum of all active service contract totals (includes Refresh Power Scrub cost){!allServicesOneTime && <> across {globalContractMonths} month agreement</>}
           {(globalTripCharge > 0 || globalParkingCharge > 0) && (
             <span className="charges-included">
               {globalTripCharge > 0 && (() => {
@@ -821,10 +824,12 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
             <span className="breakdown-label">Monthly Product Total</span>
             <span className="breakdown-value product-monthly">${productMonthlyTotal.toFixed(2)}</span>
           </div>
+          {!allServicesOneTime && (
           <div className="breakdown-row">
             <span className="breakdown-label">Products × {globalContractMonths} Months</span>
             <span className="breakdown-value product-contract">${productContractTotal.toFixed(2)}</span>
           </div>
+          )}
         </div>
       </div>
     </div>

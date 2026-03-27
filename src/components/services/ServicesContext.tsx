@@ -43,6 +43,7 @@ interface ServicesContextValue {
   globalContractMonths: number; // Global contract months (2-36)
   setGlobalContractMonths: (months: number) => void;
   getTotalAgreementAmount: () => number; // Sum of all service contract totals
+  allServicesOneTime: boolean; // True when every active service is one-time
 
   // ✅ NEW: Contract Total comparison for greenline (sum of baseline-rate contract totals vs current)
   getTotalOriginalContractTotal: () => number; // Sum of contract totals using pricing-table (baseline) rates
@@ -337,6 +338,12 @@ export const ServicesProvider: React.FC<{
       ? fixtureCount * 5 // $5 per fixture per week
       : 0;
 
+    // Computed: are all active services one-time?
+    const activeServices = Object.values(servicesState).filter((sd: any) => sd?.isActive);
+    const allServicesOneTime =
+      activeServices.length > 0 &&
+      activeServices.every((sd: any) => isOneTimeService(sd));
+
     return {
       servicesState,
       updateSaniclean,
@@ -349,6 +356,7 @@ export const ServicesProvider: React.FC<{
       globalContractMonths,
       setGlobalContractMonths,
       getTotalAgreementAmount,
+      allServicesOneTime,
       // ✅ NEW: Contract Total comparison for greenline
       getTotalOriginalContractTotal,
       // ✅ NEW: Global trip charge and parking charge
