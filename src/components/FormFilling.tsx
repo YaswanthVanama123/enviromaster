@@ -164,6 +164,7 @@ type ContractSummaryProps = {
 
 function ContractSummary({ productTotals, initialStartDate, onStartDateChange }: ContractSummaryProps) {
   const {
+    servicesState,
     globalContractMonths,
     setGlobalContractMonths,
     getTotalAgreementAmount,
@@ -894,6 +895,7 @@ function FormFillingContent({
 
   // ✅ NEW: Access ServicesContext for pricing calculations
   const {
+    servicesState,
     getTotalAgreementAmount,
     getTotalOriginalContractTotal,
     globalContractMonths,
@@ -1003,24 +1005,41 @@ function FormFillingContent({
   // ƒo. NEW: Determine document status based on pricing
   const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
     const pricingStatus = calculatePricingStatus();
+
+    // Check if any active service has manual notes text entered
+    const hasServiceNotes = Object.values(servicesState).some((sd: any) =>
+      sd?.isActive && typeof sd.notes === 'string' && sd.notes.trim().length > 0
+    );
+
+    // Check if any active service has custom (manually added) fields
+    const hasCustomFields = Object.values(servicesState).some((sd: any) =>
+      sd?.isActive && Array.isArray(sd.customFields) && sd.customFields.length > 0
+    );
+
     const requiresApproval =
       paymentOption === "others" ||
       pricingStatus === 'red' ||
-      pricingStatus === 'neutral';
+      pricingStatus === 'neutral' ||
+      hasServiceNotes ||
+      hasCustomFields;
 
     const status = requiresApproval ? 'pending_approval' : 'saved';
     const reason = paymentOption === "others"
       ? "Payment option requires approval"
-      : pricingStatus === 'red'
-        ? "Red Line pricing"
-        : pricingStatus === 'neutral'
-          ? "Neutral (below green line)"
-          : "Green Line pricing";
+      : hasCustomFields
+        ? "Custom fields added to service(s)"
+        : hasServiceNotes
+          ? "Manual notes added to service(s)"
+          : pricingStatus === 'red'
+            ? "Red Line pricing"
+            : pricingStatus === 'neutral'
+              ? "Neutral (below green line)"
+              : "Green Line pricing";
 
     console.log(`📋 [STATUS-CALC] Pricing: ${pricingStatus} | Payment: ${paymentOption} → Document Status: ${status} (${reason})`);
 
     return status;
-  }, [calculatePricingStatus, paymentOption]);
+  }, [calculatePricingStatus, paymentOption, servicesState]);
 
   // ✅ SIMPLIFIED: Use file logger instead of complex React context
   const hasChanges = hasPriceChanges();
