@@ -481,7 +481,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
           </div>
 
           {/* ✅ NEW: Agreement Expiry Timeline */}
-          {expiryDate && daysRemaining !== null && (
+          {!allServicesOneTime && expiryDate && daysRemaining !== null && (
             <div className="contract-field-group">
               <div className="agreement-timeline-section">
                 <div className="timeline-header">
