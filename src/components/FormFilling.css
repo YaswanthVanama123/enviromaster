@@ -589,6 +589,31 @@ body::-webkit-scrollbar,
   box-shadow: 0 0 0 3px rgba(255, 132, 36, 0.12);
 }
 
+.formfilling__include-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1000px;
+  margin: 12px auto 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  user-select: none;
+}
+
+.formfilling__include-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ff8c42;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .contract-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   border-color: #d1d5db;

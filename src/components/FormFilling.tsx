@@ -870,6 +870,7 @@ function FormFillingContent({
   const [agreementData, setAgreementData] = useState<ServiceAgreementData | null>(null); // Service Agreement data
   const [paymentOption, setPaymentOption] = useState<PaymentOption>("online");
   const [paymentNote, setPaymentNote] = useState<string>("");
+  const [includeProductsTable, setIncludeProductsTable] = useState<boolean>(true);
 
   // ✅ NEW: Version dialog state for PDF versioning
   const [showVersionDialog, setShowVersionDialog] = useState(false);
@@ -910,6 +911,7 @@ function FormFillingContent({
     const option = payload.agreement?.paymentOption as PaymentOption | undefined;
     setPaymentOption(option ?? "online");
     setPaymentNote(payload.agreement?.paymentNote ?? "");
+    setIncludeProductsTable((payload as any).includeProductsTable !== false);
 
     // ✅ NEW: Load start date from payload if available
     if (payload.agreement?.startDate) {
@@ -1251,6 +1253,7 @@ function FormFillingContent({
             startDate: fromBackend.agreement?.startDate, // ✅ NEW: Include start date for expiry tracking
           },
           customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
+          includeProductsTable: (fromBackend as any).includeProductsTable !== false,
           serviceAgreement: fromBackend.serviceAgreement, // ✅ Include service agreement data for editing
           summary: fromBackend.summary,
         };
@@ -1397,6 +1400,7 @@ function FormFillingContent({
       },
       serviceAgreement: agreementData, // Include Service Agreement data
       customerName, // Add customer name for PDF filename
+      includeProductsTable,
       customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
       summary,
     };
@@ -2394,6 +2398,15 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               }}
               onTotalsChange={handleProductTotalsChange}
             />
+
+            <label className="formfilling__include-checkbox">
+              <input
+                type="checkbox"
+                checked={includeProductsTable}
+                onChange={(e) => setIncludeProductsTable(e.target.checked)}
+              />
+              <span>Include Products Table in PDF</span>
+            </label>
 
             <ServicesSection
               initialServices={payload.services}
