@@ -56,7 +56,7 @@ export const StripWaxForm: React.FC<
       return editingValues[fieldName];
     }
     // Otherwise show the calculated/override value
-    return calculatedValue !== undefined ? String(calculatedValue) : '';
+    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
   // ✅ Handler for starting to edit a field
@@ -792,7 +792,7 @@ export const StripWaxForm: React.FC<
                 fontSize: '16px',
                 fontWeight: 'bold',
                 padding: '4px',
-                width: '100px'
+                width: '140px'
               }}
               title="Contract total - editable"
             />

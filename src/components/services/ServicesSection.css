@@ -319,7 +319,7 @@
 .per-visit-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 .weekly-total-field { width: 90px !important; min-width: 90px; box-sizing: border-box; }
 .monthly-total-field { width: 100px !important; min-width: 100px; box-sizing: border-box; }
-.contract-total-field { width: 120px !important; min-width: 120px; box-sizing: border-box; }
+.contract-total-field { width: 140px !important; min-width: 140px; box-sizing: border-box; }
 
 /* Dollar amount fields */
 .dollar-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
@@ -341,7 +341,7 @@
 .field-medium { width: 70px !important; min-width: 70px; box-sizing: border-box; }
 
 .svc-in{
-  border:none; border-bottom:2px solid #000; height:22px; background:transparent; outline:none; padding:0 4px; font-size:14px; min-width:60px; box-sizing:border-box; max-width:150px;
+  border:none; border-bottom:2px solid #000; height:22px; background:transparent; outline:none; padding:0 4px; font-size:14px; min-width:60px; box-sizing:border-box; max-width:200px;
 }
 .svc-in:focus{ border-bottom-color:#c20000; }
 

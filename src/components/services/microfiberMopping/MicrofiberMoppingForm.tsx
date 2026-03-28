@@ -64,7 +64,7 @@ export const MicrofiberMoppingForm: React.FC<
       return editingValues[fieldName];
     }
     // Otherwise show the calculated/override value
-    return calculatedValue !== undefined ? String(calculatedValue) : '';
+    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
   // ✅ Handler for starting to edit a field
@@ -1258,7 +1258,8 @@ export const MicrofiberMoppingForm: React.FC<
                   onBlur={handleBlur}
                   style={{
                     backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'white',
-                    border: 'none'
+                    border: 'none',
+                    width: '140px'
                   }}
                 />
               </div>

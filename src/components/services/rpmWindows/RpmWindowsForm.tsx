@@ -115,7 +115,7 @@ export const RpmWindowsForm: React.FC<
       return editingValues[fieldName];
     }
     // Otherwise show the calculated/override value
-    return calculatedValue !== undefined ? String(calculatedValue) : '';
+    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
   // ✅ Handler for starting to edit a field
@@ -1098,7 +1098,7 @@ export const RpmWindowsForm: React.FC<
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
-                style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white' }}
+                style={{ backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white', width: '140px' }}
               />
             </div>
           </div>

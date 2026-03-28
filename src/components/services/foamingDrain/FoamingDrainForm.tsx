@@ -88,7 +88,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       return editingValues[fieldName];
     }
     // Otherwise show the calculated/override value
-    return calculatedValue !== undefined ? String(calculatedValue) : '';
+    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
   // ✅ Handler for starting to edit a field
@@ -1658,7 +1658,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     name="customContractTotal"
                     className="svc-in contract-total-field"
                     style={{
-                      width: '120px',
+                      width: '140px',
                       backgroundColor: state.customContractTotal !== undefined ? '#fffacd' : 'white',
                     }}
                     value={getDisplayValue(

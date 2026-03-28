@@ -63,7 +63,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       return editingValues[fieldName];
     }
     // Otherwise show the calculated/override value
-    return calculatedValue !== undefined ? String(calculatedValue) : '';
+    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
   // ✅ Handler for starting to edit a field
@@ -1149,7 +1149,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 style={{
                   backgroundColor: form.customAnnualPrice !== undefined ? '#fffacd' : 'white',
                   border: 'none',
-                  width: '100px'
+                  width: '140px'
                 }}
               />
             </div>
