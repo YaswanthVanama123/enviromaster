@@ -1088,8 +1088,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         } else {
           baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
         }
-        // Add same custom/extra fields so comparison is purely based on rate changes
-        return round2(baselineContractRaw) + calcFieldsTotal + dollarFieldsTotal;
+        return round2(baselineContractRaw);
       })(),
     };
 

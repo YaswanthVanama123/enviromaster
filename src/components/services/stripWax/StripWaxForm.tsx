@@ -176,7 +176,7 @@ export const StripWaxForm: React.FC<
       const frequencyLabel = typeof form.frequency === "string"
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
         : String(form.frequency || "");
-      const totalPriceValue = form.customPerVisit ?? calc.perVisit;
+      const totalPriceValue = form.customPerVisit ?? calc.contractTotal;
 
       const data = isActive ? {
         serviceId: "stripwax",
@@ -668,7 +668,7 @@ export const StripWaxForm: React.FC<
                 'customMonthly',
                 form.customMonthly !== undefined
                   ? form.customMonthly
-                  : calc.monthly
+                  : calc.contractTotal
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

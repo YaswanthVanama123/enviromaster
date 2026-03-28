@@ -1266,8 +1266,6 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       } else {
         originalContractTotal = originalStandardMonthlyBill * contractMonths;
       }
-      // Add same custom/extra fields so comparison is purely based on rate changes
-      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
     }
 
     return {

@@ -880,10 +880,6 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     let originalContractTotal = contractMonths <= 0
       ? 0
       : baselineMonthly + Math.max(contractMonths - 1, 0) * baselineMonthly;
-    // Add same custom/extra fields so comparison is purely based on rate changes
-    if (originalContractTotal > 0) {
-      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
-    }
 
     return {
       totalHours: totalHoursBase,

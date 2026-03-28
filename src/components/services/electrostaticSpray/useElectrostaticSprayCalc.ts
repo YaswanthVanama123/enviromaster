@@ -694,8 +694,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       } else {
         originalContractTotal = baselineMonthlyRecurring * form.contractMonths;
       }
-      // Add same custom/extra fields so comparison is purely based on rate changes
-      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
     }
 
     return {

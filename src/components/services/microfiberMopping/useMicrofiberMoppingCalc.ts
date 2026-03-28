@@ -1281,8 +1281,7 @@ export function useMicrofiberMoppingCalc(
           const remainingMonths = Math.max(contractMonths - 1, 0);
           baselineContractTotal = baselineMonthlyService + remainingMonths * baselineMonthlyService;
         }
-        // Add same custom/extra fields so comparison is purely based on rate changes
-        return baselineContractTotal + calcFieldsTotal + dollarFieldsTotal;
+        return baselineContractTotal;
       })(),
       minimumChargePerVisit,
     };

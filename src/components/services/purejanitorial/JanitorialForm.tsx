@@ -173,7 +173,7 @@ export const JanitorialForm: React.FC<
         type: "text" as const,
         value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
       } : undefined;
-      const totalPriceValue = form.customPerVisit ?? calc.perVisit ?? 0;
+      const totalPriceValue = form.customPerVisit ?? calc.contractTotal ?? 0;
 
       const totals = (() => {
         const payload: any = {
@@ -689,7 +689,7 @@ export const JanitorialForm: React.FC<
                 'customPerVisit',
                 form.customPerVisit !== undefined
                   ? form.customPerVisit
-                  : calc?.perVisit || 0
+                  : calc?.contractTotal || 0
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

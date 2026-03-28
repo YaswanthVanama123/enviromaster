@@ -181,7 +181,7 @@ export const CarpetForm: React.FC<
         resolvedFrequency === "oneTime"
           ? form.customFirstMonthPrice !== undefined
             ? form.customFirstMonthPrice
-            : calc.firstMonthTotal
+            : calc.contractTotal
           : calc.firstMonthTotal;
 
       const totals: any = {
@@ -831,7 +831,7 @@ export const CarpetForm: React.FC<
                 'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
                   ? form.customFirstMonthPrice
-                  : calc.firstMonthTotal
+                  : calc.contractTotal
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

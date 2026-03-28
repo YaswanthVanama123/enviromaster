@@ -281,7 +281,7 @@ export const SaniscrubForm: React.FC<
           const displayTotal =
             form.customFirstMonthPrice !== undefined
               ? form.customFirstMonthPrice
-              : calc.firstMonthTotal;
+              : form.frequency === "oneTime" ? calc.contractTotal : calc.firstMonthTotal;
 
           if (calc.isVisitBasedFrequency) {
             totals.firstVisit = {
@@ -1018,7 +1018,7 @@ export const SaniscrubForm: React.FC<
                   'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
                     ? form.customFirstMonthPrice
-                    : calc.firstMonthTotal
+                    : calc.contractTotal
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}

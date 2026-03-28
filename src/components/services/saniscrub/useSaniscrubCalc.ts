@@ -1271,8 +1271,7 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
           // bimonthly, quarterly, biannual, annual: visits-based
           baselineContractTotal = totalVisitsForContract * baselinePerVisit;
         }
-        // Add same custom/extra fields so comparison is purely based on rate changes
-        return baselineContractTotal + calcFieldsTotal + dollarFieldsTotal;
+        return baselineContractTotal;
       })(),
       frequency,
       isVisitBasedFrequency,

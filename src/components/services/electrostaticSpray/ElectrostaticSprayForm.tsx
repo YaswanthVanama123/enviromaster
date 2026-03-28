@@ -194,7 +194,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         : String(form.frequency || 'Weekly');
       const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly"].includes(form.frequency);
       const totalPriceValue =
-        form.customFirstMonthTotal !== undefined ? form.customFirstMonthTotal : calc.perVisit;
+        form.customFirstMonthTotal !== undefined ? form.customFirstMonthTotal : calc.contractTotal;
 
       const data = isActive ? {
         serviceId: "electrostaticSpray",
@@ -956,7 +956,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customFirstMonthTotal',
                     form.customFirstMonthTotal !== undefined
                       ? form.customFirstMonthTotal
-                      : calc.perVisit
+                      : calc.contractTotal
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}
@@ -989,7 +989,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customFirstMonthTotal',
                     form.customFirstMonthTotal !== undefined
                       ? form.customFirstMonthTotal
-                      : calc.perVisit
+                      : calc.contractTotal
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}

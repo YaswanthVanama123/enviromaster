@@ -209,7 +209,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       const oneTimeTotalPrice =
         form.customMonthlyPrice !== undefined
           ? form.customMonthlyPrice
-          : parseFloat(calc.adjustedMonthly.toFixed(2));
+          : parseFloat(calc.contractTotal.toFixed(2));
 
       const totals = (() => {
         const base: any = {
@@ -1077,7 +1077,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 'customMonthlyPrice',
                 form.customMonthlyPrice !== undefined
                   ? form.customMonthlyPrice
-                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+                  : parseFloat(calc.contractTotal.toFixed(2))
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

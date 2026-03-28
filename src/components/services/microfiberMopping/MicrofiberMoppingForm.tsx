@@ -155,7 +155,7 @@ export const MicrofiberMoppingForm: React.FC<
       const totalPriceValue =
         form.customFirstMonthPrice !== undefined
           ? form.customFirstMonthPrice
-          : calc.firstMonthPrice;
+          : calc.contractTotal;
 
       const data = isActive ? {
         serviceId: "microfiberMopping",
@@ -1178,7 +1178,7 @@ export const MicrofiberMoppingForm: React.FC<
                   'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
                     ? form.customFirstMonthPrice
-                    : calc.firstMonthPrice
+                    : calc.contractTotal
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}

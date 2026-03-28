@@ -877,10 +877,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     } else {
       originalContractTotal = monthlyVisits * baselinePerVisit * contractMonths;
     }
-    // Add same custom/extra fields so comparison is purely based on rate changes
-    if (originalContractTotal > 0) {
-      originalContractTotal += calcFieldsTotal + dollarFieldsTotal;
-    }
 
     return {
       perVisit: finalPerVisit,
