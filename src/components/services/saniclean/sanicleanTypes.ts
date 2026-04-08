@@ -223,6 +223,10 @@ export interface SanicleanFormState {
   // Notes
   notes: string;
 
+  // Custom override for the "What's Included" list
+  // null/undefined = use computed defaults; array = user-customized list
+  includedItems?: string[] | null;
+
   // ========== BACKEND CONFIG RATES (auto-populated from backend) ==========
 
   // All-Inclusive Package

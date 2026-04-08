@@ -10,10 +10,11 @@ import {
   faBox, faStore, faSoap, faTicket, faCheck,
   faClipboard, faTrash, faShoppingBag, faShower,
   faWandMagicSparkles, faUtensils, faCog, faLayerGroup,
-  faTag, faImage, faLink, faExternalLinkAlt,
+  faTag, faImage, faLink, faExternalLinkAlt, faAlignLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
+import "ckeditor5/ckeditor5-content.css";
 import "./ServicesReferenceSection.css";
 
 // ─── Per-service icon + accent colour ────────────────────────────────────────
@@ -211,7 +212,18 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
   const meta = SERVICE_META[config.serviceId] ?? FALLBACK_META;
 
   const sections = useMemo(() => buildSections(config.config ?? {}), [config.config]);
-  const activeKey = activeSection ?? sections[0]?.sectionKey ?? null;
+
+  // "__desc__" is a synthetic tab key for the description tab
+  const hasDescription = Boolean(config.description);
+  const allTabs = useMemo(() => {
+    if (!hasDescription) return sections;
+    return [
+      { sectionKey: "__desc__", title: "Description", icon: faAlignLeft, fields: [], subsections: [] },
+      ...sections,
+    ];
+  }, [sections, hasDescription]);
+
+  const activeKey = activeSection ?? allTabs[0]?.sectionKey ?? null;
   const activeSecObj = sections.find((s) => s.sectionKey === activeKey) ?? sections[0];
 
   return (
@@ -266,20 +278,23 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
       {config.description && (
         <div className="srf-card__desc">
           <FontAwesomeIcon icon={faInfoCircle} className="srf-card__desc-icon" />
-          <span>{config.description}</span>
+          <div
+            className="srf-card__desc-html ck-content"
+            dangerouslySetInnerHTML={{ __html: config.description }}
+          />
         </div>
       )}
 
       {/* ── Expanded pricing body ── */}
       {expanded && (
         <div className="srf-card__body">
-          {sections.length === 0 ? (
+          {allTabs.length === 0 ? (
             <p className="srf-empty">No pricing configuration available.</p>
           ) : (
             <>
-              {/* Tab strip — mirrors spd__tabs style */}
+              {/* Tab strip */}
               <div className="srf-tabs">
-                {sections.map((s) => (
+                {allTabs.map((s) => (
                   <button
                     key={s.sectionKey}
                     type="button"
@@ -295,17 +310,27 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
                 ))}
               </div>
 
-              {/* Active section fields */}
-              {activeSecObj && (
+              {/* Description tab body */}
+              {activeKey === "__desc__" ? (
                 <div className="srf-section-body">
-                  {activeSecObj.fields.map((f) => <FieldRow key={f.key} {...f} />)}
-                  {activeSecObj.subsections.map((sub) => (
-                    <SubSection key={sub.sectionKey} section={sub} />
-                  ))}
-                  {activeSecObj.fields.length === 0 && activeSecObj.subsections.length === 0 && (
-                    <p className="srf-empty">No fields in this section.</p>
-                  )}
+                  <div
+                    className="srf-desc-body ck-content"
+                    dangerouslySetInnerHTML={{ __html: config.description! }}
+                  />
                 </div>
+              ) : (
+                /* Pricing section fields */
+                activeSecObj && (
+                  <div className="srf-section-body">
+                    {activeSecObj.fields.map((f) => <FieldRow key={f.key} {...f} />)}
+                    {activeSecObj.subsections.map((sub) => (
+                      <SubSection key={sub.sectionKey} section={sub} />
+                    ))}
+                    {activeSecObj.fields.length === 0 && activeSecObj.subsections.length === 0 && (
+                      <p className="srf-empty">No fields in this section.</p>
+                    )}
+                  </div>
+                )
               )}
             </>
           )}

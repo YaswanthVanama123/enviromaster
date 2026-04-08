@@ -572,7 +572,7 @@ function calculateAllInclusive(
       seatCoverDispensers,
       sanipods,
     },
-    included: [
+    included: form.includedItems ?? [
       "SaniClean service",
       "SaniPod service",
       "Urinal mats",
@@ -825,7 +825,7 @@ function calculatePerItemCharge(
       seatCoverDispensers,
       sanipods,
     },
-    included: [
+    included: form.includedItems ?? [
       "SaniClean service",
       "Electrostatic spray (free)",
       "Air freshener service (free)",

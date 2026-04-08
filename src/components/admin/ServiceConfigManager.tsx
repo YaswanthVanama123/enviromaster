@@ -2,6 +2,36 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import {
+  ClassicEditor,
+  Autoformat,
+  Alignment,
+  Base64UploadAdapter,
+  BlockQuote,
+  Bold,
+  Essentials,
+  Heading,
+  Image,
+  ImageCaption,
+  ImageStyle,
+  ImageToolbar,
+  ImageUpload,
+  Indent,
+  IndentBlock,
+  Italic,
+  Link,
+  List,
+  ListProperties,
+  Paragraph,
+  PasteFromOffice,
+  Table,
+  TableColumnResize,
+  TableToolbar,
+  TextTransformation,
+  Underline,
+} from "ckeditor5";
+import "ckeditor5/ckeditor5.css";
 import { useServiceConfigs } from "../../backendservice/hooks";
 import type { ServiceConfig, UpdateServiceConfigPayload, ServiceImage, ServiceLink } from "../../backendservice/types/serviceConfig.types";
 import { serviceConfigApi } from "../../backendservice/api/serviceConfigApi";
@@ -192,7 +222,11 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
                 <span className="scm-version-badge" style={styles.versionBadge}>v{config.version}</span>
               </div>
             </div>
-            <p className="scm-card-description" style={styles.cardDescription}>{config.description}</p>
+            <div
+              className="scm-card-description ck-content"
+              style={styles.cardDescription}
+              dangerouslySetInnerHTML={{ __html: config.description ?? "" }}
+            />
             {config.tags && config.tags.length > 0 && (
               <div className="scm-tag-container" style={styles.tagContainer}>
                 {config.tags.map((tag) => (
@@ -232,13 +266,67 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
 
             <div className="scm-form-group" style={styles.formGroup}>
               <label className="scm-label" style={styles.label}>Description</label>
-              <textarea
-                value={formData.description || ""}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="scm-textarea"
-                style={styles.textarea}
-                rows={3}
-              />
+              <div style={styles.editorWrap}>
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={formData.description || ""}
+                  onChange={(_event, editor) => {
+                    setFormData(prev => ({ ...prev, description: editor.getData() }));
+                  }}
+                  onError={(error, details) => {
+                    console.error("CKEditor error:", error, details);
+                  }}
+                  config={{
+                    licenseKey: "GPL",
+                    plugins: [
+                      Essentials, Autoformat, Alignment,
+                      Base64UploadAdapter, BlockQuote,
+                      Bold, Italic, Underline,
+                      Heading,
+                      Image, ImageCaption, ImageStyle, ImageToolbar, ImageUpload,
+                      Indent, IndentBlock,
+                      Link,
+                      List, ListProperties,
+                      Paragraph, PasteFromOffice,
+                      Table, TableColumnResize, TableToolbar,
+                      TextTransformation,
+                    ],
+                    toolbar: {
+                      items: [
+                        "heading", "|",
+                        "bold", "italic", "underline", "|",
+                        "alignment", "|",
+                        "link", "bulletedList", "numberedList", "|",
+                        "outdent", "indent", "|",
+                        "blockQuote", "insertTable", "|",
+                        "uploadImage", "|",
+                        "undo", "redo",
+                      ],
+                      shouldNotGroupWhenFull: true,
+                    },
+                    heading: {
+                      options: [
+                        { model: "paragraph" as const, title: "Paragraph", class: "ck-heading_paragraph" },
+                        { model: "heading1" as const, view: "h1", title: "Heading 1", class: "ck-heading_heading1" },
+                        { model: "heading2" as const, view: "h2", title: "Heading 2", class: "ck-heading_heading2" },
+                        { model: "heading3" as const, view: "h3", title: "Heading 3", class: "ck-heading_heading3" },
+                      ],
+                    },
+                    image: {
+                      toolbar: [
+                        "imageStyle:inline", "imageStyle:block", "imageStyle:side", "|",
+                        "toggleImageCaption", "imageTextAlternative",
+                      ],
+                    },
+                    table: {
+                      contentToolbar: [
+                        "tableColumn", "tableRow", "mergeTableCells",
+                        "tableProperties", "tableCellProperties",
+                      ],
+                    },
+                  }}
+                />
+              </div>
             </div>
 
             <div className="scm-form-group" style={styles.formGroup}>
@@ -469,10 +557,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "600",
   },
   cardDescription: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#666",
     marginBottom: "12px",
     lineHeight: "1.5",
+    maxHeight: "80px",
+    overflow: "hidden",
+    WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+    maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
   },
   tagContainer: {
     display: "flex",
@@ -515,8 +607,8 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "white",
     borderRadius: "12px",
     padding: "24px",
-    width: "90%",
-    maxWidth: "600px",
+    width: "92%",
+    maxWidth: "760px",
     maxHeight: "90vh",
     overflowY: "auto",
   },
@@ -560,6 +652,11 @@ const styles: Record<string, React.CSSProperties> = {
     outline: "none",
     fontFamily: "inherit",
     resize: "vertical",
+  },
+  editorWrap: {
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    overflow: "hidden",
   },
   checkboxLabel: {
     display: "flex",

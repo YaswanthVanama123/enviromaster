@@ -81,6 +81,140 @@ function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): 
   return FREQUENCY_MULTIPLIER_FALLBACK[frequency] ?? FREQUENCY_MULTIPLIER_FALLBACK.weekly;
 }
 
+// ─── Editable "What's Included" list ─────────────────────────────────────────
+
+function IncludedItemsEditor({
+  items,
+  isCustomized,
+  onChange,
+  onReset,
+}: {
+  items: string[];
+  isCustomized: boolean;
+  onChange: (items: string[]) => void;
+  onReset: () => void;
+}) {
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [addingNew, setAddingNew] = useState(false);
+  const [newText, setNewText] = useState("");
+
+  const startEdit = (index: number) => {
+    setEditingIndex(index);
+    setEditingText(items[index]);
+    setAddingNew(false);
+  };
+
+  const saveEdit = () => {
+    if (editingIndex === null) return;
+    const trimmed = editingText.trim();
+    if (!trimmed) return;
+    const next = [...items];
+    next[editingIndex] = trimmed;
+    onChange(next);
+    setEditingIndex(null);
+    setEditingText("");
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditingText("");
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+    if (editingIndex === index) { setEditingIndex(null); setEditingText(""); }
+  };
+
+  const saveNew = () => {
+    const trimmed = newText.trim();
+    if (!trimmed) { setAddingNew(false); setNewText(""); return; }
+    onChange([...items, trimmed]);
+    setNewText("");
+    setAddingNew(false);
+  };
+
+  const cancelNew = () => { setAddingNew(false); setNewText(""); };
+
+  return (
+    <div style={{ width: "100%" }}>
+      {items.map((item, index) => (
+        <div key={index} style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
+          {editingIndex === index ? (
+            <>
+              <input
+                className="svc-in"
+                style={{ flex: 1, fontSize: 12 }}
+                value={editingText}
+                onChange={e => setEditingText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
+                autoFocus
+              />
+              <button className="svc-btn svc-btn--small" onClick={saveEdit} title="Save">✓</button>
+              <button className="svc-btn svc-btn--small" onClick={cancelEdit} title="Cancel" style={{ opacity: 0.6 }}>✕</button>
+            </>
+          ) : (
+            <>
+              <span style={{ flex: 1, fontSize: 12 }}>• {item}</span>
+              <button
+                className="svc-btn svc-btn--small"
+                onClick={() => startEdit(index)}
+                title="Edit item"
+                style={{ opacity: 0.55, fontSize: 11 }}
+              >
+                ✎
+              </button>
+              <button
+                className="svc-btn svc-btn--small"
+                onClick={() => removeItem(index)}
+                title="Remove item"
+                style={{ opacity: 0.55, fontSize: 11 }}
+              >
+                ✕
+              </button>
+            </>
+          )}
+        </div>
+      ))}
+
+      {addingNew ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+          <input
+            className="svc-in"
+            style={{ flex: 1, fontSize: 12 }}
+            value={newText}
+            onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") saveNew(); if (e.key === "Escape") cancelNew(); }}
+            placeholder="New item…"
+            autoFocus
+          />
+          <button className="svc-btn svc-btn--small" onClick={saveNew} title="Add">✓</button>
+          <button className="svc-btn svc-btn--small" onClick={cancelNew} title="Cancel" style={{ opacity: 0.6 }}>✕</button>
+        </div>
+      ) : (
+        <div style={{ marginTop: 4, display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            className="svc-btn svc-btn--small"
+            onClick={() => setAddingNew(true)}
+          >
+            + Add item
+          </button>
+          {isCustomized && (
+            <button
+              className="svc-btn svc-btn--small"
+              onClick={onReset}
+              style={{ opacity: 0.65 }}
+              title="Restore the default calculated list"
+            >
+              Reset to defaults
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData, onRemove }) => {
@@ -1534,11 +1668,12 @@ export const SanicleanForm: React.FC<
       <div className="svc-row">
         <label>{isAllInclusive ? "All-Inclusive Bundle" : "Standard Package"}</label>
         <div className="svc-row-right">
-          <div>
-            {quote.included.map((item, index) => (
-              <div key={index}>• {item}</div>
-            ))}
-          </div>
+          <IncludedItemsEditor
+            items={quote.included}
+            isCustomized={form.includedItems != null}
+            onChange={(items) => updateForm({ includedItems: items })}
+            onReset={() => updateForm({ includedItems: null })}
+          />
         </div>
       </div>
 
