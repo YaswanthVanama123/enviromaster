@@ -59,6 +59,7 @@ export interface InitialProductData {
   amount?: number;
   total?: number;
   frequency?: string;  // ✅ CRITICAL: Added frequency field
+  costType?: 'productCost' | 'warranty';
 }
 
 // Props interface
@@ -651,6 +652,11 @@ function convertInitialToRows(
             row.frequency = item.frequency;
           }
 
+          // ✅ Preserve costType from backend data
+          if (item.costType) {
+            row.costType = item.costType;
+          }
+
           // ✅ CRITICAL: Preserve custom fields from backend data
           if (item.customFields) {
             row.customFields = item.customFields;
@@ -718,6 +724,11 @@ function convertInitialToRows(
           // ✅ CRITICAL: Preserve frequency from backend data for custom products too
           if (item.frequency) {
             row.frequency = item.frequency;
+          }
+
+          // ✅ Preserve costType from backend data for custom products too
+          if (item.costType) {
+            row.costType = item.costType;
           }
 
           // ✅ CRITICAL: Preserve custom fields from backend data for custom products too
@@ -1126,7 +1137,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       return basePrice * qty;
     }
 
+    // Dispensers: use warrantyRate for warranty, replacementRate for productCost
     const product = getProduct(row);
+    const dispCostType = row.costType ?? 'productCost';
+    if (dispCostType === 'warranty') {
+      return (row.warrantyPriceOverride ?? product?.warrantyPricePerUnit?.amount ?? 0) * qty;
+    }
     return getDispReplacementPrice(row, product) * qty;
   };
 
@@ -1137,14 +1153,31 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     ];
 
     return allRows.reduce((sum, { row, bucket }) => {
+      // Default: products = warranty (recurring), dispensers = productCost (one-time)
+      const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'warranty');
+      if (costType === 'productCost') return sum; // one-time items don't contribute to monthly
       const multiplier = getFrequencyMultiplier(row.frequency);
       return sum + getRowTotal(row, bucket) * multiplier;
     }, 0);
   }, [data.products, data.dispensers, getProduct]);
 
+  // One-time (productCost) items — added to contract total once, not × contractMonths
+  const productOnceTotal = useMemo(() => {
+    const allRows = [
+      ...data.products.map((row) => ({ row, bucket: "products" as ColumnKey })),
+      ...data.dispensers.map((row) => ({ row, bucket: "dispensers" as ColumnKey })),
+    ];
+
+    return allRows.reduce((sum, { row, bucket }) => {
+      const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'warranty');
+      if (costType !== 'productCost') return sum;
+      return sum + getRowTotal(row, bucket);
+    }, 0);
+  }, [data.products, data.dispensers, getProduct]);
+
   const productContractTotal = useMemo(
-    () => productMonthlyTotal * globalContractMonths,
-    [productMonthlyTotal, globalContractMonths]
+    () => productOnceTotal + productMonthlyTotal * globalContractMonths,
+    [productOnceTotal, productMonthlyTotal, globalContractMonths]
   );
 
   useEffect(() => {
@@ -1179,6 +1212,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             qty,
             total,
             frequency: row.frequency,
+            costType: row.costType ?? 'warranty',
             productType: 'small',
             customFields: row.customFields || {}
           };
@@ -1195,6 +1229,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             amount,
             total,
             frequency: row.frequency,
+            costType: row.costType ?? 'warranty',
             productType: 'big',
             customFields: row.customFields || {}
           };
@@ -1220,6 +1255,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           replacementRate,
           total,
           frequency: row.frequency,
+          costType: row.costType ?? 'productCost',
           customFields: row.customFields || {}
         };
       });
@@ -1662,6 +1698,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 <th className="h h-blue">Products</th>
                 <th className="h h-blue center">Qty</th>
                 <th className="h h-blue center">Unit Price/Amount</th>
+                <th className="h h-blue center">Warranty</th>
                 <th className="h h-blue center">Frequency of Service</th>
                 <th className="h h-blue center">Total</th>
                 {extraCols.products.map((col) => (
@@ -1690,6 +1727,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 <th className="h h-blue center">Qty</th>
                 <th className="h h-blue center">Warranty Rate</th>
                 <th className="h h-blue center">Replacement Rate/Install</th>
+                <th className="h h-blue center">Warranty</th>
                 <th className="h h-blue center">Frequency of Service</th>
                 <th className="h h-blue center">Total</th>
                 {extraCols.dispensers.map((col) => (
@@ -1794,15 +1832,33 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             }}
                           />
                         </td>
+                        {/* Warranty checkbox */}
                         <td className="center">
-                          <FrequencyCell
-                            value={rowProduct.frequency}
-                            onChange={(val) =>
+                          <input
+                            type="checkbox"
+                            title="Check for recurring warranty billing; uncheck for one-time direct price"
+                            checked={(rowProduct.costType ?? 'warranty') === 'warranty'}
+                            onChange={(e) =>
                               updateRowField("products", rowProduct.id, {
-                                frequency: val,
+                                costType: e.target.checked ? 'warranty' : 'productCost',
                               })
                             }
                           />
+                        </td>
+                        {/* Frequency — only shown for warranty */}
+                        <td className="center">
+                          {(rowProduct.costType ?? 'warranty') === 'warranty' ? (
+                            <FrequencyCell
+                              value={rowProduct.frequency}
+                              onChange={(val) =>
+                                updateRowField("products", rowProduct.id, {
+                                  frequency: val,
+                                })
+                              }
+                            />
+                          ) : (
+                            <span style={{ color: '#bbb', fontSize: '12px' }}>—</span>
+                          )}
                         </td>
                         <td>
                           <DollarCell
@@ -1936,25 +1992,46 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             }
                           />
                         </td>
+                        {/* Warranty checkbox */}
                         <td className="center">
-                          <FrequencyCell
-                            value={rowDisp.frequency}
-                            onChange={(val) =>
+                          <input
+                            type="checkbox"
+                            title="Check for recurring warranty billing; uncheck for one-time direct/replacement price"
+                            checked={(rowDisp.costType ?? 'productCost') === 'warranty'}
+                            onChange={(e) =>
                               updateRowField("dispensers", rowDisp.id, {
-                                frequency: val,
+                                costType: e.target.checked ? 'warranty' : 'productCost',
+                                totalOverride: undefined,
                               })
                             }
                           />
+                        </td>
+                        {/* Frequency — only shown for warranty */}
+                        <td className="center">
+                          {(rowDisp.costType ?? 'productCost') === 'warranty' ? (
+                            <FrequencyCell
+                              value={rowDisp.frequency}
+                              onChange={(val) =>
+                                updateRowField("dispensers", rowDisp.id, {
+                                  frequency: val,
+                                })
+                              }
+                            />
+                          ) : (
+                            <span style={{ color: '#bbb', fontSize: '12px' }}>—</span>
+                          )}
                         </td>
                         <td>
                           <DollarCell
                             value={
                               (rowDisp.totalOverride ??
-                              getDispReplacementPrice(rowDisp, pDisp) *
-                                getQty(rowDisp)) || ""
+                              getRowTotal(rowDisp, "dispensers")) || ""
                             }
                             backgroundColor={(() => {
-                              const catalogPrice = pDisp?.basePrice?.amount ?? 0;
+                              const dispCostType = rowDisp.costType ?? 'productCost';
+                              const catalogPrice = dispCostType === 'warranty'
+                                ? (pDisp?.warrantyPricePerUnit?.amount ?? 0)
+                                : (pDisp?.basePrice?.amount ?? 0);
                               const qty = getQty(rowDisp);
                               const calculatedTotal = catalogPrice * qty;
                               const currentTotal = rowDisp.totalOverride ?? calculatedTotal;
@@ -1990,6 +2067,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         <td className="center"><PlainCell /></td>
                         <td><PlainCell /></td>
                         <td><PlainCell /></td>
+                        <td className="center"><PlainCell /></td>
                         <td className="center"><PlainCell /></td>
                         <td><PlainCell /></td>
                         {extraCols.dispensers.map((col) => (
@@ -2059,6 +2137,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 <>
                   <th className="h h-blue center">Qty</th>
                   <th className="h h-blue center">Unit Price/Amount</th>
+                  <th className="h h-blue center">Warranty</th>
                   <th className="h h-blue center">Frequency of Service</th>
                   <th className="h h-blue center">Total</th>
                 </>
@@ -2069,6 +2148,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   <th className="h h-blue center">
                     Replacement Rate/Install
                   </th>
+                  <th className="h h-blue center">Warranty</th>
                   <th className="h h-blue center">Frequency of Service</th>
                   <th className="h h-blue center">Total</th>
                 </>
@@ -2211,15 +2291,33 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     }}
                   />
                 </td>
+                {/* Warranty checkbox */}
                 <td className="center">
-                  <FrequencyCell
-                    value={row.frequency}
-                    onChange={(val) =>
+                  <input
+                    type="checkbox"
+                    title="Check for recurring warranty billing; uncheck for one-time direct price"
+                    checked={(row.costType ?? 'warranty') === 'warranty'}
+                    onChange={(e) =>
                       updateRowField("products", row.id, {
-                        frequency: val,
+                        costType: e.target.checked ? 'warranty' : 'productCost',
                       })
                     }
                   />
+                </td>
+                {/* Frequency — only for warranty */}
+                <td className="center">
+                  {(row.costType ?? 'warranty') === 'warranty' ? (
+                    <FrequencyCell
+                      value={row.frequency}
+                      onChange={(val) =>
+                        updateRowField("products", row.id, {
+                          frequency: val,
+                        })
+                      }
+                    />
+                  ) : (
+                    <span style={{ color: '#bbb', fontSize: '12px' }}>—</span>
+                  )}
                 </td>
                 <td>
                   <DollarCell
@@ -2308,23 +2406,44 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 />
               </td>
               <td className="center">
-                <FrequencyCell
-                  value={row.frequency}
-                  onChange={(val) =>
+                <input
+                  type="checkbox"
+                  title="Check for recurring warranty billing; uncheck for one-time direct/replacement price"
+                  checked={(row.costType ?? 'productCost') === 'warranty'}
+                  onChange={(e) =>
                     updateRowField("dispensers", row.id, {
-                      frequency: val,
+                      costType: e.target.checked ? 'warranty' : 'productCost',
+                      totalOverride: undefined,
                     })
                   }
                 />
+              </td>
+              {/* Frequency — only for warranty */}
+              <td className="center">
+                {(row.costType ?? 'productCost') === 'warranty' ? (
+                  <FrequencyCell
+                    value={row.frequency}
+                    onChange={(val) =>
+                      updateRowField("dispensers", row.id, {
+                        frequency: val,
+                      })
+                    }
+                  />
+                ) : (
+                  <span style={{ color: '#bbb', fontSize: '12px' }}>—</span>
+                )}
               </td>
               <td>
                 <DollarCell
                   value={
                     row.totalOverride ??
-                    getDispReplacementPrice(row, product) * getQty(row)
+                    getRowTotal(row, "dispensers")
                   }
                   backgroundColor={(() => {
-                    const catalogPrice = product?.basePrice?.amount ?? 0;
+                    const dispCostType = row.costType ?? 'productCost';
+                    const catalogPrice = dispCostType === 'warranty'
+                      ? (product?.warrantyPricePerUnit?.amount ?? 0)
+                      : (product?.basePrice?.amount ?? 0);
                     const qty = getQty(row);
                     const calculatedTotal = catalogPrice * qty;
                     const currentTotal = row.totalOverride ?? calculatedTotal;

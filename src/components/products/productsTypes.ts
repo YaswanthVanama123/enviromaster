@@ -65,6 +65,9 @@ export type ProductRow = {
   // NEW - frequency field
   frequency?: string;
 
+  // NEW - cost type: one-time direct price or recurring warranty
+  costType?: 'productCost' | 'warranty';
+
   // Custom column data (columnId -> value)
   customFields?: Record<string, string | number>;
 };
