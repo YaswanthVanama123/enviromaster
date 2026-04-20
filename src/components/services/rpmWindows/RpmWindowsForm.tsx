@@ -1,4 +1,4 @@
-// src/features/services/rpmWindows/RpmWindowsForm.tsx
+
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -8,7 +8,7 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-// Helper function to format numbers without unnecessary decimals
+
 const formatNumber = (num: number | undefined): string => {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
@@ -43,12 +43,12 @@ const FIELD_ORDER = {
 export const RpmWindowsForm: React.FC<
   ServiceInitialData<RpmWindowsFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const {
     form,
     setForm,
@@ -67,7 +67,7 @@ export const RpmWindowsForm: React.FC<
   } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -76,9 +76,9 @@ export const RpmWindowsForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   const getOverrideStyle = (
@@ -108,84 +108,88 @@ export const RpmWindowsForm: React.FC<
     return false;
   };
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '' } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.smallQty ?? 0) > 0 || (form.mediumQty ?? 0) > 0 || (form.largeQty ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.smallQty ?? 0) > 0 || (form.mediumQty ?? 0) > 0 || (form.largeQty ?? 0) > 0 || hasCustomFieldValues;
 
       const formatDollars = (value: number) => `$${value.toFixed(2)}`;
       const frequencyLabel =
@@ -237,13 +241,13 @@ export const RpmWindowsForm: React.FC<
         displayName: "RPM Window",
         isActive: true,
 
-        // Red/Green Line pricing data
-        perVisitBase: calc.subtotal,  // Raw subtotal before minimum
-        perVisit: calc.perVisit,  // Final per-visit price after minimum
-        minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
-        originalContractTotal: calc.originalContractTotal,  // Baseline-rate contract total for greenline comparison
 
-        // Persist editable pricing fields for edit mode
+        perVisitBase: calc.subtotal,  
+        perVisit: calc.perVisit,  
+        minimumChargePerVisit: calc.minimumChargePerVisit,  
+        originalContractTotal: calc.originalContractTotal,  
+
+
         smallWindowRate: form.smallWindowRate,
         mediumWindowRate: form.mediumWindowRate,
         largeWindowRate: form.largeWindowRate,
@@ -383,7 +387,7 @@ export const RpmWindowsForm: React.FC<
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));
 
-  // Clear custom totals when base inputs change
+
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
@@ -432,7 +436,7 @@ export const RpmWindowsForm: React.FC<
     form.contractMonths,
   ]);
 
-  // Installation Fee + First Visit (now: install-only first visit)
+
   const installationFeeDisplay = form.isFirstTimeInstall
     ? calc.firstVisitTotalRated
     : 0;
@@ -484,7 +488,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -492,7 +496,7 @@ export const RpmWindowsForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Frequency */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -515,7 +519,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Small */}
+      {}
       <div className="svc-row">
         <label>Small Windows</label>
         <div className="svc-row-right">
@@ -564,7 +568,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Medium */}
+      {}
       <div className="svc-row">
         <label>Medium Windows</label>
         <div className="svc-row-right">
@@ -613,7 +617,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Large */}
+      {}
       <div className="svc-row">
         <label>Large Windows</label>
         <div className="svc-row-right">
@@ -662,7 +666,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* + Added extra lines */}
+      {}
       {form.extraCharges.map((line) => (
         <div className="svc-row" key={line.id}>
           <div className="svc-row-right">
@@ -702,30 +706,10 @@ export const RpmWindowsForm: React.FC<
         </div>
       ))}
 
-      {/* Trip Charge */}
-      {/* <div className="svc-row svc-row-charge">
-        <label>Trip Charge</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="number"
-        min="0"
-          min="0"
-            min="0"
-              value={formatNumber(calc.effTrip)}
-              readOnly
-            />
-          </div>
-          <label className="svc-inline">
-            <input type="checkbox" checked readOnly />
-            <span>Include</span>
-          </label>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Install Type */}
+      {}
       <div className="svc-row">
         <label>Install Type</label>
         <div className="svc-row-right">
@@ -751,10 +735,7 @@ export const RpmWindowsForm: React.FC<
       </div>
 
 
-
-
-
-      {/* Installation Multipliers */}
+      {}
       <div className="svc-row">
         <label>Install Multipliers</label>
         <div className="svc-row-right">
@@ -788,25 +769,11 @@ export const RpmWindowsForm: React.FC<
       </div>
 
 
-
-      {/* Rate Category */}
-      {/* <div className="svc-row">
-        <label>Rate Category</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="selectedRateCategory"
-            value={form.selectedRateCategory}
-            onChange={onChange}
-          >
-            <option value="redRate">Red (Standard)</option>
-            <option value="greenRate">Green (Premium)</option>
-          </select>
-        </div>
-      </div> */}
+      {}
+      {}
 
 
-            {/* Install Fee + First Visit */}
+            {}
       <div className="svc-row svc-row-charge">
         <label>Installation + First Visit</label>
         <div className="svc-row-right">
@@ -832,25 +799,11 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Mirror */}
-      {/* <div className="svc-row">
-        <label>Mirror Cleaning</label>
-        <div className="svc-row-right">
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="includeMirrors"
-              checked={form.includeMirrors}
-              onChange={onChange}
-            />
-            <span>Include mirrors</span>
-          </label>
-        </div>
-      </div> */}
+      {}
+      {}
 
 
-
-      {/* Minimum Charge Per Visit */}
+      {}
       <div className="svc-row">
         <label>Minimum Per Visit</label>
         <div className="svc-row-right">
@@ -867,7 +820,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Per Visit Price – Show for ALL frequencies */}
+      {}
       <div className="svc-row svc-row-charge">
         <label>Per Visit Price</label>
         <div className="svc-row-right">
@@ -893,7 +846,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-      {/* Recurring Visit Total – Show for bimonthly, quarterly, biannual, annual */}
+      {}
       {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
         form.frequency === "biannual" || form.frequency === "annual") && (
         <div className="svc-row svc-row-charge">
@@ -914,7 +867,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Redline/Greenline Pricing Indicator */}
+      {}
       {(form.smallQty > 0 || form.mediumQty > 0 || form.largeQty > 0) && (
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
@@ -948,7 +901,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* First Month Total – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+      {}
       {form.frequency !== "oneTime" && form.frequency !== "quarterly" && form.frequency !== "biannual" && form.frequency !== "annual" && form.frequency !== "bimonthly" && (
         <div className="svc-row svc-row-charge">
           <label>First Month Total</label>
@@ -964,12 +917,12 @@ export const RpmWindowsForm: React.FC<
                 title={form.isFirstTimeInstall ? "First month including installation + service" : "First month (ongoing service only)"}
               />
             </div>
-            {/* <span className="svc-small">{form.isFirstTimeInstall ? "(Install + Service)" : "(Service Only)"}</span> */}
+            {}
           </div>
         </div>
       )}
 
-      {/* Monthly Recurring – Show for weekly, biweekly, 2×/month, and monthly */}
+      {}
       {(form.frequency === "weekly" || form.frequency === "biweekly" ||
         form.frequency === "twicePerMonth" || form.frequency === "monthly") && (
         <div className="svc-row svc-row-charge">
@@ -1002,8 +955,7 @@ export const RpmWindowsForm: React.FC<
       )}
 
 
-
-      {/* First Visit Total – SHOW ONLY for oneTime, quarterly, biannual, annual, bimonthly */}
+      {}
       {(form.frequency === "oneTime" || form.frequency === "quarterly" || form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly") && (
         <div className="svc-row svc-row-charge">
           <label>{form.frequency === "oneTime" ? "Total Price" : "First Visit Total"}</label>
@@ -1036,7 +988,7 @@ export const RpmWindowsForm: React.FC<
         </div>
       )}
 
-      {/* Annual Price (now: total for selected months) – HIDE for oneTime */}
+      {}
       {form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-charge">
           <label>Contract Total</label>
@@ -1047,35 +999,35 @@ export const RpmWindowsForm: React.FC<
               value={form.contractMonths}
               onChange={onChange}
             >
-              {/* Quarterly: multiples of 3 */}
+              {}
               {form.frequency === "quarterly"
                 ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
                     <option key={m} value={m}>
                       {m} months
                     </option>
                   ))
-                /* Bimonthly: even numbers */
+
                 : form.frequency === "bimonthly"
                 ? [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36].map((m) => (
                     <option key={m} value={m}>
                       {m} months
                     </option>
                   ))
-                /* Biannual: multiples of 6 */
+
                 : form.frequency === "biannual"
                 ? [6, 12, 18, 24, 30, 36].map((m) => (
                     <option key={m} value={m}>
                       {m} months
                     </option>
                   ))
-                /* Annual: multiples of 12 */
+
                 : form.frequency === "annual"
                 ? [12, 24, 36].map((m) => (
                     <option key={m} value={m}>
                       {m} months
                     </option>
                   ))
-                /* All other frequencies: 2-36 months */
+
                 : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
                     <option key={m} value={m}>
                       {m} months

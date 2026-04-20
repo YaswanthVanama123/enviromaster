@@ -1,14 +1,14 @@
 .svc{
-  /* max-width:1120px; - Remove width constraint to allow full width */
+
   margin:18px auto 28px;
   padding:0 12px;
   font-family:Arial, Helvetica, sans-serif;
   color:#000;
   overflow-x:hidden;
-  width: 100%; /* Ensure full width usage */
+  width: 100%; 
   box-sizing: border-box;
 
-  /* ✅ PERFORMANCE: Prevent layout shifts */
+
   min-height: 700px;
   contain: layout;
   contain-intrinsic-size: auto 700px;
@@ -59,7 +59,7 @@
   border-radius:10px;
 }
 
-/* Tab Navigation Styles */
+
 .svc-tabs {
   display: flex;
   gap: 8px;
@@ -101,7 +101,7 @@
   background:transparent;
 }
 
-/* Responsive: single column on smaller screens */
+
 @media (max-width: 768px) {
   .svc-grid {
     grid-template-columns: 1fr;
@@ -112,7 +112,7 @@
 
 .svc-card{
   min-width:0;
-  width: 100%; /* Ensure service cards use full available width */
+  width: 100%; 
   background: transparent;
   border: none;
   border-radius: 0;
@@ -242,7 +242,7 @@
   border-color:#999;
 }
 .svc-mini--neg{
-  /* Remove special styling - same as all other buttons */
+
 }
 .svc-mini--inline{ 
   margin-left:6px; 
@@ -307,33 +307,31 @@
   min-width:40px;
 }
 
-/* Semantic field width classes based on field purpose */
 
-/* Calculation and input fields */
 .calc-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 .qty-field { width: 60px !important; min-width: 60px; box-sizing: border-box; }
 .rate-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 
-/* Total and result fields */
+
 .total-field { width: 100px !important; min-width: 100px; box-sizing: border-box; }
 .per-visit-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 .weekly-total-field { width: 90px !important; min-width: 90px; box-sizing: border-box; }
 .monthly-total-field { width: 100px !important; min-width: 100px; box-sizing: border-box; }
 .contract-total-field { width: 140px !important; min-width: 140px; box-sizing: border-box; }
 
-/* Dollar amount fields */
+
 .dollar-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 .price-field { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 
-/* Configuration fields */
+
 .config-field { width: 50px !important; min-width: 50px; box-sizing: border-box; }
 .count-field { width: 60px !important; min-width: 60px; box-sizing: border-box; }
 
-/* Special purpose fields */
+
 .percentage-field { width: 60px !important; min-width: 60px; box-sizing: border-box; }
 .multiplier-field { width: 50px !important; min-width: 50px; box-sizing: border-box; }
 
-/* Legacy classes - remove after migration */
+
 .field-qty { width: 60px !important; min-width: 60px; box-sizing: border-box; }
 .field-rate { width: 80px !important; min-width: 80px; box-sizing: border-box; }
 .field-total { width: 90px !important; min-width: 90px; box-sizing: border-box; }
@@ -400,7 +398,7 @@
   border-bottom-color:#c20000;    
 }
 
-/* SaniClean – Microfiber Mopping inline layout fix */
+
 .svc-micro-line{
   margin-top: 4px;
 }
@@ -412,14 +410,12 @@
   white-space: nowrap;
 }
 
-/* Allow install-row labels to wrap so "Dirty (3x)" doesn't overlap */
+
 .svc-row-install .svc-inline span {
   white-space: normal;
 }
 
 
-
-/* ─── Services Reference tab button ──────────────────── */
 .svc-tab--ref {
   border-color: #2563eb;
   color: #2563eb;

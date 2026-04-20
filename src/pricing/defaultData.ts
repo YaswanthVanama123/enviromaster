@@ -1,6 +1,4 @@
-// src/pricing/defaultData.ts
-// src/pricing/defaultData.ts
-import type { PriceRow } from "./pricingTypes"; // 👈 type-only
+import type { PriceRow } from "./pricingTypes";
 
 
 export const DEFAULT_ROWS: PriceRow[] = [
@@ -32,8 +30,8 @@ export const DEFAULT_ROWS: PriceRow[] = [
     unitType: "per_fixture",
     minimum: 175,
     installMultiplier: 3,
-    installationCost: 75, // separate installation cost
-    hasInstallationScenarios: true, // enables new calculation logic
+    installationCost: 75,
+    hasInstallationScenarios: true,
     notes: "Installation-based pricing with frequency-specific calculations. Installation cost separate from service cost.",
   },
   {
@@ -62,12 +60,11 @@ export const DEFAULT_ROWS: PriceRow[] = [
     },
     unitType: "per_sqft",
     minimum: 200,
-    installationCost: 150, // separate installation cost
-    hasInstallationScenarios: true, // enables new calculation logic
+    installationCost: 150,
+    hasInstallationScenarios: true,
     notes: "Installation-based carpet cleaning with frequency-specific calculations. Installation cost separate from service cost.",
   },
 
-  // Windows (RPM – both sides)
   {
     id: "windows_small",
     serviceKey: "windows_small",
@@ -97,7 +94,6 @@ export const DEFAULT_ROWS: PriceRow[] = [
     installMultiplier: 3,
   },
 
-  // Drains
   {
     id: "drain_standard",
     serviceKey: "drain_standard",
@@ -118,7 +114,6 @@ export const DEFAULT_ROWS: PriceRow[] = [
     notes: "$100 install + $5/wk.",
   },
 
-  // Dispensers
   {
     id: "sani_pod",
     serviceKey: "sani_pod",
@@ -129,7 +124,6 @@ export const DEFAULT_ROWS: PriceRow[] = [
     notes: "$25 install; stand-alone: $8/wk or $3/wk each + $40.",
   },
 
-  // Power-wash (Refresh)
   {
     id: "power_wash_base",
     serviceKey: "power_wash_base",
@@ -142,7 +136,6 @@ export const DEFAULT_ROWS: PriceRow[] = [
       "$75 trip + $200/hr/worker ×2 ≈ $475 minimum. Use separate templates for dumpster/FOH/BOH/patio menus.",
   },
 
-  // Floors
   {
     id: "floors_vct",
     serviceKey: "floors_vct",

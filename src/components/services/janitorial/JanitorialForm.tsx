@@ -1,4 +1,4 @@
-// src/components/services/janitorial/JanitorialForm.tsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -7,7 +7,7 @@ import type { JanitorialFormState } from "./janitorialTypes";
 import type { ServiceInitialData, CustomField } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 
-// ServiceCard wrapper component (you may need to import this from your shared components)
+
 const ServiceCard: React.FC<{
   title: string;
   children: React.ReactNode;
@@ -26,108 +26,116 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
   initialData,
   onRemove
 }) => {
-  // Get calculation hook
+
   const { form, onChange, calc, quote, refreshConfig, isLoadingConfig, updateField } = useJanitorialCalc(initialData);
 
-  // Custom fields state (for user-added fields)
+
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       updateField(name as keyof JanitorialFormState, numValue as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       updateField(name as keyof JanitorialFormState, undefined as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         updateField(name as keyof JanitorialFormState, undefined as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       updateField(name as keyof JanitorialFormState, numValue as any);
     }
   };
 
-  // Services context integration (CRITICAL - like other services)
+
   const servicesContext = useServicesContextOptional();
   const prevDataRef = useRef<string>('');
 
-  // Update services context when form changes (CRITICAL PATTERN)
+
   useEffect(() => {
     if (servicesContext) {
-      // Determine if service is active (has meaningful data)
-      // ✅ FIXED: Only check if there are meaningful quantities, not rates (rates come from backend config)
-      const isActive = form.baseHours > 0;
+
+
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const customFieldsTotal = customFields.reduce((sum, f) => {
+        if (f.type === 'dollar' && f.value) return sum + (parseFloat(f.value) || 0);
+        if (f.type === 'calc' && f.calcValues?.right) return sum + (parseFloat(f.calcValues.right) || 0);
+        return sum;
+      }, 0);
+      const isActive = form.baseHours > 0 || hasCustomFieldValues;
 
       const data = isActive ? {
         serviceId: "janitorial" as const,
         displayName: "Pure Janitorial",
         isActive: true,
 
-        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-        // This ensures edited values are saved to backend, not just backend defaults
+
         recurringServiceRate: form.customRecurringServiceRate ?? form.recurringServiceRate,
         oneTimeServiceRate: form.customOneTimeServiceRate ?? form.oneTimeServiceRate,
         vacuumingRatePerHour: form.customVacuumingRatePerHour ?? form.vacuumingRatePerHour,
@@ -143,7 +151,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         monthlyMultiplier: form.customMonthlyMultiplier ?? form.monthlyMultiplier,
         oneTimeMultiplier: form.customOneTimeMultiplier ?? form.oneTimeMultiplier,
 
-        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+
         baseHours: form.baseHours,
         vacuumingHours: form.vacuumingHours,
         dustingHours: form.dustingHours,
@@ -154,43 +162,42 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         locationRaw: form.location,
         needsParking: form.needsParking,
 
-        // Red/Green Line pricing data
-        perVisitBase: calc.baseServiceCost + calc.vacuumingCost + calc.dustingCost + calc.tripCharge,  // Raw price before minimum
-        perVisit: calc.perVisit,  // Final price after minimum
-        // perVisitMinimum already set above with effective value (line 135)
 
-        // Service type as text field
+        perVisitBase: calc.baseServiceCost + calc.vacuumingCost + calc.dustingCost + calc.tripCharge,  
+        perVisit: calc.perVisit,  
+
+
         serviceType: {
           label: "Service Type",
           type: "text" as const,
           value: form.serviceType === "recurringService" ? "Recurring Service" : "One-Time Service"
         },
 
-        // Main service as calc field (CRITICAL - same as other services)
+
         service: {
           label: "Service",
           type: "calc" as const,
-          qty: Math.round(form.baseHours * 100) / 100, // Fix decimal precision properly
+          qty: Math.round(form.baseHours * 100) / 100, 
           rate: form.serviceType === "recurringService" ? form.recurringServiceRate : form.oneTimeServiceRate,
           total: Number(calc.baseServiceCost.toFixed(2)),
           unit: "hours"
         },
 
-        // Vacuuming as text field
+
         vacuuming: {
           label: "Vacuuming",
           type: "text" as const,
           value: `${form.vacuumingHours} hours`
         },
 
-        // Dusting as text field
+
         dusting: {
           label: "Dusting",
           type: "text" as const,
           value: `${form.dustingHours} places`
         },
 
-        // Add frequency if not one-time
+
         ...(form.serviceType === "recurringService" && {
           frequency: {
             label: "Frequency",
@@ -199,7 +206,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           }
         }),
 
-        // Add location info
+
         location: {
           label: "Location",
           type: "text" as const,
@@ -208,7 +215,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                  "Paid Parking"
         },
 
-        // Add custom fields in the same format
+
         ...customFields.reduce((acc, field, index) => {
           const key = `custom_${index}`;
           if (field.type === "calc") {
@@ -236,7 +243,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           return acc;
         }, {} as Record<string, any>),
 
-        // Totals section (dollar fields)
+
         totals: {
           perVisit: {
             label: "Per Visit Total",
@@ -253,16 +260,16 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
               label: "Contract Total",
               type: "dollar" as const,
               months: form.contractMonths,
-              amount: quote.contractTotal
+              amount: quote.contractTotal + customFieldsTotal
             }
           })
         },
 
-        notes: "", // You can add form field for this if needed
+        notes: "", 
         customFields: customFields
       } : null;
 
-      // Only update if data actually changed (performance optimization)
+
       const dataStr = JSON.stringify(data);
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
@@ -321,7 +328,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
       }
     >
       <div className="svc-form">
-        {/* Service Type */}
+        {}
         <div className="svc-row">
           <label>Service Type</label>
           <div className="svc-row-right">
@@ -337,7 +344,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Base Service Hours - Calculation Row */}
+        {}
         <div className="svc-row">
           <label>Service</label>
           <div className="svc-row-right">
@@ -389,7 +396,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Vacuuming - Calculation Row */}
+        {}
         <div className="svc-row">
           <label>Vacuuming</label>
           <div className="svc-row-right">
@@ -437,7 +444,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Dusting - Calculation Row */}
+        {}
         <div className="svc-row">
           <label>Dusting</label>
           <div className="svc-row-right">
@@ -485,7 +492,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Frequency (for recurring services) */}
+        {}
         {form.serviceType === "recurringService" && (
           <div className="svc-row">
             <label>Frequency</label>
@@ -505,7 +512,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         )}
 
-        {/* Location */}
+        {}
         <div className="svc-row">
           <label>Location</label>
           <div className="svc-row-right">
@@ -522,7 +529,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         </div>
 
-        {/* Parking Cost (conditional) */}
+        {}
         {form.location === "paidParking" && (
           <div className="svc-row">
             <label>Parking Cost</label>
@@ -543,7 +550,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         )}
 
-        {/* Contract Months (for recurring) */}
+        {}
         {form.serviceType === "recurringService" && (
           <div className="svc-row">
             <label>Contract Months</label>
@@ -560,7 +567,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         )}
 
-        {/* Custom Fields */}
+        {}
         {customFields.map((field) => (
           <div key={field.id} className="svc-row">
             <input
@@ -635,7 +642,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         ))}
 
-        {/* Add Field Dropdown */}
+        {}
         <div className="svc-chooser-wrap">
           <button
             type="button"
@@ -680,7 +687,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           )}
         </div>
 
-        {/* Pricing Summary */}
+        {}
         <div className="svc-summary">
           <div className="svc-summary-row">
             <span>Per Visit:</span>
@@ -698,7 +705,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           )}
         </div>
 
-        {/* Applied Rules */}
+        {}
         {calc.appliedRules.length > 0 && (
           <div className="svc-details">
             <small>Applied Rules:</small>
@@ -710,7 +717,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           </div>
         )}
 
-        {/* Loading indicator */}
+        {}
         {isLoadingConfig && (
           <div className="svc-loading">Loading pricing configuration...</div>
         )}

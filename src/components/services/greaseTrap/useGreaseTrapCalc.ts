@@ -1,4 +1,4 @@
-// src/features/services/greaseTrap/useGreaseTrapCalc.ts
+
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
@@ -11,7 +11,7 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-// ✅ Backend config interface matching your MongoDB JSON structure
+
 interface BackendGreaseTrapConfig {
   perTrapRate: number;
   perGallonRate: number;
@@ -30,22 +30,22 @@ interface BackendGreaseTrapConfig {
 }
 
 export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
-  // ✅ Add refs for tracking override and active state
+
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
 
-  // Get services context for fallback pricing data
+
   const servicesContext = useServicesContextOptional();
 
   const [form, setForm] = useState<GreaseTrapFormState>(() => {
     const baseForm = {
-      // Set defaults for new rate fields if not provided in initialData
+
       perTrapRate: GREASE_TRAP_PER_TRAP_RATE,
       perGallonRate: GREASE_TRAP_PER_GALLON_RATE,
       ...initialData
     };
 
-    // ✅ Initialize with global months ONLY if service starts with inputs
+
     const isInitiallyActive = (initialData?.numberOfTraps || 0) > 0;
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
@@ -59,25 +59,25 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     };
   });
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendGreaseTrapConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // Helper function to update form with config data
+
   const updateFormWithConfig = (config: BackendGreaseTrapConfig) => {
     setForm((prev) => ({
       ...prev,
-      // Update rate fields from backend if available
+
       perTrapRate: config.perTrapRate ?? prev.perTrapRate,
       perGallonRate: config.perGallonRate ?? prev.perGallonRate,
     }));
   };
 
-  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("greaseTrap");
         if (backendData?.config) {
@@ -86,10 +86,10 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
           setBackendConfig(config);
           updateFormWithConfig(config);
 
-          // ✅ Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [GREASE-TRAP] Manual refresh: Clearing all custom overrides');
-            // Note: Grease Trap doesn't have custom override fields in the current implementation
+
           }
 
           console.log('✅ GreaseTrap CONFIG loaded from context:', {
@@ -107,7 +107,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     } catch (error) {
       console.error('❌ Failed to fetch GreaseTrap config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("greaseTrap");
         if (fallbackConfig?.config) {
@@ -116,10 +116,10 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
           setBackendConfig(config);
           updateFormWithConfig(config);
 
-          // ✅ FIXED: Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [GREASE-TRAP] Manual refresh: Clearing all custom overrides');
-            // Note: Grease Trap doesn't have custom override fields in the current implementation
+
           }
 
           return;
@@ -132,9 +132,9 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     }
   };
 
-  // ✅ Fetch pricing configuration on mount ONLY if no initialData (new service)
+
   useEffect(() => {
-    // Skip fetching if we have initialData (editing existing service with saved prices)
+
     if (initialData) {
       console.log('📋 [GREASE-TRAP-PRICING] Skipping price fetch - using saved historical prices from initialData');
       return;
@@ -145,9 +145,9 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+
   useEffect(() => {
-    // Skip if we have initialData (editing existing service)
+
     if (initialData) return;
 
     if (servicesContext?.backendPricingData && !backendConfig) {
@@ -155,7 +155,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+
   useEffect(() => {
     const isServiceActive = (form.numberOfTraps || 0) > 0;
     const wasActive = wasActiveRef.current;
@@ -180,7 +180,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.numberOfTraps, servicesContext]);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -206,7 +206,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     });
   }, [form.numberOfTraps, form.frequency]);
 
-  // ✅ Add setContractMonths function
+
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({
@@ -219,7 +219,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
     const { name, value } = e.target;
 
     setForm((prev) => {
-      // ✅ Capture original value before update for price override logging
+
       const originalValue = prev[name as keyof GreaseTrapFormState];
 
       let newFormState = prev;
@@ -242,7 +242,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
         newFormState = prev;
       }
 
-      // ✅ Log price override for numeric pricing fields
+
       const pricingFields = ['perTrapRate', 'perGallonRate'];
       if (pricingFields.includes(name) &&
           typeof newFormState[name as keyof GreaseTrapFormState] === 'number' &&
@@ -256,15 +256,15 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
         }
       }
 
-      // ✅ NEW: Log form field changes using universal logger
+
       const allFormFields = [
-        // Quantity fields
+
         'trapsQuantity', 'gallonsPerTrap', 'frequency',
-        // Selection fields
+
         'rateTier'
       ];
 
-      // Log non-pricing field changes
+
       if (allFormFields.includes(name)) {
         logServiceFieldChanges(
           'greaseTrap',
@@ -282,7 +282,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
   };
 
   const quote: ServiceQuoteResult = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+
     const activeConfig = backendConfig || {
       perTrapRate: GREASE_TRAP_PER_TRAP_RATE,
       perGallonRate: GREASE_TRAP_PER_GALLON_RATE,
@@ -300,11 +300,11 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
       allowedFrequencies: ["daily", "weekly", "biweekly", "monthly"],
     };
 
-    // Use form values instead of hardcoded constants (form values come from backend)
+
     const perVisit = (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate);
     const annual = annualFromPerVisit(perVisit, form.frequency);
 
-    // Calculate monthly based on frequency using backend config
+
     let monthlyTotal = 0;
     const frequencyMultiplier = activeConfig.frequencyMultipliers[form.frequency] || activeConfig.frequencyMultipliers.weekly;
     monthlyTotal = perVisit * frequencyMultiplier;
@@ -329,7 +329,7 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
         `Frequency: ${form.frequency}`,
       ],
     };
-  }, [backendConfig, form]); // ✅ CRITICAL: Re-calculate when backend config loads!
+  }, [backendConfig, form]); 
 
   return {
     form,

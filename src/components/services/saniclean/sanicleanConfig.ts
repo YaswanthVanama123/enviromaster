@@ -1,4 +1,4 @@
-// src/features/services/saniclean/sanicleanConfig.ts
+
 import type {
   SanicleanLocation,
   SanicleanRateTier,
@@ -6,150 +6,150 @@ import type {
 } from "./sanicleanTypes";
 
 export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
-  // All-Inclusive Package ($20/fixture/week, example: 11 fixtures = $900/mo)
+
   allInclusivePackage: {
-    weeklyRatePerFixture: 20, // $20/fixture/week
+    weeklyRatePerFixture: 20, 
     exampleCalculation: {
-      fixtures: 11, // 11 fixtures
-      monthlyTotal: 900, // $900/month (11 × $20 × 4.33 = $954.6 ≈ $900)
+      fixtures: 11, 
+      monthlyTotal: 900, 
     },
     includes: {
-      saniclean: true, // SaniClean service
-      sanipodService: true, // SaniPod service included
-      urinalMats: true, // Urinal mats included
-      paperDispensers: true, // Paper dispensers included
-      mopping: true, // Mopping included
-      monthlySaniscrub: true, // Monthly SaniScrub included
-      electrostaticSpray: true, // Free electrostatic spray
-      airFreshenerService: true, // Free air freshener service (no warranty)
-      soapService: true, // Free soap service (no warranty)
-      fragranceBar: true, // Fragrance Bar included
+      saniclean: true, 
+      sanipodService: true, 
+      urinalMats: true, 
+      paperDispensers: true, 
+      mopping: true, 
+      monthlySaniscrub: true, 
+      electrostaticSpray: true, 
+      airFreshenerService: true, 
+      soapService: true, 
+      fragranceBar: true, 
     },
     waivedFees: {
-      tripCharge: true, // Trip charge waived
-      warrantyFees: true, // Warranty fees waived
+      tripCharge: true, 
+      warrantyFees: true, 
     },
     soapUpgrade: {
-      luxuryUpgradePerDispenser: 5, // $5/dispenser/week to upgrade to luxury
-      oneeFillIncluded: true, // One fill per week included
+      luxuryUpgradePerDispenser: 5, 
+      oneeFillIncluded: true, 
       excessUsageCharges: {
-        standardSoap: 13, // $13/gallon for excess standard soap
-        luxurySoap: 30, // $30/gallon for excess luxury soap
+        standardSoap: 13, 
+        luxurySoap: 30, 
       },
     },
     paperCredit: {
-      creditPerFixturePerWeek: 5, // $5/fixture/week credit for paper
-      reasonableUsageIncluded: true, // Reasonable usage included
+      creditPerFixturePerWeek: 5, 
+      reasonableUsageIncluded: true, 
     },
     microfiberMopping: {
-      pricePerBathroom: 10, // $10/bathroom when included with Sani
-      includedWithSani: true, // Included in all-inclusive
+      pricePerBathroom: 10, 
+      includedWithSani: true, 
     },
   },
 
-  // Per Item Charge Model
+
   perItemCharge: {
-    // Regional Pricing
+
     insideBeltway: {
-      ratePerFixture: 7, // $7/fixture
-      weeklyMinimum: 40, // $40 minimum
-      tripCharge: 8, // $8 trip charge
-      parkingFee: 7, // $7 additional if parking needed (careful about parking)
+      ratePerFixture: 7, 
+      weeklyMinimum: 40, 
+      tripCharge: 8, 
+      parkingFee: 7, 
     },
     outsideBeltway: {
-      ratePerFixture: 6, // $6/fixture
-      weeklyMinimum: 0, // No minimum stated for outside beltway
-      tripCharge: 8, // $8 trip charge
+      ratePerFixture: 6, 
+      weeklyMinimum: 0, 
+      tripCharge: 8, 
     },
 
-    // Small Facility Rule (4-5 fixtures or less = $50 minimum includes trip)
+
     smallFacility: {
-      fixtureThreshold: 5, // 5 fixtures or less
-      minimumWeekly: 50, // $50 minimum
-      includesTripCharge: true, // Includes trip charge
+      fixtureThreshold: 5, 
+      minimumWeekly: 50, 
+      includesTripCharge: true, 
     },
 
-    // Component Calculations (monthly rates converted to weekly in calculations)
+
     facilityComponents: {
-      // Example: 4 sinks = 4 soap + 2 air freshener = 6 dispensers = $70 total, $8/mo supplies
+
       sinks: {
-        soapRatio: 1, // 1 soap dispenser per sink
-        airFreshenerRatio: 0.5, // 1 air freshener per 2 sinks
-        monthlySupplyCostPer6Dispensers: 8, // $8/month supply cost for 6 dispensers
-        totalCostPer4Sinks: 70, // $70 total monthly cost for 4 sinks (6 dispensers)
+        soapRatio: 1, 
+        airFreshenerRatio: 0.5, 
+        monthlySupplyCostPer6Dispensers: 8, 
+        totalCostPer4Sinks: 70, 
       },
 
-      // Example: 2 urinals = 2 screens + 2 mats = $16/mo total
+
       urinals: {
-        screenRatio: 1, // 1 screen per urinal
-        matRatio: 1, // 1 mat per urinal
-        monthlyCostPerUrinal: 8, // $8/month per urinal ($16 for 2)
+        screenRatio: 1, 
+        matRatio: 1, 
+        monthlyCostPerUrinal: 8, 
         components: {
-          urinalScreen: 4, // $4/month per screen
-          urinalMat: 4, // $4/month per mat
+          urinalScreen: 4, 
+          urinalMat: 4, 
         },
       },
 
-      // Example: 2 male toilets = 2 clips + 2 seat covers = $4/mo total
+
       maleToilets: {
-        clipRatio: 1, // 1 clip per toilet
-        seatCoverRatio: 1, // 1 seat cover dispenser per toilet
-        monthlyCostPerToilet: 2, // $2/month per toilet ($4 for 2)
+        clipRatio: 1, 
+        seatCoverRatio: 1, 
+        monthlyCostPerToilet: 2, 
         components: {
-          toiletClips: 1, // $1/month per clip
-          seatCoverDispenser: 1, // $1/month per dispenser
+          toiletClips: 1, 
+          seatCoverDispenser: 1, 
         },
       },
 
-      // Example: 3 female toilets = 3 SaniPods = $12/mo total
+
       femaleToilets: {
-        sanipodRatio: 1, // 1 SaniPod per toilet
-        monthlyCostPerToilet: 4, // $4/month per toilet ($12 for 3)
+        sanipodRatio: 1, 
+        monthlyCostPerToilet: 4, 
         components: {
-          sanipodService: 4, // $4/month per SaniPod
+          sanipodService: 4, 
         },
       },
     },
 
-    // Basic Includes (always included in per-item charge)
+
     basicIncludes: {
-      electrostaticSpray: true, // Free electrostatic spray
-      airFreshenerService: true, // Free air freshener service
-      soapService: true, // Free soap service
+      electrostaticSpray: true, 
+      airFreshenerService: true, 
+      soapService: true, 
     },
 
-    // Warranty Fees (additional in per-item charge model)
+
     warrantyFees: {
-      perDispenserPerWeek: 1, // $1/dispenser/week warranty fee
-      appliesToSoap: true, // Applies to soap dispensers
-      appliesToAirFreshener: true, // Applies to air freshener dispensers
+      perDispenserPerWeek: 1, 
+      appliesToSoap: true, 
+      appliesToAirFreshener: true, 
     },
   },
 
-  // Billing & Contract Conversions
+
   billingConversions: {
     weekly: {
-      monthlyMultiplier: 4.33, // 4.33 weeks per month
-      annualMultiplier: 50, // 50 service weeks per year
+      monthlyMultiplier: 4.33, 
+      annualMultiplier: 50, 
     },
   },
 
-  // Rate Tiers (Red vs Green rates)
+
   rateTiers: {
     redRate: {
-      multiplier: 1.0, // Standard rate
-      commissionRate: 0.1, // 10% commission
+      multiplier: 1.0, 
+      commissionRate: 0.1, 
     },
     greenRate: {
-      multiplier: 1.0, // Same as red for now
-      commissionRate: 0.12, // 12% commission
+      multiplier: 1.0, 
+      commissionRate: 0.12, 
     },
   } as Record<
     SanicleanRateTier,
     { multiplier: number; commissionRate: number }
   >,
 
-  // Value Proposition
+
   valueProposition: [
     "Enviro-Master's core service since the Swisher days. This is what built the company.",
     "Bathroom cleanliness is viewed by consumers as a major indicator of whether they are in a luxury establishment and should be less price conscious or a barebones one where they should be very value driven. Customers can raise prices/margins based on bathroom aesthetics.",

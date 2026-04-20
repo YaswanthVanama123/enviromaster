@@ -1,10 +1,10 @@
-// src/features/services/common/pricingUtils.ts
+
 import type { BillingFrequency } from "./serviceTypes";
 
 export function frequencyToAnnualMultiplier(f: BillingFrequency): number {
   switch (f) {
     case "weekly":
-      return 50; // “~50 visits/year”
+      return 50; 
     case "biweekly":
       return 25;
     case "monthly":

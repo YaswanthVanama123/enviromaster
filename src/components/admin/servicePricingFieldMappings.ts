@@ -1,6 +1,3 @@
-// servicePricingFieldMappings.ts
-// Comprehensive field mappings for all services matching the new backend JSON structure
-
 export interface PricingField {
   label: string;
   value: number;
@@ -22,9 +19,6 @@ type ServiceId =
   | "saniscrub"
   | "stripWax";
 
-/**
- * Helper to get nested value from config object
- */
 function getValue(config: any, path: string[]): any {
   let current: any = config;
   for (const key of path) {
@@ -34,9 +28,6 @@ function getValue(config: any, path: string[]): any {
   return current;
 }
 
-/**
- * Get all pricing fields for a service organized by category
- */
 export function getServicePricingFields(
   serviceId: ServiceId,
   config: any
@@ -65,9 +56,6 @@ export function getServicePricingFields(
   }
 }
 
-/**
- * FOAMING DRAIN - Complete field mapping
- */
 function getFoamingDrainFields(config: any): Record<string, PricingField[]> {
   const standardPricing = getValue(config, []) || {};
   const volumePricing = getValue(config, ["volumePricing"]) || {};
@@ -273,9 +261,6 @@ function getFoamingDrainFields(config: any): Record<string, PricingField[]> {
   };
 }
 
-/**
- * ELECTROSTATIC SPRAY - Complete field mapping
- */
 function getElectrostaticSprayFields(config: any): Record<string, PricingField[]> {
   const standardSprayPricing = getValue(config, ["standardSprayPricing"]) || {};
   const tripCharges = getValue(config, ["tripCharges"]) || {};
@@ -361,9 +346,6 @@ function getElectrostaticSprayFields(config: any): Record<string, PricingField[]
   };
 }
 
-/**
- * PURE JANITORIAL - Complete field mapping
- */
 function getPureJanitorialFields(config: any): Record<string, PricingField[]> {
   const standardHourly = getValue(config, ["standardHourlyPricing"]) || {};
   const shortJob = getValue(config, ["shortJobHourlyPricing"]) || {};
@@ -510,9 +492,6 @@ function getPureJanitorialFields(config: any): Record<string, PricingField[]> {
   };
 }
 
-/**
- * SANICLEAN - Complete field mapping
- */
 function getSaniCleanFields(config: any): Record<string, PricingField[]> {
   const standardALaCarte = getValue(config, ["standardALaCartePricing"]) || {};
   const insideBeltway = standardALaCarte.insideBeltway || {};
@@ -748,9 +727,6 @@ function getSaniCleanFields(config: any): Record<string, PricingField[]> {
   };
 }
 
-/**
- * SANIPOD - Complete field mapping
- */
 function getSaniPodFields(config: any): Record<string, PricingField[]> {
   const corePricing = getValue(config, ["corePricingIncludedWithSaniClean"]) || {};
   const extraBagPricing = getValue(config, ["extraBagPricing"]) || {};
@@ -889,9 +865,6 @@ function getSaniPodFields(config: any): Record<string, PricingField[]> {
   };
 }
 
-/**
- * SANISCRUB - Complete field mapping
- */
 function getSaniScrubFields(config: any): Record<string, PricingField[]> {
   const monthlyPricing = getValue(config, ["monthlyPricing"]) || {};
   const bimonthlyPricing = getValue(config, ["bimonthlyPricing"]) || {};
@@ -1049,9 +1022,6 @@ function getSaniScrubFields(config: any): Record<string, PricingField[]> {
   };
 }
 
-/**
- * STRIP & WAX - Complete field mapping
- */
 function getStripWaxFields(config: any): Record<string, PricingField[]> {
   const variants = getValue(config, ["variants"]) || {};
   const standardFull = variants.standardFull || {};
@@ -1219,9 +1189,6 @@ function getStripWaxFields(config: any): Record<string, PricingField[]> {
   };
 }
 
-/**
- * REFRESH POWER SCRUB - Complete field mapping (already in file, just verify structure)
- */
 function getRefreshPowerScrubFields(config: any): Record<string, PricingField[]> {
   const coreRates = getValue(config, ["coreRates"]) || {};
   const areaSpecific = getValue(config, ["areaSpecificPricing"]) || {};

@@ -1,10 +1,10 @@
-/* CustomFieldManager.css - Matches services section exactly */
+
 
 .custom-field-manager {
-  /* No special styling needed - uses svc-row class directly */
+
 }
 
-/* Position dropdown below the + button */
+
 .custom-field__add-dropdown {
   display: flex;
   align-items: center;
@@ -41,7 +41,7 @@
   border-color: #c00000;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 740px) {
   .custom-field__add-dropdown {
     flex-wrap: wrap;

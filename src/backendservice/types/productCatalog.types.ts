@@ -1,4 +1,3 @@
-// src/backendservice/types/productCatalog.types.ts
 
 export interface ProductPrice {
   amount?: number;

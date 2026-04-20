@@ -1,6 +1,3 @@
-// src/components/TrashView.tsx
-// ✅ SELF-CONTAINED: All trash management logic in one file
-// ✅ OPTIMIZED: Lazy rendering + memoized components
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
@@ -16,11 +13,9 @@ import DocumentSidebar from "./DocumentSidebar";
 import "./SavedFiles.css";
 import "./TrashView.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
-// ✅ OPTIMIZED: Memoized components for fast rendering
 import { AgreementRow } from "./SavedFiles/AgreementRow";
 
 export default function TrashView() {
-  // ✅ State
   const [groups, setGroups] = useState<SavedFileGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,25 +32,20 @@ export default function TrashView() {
     queryRef.current = query;
   }, [query]);
 
-  // ✅ PERFORMANCE: Prevent duplicate concurrent API calls
   const isFetchingRef = useRef(false);
 
-  // ✅ Selection state
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
 
-  // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
 
-  // ✅ Delete confirmation modal state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string, fileType?: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [deleteCheckboxChecked, setDeleteCheckboxChecked] = useState(false); // ✅ Separate checkbox state
+  const [deleteCheckboxChecked, setDeleteCheckboxChecked] = useState(false);
   const normalizedDeleteText = deleteConfirmText.trim().toUpperCase();
-  const isDeleteConfirmed = normalizedDeleteText === 'DELETE' && deleteCheckboxChecked; // ✅ Require both
+  const isDeleteConfirmed = normalizedDeleteText === 'DELETE' && deleteCheckboxChecked;
 
-  // ✅ Watermark state for controlling Normal/Draft mode
   const [fileWatermarkStates, setFileWatermarkStates] = useState<Map<string, boolean>>(new Map());
   const [updatingStatus] = useState<Record<string, boolean>>({});
 
@@ -63,7 +53,6 @@ export default function TrashView() {
   const location = useLocation();
   const isInAdminContext = location.pathname.includes("/admin-panel");
 
-  // ✅ Fetch deleted items
   const fetchGroups = useCallback(async (page = 1, search = "") => {
     if (isFetchingRef.current) {
       console.log('⏭️ [TRASH] Skipping duplicate call - already fetching');
@@ -81,7 +70,7 @@ export default function TrashView() {
         search: search.trim() || undefined,
         includeLogs: true,
         includeDrafts: false,
-        isDeleted: true // ✅ Only fetch deleted items
+        isDeleted: true
       };
 
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, requestParams);
@@ -102,12 +91,10 @@ export default function TrashView() {
     }
   }, [groupsPerPage]);
 
-  // ✅ Initial load
   useEffect(() => {
     fetchGroups(1, "");
   }, [fetchGroups]);
 
-  // ✅ Selection handlers
   const toggleGroupSelection = (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
@@ -145,12 +132,10 @@ export default function TrashView() {
     });
   };
 
-  // ✅ Action handlers
   const handleView = async (file: SavedFileListItem, watermark: boolean = false) => {
     try {
       console.log("👁️ [TRASH] Viewing deleted file", file.id);
 
-      // ✅ FIXED: Use correct documentType based on file type (matching SavedFilesAgreements)
       let documentType: string;
       if (file.fileType === 'main_pdf') {
         documentType = 'agreement';
@@ -168,9 +153,9 @@ export default function TrashView() {
         state: {
           documentId: file.id,
           fileName: file.title,
-          documentType: documentType, // ✅ FIXED: Pass documentType for correct API selection
+          documentType: documentType,
           watermark: watermark,
-          includeDeleted: true, // ✅ FIXED: Include deleted files for trash view (required for log files)
+          includeDeleted: true,
           source: "trash"
         }
       });
@@ -187,20 +172,16 @@ export default function TrashView() {
     try {
       let blob: Blob;
 
-      // ✅ FIXED: Use different download methods based on file type (matching SavedFilesAgreements)
       if (file.fileType === 'main_pdf') {
-        blob = await pdfApi.downloadPdf(file.id); // ✅ FIXED: lowercase 'df', not 'DF'
+        blob = await pdfApi.downloadPdf(file.id);
       } else if (file.fileType === 'version_pdf') {
         console.log(`📥 [TRASH-DOWNLOAD] Downloading version PDF ${file.id} with watermark: ${watermark}`);
         blob = await pdfApi.downloadVersionPdf(file.id, watermark);
       } else if (file.fileType === 'version_log') {
-        // ✅ FIXED: Use version log API for log files
-        blob = await pdfApi.downloadVersionLog(file.id, true); // includeDeleted=true for trash
+        blob = await pdfApi.downloadVersionLog(file.id, true);
       } else if (file.fileType === 'attached_pdf') {
-        // ✅ FIXED: Use manual upload API for manually uploaded attached files
         blob = await manualUploadApi.downloadFile(file.id);
       } else {
-        // Handle other attached files
         blob = await pdfApi.downloadAttachedFile(file.id);
       }
 
@@ -208,7 +189,6 @@ export default function TrashView() {
       const a = document.createElement("a");
       a.href = url;
 
-      // ✅ FIXED: Use appropriate file extension based on file type
       let safeName: string;
       if (file.fileType === 'version_log') {
         safeName = file.fileName || "EnviroMaster_Version_Log.txt";
@@ -252,14 +232,12 @@ export default function TrashView() {
       console.log(`♻️ [TRASH] Restoring ${type}: ${id} (fileType: ${fileType || 'N/A'})`);
 
       if (type === 'folder') {
-        // ✅ FIXED: Use correct API name - restoreAgreement (not restoreCustomerHeader)
         await pdfApi.restoreAgreement(id);
         setToastMessage({
           message: `Restored agreement: ${title}`,
           type: "success"
         });
       } else {
-        // ✅ FIXED: Call restoreFile API for individual files
         await pdfApi.restoreFile(id, { fileType });
         setToastMessage({
           message: `Restored file: ${title}`,
@@ -267,7 +245,6 @@ export default function TrashView() {
         });
       }
 
-      // Refresh list
       fetchGroups(currentPage, queryRef.current);
     } catch (error) {
       console.error(`Failed to restore ${type}:`, error);
@@ -286,7 +263,6 @@ export default function TrashView() {
   const confirmPermanentDelete = async () => {
     if (!itemToDelete || !isDeleteConfirmed) return;
 
-    // ✅ ADMIN CHECK: Permanent delete requires admin access
     if (!isInAdminContext) {
       setToastMessage({
         message: "⚠️ Admin access required to permanently delete items. Please access this page from the Admin Panel to perform permanent deletions.",
@@ -303,14 +279,12 @@ export default function TrashView() {
       console.log(`🗑️ [TRASH] Permanently deleting ${itemToDelete.type}: ${itemToDelete.id}`);
 
       if (itemToDelete.type === 'folder') {
-        // ✅ FIXED: Use correct API name - permanentlyDeleteAgreement
         await pdfApi.permanentlyDeleteAgreement(itemToDelete.id);
         setToastMessage({
           message: `Permanently deleted agreement: ${itemToDelete.title}`,
           type: "success"
         });
       } else {
-        // ✅ FIXED: Call permanentlyDeleteFile API with fileType
         await pdfApi.permanentlyDeleteFile(itemToDelete.id, { fileType: itemToDelete.fileType });
         setToastMessage({
           message: `Permanently deleted file: ${itemToDelete.title}`,
@@ -318,12 +292,11 @@ export default function TrashView() {
         });
       }
 
-      // Refresh list
       fetchGroups(currentPage, queryRef.current);
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
       setDeleteConfirmText('');
-      setDeleteCheckboxChecked(false); // ✅ Reset checkbox
+      setDeleteCheckboxChecked(false);
     } catch (error) {
       console.error(`Failed to permanently delete ${itemToDelete.type}:`, error);
       setToastMessage({
@@ -333,7 +306,6 @@ export default function TrashView() {
     }
   };
 
-  // ✅ Watermark toggle handler - updates Normal/Draft mode state
   const handleWatermarkToggle = useCallback((fileId: string, checked: boolean) => {
     console.log(`💧 [TRASH-WATERMARK] Toggling watermark for file ${fileId}: ${checked}`);
     setFileWatermarkStates(prev => {
@@ -343,7 +315,6 @@ export default function TrashView() {
     });
   }, []);
 
-  // ✅ Placeholder handlers (not used in trash view)
   const handleAddFile = () => {};
   const handleEditAgreement = () => {};
   const handleAgreementZohoUpload = () => {};
@@ -352,7 +323,6 @@ export default function TrashView() {
   const handleZohoUpload = () => {};
   const handleStatusChange = () => {};
 
-  // ✅ Calculate statistics
   const statusCounts = useMemo(() => {
     let deletedFiles = 0;
     let deletedFolders = 0;
@@ -470,9 +440,7 @@ export default function TrashView() {
           padding: '24px'
         }}
       >
-        {/* Main Content */}
         <div className="trash-view-main" style={{ flex: 1 }}>
-          {/* ✅ Search and filters */}
           <div
             className="trash-view-search-bar"
             style={{
@@ -516,7 +484,6 @@ export default function TrashView() {
             </label>
           </div>
 
-          {/* Error state */}
           {error && <div className="sf__error">{error}</div>}
           {!loading && !error && groups.length === 0 && (
             <div className="sf__empty">
@@ -524,7 +491,6 @@ export default function TrashView() {
             </div>
           )}
 
-          {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
           {loading && (
             <>
               {Array.from({ length: 5 }).map((_, idx) => (
@@ -541,7 +507,6 @@ export default function TrashView() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {/* Checkbox skeleton */}
                     <div style={{
                       width: '16px',
                       height: '16px',
@@ -549,7 +514,6 @@ export default function TrashView() {
                       borderRadius: '4px'
                     }} />
 
-                    {/* Arrow skeleton */}
                     <div style={{
                       width: '14px',
                       height: '14px',
@@ -557,7 +521,6 @@ export default function TrashView() {
                       borderRadius: '4px'
                     }} />
 
-                    {/* Folder icon skeleton */}
                     <div style={{
                       width: '18px',
                       height: '18px',
@@ -565,7 +528,6 @@ export default function TrashView() {
                       borderRadius: '4px'
                     }} />
 
-                    {/* Title skeleton */}
                     <div style={{ flex: 1 }}>
                       <div style={{
                         height: '16px',
@@ -582,7 +544,6 @@ export default function TrashView() {
                       }} />
                     </div>
 
-                    {/* Action buttons skeleton */}
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <div style={{
                         width: '60px',
@@ -609,7 +570,6 @@ export default function TrashView() {
             </>
           )}
 
-          {/* ✅ OPTIMIZED: Memoized components with lazy rendering */}
           <div className="sf__list">
             {!loading && !error && groups.map((group) => {
               const isExpanded = expandedGroups.has(group.id);
@@ -647,7 +607,6 @@ export default function TrashView() {
             })}
           </div>
 
-          {/* Pagination */}
           {totalGroups > groupsPerPage && (
             <div className="sf__pager" style={{ marginTop: '20px' }}>
               <div className="sf__page-info">
@@ -657,7 +616,6 @@ export default function TrashView() {
           )}
         </div>
 
-        {/* Right Sidebar */}
         <DocumentSidebar
           statusCounts={statusCounts}
           totalDocuments={totalFiles}
@@ -666,7 +624,6 @@ export default function TrashView() {
         />
       </div>
 
-      {/* Toast notifications */}
       {toastMessage && (
         <Toast
           message={toastMessage.message}
@@ -675,7 +632,6 @@ export default function TrashView() {
         />
       )}
 
-      {/* Email Composer Modal */}
       <EmailComposer
         isOpen={emailComposerOpen}
         onClose={() => {
@@ -693,7 +649,6 @@ export default function TrashView() {
         currentFile={currentEmailFile}
       />
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && itemToDelete && (
         <div
           className="trash-view-modal-overlay"
@@ -705,14 +660,14 @@ export default function TrashView() {
             bottom: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             display: 'flex',
-            alignItems: 'center', // ✅ FIXED: Center vertically
-            justifyContent: 'center', // ✅ FIXED: Center horizontally
+            alignItems: 'center',
+            justifyContent: 'center',
             zIndex: 9999
           }}
           onClick={() => {
             setDeleteConfirmOpen(false);
             setDeleteConfirmText('');
-            setDeleteCheckboxChecked(false); // ✅ Reset checkbox on close
+            setDeleteCheckboxChecked(false);
           }}
         >
           <div
@@ -728,7 +683,6 @@ export default function TrashView() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: 600, color: '#212121', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* ✅ FIXED: Use FontAwesome icon instead of emoji */}
               <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#dc2626', fontSize: '24px' }} />
               Permanently Delete {itemToDelete.type === 'folder' ? 'Agreement' : 'File'}?
             </h3>
@@ -738,7 +692,6 @@ export default function TrashView() {
               <span style={{ color: '#dc2626', fontWeight: 600 }}>This action cannot be undone!</span>
             </p>
 
-            {/* ✅ FIXED: Checkbox does NOT auto-fill text - user must type manually */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -753,7 +706,7 @@ export default function TrashView() {
                 type="checkbox"
                 id="delete-confirm-checkbox"
                 checked={deleteCheckboxChecked}
-                onChange={(e) => setDeleteCheckboxChecked(e.target.checked)} // ✅ FIXED: No auto-fill
+                onChange={(e) => setDeleteCheckboxChecked(e.target.checked)}
                 style={{
                   width: '18px',
                   height: '18px',
@@ -790,7 +743,7 @@ export default function TrashView() {
                 borderRadius: '6px',
                 fontSize: '14px',
                 marginBottom: '16px',
-                textTransform: 'uppercase' // ✅ FIXED: Show in uppercase
+                textTransform: 'uppercase'
               }}
             />
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -799,7 +752,7 @@ export default function TrashView() {
                   setDeleteConfirmOpen(false);
                   setItemToDelete(null);
                   setDeleteConfirmText('');
-                  setDeleteCheckboxChecked(false); // ✅ Reset checkbox
+                  setDeleteCheckboxChecked(false);
                 }}
                 style={{
                   flex: 1,
@@ -827,7 +780,7 @@ export default function TrashView() {
                   cursor: isDeleteConfirmed ? 'pointer' : 'not-allowed',
                   fontWeight: 600,
                   fontSize: '14px',
-                  textTransform: 'uppercase' // ✅ FIXED: "DELETE" in uppercase
+                  textTransform: 'uppercase'
                 }}
               >
                 Delete

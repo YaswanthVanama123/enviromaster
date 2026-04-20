@@ -1,5 +1,4 @@
 .svc{
-  /* max-width:1120px; */
   margin:18px auto 28px;
   padding:0 12px;
   font-family:Arial, Helvetica, sans-serif;
@@ -252,7 +251,6 @@
   border-bottom-color:#c20000;    
 }
 
-/* SaniClean – Microfiber Mopping layout */
 .svc-micro{
   display:flex;
   flex-direction:column;
@@ -274,10 +272,6 @@
 }
 
 
-
-/* ✅ ENHANCED: Comprehensive responsive design without breaking UI */
-
-/* Tablet view (769px - 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   .svc {
     padding: 0 10px;
@@ -341,19 +335,16 @@
   }
 }
 
-/* Mobile/tablet transition */
 @media (max-width: 1024px) {
   .svc-title--hasActions .svc-actions {
     display: none;
   }
 }
 
-/* Keep 2-column grid for medium screens */
 @media (max-width:1100px){
   .svc-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
 }
 
-/* Mobile view (max 768px) */
 @media (max-width: 768px) {
   .svc {
     padding: 0 8px;
@@ -458,14 +449,12 @@
   }
 }
 
-/* Keep existing 740px breakpoint for backwards compatibility */
 @media (max-width:740px){
   .svc-grid{ grid-template-columns:1fr; }
   .svc-card--wide{ grid-column:1; }
   .svc-row{ grid-template-columns:1fr; row-gap:4px; }
 }
 
-/* Extra small mobile (max 480px) */
 @media (max-width: 480px) {
   .svc {
     padding: 0 6px;

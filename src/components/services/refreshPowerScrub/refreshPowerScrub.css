@@ -1,11 +1,10 @@
-/* src/features/services/refreshPowerScrub/refreshPowerScrub.css */
 
-/* Make the Refresh card + table use the full available width */
+
 .refresh-rps {
-  width: 100% !important; /* Force full width */
+  width: 100% !important; 
   max-width: 100% !important;
   box-sizing: border-box;
-  margin: 0; /* Remove any margin constraints */
+  margin: 0; 
 }
 
 .rps-wrap {
@@ -13,7 +12,7 @@
   overflow-x: auto;
 }
 
-/* ===== GRID LAYOUT CLASSES (for 6-column horizontal layout) ===== */
+
 .rps-grid {
   display: flex;
   flex-direction: column;
@@ -36,7 +35,7 @@
 .rps-column {
   flex: 1;
   min-width: 150px;
-  min-height: 200px; /* Increased to accommodate monthly and contract fields */
+  min-height: 200px; 
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -44,27 +43,27 @@
 }
 
 .rps-column:nth-child(1) {
-  background: #f0f8ff; /* Light blue for DUMPSTER */
+  background: #f0f8ff; 
 }
 
 .rps-column:nth-child(2) {
-  background: #f0fff0; /* Light green for PATIO */
+  background: #f0fff0; 
 }
 
 .rps-column:nth-child(3) {
-  background: #fff5ee; /* Light orange for WALKWAY */
+  background: #fff5ee; 
 }
 
 .rps-column:nth-child(4) {
-  background: #f5f5dc; /* Beige for FRONT HOUSE */
+  background: #f5f5dc; 
 }
 
 .rps-column:nth-child(5) {
-  background: #fdf5e6; /* Old lace for BACK HOUSE */
+  background: #fdf5e6; 
 }
 
 .rps-column:nth-child(6) {
-  background: #f8f8ff; /* Ghost white for OTHER */
+  background: #f8f8ff; 
 }
 
 .rps-area-header {
@@ -78,7 +77,6 @@
   margin: 0;
 }
 
-/* ===== TABLE LAYOUT CLASSES (legacy - keep for compatibility) ===== */
 
 .rps {
   width: 100%;
@@ -92,7 +90,7 @@
   border: 1px solid #999;
 }
 
-/* Compact little inline rows inside each cell */
+
 .rps-inline {
   display: flex;
   align-items: center;
@@ -126,7 +124,7 @@
   text-transform: uppercase;
 }
 
-/* Monthly and contract field styling */
+
 .rps-inline .rps-label {
   color: #333;
 }
@@ -136,7 +134,7 @@
   padding: 1px 2px;
 }
 
-/* Global config row above the table */
+
 .rps-config-row {
   display: flex;
   flex-wrap: wrap;
@@ -144,13 +142,13 @@
   margin: 8px 0 12px;
 }
 
-/* Header row (area names) slightly emphasized */
+
 .rps-full tbody tr:first-child td {
   background: #f5f5f5;
   font-weight: 600;
 }
 
-/* Amount row labels centred a bit more */
+
 .rps-full tbody tr:nth-last-child(2) .rps-label {
   text-align: center;
   width: 100%;

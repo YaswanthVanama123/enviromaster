@@ -1,7 +1,7 @@
-// src/components/forms/PriceAwareField.tsx
+
 import { useMemo } from "react";
 import { usePricing } from "../../pricing/pricingStore";
-import type { Frequency, RateColor } from "../../pricing/pricingTypes"; // 👈 type-only
+import type { Frequency, RateColor } from "../../pricing/pricingTypes"; 
 
 
 type Props = {
@@ -46,7 +46,7 @@ export default function PriceAwareField(props: Props) {
       rateColor,
       firstTimeInstall,
     });
-    // Only re-run when these specific values change (not entire props object)
+
   }, [
     row,
     serviceKey,

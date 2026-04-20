@@ -1,4 +1,4 @@
-// src/features/services/stripWax/stripWaxConfig.ts
+
 import type { StripWaxPricingConfig } from "./stripWaxTypes";
 
 export const stripWaxPricingConfig: StripWaxPricingConfig = {
@@ -11,7 +11,7 @@ export const stripWaxPricingConfig: StripWaxPricingConfig = {
   defaultFrequency: "weekly",
   defaultVariant: "standardFull",
 
-  // Billing conversions for all 9 frequencies
+
   billingConversions: {
     oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },
     weekly: { annualMultiplier: 52, monthlyMultiplier: 4.33 },

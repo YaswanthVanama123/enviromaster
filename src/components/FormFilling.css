@@ -1,25 +1,22 @@
-/* ✅ CLS FIX: Prevent font loading shifts */
+
 * {
   font-display: swap;
 }
 
-/* ✅ DARK MODE FIX: Force light color-scheme so ALL native form controls
-   (inputs, selects, checkboxes, scrollbars) render in light mode even when
-   the OS is in dark mode.  This is the one property FormFilling was missing. */
+
 html, body, #root {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  color-scheme: light !important;          /* ← key fix: forces light native widgets */
+  color-scheme: light !important;          
   background-color: #ffffff !important;
   color: #000000 !important;
-  /* ✅ Hide scrollbar while keeping scroll functionality */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
 }
 
-/* ✅ Explicitly style every form control so they are never
-   drawn with the dark-mode browser defaults.               */
+
 input,
 input[type="text"],
 input[type="number"],
@@ -36,14 +33,14 @@ select {
   color: #000000;
 }
 
-/* Checkboxes and radio buttons use accent-color for the tick/fill colour */
+
 input[type="checkbox"],
 input[type="radio"] {
   color-scheme: light;
   accent-color: #c00000;
 }
 
-/* ✅ Hide scrollbar for Chrome, Safari and Opera */
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 #root::-webkit-scrollbar {
@@ -55,13 +52,13 @@ body::-webkit-scrollbar,
   justify-content: center;
   margin: 30px;
   background-color: #ffffff !important;
-  /* ✅ REMOVED: position: relative - was breaking fixed positioning of modals */
-  /* ✅ CLS FIX: Use content-visibility for off-screen optimization */
+
+
   content-visibility: auto;
   contain-intrinsic-size: auto 3000px;
 }
 
-/* Edit Mode Styles */
+
 .edit-mode-header {
   position: fixed;
   top: 0;
@@ -104,7 +101,7 @@ body::-webkit-scrollbar,
   font-size: 16px;
 }
 
-/* Add top padding to content when edit header is present */
+
 .edit-mode-container {
   padding-top: 60px;
   background-color: #ffffff !important;
@@ -166,7 +163,7 @@ body::-webkit-scrollbar,
 
 .formfilling__saving-overlay {
   position: fixed;
-  bottom: 80px; /* Position near the save buttons */
+  bottom: 80px; 
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
@@ -178,28 +175,28 @@ body::-webkit-scrollbar,
   justify-content: center;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  z-index: 5000; /* ✅ Above content but below modals (9999) */
+  z-index: 5000; 
 }
 
 .formfilling__loading-overlay {
-  position: fixed !important; /* ✅ FIXED: Force fixed positioning */
+  position: fixed !important; 
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important; /* ✅ FIXED: Force full viewport width */
-  height: 100vh !important; /* ✅ FIXED: Force full viewport height */
+  width: 100vw !important; 
+  height: 100vh !important; 
   margin: 0 !important;
   padding: 0 !important;
-  background: rgba(15, 23, 42, 0.75); /* ✅ Dark semi-transparent background for better spinner visibility */
+  background: rgba(15, 23, 42, 0.75); 
   backdrop-filter: blur(8px);
   display: flex !important;
-  align-items: center !important; /* ✅ FIXED: Center vertically */
-  justify-content: center !important; /* ✅ FIXED: Center horizontally */
-  z-index: 99999 !important; /* ✅ FIXED: Maximum z-index to ensure it's on top */
+  align-items: center !important; 
+  justify-content: center !important; 
+  z-index: 99999 !important; 
   box-sizing: border-box;
   overflow: hidden;
-  transform: translateZ(0); /* ✅ FIXED: Create new stacking context */
+  transform: translateZ(0); 
 }
 
 .formfilling__spinner {
@@ -218,7 +215,7 @@ body::-webkit-scrollbar,
   justify-content: center;
 }
 
-/* ✅ Smaller spinner for save overlay at bottom */
+
 .formfilling__saving-overlay .formfilling__spinner {
   width: 48px;
   height: 48px;
@@ -253,24 +250,18 @@ body::-webkit-scrollbar,
   }
 }
 
-/* html, body, #root{
-  height:100%;
-  margin:0;
-  padding:0;
-  display:block;
-} */
-/* ✅ Spinner animation for loading states */
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* ✅ CLS FIX: Skeleton animation and loading transitions */
+
 .formfilling__skeleton {
-  /* ✅ Prevent layout shift during load-to-content transition */
+
   animation: fadeIn 0.3s ease-in-out;
   position: relative;
-  z-index: 1; /* ✅ Below overlays and modals */
+  z-index: 1; 
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -286,7 +277,7 @@ body::-webkit-scrollbar,
   }
 }
 
-/* ✅ CLS FIX: Skeleton shimmer effect (smooth loading indication) */
+
 .formfilling__skeleton > div {
   animation: shimmer 1.5s infinite linear;
   background: linear-gradient(
@@ -308,7 +299,7 @@ body::-webkit-scrollbar,
   }
 }
 
-/* ✅ NEW: Contract Summary Section Styling */
+
 .contract-summary-section {
   max-width: 1000px;
   margin: 32px auto;
@@ -339,7 +330,7 @@ body::-webkit-scrollbar,
   color: #ff4500;
 }
 
-/* ✅ NEW: Prominent Status Banner at Top */
+
 .pricing-status-banner {
   padding: 20px 24px;
   border-radius: 12px;
@@ -466,7 +457,7 @@ body::-webkit-scrollbar,
   opacity: 0.5;
 }
 
-/* ✅ NEW: Grid Layout for Cards */
+
 .contract-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -474,7 +465,7 @@ body::-webkit-scrollbar,
   margin-bottom: 24px;
 }
 
-/* ✅ NEW: Card Styling */
+
 .contract-card {
   background: #ffffff;
   border: 2px solid #e5e7eb;
@@ -665,7 +656,7 @@ body::-webkit-scrollbar,
   font-style: italic;
 }
 
-/* ✅ NEW: Pricing Breakdown Styling */
+
 .pricing-breakdown {
   display: flex;
   flex-direction: column;
@@ -752,7 +743,7 @@ body::-webkit-scrollbar,
   color: #d97706;
 }
 
-/* ✅ NEW: Total Agreement Section */
+
 .contract-total-section {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border: 3px solid #86efac;
@@ -818,7 +809,7 @@ body::-webkit-scrollbar,
   border-color: #d1d5db;
 }
 
-/* ✅ NEW: Input with prefix ($ sign) styling */
+
 .contract-input-with-prefix {
   position: relative;
   display: flex;
@@ -840,7 +831,7 @@ body::-webkit-scrollbar,
   width: 100%;
 }
 
-/* ✅ NEW: Charge Input Row Layout (Input + Frequency Dropdown) */
+
 .charge-input-row {
   display: flex;
   gap: 8px;
@@ -851,7 +842,7 @@ body::-webkit-scrollbar,
   flex: 1;
 }
 
-/* ✅ NEW: Frequency Dropdown Styling */
+
 .frequency-dropdown-wrapper {
   position: relative;
   min-width: 130px;
@@ -910,7 +901,7 @@ body::-webkit-scrollbar,
   overflow-x: hidden;
   padding: 8px;
 
-  /* Custom scrollbar */
+
   scrollbar-width: thin;
   scrollbar-color: #ff4500 #f5f5f5;
 }
@@ -980,13 +971,12 @@ body::-webkit-scrollbar,
 }
 
 
-/* ✅ NEW: Custom Dropdown Styling (collapsible with fixed-height scrollable menu) */
 .custom-dropdown {
   position: relative;
   width: 100%;
 }
 
-/* Dropdown Trigger Button */
+
 .custom-dropdown-trigger {
   width: 100%;
   padding: 12px 16px;
@@ -1020,7 +1010,7 @@ body::-webkit-scrollbar,
   font-weight: 600;
 }
 
-/* Animated Arrow */
+
 .dropdown-arrow {
   width: 12px;
   height: 8px;
@@ -1032,7 +1022,7 @@ body::-webkit-scrollbar,
   transform: rotate(180deg);
 }
 
-/* Dropdown Menu (opens below) */
+
 .custom-dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -1057,14 +1047,14 @@ body::-webkit-scrollbar,
   }
 }
 
-/* Scrollable Options Container */
+
 .dropdown-options {
   max-height: 320px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
 
-  /* Custom scrollbar */
+
   scrollbar-width: thin;
   scrollbar-color: #ff4500 #f5f5f5;
 }
@@ -1087,7 +1077,7 @@ body::-webkit-scrollbar,
   background: linear-gradient(180deg, #cc3700 0%, #cc5529 100%);
 }
 
-/* Individual Option Buttons */
+
 .dropdown-option {
   width: 100%;
   padding: 12px 16px;
@@ -1124,7 +1114,7 @@ body::-webkit-scrollbar,
   background: linear-gradient(135deg, #ff6b35 0%, #ff4500 100%);
 }
 
-/* Recommended Badge */
+
 .recommended-badge {
   font-size: 13px;
   font-weight: 600;
@@ -1137,7 +1127,7 @@ body::-webkit-scrollbar,
   color: #ffffff;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .contract-summary-section {
     margin: 16px;
@@ -1151,7 +1141,7 @@ body::-webkit-scrollbar,
     padding: 20px;
   }
 
-  /* ✅ Save loader responsive for mobile */
+
   .formfilling__saving-overlay {
     bottom: 60px;
     padding: 12px 24px;
@@ -1163,7 +1153,7 @@ body::-webkit-scrollbar,
     border-width: 4px;
   }
 
-  /* Status banner responsive */
+
   .status-banner-content {
     flex-direction: column;
     align-items: flex-start;
@@ -1190,7 +1180,7 @@ body::-webkit-scrollbar,
     font-size: 18px;
   }
 
-  /* Total section responsive */
+
   .total-amount {
     font-size: 36px;
   }
@@ -1205,7 +1195,7 @@ body::-webkit-scrollbar,
     margin-top: 8px;
   }
 
-  /* Frequency dropdown responsive */
+
   .charge-input-row {
     flex-direction: column;
     gap: 12px;
@@ -1222,11 +1212,7 @@ body::-webkit-scrollbar,
   }
 }
 
-/* ====================================================================
-   ✅ AGREEMENT TIMELINE & EXPIRY TRACKING STYLES
-   ==================================================================== */
 
-/* Agreement Timeline Container */
 .agreement-timeline-section {
   margin-top: 12px;
   padding: 14px;
@@ -1239,7 +1225,7 @@ body::-webkit-scrollbar,
   margin-bottom: 12px;
 }
 
-/* Expiry Status Badge - Color-coded for easy identification */
+
 .expiry-status-badge {
   display: flex;
   align-items: center;
@@ -1275,7 +1261,7 @@ body::-webkit-scrollbar,
   border: 2px solid #dc3545;
 }
 
-/* Pulse animation for critical status */
+
 @keyframes pulse-critical {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
@@ -1314,7 +1300,7 @@ body::-webkit-scrollbar,
   font-weight: 500;
 }
 
-/* Timeline Bar - Visual progress indicator */
+
 .timeline-bar-container {
   margin-bottom: 12px;
 }
@@ -1366,7 +1352,7 @@ body::-webkit-scrollbar,
   font-weight: 500;
 }
 
-/* Timeline Stats - Breakdown of days */
+
 .timeline-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1416,7 +1402,7 @@ body::-webkit-scrollbar,
   text-decoration: line-through;
 }
 
-/* Date Input Styling */
+
 input[type="date"].contract-input {
   font-family: inherit;
   cursor: pointer;
@@ -1427,7 +1413,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   font-size: 16px;
 }
 
-/* Responsive Design for Timeline */
+
 @media (max-width: 768px) {
   .timeline-stats {
     grid-template-columns: 1fr;
@@ -1455,9 +1441,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   }
 }
 
-/* ✅ ENHANCED: Comprehensive responsive design for tablets and mobile */
 
-/* Tablet view (769px - 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   .center-align {
     margin: 24px;
@@ -1493,7 +1477,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 17px;
   }
 
-  /* Contract summary responsive */
+
   .contract-summary-section {
     margin: 20px;
   }
@@ -1533,7 +1517,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 13px;
   }
 
-  /* Payment options responsive */
+
   .formfilling__payment-options {
     padding: 20px;
   }
@@ -1555,7 +1539,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   }
 }
 
-/* Extra small mobile (max 480px) */
+
 @media (max-width: 480px) {
   .center-align {
     margin: 16px;
@@ -1598,7 +1582,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 16px;
   }
 
-  /* Spinner responsive */
+
   .formfilling__spinner {
     width: 72px;
     height: 72px;
@@ -1616,7 +1600,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     border-width: 3px;
   }
 
-  /* Contract summary responsive */
+
   .contract-summary-section {
     margin: 12px;
   }
@@ -1674,7 +1658,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 11px;
   }
 
-  /* Status banner responsive */
+
   .pricing-status-banner {
     padding: 14px 16px;
   }
@@ -1701,7 +1685,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 15px;
   }
 
-  /* Total section responsive */
+
   .contract-total-section {
     padding: 18px;
   }
@@ -1722,7 +1706,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 10px;
   }
 
-  /* Breakdown responsive */
+
   .breakdown-label {
     font-size: 12px;
   }
@@ -1731,7 +1715,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 13px;
   }
 
-  /* Frequency dropdown responsive */
+
   .frequency-dropdown-trigger {
     padding: 8px 10px;
     font-size: 12px;
@@ -1749,7 +1733,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 11px;
   }
 
-  /* Timeline responsive */
+
   .timeline-header label {
     font-size: 12px;
   }
@@ -1783,7 +1767,7 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 12px;
   }
 
-  /* Payment options responsive */
+
   .formfilling__payment-options {
     padding: 16px;
     margin: 16px 0;

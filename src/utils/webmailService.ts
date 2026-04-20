@@ -1,7 +1,4 @@
-/**
- * Email Service for PDF Sharing
- * Simple mailto integration with automatic PDF download
- */
+
 
 export interface EmailData {
   subject: string;
@@ -15,9 +12,7 @@ export interface PdfAttachment {
   blob?: Blob;
 }
 
-/**
- * Generate mailto URL
- */
+
 function generateMailtoUrl(emailData: EmailData): string {
   const { subject, body, to = '' } = emailData;
   const encodedTo = encodeURIComponent(to);
@@ -27,18 +22,16 @@ function generateMailtoUrl(emailData: EmailData): string {
   return `mailto:${encodedTo}?subject=${encodedSubject}&body=${encodedBody}`;
 }
 
-/**
- * Download PDF file automatically
- */
+
 async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
   try {
     let blob: Blob;
 
     if (attachment.blob) {
-      // Use provided blob
+
       blob = attachment.blob;
     } else {
-      // Download from URL
+
       const response = await fetch(attachment.downloadUrl);
       if (!response.ok) {
         throw new Error(`Failed to download PDF: ${response.statusText}`);
@@ -46,18 +39,18 @@ async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
       blob = await response.blob();
     }
 
-    // Create download link
+
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = attachment.fileName.endsWith('.pdf') ? attachment.fileName : `${attachment.fileName}.pdf`;
 
-    // Trigger download
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 
-    // Clean up
+
     window.URL.revokeObjectURL(url);
 
     console.log('✅ PDF download completed');
@@ -67,20 +60,18 @@ async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
   }
 }
 
-/**
- * Share PDF via email - Opens mailto and downloads PDF for attachment
- */
+
 export function shareViaPdf(emailData: EmailData, attachment?: PdfAttachment): void {
   try {
-    // Generate mailto URL
+
     const mailtoUrl = generateMailtoUrl(emailData);
 
-    // Open default email client
+
     window.location.href = mailtoUrl;
 
-    // Automatically download PDF if provided
+
     if (attachment) {
-      // Small delay to ensure mailto opens first
+
       setTimeout(() => {
         downloadPdfAttachment(attachment).catch(error => {
           console.error('Failed to download PDF attachment:', error);
@@ -96,9 +87,7 @@ export function shareViaPdf(emailData: EmailData, attachment?: PdfAttachment): v
   }
 }
 
-/**
- * Create email data for PDF document sharing with mailto
- */
+
 export function createPdfEmailData(options: {
   fileName?: string;
   status?: string;
@@ -135,7 +124,7 @@ export function createPdfEmailData(options: {
   const emailData: EmailData = {
     subject,
     body,
-    to: '' // User will enter recipient
+    to: '' 
   };
 
   const attachment: PdfAttachment = {

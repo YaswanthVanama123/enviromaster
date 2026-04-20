@@ -61,7 +61,6 @@ function headerRowsToFields(rows: HeaderRow[]): Field[] {
     }
   });
 
-  // fallback: if backend sent nothing, create the standard 3 rows
   if (fields.length === 0) {
     const defaults: HeaderRow[] = [
       {

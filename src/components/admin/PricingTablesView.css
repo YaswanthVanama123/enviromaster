@@ -1,6 +1,3 @@
-/* PricingTablesView.css - Responsive Styles for Small and Medium Devices */
-
-/* Medium devices (tablets, 769px - 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .pricing-container {
     padding: 16px !important;
@@ -47,7 +44,6 @@
   }
 }
 
-/* Small devices (mobile landscape, 481px - 768px) */
 @media (max-width: 768px) {
   .pricing-container {
     padding: 12px !important;
@@ -165,7 +161,6 @@
   }
 }
 
-/* Extra small devices (mobile portrait, ≤480px) */
 @media (max-width: 480px) {
   .pricing-container {
     padding: 8px !important;
@@ -307,7 +302,6 @@
   }
 }
 
-/* Horizontal scroll hint for small devices */
 @media (max-width: 768px) {
   .pricing-table-wrapper::after {
     content: "← Scroll horizontally to see more →";
@@ -321,7 +315,6 @@
   }
 }
 
-/* Very small devices - additional compaction */
 @media (max-width: 360px) {
   .pricing-container {
     padding: 6px !important;

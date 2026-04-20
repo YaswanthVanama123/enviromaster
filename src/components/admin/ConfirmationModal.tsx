@@ -18,7 +18,7 @@ interface ConfirmationModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  details?: string; // Additional details to show
+  details?: string;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -175,7 +175,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     }
   };
 
-  // Add hover styles
   const handleMouseEnter = (e: React.MouseEvent, hoverColor: string) => {
     if (!loading) {
       (e.target as HTMLElement).style.backgroundColor = hoverColor;

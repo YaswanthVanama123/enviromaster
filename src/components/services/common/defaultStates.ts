@@ -1,4 +1,4 @@
-// src/components/services/common/defaultStates.ts
+
 
 import type { SanicleanFormState } from "../saniclean/sanicleanTypes";
 import type { SaniscrubFormState } from "../saniscrub/saniscrubTypes";
@@ -79,7 +79,7 @@ export const DEFAULT_SANIPOD_FORM: SanipodFormState = {
   podQuantity: 0,
   extraBagsPerWeek: 0,
   extraBagsRecurring: true,
-  frequency: "weekly",  // Default to weekly
+  frequency: "weekly",  
   weeklyRatePerUnit: 3,
   altWeeklyRatePerUnit: 8,
   extraBagPrice: 2.0,
@@ -102,21 +102,21 @@ export const DEFAULT_SANIPOD_FORM: SanipodFormState = {
 export const DEFAULT_CARPET_CLEANING_FORM: CarpetFormState = {
   serviceId: "carpetCleaning",
   areaSqFt: 1000,
-  useExactSqft: true,  // Default to exact calculation
+  useExactSqft: true,  
   frequency: "monthly",
   location: "insideBeltway",
   needsParking: false,
   contractMonths: 12,
   includeInstall: true,
   isDirtyInstall: false,
-  // Editable pricing rates from config
+
   unitSqFt: 500,
   firstUnitRate: 250,
   additionalUnitRate: 125,
   perVisitMinimum: 250,
   installMultiplierDirty: 3,
   installMultiplierClean: 1,
-  // Default overrides (none)
+
   tripChargeIncluded: true,
   notes: "",
 };

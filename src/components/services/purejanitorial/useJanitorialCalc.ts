@@ -1,4 +1,4 @@
-// src/features/services/janitorial/useJanitorialCalc.ts
+
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
@@ -13,7 +13,7 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-// ✅ Backend tiered pricing structure
+
 interface TieredPricingTier {
   upToMinutes?: number;
   upToHours?: number;
@@ -24,65 +24,65 @@ interface TieredPricingTier {
   standalonePrice?: number;
 }
 
-// ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
+
 interface BackendJanitorialConfig {
   standardHourlyPricing: {
-    standardHourlyRate: number; // 30
-    minimumHoursPerTrip: number; // 4
+    standardHourlyRate: number; 
+    minimumHoursPerTrip: number; 
   };
   shortJobHourlyPricing: {
-    shortJobHourlyRate: number; // 50
+    shortJobHourlyRate: number; 
   };
   vacuuming: {
-    estimatedTimeHoursPerJob: number; // 1
-    largeJobMinimumTimeHours: number; // 1
+    estimatedTimeHoursPerJob: number; 
+    largeJobMinimumTimeHours: number; 
   };
   dusting: {
-    itemsPerHour: number; // 30
-    pricePerItem: number; // 1
-    dirtyFirstTimeMultiplier: number; // 3
-    infrequentServiceMultiplier4PerYear: number; // 3
+    itemsPerHour: number; 
+    pricePerItem: number; 
+    dirtyFirstTimeMultiplier: number; 
+    infrequentServiceMultiplier4PerYear: number; 
   };
   smoothBreakdownPricingTable: TieredPricingTier[];
-  minimumChargePerVisit: number; // 50
+  minimumChargePerVisit: number; 
   tripCharges: {
-    standard: number; // 0
-    beltway: number; // 0
+    standard: number; 
+    beltway: number; 
   };
   contract: {
-    minMonths: number; // 2
-    maxMonths: number; // 36
+    minMonths: number; 
+    maxMonths: number; 
   };
   frequencyMetadata: {
     weekly: {
-      monthlyRecurringMultiplier: number; // 4.33
-      firstMonthExtraMultiplier: number; // 3.33
+      monthlyRecurringMultiplier: number; 
+      firstMonthExtraMultiplier: number; 
     };
     biweekly: {
-      monthlyRecurringMultiplier: number; // 2.165
-      firstMonthExtraMultiplier: number; // 1.165
+      monthlyRecurringMultiplier: number; 
+      firstMonthExtraMultiplier: number; 
     };
-    bimonthly: { cycleMonths: number }; // 2
-    quarterly: { cycleMonths: number }; // 3
-    biannual: { cycleMonths: number }; // 6
-    annual: { cycleMonths: number }; // 12
-    monthly: { cycleMonths: number }; // 0 - special case
+    bimonthly: { cycleMonths: number }; 
+    quarterly: { cycleMonths: number }; 
+    biannual: { cycleMonths: number }; 
+    annual: { cycleMonths: number }; 
+    monthly: { cycleMonths: number }; 
   };
 }
 
 export interface JanitorialCalcResult {
   totalHours: number;
   perVisit: number;
-  weekly: number; // ✅ Added for weekly total display
+  weekly: number; 
   monthly: number;
-  firstMonth: number; // ✅ Added for first month display
-  recurringMonthly: number; // ✅ Added for ongoing monthly display
+  firstMonth: number; 
+  recurringMonthly: number; 
   annual: number;
   firstVisit: number;
   ongoingMonthly: number;
   contractTotal: number;
   originalContractTotal: number;
-  minimumChargePerVisit: number; // ✅ NEW: Minimum charge for red/green line indicator
+  minimumChargePerVisit: number; 
   breakdown: {
     manualHours: number;
     vacuumingHours: number;
@@ -98,20 +98,20 @@ export interface JanitorialCalcResult {
 const DEFAULT_FORM_STATE: JanitorialFormState = {
   manualHours: 0,
   schedulingMode: "normalRoute",
-  serviceType: "recurring", // Default to recurring service
+  serviceType: "recurring", 
   vacuumingHours: 0,
-  // ✅ NEW: Changed dusting from dustingPlaces to places + calculated hours
-  dustingTotalPlaces: 0,        // Total places needed (user input)
-  dustingCalculatedHours: 0,    // Calculated automatically (totalPlaces ÷ placesPerHour)
+
+  dustingTotalPlaces: 0,        
+  dustingCalculatedHours: 0,    
   dirtyInitial: false,
   frequency: cfg.defaultFrequency,
-  visitsPerWeek: 1, // Default to once per week
+  visitsPerWeek: 1, 
   rateCategory: "redRate",
   contractMonths: cfg.minContractMonths ?? 12,
-  addonTimeMinutes: 0, // Add-on time for one-time service
-  installation: false, // Installation checkbox for recurring service
+  addonTimeMinutes: 0, 
+  installation: false, 
 
-  // ✅ NEW: Editable pricing rates from config (will be overridden by backend)
+
   baseHourlyRate: cfg.baseHourlyRate,
   shortJobHourlyRate: cfg.shortJobHourlyRate,
   minHoursPerVisit: cfg.minHoursPerVisit,
@@ -119,24 +119,19 @@ const DEFAULT_FORM_STATE: JanitorialFormState = {
   dirtyInitialMultiplier: cfg.dirtyInitialMultiplier,
   infrequentMultiplier: cfg.infrequentMultiplier,
   dustingPlacesPerHour: cfg.dustingPlacesPerHour,
-  dustingPricePerPlace: cfg.dustingPricePerPlace, // DEPRECATED: kept for compatibility
+  dustingPricePerPlace: cfg.dustingPricePerPlace, 
   vacuumingDefaultHours: cfg.vacuumingDefaultHours,
   redRateMultiplier: cfg.rateCategories.redRate.multiplier,
   greenRateMultiplier: cfg.rateCategories.greenRate.multiplier,
 
-  // ✅ NEW: Custom pricing overrides (for yellow highlighting)
+
   customBaseHourlyRate: undefined,
   customShortJobHourlyRate: undefined,
   customMinHoursPerVisit: undefined,
   customDustingPlacesPerHour: undefined,
 };
 
-/**
- * Calculate add-on time price based on BACKEND tiered pricing table
- *
- * ✅ 100% DYNAMIC - Uses backend tieredPricing array
- * No hardcoded values!
- */
+
 function calculateAddonTimePrice(
   minutes: number,
   tieredPricing: TieredPricingTier[],
@@ -156,14 +151,14 @@ function calculateAddonTimePrice(
 
   const hours = minutes / 60;
 
-  // Find the matching tier from backend config
+
   for (const tier of tieredPricing) {
     console.log(`🔍 Checking tier:`, tier);
 
-    // Check minute-based tiers (0-15 min, 15-30 min)
+
     if (tier.upToMinutes !== undefined && minutes <= tier.upToMinutes) {
       console.log(`✅ Matched minute tier: ${tier.upToMinutes} mins, price: ${tier.price}`);
-      // Handle addon vs standalone pricing
+
       if (!isAddon && tier.standalonePrice !== undefined) {
         console.log(`✅ Using standalone price: ${tier.standalonePrice}`);
         return tier.standalonePrice;
@@ -172,29 +167,27 @@ function calculateAddonTimePrice(
       return tier.price || 0;
     }
 
-    // Check hour-based tiers (1hr, 2hr, 3hr, 4hr, etc.)
+
     if (tier.upToHours !== undefined && hours <= tier.upToHours) {
       console.log(`✅ Matched hour tier: ${tier.upToHours} hrs`);
-      // If tier has ratePerHour (for 4+ hours), calculate dynamically
+
       if (tier.ratePerHour !== undefined) {
         const calculated = hours * tier.ratePerHour;
         console.log(`✅ Using hourly rate: ${tier.ratePerHour}/hr * ${hours} = ${calculated}`);
         return calculated;
       }
-      // Otherwise use fixed price
+
       console.log(`✅ Using fixed hour price: ${tier.price}`);
       return tier.price || 0;
     }
   }
 
-  // Fallback: if no tier matches, return 0
+
   console.log(`❌ No tier matched for ${minutes} minutes`);
   return 0;
 }
 
-/**
- * ✅ NEW: Default tiered pricing structure matching frontend expectations
- */
+
 function getDefaultTieredPricing(): TieredPricingTier[] {
   return [
     { upToMinutes: 15, price: 10, description: "0-15 minutes", addonOnly: true },
@@ -207,10 +200,7 @@ function getDefaultTieredPricing(): TieredPricingTier[] {
   ];
 }
 
-/**
- * ✅ NEW: Transform backend tiered pricing to frontend expected structure
- * Handles the actual backend JSON structure with smoothBreakdownPricingTable
- */
+
 function transformTieredPricing(backendTiers: any[] | undefined): TieredPricingTier[] | null {
   if (!Array.isArray(backendTiers) || backendTiers.length === 0) {
     console.warn('⚠️ Backend smoothBreakdownPricingTable is not an array or is empty, using default structure');
@@ -224,7 +214,7 @@ function transformTieredPricing(backendTiers: any[] | undefined): TieredPricingT
   for (const tier of backendTiers) {
     if (!tier || typeof tier !== 'object') continue;
 
-    // Handle the backend structure directly (already in correct format)
+
     if (tier.upToMinutes !== undefined) {
       transformedTiers.push({
         upToMinutes: tier.upToMinutes,
@@ -252,10 +242,10 @@ function transformTieredPricing(backendTiers: any[] | undefined): TieredPricingT
 }
 
 export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, customFields?: any[]) {
-  // Get services context for fallback pricing data
+
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -271,7 +261,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     return total;
   }, [customFields]);
 
-  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -293,7 +283,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       ...initialData,
     };
 
-    // ✅ FIXED: Always use global contract months if available (not just when initially active)
+
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
       : servicesContext?.globalContractMonths
@@ -306,7 +296,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     };
   });
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const isEditMode = Boolean(initialData && Object.keys(initialData).length > 0);
@@ -319,7 +309,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     dustingPlacesPerHour: backendConfig?.dusting?.itemsPerHour ?? cfg.dustingPlacesPerHour,
   }), [backendConfig]);
 
-  // Helper function to update form with config data from new backend structure
+
   const updateFormWithConfig = (
     config: BackendJanitorialConfig,
     options?: { forceOverride?: boolean }
@@ -333,7 +323,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
 
       return {
         ...prev,
-        // Extract from nested backend structure
+
         baseHourlyRate: applyConfigValue(
           prev.baseHourlyRate,
           config.standardHourlyPricing?.standardHourlyRate
@@ -362,7 +352,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
           prev.vacuumingDefaultHours,
           config.vacuuming?.estimatedTimeHoursPerJob
         ),
-        // Add new fields from backend
+
         dirtyInitialMultiplier: applyConfigValue(
           prev.dirtyInitialMultiplier,
           config.dusting?.dirtyFirstTimeMultiplier
@@ -408,20 +398,20 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     });
   }, [pricingBaselines]);
 
-  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     const shouldForceOverrideConfig = forceOverrideConfigRef.current || forceRefresh;
     forceOverrideConfigRef.current = false;
     setIsLoadingConfig(true);
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("pureJanitorial");
         if (backendData?.config) {
           console.log('✅ [PureJanitorial] Using cached pricing data from context');
           const rawConfig = backendData.config;
 
-          // ✅ NEW: Transform backend data structure and extract smoothBreakdownPricingTable
+
           const config: BackendJanitorialConfig = {
             ...rawConfig,
             smoothBreakdownPricingTable: transformTieredPricing(rawConfig.smoothBreakdownPricingTable) || getDefaultTieredPricing()
@@ -448,14 +438,14 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     } catch (error) {
       console.error('❌ Failed to fetch PureJanitorial config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("pureJanitorial");
         if (fallbackConfig?.config) {
           console.log('✅ [PureJanitorial] Using backend pricing data from context after error');
           const rawConfig = fallbackConfig.config;
 
-          // ✅ NEW: Transform backend data structure and extract smoothBreakdownPricingTable
+
           const config: BackendJanitorialConfig = {
             ...rawConfig,
             smoothBreakdownPricingTable: transformTieredPricing(rawConfig.smoothBreakdownPricingTable) || getDefaultTieredPricing()
@@ -474,12 +464,12 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
   };
 
   const refreshConfig = () => {
-    fetchPricing(true); // Pass forceRefresh=true
+    fetchPricing(true); 
   };
 
-  // ✅ Fetch pricing configuration on mount ONLY if no initialData (new service)
+
   useEffect(() => {
-    // Skip fetching if we have initialData (editing existing service with saved prices)
+
     if (initialData) {
       console.log('📋 [PURE-JANITORIAL-PRICING] Skipping price fetch - using saved historical prices from initialData');
       return;
@@ -490,9 +480,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+
   useEffect(() => {
-    // Skip if we have initialData (editing existing service)
+
     if (initialData) return;
 
     if (servicesContext?.backendPricingData && !backendConfig) {
@@ -500,20 +490,20 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ NEW: Sync global contract months to service (unless service has explicitly overridden it)
+
   const hasContractMonthsOverride = useRef(false);
-  const wasActiveRef = useRef(false); // Track if service was previously active
+  const wasActiveRef = useRef(false); 
 
   useEffect(() => {
-    // Determine if service is active (has hours entered)
+
     const isServiceActive = (form.manualHours > 0) || (form.vacuumingHours > 0) || (form.dustingCalculatedHours > 0);
     const wasActive = wasActiveRef.current;
 
-    // ✅ FIX: Detect transition from inactive to active
+
     const justBecameActive = isServiceActive && !wasActive;
 
     if (justBecameActive) {
-      // Service just became active - adopt global contract months
+
       console.log(`📅 [PURE-JANITORIAL-CONTRACT] Service just became active, adopting global contract months`);
       if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
         const globalMonths = servicesContext.globalContractMonths;
@@ -524,7 +514,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         }));
       }
     } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
-      // Service is already active - sync with global if it changes
+
       const globalMonths = servicesContext.globalContractMonths;
       if (form.contractMonths !== globalMonths) {
         console.log(`📅 [PURE-JANITORIAL-CONTRACT] Syncing global contract months: ${globalMonths}`);
@@ -534,13 +524,12 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         }));
       }
     }
-    // ✅ IMPORTANT: If service is inactive, do NOT sync global months
 
-    // Update the ref for next render
+
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.manualHours, form.vacuumingHours, form.dustingCalculatedHours, servicesContext]);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -573,12 +562,12 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
     const t: any = e.target;
 
     setForm((prev) => {
-      // ✅ Capture original value before update for price override logging
+
       const originalValue = prev[name as keyof JanitorialFormState];
 
       const next: JanitorialFormState = { ...prev };
 
-      // ✅ NEW: Handle custom override fields for totals
+
       if (
         name === "customPerVisit" ||
         name === "customFirstVisit" ||
@@ -597,7 +586,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         const num = raw === "" ? 0 : Number(raw);
         (next as any)[name] = Number.isFinite(num) && num >= 0 ? num : 0;
 
-        // ✅ NEW: Track when user manually changes contract months
+
         if (name === "contractMonths") {
           hasContractMonthsOverride.current = true;
           console.log(`📅 [PURE-JANITORIAL-CONTRACT] User override: ${num} months`);
@@ -606,7 +595,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         (next as any)[name] = t.value;
       }
 
-      // ✅ NEW: Auto-calculate dusting hours when total places or places per hour change
+
       if (name === 'dustingTotalPlaces' || name === 'dustingPlacesPerHour') {
         const totalPlaces = name === 'dustingTotalPlaces' ? (next.dustingTotalPlaces || 0) : prev.dustingTotalPlaces;
         const placesPerHour = name === 'dustingPlacesPerHour' ? (next.dustingPlacesPerHour || 0) : prev.dustingPlacesPerHour;
@@ -618,7 +607,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         console.log(`🔧 [Pure Janitorial] Auto-calculated dusting hours: ${totalPlaces} places ÷ ${placesPerHour} places/hr = ${next.dustingCalculatedHours.toFixed(2)} hours`);
       }
 
-      // ✅ Log price override for numeric pricing fields
+
       const pricingFields = [
         'baseHourlyRate', 'shortJobHourlyRate', 'minHoursPerVisit', 'weeksPerMonth',
         'dirtyInitialMultiplier', 'infrequentMultiplier', 'dustingPlacesPerHour',
@@ -630,7 +619,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
         const newValue = (next as any)[name] as number | undefined;
         const oldValue = originalValue as number | undefined;
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
+
         if (newValue !== undefined && oldValue !== undefined &&
             typeof newValue === 'number' && typeof oldValue === 'number' &&
             newValue !== oldValue && newValue > 0) {
@@ -661,9 +650,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
   };
 
   const calc: JanitorialCalcResult = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG OR FALLBACK ==========
+
     const activeConfig = backendConfig ? {
-      // Extract values from nested backend structure
+
       baseHourlyRate: backendConfig.standardHourlyPricing?.standardHourlyRate ?? cfg.baseHourlyRate,
       shortJobHourlyRate: backendConfig.shortJobHourlyPricing?.shortJobHourlyRate ?? cfg.shortJobHourlyRate,
       minHoursPerVisit: backendConfig.standardHourlyPricing?.minimumHoursPerTrip ?? cfg.minHoursPerVisit,
@@ -675,7 +664,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       vacuumingDefaultHours: backendConfig.vacuuming?.estimatedTimeHoursPerJob ?? cfg.vacuumingDefaultHours,
       smoothBreakdownPricingTable: backendConfig.smoothBreakdownPricingTable ?? getDefaultTieredPricing(),
     } : {
-      // Fallback to static config if no backend config
+
       baseHourlyRate: cfg.baseHourlyRate,
       shortJobHourlyRate: cfg.shortJobHourlyRate,
       minHoursPerVisit: cfg.minHoursPerVisit,
@@ -694,15 +683,15 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       console.log('✅ Using backend smoothBreakdownPricingTable:', activeConfig.smoothBreakdownPricingTable);
     }
 
-    // ---- base hours with dust at 1× time ----
+
     const manualHours = Math.max(0, Number(form.manualHours) || 0);
     const vacuumingHours = Math.max(0, Number(form.vacuumingHours) || 0);
 
-    // ✅ NEW: Calculate dusting hours from total places ÷ places per hour
+
     const dustingTotalPlaces = Math.max(0, Number(form.dustingTotalPlaces) || 0);
     const dustingPlacesPerHour = form.dustingPlacesPerHour || activeConfig.dustingPlacesPerHour;
 
-    // Calculate dusting hours: total places ÷ places per hour
+
     const dustingCalculatedHours = dustingTotalPlaces > 0
       ? dustingTotalPlaces / dustingPlacesPerHour
       : 0;
@@ -738,13 +727,13 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       };
     }
 
-    // ========== FOR ONE-TIME SERVICES: 4-hour minimum + add-on time ==========
+
     if (form.serviceType === "oneTime") {
-      // Apply 4-hour minimum
+
       const billableHours = Math.max(totalHoursBase, form.minHoursPerVisit);
       const baseServicePrice = billableHours * form.shortJobHourlyRate;
 
-      // Add-on time (table pricing) - ✅ USE BACKEND smoothBreakdownPricingTable
+
       const addonTimePrice = calculateAddonTimePrice(
         form.addonTimeMinutes,
         activeConfig.smoothBreakdownPricingTable,
@@ -756,8 +745,8 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
 
       return {
         totalHours: totalHoursBase,
-        perVisit: totalPrice, // Total includes add-on time
-        monthly: totalPrice, // Same as per visit for one-time
+        perVisit: totalPrice, 
+        monthly: totalPrice, 
         annual: totalPrice,
         firstVisit: totalPrice,
         ongoingMonthly: totalPrice,
@@ -774,15 +763,15 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       };
     }
 
-    // ========== FOR RECURRING SERVICES: 4-hour minimum + add-on time ==========
-    const weeksPerMonth = form.weeksPerMonth;  // ✅ USE FORM VALUE (from backend)
-    const monthlyVisits = weeksPerMonth * form.visitsPerWeek; // visits per month = weeks per month * visits per week
 
-    // Apply 4-hour minimum for recurring
+    const weeksPerMonth = form.weeksPerMonth;  
+    const monthlyVisits = weeksPerMonth * form.visitsPerWeek; 
+
+
     const billableHours = Math.max(totalHoursBase, form.minHoursPerVisit);
     const recurringBasePrice = billableHours * form.baseHourlyRate;
 
-    // Add-on time (table pricing) - ✅ USE BACKEND smoothBreakdownPricingTable
+
     const addonTimePrice = calculateAddonTimePrice(
       form.addonTimeMinutes,
       activeConfig.smoothBreakdownPricingTable,
@@ -800,29 +789,28 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       billableHours
     });
 
-    // ✅ Apply custom per-visit override EARLY so it cascades to monthly/contract
+
     const effectivePerVisit = form.customPerVisit ?? recurringPerVisit;
 
-    // Monthly: per visit * monthly visits (use effective per-visit)
+
     const recurringMonthly = effectivePerVisit * monthlyVisits;
 
-    // Weekly: per visit * visits per week (use effective per-visit)
+
     const recurringWeekly = effectivePerVisit * form.visitsPerWeek;
 
-    // ✅ FIXED INSTALLATION LOGIC: Now based on dusting hours × hourly rate instead of per-place pricing
-    // Calculate dusting cost per visit using hourly rate
+
     const hourlyRate = form.serviceType === "oneTime" ? form.shortJobHourlyRate : form.baseHourlyRate;
     const dustingCostPerVisit = dustingCalculatedHours * hourlyRate;
 
-    // Installation adds 2x extra dusting cost (making total 3x for first visit only)
+
     const installationFee = form.installation && dustingTotalPlaces > 0
-      ? dustingCostPerVisit * 2  // 2x extra (normal 1x + 2x extra = 3x total)
+      ? dustingCostPerVisit * 2  
       : 0;
 
-    // First month: monthly + installation fee (if applicable)
+
     const firstMonth = recurringMonthly + installationFee;
 
-    // Contract total: monthly * contract months
+
     const minMonths = activeConfig.minContractMonths ?? 2;
     const maxMonths = activeConfig.maxContractMonths ?? 36;
     const rawMonths = Number(form.contractMonths) || minMonths;
@@ -831,7 +819,7 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       maxMonths
     );
 
-    // ✅ CORRECTED: Contract total = first month + (regular monthly × remaining months)
+
     const recurringContractTotal = contractMonths <= 0
       ? 0
       : firstMonth + Math.max(contractMonths - 1, 0) * recurringMonthly;
@@ -846,14 +834,14 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
 
     console.log(`✅ Final Calculation - Per Visit: $${effectivePerVisit.toFixed(2)}, Contract Total: $${recurringContractTotal.toFixed(2)}`);
 
-    // ✅ Apply remaining custom overrides (per-visit already applied early)
-    const finalPerVisit = effectivePerVisit; // Already includes custom override
-    const finalWeekly = recurringWeekly; // Uses effective per-visit
-    const finalFirstMonth = form.customMonthly ?? firstMonth;
-    const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly; // Already uses effective per-visit
-    const finalContractTotal = form.customContractTotal ?? recurringContractTotal; // Already uses effective per-visit
 
-    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+    const finalPerVisit = effectivePerVisit; 
+    const finalWeekly = recurringWeekly; 
+    const finalFirstMonth = form.customMonthly ?? firstMonth;
+    const finalRecurringMonthly = form.customOngoingMonthly ?? recurringMonthly; 
+    const finalContractTotal = form.customContractTotal ?? recurringContractTotal; 
+
+
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = finalContractTotal + customFieldsTotal;
 
@@ -869,11 +857,11 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       ? form.minHoursPerVisit * form.shortJobHourlyRate
       : form.minHoursPerVisit * form.baseHourlyRate;
 
-    // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+
     const baselineHourlyRate = activeConfig.baseHourlyRate;
     const baselineBillableHours = Math.max(totalHoursBase, activeConfig.minHoursPerVisit);
     const baselinePerVisitRated = baselineBillableHours * baselineHourlyRate;
-    // Apply same minimum floor so baseline reflects what would actually be charged at table rates
+
     const baselineMinimumCharge = activeConfig.minHoursPerVisit * baselineHourlyRate;
     const baselinePerVisit = Math.max(baselinePerVisitRated, baselineMinimumCharge);
     const baselineMonthly = baselinePerVisit * monthlyVisits;
@@ -885,21 +873,21 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       totalHours: totalHoursBase,
       perVisit: finalPerVisit,
       weekly: finalWeekly,
-      monthly: finalFirstMonth, // ✅ FIRST month (includes installation if applicable)
-      firstMonth: finalFirstMonth, // ✅ First month total (regular + installation)
-      recurringMonthly: finalRecurringMonthly, // ✅ Ongoing monthly (just regular, no installation)
-      annual: contractTotalWithCustomFields, // ✅ UPDATED: Uses contract total with custom fields
+      monthly: finalFirstMonth, 
+      firstMonth: finalFirstMonth, 
+      recurringMonthly: finalRecurringMonthly, 
+      annual: contractTotalWithCustomFields, 
       firstVisit: finalPerVisit,
-      ongoingMonthly: finalRecurringMonthly, // ✅ Regular monthly recurring (no installation)
-      contractTotal: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
+      ongoingMonthly: finalRecurringMonthly, 
+      contractTotal: contractTotalWithCustomFields, 
       originalContractTotal,
-      minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
+      minimumChargePerVisit, 
       breakdown: {
         manualHours,
         vacuumingHours,
-        dustingHours: dustingCalculatedHours,  // ✅ NEW: Use calculated hours instead of places-based calculation
-        dustingTotalPlaces,                    // ✅ NEW: Include total places in breakdown
-        dustingPlacesPerHour,                  // ✅ NEW: Include places per hour rate in breakdown
+        dustingHours: dustingCalculatedHours,  
+        dustingTotalPlaces,                    
+        dustingPlacesPerHour,                  
         pricingMode: `Recurring Service ($${form.baseHourlyRate}/hr, min ${form.minHoursPerVisit} hrs)`,
         basePrice: recurringBasePrice,
         appliedMultiplier: 1,
@@ -908,9 +896,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>, cu
       },
     };
   }, [
-    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    backendConfig,  
     form,
-    // ✅ NEW: Re-calculate when custom fields change
+
     calcFieldsTotal,
     dollarFieldsTotal,
   ]);

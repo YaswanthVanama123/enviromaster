@@ -1,14 +1,8 @@
-// src/components/services/ServicesContext.tsx
+
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 
-/**
- * Cross-service integration context.
- * Allows services and products to know about each other's state.
- * NOW ALSO: Stores complete service data for form saving
- * UPDATED: Includes backend pricing data to replace static fallbacks
- */
 
 export interface ServicesState {
   saniclean?: any;
@@ -31,33 +25,33 @@ interface ServicesContextValue {
   updateSaniclean: (update: Partial<ServicesState["saniclean"]>) => void;
   updateService: (serviceName: keyof ServicesState, data: any) => void;
 
-  // Backend pricing data - replaces static fallbacks for inactive services
+
   backendPricingData: ServiceConfig[];
   getBackendPricingForService: (serviceId: string) => ServiceConfig | null;
 
-  // Helper computed values
+
   isSanicleanAllInclusive: boolean;
-  sanicleanPaperCreditPerWeek: number; // $5 per fixture per week
+  sanicleanPaperCreditPerWeek: number; 
 
-  // ✅ NEW: Global contract months functionality
-  globalContractMonths: number; // Global contract months (2-36)
+
+  globalContractMonths: number; 
   setGlobalContractMonths: (months: number) => void;
-  getTotalAgreementAmount: () => number; // Sum of all service contract totals
-  allServicesOneTime: boolean; // True when every active service is one-time
+  getTotalAgreementAmount: () => number; 
+  allServicesOneTime: boolean; 
 
-  // ✅ NEW: Contract Total comparison for greenline (sum of baseline-rate contract totals vs current)
-  getTotalOriginalContractTotal: () => number; // Sum of contract totals using pricing-table (baseline) rates
 
-  // ✅ NEW: Global trip charge and parking charge
-  globalTripCharge: number; // Trip charge per visit
+  getTotalOriginalContractTotal: () => number; 
+
+
+  globalTripCharge: number; 
   setGlobalTripCharge: (charge: number) => void;
-  globalParkingCharge: number; // Parking charge per visit
+  globalParkingCharge: number; 
   setGlobalParkingCharge: (charge: number) => void;
 
-  // ✅ NEW: Frequency for trip and parking charges
-  globalTripChargeFrequency: number; // How many times per month (default: 4 for weekly)
+
+  globalTripChargeFrequency: number; 
   setGlobalTripChargeFrequency: (frequency: number) => void;
-  globalParkingChargeFrequency: number; // How many times per month (default: 4 for weekly)
+  globalParkingChargeFrequency: number; 
   setGlobalParkingChargeFrequency: (frequency: number) => void;
 }
 
@@ -74,14 +68,14 @@ export const ServicesProvider: React.FC<{
 }) => {
   const [servicesState, setServicesState] = useState<ServicesState>({});
 
-  // ✅ NEW: Global contract months state (default: 36 months)
+
   const [globalContractMonths, setGlobalContractMonths] = useState<number>(36);
 
-  // ✅ NEW: Global trip charge and parking charge state (default: 0)
+
   const [globalTripCharge, setGlobalTripCharge] = useState<number>(0);
   const [globalParkingCharge, setGlobalParkingCharge] = useState<number>(0);
 
-  // ✅ NEW: Frequency state for trip and parking charges (default: 4 for weekly)
+
   const [globalTripChargeFrequency, setGlobalTripChargeFrequency] = useState<number>(4);
   const [globalParkingChargeFrequency, setGlobalParkingChargeFrequency] = useState<number>(4);
 
@@ -98,7 +92,7 @@ export const ServicesProvider: React.FC<{
     []
   );
 
-  // Generic update method for any service
+
   const updateService = useCallback(
     (serviceName: keyof ServicesState, data: any) => {
       setServicesState((prev) => ({
@@ -109,12 +103,12 @@ export const ServicesProvider: React.FC<{
     []
   );
 
-  // Helper function to get backend pricing for a specific service
+
   const getBackendPricingForService = useCallback((serviceId: string): ServiceConfig | null => {
     return backendPricingData.find(config => config.serviceId === serviceId) || null;
   }, [backendPricingData]);
 
-  // ✅ NEW: Helper function to calculate total agreement amount (sum of all service contract totals)
+
   const normalizeFrequencyKey = (value: any): string | null => {
     if (value === undefined || value === null) return null;
     const raw = typeof value === "object"
@@ -162,26 +156,26 @@ export const ServicesProvider: React.FC<{
   const getTotalAgreementAmount = useCallback((): number => {
     let totalAmount = 0;
 
-    // Iterate through all services and sum their contract totals
+
     Object.keys(servicesState).forEach((serviceName) => {
       const serviceData = servicesState[serviceName as keyof ServicesState];
 
-      // Check if service is active
+
       if (serviceData?.isActive) {
-        // ✅ FIX: Contract total can be in multiple locations depending on service structure
+
         let contractTotal = 0;
 
-        // Priority 1: Try direct contractTotal field (for SaniClean, RefreshPowerScrub)
+
         if (typeof serviceData.contractTotal === 'number') {
           contractTotal = serviceData.contractTotal;
           console.log(`📊 [TOTAL CALC] ${serviceName} found contractTotal: $${contractTotal.toFixed(2)}`);
         }
-        // Priority 2: Try nested totals.contract.amount structure (for SaniPod, Janitorial)
+
         else if (serviceData.totals?.contract?.amount && typeof serviceData.totals.contract.amount === 'number') {
           contractTotal = serviceData.totals.contract.amount;
           console.log(`📊 [TOTAL CALC] ${serviceName} found totals.contract.amount: $${contractTotal.toFixed(2)}`);
         }
-        // Priority 3: Try totals.annual.amount (for RPM Windows and similar services)
+
         else if (serviceData.totals?.annual?.amount && typeof serviceData.totals.annual.amount === 'number') {
           contractTotal = serviceData.totals.annual.amount;
           console.log(`📊 [TOTAL CALC] ${serviceName} found totals.annual.amount: $${contractTotal.toFixed(2)}`);
@@ -231,15 +225,13 @@ export const ServicesProvider: React.FC<{
       }
     });
 
-    // ✅ Add global trip charge and parking charge to the contract total
-    // These are per-visit charges, so multiply by frequency and contract months
-    // Special handling for one-time charges (frequency = 0)
+
     const tripChargeContractTotal = globalTripChargeFrequency === 0
-      ? globalTripCharge // One-time charge - no multiplication
+      ? globalTripCharge 
       : globalTripCharge * globalTripChargeFrequency * globalContractMonths;
 
     const parkingChargeContractTotal = globalParkingChargeFrequency === 0
-      ? globalParkingCharge // One-time charge - no multiplication
+      ? globalParkingCharge 
       : globalParkingCharge * globalParkingChargeFrequency * globalContractMonths;
 
     totalAmount += tripChargeContractTotal;
@@ -276,10 +268,7 @@ export const ServicesProvider: React.FC<{
     return totalAmount;
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
-  // ✅ NEW: Sum of contract totals using baseline (pricing-table) rates for greenline comparison.
-  // For services that export `originalContractTotal` (e.g. RPM Windows) we use it directly.
-  // For services that don't track the baseline yet we fall back to their current contractTotal,
-  // meaning those services contribute equally to both sides and don't affect the greenline ratio.
+
   const getTotalOriginalContractTotal = useCallback((): number => {
     let totalOriginal = 0;
 
@@ -289,11 +278,11 @@ export const ServicesProvider: React.FC<{
       if (serviceData?.isActive) {
         let originalTotal = 0;
 
-        // Prefer explicit baseline-rate contract total when available
+
         if (typeof serviceData.originalContractTotal === 'number' && serviceData.originalContractTotal > 0) {
           originalTotal = serviceData.originalContractTotal;
         }
-        // Fall back to current contract total (treats service as "no change")
+
         else if (typeof serviceData.contractTotal === 'number') {
           originalTotal = serviceData.contractTotal;
         } else if (serviceData.totals?.contract?.amount && typeof serviceData.totals.contract.amount === 'number') {
@@ -306,7 +295,7 @@ export const ServicesProvider: React.FC<{
       }
     });
 
-    // Trip/parking charges don't have a separate "original" – treat as unchanged
+
     const tripChargeContractTotal = globalTripChargeFrequency === 0
       ? globalTripCharge
       : globalTripCharge * globalTripChargeFrequency * globalContractMonths;
@@ -322,8 +311,8 @@ export const ServicesProvider: React.FC<{
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
   const value = useMemo<ServicesContextValue>(() => {
-    // Computed: Is SaniClean in all-inclusive mode?
-    // Access the structured data format
+
+
     const sanicleanData = servicesState.saniclean;
     const isSanicleanAllInclusive = Boolean(
       sanicleanData?.isActive &&
@@ -331,14 +320,13 @@ export const ServicesProvider: React.FC<{
        sanicleanData?.pricingMode === "all_inclusive")
     );
 
-    // Computed: Paper credit (all-inclusive only)
-    // Extract fixture count from the structured data
+
     const fixtureCount = sanicleanData?.fixtureBreakdown?.reduce((sum: number, item: any) => sum + (item.qty || 0), 0) || 0;
     const sanicleanPaperCreditPerWeek = isSanicleanAllInclusive
-      ? fixtureCount * 5 // $5 per fixture per week
+      ? fixtureCount * 5 
       : 0;
 
-    // Computed: are all active services one-time?
+
     const activeServices = Object.values(servicesState).filter((sd: any) => sd?.isActive);
     const allServicesOneTime =
       activeServices.length > 0 &&
@@ -352,25 +340,25 @@ export const ServicesProvider: React.FC<{
       getBackendPricingForService,
       isSanicleanAllInclusive,
       sanicleanPaperCreditPerWeek,
-      // ✅ NEW: Global contract months functionality
+
       globalContractMonths,
       setGlobalContractMonths,
       getTotalAgreementAmount,
       allServicesOneTime,
-      // ✅ NEW: Contract Total comparison for greenline
+
       getTotalOriginalContractTotal,
-      // ✅ NEW: Global trip charge and parking charge
+
       globalTripCharge,
       setGlobalTripCharge,
       globalParkingCharge,
       setGlobalParkingCharge,
-      // ✅ NEW: Frequency for trip and parking charges
+
       globalTripChargeFrequency,
       setGlobalTripChargeFrequency,
       globalParkingChargeFrequency,
       setGlobalParkingChargeFrequency,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); // ✅ Keep dependencies - callbacks are stable
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); 
 
   return (
     <ServicesContext.Provider value={value}>
@@ -389,7 +377,7 @@ export const useServicesContext = (): ServicesContextValue => {
   return context;
 };
 
-// Hook that returns null if context is not available (for optional usage)
+
 export const useServicesContextOptional = ():
   | ServicesContextValue
   | undefined => {

@@ -49,7 +49,7 @@ export type ServicesData = {
   serviceNotes: { name: string; defaultValue?: string }[];
 };
 
-/** Backend structural payload (what you already pass in) */
+
 export type BackendServiceRow = {
   type: "line" | "bold" | "atCharge";
   label: string;

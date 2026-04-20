@@ -1,8 +1,6 @@
-// src/hooks/VersionChangeCollectionContext.tsx
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useVersionChangeCollection } from './useVersionChangeCollection';
 
-// Interface for the context value
 interface VersionChangeCollectionContextValue {
   addChange: (change: any) => void;
   removeChange: (productKey: string, fieldType: string) => void;
@@ -14,10 +12,8 @@ interface VersionChangeCollectionContextValue {
   error: string | null;
 }
 
-// Create the context
 const VersionChangeCollectionContext = createContext<VersionChangeCollectionContextValue | null>(null);
 
-// Provider component
 interface VersionChangeCollectionProviderProps {
   children: ReactNode;
 }
@@ -32,7 +28,6 @@ export const VersionChangeCollectionProvider: React.FC<VersionChangeCollectionPr
   );
 };
 
-// Hook to use the shared version change collection
 export const useSharedVersionChangeCollection = (): VersionChangeCollectionContextValue => {
   const context = useContext(VersionChangeCollectionContext);
   if (!context) {
@@ -41,7 +36,6 @@ export const useSharedVersionChangeCollection = (): VersionChangeCollectionConte
   return context;
 };
 
-// Optional hook that returns null if not within provider (for backward compatibility)
 export const useSharedVersionChangeCollectionOptional = (): VersionChangeCollectionContextValue | null => {
   return useContext(VersionChangeCollectionContext);
 };

@@ -1,58 +1,55 @@
-// src/features/services/microfiberMopping/microfiberMoppingTypes.ts
+
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type MicrofiberFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
-/**
- * Static config for the Microfiber Mopping pricing engine.
- * Most of this is descriptive / guard-rail data used by the calculator + UI.
- */
-export interface MicrofiberMoppingPricingConfig {
-  // Bathroom pricing when included with Sani services
-  includedBathroomRate: number; // $ per standard bathroom per visit
 
-  // "Huge" bathrooms priced by square footage instead of per bathroom
+export interface MicrofiberMoppingPricingConfig {
+
+  includedBathroomRate: number; 
+
+
   hugeBathroomPricing: {
     enabled: boolean;
-    ratePerSqFt: number; // $ per 300 sq ft unit (see sqFtUnit)
+    ratePerSqFt: number; 
     sqFtUnit: number;
     description: string;
   };
 
-  // Non-bathroom area pricing (add-on to an existing service)
+
   extraAreaPricing: {
-    singleLargeAreaRate: number; // e.g. $100 flat for a single big area
-    extraAreaSqFtUnit: number; // e.g. 400 sq ft
-    extraAreaRatePerUnit: number; // e.g. $10 per 400 sq ft
-    useHigherRate: boolean; // if true, bill max(unit price, singleLargeAreaRate)
+    singleLargeAreaRate: number; 
+    extraAreaSqFtUnit: number; 
+    extraAreaRatePerUnit: number; 
+    useHigherRate: boolean; 
   };
 
-  // Stand-alone microfiber mopping pricing
+
   standalonePricing: {
-    standaloneSqFtUnit: number; // e.g. 200 sq ft
-    standaloneRatePerUnit: number; // e.g. $10 per 200 sq ft
-    standaloneMinimum: number; // e.g. $40 minimum
-    includeTripCharge: boolean; // kept for copy; math uses 0 trip now
+    standaloneSqFtUnit: number; 
+    standaloneRatePerUnit: number; 
+    standaloneMinimum: number; 
+    includeTripCharge: boolean; 
   };
 
-  // Chemical sold for customer self-mopping
+
   chemicalProducts: {
-    dailyChemicalPerGallon: number; // e.g. $27.34 / gallon
+    dailyChemicalPerGallon: number; 
     customerSelfMopping: boolean;
     waterOnlyBetweenServices: boolean;
   };
 
-  // Equipment we provide (for proposal copy only)
+
   equipmentProvision: {
     mopHandlesOnInstall: boolean;
     microfiberMopsLeftBehind: boolean;
     commercialGradeMicrofiber: boolean;
     designedWashes: number;
-    enhancedCleaningSpeed: number; // % faster vs traditional mops
+    enhancedCleaningSpeed: number; 
     microfiberDensity: string;
   };
 
-  // Trip charges by location – NOT used in math anymore, only for reference
+
   tripCharges: {
     insideBeltway: number;
     outsideBeltway: number;
@@ -61,17 +58,17 @@ export interface MicrofiberMoppingPricingConfig {
     waiveForAllInclusive: boolean;
   };
 
-  // Minimum charge per visit (for redline/greenline pricing)
+
   minimumChargePerVisit: number;
 
-  // How this behaves inside an all-inclusive package
+
   allInclusiveIntegration: {
     includedInPackage: boolean;
     noAdditionalCharge: boolean;
     standardBathroomCoverage: boolean;
   };
 
-  // Integration with other services (for copy)
+
   serviceIntegration: {
     recommendCombineWithSaniScrub: boolean;
     installUpkeepNeeded: boolean;
@@ -79,7 +76,7 @@ export interface MicrofiberMoppingPricingConfig {
     optimalPairing: string[];
   };
 
-  // Frequency conversions (key: actualWeeksPerMonth = 4.33)
+
   billingConversions: {
     oneTime: {
       annualMultiplier: number;
@@ -87,41 +84,41 @@ export interface MicrofiberMoppingPricingConfig {
     };
     weekly: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (4.33)
+      monthlyMultiplier: number; 
     };
     biweekly: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (~2.17)
+      monthlyMultiplier: number; 
     };
     twicePerMonth: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (2)
+      monthlyMultiplier: number; 
     };
     monthly: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (1)
+      monthlyMultiplier: number; 
     };
     bimonthly: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (0.5)
+      monthlyMultiplier: number; 
     };
     quarterly: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (0.333)
+      monthlyMultiplier: number; 
     };
     biannual: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (0.167)
+      monthlyMultiplier: number; 
     };
     annual: {
       annualMultiplier: number;
-      monthlyMultiplier: number; // visits per month (0.083)
+      monthlyMultiplier: number; 
     };
     actualWeeksPerYear: number;
-    actualWeeksPerMonth: number; // 4.33
+    actualWeeksPerMonth: number; 
   };
 
-  // Pricing rules / guard rails
+
   pricingRules: {
     canBundleWithSani: boolean;
     canPriceAsIncluded: boolean;
@@ -133,7 +130,7 @@ export interface MicrofiberMoppingPricingConfig {
     };
   };
 
-  // Rate categories (meta only)
+
   rateCategories: {
     redRate: {
       multiplier: number;
@@ -145,7 +142,7 @@ export interface MicrofiberMoppingPricingConfig {
     };
   };
 
-  // Value proposition (for copy)
+
   valueProposition: {
     bacterialReduction: boolean;
     costSavingsForCustomer: boolean;
@@ -154,7 +151,7 @@ export interface MicrofiberMoppingPricingConfig {
     enhancedEfficiency: boolean;
   };
 
-  // Specs for proposals
+
   serviceSpecs: {
     microfiberSize: string;
     microfiberQuality: string;
@@ -163,7 +160,7 @@ export interface MicrofiberMoppingPricingConfig {
     bacteriaPrevention: string;
   };
 
-  // Defaults
+
   defaultFrequency: MicrofiberFrequencyKey;
   allowedFrequencies: MicrofiberFrequencyKey[];
 
@@ -172,58 +169,56 @@ export interface MicrofiberMoppingPricingConfig {
   availablePricingMethods: string[];
 }
 
-/**
- * Actual form state used on the Microfiber Mopping screen.
- */
+
 export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   frequency: MicrofiberFrequencyKey;
 
-  // NEW: contract length dropdown (2–36 months)
+
   contractTermMonths: number;
 
-  // Tied to Sani program?
+
   hasExistingSaniService: boolean;
 
-  // Standard bathrooms (per-bathroom pricing path)
+
   bathroomCount: number;
 
-  // Huge bathroom exception
+
   isHugeBathroom: boolean;
   hugeBathroomSqFt: number;
 
-  // Extra non-bathroom floor area (add-on)
+
   extraAreaSqFt: number;
-  useExactExtraAreaSqft: boolean;  // true = exact calculation, false = block pricing
+  useExactExtraAreaSqft: boolean;  
 
-  // Stand-alone microfiber mopping area
+
   standaloneSqFt: number;
-  useExactStandaloneSqft: boolean;  // true = exact calculation, false = direct pricing
+  useExactStandaloneSqft: boolean;  
 
-  // Chemical we sell them for self-mopping (gallons/month)
+
   chemicalGallons: number;
 
-  // If true, all microfiber is baked into an "all-inclusive" package pricing
+
   isAllInclusive: boolean;
 
-  // Trip info (kept for UI only)
+
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
 
-  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
-  includedBathroomRate: number;         // $10 per bathroom
-  hugeBathroomRatePerSqFt: number;      // $10 per 300 sq ft
-  extraAreaRatePerUnit: number;         // $10 per 400 sq ft
-  standaloneRatePerUnit: number;        // $10 per 200 sq ft
-  dailyChemicalPerGallon: number;       // $27.34 per gallon
 
-  // ========== CUSTOM RATE OVERRIDES (for yellow highlighting in edit mode) ==========
+  includedBathroomRate: number;         
+  hugeBathroomRatePerSqFt: number;      
+  extraAreaRatePerUnit: number;         
+  standaloneRatePerUnit: number;        
+  dailyChemicalPerGallon: number;       
+
+
   customIncludedBathroomRate?: number;
   customHugeBathroomRatePerSqFt?: number;
   customExtraAreaRatePerUnit?: number;
   customStandaloneRatePerUnit?: number;
   customDailyChemicalPerGallon?: number;
 
-  // ========== CUSTOM TOTAL OVERRIDES (user can manually set totals) ==========
+
   customStandardBathroomTotal?: number;
   customHugeBathroomTotal?: number;
   customExtraAreaTotal?: number;
@@ -237,9 +232,7 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   applyMinimum?: boolean;
 }
 
-/**
- * Calculator outputs (used both for UI display and quote summary).
- */
+
 export interface MicrofiberMoppingCalcResult {
   standardBathroomPrice: number;
   hugeBathroomPrice: number;
@@ -248,7 +241,7 @@ export interface MicrofiberMoppingCalcResult {
   extraAreaPrice: number;
 
   standaloneServicePrice: number;
-  standaloneTripCharge: number; // always 0 in math now
+  standaloneTripCharge: number; 
   standaloneTotal: number;
 
   chemicalSupplyMonthly: number;
@@ -260,13 +253,13 @@ export interface MicrofiberMoppingCalcResult {
   annualPrice: number;
   monthlyRecurring: number;
 
-  // NEW: first visit / first month / contract math
+
   firstVisitPrice: number;
   firstMonthPrice: number;
   contractMonths: number;
   contractTotal: number;
   originalContractTotal: number;
 
-  // Minimum charge for redline/greenline indicator
+
   minimumChargePerVisit: number;
 }

@@ -1,6 +1,3 @@
-// src/components/SavedFilesAgreements.tsx
-// ✅ CORRECTED: Single document per agreement with attachedFiles array
-// ✅ PERFORMANCE OPTIMIZED: Memoized components (AgreementRow, FileRow) for better rendering
 import { useEffect, useState, useMemo, useRef, useCallback, ChangeEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
@@ -23,7 +20,6 @@ import EmailComposer, { type EmailData, type EmailAttachment } from "./EmailComp
 import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
-// ✅ OPTIMIZED: Import memoized components for better performance
 import { AgreementRow } from "./SavedFiles/AgreementRow";
 
 type FileStatus =
@@ -51,9 +47,6 @@ const STATUS_LABEL: Record<FileStatus, string> = {
   attached: "Attached File",
 };
 
-// ✅ REMOVED: FileRow component now imported from separate file for better performance
-
-// ✅ NEW: Status configuration helper function
 const getStatusConfig = (status: string) => {
   const EXISTING_STATUSES = [
     { value: 'draft', label: 'Draft', color: '#6b7280', canManuallySelect: false },
@@ -72,15 +65,12 @@ const getStatusConfig = (status: string) => {
   return config || { value: status, label: status, color: '#6b7280', canManuallySelect: false };
 };
 
-// ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads across React Strict Mode remounts
 let hasInitiallyLoaded = false;
 
-// ✅ OPTIMIZATION: Cache email template at module level to prevent repeated API calls
 let cachedEmailTemplate: { subject: string; body: string } | null = null;
 let isLoadingEmailTemplate = false;
 
 export default function SavedFilesAgreements() {
-  // ✅ CORRECTED: agreements is the source of truth (each is one MongoDB document)
   const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
   const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -88,50 +78,40 @@ export default function SavedFilesAgreements() {
   const [totalFiles, setTotalFiles] = useState(0);
   const [agreementsPerPage] = useState(20);
   const [query, setQuery] = useState("");
-  const [timelineFilter, setTimelineFilter] = useState<'all' | 'yet-to-start' | 'active' | 'inactive'>('all'); // ✅ NEW: Timeline filter
+  const [timelineFilter, setTimelineFilter] = useState<'all' | 'yet-to-start' | 'active' | 'inactive'>('all');
   const [loading, setLoading] = useState(false);
-  const [emailTemplateLoading, setEmailTemplateLoading] = useState(false); // ✅ NEW: Email template loading state
+  const [emailTemplateLoading, setEmailTemplateLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // ✅ PERFORMANCE: Prevent duplicate concurrent API calls
   const isFetchingRef = useRef(false);
 
-  // ✅ CRITICAL FIX: Track if this is the first render of search effect to prevent duplicate call on page refresh
   const isFirstSearchRender = useRef(true);
 
-  // Selection state - for individual files within agreements
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
 
-  // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
   const [defaultEmailTemplate, setDefaultEmailTemplate] = useState<{ subject: string; body: string } | null>(null);
 
-  // Zoho upload state
   const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
   const [currentZohoFile, setCurrentZohoFile] = useState<SavedFileListItem | null>(null);
 
-  // Bulk Zoho upload state
   const [bulkZohoUploadOpen, setBulkZohoUploadOpen] = useState(false);
   const [selectedFilesForBulkUpload, setSelectedFilesForBulkUpload] = useState<SavedFileListItem[]>([]);
 
-  // File upload state
   const [fileUploadOpen, setFileUploadOpen] = useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [currentUploadAgreement, setCurrentUploadAgreement] = useState<SavedFileGroup | null>(null);
 
-  // ✅ NEW: Delete confirmation state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string, fileType?: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const normalizedDeleteConfirmText = deleteConfirmText.trim().toUpperCase();
   const isDeleteConfirmed = normalizedDeleteConfirmText === 'DELETE';
 
-  // ✅ NEW: Status change state
   const [statusChangeLoading, setStatusChangeLoading] = useState<Record<string, boolean>>({});
 
-  // ✅ NEW: Watermark state for each file (only applies to version PDFs)
   const [fileWatermarkStates, setFileWatermarkStates] = useState<Map<string, boolean>>(new Map());
 
   const navigate = useNavigate();
@@ -139,7 +119,6 @@ export default function SavedFilesAgreements() {
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // ✅ NEW: Watermark toggle handler
   const handleWatermarkToggle = useCallback((fileId: string, checked: boolean) => {
     setFileWatermarkStates(prev => {
       const newMap = new Map(prev);
@@ -149,7 +128,6 @@ export default function SavedFilesAgreements() {
     console.log(`💧 [WATERMARK] Toggled watermark for file ${fileId}: ${checked}`);
   }, []);
 
-  // ✅ PERFORMANCE: Memoized callback for status changes
   const handleStatusChange = useCallback(async (file: SavedFileListItem, newStatus: string) => {
     if (statusChangeLoading[file.id]) return;
 
@@ -158,16 +136,12 @@ export default function SavedFilesAgreements() {
     setStatusChangeLoading(prev => ({ ...prev, [file.id]: true }));
 
     try {
-      // ✅ FIX: Handle different file types appropriately
       if (file.fileType === 'version_pdf') {
-        // For version PDFs, use the file.id directly as the version ID
         console.log(`📊 [STATUS-CHANGE-DEBUG] Using file.id as version ID: ${file.id}`);
         await pdfApi.updateVersionStatus(file.id, newStatus);
       } else if (file.fileType === 'main_pdf' && file.agreementId) {
-        // For main agreement PDFs, update agreement status
         await pdfApi.updateDocumentStatus(file.agreementId, newStatus);
       } else if (file.fileType === 'attached_pdf') {
-        // ✅ NEW: For manually uploaded attached files, update manual upload status
         console.log(`📊 [MANUAL-UPLOAD-STATUS] Updating manual upload ${file.id} to ${newStatus}`);
         await manualUploadApi.updateStatus(file.id, newStatus);
       } else {
@@ -176,8 +150,6 @@ export default function SavedFilesAgreements() {
 
       console.log(`✅ [STATUS-CHANGE] Status update API call succeeded for ${file.id}`);
 
-      // ✅ FIX: Update local state immediately instead of refetching (like ApprovalDocuments)
-      // This prevents race conditions and makes the UI update instantly
       setAgreements(prev => prev.map(agreement => ({
         ...agreement,
         files: agreement.files.map(f =>
@@ -192,8 +164,6 @@ export default function SavedFilesAgreements() {
 
       console.log(`✅ [STATUS-CHANGE] Local state updated successfully`);
 
-      // ✅ OPTIONAL: Refresh in background without blocking the success message
-      // Wrapped in try-catch to prevent errors from affecting the success flow
       setTimeout(() => {
         fetchAgreements(currentPage, query).catch(err => {
           console.warn('⚠️ [STATUS-CHANGE] Background refresh failed (non-critical):', err);
@@ -216,41 +186,32 @@ export default function SavedFilesAgreements() {
     } finally {
       setStatusChangeLoading(prev => ({ ...prev, [file.id]: false }));
     }
-  }, [statusChangeLoading, currentPage, query]); // ✅ Dependencies for useCallback
+  }, [statusChangeLoading, currentPage, query]);
 
-  // ✅ OPTIMIZED: Single API call with duplicate prevention
   const fetchAgreements = async (page = 1, search = "") => {
-    // ✅ CRITICAL FIX: Check flag AND loading state to prevent race conditions
     if (isFetchingRef.current || loading) {
       console.log('⏭️ [SAVED-FILES] Skipping duplicate call - already fetching or loading');
       return;
     }
 
-    // Set flag immediately (synchronous) before any async operations
     isFetchingRef.current = true;
 
     setLoading(true);
     setError(null);
 
     try {
-      // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
       console.log(`📡 [API-CALL] Fetching agreements: page=${page}, search="${search}"`);
 
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, agreementsPerPage, {
         search: search.trim() || undefined,
         includeLogs: true,
-        includeDrafts: true,  // ✅ Backend should include draft agreements without PDFs
-        isDeleted: false // ✅ Only fetch non-deleted agreements (saved files, not trash)
+        includeDrafts: true,
+        isDeleted: false
       });
-
-      // ✅ REMOVED: Second API call to getCustomerHeadersSummary()
-      // Backend now returns draft agreements in the grouped response
 
       const allAgreements = groupedResponse.groups;
 
-      // ✅ OPTIMIZED: Process files without console.log in loops
       allAgreements.forEach(agreement => {
-        // Determine latest versions if not set by backend
         if (agreement.files.some(file => file.isLatestVersion === undefined)) {
           const versionFiles = agreement.files.filter(file => file.fileType === 'version_pdf' || file.fileType === 'main_pdf');
           let highestVersionNumber = 0;
@@ -270,13 +231,11 @@ export default function SavedFilesAgreements() {
             versionMap.get(versionNumber)!.push(file);
           });
 
-          // Mark latest versions
           const latestVersionFiles = versionMap.get(highestVersionNumber) || [];
           latestVersionFiles.forEach(file => {
             file.isLatestVersion = true;
           });
 
-          // Mark older versions
           versionFiles.forEach(file => {
             if (file.isLatestVersion === undefined) {
               file.isLatestVersion = false;
@@ -284,9 +243,7 @@ export default function SavedFilesAgreements() {
           });
         }
 
-        // ✅ OPTIMIZED: Set canChangeStatus without logging
         agreement.files.forEach(file => {
-          // Fix hasPdf for attached files
           if (file.fileType === 'attached_pdf' && file.fileSize && file.fileSize > 0) {
             file.hasPdf = true;
           }
@@ -314,11 +271,9 @@ export default function SavedFilesAgreements() {
         return (a.agreementTitle || "").localeCompare(b.agreementTitle || "");
       });
 
-      // ✅ NEW: Filter by timeline status if filter is applied
       const filteredAgreements = timelineFilter === 'all' ? sortedAgreements : sortedAgreements.filter(agreement => {
-        // Calculate timeline status for this agreement
         if (!agreement.startDate || !agreement.contractMonths) {
-          return false; // Agreements without timeline data don't match any filter
+          return false;
         }
 
         const today = new Date();
@@ -333,7 +288,6 @@ export default function SavedFilesAgreements() {
         const daysUntilStart = Math.ceil((startDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         const daysRemaining = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Determine status
         let status: 'yet-to-start' | 'active' | 'inactive';
         if (daysUntilStart > 0) {
           status = 'yet-to-start';
@@ -351,7 +305,6 @@ export default function SavedFilesAgreements() {
       setTotalFiles(filteredAgreements.reduce((sum, agreement) => sum + agreement.files.length, 0));
       setCurrentPage(page);
 
-      // ✅ DEBUG: Log timeline data for ALL agreements to verify backend data
       const agreementsWithTimeline = allAgreements.filter(a => a.startDate && a.contractMonths);
       const agreementsWithoutTimeline = allAgreements.filter(a => !a.startDate || !a.contractMonths);
       console.log(`📅 [TIMELINE-DEBUG] Timeline data summary:`, {
@@ -379,12 +332,10 @@ export default function SavedFilesAgreements() {
       setTotalFiles(0);
     } finally {
       setLoading(false);
-      isFetchingRef.current = false;  // ✅ Reset fetching flag
+      isFetchingRef.current = false;
     }
   };
 
-  // ✅ FIXED: Separate initial load from search to prevent duplicate calls
-  // Initial load - runs once per component mount, resets when navigating away
   useEffect(() => {
     if (!hasInitiallyLoaded) {
       hasInitiallyLoaded = true;
@@ -394,25 +345,18 @@ export default function SavedFilesAgreements() {
       console.log('⏭️ [SAVED-FILES-AGREEMENTS] Skipping duplicate initial load (React Strict Mode remount)');
     }
 
-    // ✅ CRITICAL FIX: Reset flags on unmount so next mount (tab navigation) loads fresh
     return () => {
-      // Use setTimeout to distinguish between React Strict Mode unmount (immediate remount)
-      // and real navigation unmount (no remount). Strict Mode remounts within ~10ms.
       setTimeout(() => {
         hasInitiallyLoaded = false;
         isFirstSearchRender.current = true;
         console.log('🔄 [SAVED-FILES-AGREEMENTS] Flags reset after unmount (navigating away)');
-      }, 50); // 50ms delay - Strict Mode remounts happen much faster
+      }, 50);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only on mount, no dependencies needed for saved files view
+  }, []);
 
-  // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
-    // Skip if the initial load hasn't happened yet (very first render)
     if (!hasInitiallyLoaded) return;
 
-    // ✅ FIX: Skip on first render to prevent duplicate call when page refreshes
     if (isFirstSearchRender.current) {
       isFirstSearchRender.current = false;
       console.log('⏭️ [SAVED-FILES-AGREEMENTS] Skipping search effect on first render');
@@ -421,26 +365,21 @@ export default function SavedFilesAgreements() {
 
     console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}" or timeline filter changed to: "${timelineFilter}"`);
 
-    // Debounce search to avoid excessive API calls while typing
     const timeoutId = setTimeout(() => {
       fetchAgreements(1, query);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, timelineFilter]); // Re-fetch when search query or timeline filter changes
+  }, [query, timelineFilter]);
 
-  // ✅ OPTIMIZED: Load default email template on mount (cached to prevent repeated API calls)
   useEffect(() => {
     const loadEmailTemplate = async () => {
-      // ✅ Use cached template if available
       if (cachedEmailTemplate) {
         console.log('📧 [EMAIL-TEMPLATE] Using cached email template');
         setDefaultEmailTemplate(cachedEmailTemplate);
         return;
       }
 
-      // ✅ Prevent duplicate concurrent API calls
       if (isLoadingEmailTemplate) {
         console.log('📧 [EMAIL-TEMPLATE] Already loading template, skipping...');
         return;
@@ -448,12 +387,11 @@ export default function SavedFilesAgreements() {
 
       try {
         isLoadingEmailTemplate = true;
-        setEmailTemplateLoading(true); // ✅ NEW: Show loading spinner
+        setEmailTemplateLoading(true);
         console.log('📧 [EMAIL-TEMPLATE] Loading email template from API...');
 
         const template = await emailTemplateApi.getActiveTemplate();
 
-        // ✅ Cache the template for future component mounts
         cachedEmailTemplate = {
           subject: template.subject,
           body: template.body
@@ -464,7 +402,6 @@ export default function SavedFilesAgreements() {
       } catch (error) {
         console.error('❌ [EMAIL-TEMPLATE] Failed to load template:', error);
 
-        // Use fallback template if API fails
         const fallbackTemplate = {
           subject: 'Document from EnviroMaster NVA',
           body: `Hello,\n\nPlease find the attached document.\n\nBest regards,\nEnviroMaster NVA Team`
@@ -474,14 +411,13 @@ export default function SavedFilesAgreements() {
         setDefaultEmailTemplate(fallbackTemplate);
       } finally {
         isLoadingEmailTemplate = false;
-        setEmailTemplateLoading(false); // ✅ NEW: Hide loading spinner
+        setEmailTemplateLoading(false);
       }
     };
 
     loadEmailTemplate();
-  }, []); // ✅ Empty deps - load once per app lifetime (cached)
+  }, []);
 
-  // Selection helpers
   const selectedFileIds = useMemo(() =>
     Object.entries(selectedFiles)
       .filter(([, selected]) => selected)
@@ -497,7 +433,6 @@ export default function SavedFilesAgreements() {
 
   const hasSelectedFiles = selectedFileIds.length > 0;
 
-  // ✅ PERFORMANCE: Memoized selection handlers
   const toggleFileSelection = useCallback((fileId: string) => {
     setSelectedFiles(prev => ({ ...prev, [fileId]: !prev[fileId] }));
   }, []);
@@ -530,7 +465,6 @@ export default function SavedFilesAgreements() {
     setSelectedFiles({});
   }, []);
 
-  // ✅ PERFORMANCE: Memoized selection state calculator
   const getAgreementSelectionState = useCallback((agreement: SavedFileGroup) => {
     const selectedCount = agreement.files.filter(file => selectedFiles[file.id]).length;
     if (selectedCount === 0) return 'none';
@@ -538,9 +472,7 @@ export default function SavedFilesAgreements() {
     return 'partial';
   }, [selectedFiles]);
 
-  // ✅ PERFORMANCE: Memoized bulk upload handler
   const handleBulkZohoUpload = useCallback(() => {
-    // ✅ UPDATED: Support both PDFs and TXT log files for bulk upload
     const uploadableFiles = selectedFileObjects.filter(file => file.hasPdf || file.fileType === 'version_log');
 
     if (uploadableFiles.length === 0) {
@@ -568,24 +500,21 @@ export default function SavedFilesAgreements() {
 
   const isAgreementExpanded = useCallback((agreementId: string) => expandedAgreements.has(agreementId), [expandedAgreements]);
 
-  // ✅ PERFORMANCE: Memoized file action handlers
   const handleView = useCallback(async (file: SavedFileListItem, watermark: boolean) => {
     try {
-      // For main PDF files, load details; for attached files, navigate directly
       if (file.fileType === 'main_pdf') {
         await pdfApi.getSavedFileDetails(file.id);
       }
 
-      // ✅ SMART NAVIGATION: Include document type for correct API selection
       let documentType: string;
       if (file.fileType === 'main_pdf') {
         documentType = 'agreement';
       } else if (file.fileType === 'version_pdf') {
-        documentType = 'version'; // ✅ FIX: Map version_pdf to 'version' for PDFViewer
+        documentType = 'version';
       } else if (file.fileType === 'version_log') {
-        documentType = 'version-log'; // ✅ NEW: Handle version logs
+        documentType = 'version-log';
       } else if (file.fileType === 'attached_pdf') {
-        documentType = 'manual-upload'; // ✅ FIX: Use manual-upload type for manually uploaded files
+        documentType = 'manual-upload';
       } else {
         documentType = 'attached-file';
       }
@@ -596,8 +525,8 @@ export default function SavedFilesAgreements() {
         state: {
           documentId: file.id,
           fileName: file.title,
-          documentType: documentType, // ✅ Updated: Specify document type for correct API
-          watermark: watermark, // ✅ NEW: Pass watermark state to PDFViewer
+          documentType: documentType,
+          watermark: watermark,
           originalReturnPath: returnPath,
         },
       });
@@ -613,37 +542,28 @@ export default function SavedFilesAgreements() {
     try {
       let blob: Blob;
 
-      // ✅ Use different download methods based on file type
       if (file.fileType === 'main_pdf') {
         blob = await pdfApi.downloadPdf(file.id);
       } else if (file.fileType === 'version_pdf') {
-        // ✅ FIX: Use version PDF API for version PDFs with watermark parameter
         console.log(`📥 [DOWNLOAD] Downloading version PDF ${file.id} with watermark: ${watermark}`);
-        blob = await pdfApi.downloadVersionPdf(file.id, watermark); // ✅ NEW: Pass watermark flag
+        blob = await pdfApi.downloadVersionPdf(file.id, watermark);
       } else if (file.fileType === 'version_log') {
-        // ✅ Download version log files using version log API
         blob = await pdfApi.downloadVersionLog(file.id);
       } else if (file.fileType === 'attached_pdf') {
-        // ✅ FIX: Use manual upload API for manually uploaded attached files
         blob = await manualUploadApi.downloadFile(file.id);
       } else {
-        // Handle other attached files
         blob = await pdfApi.downloadAttachedFile(file.id);
       }
 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      // ✅ Use appropriate file extension based on file type
       let safeName: string;
       if (file.fileType === 'version_log') {
-        // ✅ UPDATED: Version logs already have .txt extension in fileName
         safeName = file.fileName || "EnviroMaster_Version_Log.txt";
       } else {
-        // For PDFs, add .pdf extension if not present
         const extension = '.pdf';
         const baseFileName = file.fileName || "EnviroMaster_Document";
-        // ✅ NEW: Add _DRAFT suffix if watermark is enabled for version PDFs
         if (file.fileType === 'version_pdf' && watermark) {
           const nameWithoutExt = baseFileName.replace('.pdf', '');
           safeName = nameWithoutExt + '_DRAFT' + extension;
@@ -667,7 +587,6 @@ export default function SavedFilesAgreements() {
   }, []);
 
   const handleZohoUpload = useCallback((file: SavedFileListItem) => {
-    // ✅ UPDATED: Support both PDFs and TXT log files for Zoho upload
     const isUploadableFile = file.hasPdf || file.fileType === 'version_log' || file.fileType === 'attached_pdf';
     if (!isUploadableFile) {
       setToastMessage({
@@ -688,9 +607,7 @@ export default function SavedFilesAgreements() {
     );
   };
 
-  // ✅ NEW: Handle Zoho upload for entire agreement (folder-level upload)
   const handleAgreementZohoUpload = (agreement: SavedFileGroup) => {
-    // ✅ UPDATED: Support PDFs, version logs, and attached files for agreement upload
     const uploadableFiles = getAgreementUploadableFiles(agreement);
 
     if (uploadableFiles.length === 0) {
@@ -701,21 +618,18 @@ export default function SavedFilesAgreements() {
       return;
     }
 
-    // For single file agreements, use the single file upload modal
     if (uploadableFiles.length === 1) {
       setCurrentZohoFile(uploadableFiles[0]);
       setZohoUploadOpen(true);
     } else {
-      // ✅ FIXED: For multiple files, use original file IDs but handle them properly in backend
       console.log(`🔍 [FOLDER-UPLOAD] Uploading ${uploadableFiles.length} files (PDFs + TXT logs) from agreement folder`);
-      setSelectedFilesForBulkUpload(uploadableFiles); // Use original file structure
+      setSelectedFilesForBulkUpload(uploadableFiles);
       setBulkZohoUploadOpen(true);
     }
   };
 
   const handleEdit = async (file: SavedFileListItem) => {
     try {
-      // ✅ FIXED: Allow editing main PDFs and latest version PDFs
       const canEdit = file.fileType === 'main_pdf' ||
                      (file.fileType === 'version_pdf' && file.isLatestVersion === true);
 
@@ -729,7 +643,6 @@ export default function SavedFilesAgreements() {
 
       console.log(`📝 [EDIT] Editing agreement: ${file.agreementId || file.id}`);
 
-      // ✅ DEBUG: Log file properties to verify we're using file.id as version ID
       console.log(`📝 [EDIT-DEBUG] File properties:`, {
         fileId: file.id,
         fileType: file.fileType,
@@ -743,13 +656,11 @@ export default function SavedFilesAgreements() {
       const versionIdToPass = file.fileType === 'version_pdf' ? file.id : undefined;
       console.log(`📝 [EDIT-DEBUG] Using file.id as version ID:`, versionIdToPass);
 
-      // ✅ FIXED: Navigate using agreement ID and pass version info if editing a version PDF
       navigate(`/edit/pdf/${file.agreementId || file.id}`, {
         state: {
           editing: true,
           id: file.agreementId || file.id,
           returnPath: returnPath,
-          // ✅ NEW: Pass version info for status updates
           editingVersionId: versionIdToPass,
           editingVersionFile: file.fileType === 'version_pdf' ? file.id : undefined,
         },
@@ -762,7 +673,6 @@ export default function SavedFilesAgreements() {
     }
   };
 
-  // ✅ NEW: Edit Agreement handler for draft-only agreements
   const handleEditAgreement = async (agreement: SavedFileGroup) => {
     try {
       console.log(`📝 [EDIT AGREEMENT] Editing draft agreement: ${agreement.id}`);
@@ -782,13 +692,11 @@ export default function SavedFilesAgreements() {
     }
   };
 
-  // ✅ NEW: Add file to agreement handler
   const handleAddFileToAgreement = (agreement: SavedFileGroup) => {
     setCurrentUploadAgreement(agreement);
     setFileUploadOpen(true);
   };
 
-  // ✅ NEW: Process file upload to agreement
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || !currentUploadAgreement) return;
 
@@ -803,7 +711,6 @@ export default function SavedFilesAgreements() {
       const fileArray = Array.from(files);
       const processedFiles = [];
 
-      // Read each file's binary content
       for (const file of fileArray) {
         const fileBuffer = await readFileAsArrayBuffer(file);
 
@@ -812,7 +719,7 @@ export default function SavedFilesAgreements() {
           fileSize: file.size,
           contentType: file.type,
           description: `Uploaded ${file.name}`,
-          pdfBuffer: Array.from(new Uint8Array(fileBuffer)), // Convert ArrayBuffer to number array
+          pdfBuffer: Array.from(new Uint8Array(fileBuffer)), 
         });
       }
 
@@ -827,7 +734,6 @@ export default function SavedFilesAgreements() {
         type: "success"
       });
 
-      // Refresh agreements to show new files
       fetchAgreements(currentPage, query);
 
       setFileUploadOpen(false);
@@ -843,7 +749,6 @@ export default function SavedFilesAgreements() {
     }
   };
 
-  // ✅ NEW: Delete confirmation handlers
   const handleDelete = (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
     setItemToDelete({ type, id, title, fileType });
     setDeleteConfirmText('');
@@ -862,10 +767,8 @@ export default function SavedFilesAgreements() {
     try {
       let result;
       if (itemToDelete.type === 'folder') {
-        // Soft delete (move to trash)
         result = await pdfApi.deleteAgreement(itemToDelete.id);
       } else {
-        // Soft delete (move to trash)
         result = await pdfApi.deleteFile(itemToDelete.id, {
           fileType: itemToDelete.fileType
         });
@@ -881,7 +784,6 @@ export default function SavedFilesAgreements() {
           type: "success"
         });
 
-        // Refresh the list
         await fetchAgreements(currentPage, query);
       } else {
         setToastMessage({
@@ -898,7 +800,6 @@ export default function SavedFilesAgreements() {
     }
   };
 
-  // Helper function to read file as ArrayBuffer
   const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -908,7 +809,6 @@ export default function SavedFilesAgreements() {
     });
   };
 
-  // ✅ NEW: Pagination helpers
   const totalPages = Math.ceil(totalAgreements / agreementsPerPage);
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;
@@ -943,7 +843,6 @@ export default function SavedFilesAgreements() {
           />
         </div>
 
-        {/* ✅ NEW: Timeline filter dropdown */}
         <div style={{ marginLeft: '12px' }}>
           <select
             value={timelineFilter}
@@ -951,7 +850,6 @@ export default function SavedFilesAgreements() {
               const newFilter = e.target.value as 'all' | 'yet-to-start' | 'active' | 'inactive';
               setTimelineFilter(newFilter);
               console.log(`🔍 [TIMELINE-FILTER] Changed to: ${newFilter}`);
-              // ✅ NOTE: No need to call fetchAgreements here - the useEffect will handle it
             }}
             style={{
               padding: '8px 12px',
@@ -970,7 +868,6 @@ export default function SavedFilesAgreements() {
           </select>
         </div>
 
-        {/* Bulk actions toolbar */}
         <div className="sf__actions">
           {hasSelectedFiles && (
             <>
@@ -991,15 +888,6 @@ export default function SavedFilesAgreements() {
                 Clear Selection
               </button>
 
-              {/* <button
-                type="button"
-                className="sf__btn sf__btn--primary zoho-upload-btn"
-                onClick={handleBulkZohoUpload}
-                disabled={selectedFileObjects.filter(f => f.hasPdf || f.fileType === 'version_log').length === 0}
-              >
-                <FontAwesomeIcon icon={faUpload} style={{ marginRight: '6px' }} />
-                Upload to Zoho ({selectedFileObjects.filter(f => f.hasPdf || f.fileType === 'version_log').length})
-              </button> */}
             </>
           )}
 
@@ -1022,7 +910,6 @@ export default function SavedFilesAgreements() {
       </div>
 
       <div className="sf__groups">
-        {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
         {loading && (
           <>
             {Array.from({ length: 5 }).map((_, idx) => (
@@ -1039,7 +926,6 @@ export default function SavedFilesAgreements() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* Checkbox skeleton */}
                   <div style={{
                     width: '16px',
                     height: '16px',
@@ -1047,7 +933,6 @@ export default function SavedFilesAgreements() {
                     borderRadius: '4px'
                   }} />
 
-                  {/* Arrow skeleton */}
                   <div style={{
                     width: '14px',
                     height: '14px',
@@ -1055,7 +940,6 @@ export default function SavedFilesAgreements() {
                     borderRadius: '4px'
                   }} />
 
-                  {/* Folder icon skeleton */}
                   <div style={{
                     width: '18px',
                     height: '18px',
@@ -1063,7 +947,6 @@ export default function SavedFilesAgreements() {
                     borderRadius: '4px'
                   }} />
 
-                  {/* Title skeleton */}
                   <div style={{ flex: 1 }}>
                     <div style={{
                       height: '16px',
@@ -1080,7 +963,6 @@ export default function SavedFilesAgreements() {
                     }} />
                   </div>
 
-                  {/* Action buttons skeleton */}
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <div style={{
                       width: '60px',
@@ -1119,7 +1001,6 @@ export default function SavedFilesAgreements() {
           </div>
         )}
 
-        {/* ✅ OPTIMIZED: Direct rendering with memoized components - no virtual scrolling complexity */}
         {!loading && !error && agreements.map((agreement) => {
           const isExpanded = expandedAgreements.has(agreement.id);
           const selectionState = getAgreementSelectionState(agreement);
@@ -1152,7 +1033,6 @@ export default function SavedFilesAgreements() {
                     message: "Agreement start date updated successfully!",
                     type: "success"
                   });
-                  // Refresh the list to show updated timeline
                   fetchAgreements(currentPage, query);
                 } catch (error) {
                   console.error("Failed to update start date:", error);
@@ -1170,7 +1050,6 @@ export default function SavedFilesAgreements() {
               onStatusChange={handleStatusChange}
               onWatermarkToggle={handleWatermarkToggle}
               onRestore={(type, id, title, fileType) => {
-                // No-op placeholder for compatibility - not used in saved files view
                 console.log('Restore not available in saved files view');
               }}
             />
@@ -1178,7 +1057,6 @@ export default function SavedFilesAgreements() {
         })}
       </div>
 
-      {/* ✅ NEW: Enhanced Pagination with page info and controls */}
       <div className="sf__pager">
         <div className="sf__page-info">
           Showing {Math.min((currentPage - 1) * agreementsPerPage + 1, totalAgreements)}-{Math.min(currentPage * agreementsPerPage, totalAgreements)} of {totalAgreements} agreements
@@ -1194,14 +1072,12 @@ export default function SavedFilesAgreements() {
             Previous
           </button>
 
-          {/* Page numbers */}
           <div style={{ display: 'flex', gap: '4px' }}>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
                 pageNum = i + 1;
               } else {
-                // Show pages around current page
                 const start = Math.max(1, currentPage - 2);
                 const end = Math.min(totalPages, start + 4);
                 pageNum = start + i;
@@ -1241,8 +1117,7 @@ export default function SavedFilesAgreements() {
         />
       )}
 
-      {/* Email Composer Modal */}
-        <EmailComposer
+      <EmailComposer
           isOpen={emailComposerOpen}
           onClose={() => setEmailComposerOpen(false)}
           onSend={async (emailData: EmailData) => {
@@ -1276,7 +1151,6 @@ export default function SavedFilesAgreements() {
         defaultBody={defaultEmailTemplate?.body || (currentEmailFile ? `Hello,\n\nPlease find the document attached.\n\nDocument: ${currentEmailFile.title}\n\nBest regards` : '')}
       />
 
-      {/* Zoho Upload Modal */}
       {zohoUploadOpen && currentZohoFile && (
         <ZohoUpload
           agreementId={currentZohoFile.agreementId || currentZohoFile.id}
@@ -1303,16 +1177,15 @@ export default function SavedFilesAgreements() {
         />
       )}
 
-      {/* Bulk Zoho Upload Modal - Using Enhanced Existing ZohoUpload Component */}
       {bulkZohoUploadOpen && selectedFilesForBulkUpload.length > 0 && (
         <ZohoUpload
-          agreementId={selectedFilesForBulkUpload[0]?.agreementId || selectedFilesForBulkUpload[0]?.id || ''} // Use agreement ID for Zoho upload
+          agreementId={selectedFilesForBulkUpload[0]?.agreementId || selectedFilesForBulkUpload[0]?.id || ''}
           agreementTitle={`Bulk Upload - ${selectedFilesForBulkUpload.length} Documents`}
           bulkFiles={selectedFilesForBulkUpload.map(file => ({
             id: file.id,
             fileName: file.fileName,
             title: file.title,
-            fileType: file.fileType  // ✅ FIX: Include fileType for proper routing
+            fileType: file.fileType
           }))}
           onClose={() => {
             setBulkZohoUploadOpen(false);
@@ -1331,7 +1204,6 @@ export default function SavedFilesAgreements() {
         />
       )}
 
-      {/* ✅ ENHANCED: File Upload Modal with Modern UI */}
       {fileUploadOpen && currentUploadAgreement && (
         <div className="file-upload-modal">
           <div className="file-upload-modal__overlay" onClick={() => {
@@ -1410,7 +1282,6 @@ export default function SavedFilesAgreements() {
         </div>
       )}
 
-      {/* ✅ NEW: Delete Confirmation Modal */}
       {deleteConfirmOpen && itemToDelete && (
         <div style={{
           position: 'fixed',

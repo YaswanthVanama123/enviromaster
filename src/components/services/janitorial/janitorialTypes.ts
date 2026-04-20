@@ -1,12 +1,12 @@
-// src/components/services/janitorial/janitorialTypes.ts
+
 import type { BaseServiceFormState, ServiceQuoteResult } from "../common/serviceTypes";
 
-// Enumerated type unions for specific choices
+
 export type JanitorialFrequency = "daily" | "weekly" | "biweekly" | "monthly" | "oneTime";
 export type JanitorialServiceType = "recurringService" | "oneTimeService";
 export type JanitorialLocation = "insideBeltway" | "outsideBeltway" | "paidParking";
 
-// Config type interface (matches janitorialConfig.ts structure)
+
 export interface JanitorialPricingConfig {
   baseRates: {
     recurringService: number;
@@ -35,52 +35,50 @@ export interface JanitorialPricingConfig {
   };
 }
 
-// Form state interface (THE CRITICAL ONE!)
+
 export interface JanitorialFormState extends BaseServiceFormState {
   serviceId: "janitorial";
 
-  // ========== BUSINESS LOGIC FIELDS (inputs) ==========
+
   serviceType: JanitorialServiceType;
   frequency: JanitorialFrequency;
   location: JanitorialLocation;
   contractMonths: number;
 
-  // Main service hours
+
   baseHours: number;
 
-  // Additional services
+
   vacuumingHours: number;
   dustingHours: number;
 
-  // Trip charge details
+
   needsParking: boolean;
   parkingCost: number;
 
-  // ========== EDITABLE PRICING RATES (fetched from backend or config) ==========
-  // ALL pricing rates that can be changed by backend or admin
+
   recurringServiceRate: number;
   oneTimeServiceRate: number;
   vacuumingRatePerHour: number;
   dustingRatePerHour: number;
 
-  // Frequency multipliers (editable)
+
   dailyMultiplier: number;
   weeklyMultiplier: number;
   biweeklyMultiplier: number;
   monthlyMultiplier: number;
   oneTimeMultiplier: number;
 
-  // Minimums (editable)
+
   perVisitMinimum: number;
   recurringContractMinimum: number;
 
-  // Trip charges (editable)
+
   standardTripCharge: number;
   beltwayTripCharge: number;
   paidParkingTripCharge: number;
 
-  // ========== CUSTOM RATE OVERRIDES (for edit mode yellow highlighting) ==========
-  // These fields are set when loaded values differ from backend defaults
+
   customRecurringServiceRate?: number;
   customOneTimeServiceRate?: number;
   customVacuumingRatePerHour?: number;
@@ -96,14 +94,14 @@ export interface JanitorialFormState extends BaseServiceFormState {
   customBeltwayTripCharge?: number;
   customPaidParkingTripCharge?: number;
 
-  // ========== CUSTOM TOTAL OVERRIDES (user can manually set totals) ==========
+
   customPerVisitTotal?: number;
   customMonthlyTotal?: number;
   customAnnualTotal?: number;
   customContractTotal?: number;
 }
 
-// Result types
+
 export interface JanitorialQuoteResult extends ServiceQuoteResult {
   perVisitPrice: number;
   monthlyPrice: number;
@@ -112,7 +110,7 @@ export interface JanitorialQuoteResult extends ServiceQuoteResult {
   detailsBreakdown: string[];
 }
 
-// Calculation details (internal)
+
 export interface JanitorialCalcDetails {
   baseServiceCost: number;
   vacuumingCost: number;

@@ -1,10 +1,4 @@
-/*
-  Service Agreement (PDF-like) styling
-  Goal: Match the provided "SERVICE AGREEMENT" page layout (Letter: 8.5in x 11in).
-*/
-
 .sa-page {
-  /* 8.5in x 11in @ 96dpi ≈ 816px x 1056px */
   --sa-page-width: 816px;
   --sa-page-height: 1056px;
   --sa-pad-x: 56px;
@@ -22,7 +16,6 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Header */
 .sa-header {
   display: grid;
   grid-template-columns: 140px 1fr 140px;
@@ -68,7 +61,6 @@
   font-size: 16px;
 }
 
-/* Terms */
 .sa-terms {
   font-size: 13px;
   line-height: 1.55;
@@ -102,7 +94,6 @@
   text-decoration: underline;
 }
 
-/* Dispenser options */
 .sa-dispenser-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -124,7 +115,6 @@
   flex: 1;
 }
 
-/* Custom square checkbox (matches the PDF style) */
 .sa-checkbox {
   appearance: none;
   -webkit-appearance: none;
@@ -156,7 +146,6 @@
   text-align: justify;
 }
 
-/* Representatives */
 .sa-reps-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -196,7 +185,6 @@
   text-decoration: underline;
 }
 
-/* Signature section */
 .sa-signatures {
   margin-top: 6px;
 }
@@ -259,7 +247,6 @@
   font-size: 14px;
 }
 
-/* Responsive */
 @media (max-width: 920px) {
   .sa-page {
     --sa-pad-x: 18px;
@@ -303,7 +290,6 @@
   }
 }
 
-/* Print */
 @media print {
   .sa-page {
     width: auto;

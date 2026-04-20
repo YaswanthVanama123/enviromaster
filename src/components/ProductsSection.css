@@ -1,5 +1,4 @@
 .prod {
-  /* max-width: 1120px; */
   margin: 18px auto 28px;
   padding: 0 12px;
   font-family: Arial, Helvetica, sans-serif;
@@ -152,14 +151,10 @@
 .gtable thead th:first-child { border-left: 1px solid #000; }
 .gtable td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 8px; background: #fff; }
 
-/* ✅ ENHANCED: Comprehensive responsive design without breaking UI */
-
-/* Keep desktop view above 1024px */
 @media (min-width:1025px){
   .gwrap { display:none; }
 }
 
-/* Tablet view (769px - 1024px) */
 @media (min-width: 769px) and (max-width: 1024px) {
   .prod {
     padding: 0 10px;
@@ -180,14 +175,13 @@
     padding: 5px 9px;
   }
 
-  /* Make table scrollable on tablets */
   .table-desktop {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .table-desktop .grid10 {
-    min-width: 900px; /* Reduced from 1120px to prevent overflow */
+    min-width: 900px;
   }
 
   .h {
@@ -216,13 +210,11 @@
   }
 }
 
-/* Mobile/tablet transition */
 @media (max-width:1024px){
   .table-desktop { display:none; }
   .prod__ribbon .prod__title-actions { display:none; }
 }
 
-/* Mobile view (max 768px) */
 @media (max-width: 768px) {
   .prod {
     padding: 0 8px;
@@ -278,7 +270,6 @@
   }
 }
 
-/* Extra small mobile */
 @media (max-width:600px){
   .prod {
     padding: 0 6px;

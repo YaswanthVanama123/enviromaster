@@ -189,9 +189,6 @@
   background-color: inherit;
 }
 
-/* Responsive */
-
-/* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .email-composer-modal {
     width: 92%;
@@ -236,7 +233,6 @@
   }
 }
 
-/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .email-composer-modal {
     width: 95%;
@@ -283,7 +279,6 @@
   }
 }
 
-/* Extra small viewports - max 480px */
 @media (max-width: 480px) {
   .email-composer-modal {
     width: 98%;

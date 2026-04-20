@@ -1,18 +1,15 @@
-// src/features/products/productsTableConfig.ts
+
 
 import type { ProductTableSectionKey } from "./productsTableTypes";
 
 export interface ProductRowConfig {
-  /** Product key inside envProductCatalog, if any */
+
   productKey?: string;
 
-  /** Override label to show in the grid */
+
   overrideLabel?: string;
 
-  /**
-   * If false, this row will NOT show by default.
-   * It will still appear as an option in the "+Row" select.
-   */
+
   displayByAdmin?: boolean;
 }
 
@@ -21,14 +18,9 @@ export type ProductTableLayout = Record<
   ProductRowConfig[]
 >;
 
-/**
- * Layout for the PRODUCTS grid:
- * - smallProducts (left)   = paper + small items
- * - dispensers  (middle)   = all dispensers
- * - bigProducts (right)    = mats, screens, key chemicals
- */
+
 export const productsTableLayout: ProductTableLayout = {
-  // LEFT – paper + sleeves
+
   smallProducts: [
     {
       productKey: "paper-em-jrt",
@@ -55,19 +47,19 @@ export const productsTableLayout: ProductTableLayout = {
       overrideLabel: "Multifold Towel",
     },
     {
-      // now mapped to a priced product
+
       productKey: "extra-seat-cover",
       overrideLabel: "Seat Cover Sleeve",
     },
     {
-      // Grit Soap doesn’t have a clean red-rate in the sheet, so
-      // we hide it by default to avoid blank pricing.
+
+
       overrideLabel: "Grit Soap",
       displayByAdmin: false,
     },
   ],
 
-  // MIDDLE – dispensers
+
   dispensers: [
     {
       productKey: "disp-jrt",
@@ -93,10 +85,8 @@ export const productsTableLayout: ProductTableLayout = {
       productKey: "disp-air-freshener",
       overrideLabel: "Enviro-Master Air Freshener (Battery)",
     },
-    // {
-    //   productKey: "disp-manual-soap",
-    //   overrideLabel: "Enviro-Master Manual Soap Dispenser",
-    // },
+
+
     {
       productKey: "disp-seat-cover",
       overrideLabel: "Seat Cover Dispenser",
@@ -106,7 +96,7 @@ export const productsTableLayout: ProductTableLayout = {
       overrideLabel: "Hand Sanitizer Dispenser",
     },
     {
-      // no explicit red rate for Grit Soap dispenser – hide by default
+
       overrideLabel: "Grit Soap Dispenser",
       displayByAdmin: false,
     },
@@ -116,14 +106,14 @@ export const productsTableLayout: ProductTableLayout = {
     },
   ],
 
-  // RIGHT – extras + chemicals
+
   bigProducts: [
     {
       productKey: "extra-urinal-mat",
       overrideLabel: "Urinal Mats",
     },
     {
-      // reuse Urinal Mat price for Commode Mat
+
       productKey: "extra-urinal-mat",
       overrideLabel: "EM Commode Mat",
     },

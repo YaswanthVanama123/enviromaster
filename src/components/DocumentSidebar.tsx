@@ -45,7 +45,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   onDateSelect,
   agreementTimelines = []
 }) => {
-  // Calculate summary statistics
   const timelineStats = useMemo(() => {
     const active = agreementTimelines.filter(t => t.status === 'active').length;
     const expiringSoon = agreementTimelines.filter(t => t.status === 'expiring-soon').length;
@@ -54,7 +53,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     return { active, expiringSoon, expired };
   }, [agreementTimelines]);
 
-  // Sort timelines by days remaining (ascending - expiring soon first)
   const sortedTimelines = useMemo(() => {
     return [...agreementTimelines].sort((a, b) => a.daysRemaining - b.daysRemaining);
   }, [agreementTimelines]);
@@ -87,7 +85,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
       top: '20px',
       alignSelf: 'flex-start'
     }}>
-      {/* Active Days Remaining Widget */}
       <div style={{
         background: '#fff',
         border: '1px solid #e5e7eb',
@@ -95,7 +92,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
         padding: '20px',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
       }}>
-        {/* Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -119,7 +115,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           </div>
         </div>
 
-        {/* Summary Stats */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -199,7 +194,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           </div>
         </div>
 
-        {/* Timeline List */}
         <div style={{
           maxHeight: '400px',
           overflowY: 'auto',
@@ -238,7 +232,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                   e.currentTarget.style.background = '#f9fafb';
                 }}
               >
-                {/* Agreement Title */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -265,7 +258,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                   </div>
                 </div>
 
-                {/* Days Remaining */}
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -287,7 +279,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                   </span>
                 </div>
 
-                {/* Progress Bar */}
                 <div style={{
                   width: '100%',
                   height: '6px',
@@ -303,7 +294,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
                   }} />
                 </div>
 
-                {/* Start Date */}
                 <div style={{
                   fontSize: '11px',
                   color: '#9ca3af',
@@ -317,7 +307,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
         </div>
       </div>
 
-      {/* Status Summary Box */}
       <div style={{
         background: '#fff',
         border: '1px solid #e5e7eb',
@@ -348,7 +337,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           </h3>
         </div>
 
-        {/* Total Documents */}
         <div style={{
           padding: '12px',
           background: '#f9fafb',
@@ -374,7 +362,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           </span>
         </div>
 
-        {/* Status Breakdown */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -428,7 +415,6 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           ))}
         </div>
 
-        {/* Empty State */}
         {statusCounts.length === 0 && (
           <div style={{
             textAlign: 'center',

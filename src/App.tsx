@@ -3,8 +3,8 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import Home from "./components/Home";
 import FormFilling from "./components/FormFilling";
-import SavedFilesAgreements from "./components/SavedFilesAgreements"; // ✅ BACK to original working component
-import TrashView from "./components/TrashView"; // ✅ NEW: Import TrashView component
+import SavedFilesAgreements from "./components/SavedFilesAgreements";
+import TrashView from "./components/TrashView";
 import PDFViewer from "./components/PDFViewer";
 import AdminLogin from "./components/AdminLogin";
 import AdminPanel from "./components/AdminPanel";

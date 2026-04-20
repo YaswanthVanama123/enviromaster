@@ -1,13 +1,3 @@
-/**
- * Email Tester Component
- *
- * A simple testing component for the new mailto-based email functionality
- * Usage:
- * 1. Add this component to your app temporarily for testing
- * 2. Test the mailto functionality with PDF download
- * 3. Remove this component once testing is complete
- */
-
 import React, { useState } from 'react';
 import {
   shareViaPdf,
@@ -17,7 +7,6 @@ import {
 const EmailTester: React.FC = () => {
   const [testResult, setTestResult] = useState<string>('');
 
-  // Test actual email compose functionality
   const handleTestEmail = () => {
     try {
       const { emailData, attachment } = createPdfEmailData({
@@ -45,7 +34,6 @@ const EmailTester: React.FC = () => {
       <h2>📧 Email Integration Tester</h2>
       <p><strong>Note:</strong> This tests the new mailto-based email functionality.</p>
 
-      {/* Testing Button */}
       <div style={{ marginBottom: '20px' }}>
         <h3>Testing</h3>
         <button
@@ -63,7 +51,6 @@ const EmailTester: React.FC = () => {
         </button>
       </div>
 
-      {/* Results */}
       {testResult && (
         <div>
           <h3>Results</h3>
@@ -80,7 +67,6 @@ const EmailTester: React.FC = () => {
         </div>
       )}
 
-      {/* Instructions */}
       <div style={{ marginTop: '20px', backgroundColor: '#fff3cd', padding: '10px', borderRadius: '4px' }}>
         <h4>📋 Testing Instructions</h4>
         <ol>
@@ -91,7 +77,6 @@ const EmailTester: React.FC = () => {
         </ol>
       </div>
 
-      {/* How it works */}
       <div style={{ marginTop: '20px', backgroundColor: '#d1ecf1', padding: '10px', borderRadius: '4px' }}>
         <h4>🔧 How it works</h4>
         <ul>

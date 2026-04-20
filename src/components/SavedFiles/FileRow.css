@@ -1,7 +1,3 @@
-/* FileRow.css - Responsive styles for file rows */
-/* ✅ SCOPED: All styles are under .sf (SavedFiles) or .trash-view-page (TrashView) to prevent affecting ApprovalDocuments */
-
-/* Default styles */
 .sf .file-row,
 .trash-view-page .file-row {
   display: flex;
@@ -64,7 +60,6 @@
   flex-wrap: wrap;
 }
 
-/* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .sf .file-row,
   .trash-view-page .file-row {
@@ -122,7 +117,6 @@
   }
 }
 
-/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .sf .file-row,
   .trash-view-page .file-row {
@@ -227,7 +221,6 @@
   }
 }
 
-/* Extra small viewports - max 480px */
 @media (max-width: 480px) {
   .sf .file-row,
   .trash-view-page .file-row {

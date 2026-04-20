@@ -1,4 +1,4 @@
-// src/components/services/hooks/usePricing.ts
+
 import { useEffect, useState } from "react";
 import { pricingApi, type PriceFixDocument } from "../../../backendservice/api";
 
@@ -71,7 +71,7 @@ type ServicesPricingFromApi = {
   restroomHygiene?: RestroomHygienePricingFromApi;
   tripCharge?: TripChargePricingFromApi;
   rpmWindow?: RpmWindowPricingFromApi;
-  // other services can be added later
+
 };
 
 function mapPriceFixToPricing(doc: PriceFixDocument | null): Pricing {

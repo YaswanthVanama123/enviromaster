@@ -3,9 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* Force light colour-scheme app-wide so native widgets always render in
-     light mode regardless of the OS setting.  Individual dark-mode panels
-     that intentionally want dark styling can override locally.           */
+
   color-scheme: light;
   color: #213547;
   background-color: #ffffff;

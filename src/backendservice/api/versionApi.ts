@@ -1,14 +1,12 @@
-// src/backendservice/api/versionApi.ts
 import { apiClient } from "../utils/apiClient";
 
-// Types for version API responses
 export interface VersionStatus {
   success: boolean;
   isFirstTime: boolean;
   hasMainPdf: boolean;
   totalVersions: number;
   latestVersionNumber: number;
-  suggestedAction: 'auto_create_v1' | 'create_version' | 'suggest_replace'; // ✅ UPDATED: Added auto_create_v1
+  suggestedAction: 'auto_create_v1' | 'create_version' | 'suggest_replace';
   canCreateVersion: boolean;
   canReplace: boolean;
   versions: Array<{
@@ -30,7 +28,7 @@ export interface VersionStatus {
 
 export interface VersionItem {
   id: string;
-  type: 'version'; // ✅ UPDATED: Removed 'main' type, only versions now
+  type: 'version';
   versionNumber: number;
   versionLabel: string;
   fileName: string;
@@ -75,14 +73,11 @@ export interface VersionCreateResult {
   };
   totalVersions?: number;
   wasReplacement?: boolean;
-  isFirstVersion?: boolean; // ✅ NEW: Flag indicating this was the first version
+  isFirstVersion?: boolean;
   error?: string;
 }
 
 export const versionApi = {
-  /**
-   * Check version status for an agreement (determines if user should create version or replace)
-   */
   async checkVersionStatus(agreementId: string): Promise<VersionStatus> {
     const res = await apiClient.get<VersionStatus>(
       `/api/versions/${agreementId}/check-status`
@@ -91,16 +86,13 @@ export const versionApi = {
     return res.data!;
   },
 
-  /**
-   * Create a new version or replace recent version
-   */
   async createVersion(
     agreementId: string,
     options: {
       changeNotes?: string;
       createdBy?: string;
       replaceRecent?: boolean;
-      isFirstTime?: boolean; // ✅ NEW: Flag for auto v1 creation
+      isFirstTime?: boolean;
     }
   ): Promise<VersionCreateResult> {
     const res = await apiClient.post<VersionCreateResult>(
@@ -111,9 +103,6 @@ export const versionApi = {
     return res.data!;
   },
 
-  /**
-   * Replace main PDF with current form data
-   */
   async replaceMainPdf(
     agreementId: string,
     options: {
@@ -128,9 +117,6 @@ export const versionApi = {
     return res.data!;
   },
 
-  /**
-   * Get all versions for an agreement
-   */
   async getVersionsList(
     agreementId: string,
     includeArchived = false
@@ -147,23 +133,14 @@ export const versionApi = {
     return res.data!;
   },
 
-  /**
-   * View a specific version PDF (for inline display in browser)
-   */
   async viewVersion(versionId: string): Promise<Blob> {
     return apiClient.downloadBlob(`/api/versions/version/${versionId}/view`);
   },
 
-  /**
-   * Download a specific version PDF
-   */
   async downloadVersion(versionId: string): Promise<Blob> {
     return apiClient.downloadBlob(`/api/versions/version/${versionId}/download`);
   },
 
-  /**
-   * Delete or archive a version
-   */
   async deleteVersion(
     versionId: string,
     permanent = false
@@ -178,9 +155,6 @@ export const versionApi = {
     return res.data!;
   },
 
-  /**
-   * Get version data in edit format for FormFilling component
-   */
   async getVersionForEdit(versionId: string): Promise<any> {
     const res = await apiClient.get(
       `/api/versions/version/${versionId}/edit-format`

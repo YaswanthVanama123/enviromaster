@@ -1,7 +1,3 @@
-/* AdminDashboard.css - Responsive styles for admin dashboard */
-/* ✅ SCOPED: Styles only apply to AdminDashboard component */
-
-/* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .admin-dashboard-top-bar {
     padding: 14px 20px !important;
@@ -40,7 +36,6 @@
   }
 }
 
-/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .admin-dashboard-top-bar {
     flex-direction: column !important;
@@ -106,7 +101,6 @@
   }
 }
 
-/* Extra small viewports - max 480px */
 @media (max-width: 480px) {
   .admin-dashboard-top-bar {
     padding: 10px 12px !important;

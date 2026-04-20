@@ -11,7 +11,7 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
+
 interface BackendCarpetConfig {
   baseSqFtUnit: number;
   basePrice: number;
@@ -38,17 +38,17 @@ interface BackendCarpetConfig {
 const DEFAULT_FORM: CarpetFormState = {
   serviceId: "carpetCleaning",
   areaSqFt: 0,
-  useExactSqft: true,  // Default to exact calculation
+  useExactSqft: true,  
   frequency: "monthly",
   location: "insideBeltway",
   needsParking: false,
-  tripChargeIncluded: true, // from BaseServiceFormState, but ignored in calc
+  tripChargeIncluded: true, 
   notes: "",
   contractMonths: 12,
   includeInstall: false,
   isDirtyInstall: false,
 
-  // ✅ NEW: Editable pricing rates from config (will be overridden by backend)
+
   unitSqFt: cfg.unitSqFt,
   firstUnitRate: cfg.firstUnitRate,
   additionalUnitRate: cfg.additionalUnitRate,
@@ -58,7 +58,7 @@ const DEFAULT_FORM: CarpetFormState = {
   applyMinimum: true,
 };
 
-// ✅ Helper function to transform backend frequencyMetadata to frontend format
+
 function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequencyMetadata'] | undefined) {
   if (!backendMeta) {
     console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
@@ -67,10 +67,10 @@ function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequen
 
   console.log('🔧 [Carpet] Transforming backend frequencyMetadata:', backendMeta);
 
-  // Transform backend structure to frontend expected structure
+
   const transformedMeta: any = {};
 
-  // Handle weekly and biweekly with their special multipliers
+
   if (backendMeta.weekly) {
     transformedMeta.weekly = {
       monthlyMultiplier: backendMeta.weekly.monthlyRecurringMultiplier,
@@ -89,15 +89,15 @@ function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequen
     };
   }
 
-  // Handle cycle-based frequencies (monthly, bimonthly, quarterly, biannual, annual)
+
   const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
 
   for (const freq of cycleBased) {
     const backendFreqData = backendMeta[freq];
     if (backendFreqData?.cycleMonths) {
       const cycleMonths = backendFreqData.cycleMonths;
-      const visitsPerYear = 12 / cycleMonths; // e.g., monthly: 12/1=12, quarterly: 12/3=4
-      const monthlyMultiplier = visitsPerYear / 12; // e.g., monthly: 12/12=1, quarterly: 4/12=0.333
+      const visitsPerYear = 12 / cycleMonths; 
+      const monthlyMultiplier = visitsPerYear / 12; 
 
       transformedMeta[freq] = {
         cycleMonths,
@@ -108,10 +108,10 @@ function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequen
     }
   }
 
-  // Add fallback frequencies that might not be in backend
+
   const finalMeta = {
-    ...cfg.frequencyMeta, // Start with fallback values
-    ...transformedMeta,   // Override with backend values
+    ...cfg.frequencyMeta, 
+    ...transformedMeta,   
   };
 
   console.log('✅ [Carpet] Transformed frequencyMetadata:', finalMeta);
@@ -133,20 +133,19 @@ function clampContractMonths(value: unknown): number {
 }
 
 export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?: any[]) {
-  // ✅ Add refs for tracking override and active state
+
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
-  const isEditMode = useRef(!!initial); // ✅ NEW: Track if we're in edit mode (has initial data)
+  const isEditMode = useRef(!!initial); 
 
-  // ✅ NEW: Track baseline values for logging (set ONCE on mount)
-  // Baseline = backend default for new documents, or loaded/saved value for edit mode
+
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-  // Get services context for fallback pricing data
+
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -162,7 +161,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     return total;
   }, [customFields]);
 
-  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -184,7 +183,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       ...initial,
     };
 
-    // ✅ FIXED: Always use global contract months if available (not just when initially active)
+
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
       : servicesContext?.globalContractMonths
@@ -197,23 +196,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     };
   });
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendCarpetConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // Helper function to update form with config data
+
   const updateFormWithConfig = (config: BackendCarpetConfig, forceUpdate: boolean = false) => {
-    // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
-    // Only update on manual refresh (when user explicitly clicks refresh button)
+
+
     if (initial && !forceUpdate) {
       console.log('📋 [CARPET] Edit mode: Skipping form update to preserve loaded values');
-      return; // Don't overwrite loaded values in edit mode
+      return; 
     }
 
     console.log('📋 [CARPET] Updating form with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
     setForm((prev) => ({
       ...prev,
-      // ✅ Map backend config properties to form properties
+
       unitSqFt: config.baseSqFtUnit ?? prev.unitSqFt,
       firstUnitRate: config.basePrice ?? prev.firstUnitRate,
       additionalUnitRate: config.additionalUnitPrice ?? prev.additionalUnitRate,
@@ -223,11 +222,11 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }));
   };
 
-  // ⚡ OPTIMIZED: Fetch pricing configuration from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("carpetCleaning");
         if (backendData?.config) {
@@ -236,7 +235,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
@@ -268,7 +267,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     } catch (error) {
       console.error('❌ Failed to fetch Carpet Cleaning config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("carpetCleaning");
         if (fallbackConfig?.config) {
@@ -277,7 +276,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
@@ -303,23 +302,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }
   };
 
-  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
+
   useEffect(() => {
-    // Always fetch backend config to enable override detection in edit mode
+
     console.log('📋 [CARPET-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
-    fetchPricing(false); // false = don't force update in edit mode
+    fetchPricing(false); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
+
   useEffect(() => {
     if (!backendConfig) return;
 
-    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
 
-      // Baseline = loaded/saved value (edit mode) OR backend default (new document)
+
       baselineValues.current = {
         firstUnitRate: initial?.firstUnitRate ?? backendConfig.basePrice,
         additionalUnitRate: initial?.additionalUnitRate ?? backendConfig.additionalUnitPrice,
@@ -335,11 +334,11 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         note: initial ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+
       if (initial) {
         console.log('🔍 [CARPET-PRICING] Detecting price overrides for yellow highlighting...');
 
-        // Compare saved values against backend defaults
+
         const hasFirstUnitRateOverride = initial.firstUnitRate !== undefined &&
                                           initial.firstUnitRate !== backendConfig.basePrice;
         const hasAdditionalUnitRateOverride = initial.additionalUnitRate !== undefined &&
@@ -350,7 +349,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         if (hasFirstUnitRateOverride || hasAdditionalUnitRateOverride || hasPerVisitMinimumOverride) {
           setForm(prev => ({
             ...prev,
-            // Set custom override fields to enable yellow highlighting
+
             customFirstUnitRate: hasFirstUnitRateOverride ? initial.firstUnitRate : prev.customFirstUnitRate,
             customAdditionalUnitRate: hasAdditionalUnitRateOverride ? initial.additionalUnitRate : prev.customAdditionalUnitRate,
             customPerVisitMinimum: hasPerVisitMinimumOverride ? initial.perVisitMinimum : prev.customPerVisitMinimum,
@@ -368,15 +367,15 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }
   }, [backendConfig, initial]);
 
-  // Also fetch when services context becomes available (for fallback pricing)
+
   useEffect(() => {
-    // Fetch from context if backend config not loaded yet (even in edit mode, for override detection)
+
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+
   useEffect(() => {
     const isServiceActive = (form.areaSqFt || 0) > 0;
     const wasActive = wasActiveRef.current;
@@ -401,7 +400,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.areaSqFt, servicesContext]);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -427,7 +426,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     });
   }, [form.sqFt, form.frequency]);
 
-  // ✅ Add setContractMonths function
+
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({
@@ -442,7 +441,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     const { name, value, type, checked } = e.target as any;
 
     setForm((prev) => {
-      // ✅ Capture original value before update for price override logging
+
       const originalValue = prev[name as keyof CarpetFormState];
 
       let newFormState = prev;
@@ -458,7 +457,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
         }
 
-        // ✅ Handle editable rate fields (logging happens below)
+
         case "unitSqFt":
         case "firstUnitRate":
         case "additionalUnitRate":
@@ -477,7 +476,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
         }
 
-        // ✅ Handle custom override fields (logging happens below)
+
         case "customFirstUnitRate":
         case "customAdditionalUnitRate":
         case "customPerVisitMinimum":
@@ -541,14 +540,13 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
       }
 
-      // ✅ FIXED: Log ALL price changes for numeric pricing fields
-      // Log changes to BASE editable fields (these are what the user actually types)
+
       const baseEditableFields = [
         'unitSqFt', 'firstUnitRate', 'additionalUnitRate', 'perVisitMinimum',
         'installMultiplierDirty', 'installMultiplierClean'
       ];
 
-      // Log changes to CUSTOM OVERRIDE fields (set programmatically)
+
       const customOverrideFields = [
         'customFirstUnitRate', 'customAdditionalUnitRate', 'customPerVisitMinimum',
         'customPerVisitPrice', 'customMonthlyRecurring', 'customFirstMonthPrice',
@@ -560,11 +558,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       if (allPricingFields.includes(name)) {
         const newValue = newFormState[name as keyof CarpetFormState] as number | undefined;
 
-        // ✅ NEW: Use baseline value instead of previous form value
-        // Baseline = backend default (new documents) or loaded value (edit mode)
+
         let baselineValue = baselineValues.current[name];
 
-        // For custom fields, get baseline from the corresponding base field
+
         if (baselineValue === undefined && name.startsWith('custom')) {
           const baseFieldMap: Record<string, string> = {
             'customFirstUnitRate': 'firstUnitRate',
@@ -578,9 +575,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           }
         }
 
-        // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
-        // This ensures Map replaces previous entry with updated value still comparing to baseline
-        // Example: First change 300→30 logs "300→30", second change 30→3 REPLACES with "300→3"
+
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
@@ -594,17 +589,17 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         }
       }
 
-      // ✅ NEW: Log form field changes using universal logger
+
       const allFormFields = [
-        // Quantity fields
+
         'rooms', 'totalSqFt', 'contractMonths',
-        // Selection fields
+
         'frequency', 'dirtLevel', 'rateTier',
-        // Boolean fields
+
         'needsStainProtection'
       ];
 
-      // Log non-pricing field changes
+
       if (allFormFields.includes(name)) {
         logServiceFieldChanges(
           'carpetCleaning',
@@ -639,8 +634,8 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     monthsPerVisit,
     totalVisitsForContract,
   } = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Map backend config to our expected format, using backend frequencyMetadata when available
+
+
     const baseConfig = backendConfig ? {
       unitSqFt: backendConfig.baseSqFtUnit ?? cfg.unitSqFt,
       firstUnitRate: backendConfig.basePrice ?? cfg.firstUnitRate,
@@ -650,7 +645,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         dirty: backendConfig.installationMultipliers?.dirtyInstallMultiplier ?? cfg.installMultipliers.dirty,
         clean: backendConfig.installationMultipliers?.cleanInstallMultiplier ?? cfg.installMultipliers.clean,
       },
-      // ✅ UPDATED: Transform backend frequencyMetadata to frontend format
+
       frequencyMeta: transformBackendFrequencyMeta(backendConfig.frequencyMetadata),
     } : {
       unitSqFt: cfg.unitSqFt,
@@ -661,14 +656,14 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       frequencyMeta: cfg.frequencyMeta,
     };
 
-    // ✅ Apply user overrides to base config (including installation multipliers)
+
     const activeConfig = {
       unitSqFt: baseConfig.unitSqFt,
       firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate ?? baseConfig.firstUnitRate,
       additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate ?? baseConfig.additionalUnitRate,
       perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum ?? baseConfig.perVisitMinimum,
       installMultipliers: {
-        // ✅ FIXED: Use editable multipliers from form (from backend)
+
         dirty: form.installMultiplierDirty ?? baseConfig.installMultipliers.dirty,
         clean: form.installMultiplierClean ?? baseConfig.installMultipliers.clean,
       },
@@ -677,23 +672,23 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
     const freq = clampFrequency(form.frequency);
 
-    // ✅ Get billing conversion for current frequency from backend config (if available)
+
     const conv = activeConfig.frequencyMeta[freq];
     let monthlyVisits = 1;
     let visitsPerYear = 12;
 
     if (conv) {
-      // Use backend frequency metadata
+
       if (conv.monthlyMultiplier !== undefined) {
         monthlyVisits = conv.monthlyMultiplier;
         visitsPerYear = conv.visitsPerYear || conv.annualMultiplier || (monthlyVisits * 12);
       } else if (conv.cycleMonths !== undefined) {
-        // For cycle-based frequencies (monthly, bimonthly, quarterly, etc.)
+
         visitsPerYear = 12 / conv.cycleMonths;
         monthlyVisits = visitsPerYear / 12;
       }
     } else {
-      // Fallback to static config
+
       const fallbackConv = cfg.billingConversions[freq];
       if (fallbackConv) {
         monthlyVisits = fallbackConv.monthlyMultiplier || 1;
@@ -716,20 +711,20 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     let calculatedPerVisitCharge = 0;
 
     if (areaSqFt > 0) {
-      // ✅ CARPET PRICING: Two calculation methods based on useExactSqft checkbox
+
       if (areaSqFt <= activeConfig.unitSqFt) {
-        // 500 sq ft or less: flat rate
+
         calculatedPerVisitBase = activeConfig.firstUnitRate;
       } else {
-        // Over 500 sq ft: choose calculation method
+
         const extraSqFt = areaSqFt - activeConfig.unitSqFt;
 
         if (form.useExactSqft) {
-          // EXACT SQFT: extra sq ft × rate per sq ft
+
           const ratePerSqFt = activeConfig.additionalUnitRate / activeConfig.unitSqFt;
           calculatedPerVisitBase = activeConfig.firstUnitRate + (extraSqFt * ratePerSqFt);
         } else {
-          // BLOCK PRICING: number of additional 500 sq ft blocks × rate
+
           const additionalBlocks = Math.ceil(extraSqFt / activeConfig.unitSqFt);
           calculatedPerVisitBase = activeConfig.firstUnitRate + (additionalBlocks * activeConfig.additionalUnitRate);
         }
@@ -738,22 +733,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       calculatedPerVisitCharge = form.applyMinimum !== false ? Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum) : calculatedPerVisitBase;
     }
 
-    // Use custom override if set, otherwise use calculated
+
     const perVisitBase = calculatedPerVisitBase;
     const perVisitCharge = form.customPerVisitPrice !== undefined
       ? form.customPerVisitPrice
       : calculatedPerVisitCharge;
 
-    // Trip is disabled in math (still shown as 0.00 in UI)
+
     const perVisitTrip = 0;
     const monthlyTrip = 0;
 
     const serviceActive = areaSqFt > 0;
 
-    // ---------------- INSTALLATION FEE ----------------
-    // ✅ FIXED: Install = 3× dirty / 1× clean of MINIMUM PRICE (NOT calculated price)
-    // Installation is the same for any frequency type
-    // Use minimum price as base for installation fee calculation
+
     const installationBasePrice = form.applyMinimum !== false ? Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum) : calculatedPerVisitBase;
     const calculatedInstallOneTime =
       serviceActive && form.includeInstall
@@ -763,116 +755,116 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
             : activeConfig.installMultipliers.clean)
         : 0;
 
-    // Use custom override if set, otherwise use calculated
+
     const installOneTime = form.customInstallationFee !== undefined
       ? form.customInstallationFee
       : calculatedInstallOneTime;
 
-    // ---------------- RECURRING MONTHLY (normal full month) ----------------
+
     let calculatedMonthlyRecurring = 0;
 
     if (serviceActive) {
       if (freq === "oneTime") {
-        // One-time service: just the per-visit price
+
         calculatedMonthlyRecurring = perVisitCharge;
       } else if (isVisitBasedFrequency) {
-        // Visit-based frequencies: monthly price = per-visit × monthly multiplier
+
         calculatedMonthlyRecurring = monthlyVisits * perVisitCharge;
       } else if (monthlyVisits > 0) {
-        // Month-based frequencies: monthly price = per-visit × monthly multiplier
+
         calculatedMonthlyRecurring = perVisitCharge * monthlyVisits;
       }
     }
 
-    // Use custom override if set
+
     const monthlyRecurring = form.customMonthlyRecurring !== undefined
       ? form.customMonthlyRecurring
       : calculatedMonthlyRecurring;
 
-    // ---------------- FIRST VISIT & FIRST MONTH - NEW INSTALLATION-BASED RULES ----------------
+
     let calculatedFirstMonthTotal = 0;
 
     if (serviceActive) {
       if (freq === "oneTime") {
-        // One-Time: Installation Cost only if included, otherwise Service Cost × 1
+
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only
+          calculatedFirstMonthTotal = installOneTime; 
         } else {
-          calculatedFirstMonthTotal = perVisitCharge; // Service cost × 1
+          calculatedFirstMonthTotal = perVisitCharge; 
         }
       } else if (freq === "weekly") {
-        // ✅ BACKEND-DRIVEN: Weekly first month calculation using backend firstMonthExtraMultiplier
+
         if (form.includeInstall && installOneTime > 0) {
           const backendWeeklyMeta = backendConfig?.frequencyMetadata?.weekly;
           if (backendWeeklyMeta?.firstMonthExtraMultiplier !== undefined) {
-            // Use backend's first month extra multiplier (e.g., 3.33 extra visits)
+
             const extraVisits = backendWeeklyMeta.firstMonthExtraMultiplier;
             calculatedFirstMonthTotal = installOneTime + (extraVisits * perVisitCharge);
             console.log(`🔧 [Carpet Weekly] Backend first month: install + ${extraVisits} extra visits = $${calculatedFirstMonthTotal.toFixed(2)}`);
           } else {
-            // Fallback to old logic
-            const remainingVisits = monthlyVisits - 1; // e.g., 4.33 - 1 = 3.33 remaining visits
+
+            const remainingVisits = monthlyVisits - 1; 
             calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
           }
         } else {
           calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
       } else if (freq === "biweekly") {
-        // ✅ BACKEND-DRIVEN: Biweekly first month calculation using backend firstMonthExtraMultiplier
+
         if (form.includeInstall && installOneTime > 0) {
           const backendBiweeklyMeta = backendConfig?.frequencyMetadata?.biweekly;
           if (backendBiweeklyMeta?.firstMonthExtraMultiplier !== undefined) {
-            // Use backend's first month extra multiplier (e.g., 1.165 extra visits)
+
             const extraVisits = backendBiweeklyMeta.firstMonthExtraMultiplier;
             calculatedFirstMonthTotal = installOneTime + (extraVisits * perVisitCharge);
             console.log(`🔧 [Carpet Biweekly] Backend first month: install + ${extraVisits} extra visits = $${calculatedFirstMonthTotal.toFixed(2)}`);
           } else {
-            // Fallback to old logic
-            const remainingVisits = monthlyVisits - 1; // e.g., 2.165 - 1 = 1.165 remaining visits
+
+            const remainingVisits = monthlyVisits - 1; 
             calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
           }
         } else {
           calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
         }
       } else if (freq === "monthly") {
-        // Monthly: First month = Installation only (no service)
+
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only
+          calculatedFirstMonthTotal = installOneTime; 
         } else {
-          calculatedFirstMonthTotal = perVisitCharge; // Service cost
+          calculatedFirstMonthTotal = perVisitCharge; 
         }
       } else if (freq === "bimonthly") {
-        // Bi-Monthly: First visit = Installation only (every 2 months = 1 visit per 2-month period)
+
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only for first visit
+          calculatedFirstMonthTotal = installOneTime; 
         } else {
           calculatedFirstMonthTotal = perVisitCharge;
         }
       } else if (freq === "quarterly") {
-        // Quarterly: First visit = Installation only (4 visits per year)
+
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only for first visit
+          calculatedFirstMonthTotal = installOneTime; 
         } else {
           calculatedFirstMonthTotal = perVisitCharge;
         }
       } else if (freq === "biannual") {
-        // Bi-Annual: First service = Installation only
+
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only
+          calculatedFirstMonthTotal = installOneTime; 
         } else {
           calculatedFirstMonthTotal = perVisitCharge;
         }
       } else if (freq === "annual") {
-        // Annual: Installation only if included, otherwise service cost
+
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; // Installation only
+          calculatedFirstMonthTotal = installOneTime; 
         } else {
           calculatedFirstMonthTotal = perVisitCharge;
         }
       } else if (freq === "twicePerMonth") {
-        // 2×/month: Use backend monthlyVisits multiplier
+
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = monthlyVisits - 1; // e.g., 2 - 1 = 1 remaining visit
+          const remainingVisits = monthlyVisits - 1; 
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
           calculatedFirstMonthTotal = monthlyVisits * perVisitCharge;
@@ -880,12 +872,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       }
     }
 
-    // Use custom override if set
+
     const firstMonthTotal = form.customFirstMonthPrice !== undefined
       ? form.customFirstMonthPrice
       : calculatedFirstMonthTotal;
 
-    // ---------------- CONTRACT TOTAL - NEW INSTALLATION-BASED RULES ----------------
+
     const contractMonths = clampContractMonths(form.contractMonths);
 
     let calculatedContractTotal = 0;
@@ -894,137 +886,137 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
     if (contractMonths > 0 && serviceActive) {
       if (freq === "oneTime") {
-        // One-time service: just the first visit total
+
         calculatedContractTotal = firstMonthTotal;
         totalVisitsForContract = 1;
       } else if (freq === "weekly") {
-        // ✅ OVERRIDE-AWARE: Weekly contract calculation respecting monthlyRecurring override
+
         const backendWeeklyMeta = backendConfig?.frequencyMetadata?.weekly;
         const effectiveMonthlyVisits = backendWeeklyMeta?.monthlyRecurringMultiplier ?? monthlyVisits;
         totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of recalculating
-          // First month uses firstMonthTotal, remaining months use monthlyRecurring
+
+
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
           console.log(`🔧 [Carpet Weekly Contract] Override-aware: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × $${monthlyRecurring.toFixed(2)} = $${calculatedContractTotal.toFixed(2)}`);
         } else {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+
           calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "biweekly") {
-        // ✅ OVERRIDE-AWARE: Biweekly contract calculation respecting monthlyRecurring override
+
         const backendBiweeklyMeta = backendConfig?.frequencyMetadata?.biweekly;
         const effectiveMonthlyVisits = backendBiweeklyMeta?.monthlyRecurringMultiplier ?? monthlyVisits;
         totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of recalculating
-          // First month uses firstMonthTotal, remaining months use monthlyRecurring
+
+
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
           console.log(`🔧 [Carpet Biweekly Contract] Override-aware: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × $${monthlyRecurring.toFixed(2)} = $${calculatedContractTotal.toFixed(2)}`);
         } else {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+
           calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "monthly") {
-        // ✅ OVERRIDE-AWARE: Monthly contract calculation respecting monthlyRecurring override
+
         const backendMonthlyMeta = backendConfig?.frequencyMetadata?.monthly;
         const cycleMonths = backendMonthlyMeta?.cycleMonths ?? 1;
         totalVisitsForContract = Math.round(contractMonths / cycleMonths);
 
         if (form.includeInstall && installOneTime > 0) {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of perVisitCharge
-          // First month: installation only, remaining months: use monthlyRecurring
+
+
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+
           calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "bimonthly") {
-        // ✅ BACKEND-DRIVEN: Bimonthly uses cycleMonths from backend
+
         const backendBimonthlyMeta = backendConfig?.frequencyMetadata?.bimonthly;
         const cycleMonths = backendBimonthlyMeta?.cycleMonths ?? 2;
         const totalVisits = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalVisits;
 
         if (form.includeInstall && installOneTime > 0) {
-          // First visit: installation only, remaining visits: service cost
+
           const remainingVisits = Math.max(totalVisits - 1, 0);
           calculatedContractTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
-          // No installation: all visits are service cost
+
           calculatedContractTotal = totalVisits * perVisitCharge;
         }
       } else if (freq === "quarterly") {
-        // ✅ BACKEND-DRIVEN: Quarterly uses cycleMonths from backend
+
         const backendQuarterlyMeta = backendConfig?.frequencyMetadata?.quarterly;
         const cycleMonths = backendQuarterlyMeta?.cycleMonths ?? 3;
         const totalVisits = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalVisits;
 
         if (form.includeInstall && installOneTime > 0) {
-          // First visit: installation only, remaining visits: service cost
+
           const remainingVisits = Math.max(totalVisits - 1, 0);
           calculatedContractTotal = installOneTime + (remainingVisits * perVisitCharge);
         } else {
-          // No installation: all visits are service cost
+
           calculatedContractTotal = totalVisits * perVisitCharge;
         }
       } else if (freq === "biannual") {
-        // ✅ BACKEND-DRIVEN: Biannual uses cycleMonths from backend
+
         const backendBiannualMeta = backendConfig?.frequencyMetadata?.biannual;
         const cycleMonths = backendBiannualMeta?.cycleMonths ?? 6;
         const totalServices = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalServices;
 
         if (form.includeInstall && installOneTime > 0) {
-          // First service: installation, remaining services: normal service
+
           const remainingServices = Math.max(totalServices - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingServices * perVisitCharge);
         } else {
-          // No installation: all services normal
+
           calculatedContractTotal = totalServices * perVisitCharge;
         }
       } else if (freq === "annual") {
-        // ✅ BACKEND-DRIVEN: Annual uses cycleMonths from backend
+
         const backendAnnualMeta = backendConfig?.frequencyMetadata?.annual;
         const cycleMonths = backendAnnualMeta?.cycleMonths ?? 12;
         const totalServices = Math.round(contractMonths / cycleMonths);
         totalVisitsForContract = totalServices;
 
         if (form.includeInstall && installOneTime > 0) {
-          // If installation included, total = installation only (per rule)
+
           calculatedContractTotal = installOneTime;
         } else {
-          // No installation: service cost
+
           calculatedContractTotal = totalServices * perVisitCharge;
         }
       } else if (freq === "twicePerMonth") {
-        // ✅ OVERRIDE-AWARE: 2×/month contract calculation respecting monthlyRecurring override
+
         totalVisitsForContract = Math.round(contractMonths * monthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring (respects override) instead of recalculating
-          // First month uses firstMonthTotal, remaining months use monthlyRecurring
+
+
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
-          // ✅ HIERARCHY FIX: Use monthlyRecurring for all months (respects override)
+
           calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       }
     }
 
-    // Use custom override if set
+
     const contractTotal = form.customContractTotal !== undefined
       ? form.customContractTotal
       : calculatedContractTotal;
 
-    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
 
@@ -1036,11 +1028,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
-    // Per-Visit Effective = normal per-visit service price (no install, no trip)
+
     const perVisitEffective = perVisitCharge;
 
-    // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
-    // Uses baseConfig rates (no custom overrides, no minimum floor)
+
     let originalContractTotal = 0;
     if (serviceActive && contractMonths > 0) {
       const baselineUnitSqFt = baseConfig.unitSqFt;
@@ -1073,7 +1064,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       perVisitBase,
       perVisitCharge,
       monthlyTotal: monthlyRecurring,
-      contractTotal: contractTotalWithCustomFields,  // ✅ UPDATED: Return contract total with custom fields added
+      contractTotal: contractTotalWithCustomFields,  
       originalContractTotal,
       visitsPerYear,
       visitsPerMonth,
@@ -1082,37 +1073,37 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       installOneTime,
       firstMonthTotal,
       perVisitEffective,
-      // ✅ NEW: Frequency-specific UI helpers
+
       frequency: freq,
       isVisitBasedFrequency,
       monthsPerVisit,
       totalVisitsForContract,
     };
   }, [
-    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    backendConfig,  
     form.areaSqFt,
-    form.useExactSqft,  // ✅ Re-calculate when pricing method changes
+    form.useExactSqft,  
     form.frequency,
     form.contractMonths,
     form.includeInstall,
     form.isDirtyInstall,
-    // ✅ FIXED: Watch editable rate fields from backend
+
     form.firstUnitRate,
     form.additionalUnitRate,
     form.perVisitMinimum,
     form.installMultiplierDirty,
     form.installMultiplierClean,
-    // ✅ FIXED: Watch custom override fields for rates
+
     form.customFirstUnitRate,
     form.customAdditionalUnitRate,
     form.customPerVisitMinimum,
-    // ✅ FIXED: Watch custom override fields for totals
+
     form.customPerVisitPrice,
     form.customMonthlyRecurring,
     form.customFirstMonthPrice,
     form.customContractTotal,
     form.customInstallationFee,
-    // ✅ NEW: Re-calculate when custom fields change
+
     calcFieldsTotal,
     dollarFieldsTotal,
     form.applyMinimum,
@@ -1149,13 +1140,13 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       installOneTime,
       firstMonthTotal,
       perVisitEffective,
-      // ✅ NEW: Frequency-specific UI helpers
+
       frequency,
       isVisitBasedFrequency,
       monthsPerVisit,
       totalVisitsForContract,
     },
-    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
+    refreshConfig: () => fetchPricing(true), 
     isLoadingConfig,
     setContractMonths,
   };

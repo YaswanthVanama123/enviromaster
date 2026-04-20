@@ -1,4 +1,3 @@
-// src/components/admin/EmailTemplateManager.tsx
 import React, { useState, useEffect } from 'react';
 import { emailTemplateApi, type EmailTemplate } from '../../backendservice/api/emailTemplateApi';
 import { Toast } from './Toast';
@@ -16,12 +15,10 @@ export const EmailTemplateManager: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Load active template on component mount
   useEffect(() => {
     loadTemplate();
   }, []);
 
-  // Track changes
   useEffect(() => {
     if (template) {
       const changed = subject !== template.subject || body !== template.body;
@@ -113,7 +110,6 @@ export const EmailTemplateManager: React.FC = () => {
       </div>
 
       <div className="email-template-form">
-        {/* Loading State - Show spinner in place of form fields */}
         {loading ? (
           <div className="email-template-loading-state">
             <div className="email-template-spinner-inline">
@@ -123,7 +119,6 @@ export const EmailTemplateManager: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Subject Field */}
             <div className="email-template-field">
               <label htmlFor="subject">
                 Email Subject
@@ -141,7 +136,6 @@ export const EmailTemplateManager: React.FC = () => {
               <small className="field-hint">This subject will be pre-filled when sending emails</small>
             </div>
 
-            {/* Body Field */}
             <div className="email-template-field">
               <label htmlFor="body">
                 Email Body
@@ -161,7 +155,6 @@ export const EmailTemplateManager: React.FC = () => {
               </small>
             </div>
 
-            {/* Template Variables Info */}
             <div className="email-template-variables">
               <h3>Template Tips</h3>
               <ul>
@@ -172,7 +165,6 @@ export const EmailTemplateManager: React.FC = () => {
               </ul>
             </div>
 
-            {/* Action Buttons */}
             <div className="email-template-actions">
               <button
                 type="button"
@@ -194,7 +186,6 @@ export const EmailTemplateManager: React.FC = () => {
               </button>
             </div>
 
-            {/* Last Updated Info */}
             {template && (
               <div className="email-template-meta">
                 Last updated: {new Date(template.updatedAt).toLocaleString()}

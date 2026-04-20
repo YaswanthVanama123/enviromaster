@@ -1,4 +1,3 @@
-// src/backendservice/api/pdfApi.ts
 
 import { apiClient } from "../utils/apiClient";
 
@@ -9,7 +8,6 @@ export interface CustomerHeader {
   status: string;
   createdAt: string;
   updatedAt: string;
-  // ✅ NEW: Soft delete fields
   isDeleted?: boolean;
   deletedAt?: string | null;
   deletedBy?: string | null;
@@ -38,10 +36,10 @@ export interface ProductItem {
   qty: number;
   frequency?: string;
   total: number;
-  unitPrice?: number;      // For small products
-  warrantyRate?: number;   // For dispensers
-  replacementRate?: number;// For dispensers
-  amount?: number;         // For big products
+  unitPrice?: number;
+  warrantyRate?: number;
+  replacementRate?: number;
+  amount?: number;
 }
 
 export interface ProductsPayload {
@@ -70,17 +68,15 @@ export interface FormPayload {
   summary?: GlobalSummary;
 }
 
-// ✅ NEW: Status types for agreements and versions
 export type AgreementStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized';
 export type VersionStatus = 'draft' | 'pending_approval' | 'approved_salesman' | 'approved_admin' | 'finalized' | 'archived';
 
-// New interfaces for saved-files API
 export interface SavedFileListItem {
   id: string;
-  agreementId?: string;                 // ✅ FIX: Agreement ID (CustomerHeaderDoc._id) for Zoho upload
-  versionId?: string;                   // ✅ NEW: Version ID for proper version mapping
-  fileName: string;                     // ✅ NEW: Actual file name
-  fileType: 'main_pdf' | 'attached_pdf' | 'version_pdf' | 'version_log'; // ✅ NEW: Added version_log type
+  agreementId?: string;
+  versionId?: string;
+  fileName: string;
+  fileType: 'main_pdf' | 'attached_pdf' | 'version_pdf' | 'version_log';
   title: string;
   status: string;
   createdAt: string;
@@ -90,18 +86,17 @@ export interface SavedFileListItem {
   fileSize: number;
   pdfStoredAt: string | null;
   hasPdf: boolean;
-  description?: string;                 // ✅ NEW: For attached files
-  versionNumber?: number;               // ✅ NEW: For version files
-  versionStatus?: VersionStatus;        // ✅ NEW: Status specific to this version
-  isLatestVersion?: boolean;            // ✅ NEW: Flag to identify if this is the latest version
-  canChangeStatus?: boolean;            // ✅ NEW: Flag to determine if status can be changed
+  description?: string;
+  versionNumber?: number;
+  versionStatus?: VersionStatus;
+  isLatestVersion?: boolean;
+  canChangeStatus?: boolean;
   zohoInfo: {
     biginDealId: string | null;
     biginFileId: string | null;
     crmDealId: string | null;
     crmFileId: string | null;
   };
-  // ✅ NEW: Soft delete fields
   isDeleted?: boolean;
   deletedAt?: string | null;
   deletedBy?: string | null;
@@ -120,28 +115,24 @@ export interface SavedFilesListResponse {
   };
 }
 
-// Grouped files interfaces (folder-like structure) - CORRECTED for single document approach
 export interface SavedFileGroup {
-  id: string;                    // Agreement document ID
-  agreementTitle: string;        // Agreement title
-  agreementStatus: AgreementStatus; // ✅ NEW: Agreement-level status
-  fileCount: number;             // Main PDF + attached files count
-  latestUpdate: string;          // Latest update to agreement or attached files
-  statuses: string[];            // Main agreement status
-  hasUploads: boolean;           // Any files uploaded to Zoho
-  files: SavedFileListItem[];    // Main PDF + all attached files
-  hasVersions: boolean;          // ✅ NEW: Flag if agreement has PDF versions
-  isDraftOnly: boolean;          // ✅ NEW: Flag if agreement is draft-only (no PDFs generated)
-  // ✅ NEW: Soft delete fields
+  id: string;
+  agreementTitle: string;
+  agreementStatus: AgreementStatus;
+  fileCount: number;
+  latestUpdate: string;
+  statuses: string[];
+  hasUploads: boolean;
+  files: SavedFileListItem[];
+  hasVersions: boolean;
+  isDraftOnly: boolean;
   isDeleted?: boolean;
   deletedAt?: string | null;
   deletedBy?: string | null;
-  // ✅ NEW: Agreement timeline fields for expiry tracking
-  startDate?: string | null;     // Agreement start date (ISO format)
-  contractMonths?: number | null; // Contract duration in months
+  startDate?: string | null;
+  contractMonths?: number | null;
 }
 
-// ✅ NEW: Interface for adding files to agreement
 export interface AddFileToAgreementRequest {
   files: {
     fileId?: string;
@@ -149,7 +140,7 @@ export interface AddFileToAgreementRequest {
     fileSize: number;
     contentType?: string;
     description?: string;
-    pdfBuffer?: number[];  // ✅ NEW: Array of bytes from frontend
+    pdfBuffer?: number[];
     externalUrl?: string;
     zoho?: {
       bigin?: { dealId?: string; fileId?: string; url?: string };
@@ -222,7 +213,6 @@ export interface SavedFileDetailsResponse {
   };
 }
 
-// ✅ ENHANCED: Version logs interfaces with overwriting support and cumulative history
 export interface VersionLogRequest {
   agreementId: string;
   versionId: string;
@@ -231,23 +221,19 @@ export interface VersionLogRequest {
   salespersonName: string;
   saveAction: 'save_draft' | 'generate_pdf' | 'manual_save';
   documentTitle: string;
-  // ✅ NEW: Overwriting support for smart log management
   overwriteExisting?: boolean;
   overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
-  // ✅ NEW: Cumulative change history support
   currentChanges?: Array<{
     productKey: string;
     productName: string;
     productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-    // Numeric changes
+    changeType?: 'numeric' | 'text';
     originalValue?: number;
     newValue?: number;
     changeAmount?: number;
     changePercentage?: number;
-    // ✅ NEW: Text changes
     originalText?: string;
     newText?: string;
     quantity?: number;
@@ -260,33 +246,28 @@ export interface VersionLogRequest {
     productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-    // Numeric changes
+    changeType?: 'numeric' | 'text';
     originalValue?: number;
     newValue?: number;
     changeAmount?: number;
     changePercentage?: number;
-    // ✅ NEW: Text changes
     originalText?: string;
     newText?: string;
     quantity?: number;
     frequency?: string;
     timestamp: string;
   }>;
-  // Keep for backward compatibility
   changes?: Array<{
     productKey: string;
     productName: string;
     productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-    // Numeric changes
+    changeType?: 'numeric' | 'text';
     originalValue?: number;
     newValue?: number;
     changeAmount?: number;
     changePercentage?: number;
-    // ✅ NEW: Text changes
     originalText?: string;
     newText?: string;
     quantity?: number;
@@ -307,7 +288,6 @@ export interface VersionLogResponse {
   } | null;
 }
 
-// ✅ SIMPLIFIED: Log document structure (separate collection) with cumulative history support
 export interface LogDocument {
   _id: string;
   agreementId: string;
@@ -321,20 +301,17 @@ export interface LogDocument {
   totalChanges: number;
   totalPriceImpact: number;
   hasSignificantChanges: boolean;
-  // ✅ NEW: Cumulative change history fields
   currentChanges?: Array<{
     productKey: string;
     productName: string;
     productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-    // Numeric changes
+    changeType?: 'numeric' | 'text';
     originalValue?: number;
     newValue?: number;
     changeAmount?: number;
     changePercentage?: number;
-    // ✅ NEW: Text changes
     originalText?: string;
     newText?: string;
     quantity?: number;
@@ -347,33 +324,28 @@ export interface LogDocument {
     productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-    // Numeric changes
+    changeType?: 'numeric' | 'text';
     originalValue?: number;
     newValue?: number;
     changeAmount?: number;
     changePercentage?: number;
-    // ✅ NEW: Text changes
     originalText?: string;
     newText?: string;
     quantity?: number;
     frequency?: string;
     timestamp: string;
   }>;
-  // Keep for backward compatibility
   changes: Array<{
     productKey: string;
     productName: string;
     productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
     fieldType: string;
     fieldDisplayName: string;
-    changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-    // Numeric changes
+    changeType?: 'numeric' | 'text';
     originalValue?: number;
     newValue?: number;
     changeAmount?: number;
     changePercentage?: number;
-    // ✅ NEW: Text changes
     originalText?: string;
     newText?: string;
     quantity?: number;
@@ -384,38 +356,35 @@ export interface LogDocument {
   updatedAt: string;
 }
 
-// ✅ UPDATED: Helper function to map LogDocument to SavedFileListItem format
 export const mapLogToSavedFileItem = (log: LogDocument, agreementTitle?: string): SavedFileListItem => {
-  // ✅ IMPROVED: Generate descriptive file name with version info and date
   const customerName = agreementTitle || 'Agreement';
   const safeCustomerName = customerName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
-  const logDate = new Date(log.createdAt).toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+  const logDate = new Date(log.createdAt).toISOString().split('T')[0].replace(/-/g, '');
   const versionInfo = `v${log.versionNumber}`;
   const changeCount = `${log.totalChanges}changes`;
 
-  // Format: "Agreement_CustomerName_v2_15changes_20241216.txt"
   const descriptiveFileName = `Agreement_${safeCustomerName}_${versionInfo}_${changeCount}_${logDate}.txt`;
 
   return {
     id: log._id,
     agreementId: log.agreementId,
     versionId: log.versionId,
-    fileName: descriptiveFileName, // ✅ NEW: Descriptive name with version info
+    fileName: descriptiveFileName,
     fileType: 'version_log',
-    title: descriptiveFileName, // ✅ NEW: Use descriptive name for title too
-    status: 'attached', // Logs are treated as attachments to the agreement
+    title: descriptiveFileName,
+    status: 'attached',
     createdAt: log.createdAt,
     updatedAt: log.updatedAt,
     createdBy: log.salespersonId,
     updatedBy: null,
-    fileSize: Math.max(1000, log.totalChanges * 200), // Estimate file size based on changes
-    pdfStoredAt: null, // Logs are stored as TXT, not PDF
-    hasPdf: true, // ✅ UPDATED: Can be downloaded as TXT file
+    fileSize: Math.max(1000, log.totalChanges * 200),
+    pdfStoredAt: null,
+    hasPdf: true,
     description: `Version ${log.versionNumber} changes: ${log.totalChanges} modifications ($${log.totalPriceImpact.toFixed(2)} impact)`,
     versionNumber: log.versionNumber,
-    versionStatus: undefined, // Logs don't have changeable status
-    isLatestVersion: false, // Logs are not versions themselves
-    canChangeStatus: false, // Logs cannot have their status changed
+    versionStatus: undefined,
+    isLatestVersion: false,
+    canChangeStatus: false,
     zohoInfo: {
       biginDealId: null,
       biginFileId: null,
@@ -428,7 +397,6 @@ export const mapLogToSavedFileItem = (log: LogDocument, agreementTitle?: string)
   };
 };
 
-// ✅ NEW: Helper function to merge logs into agreement groups (can be used in backend or frontend)
 export const mergeLogsIntoAgreements = async (
   agreements: SavedFileGroup[],
   getLogsForAgreement: (agreementId: string) => Promise<LogDocument[]>
@@ -437,13 +405,10 @@ export const mergeLogsIntoAgreements = async (
 
   for (const agreement of agreements) {
     try {
-      // Fetch logs for this agreement
       const logs = await getLogsForAgreement(agreement.id);
 
-      // Map logs to SavedFileListItem format
       const logFiles = logs.map(log => mapLogToSavedFileItem(log, agreement.agreementTitle));
 
-      // Merge logs with existing files, sorted by creation date (newest first)
       const allFiles = [...agreement.files, ...logFiles].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
@@ -451,13 +416,12 @@ export const mergeLogsIntoAgreements = async (
       enrichedAgreements.push({
         ...agreement,
         files: allFiles,
-        fileCount: allFiles.length, // Update file count to include logs
+        fileCount: allFiles.length,
       });
 
       console.log(`📋 [MERGE-LOGS] Agreement "${agreement.agreementTitle}": +${logFiles.length} logs (${allFiles.length} total files)`);
     } catch (error) {
       console.warn(`⚠️ [MERGE-LOGS] Failed to fetch logs for agreement ${agreement.id}:`, error);
-      // Include agreement without logs if fetching fails
       enrichedAgreements.push(agreement);
     }
   }
@@ -465,25 +429,13 @@ export const mergeLogsIntoAgreements = async (
   return enrichedAgreements;
 };
 
-/**
- * PDF API Service
- * Handles all PDF-related operations: customer headers, admin templates, downloads
- */
 export const pdfApi = {
-  /**
-   * Get all customer headers
-   */
   async getCustomerHeaders(): Promise<CustomerHeadersResponse> {
     const res = await apiClient.get<CustomerHeadersResponse>(`/api/pdf/customer-headers`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Get lightweight customer headers summary (no heavy payload data)
-   * Returns only essential fields: _id, status, updatedAt, headerTitle
-   * Use this for list views to avoid loading heavy form data upfront
-   */
   async getCustomerHeadersSummary(
     options: CustomerHeadersSummaryOptions = {}
   ): Promise<{
@@ -494,7 +446,7 @@ export const pdfApi = {
       _id: string;
       status: string;
       updatedAt: string;
-      headerTitle?: string; // extracted from payload.headerTitle
+      headerTitle?: string;
     }>;
   }> {
     const params = new URLSearchParams();
@@ -514,9 +466,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Fetch multiple pages of customer headers summary for dashboards
-   */
   async getAllCustomerHeadersSummary(
     options: CustomerHeadersAggregateOptions = {}
   ): Promise<{
@@ -557,10 +506,6 @@ export const pdfApi = {
     return { items: aggregated };
   },
 
-  /**
-   * ✅ NEW: Get optimized document status counts for Home page bar graph
-   * Returns only counts without loading full documents (much faster)
-   */
   async getDocumentStatusCounts(options: {
     startDate?: string;
     endDate?: string;
@@ -586,37 +531,24 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Get a specific customer header by ID
-   */
   async getCustomerHeaderById(id: string): Promise<{ payload: FormPayload }> {
     const res = await apiClient.get(`/api/pdf/customer-headers/${id}`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
 
-  /**
-   * Get a specific customer header by ID in edit-friendly format
-   * This endpoint converts backend data structure for proper edit mode mapping
-   */
   async getCustomerHeaderForEdit(id: string): Promise<{ payload: FormPayload }> {
     const res = await apiClient.get(`/api/pdf/customer-headers/${id}/edit-format`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
 
-  /**
-   * Get admin template header by ID
-   */
   async getAdminHeaderById(id: string): Promise<{ payload: FormPayload }> {
     const res = await apiClient.get(`/api/pdf/admin-headers/${id}`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
 
-  /**
-   * Create a new customer header with PDF generation
-   */
   async createCustomerHeader(payload: FormPayload): Promise<{
     status: number;
     headers: any;
@@ -633,9 +565,6 @@ export const pdfApi = {
     };
   },
 
-  /**
-   * Update existing customer header (draft only)
-   */
   async updateCustomerHeader(id: string, payload: FormPayload): Promise<void> {
     await apiClient.put(
       `/api/pdf/customer-headers/${id}`,
@@ -643,9 +572,6 @@ export const pdfApi = {
     );
   },
 
-  /**
-   * Update existing customer header and recompile PDF
-   */
   async updateAndRecompileCustomerHeader(
     id: string,
     payload: FormPayload
@@ -656,9 +582,6 @@ export const pdfApi = {
     );
   },
 
-  /**
-   * Update document status
-   */
   async updateDocumentStatus(id: string, status: string): Promise<void> {
     const res = await apiClient.patch(
       `/api/pdf/customer-headers/${id}/status`,
@@ -667,9 +590,6 @@ export const pdfApi = {
     if (res.error) throw new Error(res.error);
   },
 
-  /**
-   * Get all version PDFs with pagination and filtering
-   */
   async getAllVersionPdfs(params?: {
     page?: number;
     limit?: number;
@@ -724,9 +644,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Update version status (for version PDFs)
-   */
   async updateVersionStatus(versionId: string, status: string): Promise<void> {
     const res = await apiClient.patch(
       `/api/versions/${versionId}/status`,
@@ -735,55 +652,28 @@ export const pdfApi = {
     if (res.error) throw new Error(res.error);
   },
 
-  /**
-   * Download PDF as blob
-   */
   async downloadPdf(documentId: string): Promise<Blob> {
     return apiClient.downloadBlob(`/api/pdf/viewer/download/${documentId}`);
   },
 
-  /**
-   * ✅ NEW: Download version PDF as blob (with optional watermark)
-   * @param versionId Version PDF ID
-   * @param watermark Optional watermark flag (true = add DRAFT watermark, false = normal PDF)
-   */
   async downloadVersionPdf(versionId: string, watermark = false): Promise<Blob> {
     const watermarkParam = watermark ? '?watermark=true' : '';
     return apiClient.downloadBlob(`/api/versions/${versionId}/download${watermarkParam}`);
   },
 
-  /**
-   * ✅ NEW: Download attached file from ManualUploadDocument collection
-   */
   async downloadAttachedFile(fileId: string): Promise<Blob> {
     return apiClient.downloadBlob(`/api/pdf/attached-files/${fileId}/download`);
   },
 
-  /**
-   * Get PDF download URL
-   */
   getPdfDownloadUrl(documentId: string): string {
     return `/api/pdf/viewer/download/${documentId}`;
   },
 
-  /**
-   * ✅ NEW: Get version PDF view URL (with optional watermark)
-   * @param versionId Version PDF ID
-   * @param watermark Optional watermark flag (true = add DRAFT watermark, false = normal PDF)
-   */
   getVersionPdfViewUrl(versionId: string, watermark = false): string {
     const watermarkParam = watermark ? '?watermark=true' : '';
     return `/api/versions/version/${versionId}/view${watermarkParam}`;
   },
 
-  // ---- NEW SAVED-FILES API (Lazy Loading) ----
-
-  /**
-   * Get saved files list with pagination (lightweight - only high-level data)
-   * @param page Page number (default: 1)
-   * @param limit Items per page (default: 20, max: 100)
-   * @param filters Optional filters like status, search, isDeleted
-   */
   async getSavedFilesList(
     page = 1,
     limit = 20,
@@ -808,21 +698,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Get saved files grouped by agreement (folder-like structure)
-   * ✅ UPDATED: Now includes version logs as files within each agreement
-   *
-   * **BACKEND REQUIREMENTS**:
-   * 1. When `includeLogs: true`, backend must include version logs in files array for each agreement
-   * 2. Backend must set `isLatestVersion: true` for the newest version PDF of each agreement
-   * 3. Backend must set `canChangeStatus: true` for latest version PDFs (frontend will override this)
-  * 4. Log files should be mapped using mapLogToSavedFileItem format with descriptive filenames
-  * 5. Trash responses expose `isDeleted`, `deletedAt`, and `deletedBy` on manual uploads, version PDFs, and version logs so the UI can surface deleted traces
-   *
-   * @param page Page number (default: 1)
-   * @param limit Groups per page (default: 20, max: 100)
-   * @param filters Optional filters like status, search, isDeleted
-   */
   async getSavedFilesGrouped(
     page = 1,
     limit = 20,
@@ -831,14 +706,13 @@ export const pdfApi = {
       search?: string;
       isDeleted?: boolean;
       includeLogs?: boolean;
-      includeDrafts?: boolean; // ✅ NEW: Include draft agreements without PDFs
-      isTrashView?: boolean; // ✅ NEW: Include isTrashView for trash filtering
+      includeDrafts?: boolean;
+      isTrashView?: boolean;
     } = {}
   ): Promise<SavedFilesGroupedResponse> {
     const params = new URLSearchParams();
     params.set('page', page.toString());
     params.set('limit', limit.toString());
-    // ✅ NEW: Always include logs by default in grouped view
     params.set('includeLogs', (filters.includeLogs !== false).toString());
 
     if (filters.status) {
@@ -850,11 +724,9 @@ export const pdfApi = {
     if (filters.isDeleted !== undefined) {
       params.set('isDeleted', filters.isDeleted.toString());
     }
-    // ✅ NEW: Add includeDrafts parameter
     if (filters.includeDrafts !== undefined) {
       params.set('includeDrafts', filters.includeDrafts.toString());
     }
-    // ✅ NEW: Add isTrashView parameter for frontend to control backend filtering
     if (filters.isTrashView !== undefined) {
       params.set('isTrashView', filters.isTrashView.toString());
     }
@@ -866,18 +738,12 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Get full file details by ID (on-demand - includes complete payload)
-   */
   async getSavedFileDetails(id: string): Promise<SavedFileDetailsResponse> {
     const res = await apiClient.get(`/api/pdf/saved-files/${id}/details`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Add files to existing agreement's attachedFiles array
-   */
   async addFilesToAgreement(
     agreementId: string,
     request: AddFileToAgreementRequest
@@ -890,9 +756,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Restore deleted agreement from trash
-   */
   async restoreAgreement(agreementId: string): Promise<{
     success: boolean;
     message: string;
@@ -909,9 +772,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Restore deleted manual uploads, version PDFs, and version logs from trash
-   */
   async restoreFile(
     fileId: string,
     options: { fileType?: string } = {}
@@ -939,9 +799,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Soft delete agreement (move to trash)
-   */
   async deleteAgreement(agreementId: string): Promise<{
     success: boolean;
     message: string;
@@ -954,9 +811,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Soft delete attached files, version PDFs, or version logs (moves them to trash with deleted metadata)
-   */
   async deleteFile(
     fileId: string,
     options: { fileType?: string } = {}
@@ -979,9 +833,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Permanently delete agreement and all associated files
-   */
   async permanentlyDeleteAgreement(agreementId: string): Promise<{
     success: boolean;
     message: string;
@@ -999,9 +850,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Permanently delete individual file and cleanup references
-   */
   async permanentlyDeleteFile(
     fileId: string,
     options: { fileType?: string } = {}
@@ -1029,9 +877,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ SIMPLIFIED: Create version log (separate Logs collection, store IDs in Agreement & Version)
-   */
   async createVersionLog(request: VersionLogRequest): Promise<VersionLogResponse> {
     const res = await apiClient.post(
       `/api/pdf/logs/create`,
@@ -1041,9 +886,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ SIMPLIFIED: Get version logs for an agreement (from Logs collection)
-   */
   async getVersionLogs(agreementId: string): Promise<{
     success: boolean;
     agreement: {
@@ -1059,9 +901,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ SIMPLIFIED: Get ALL version logs (from Logs collection)
-   */
   async getAllVersionLogs(params?: {
     page?: number;
     limit?: number;
@@ -1090,19 +929,12 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ SIMPLIFIED: Download version log (from Logs collection)
-   */
   async downloadVersionLog(logId: string, includeDeleted = false): Promise<Blob> {
     return apiClient.downloadBlob(
       `/api/pdf/logs/${logId}/download${includeDeleted ? "?includeDeleted=true" : ""}`
     );
   },
 
-  /**
-   * ✅ NEW: Get all approval documents grouped by agreement (folder structure)
-   * Returns version PDFs, attached files, and main PDFs that are pending approval
-   */
   async getApprovalDocumentsGrouped(): Promise<{
     success: boolean;
     totalGroups: number;
@@ -1119,9 +951,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ NEW: Update agreement status
-   */
   async updateAgreementStatus(agreementId: string, status: AgreementStatus, notes?: string): Promise<{
     success: boolean;
     message: string;
@@ -1143,10 +972,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Get admin dashboard data including recent documents and statistics
-   * Uses the new admin dashboard API endpoint
-   */
   async getAdminDashboardData(): Promise<{
     stats: {
       manualUploads: number;
@@ -1176,9 +1001,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Get status counts scoped to a time filter for the admin pie chart
-   */
   async getDashboardStatusCounts(params: { period?: string; from?: string; to?: string } = {}): Promise<{
     success: boolean;
     period: string;
@@ -1204,9 +1026,6 @@ export const pdfApi = {
     return res.data!;
   },
 
-  /**
-   * Get paginated recent documents for admin panel
-   */
   async getAdminRecentDocuments(params?: {
     page?: number;
     limit?: number;

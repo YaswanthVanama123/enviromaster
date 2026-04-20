@@ -20,11 +20,10 @@ interface TextConfirmationModalProps {
   loading?: boolean;
   details?: string;
 
-  // Text confirmation settings
   textConfirmation: {
     required: boolean;
     placeholder: string;
-    expectedText?: string; // If provided, user must type this exact text
+    expectedText?: string;
     label: string;
     description?: string;
   };
@@ -92,7 +91,6 @@ export const TextConfirmationModal: React.FC<TextConfirmationModalProps> = ({
     }
   };
 
-  // Check if confirmation is valid
   const isConfirmationValid = () => {
     if (!textConfirmation.required) return true;
 
@@ -106,12 +104,12 @@ export const TextConfirmationModal: React.FC<TextConfirmationModalProps> = ({
   const handleConfirm = () => {
     if (isConfirmationValid()) {
       onConfirm();
-      setInputText(''); // Reset input
+      setInputText('');
     }
   };
 
   const handleCancel = () => {
-    setInputText(''); // Reset input
+    setInputText('');
     onCancel();
   };
 
@@ -247,7 +245,6 @@ export const TextConfirmationModal: React.FC<TextConfirmationModalProps> = ({
     }
   };
 
-  // Add hover styles
   const handleMouseEnter = (e: React.MouseEvent, hoverColor: string) => {
     if (!loading && isConfirmationValid()) {
       (e.target as HTMLElement).style.backgroundColor = hoverColor;

@@ -1,4 +1,4 @@
-// src/features/services/stripWax/StripWaxForm.tsx
+
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -26,16 +26,16 @@ const FIELD_ORDER = {
 export const StripWaxForm: React.FC<
   ServiceInitialData<StripWaxFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useStripWaxCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -44,91 +44,91 @@ export const StripWaxForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: numValue, type: "number" } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '', type: "number" } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '', type: "number" } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: numValue, type: "number" } } as any);
     }
   };
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
-  // Determine if frequency is visit-based (not monthly billing)
+
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
     form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
 
-  // Generate frequency-specific contract month options
+
   const formatDisplayNumber = (value: number | undefined): string => {
     return Number.isFinite(value) ? value.toFixed(2) : "0.00";
   };
@@ -171,7 +171,11 @@ export const StripWaxForm: React.FC<
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.floorAreaSqFt ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.floorAreaSqFt ?? 0) > 0 || hasCustomFieldValues;
 
       const frequencyLabel = typeof form.frequency === "string"
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
@@ -189,10 +193,10 @@ export const StripWaxForm: React.FC<
         contractMonths: form.contractMonths,
         applyMinimum: form.applyMinimum !== false,
 
-        // Red/Green Line pricing data
-        rawPrice: calc.rawPrice,  // Raw price before minimum
-        perVisit: calc.perVisit,  // Final price after minimum
-        minCharge: form.minCharge,  // Minimum threshold
+
+        rawPrice: calc.rawPrice,  
+        perVisit: calc.perVisit,  
+        minCharge: form.minCharge,  
 
         frequency: {
           isDisplay: true,
@@ -234,13 +238,8 @@ export const StripWaxForm: React.FC<
           };
 
           if (isVisitBasedFrequency) {
-            // totals.firstVisit = {
-            //   isDisplay: true,
-            //   orderNo: FIELD_ORDER.totals.firstVisit,
-            //   label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
-            //   type: "dollar" as const,
-            //   amount: calc.firstVisit,
-            // };
+
+
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -250,13 +249,8 @@ export const StripWaxForm: React.FC<
               gap: "normal",
             };
           } else {
-            // totals.firstMonth = {
-            //   isDisplay: true,
-            //   orderNo: FIELD_ORDER.totals.firstMonth,
-            //   label: "First Month Total",
-            //   type: "dollar" as const,
-            //   amount: calc.monthly,
-            // };
+
+
             totals.monthlyRecurring = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.monthlyRecurring,
@@ -299,7 +293,7 @@ export const StripWaxForm: React.FC<
           return totals;
         })(),
 
-        notes: "", // No notes field in Strip Wax
+        notes: "", 
         customFields: customFields,
         contractTotal: calc.contractTotal,
         originalContractTotal: calc.originalContractTotal,
@@ -317,7 +311,7 @@ export const StripWaxForm: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
-  // Clear custom overrides when base inputs change
+
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
@@ -341,7 +335,7 @@ export const StripWaxForm: React.FC<
 
   return (
     <div className="svc-card" style={{ position: 'relative' }}>
-      {/* Loading Overlay */}
+      {}
       {isLoadingConfig && (
         <div className="svc-loading-overlay">
           <div className="svc-loading-spinner">
@@ -351,7 +345,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* Header */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">STRIP &amp; WAX FLOOR</div>
         <div className="svc-h-actions">
@@ -388,7 +382,7 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -396,7 +390,7 @@ export const StripWaxForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Frequency row (for per-visit view label only) */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -419,7 +413,7 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Service variant selection */}
+      {}
       <div className="svc-row">
         <label>Service Type</label>
         <div className="svc-row-right">
@@ -442,7 +436,7 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Floor area row */}
+      {}
       <div className="svc-row">
         <label>Floor Area</label>
         <div className="svc-row-right">
@@ -484,7 +478,7 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Floor area calculation info */}
+      {}
       <div className="svc-row">
         <label></label>
         <div className="svc-row-right">
@@ -494,7 +488,7 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-      {/* Minimum charge row */}
+      {}
       <div className="svc-row">
         <label>Minimum Charge</label>
         <div className="svc-row-right">
@@ -528,24 +522,10 @@ export const StripWaxForm: React.FC<
       </div>
 
 
+      {}
+      {}
 
-      {/* Rate category */}
-      {/* <div className="svc-row">
-        <label>Rate Category</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="rateCategory"
-            value={form.rateCategory}
-            onChange={onChange}
-          >
-            <option value="redRate">Red (base)</option>
-            <option value="greenRate">Green (+30%)</option>
-          </select>
-        </div>
-      </div> */}
-
-      {/* Totals */}
+      {}
       <div className="svc-row svc-row-total">
         <label>Per Visit Total</label>
         <div className="svc-dollar">
@@ -575,7 +555,7 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-            {/* First Visit Total - Show for visit-based (not oneTime) */}
+            {}
       {isVisitBasedFrequency && form.frequency !== "oneTime" || form.frequency === "quarterly" ||
     form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" && (
         <div className="svc-row svc-row-total">
@@ -608,7 +588,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* Redline/Greenline Pricing Indicator */}
+      {}
       {form.floorAreaSqFt > 0 && (
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
@@ -642,7 +622,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* Recurring Visit Total – Show for bimonthly, quarterly, biannual, annual */}
+      {}
       {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
         form.frequency === "biannual" || form.frequency === "annual") && (
         <div className="svc-row svc-row-total">
@@ -653,7 +633,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* Total Price - Show ONLY for oneTime */}
+      {}
       {form.frequency === "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>Total Price</label>
@@ -685,8 +665,7 @@ export const StripWaxForm: React.FC<
       )}
 
 
-
-      {/* First Month Total - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+      {}
       {!isVisitBasedFrequency && (
         <div className="svc-row svc-row-total">
           <label>First Month Total</label>
@@ -718,7 +697,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+      {}
       {!isVisitBasedFrequency && (
         <div className="svc-row svc-row-total">
           <label>Monthly Recurring</label>
@@ -750,7 +729,7 @@ export const StripWaxForm: React.FC<
         </div>
       )}
 
-      {/* Contract Total - Hide for oneTime */}
+      {}
       {form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>Contract Total</label>

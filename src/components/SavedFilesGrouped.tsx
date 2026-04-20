@@ -1,5 +1,3 @@
-// src/components/SavedFilesGrouped.tsx
-// ✅ PERFORMANCE OPTIMIZED: Memoized components for better rendering (no virtual scrolling)
 import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
@@ -14,7 +12,6 @@ import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
-// ✅ OPTIMIZED: Import memoized component for better performance
 import { AgreementRow } from "./SavedFiles/AgreementRow";
 
 type FileStatus =
@@ -63,7 +60,6 @@ interface SavedFilesGroupedProps {
   onDataLoaded?: (groups: SavedFileGroup[]) => void;
 }
 
-// ✅ CRITICAL FIX: Module-level flag to prevent duplicate initial loads
 let hasInitiallyLoaded = false;
 
 export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedProps) {
@@ -83,45 +79,35 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     queryRef.current = query;
   }, [query]);
 
-  // ✅ PERFORMANCE: Prevent duplicate concurrent API calls
   const isFetchingRef = useRef(false);
 
-  // ✅ NEW: Selection state for checkboxes
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
 
-  // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
 
-  // Zoho upload state
   const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
   const [currentZohoFile, setCurrentZohoFile] = useState<SavedFileListItem | null>(null);
 
-  // ✅ NEW: Bulk Zoho upload state
   const [bulkZohoUploadOpen, setBulkZohoUploadOpen] = useState(false);
   const [selectedFilesForBulkUpload, setSelectedFilesForBulkUpload] = useState<SavedFileListItem[]>([]);
 
-  // ✅ NEW: Status update state
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
 
-  // ✅ NEW: Version logs state
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [currentLogsFile, setCurrentLogsFile] = useState<SavedFileListItem | null>(null);
   const [versionLogs, setVersionLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  // ✅ NEW: Delete confirmation modal state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'file' | 'folder', id: string, title: string, fileType?: string} | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const normalizedDeleteText = deleteConfirmText.trim().toUpperCase();
   const isDeleteConfirmed = normalizedDeleteText === 'DELETE';
 
-  // ✅ NEW: Watermark state for compatibility with VirtualizedAgreementList
   const [fileWatermarkStates, setFileWatermarkStates] = useState<Map<string, boolean>>(new Map());
 
-  // ✅ NEW: Placeholder handler for watermark toggle (feature not used in this view)
   const handleWatermarkToggle = useCallback((fileId: string, checked: boolean) => {
     setFileWatermarkStates(prev => {
       const newMap = new Map(prev);
@@ -130,22 +116,18 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     });
   }, []);
 
-  // ✅ NEW: Placeholder handler for add file (feature not used in this view)
   const handleAddFile = useCallback((group: SavedFileGroup) => {
     console.log('Add file not implemented in SavedFilesGrouped');
   }, []);
 
-  // ✅ NEW: Placeholder handler for agreement Zoho upload (feature not used in this view)
   const handleAgreementZohoUpload = useCallback((group: SavedFileGroup) => {
     console.log('Agreement Zoho upload not implemented in SavedFilesGrouped');
   }, []);
 
-  // ✅ NEW: Placeholder handler for date change (feature not used in this view)
   const handleDateChange = useCallback(async (agreementId: string, newDate: string) => {
     console.log('Date change not implemented in SavedFilesGrouped');
   }, []);
 
-  // ✅ FIXED: Wrapper for handleStatusUpdate to match VirtualizedAgreementList signature
   const handleStatusChange = useCallback((file: SavedFileListItem, newStatus: string) => {
     handleStatusUpdate(file.id, newStatus, file.fileType);
   }, []);
@@ -155,17 +137,12 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  // Fetch grouped files
-  // ✅ OPTIMIZED: Single API call with duplicate prevention
-  // Fetch grouped files
   const fetchGroups = useCallback(async (page = 1, search = "") => {
-    // ✅ CRITICAL FIX: Check flag AND loading state to prevent race conditions
     if (isFetchingRef.current) {
       console.log('⏭️ [SAVED-FILES-GROUPED] Skipping duplicate call - already fetching or loading');
       return;
     }
 
-    // Set flag immediately (synchronous) before any async operations
     isFetchingRef.current = true;
 
     setLoading(true);
@@ -174,12 +151,11 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     try {
       console.log(`📁 [SAVED-FILES-GROUPED] Fetching items - page ${page} with search: "${search}"`);
 
-      // ✅ OPTIMIZED: Single API call - backend returns all agreements (with and without PDFs)
       const requestParams = {
         search: search.trim() || undefined,
         includeLogs: true,
         includeDrafts: true,
-        isDeleted: false // ✅ Only fetch non-deleted items (saved files)
+        isDeleted: false
       };
 
       console.log(`📡 [SAVED-FILES-GROUPED] Request params:`, requestParams);
@@ -201,9 +177,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         } : null
       });
 
-      // ✅ REMOVED: Second API call to getCustomerHeadersSummary()
-      // Backend now returns draft agreements in the grouped response
-
       const allGroups = groupedResponse.groups;
 
       setGroups(allGroups);
@@ -211,7 +184,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
       setTotalFiles(allGroups.reduce((sum, group) => sum + group.fileCount, 0));
       setCurrentPage(page);
 
-      // ✅ NEW: Call onDataLoaded callback with loaded groups
       if (onDataLoaded) {
         onDataLoaded(allGroups);
       }
@@ -225,14 +197,12 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
       setTotalFiles(0);
     } finally {
       setLoading(false);
-      isFetchingRef.current = false;  // ✅ Reset fetching flag
+      isFetchingRef.current = false;
     }
-  }, [groupsPerPage]); // ✅ Dependencies for useCallback
+  }, [groupsPerPage]);
 
-  // ✅ CRITICAL FIX: Track if this is the first render of search effect to prevent duplicate call on page refresh
   const isFirstSearchRender = useRef(true);
 
-  // ✅ FIXED: Separate initial load from search to prevent duplicate calls
   useEffect(() => {
     if (hasInitiallyLoaded) {
       console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping duplicate initial load`);
@@ -243,7 +213,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     fetchGroups(1, queryRef.current);
 
     return () => {
-      // Use setTimeout to distinguish between React Strict Mode unmount and real navigation
       setTimeout(() => {
         hasInitiallyLoaded = false;
         isFirstSearchRender.current = true;
@@ -252,12 +221,9 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     };
   }, [fetchGroups]);
 
-  // Search handler - debounced, only runs when query changes after initial load
   useEffect(() => {
-    // Skip if the initial load hasn't happened yet
     if (!hasInitiallyLoaded) return;
 
-    // ✅ FIX: Skip on first render to prevent duplicate call when page refreshes
     if (isFirstSearchRender.current) {
       isFirstSearchRender.current = false;
       console.log(`⏭️ [SAVED-FILES-GROUPED] Skipping search effect on first render`);
@@ -270,10 +236,8 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
       fetchGroups(1, query);
     }, 500);
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // ✅ NEW: Selection helpers and computed values
   const selectedFileIds = useMemo(() =>
     Object.entries(selectedFiles)
       .filter(([, selected]) => selected)
@@ -289,7 +253,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
 
   const hasSelectedFiles = selectedFileIds.length > 0;
 
-  // ✅ NEW: Selection handlers
   const toggleFileSelection = (fileId: string) => {
     setSelectedFiles(prev => ({ ...prev, [fileId]: !prev[fileId] }));
   };
@@ -322,7 +285,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     setSelectedFiles({});
   };
 
-  // Check if group is partially or fully selected
   const getGroupSelectionState = (group: SavedFileGroup) => {
     const selectedCount = group.files.filter(file => selectedFiles[file.id]).length;
     if (selectedCount === 0) return 'none';
@@ -330,7 +292,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     return 'partial';
   };
 
-  // ✅ NEW: Bulk Zoho upload handler
   const handleBulkZohoUpload = () => {
     const filesWithPdf = selectedFileObjects.filter(file => file.hasPdf);
     if (filesWithPdf.length === 0) {
@@ -358,7 +319,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
 
   const isGroupExpanded = (groupId: string) => expandedGroups.has(groupId);
 
-  // ✅ OPTIMIZED: File action handlers with on-demand detailed data fetching
   const handleView = async (file: SavedFileListItem, watermark: boolean = false) => {
     try {
       if (file.fileType === "version_log") {
@@ -470,7 +430,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     setZohoUploadOpen(true);
   };
 
-  // ✅ NEW: View version change logs handler
   const handleViewLogs = async (file: SavedFileListItem) => {
     if (file.fileType !== 'version_pdf') {
       setToastMessage({
@@ -488,7 +447,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     try {
       console.log(`📋 [VIEW LOGS] Fetching logs for version: ${file.id}`);
 
-      // Fetch version change logs using the version ID
       const response = await fetch(`/api/pdf/version-changes/log/${file.id}`);
 
       if (!response.ok) {
@@ -499,7 +457,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
 
       if (data.success && data.log) {
         console.log(`✅ [VIEW LOGS] Found log for version ${file.id}:`, data.log);
-        setVersionLogs([data.log]); // Single log per version
+        setVersionLogs([data.log]); 
       } else {
         console.log(`ℹ️ [VIEW LOGS] No change log found for version ${file.id}`);
         setVersionLogs([]);
@@ -517,27 +475,24 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
 
   const handleEdit = async (file: SavedFileListItem, groupId?: string) => {
     try {
-      // ✅ Get groupId from file if not provided
       const agreementId = groupId || file.agreementId || file.id;
-      // ✅ FIXED: For version PDFs, edit the agreement directly (like handleEditAgreement)
       if (file.fileType === 'version_pdf') {
         console.log(`✏️ [EDIT VERSION] Editing agreement for version: ${file.title}, agreement: ${agreementId}`);
         await pdfApi.getCustomerHeaderForEdit(agreementId);
         navigate(`/edit/pdf/${agreementId}`, {
           state: {
             editing: true,
-            id: agreementId, // ✅ Use agreement ID, not version file ID
+            id: agreementId,
             returnPath: returnPath,
           },
         });
       } else {
-        // ✅ For other file types, use the original logic
         console.log(`✏️ [EDIT] Loading detailed data for file: ${file.id}, agreement: ${groupId}`);
         await pdfApi.getSavedFileDetails(file.id);
         navigate(`/edit/pdf/${groupId}`, {
           state: {
             editing: true,
-            id: groupId, // ✅ Use agreement ID, not file ID
+            id: groupId,
             returnPath: returnPath,
           },
         });
@@ -550,13 +505,10 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     }
   };
 
-  // ✅ OPTIMIZED: Edit Agreement handler for draft-only agreements with on-demand loading
   const handleEditAgreement = async (group: SavedFileGroup) => {
     try {
       console.log(`📝 [EDIT AGREEMENT] Loading detailed data for draft agreement: ${group.id}`);
 
-      // ✅ On-demand: Fetch detailed customer header data only when editing
-      // This loads the full form payload that was excluded from the lightweight initial load
       await pdfApi.getCustomerHeaderForEdit(group.id);
 
       navigate(`/edit/pdf/${group.id}`, {
@@ -574,25 +526,21 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     }
   };
 
-  // ✅ FIXED: Handle status update for files/agreements with correct API methods
   const handleStatusUpdate = async (fileId: string, newStatus: string, fileType?: string) => {
     setUpdatingStatus(prev => ({ ...prev, [fileId]: true }));
     try {
       console.log(`📊 [STATUS-UPDATE] Updating ${fileType || 'unknown'} file ${fileId} to status: ${newStatus}`);
 
-      // ✅ FIXED: Use correct API method based on file type
       if (fileType === 'version_pdf') {
         await pdfApi.updateVersionStatus(fileId, newStatus);
       } else if (fileType === 'attached_pdf') {
         await manualUploadApi.updateStatus(fileId, newStatus);
       } else {
-        // For main_pdf, agreements, or version_log, use document status API
         await pdfApi.updateDocumentStatus(fileId, newStatus);
       }
 
       console.log(`✅ [STATUS-UPDATE] Successfully updated status for ${fileId}`);
 
-      // Update local state
       setGroups(prevGroups =>
         prevGroups.map(group => {
           if (group.id === fileId) {
@@ -622,14 +570,12 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     }
   };
 
-  // ✅ NEW: Handle delete confirmation
   const handleDelete = (type: 'file' | 'folder', id: string, title: string, fileType?: string) => {
     setItemToDelete({ type, id, title, fileType });
     setDeleteConfirmText('');
     setDeleteConfirmOpen(true);
   };
 
-  // ✅ NEW: Confirm delete action
   const confirmDelete = async () => {
     if (!itemToDelete || !isDeleteConfirmed) {
       setToastMessage({
@@ -642,7 +588,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
     try {
       let result;
 
-      // Soft delete (move to trash)
       if (itemToDelete.type === 'folder') {
         result = await pdfApi.deleteAgreement(itemToDelete.id);
       } else {
@@ -661,7 +606,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
           type: "success"
         });
 
-        // Refresh the list after deletion
         await fetchGroups(currentPage, query);
       } else {
         setToastMessage({
@@ -690,7 +634,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
           />
         </div>
 
-        {/* Bulk actions toolbar */}
         <div className="sf__actions">
           {hasSelectedFiles && (
             <>
@@ -742,7 +685,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
       </div>
 
       <div className="sf__groups">
-        {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
         {loading && (
           <>
             {Array.from({ length: 5 }).map((_, idx) => (
@@ -759,7 +701,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* Checkbox skeleton */}
                   <div style={{
                     width: '16px',
                     height: '16px',
@@ -767,7 +708,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                     borderRadius: '4px'
                   }} />
 
-                  {/* Arrow skeleton */}
                   <div style={{
                     width: '14px',
                     height: '14px',
@@ -775,7 +715,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                     borderRadius: '4px'
                   }} />
 
-                  {/* Folder icon skeleton */}
                   <div style={{
                     width: '18px',
                     height: '18px',
@@ -783,7 +722,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                     borderRadius: '4px'
                   }} />
 
-                  {/* Title skeleton */}
                   <div style={{ flex: 1 }}>
                     <div style={{
                       height: '16px',
@@ -800,7 +738,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                     }} />
                   </div>
 
-                  {/* Action buttons skeleton */}
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <div style={{
                       width: '70px',
@@ -827,7 +764,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
           </div>
         )}
 
-        {/* ✅ OPTIMIZED: Direct rendering with memoized components - no virtual scrolling complexity */}
         {!loading && !error && groups.map((group) => {
           const isExpanded = expandedGroups.has(group.id);
           const selectionState = getGroupSelectionState(group);
@@ -859,7 +795,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
               onStatusChange={handleStatusChange}
               onWatermarkToggle={handleWatermarkToggle}
               onRestore={(type, id, title, fileType) => {
-                // No-op placeholder for compatibility - not used in normal view
                 console.log('Restore not available in normal view');
               }}
             />
@@ -867,7 +802,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         })}
       </div>
 
-      {/* Pagination */}
       <div className="sf__pager">
         <div className="sf__page-info">
           Showing {Math.min((currentPage - 1) * groupsPerPage + 1, totalGroups)}-{Math.min(currentPage * groupsPerPage, totalGroups)} of {totalGroups} agreements
@@ -882,8 +816,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         />
       )}
 
-      {/* Email Composer Modal */}
-        <EmailComposer
+      <EmailComposer
           isOpen={emailComposerOpen}
           onClose={() => setEmailComposerOpen(false)}
           onSend={async (emailData: EmailData) => {
@@ -916,7 +849,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         userEmail=""
       />
 
-      {/* Zoho Upload Modal */}
       {zohoUploadOpen && currentZohoFile && (
       <ZohoUpload
         agreementId={currentZohoFile.agreementId || currentZohoFile.id}
@@ -943,7 +875,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         />
       )}
 
-      {/* ✅ NEW: Version Change Logs Modal */}
       {logsModalOpen && currentLogsFile && (
         <div style={{
           position: 'fixed',
@@ -1044,7 +975,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                 marginBottom: '16px',
                 overflow: 'hidden'
               }}>
-                {/* Log Header */}
                 <div style={{
                   background: '#f9fafb',
                   padding: '16px',
@@ -1091,7 +1021,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                     </div>
                   </div>
 
-                  {/* Log Metadata */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -1141,7 +1070,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                   </div>
                 </div>
 
-                {/* Changes List */}
                 {log.changes && log.changes.length > 0 && (
                   <div style={{ padding: '16px' }}>
                     <div style={{
@@ -1222,7 +1150,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         </div>
       )}
 
-      {/* ✅ NEW: Bulk Zoho Upload Modal */}
       {bulkZohoUploadOpen && selectedFilesForBulkUpload.length > 0 && (
         <div style={{
           position: 'fixed',
@@ -1324,8 +1251,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                 }}
                 onClick={async () => {
                   try {
-                    // TODO: Implement actual bulk upload logic
-                    // For now, just show success message
                     setBulkZohoUploadOpen(false);
                     setSelectedFilesForBulkUpload([]);
                     clearAllSelections();
@@ -1335,7 +1260,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                       type: "success"
                     });
 
-                    // Refresh the data
                     await fetchGroups(currentPage, query);
                   } catch (error) {
                     setToastMessage({
@@ -1353,7 +1277,6 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
         </div>
       )}
 
-      {/* ✅ NEW: Delete Confirmation Modal */}
       {deleteConfirmOpen && itemToDelete && (
         <div style={{
           position: 'fixed',

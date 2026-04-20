@@ -1,5 +1,3 @@
-// src/components/admin/AdminLogin.tsx
-
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAdminAuth } from "../../backendservice/hooks";
@@ -15,12 +13,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState("");
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
 
-  // ✅ NEW: Show session expired message if redirected from auth guard
   useEffect(() => {
     const state = location.state as { message?: string; reason?: string } | undefined;
     if (state?.message && state?.reason === 'unauthorized') {
       setSessionMessage(state.message);
-      // Clear message after 10 seconds
       const timer = setTimeout(() => setSessionMessage(null), 10000);
       return () => clearTimeout(timer);
     }

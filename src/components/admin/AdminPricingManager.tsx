@@ -1,12 +1,9 @@
-// src/components/admin/AdminPricingManager.tsx
-
 import React, { useState } from "react";
 import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import { ServicePricingEditor } from "./ServicePricingEditor";
 import "./AdminPricingManager.css";
 
-// Import all service forms
 import { SanicleanForm } from "../services/saniclean/SanicleanForm";
 import { SanipodForm } from "../services/sanipod/SanipodForm";
 import { SaniscrubForm } from "../services/saniscrub/SaniscrubForm";
@@ -89,7 +86,6 @@ export const AdminPricingManager: React.FC = () => {
     return <div className="apm-loading" style={styles.loading}>Loading pricing data...</div>;
   }
 
-  // LIST VIEW - Show all services
   if (viewMode === "list") {
     return (
       <div className="apm-container" style={styles.container}>
@@ -149,7 +145,6 @@ export const AdminPricingManager: React.FC = () => {
     );
   }
 
-  // SERVICE VIEW - Show service form
   if (viewMode === "service" && selectedService) {
     return (
       <div className="apm-container" style={styles.container}>
@@ -204,7 +199,6 @@ export const AdminPricingManager: React.FC = () => {
     );
   }
 
-  // EDIT CONFIG VIEW
   if (viewMode === "editConfig" && selectedService) {
     return (
       <ServicePricingEditor
@@ -215,7 +209,6 @@ export const AdminPricingManager: React.FC = () => {
     );
   }
 
-  // PRODUCTS VIEW
   if (viewMode === "products" && catalog) {
     return (
       <div className="apm-container" style={styles.container}>

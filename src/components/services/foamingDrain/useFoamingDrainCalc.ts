@@ -1,4 +1,4 @@
-// src/features/services/foamingDrain/useFoamingDrainCalc.ts
+
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { FOAMING_DRAIN_CONFIG as cfg } from "./foamingDrainConfig";
 import type {
@@ -14,7 +14,7 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-// ✅ Helper function to transform backend frequencyMetadata to frontend format
+
 function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['frequencyMetadata'] | undefined) {
   if (!backendMeta) {
     console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
@@ -23,10 +23,10 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
 
   console.log('🔧 [Foaming Drain] Transforming backend frequencyMetadata:', backendMeta);
 
-  // Transform backend structure to frontend billingConversions format
+
   const transformedBilling: any = {};
 
-  // Handle weekly and biweekly with their special multipliers
+
   if (backendMeta.weekly) {
     transformedBilling.weekly = {
       monthlyMultiplier: backendMeta.weekly.monthlyRecurringMultiplier,
@@ -41,14 +41,14 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
     };
   }
 
-  // Handle cycle-based frequencies (monthly, bimonthly, quarterly, biannual, annual)
+
   const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
 
   for (const freq of cycleBased) {
     const backendFreqData = backendMeta[freq];
     if (backendFreqData?.cycleMonths) {
       const cycleMonths = backendFreqData.cycleMonths;
-      const monthlyMultiplier = 1 / cycleMonths; // e.g., bimonthly: 1/2=0.5, quarterly: 1/3=0.333
+      const monthlyMultiplier = 1 / cycleMonths; 
 
       transformedBilling[freq] = {
         cycleMonths,
@@ -57,17 +57,17 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
     }
   }
 
-  // Merge with fallback config
+
   const finalBilling = {
-    ...cfg.billingConversions, // Start with fallback values
-    ...transformedBilling,     // Override with backend values
+    ...cfg.billingConversions, 
+    ...transformedBilling,     
   };
 
   console.log('✅ [Foaming Drain] Transformed frequencyMetadata to billingConversions:', finalBilling);
   return finalBilling;
 }
 
-// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure
+
 interface BackendFoamingDrainConfig {
   standardPricing: {
     standardDrainRate: number;
@@ -131,7 +131,7 @@ const DEFAULT_FOAMING_DRAIN_FORM_STATE: FoamingDrainFormState = {
   needsPlumbing: false,
 
   frequency: DEFAULT_FREQUENCY,
-  // ✅ NEW: Default install frequency to weekly
+
   installFrequency: "weekly" as const,
   facilityCondition: "normal",
   location: "standard",
@@ -146,7 +146,7 @@ const DEFAULT_FOAMING_DRAIN_FORM_STATE: FoamingDrainFormState = {
   contractMonths: cfg.contract.defaultMonths,
   notes: "",
 
-  // Editable pricing rates from config (will be overridden by backend)
+
   standardDrainRate: cfg.standardDrainRate,
   altBaseCharge: cfg.altBaseCharge,
   altExtraPerDrain: cfg.altExtraPerDrain,
@@ -171,10 +171,10 @@ function round2(n: number): number {
 }
 
 export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>, customFields?: any[]) {
-  // Get services context for fallback pricing data AND global contract months
+
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -190,7 +190,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     return total;
   }, [customFields]);
 
-  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -207,14 +207,14 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   }, [customFields]);
 
   const [state, setState] = useState<FoamingDrainFormState>(() => {
-    // ✅ Calculate if service is initially active (has drains)
+
     const initialDrainCount = (initialData?.standardDrainCount || 0) +
                                (initialData?.installDrainCount || 0) +
                                (initialData?.filthyDrainCount || 0) +
                                (initialData?.greaseTrapCount || 0) +
                                (initialData?.greenDrainCount || 0) +
                                (initialData?.plumbingDrainCount || 0);
-    // ✅ FIXED: Always use global contract months if available (not just when initially active)
+
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
       : servicesContext?.globalContractMonths
@@ -227,7 +227,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       hasInitialValue: !!initialData?.contractMonths
     });
 
-    // ✅ FIXED: Extract frequency and installFrequency values from saved object format
+
     const frequencyValue = typeof initialData?.frequency === 'object' && initialData.frequency !== null && 'frequencyKey' in initialData.frequency
       ? (initialData.frequency as any).frequencyKey
       : initialData?.frequency;
@@ -241,34 +241,34 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       ...initialData,
       serviceId: "foamingDrain",
       contractMonths: defaultContractMonths,
-      // ✅ Override with extracted string values
+
       ...(frequencyValue && { frequency: frequencyValue }),
       ...(installFrequencyValue && { installFrequency: installFrequencyValue as "weekly" | "bimonthly" }),
     };
   });
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendFoamingDrainConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Add refs for tracking baseline values and edit mode
+
   const isEditMode = useRef(!!initialData);
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-  // Helper function to update state with config data from the actual backend structure
+
   const updateStateWithConfig = (config: BackendFoamingDrainConfig, forceUpdate: boolean = false) => {
-    // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
-    // Only update on manual refresh (when user explicitly clicks refresh button)
+
+
     if (initialData && !forceUpdate) {
       console.log('📋 [FOAMING-DRAIN] Edit mode: Skipping form update to preserve loaded values');
-      return; // Don't overwrite loaded values in edit mode
+      return; 
     }
 
     console.log('📋 [FOAMING-DRAIN] Updating state with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
     setState((prev) => ({
       ...prev,
-      // ✅ Extract from nested backend structure
+
       standardDrainRate: config.standardPricing?.standardDrainRate ?? prev.standardDrainRate,
       altBaseCharge: config.standardPricing?.alternateBaseCharge ?? prev.altBaseCharge,
       altExtraPerDrain: config.standardPricing?.alternateExtraPerDrain ?? prev.altExtraPerDrain,
@@ -283,11 +283,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }));
   };
 
-  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("foamingDrain");
         if (backendData?.config) {
@@ -296,12 +296,12 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           setBackendConfig(config);
           updateStateWithConfig(config, forceRefresh);
 
-          // ✅ Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
             setState(prev => ({
               ...prev,
-              // Clear custom RATE overrides
+
               customRatePerDrain: undefined,
               customAltBaseCharge: undefined,
               customAltExtraPerDrain: undefined,
@@ -313,7 +313,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
               customGreenInstallRate: undefined,
               customPlumbingAddonRate: undefined,
               customFilthyMultiplier: undefined,
-              // Clear custom TOTAL overrides
+
               customWeeklyService: undefined,
               customInstallationTotal: undefined,
               customMonthlyRecurring: undefined,
@@ -342,7 +342,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     } catch (error) {
       console.error('❌ Failed to fetch Foaming Drain config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("foamingDrain");
         if (fallbackConfig?.config) {
@@ -351,12 +351,12 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           setBackendConfig(config);
           updateStateWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
             setState(prev => ({
               ...prev,
-              // Clear custom RATE overrides
+
               customRatePerDrain: undefined,
               customAltBaseCharge: undefined,
               customAltExtraPerDrain: undefined,
@@ -368,7 +368,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
               customGreenInstallRate: undefined,
               customPlumbingAddonRate: undefined,
               customFilthyMultiplier: undefined,
-              // Clear custom TOTAL overrides
+
               customWeeklyService: undefined,
               customInstallationTotal: undefined,
               customMonthlyRecurring: undefined,
@@ -387,23 +387,23 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }
   };
 
-  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
+
   useEffect(() => {
-    // Always fetch backend config to enable override detection in edit mode
+
     console.log('📋 [FOAMING-DRAIN-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
-    fetchPricing(false); // false = don't force update in edit mode
+    fetchPricing(false); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
+
   useEffect(() => {
     if (!backendConfig) return;
 
-    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
 
-      // Baseline = loaded/saved value (edit mode) OR backend default (new document) OR current state (fallback)
+
       baselineValues.current = {
         standardDrainRate: initialData?.standardDrainRate ?? backendConfig.standardPricing?.standardDrainRate ?? state.standardDrainRate,
         altBaseCharge: initialData?.altBaseCharge ?? backendConfig.standardPricing?.alternateBaseCharge ?? state.altBaseCharge,
@@ -433,11 +433,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+
       if (initialData) {
         console.log('🔍 [FOAMING-DRAIN-PRICING] Detecting price overrides for yellow highlighting...');
 
-        // ✅ FIXED: Compare ALL rate fields against backend defaults (not just 3)
+
         const overrides = {
           customRatePerDrain: (initialData.standardDrainRate !== undefined &&
                                initialData.standardDrainRate !== backendConfig.standardPricing?.standardDrainRate)
@@ -484,13 +484,13 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
                                    ? initialData.filthyMultiplier : undefined,
         };
 
-        // Only set overrides that are actually different
+
         const hasAnyOverrides = Object.values(overrides).some(v => v !== undefined);
 
         if (hasAnyOverrides) {
           setState(prev => ({
             ...prev,
-            ...overrides, // Spread all override fields
+            ...overrides, 
           }));
 
           console.log('✅ [FOAMING-DRAIN-PRICING] Set custom override fields for yellow highlighting:',
@@ -505,15 +505,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }
   }, [backendConfig, initialData]);
 
-  // Also fetch when services context becomes available (for fallback pricing)
+
   useEffect(() => {
-    // Fetch from context if backend config not loaded yet (even in edit mode, for override detection)
+
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Sync global contract months to service (unless service has explicitly overridden it)
+
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef(() => {
     const drainCount = state.standardDrainCount + state.installDrainCount +
@@ -531,7 +531,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const justBecameActive = isServiceActive && !wasActive;
 
     if (justBecameActive) {
-      // Service just became active - adopt global contract months
+
       console.log(`📅 [FOAMING-DRAIN-CONTRACT] Service just became active, adopting global contract months`);
       if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
         const globalMonths = servicesContext.globalContractMonths;
@@ -539,7 +539,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         setState(prev => ({ ...prev, contractMonths: globalMonths }));
       }
     } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
-      // Service is already active - sync with global if it changes
+
       const globalMonths = servicesContext.globalContractMonths;
       if (state.contractMonths !== globalMonths) {
         console.log(`📅 [FOAMING-DRAIN-CONTRACT] Syncing global contract months: ${globalMonths}`);
@@ -547,20 +547,20 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       }
     }
 
-    // Update the ref for next render
+
     wasActiveRef.current = () => isServiceActive;
   }, [servicesContext?.globalContractMonths, state.contractMonths,
       state.standardDrainCount, state.installDrainCount, state.filthyDrainCount,
       state.greaseTrapCount, state.greenDrainCount, state.plumbingDrainCount, servicesContext]);
 
-  // ✅ Track when user manually changes contract months (this sets the override flag)
+
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setState(prev => ({ ...prev, contractMonths: months }));
     console.log(`📅 [FOAMING-DRAIN-CONTRACT] User override: ${months} months`);
   }, []);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -587,8 +587,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   }, [state.standardDrainCount, state.frequency]);
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Map backend config to expected format with proper fallbacks
+
+
     const activeConfig = {
       standardDrainRate: backendConfig?.standardPricing?.standardDrainRate ?? cfg.standardDrainRate,
       altBaseCharge: backendConfig?.standardPricing?.alternateBaseCharge ?? cfg.altBaseCharge,
@@ -616,7 +616,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       contract: backendConfig?.contract ?? cfg.contract,
       defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
       allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
-      // ✅ NEW: Transform backend frequencyMetadata
+
       billingConversions: transformBackendFrequencyMeta(backendConfig?.frequencyMetadata),
     };
 
@@ -630,7 +630,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       });
     }
 
-    // ---------- 1) Normalize inputs ----------
+
     const standardDrains = Math.max(0, Number(state.standardDrainCount) || 0);
     const installRequested = Math.max(
       0,
@@ -654,32 +654,32 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       state.facilityCondition || "normal";
 
     const isWeekly = frequency === "weekly";
-    const isVolume = standardDrains >= activeConfig.volumePricing.minimumDrains;  // ✅ FROM BACKEND
+    const isVolume = standardDrains >= activeConfig.volumePricing.minimumDrains;  
     const canUseInstallProgram =
       isVolume && !state.useBigAccountTenWeekly && !state.isAllInclusive;
 
-    // Install-level drains: only when volume program is valid
+
     const installDrains = canUseInstallProgram
       ? Math.min(installRequested, standardDrains)
       : 0;
 
     const normalStandardDrains = Math.max(standardDrains - installDrains, 0);
 
-    // When all-inclusive, standard drains are included for free
+
     const standardDrainsActive = state.isAllInclusive ? 0 : normalStandardDrains;
 
-    // Filthy drain count is subset of standard drains
+
     let filthyDrains = 0;
     if (condition === "filthy" && standardDrainsActive > 0) {
       if (filthyRequested > 0) {
         filthyDrains = Math.min(filthyRequested, standardDrainsActive);
       } else {
-        // 0 means "all" in this UI when filthy mode is on
+
         filthyDrains = standardDrainsActive;
       }
     }
 
-    // ========== EFFECTIVE VALUES (use custom overrides if set, otherwise base values) ==========
+
     const effectiveStandardDrainRate = state.customRatePerDrain ?? state.standardDrainRate;
     const effectiveAltBaseCharge = state.customAltBaseCharge ?? state.altBaseCharge;
     const effectiveAltExtraPerDrain = state.customAltExtraPerDrain ?? state.altExtraPerDrain;
@@ -706,11 +706,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       effectiveFilthyMultiplier,
     });
 
-    // ---------- 2) Standard drain pricing ----------
-    const tenTotal = standardDrainsActive * effectiveStandardDrainRate;  // ✅ USE EFFECTIVE VALUE
+
+    const tenTotal = standardDrainsActive * effectiveStandardDrainRate;  
     const altTotal =
       standardDrainsActive > 0
-        ? effectiveAltBaseCharge + effectiveAltExtraPerDrain * standardDrainsActive  // ✅ USE EFFECTIVE VALUES
+        ? effectiveAltBaseCharge + effectiveAltExtraPerDrain * standardDrainsActive  
         : 0;
 
     let usedSmallAlt = false;
@@ -719,15 +719,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     if (standardDrainsActive > 0 && !state.isAllInclusive) {
       if (state.useSmallAltPricingWeekly) {
-        // Force 20 + 4$/drain
+
         useAltPricing = true;
         usedSmallAlt = true;
       } else if (state.useBigAccountTenWeekly) {
-        // Force $10/drain
+
         useAltPricing = false;
         usedBigAccountAlt = true;
       } else {
-        // Auto choose cheaper between 10$/drain vs 20+4$/drain
+
         if (altTotal > 0 && altTotal < tenTotal) {
           useAltPricing = true;
           usedSmallAlt = true;
@@ -743,39 +743,35 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       ? altTotal
       : tenTotal;
 
-    // ---------- 3) Install-level drains (10+ program) ----------
-    // IMPORTANT: drains are always serviced at their install frequency.
-    // The Install Frequency selector is used to decide the install-program rate:
-    //   Weekly  → $20 / install drain
-    //   Monthly → $10 / install drain (treated as bimonthly rate for compatibility)
+
     let weeklyInstallDrains = 0;
     let volumePricingApplied = false;
 
     if (installDrains > 0 && canUseInstallProgram) {
       volumePricingApplied = true;
 
-      // ✅ UPDATED: Use correct backend pricing structure for install frequencies
+
       const perDrainRate =
         state.installFrequency === "bimonthly"
-          ? effectiveVolumeBimonthlyRate  // ✅ USE EFFECTIVE VALUE (custom override if set)
-          : effectiveVolumeWeeklyRate;    // ✅ USE EFFECTIVE VALUE (custom override if set)
+          ? effectiveVolumeBimonthlyRate  
+          : effectiveVolumeWeeklyRate;    
 
       weeklyInstallDrains = perDrainRate * installDrains;
     }
 
-    // ---------- 4) Plumbing add-on ----------
+
     const weeklyPlumbing =
       state.needsPlumbing && plumbingDrains > 0
-        ? plumbingDrains * effectivePlumbingAddonRate  // ✅ USE EFFECTIVE VALUE
+        ? plumbingDrains * effectivePlumbingAddonRate  
         : 0;
 
-    // ---------- 5) Grease & green weekly service ----------
-    const weeklyGreaseTraps =
-      greaseTraps > 0 ? greaseTraps * effectiveGreaseWeeklyRate : 0;  // ✅ USE EFFECTIVE VALUE
-    const weeklyGreenDrains =
-      greenDrains > 0 ? greenDrains * effectiveGreenWeeklyRate : 0;  // ✅ USE EFFECTIVE VALUE
 
-    // ---------- 6) Total weekly service (no trip) ----------
+    const weeklyGreaseTraps =
+      greaseTraps > 0 ? greaseTraps * effectiveGreaseWeeklyRate : 0;  
+    const weeklyGreenDrains =
+      greenDrains > 0 ? greenDrains * effectiveGreenWeeklyRate : 0;  
+
+
     const weeklyServiceRaw =
       weeklyStandardDrains +
       weeklyInstallDrains +
@@ -783,22 +779,18 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyGreaseTraps +
       weeklyGreenDrains;
 
-    // ✅ NEW: Apply minimum charge per visit from backend ONLY when there's actual service
-    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? 50; // Default $50
+
+    const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? 50; 
     const weeklyServiceBeforeMin = round2(weeklyServiceRaw);
     const weeklyService = weeklyServiceRaw > 0 ? (state.applyMinimum !== false ? Math.max(weeklyServiceBeforeMin, minimumChargePerVisit) : weeklyServiceBeforeMin) : 0;
-    const tripCharge = 0; // Trip charge removed from math
-    const weeklyTotal = weeklyService; // (service only)
+    const tripCharge = 0; 
+    const weeklyTotal = weeklyService; 
 
-    // ---------- 7) One-time installation ----------
 
-    // 7a) Filthy standard drains installation
-    //     FilthyInstall = (weekly cost for filthy drains) × filthyMultiplier (usually 3)
-    //     ✅ WAIVED when "$10/drain for all standard drains" checkbox is enabled
     let filthyInstallOneTime = 0;
 
     if (condition === "filthy" && standardDrainsActive > 0 && !state.useBigAccountTenWeekly) {
-      // How many drains are filthy?
+
       const filthyDrainCount =
         filthyDrains > 0 && filthyDrains <= standardDrainsActive
           ? filthyDrains
@@ -807,73 +799,61 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       let weeklyFilthyCost = 0;
 
       if (useAltPricing) {
-        // Alt weekly for those filthy drains: $20 + $4/drain
+
         weeklyFilthyCost =
-          effectiveAltBaseCharge + effectiveAltExtraPerDrain * filthyDrainCount;  // ✅ USE EFFECTIVE VALUES
+          effectiveAltBaseCharge + effectiveAltExtraPerDrain * filthyDrainCount;  
       } else {
-        // Standard pricing: standardDrainRate × filthyDrains
-        weeklyFilthyCost = effectiveStandardDrainRate * filthyDrainCount;  // ✅ USE EFFECTIVE VALUE
+
+        weeklyFilthyCost = effectiveStandardDrainRate * filthyDrainCount;  
       }
 
       filthyInstallOneTime =
-        weeklyFilthyCost * effectiveFilthyMultiplier; // ✅ USE EFFECTIVE VALUE (custom override if set, usually ×3)
+        weeklyFilthyCost * effectiveFilthyMultiplier; 
     }
 
-    // 7b) Grease traps install – $300 × #traps (one-time)
+
     const greaseInstallOneTime =
       state.chargeGreaseTrapInstall && greaseTraps > 0
-        ? effectiveGreaseInstallRate * greaseTraps  // ✅ USE EFFECTIVE VALUE
+        ? effectiveGreaseInstallRate * greaseTraps  
         : 0;
 
-    // 7c) Green drains install – $100 × #drains (one-time)
+
     const greenInstallOneTime =
-      greenDrains > 0 ? effectiveGreenInstallRate * greenDrains : 0;  // ✅ USE EFFECTIVE VALUE
+      greenDrains > 0 ? effectiveGreenInstallRate * greenDrains : 0;  
 
     const installationRaw =
       filthyInstallOneTime + greaseInstallOneTime + greenInstallOneTime;
     const installation = round2(installationRaw);
 
-    // ✅ Apply custom installation override early for dependent calculations
+
     const effectiveInstallation = state.customInstallationTotal ?? installation;
 
-    // ---------- 7d) FIRST VISIT LOGIC ----------
-    // ✅ FIXED: First visit = Installation + Services that don't have installation fees
-    // Services WITH installation fees (being installed on first visit):
-    //   - Filthy standard drains (if filthy condition)
-    //   - Grease traps (if grease install is enabled)
-    //   - Green drains (always have install fee)
-    // Services WITHOUT installation fees (serviced on first visit):
-    //   - Install drains (recurring cost, no install fee)
-    //   - Plumbing (add-on service)
-    //   - Standard drains (if normal condition - no filthy install)
-    //   - Grease traps (if grease install is NOT enabled)
 
     let firstVisitServiceRaw = weeklyInstallDrains + weeklyPlumbing;
 
-    // Add standard drains if normal condition (no filthy install)
+
     if (condition === "normal") {
       firstVisitServiceRaw += weeklyStandardDrains;
     }
 
-    // Add grease traps if grease install is NOT enabled
+
     if (!state.chargeGreaseTrapInstall) {
       firstVisitServiceRaw += weeklyGreaseTraps;
     }
 
-    // Green drains ALWAYS have installation fee, so never add to first visit service
 
     const firstVisitService = round2(firstVisitServiceRaw);
     let firstVisitPrice = effectiveInstallation + firstVisitService;
     firstVisitPrice = round2(firstVisitPrice);
 
-    // ---------- 8) Monthly & contract logic ----------
+
     const contractMonths = clamp(
-      Number(state.contractMonths) || activeConfig.contract.defaultMonths,  // ✅ USE BACKEND
-      activeConfig.contract.minMonths,  // ✅ USE BACKEND
-      activeConfig.contract.maxMonths   // ✅ USE BACKEND
+      Number(state.contractMonths) || activeConfig.contract.defaultMonths,  
+      activeConfig.contract.minMonths,  
+      activeConfig.contract.maxMonths   
     );
 
-    // ✅ Get frequency multiplier from backend-transformed billing conversions
+
     const getFrequencyMultiplier = (freq: string) => {
       const normalized = freq.toLowerCase().replace(/\s+/g, '');
 
@@ -903,17 +883,16 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     const frequencyMultiplier = getFrequencyMultiplier(frequency);
 
-    // ✅ Apply custom override to per-visit price FIRST, before calculating monthly/contract
-    // ⚠️ CRITICAL: Always enforce minimum charge when there's actual service, even on custom overrides
+
     const customOrCalculated = state.customWeeklyService ?? weeklyService;
     const effectiveWeeklyService = weeklyServiceRaw > 0
       ? (state.applyMinimum !== false ? Math.max(customOrCalculated, minimumChargePerVisit) : customOrCalculated)
-      : customOrCalculated; // If no service, don't enforce minimum (should be 0)
+      : customOrCalculated; 
 
     let normalMonth = effectiveWeeklyService * frequencyMultiplier;
     let firstMonthPrice = 0;
 
-    // First month includes installation if present (check effective installation for custom overrides)
+
     if (effectiveInstallation > 0) {
       firstMonthPrice = firstVisitPrice + effectiveWeeklyService * Math.max(0, frequencyMultiplier - 1);
     } else {
@@ -923,28 +902,28 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     normalMonth = round2(normalMonth);
     firstMonthPrice = round2(firstMonthPrice);
 
-    // ✅ FIXED: Contract total calculation with proper bimonthly logic
+
     let contractTotalRaw = 0;
     const freqLower = frequency.toLowerCase();
 
     if (freqLower === "bimonthly") {
-      // ✅ CORRECTED: Bimonthly = every 2 months = 6 visits in 12 months
-      // When installation is present: Installation + 5 regular visits (not 6)
-      const totalVisitsIn12Months = 6; // 12 months / 2 months per visit = 6 visits
+
+
+      const totalVisitsIn12Months = 6; 
       const contractVisitsForTerm = Math.round((contractMonths / 12) * totalVisitsIn12Months);
 
       if (effectiveInstallation > 0) {
-        // First visit includes installation, remaining visits are regular service
+
         const remainingVisits = Math.max(contractVisitsForTerm - 1, 0);
         contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
         console.log(`🔧 [Foaming Drain Bimonthly Contract] Fixed calculation: first visit=$${firstVisitPrice.toFixed(2)}, remaining ${remainingVisits} visits × $${effectiveWeeklyService.toFixed(2)} = $${contractTotalRaw.toFixed(2)}`);
       } else {
-        // No installation: all visits are regular service
+
         contractTotalRaw = effectiveWeeklyService * contractVisitsForTerm;
         console.log(`🔧 [Foaming Drain Bimonthly Contract] No installation: ${contractVisitsForTerm} visits × $${effectiveWeeklyService.toFixed(2)} = $${contractTotalRaw.toFixed(2)}`);
       }
     } else if (freqLower === "quarterly") {
-      // Quarterly: visits = months / 3
+
       const quarterlyVisits = contractMonths / 3;
       const totalVisits = Math.round(quarterlyVisits);
 
@@ -955,7 +934,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         contractTotalRaw = effectiveWeeklyService * totalVisits;
       }
     } else if (freqLower === "biannual") {
-      // Bi-annual: visits = months / 6
+
       const biannualVisits = contractMonths / 6;
       const totalVisits = Math.round(biannualVisits);
 
@@ -966,7 +945,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         contractTotalRaw = effectiveWeeklyService * totalVisits;
       }
     } else if (freqLower === "annual") {
-      // Annual: visits = months / 12
+
       const annualVisits = contractMonths / 12;
       const totalVisits = Math.round(annualVisits);
 
@@ -977,13 +956,13 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         contractTotalRaw = effectiveWeeklyService * totalVisits;
       }
     } else {
-      // All other frequencies: FirstMonth + (Months − 1) × NormalMonth
+
       contractTotalRaw = firstMonthPrice + (contractMonths - 1) * normalMonth;
     }
 
     const contractTotal = round2(contractTotalRaw);
 
-    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
 
@@ -995,13 +974,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
-    // For compatibility with ServiceQuoteResult:
-    // - monthlyRecurring  → Normal recurring month (NormalMonth)
-    // - annualRecurring   → TOTAL CONTRACT for contractMonths
-    const calculatedMonthlyRecurring = normalMonth;
-    const calculatedContractTotal = contractTotalWithCustomFields;  // ✅ UPDATED: Use contract total with custom fields
 
-    // ---------- 9) Breakdown ----------
+    const calculatedMonthlyRecurring = normalMonth;
+    const calculatedContractTotal = contractTotalWithCustomFields;  
+
+
     const breakdown: FoamingDrainBreakdown = {
       usedSmallAlt,
       usedBigAccountAlt,
@@ -1017,10 +994,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       greaseInstallOneTime: round2(greaseInstallOneTime),
       greenInstallOneTime: round2(greenInstallOneTime),
 
-      tripCharge, // always 0 in new rules
+      tripCharge, 
     };
 
-    // ---------- 10) Build quote ----------
+
     const quote: FoamingDrainQuoteResult = {
       serviceId: "foamingDrain",
 
@@ -1033,9 +1010,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       isAllInclusive: state.isAllInclusive,
       chargeGreaseTrapInstall: state.chargeGreaseTrapInstall,
 
-      // ✅ Apply custom overrides in cascade:
-      // 1. Per-visit can be customized
-      // 2. Monthly/Contract are calculated from custom per-visit (if set), but can be further overridden
+
       weeklyService: effectiveWeeklyService,
       weeklyTotal: effectiveWeeklyService,
       monthlyRecurring: state.customMonthlyRecurring ?? calculatedMonthlyRecurring,
@@ -1051,10 +1026,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       breakdown,
 
-      // ✅ NEW: Export minimum charge for redline/greenline indicator
+
       minimumChargePerVisit,
 
-      // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+
       originalContractTotal: (() => {
         if (!weeklyServiceRaw) return 0;
         const baselineStandardDrains = standardDrainsActive * activeConfig.standardDrainRate;
@@ -1094,7 +1069,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     return quote;
   }, [
-    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    backendConfig,  
     state.standardDrainCount,
     state.installDrainCount,
     state.filthyDrainCount,
@@ -1103,7 +1078,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.plumbingDrainCount,
     state.needsPlumbing,
     state.frequency,
-    state.installFrequency, // ✅ MISSING: Re-calculate when install frequency changes!
+    state.installFrequency, 
     state.facilityCondition,
     state.location,
     state.useSmallAltPricingWeekly,
@@ -1113,7 +1088,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.tripChargeOverride,
     state.contractMonths,
     state.notes,
-    // ✅ NEW: Editable rate fields (from backend)
+
     state.standardDrainRate,
     state.altBaseCharge,
     state.altExtraPerDrain,
@@ -1125,7 +1100,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.greenInstallRate,
     state.plumbingAddonRate,
     state.filthyMultiplier,
-    // ✅ CRITICAL: Custom RATE override fields (must be in dependencies for calculations to update!)
+
     state.customRatePerDrain,
     state.customAltBaseCharge,
     state.customAltExtraPerDrain,
@@ -1137,15 +1112,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     state.customGreenInstallRate,
     state.customPlumbingAddonRate,
     state.customFilthyMultiplier,
-    // ✅ Custom TOTAL override fields
+
     state.customWeeklyService,
     state.customInstallationTotal,
     state.customMonthlyRecurring,
     state.customFirstMonthPrice,
     state.customContractTotal,
-    // ✅ NEW: Re-calculate when applyMinimum changes
+
     state.applyMinimum,
-    // ✅ NEW: Re-calculate when custom fields change
+
     calcFieldsTotal,
     dollarFieldsTotal,
   ]);
@@ -1155,7 +1130,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     value: FoamingDrainFormState[K]
   ) => {
     setState((prev) => {
-      // ✅ Capture original value before update for price override logging
+
       const originalValue = prev[key];
 
       const next = {
@@ -1163,8 +1138,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         [key]: value,
       };
 
-      // ✅ AUTO-CLEAR CUSTOM OVERRIDES when base inputs change
-      // If user changes a base input (like drain counts), clear related custom totals
+
       if (
         key === 'standardDrainCount' ||
         key === 'installDrainCount' ||
@@ -1181,7 +1155,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         key === 'needsPlumbing' ||
         key === 'contractMonths'
       ) {
-        // Clear all custom overrides when base inputs change
+
         next.customStandardDrainTotal = undefined;
         next.customGreaseTrapTotal = undefined;
         next.customGreenDrainTotal = undefined;
@@ -1196,7 +1170,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customContractTotal = undefined;
       }
 
-      // Also clear custom overrides when pricing rates change
+
       if (
         key === 'standardDrainRate' ||
         key === 'altBaseCharge' ||
@@ -1210,7 +1184,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         key === 'plumbingAddonRate' ||
         key === 'filthyMultiplier'
       ) {
-        // Clear custom overrides when rates change
+
         next.customStandardDrainTotal = undefined;
         next.customGreaseTrapTotal = undefined;
         next.customGreenDrainTotal = undefined;
@@ -1225,15 +1199,14 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customContractTotal = undefined;
       }
 
-      // ✅ FIXED: Log ALL price changes for numeric pricing fields
-      // Log changes to BASE editable fields (these are what the user actually types)
+
       const baseEditableFields = [
         'standardDrainRate', 'altBaseCharge', 'altExtraPerDrain',
         'volumeWeeklyRate', 'volumeBimonthlyRate', 'greaseWeeklyRate', 'greaseInstallRate',
         'greenWeeklyRate', 'greenInstallRate', 'plumbingAddonRate', 'filthyMultiplier'
       ];
 
-      // ✅ CRITICAL: Log changes to CUSTOM RATE OVERRIDE fields (set by user editing in UI)
+
       const customRateOverrideFields = [
         'customRatePerDrain', 'customAltBaseCharge', 'customAltExtraPerDrain',
         'customVolumeWeeklyRate', 'customVolumeBimonthlyRate',
@@ -1242,7 +1215,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         'customPlumbingAddonRate', 'customFilthyMultiplier'
       ];
 
-      // Log changes to CUSTOM TOTAL override fields (set programmatically)
+
       const customTotalOverrideFields = [
         'customWeeklyService', 'customInstallationTotal', 'customMonthlyRecurring',
         'customFirstMonthPrice', 'customContractTotal'
@@ -1250,7 +1223,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       const allPricingFields = [...baseEditableFields, ...customRateOverrideFields, ...customTotalOverrideFields];
 
-      // ✅ EXPLICIT: Map custom field names to base field names for baseline lookup
+
       const customToBaseFieldMap: Record<string, string> = {
         'customRatePerDrain': 'standardDrainRate',
         'customAltBaseCharge': 'altBaseCharge',
@@ -1274,7 +1247,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         const newValue = value as number | undefined;
         const keyStr = key as string;
 
-        // ✅ FIXED: Always use base field name for baseline lookup
+
         const baseFieldForLookup = customToBaseFieldMap[keyStr] || keyStr;
         const baselineValue = baselineValues.current[baseFieldForLookup];
 
@@ -1285,9 +1258,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           isCustomField: keyStr.startsWith('custom'),
         });
 
-        // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
-        // This ensures Map replaces previous entry with updated value still comparing to baseline
-        // Example: First change 10→15 logs "10→15", second change 15→20 REPLACES with "10→20"
+
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
@@ -1311,15 +1282,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         }
       }
 
-      // ✅ NEW: Log form field changes using universal logger
+
       const allFormFields = [
-        // Quantity fields
+
         'drainsPerWeek', 'contractMonths',
-        // Selection fields
+
         'frequency', 'location', 'condition', 'rateTier'
       ];
 
-      // Log non-pricing field changes
+
       if (allFormFields.includes(key as string)) {
         logServiceFieldChanges(
           'foamingDrain',
@@ -1348,9 +1319,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     quote,
     updateField,
     reset,
-    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
+    refreshConfig: () => fetchPricing(true), 
     isLoadingConfig,
-    backendConfig, // ✅ EXPOSE: Backend config for dynamic thresholds
-    setContractMonths, // ✅ NEW: Contract months with override support
+    backendConfig, 
+    setContractMonths, 
   };
 }

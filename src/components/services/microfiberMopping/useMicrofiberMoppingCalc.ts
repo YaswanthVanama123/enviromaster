@@ -1,4 +1,4 @@
-// src/features/services/microfiberMopping/useMicrofiberMoppingCalc.ts
+
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
@@ -13,9 +13,9 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-// ✅ Backend config interface matching the ACTUAL MongoDB JSON structure from API
+
 interface BackendMicrofiberConfig {
-  // OLD format (for backward compatibility)
+
   includedBathroomRate?: number;
   hugeBathroomPricing?: {
     enabled: boolean;
@@ -40,7 +40,7 @@ interface BackendMicrofiberConfig {
     customerSelfMopping: boolean;
     waterOnlyBetweenServices: boolean;
   };
-  // NEW format (from actual backend API)
+
   bathroomMoppingPricing?: {
     flatPricePerBathroom: number;
     hugeBathroomSqFtUnit: number;
@@ -63,7 +63,7 @@ interface BackendMicrofiberConfig {
     beltway: number;
   };
   minimumChargePerVisit?: number;
-  frequencyMetadata?: any; // Will be converted to billingConversions
+  frequencyMetadata?: any; 
   billingConversions?: {
     oneTime: {
       annualMultiplier: number;
@@ -122,7 +122,7 @@ type InputChangeEvent =
   | ChangeEvent<HTMLInputElement>
   | ChangeEvent<HTMLSelectElement>;
 
-// ✅ Helper function to map frequency strings to valid MicrofiberFrequencyKey
+
 function mapFrequency(v: string): MicrofiberFrequencyKey {
   if (v === "oneTime" || v === "weekly" || v === "biweekly" || v === "twicePerMonth" ||
       v === "monthly" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
@@ -131,14 +131,14 @@ function mapFrequency(v: string): MicrofiberFrequencyKey {
   return "weekly";
 }
 
-// ✅ Helper function to convert frequencyMetadata to billingConversions format
+
 function convertFrequencyMetadataToBillingConversions(config: any): BackendMicrofiberConfig {
-  // If the config already has billingConversions, return as-is
+
   if (config.billingConversions) {
     return config as BackendMicrofiberConfig;
   }
 
-  // If the config has frequencyMetadata, convert it to billingConversions format
+
   if (config.frequencyMetadata) {
     const freqMeta = config.frequencyMetadata;
 
@@ -147,7 +147,7 @@ function convertFrequencyMetadataToBillingConversions(config: any): BackendMicro
       billingConversions: {
         oneTime: {
           annualMultiplier: 1,
-          monthlyMultiplier: 0, // oneTime has no monthly billing
+          monthlyMultiplier: 0, 
         },
         weekly: {
           annualMultiplier: 52,
@@ -159,44 +159,44 @@ function convertFrequencyMetadataToBillingConversions(config: any): BackendMicro
         },
         twicePerMonth: {
           annualMultiplier: 24,
-          monthlyMultiplier: 2, // 2 visits per month
+          monthlyMultiplier: 2, 
         },
         monthly: {
           annualMultiplier: 12,
-          monthlyMultiplier: 1, // monthly always 1 visit per month
+          monthlyMultiplier: 1, 
         },
         bimonthly: {
           annualMultiplier: 6,
-          monthlyMultiplier: 0.5, // every 2 months = 0.5 per month
+          monthlyMultiplier: 0.5, 
         },
         quarterly: {
           annualMultiplier: 4,
-          monthlyMultiplier: 0, // no monthly for quarterly
+          monthlyMultiplier: 0, 
         },
         biannual: {
           annualMultiplier: 2,
-          monthlyMultiplier: 0, // no monthly for biannual
+          monthlyMultiplier: 0, 
         },
         annual: {
           annualMultiplier: 1,
-          monthlyMultiplier: 0, // no monthly for annual
+          monthlyMultiplier: 0, 
         },
         actualWeeksPerYear: 52,
-        actualWeeksPerMonth: 4.33, // 52/12
+        actualWeeksPerMonth: 4.33, 
       },
     } as BackendMicrofiberConfig;
   }
 
-  // Fallback: return config as-is (will use static defaults)
+
   console.warn('⚠️ Microfiber Mopping config has neither billingConversions nor frequencyMetadata');
   return config as BackendMicrofiberConfig;
 }
 
 const DEFAULT_FORM: MicrofiberMoppingFormState = {
-  // Base service meta
+
   serviceId: "microfiber_mopping",
 
-  // Defaults
+
   frequency: cfg.defaultFrequency,
   contractTermMonths: 36,
 
@@ -207,9 +207,9 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
   hugeBathroomSqFt: 0,
 
   extraAreaSqFt: 0,
-  useExactExtraAreaSqft: true, // Default to exact calculation
+  useExactExtraAreaSqft: true, 
   standaloneSqFt: 0,
-  useExactStandaloneSqft: true, // Default to exact calculation
+  useExactStandaloneSqft: true, 
   chemicalGallons: 0,
 
   isAllInclusive: false,
@@ -217,7 +217,7 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
   location: "insideBeltway",
   needsParking: false,
 
-  // Editable pricing rates from config (will be overridden by backend)
+
   includedBathroomRate: cfg.includedBathroomRate,
   hugeBathroomRatePerSqFt: cfg.hugeBathroomPricing.ratePerSqFt,
   extraAreaRatePerUnit: cfg.extraAreaPricing.extraAreaRatePerUnit,
@@ -226,7 +226,6 @@ const DEFAULT_FORM: MicrofiberMoppingFormState = {
   applyMinimum: true,
 } as MicrofiberMoppingFormState;
 
-// Helper function removed - will use backend config directly
 
 export function useMicrofiberMoppingCalc(
   initialData?: unknown,
@@ -238,10 +237,10 @@ export function useMicrofiberMoppingCalc(
   quote: ServiceQuoteResult;
   calc: MicrofiberMoppingCalcResult;
 } {
-  // Get services context for fallback pricing data AND global contract months
+
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -257,7 +256,7 @@ export function useMicrofiberMoppingCalc(
     return total;
   }, [customFields]);
 
-  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -278,7 +277,7 @@ export function useMicrofiberMoppingCalc(
     const initialForm =
       maybe && typeof maybe === "object" && "form" in maybe ? maybe.form : maybe;
 
-    // ✅ Calculate if service is initially active (has inputs)
+
     const initialInputCount = (initialForm?.bathroomCount || 0) +
                                (initialForm?.hugeBathroomSqFt || 0) +
                                (initialForm?.extraAreaSqFt || 0) +
@@ -286,7 +285,7 @@ export function useMicrofiberMoppingCalc(
                                (initialForm?.chemicalGallons || 0);
     const isInitiallyActive = initialInputCount > 0;
 
-    // ✅ Only use global contract months if service starts active AND no initial value provided
+
     const defaultContractMonths = initialForm?.contractTermMonths
       ? initialForm.contractTermMonths
       : servicesContext?.globalContractMonths
@@ -308,59 +307,59 @@ export function useMicrofiberMoppingCalc(
     };
   });
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendMicrofiberConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ Add refs for tracking baseline values and edit mode
+
   const isEditMode = useRef(!!initialData);
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-  // Helper function to update form with config data
+
   const updateFormWithConfig = (config: BackendMicrofiberConfig, forceUpdate: boolean = false) => {
-    // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
-    // Only update on manual refresh (when user explicitly clicks refresh button)
+
+
     if (initialData && !forceUpdate) {
       console.log('📋 [MICROFIBER-MOPPING] Edit mode: Skipping form update to preserve loaded values');
-      return; // Don't overwrite loaded values in edit mode
+      return; 
     }
 
     console.log('📋 [MICROFIBER-MOPPING] Updating state with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
     setForm((prev) => ({
       ...prev,
-      // ✅ Map backend API fields to form state (supports both old and new format)
-      // Bathroom rate: NEW format bathroomMoppingPricing.flatPricePerBathroom OR OLD format includedBathroomRate
+
+
       includedBathroomRate: config.bathroomMoppingPricing?.flatPricePerBathroom ??
                             config.includedBathroomRate ??
                             prev.includedBathroomRate,
 
-      // Huge bathroom rate: NEW format bathroomMoppingPricing.hugeBathroomRate OR OLD format hugeBathroomPricing.ratePerSqFt
+
       hugeBathroomRatePerSqFt: config.bathroomMoppingPricing?.hugeBathroomRate ??
                                 config.hugeBathroomPricing?.ratePerSqFt ??
                                 prev.hugeBathroomRatePerSqFt,
 
-      // Extra area rate: NEW format nonBathroomAddonAreas.ratePerSqFtUnit OR OLD format extraAreaPricing.extraAreaRatePerUnit
+
       extraAreaRatePerUnit: config.nonBathroomAddonAreas?.ratePerSqFtUnit ??
                             config.extraAreaPricing?.extraAreaRatePerUnit ??
                             prev.extraAreaRatePerUnit,
 
-      // Standalone rate: NEW format standaloneMoppingPricing.ratePerSqFtUnit OR OLD format standalonePricing.standaloneRatePerUnit
+
       standaloneRatePerUnit: config.standaloneMoppingPricing?.ratePerSqFtUnit ??
                              config.standalonePricing?.standaloneRatePerUnit ??
                              prev.standaloneRatePerUnit,
 
-      // Chemical rate: OLD format only (not in new API response yet)
+
       dailyChemicalPerGallon: config.chemicalProducts?.dailyChemicalPerGallon ??
                                prev.dailyChemicalPerGallon,
     }));
   };
 
-  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("microfiberMopping");
         if (backendData?.config) {
@@ -369,18 +368,18 @@ export function useMicrofiberMoppingCalc(
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [MICROFIBER-MOPPING] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
               ...prev,
-              // Clear custom RATE overrides
+
               customIncludedBathroomRate: undefined,
               customHugeBathroomRatePerSqFt: undefined,
               customExtraAreaRatePerUnit: undefined,
               customStandaloneRatePerUnit: undefined,
               customDailyChemicalPerGallon: undefined,
-              // Clear custom TOTAL overrides
+
               customStandardBathroomTotal: undefined,
               customHugeBathroomTotal: undefined,
               customExtraAreaTotal: undefined,
@@ -416,7 +415,7 @@ export function useMicrofiberMoppingCalc(
     } catch (error) {
       console.error('❌ Failed to fetch Microfiber Mopping config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("microfiberMopping");
         if (fallbackConfig?.config) {
@@ -425,18 +424,18 @@ export function useMicrofiberMoppingCalc(
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [MICROFIBER-MOPPING] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
               ...prev,
-              // Clear custom RATE overrides
+
               customIncludedBathroomRate: undefined,
               customHugeBathroomRatePerSqFt: undefined,
               customExtraAreaRatePerUnit: undefined,
               customStandaloneRatePerUnit: undefined,
               customDailyChemicalPerGallon: undefined,
-              // Clear custom TOTAL overrides
+
               customStandardBathroomTotal: undefined,
               customHugeBathroomTotal: undefined,
               customExtraAreaTotal: undefined,
@@ -459,23 +458,23 @@ export function useMicrofiberMoppingCalc(
     }
   };
 
-  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
+
   useEffect(() => {
-    // Always fetch backend config to enable override detection in edit mode
+
     console.log('📋 [MICROFIBER-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
-    fetchPricing(false); // false = don't force update in edit mode
+    fetchPricing(false); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
+
   useEffect(() => {
     if (!backendConfig) return;
 
-    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
 
-      // Baseline = loaded/saved value (edit mode) OR backend default (new document) OR current state (fallback)
+
       baselineValues.current = {
         includedBathroomRate: (initialData as any)?.includedBathroomRate ?? backendConfig.bathroomMoppingPricing?.flatPricePerBathroom ?? backendConfig.includedBathroomRate ?? form.includedBathroomRate,
         hugeBathroomRatePerSqFt: (initialData as any)?.hugeBathroomRatePerSqFt ?? backendConfig.bathroomMoppingPricing?.hugeBathroomRate ?? backendConfig.hugeBathroomPricing?.ratePerSqFt ?? form.hugeBathroomRatePerSqFt,
@@ -493,13 +492,13 @@ export function useMicrofiberMoppingCalc(
         note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+
       if (initialData) {
         console.log('🔍 [MICROFIBER-PRICING] Detecting price overrides for yellow highlighting...');
 
         const initialDataTyped = initialData as any;
 
-        // ✅ FIXED: Compare ALL rate fields against backend defaults
+
         const overrides = {
           customIncludedBathroomRate: (initialDataTyped.includedBathroomRate !== undefined &&
                                        initialDataTyped.includedBathroomRate !== (backendConfig.bathroomMoppingPricing?.flatPricePerBathroom ?? backendConfig.includedBathroomRate))
@@ -522,13 +521,13 @@ export function useMicrofiberMoppingCalc(
                                          ? initialDataTyped.dailyChemicalPerGallon : undefined,
         };
 
-        // Only set overrides that are actually different
+
         const hasAnyOverrides = Object.values(overrides).some(v => v !== undefined);
 
         if (hasAnyOverrides) {
           setForm(prev => ({
             ...prev,
-            ...overrides, // Spread all override fields
+            ...overrides, 
           }));
 
           console.log('✅ [MICROFIBER-PRICING] Set custom override fields for yellow highlighting:',
@@ -543,9 +542,9 @@ export function useMicrofiberMoppingCalc(
     }
   }, [backendConfig, initialData]);
 
-  // Also fetch when services context becomes available (but NOT in edit mode)
+
   useEffect(() => {
-    // Skip if we have initialData (editing existing service)
+
     if (initialData) return;
 
     if (servicesContext?.backendPricingData && !backendConfig) {
@@ -553,7 +552,7 @@ export function useMicrofiberMoppingCalc(
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Sync global contract months to service (unless service has explicitly overridden it)
+
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef(() => {
     const inputCount = form.bathroomCount + form.hugeBathroomSqFt +
@@ -569,7 +568,7 @@ export function useMicrofiberMoppingCalc(
     const justBecameActive = isServiceActive && !wasActive;
 
     if (justBecameActive) {
-      // Service just became active - adopt global contract months
+
       console.log(`📅 [MICROFIBER-CONTRACT] Service just became active, adopting global contract months`);
       if (servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
         const globalMonths = servicesContext.globalContractMonths;
@@ -577,7 +576,7 @@ export function useMicrofiberMoppingCalc(
         setForm(prev => ({ ...prev, contractTermMonths: globalMonths }));
       }
     } else if (isServiceActive && servicesContext?.globalContractMonths && !hasContractMonthsOverride.current) {
-      // Service is already active - sync with global if it changes
+
       const globalMonths = servicesContext.globalContractMonths;
       if (form.contractTermMonths !== globalMonths) {
         console.log(`📅 [MICROFIBER-CONTRACT] Syncing global contract months: ${globalMonths}`);
@@ -585,20 +584,20 @@ export function useMicrofiberMoppingCalc(
       }
     }
 
-    // Update the ref for next render
+
     wasActiveRef.current = () => isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractTermMonths,
       form.bathroomCount, form.hugeBathroomSqFt, form.extraAreaSqFt,
       form.standaloneSqFt, form.chemicalGallons, servicesContext]);
 
-  // ✅ Track when user manually changes contract months (this sets the override flag)
+
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({ ...prev, contractTermMonths: months }));
     console.log(`📅 [MICROFIBER-CONTRACT] User override: ${months} months`);
   }, []);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -629,7 +628,7 @@ export function useMicrofiberMoppingCalc(
     const { name, type, value, checked } = target;
 
     setForm((prev) => {
-      // ✅ Capture original value before update for price override logging
+
       const originalValue = prev[name as keyof MicrofiberMoppingFormState];
 
       let nextValue: unknown = value;
@@ -637,7 +636,7 @@ export function useMicrofiberMoppingCalc(
       if (type === "checkbox") {
         nextValue = checked;
       } else if (
-        // Handle custom override fields - allow clearing by setting to undefined
+
         name === "customIncludedBathroomRate" ||
         name === "customHugeBathroomRatePerSqFt" ||
         name === "customExtraAreaRatePerUnit" ||
@@ -660,7 +659,7 @@ export function useMicrofiberMoppingCalc(
           if (!isNaN(numVal)) {
             nextValue = numVal;
           } else {
-            return prev; // Don't update if invalid
+            return prev; 
           }
         }
       } else if (type === "number") {
@@ -678,7 +677,7 @@ export function useMicrofiberMoppingCalc(
         [name]: nextValue as any,
       };
 
-      // UX rule: huge bathroom path clears standard bathroom count
+
       if (name === "hugeBathroomSqFt") {
         const sq = Number(nextValue) || 0;
         if (sq > 0) {
@@ -693,20 +692,19 @@ export function useMicrofiberMoppingCalc(
         next.bathroomCount = 0;
       }
 
-      // ✅ FIXED: Log ALL price changes for numeric pricing fields
-      // Log changes to BASE editable fields (these are what the user actually types)
+
       const baseEditableFields = [
         'includedBathroomRate', 'hugeBathroomRatePerSqFt', 'extraAreaRatePerUnit',
         'standaloneRatePerUnit', 'dailyChemicalPerGallon'
       ];
 
-      // ✅ CRITICAL: Log changes to CUSTOM RATE OVERRIDE fields (set by user editing in UI)
+
       const customRateOverrideFields = [
         'customIncludedBathroomRate', 'customHugeBathroomRatePerSqFt',
         'customExtraAreaRatePerUnit', 'customStandaloneRatePerUnit', 'customDailyChemicalPerGallon'
       ];
 
-      // Log changes to CUSTOM TOTAL override fields (set programmatically)
+
       const customTotalOverrideFields = [
         'customStandardBathroomTotal', 'customHugeBathroomTotal', 'customExtraAreaTotal',
         'customStandaloneTotal', 'customChemicalTotal', 'customPerVisitPrice',
@@ -715,7 +713,7 @@ export function useMicrofiberMoppingCalc(
 
       const allPricingFields = [...baseEditableFields, ...customRateOverrideFields, ...customTotalOverrideFields];
 
-      // ✅ EXPLICIT: Map custom field names to base field names for baseline lookup
+
       const customToBaseFieldMap: Record<string, string> = {
         'customIncludedBathroomRate': 'includedBathroomRate',
         'customHugeBathroomRatePerSqFt': 'hugeBathroomRatePerSqFt',
@@ -737,7 +735,7 @@ export function useMicrofiberMoppingCalc(
         const newValue = nextValue as number | undefined;
         const keyStr = name;
 
-        // ✅ FIXED: Always use base field name for baseline lookup
+
         const baseFieldForLookup = customToBaseFieldMap[keyStr] || keyStr;
         const baselineValue = baselineValues.current[baseFieldForLookup];
 
@@ -748,9 +746,7 @@ export function useMicrofiberMoppingCalc(
           isCustomField: keyStr.startsWith('custom'),
         });
 
-        // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
-        // This ensures Map replaces previous entry with updated value still comparing to baseline
-        // Example: First change 10→15 logs "10→15", second change 15→20 REPLACES with "10→20"
+
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
@@ -774,15 +770,15 @@ export function useMicrofiberMoppingCalc(
         }
       }
 
-      // ✅ NEW: Log form field changes using universal logger
+
       const allFormFields = [
-        // Quantity fields
+
         'bathrooms', 'hugeSqFtPerBathroom', 'contractMonths',
-        // Selection fields
+
         'frequency', 'rateTier'
       ];
 
-      // Log non-pricing field changes
+
       if (allFormFields.includes(name)) {
         logServiceFieldChanges(
           'microfiberMopping',
@@ -800,17 +796,17 @@ export function useMicrofiberMoppingCalc(
   };
 
   const { calc, quote } = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
-    // Map NEW backend format to OLD format structure that calculations expect
+
+
     const activeConfig = {
-      // Included bathroom rate: NEW bathroomMoppingPricing.flatPricePerBathroom OR OLD includedBathroomRate
+
       includedBathroomRate: backendConfig?.bathroomMoppingPricing?.flatPricePerBathroom ??
                             backendConfig?.includedBathroomRate ??
                             cfg.includedBathroomRate,
 
-      // Huge bathroom pricing: NEW bathroomMoppingPricing OR OLD hugeBathroomPricing
+
       hugeBathroomPricing: {
-        enabled: true, // Always enabled if backend config exists
+        enabled: true, 
         ratePerSqFt: backendConfig?.bathroomMoppingPricing?.hugeBathroomRate ??
                      backendConfig?.hugeBathroomPricing?.ratePerSqFt ??
                      cfg.hugeBathroomPricing.ratePerSqFt,
@@ -820,7 +816,7 @@ export function useMicrofiberMoppingCalc(
         description: backendConfig?.hugeBathroomPricing?.description ?? cfg.hugeBathroomPricing.description,
       },
 
-      // Extra area pricing: NEW nonBathroomAddonAreas OR OLD extraAreaPricing
+
       extraAreaPricing: {
         singleLargeAreaRate: backendConfig?.nonBathroomAddonAreas?.flatPriceSingleLargeArea ??
                              backendConfig?.extraAreaPricing?.singleLargeAreaRate ??
@@ -836,7 +832,7 @@ export function useMicrofiberMoppingCalc(
                        cfg.extraAreaPricing.useHigherRate,
       },
 
-      // Standalone pricing: NEW standaloneMoppingPricing OR OLD standalonePricing
+
       standalonePricing: {
         standaloneSqFtUnit: backendConfig?.standaloneMoppingPricing?.sqFtUnit ??
                             backendConfig?.standalonePricing?.standaloneSqFtUnit ??
@@ -853,29 +849,29 @@ export function useMicrofiberMoppingCalc(
                            cfg.standalonePricing.includeTripCharge,
       },
 
-      // Chemical products: OLD format only
+
       chemicalProducts: backendConfig?.chemicalProducts ?? cfg.chemicalProducts,
 
-      // Billing conversions: use existing billingConversions (already converted from frequencyMetadata)
+
       billingConversions: backendConfig?.billingConversions ?? cfg.billingConversions,
 
-      // Rate categories
+
       rateCategories: backendConfig?.rateCategories ?? cfg.rateCategories,
 
-      // Frequency settings
+
       defaultFrequency: backendConfig?.defaultFrequency ?? cfg.defaultFrequency,
       allowedFrequencies: backendConfig?.allowedFrequencies ?? cfg.allowedFrequencies,
 
-      // Minimum charge per visit (for redline/greenline pricing)
+
       minimumChargePerVisit: backendConfig?.minimumChargePerVisit ?? cfg.minimumChargePerVisit,
     };
 
     const freq: MicrofiberFrequencyKey = mapFrequency(form.frequency ?? activeConfig.defaultFrequency);
 
-    // ✅ BILLING CONVERSION FROM BACKEND (NOT HARDCODED!)
+
     const conv = activeConfig.billingConversions[freq] || activeConfig.billingConversions.weekly;
 
-    // ========== EFFECTIVE VALUES (use custom overrides if set, otherwise base values) ==========
+
     const effectiveIncludedBathroomRate = form.customIncludedBathroomRate ?? form.includedBathroomRate;
     const effectiveHugeBathroomRatePerSqFt = form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt;
     const effectiveExtraAreaRatePerUnit = form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit;
@@ -893,7 +889,7 @@ export function useMicrofiberMoppingCalc(
     const { actualWeeksPerYear, actualWeeksPerMonth } = activeConfig.billingConversions;
     const isAllInclusive = !!form.isAllInclusive;
 
-    // ✅ EARLY RETURN: If service is inactive (no inputs), return $0 for everything
+
     const bathroomCount = Number(form.bathroomCount) || 0;
     const hugeBathroomSqFt = Number(form.hugeBathroomSqFt) || 0;
     const extraAreaSqFt = Number(form.extraAreaSqFt) || 0;
@@ -931,37 +927,35 @@ export function useMicrofiberMoppingCalc(
       };
     }
 
-    // ----------------------------
-    // 1) Bathrooms (included with Sani) - BASE CALCULATIONS
-    // ----------------------------
+
     let calculatedStandardBathroomPrice = 0;
     let calculatedHugeBathroomPrice = 0;
 
     if (!isAllInclusive && form.hasExistingSaniService) {
       const standardBathCount = Math.max(0, Number(form.bathroomCount) || 0);
 
-      // Standard bathrooms: use effective rate (custom override if set)
+
       if (standardBathCount > 0) {
         calculatedStandardBathroomPrice =
-          standardBathCount * effectiveIncludedBathroomRate;  // ✅ USE EFFECTIVE VALUE
+          standardBathCount * effectiveIncludedBathroomRate;  
       }
 
-      // Huge bathroom: use editable rate per sq ft
+
       const hugeSqFt = Math.max(0, Number(form.hugeBathroomSqFt) || 0);
       if (
         form.isHugeBathroom &&
-        activeConfig.hugeBathroomPricing.enabled &&  // ✅ FROM BACKEND
+        activeConfig.hugeBathroomPricing.enabled &&  
         hugeSqFt > 0
       ) {
         const units = Math.ceil(
-          hugeSqFt / activeConfig.hugeBathroomPricing.sqFtUnit  // ✅ FROM BACKEND
+          hugeSqFt / activeConfig.hugeBathroomPricing.sqFtUnit  
         );
         calculatedHugeBathroomPrice =
-          units * effectiveHugeBathroomRatePerSqFt;  // ✅ USE EFFECTIVE VALUE
+          units * effectiveHugeBathroomRatePerSqFt;  
       }
     }
 
-    // Use custom overrides if set, otherwise use calculated
+
     const standardBathroomPrice = form.customStandardBathroomTotal !== undefined
       ? form.customStandardBathroomTotal
       : calculatedStandardBathroomPrice;
@@ -972,217 +966,195 @@ export function useMicrofiberMoppingCalc(
 
     const bathroomPrice = standardBathroomPrice + hugeBathroomPrice;
 
-    // ----------------------------
-    // 2) Extra non-bath area - BASE CALCULATIONS with exact vs direct pricing (like SaniScrub)
-    // NEW: Support exact calculation vs direct calculation like SaniScrub
-    // ----------------------------
+
     let calculatedExtraAreaPrice = 0;
 
     if (!isAllInclusive && form.extraAreaSqFt > 0) {
-      const unitSqFt = activeConfig.extraAreaPricing.extraAreaSqFtUnit; // ✅ FROM BACKEND (400)
-      const firstUnitRate = activeConfig.extraAreaPricing.singleLargeAreaRate; // ✅ FROM BACKEND ($100)
-      const additionalUnitRate = effectiveExtraAreaRatePerUnit;  // ✅ USE EFFECTIVE VALUE ($10 per 400 sq ft)
+      const unitSqFt = activeConfig.extraAreaPricing.extraAreaSqFtUnit; 
+      const firstUnitRate = activeConfig.extraAreaPricing.singleLargeAreaRate; 
+      const additionalUnitRate = effectiveExtraAreaRatePerUnit;  
 
       if (form.useExactExtraAreaSqft) {
-        // ✅ EXACT CALCULATION with step-down pricing model using backend values
-        // Step-down model: minimum up to threshold, then recalculate using per-unit pricing
 
-        // Calculate threshold: how many sq ft does the minimum cover?
-        const unitsInMinimum = Math.floor(firstUnitRate / additionalUnitRate); // e.g., $100 ÷ $10 = 10 units
-        const minimumCoverageSqFt = unitsInMinimum * unitSqFt; // e.g., 10 × 400 = 4000 sqft
+
+        const unitsInMinimum = Math.floor(firstUnitRate / additionalUnitRate); 
+        const minimumCoverageSqFt = unitsInMinimum * unitSqFt; 
 
         if (form.extraAreaSqFt <= minimumCoverageSqFt) {
-          // ≤ minimum coverage: Use minimum rate
+
           calculatedExtraAreaPrice = firstUnitRate;
         } else {
-          // > minimum coverage: Use per-unit pricing for ALL units (step-down model)
-          // Instead of minimum + extra, calculate total units × rate
+
+
           const totalUnits = Math.ceil(form.extraAreaSqFt / unitSqFt);
           calculatedExtraAreaPrice = totalUnits * additionalUnitRate;
         }
       } else {
-        // ✅ DIRECT CALCULATION: Calculate minimum coverage first, then exact additional sqft
-        const minimumUnits = Math.floor(firstUnitRate / additionalUnitRate); // $100 ÷ $10 = 10 units
-        const minimumCoverageSqFt = minimumUnits * unitSqFt; // 10 × 400 = 4000 sqft
+
+        const minimumUnits = Math.floor(firstUnitRate / additionalUnitRate); 
+        const minimumCoverageSqFt = minimumUnits * unitSqFt; 
 
         if (form.extraAreaSqFt <= minimumCoverageSqFt) {
-          // ≤ 4000 sq ft: Always $100 minimum
+
           calculatedExtraAreaPrice = firstUnitRate;
         } else {
-          // > 4000 sq ft: $100 minimum + exact additional sq ft × rate
-          const extraSqFt = form.extraAreaSqFt - minimumCoverageSqFt; // sq ft over 4000
-          const ratePerSqFt = additionalUnitRate / unitSqFt; // $10/400 = $0.025
+
+          const extraSqFt = form.extraAreaSqFt - minimumCoverageSqFt; 
+          const ratePerSqFt = additionalUnitRate / unitSqFt; 
           calculatedExtraAreaPrice = firstUnitRate + (extraSqFt * ratePerSqFt);
         }
       }
 
-      // Apply useHigherRate rule if configured (but usually not needed with this logic)
+
       if (activeConfig.extraAreaPricing.useHigherRate) {
         calculatedExtraAreaPrice = Math.max(calculatedExtraAreaPrice, firstUnitRate);
       }
     }
 
-    // Use custom override if set
+
     const extraAreaPrice = form.customExtraAreaTotal !== undefined
       ? form.customExtraAreaTotal
       : calculatedExtraAreaPrice;
 
-    // ----------------------------
-    // 3) Stand-alone microfiber mopping - BASE CALCULATIONS with exact vs direct pricing (like SaniScrub)
-    // NEW: Support exact calculation vs direct calculation like SaniScrub
-    // ----------------------------
+
     let calculatedStandaloneServicePrice = 0;
     let standaloneTripCharge = 0;
     let calculatedStandaloneTotal = 0;
 
     if (!isAllInclusive && form.standaloneSqFt > 0) {
-      const unitSqFt = activeConfig.standalonePricing.standaloneSqFtUnit; // ✅ FROM BACKEND (200)
-      const minimumRate = activeConfig.standalonePricing.standaloneMinimum; // ✅ FROM BACKEND ($40)
-      const additionalUnitRate = effectiveStandaloneRatePerUnit;  // ✅ USE EFFECTIVE VALUE ($10 per 200 sq ft)
+      const unitSqFt = activeConfig.standalonePricing.standaloneSqFtUnit; 
+      const minimumRate = activeConfig.standalonePricing.standaloneMinimum; 
+      const additionalUnitRate = effectiveStandaloneRatePerUnit;  
 
       if (form.useExactStandaloneSqft) {
-        // ✅ EXACT CALCULATION with step-down pricing model using backend values
-        // Step-down model: minimum up to threshold, then recalculate using per-unit pricing
 
-        // Calculate threshold: how many sq ft does the minimum cover?
-        // Based on the pattern: minimum covers X units worth of area, then switch to per-unit pricing
-        const unitsInMinimum = Math.floor(minimumRate / additionalUnitRate); // e.g., $40 ÷ $10 = 4 units
-        const minimumCoverageSqFt = unitsInMinimum * unitSqFt; // e.g., 4 × 200 = 800 sqft
+
+        const unitsInMinimum = Math.floor(minimumRate / additionalUnitRate); 
+        const minimumCoverageSqFt = unitsInMinimum * unitSqFt; 
 
         if (form.standaloneSqFt <= minimumCoverageSqFt) {
-          // ≤ minimum coverage: Use minimum rate
+
           calculatedStandaloneServicePrice = minimumRate;
         } else {
-          // > minimum coverage: Use per-unit pricing for ALL units (step-down model)
-          // Instead of minimum + extra, calculate total units × rate
+
+
           const totalUnits = Math.ceil(form.standaloneSqFt / unitSqFt);
           calculatedStandaloneServicePrice = totalUnits * additionalUnitRate;
         }
       } else {
-        // ✅ DIRECT CALCULATION: Calculate minimum coverage first, then exact additional sqft
-        const minimumUnits = Math.floor(minimumRate / additionalUnitRate); // e.g., $40 ÷ $10 = 4 units
-        const minimumCoverageSqFt = minimumUnits * unitSqFt; // e.g., 4 × 200 = 800 sqft
+
+        const minimumUnits = Math.floor(minimumRate / additionalUnitRate); 
+        const minimumCoverageSqFt = minimumUnits * unitSqFt; 
 
         if (form.standaloneSqFt <= minimumCoverageSqFt) {
-          // ≤ 800 sq ft: Always $40 minimum
+
           calculatedStandaloneServicePrice = minimumRate;
         } else {
-          // > 800 sq ft: $40 minimum + exact additional sq ft × rate
-          const extraSqFt = form.standaloneSqFt - minimumCoverageSqFt; // sq ft over 800
-          const ratePerSqFt = additionalUnitRate / unitSqFt; // $10/200 = $0.05
+
+          const extraSqFt = form.standaloneSqFt - minimumCoverageSqFt; 
+          const ratePerSqFt = additionalUnitRate / unitSqFt; 
           calculatedStandaloneServicePrice = minimumRate + (extraSqFt * ratePerSqFt);
         }
       }
 
-      // Trip charge concept removed → always 0 in calculations
+
       standaloneTripCharge = 0;
       calculatedStandaloneTotal = calculatedStandaloneServicePrice;
     }
 
-    // Use custom override if set
+
     const standaloneServicePrice = form.customStandaloneTotal !== undefined
       ? form.customStandaloneTotal
       : calculatedStandaloneServicePrice;
 
     const standaloneTotal = standaloneServicePrice;
 
-    // ----------------------------
-    // 4) Chemical supply (customer self-mopping) - BASE CALCULATIONS
-    // Rule: use effective rate per gallon (custom override if set) – per month.
-    // ----------------------------
+
     const calculatedChemicalSupplyMonthly =
       form.chemicalGallons > 0
-        ? form.chemicalGallons * effectiveDailyChemicalPerGallon  // ✅ USE EFFECTIVE VALUE
+        ? form.chemicalGallons * effectiveDailyChemicalPerGallon  
         : 0;
 
-    // Use custom override if set
+
     const chemicalSupplyMonthly = form.customChemicalTotal !== undefined
       ? form.customChemicalTotal
       : calculatedChemicalSupplyMonthly;
 
-    // ----------------------------
-    // 5) Per-visit total - BASE CALCULATIONS
-    // ----------------------------
+
     const calculatedPerVisitServiceTotal =
       bathroomPrice + extraAreaPrice + standaloneTotal;
 
-    // ✅ Apply minimum charge per visit from activeConfig (backend or fallback)
+
     const minimumChargePerVisit = activeConfig.minimumChargePerVisit;
     const calculatedPerVisitWithMinimum = form.applyMinimum !== false ? Math.max(calculatedPerVisitServiceTotal, minimumChargePerVisit) : calculatedPerVisitServiceTotal;
 
-    // Use custom override if set
+
     const perVisitPrice = form.customPerVisitPrice !== undefined
       ? form.customPerVisitPrice
       : calculatedPerVisitWithMinimum;
 
-    // ----------------------------
-    // 6) Monthly (4.33 weeks logic) and contract - BASE CALCULATIONS
-    // ✅ Support all 9 frequencies with visit-based logic
-    // ----------------------------
-    // Determine if frequency is visit-based (not monthly billing)
+
     const isVisitBasedFrequency = freq === "oneTime" || freq === "quarterly" ||
       freq === "biannual" || freq === "annual" || freq === "bimonthly";
 
-    const monthlyVisits = conv.monthlyMultiplier; // e.g., 4.33 for weekly, 0 for quarterly
+    const monthlyVisits = conv.monthlyMultiplier; 
     const calculatedMonthlyService = perVisitPrice * monthlyVisits;
     const calculatedMonthlyRecurring = calculatedMonthlyService + chemicalSupplyMonthly;
 
-    // Use custom override if set
+
     const monthlyRecurring = form.customMonthlyRecurring !== undefined
       ? form.customMonthlyRecurring
       : calculatedMonthlyRecurring;
 
-    // First visit / first month rules
-    // For Microfiber we don't have a separate installation fee,
-    // so installFee is treated as 0 here.
-    const installFee = 0;
-    const firstVisitPrice = installFee; // install-only, but 0 in this service
 
-    // First month calculation varies by frequency type
+    const installFee = 0;
+    const firstVisitPrice = installFee; 
+
+
     let calculatedFirstMonthPrice = 0;
     if (isVisitBasedFrequency) {
-      // For oneTime, quarterly, biannual, annual, bimonthly: just the first visit (service only, no install)
+
       calculatedFirstMonthPrice = perVisitPrice;
     } else {
-      // For weekly, biweekly, twicePerMonth, monthly: (monthlyVisits) × normal service price + chemical
+
       const calculatedFirstMonthService = Math.max(monthlyVisits, 0) * perVisitPrice;
       calculatedFirstMonthPrice = firstVisitPrice + calculatedFirstMonthService + chemicalSupplyMonthly;
     }
 
-    // Use custom override if set
+
     const firstMonthPrice = form.customFirstMonthPrice !== undefined
       ? form.customFirstMonthPrice
       : calculatedFirstMonthPrice;
 
-    // Contract term (2–36 months)
+
     let contractMonths = Number(form.contractTermMonths) || 0;
     if (contractMonths < 2) contractMonths = 2;
     if (contractMonths > 36) contractMonths = 36;
 
-    // Contract total calculation
+
     let calculatedContractTotal = 0;
     if (freq === "oneTime") {
-      // ✅ For oneTime: just the first visit (no recurring billing)
+
       calculatedContractTotal = firstMonthPrice;
     } else if (isVisitBasedFrequency) {
-      // ✅ For quarterly, biannual, annual, bimonthly: use annual multipliers
+
       const visitsPerYear = conv.annualMultiplier ?? 1;
       const totalVisits = (contractMonths / 12) * visitsPerYear;
 
-      // All visits are service visits (no install in microfiber)
+
       calculatedContractTotal = totalVisits * perVisitPrice + (contractMonths * (chemicalSupplyMonthly / monthlyVisits || 0));
     } else {
-      // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
+
       const remainingMonths = Math.max(contractMonths - 1, 0);
       calculatedContractTotal = firstMonthPrice + remainingMonths * monthlyRecurring;
     }
 
-    // Use custom override if set
+
     const contractTotal = form.customContractTotal !== undefined
       ? form.customContractTotal
       : calculatedContractTotal;
 
-    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
 
@@ -1194,9 +1166,7 @@ export function useMicrofiberMoppingCalc(
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
-    // ----------------------------
-    // 7) Annual + weekly approximations (not main focus now)
-    // ----------------------------
+
     const annualPrice = monthlyRecurring * 12;
 
     const weeklyServiceTotal =
@@ -1221,9 +1191,9 @@ export function useMicrofiberMoppingCalc(
       firstVisitPrice,
       firstMonthPrice,
       contractMonths,
-      contractTotal: contractTotalWithCustomFields,  // ✅ UPDATED: Use contract total with custom fields
+      contractTotal: contractTotalWithCustomFields,  
       originalContractTotal: (() => {
-        // ✅ ORIGINAL CONTRACT TOTAL: baseline (pricing table) rates × current quantities
+
         const baselineBathroomRate = activeConfig.includedBathroomRate;
         const baselineExtraAreaRatePerUnit = activeConfig.extraAreaPricing.extraAreaRatePerUnit;
         const baselineStandaloneRatePerUnit = activeConfig.standalonePricing.standaloneRatePerUnit;
@@ -1298,12 +1268,12 @@ export function useMicrofiberMoppingCalc(
 
     return { calc, quote };
   }, [
-    backendConfig,  // ✅ CRITICAL: Re-calculate when backend config loads!
+    backendConfig,  
     form,
-    // ✅ NEW: Re-calculate when custom fields change
+
     calcFieldsTotal,
     dollarFieldsTotal,
-    // ✅ CRITICAL: Custom RATE override fields (must be in dependencies for calculations to update!)
+
     form.customIncludedBathroomRate,
     form.customHugeBathroomRatePerSqFt,
     form.customExtraAreaRatePerUnit,
@@ -1317,9 +1287,9 @@ export function useMicrofiberMoppingCalc(
     onChange,
     quote,
     calc,
-    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
+    refreshConfig: () => fetchPricing(true), 
     isLoadingConfig,
-    // ✅ EXPOSE: Backend config for dynamic pricing text
+
     activeConfig: {
       extraAreaPricing: {
         singleLargeAreaRate: backendConfig?.nonBathroomAddonAreas?.flatPriceSingleLargeArea ??
@@ -1339,6 +1309,6 @@ export function useMicrofiberMoppingCalc(
                            cfg.standalonePricing.standaloneMinimum,
       },
     },
-    setContractMonths, // ✅ NEW: Contract months with override support
+    setContractMonths, 
   };
 }

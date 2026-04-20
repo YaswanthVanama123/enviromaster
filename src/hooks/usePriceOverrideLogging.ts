@@ -1,4 +1,3 @@
-// src/hooks/usePriceOverrideLogging.ts
 import { useState, useCallback } from 'react';
 
 interface PriceOverrideLogData {
@@ -9,7 +8,7 @@ interface PriceOverrideLogData {
   salespersonName: string;
   productKey: string;
   productName: string;
-  productType: 'product' | 'dispenser' | 'service'; // ✅ Added 'service' type
+  productType: 'product' | 'dispenser' | 'service';
   fieldType: 'unitPrice' | 'amount' | 'warrantyPrice' | 'replacementPrice' | 'total' | 'hourlyRate' | 'minimumVisit' | 'customPerVisitTotal' | 'workers' | 'hours' | 'customAmount' | 'insideSqFt' | 'outsideSqFt' | 'insideRate' | 'outsideRate' | 'sqFtFixedFee';
   originalValue: number;
   overrideValue: number;
@@ -74,7 +73,6 @@ export const usePriceOverrideLogging = (): UsePriceOverrideLoggingReturn => {
 
       const result: LogResponse = await response.json();
 
-      // Log the result for debugging
       console.log('✅ [PRICE-OVERRIDE] Successfully logged:', {
         logId: result.log.id,
         changeAmount: result.log.changeAmount,
@@ -90,7 +88,6 @@ export const usePriceOverrideLogging = (): UsePriceOverrideLoggingReturn => {
       console.error('❌ [PRICE-OVERRIDE] Failed to log price override:', errorMessage);
       setError(errorMessage);
 
-      // Return a default response structure so the component doesn't crash
       return {
         success: false,
         message: errorMessage,
@@ -115,19 +112,16 @@ export const usePriceOverrideLogging = (): UsePriceOverrideLoggingReturn => {
   };
 };
 
-// Utility function to generate session ID if not provided
 export const generateSessionId = (): string => {
   return `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 };
 
-// Utility function to determine product type from family key
 export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispenser' | 'service' => {
   if (familyKey === 'dispensers') return 'dispenser';
   if (familyKey.includes('service') || familyKey.includes('Service')) return 'service';
   return 'product';
 };
 
-// Utility function to determine field type from the field being overridden
 export const getFieldType = (fieldName: string): 'unitPrice' | 'amount' | 'warrantyPrice' | 'replacementPrice' | 'total' | 'hourlyRate' | 'minimumVisit' | 'customPerVisitTotal' | 'workers' | 'hours' | 'customAmount' | 'insideSqFt' | 'outsideSqFt' | 'insideRate' | 'outsideRate' | 'sqFtFixedFee' => {
   switch (fieldName) {
     case 'unitPriceOverride':
@@ -140,7 +134,6 @@ export const getFieldType = (fieldName: string): 'unitPrice' | 'amount' | 'warra
       return 'replacementPrice';
     case 'totalOverride':
       return 'total';
-    // ✅ NEW: Service-specific field types
     case 'hourlyRate':
       return 'hourlyRate';
     case 'minimumVisit':
@@ -164,7 +157,7 @@ export const getFieldType = (fieldName: string): 'unitPrice' | 'amount' | 'warra
     case 'sqFtFixedFee':
       return 'sqFtFixedFee';
     default:
-      return 'unitPrice'; // Default fallback
+      return 'unitPrice';
   }
 };
 

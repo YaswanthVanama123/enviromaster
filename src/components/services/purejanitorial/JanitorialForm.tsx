@@ -1,4 +1,4 @@
-// src/features/services/janitorial/JanitorialForm.tsx
+
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -9,7 +9,7 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-// Helper function to format numbers without unnecessary decimals
+
 const formatNumber = (num: number | undefined): string => {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
@@ -32,9 +32,9 @@ const FIELD_ORDER = {
   totals: {
     perVisit: 30,
     weekly: 31,
-    // firstMonth: 32,
+
     monthlyRecurring: 33,
-    // firstVisit: 34,
+
     recurringVisit: 35,
     totalPrice: 36,
     contract: 37,
@@ -45,16 +45,16 @@ const FIELD_ORDER = {
 export const JanitorialForm: React.FC<
   ServiceInitialData<JanitorialFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, onChange, calc, refreshConfig, isLoadingConfig } = useJanitorialCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       onChange({ target: { name: 'contractMonths', value: String(servicesContext.globalContractMonths) } } as any);
@@ -63,89 +63,93 @@ export const JanitorialForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '' } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingTotalPlaces ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingTotalPlaces ?? 0) > 0 || hasCustomFieldValues;
       const frequencyKey = form.serviceType === "recurring" ? "weekly" : "oneTime";
       const frequencyLabel =
         form.serviceType === "recurring"
@@ -193,13 +197,8 @@ export const JanitorialForm: React.FC<
             type: "dollar" as const,
             amount: calc.weekly,
           };
-          // payload.firstMonth = {
-          //   isDisplay: true,
-          //   orderNo: FIELD_ORDER.totals.firstMonth,
-          //   label: "First Month Total",
-          //   type: "dollar" as const,
-          //   amount: calc.firstMonth,
-          // };
+
+
           payload.monthlyRecurring = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.monthlyRecurring,
@@ -217,13 +216,8 @@ export const JanitorialForm: React.FC<
             amount: calc.contractTotal,
           };
         } else {
-          // payload.firstVisit = {
-          //   isDisplay: true,
-          //   orderNo: FIELD_ORDER.totals.firstVisit,
-          //   label: "Total Price",
-          //   type: "dollar" as const,
-          //   amount: calc.firstVisit,
-          // };
+
+
           payload.recurringVisit = {
             isDisplay: true,
             orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -251,14 +245,14 @@ export const JanitorialForm: React.FC<
       })();
 
       const data = isActive ? {
-        serviceId: "pureJanitorial", // ✅ FIXED: Use correct service ID to match backend
+        serviceId: "pureJanitorial", 
         displayName: "Pure Janitorial",
         isActive: true,
 
-        // ✅ NEW: Red/Green Line pricing data
-        rawPrice: calc.breakdown.basePrice,  // Raw price before minimum
-        perVisit: calc.perVisit,  // Final price after minimum
-        minCharge: calc.minimumChargePerVisit || 0,  // Minimum threshold
+
+        rawPrice: calc.breakdown.basePrice,  
+        perVisit: calc.perVisit,  
+        minCharge: calc.minimumChargePerVisit || 0,  
 
         frequency: frequencyField,
         serviceType: serviceTypeField,
@@ -332,7 +326,7 @@ export const JanitorialForm: React.FC<
             }
           : {}),
 
-        notes: form.notes || "", // Optional notes field
+        notes: form.notes || "", 
         customFields: customFields,
         contractTotal: calc.contractTotal,
         originalContractTotal: calc.originalContractTotal,
@@ -346,7 +340,7 @@ export const JanitorialForm: React.FC<
         console.log('✅ Totals section:', JSON.stringify(data?.totals, null, 2));
 
         prevDataRef.current = dataStr;
-        servicesContext.updateService("pureJanitorial", data); // ✅ FIXED: Use correct service ID
+        servicesContext.updateService("pureJanitorial", data); 
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -354,7 +348,7 @@ export const JanitorialForm: React.FC<
 
   return (
     <div className="svc-card">
-      {/* Header */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">PURE JANITORIAL ADD-ONS</div>
         <div className="svc-h-actions">
@@ -391,7 +385,7 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -399,23 +393,10 @@ export const JanitorialForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Summary / description */}
-      {/* <div className="svc-row">
-        <label>Overview</label>
-        <div className="svc-row-right">
-          <span className="svc-small">
-            Vacuuming, dusting, and other light janitorial extras. Base rate $
-            {cfg.baseHourlyRate.toFixed(2)}/hr. Normal route has a{" "}
-            {cfg.minHoursPerVisit}-hour minimum target (
-            {cfg.minHoursPerVisit} × ${cfg.baseHourlyRate} = $
-            {cfg.minHoursPerVisit * cfg.baseHourlyRate} minimum per visit). For
-            very small standalone jobs you can use $
-            {cfg.shortJobHourlyRate.toFixed(2)}/hr.
-          </span>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Service Type: Recurring or One-Time */}
+      {}
       <div className="svc-row">
         <label>Service Type</label>
         <div className="svc-row-right">
@@ -431,7 +412,7 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Visits per Week (only for recurring) */}
+      {}
       {form.serviceType === "recurring" && (
         <div className="svc-row">
           <label>Visits per Week</label>
@@ -450,19 +431,17 @@ export const JanitorialForm: React.FC<
               <option value={6}>6 visits per week</option>
               <option value={7}>7 visits per week (daily)</option>
             </select>
-            {/* <span className="svc-small">
-              Monthly visits: {formatNumber((form.weeksPerMonth || 0) * (form.visitsPerWeek || 0))}
-            </span> */}
+            {}
           </div>
         </div>
       )}
 
-      {/* TASK-SPECIFIC INPUTS */}
+      {}
       <div className="svc-h-row svc-h-row-sub">
         <div className="svc-h-sub">Task-Specific Inputs</div>
       </div>
 
-      {/* One-Time Service Pricing - Show rate for one-time */}
+      {}
       {form.serviceType === "oneTime" && (
         <div className="svc-row">
           <label>One-Time Rate</label>
@@ -488,7 +467,7 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {/* Recurring Service Pricing - Show rate for recurring */}
+      {}
       {form.serviceType === "recurring" && (
         <div className="svc-row">
           <label>Recurring Rate</label>
@@ -514,7 +493,7 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {/* Vacuuming */}
+      {}
       <div className="svc-row">
         <label>Vacuuming (hours)</label>
         <div className="svc-row-right">
@@ -534,25 +513,10 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Installation checkbox - Only for recurring */}
-      {/* {form.serviceType === "recurring" && (
-        <div className="svc-row">
-          <label>Installation</label>
-          <div className="svc-row-right">
-            <label className="svc-inline">
-              <input
-                type="checkbox"
-                name="installation"
-                checked={form.installation}
-                onChange={onChange}
-              />
-              <span className="svc-small">Include installation/setup</span>
-            </label>
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
 
-      {/* Dusting */}
+      {}
       <div className="svc-row">
         <label>Dusting (Places → Hours)</label>
         <div className="svc-row-right">
@@ -590,11 +554,11 @@ export const JanitorialForm: React.FC<
             style={{ backgroundColor: '#f0f8ff' }}
             title="Calculated hours (auto-calculated)"
           />
-          {/* <span className="svc-small">hrs (combined with vacuum & other tasks, priced at hourly rate)</span> */}
+          {}
         </div>
       </div>
 
-      {/* Other Tasks (hours) */}
+      {}
       <div className="svc-row">
         <label>Other Tasks (hrs)</label>
         <div className="svc-row-right">
@@ -613,7 +577,7 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Add-on Time (minutes) - For BOTH recurring and one-time */}
+      {}
       <div className="svc-row">
         <label>Add-on Time (mins)</label>
         <div className="svc-row-right">
@@ -633,31 +597,15 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Contract length - Only show for recurring services */}
-      {/* {form.serviceType === "recurring" && (
-        <div className="svc-row">
-          <label>Contract Length (Months)</label>
-          <div className="svc-row-right">
-            <input
-              className="svc-in svc-in-small"
-              type="number"
-              min="0"
-              min={cfg.minContractMonths}
-              max={cfg.maxContractMonths}
-              name="contractMonths"
-              value={form.contractMonths}
-              onChange={onChange}
-            />
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
 
-      {/* OUTPUTS */}
+      {}
       <div className="svc-h-row svc-h-row-sub">
         <div className="svc-h-sub">Pricing Summary</div>
       </div>
 
-      {/* Total hours */}
+      {}
       <div className="svc-row">
         <label>Total Hours (per visit)</label>
         <div className="svc-row-right">
@@ -670,7 +618,7 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Per-visit price */}
+      {}
       <div className="svc-row svc-row-charge">
         <label>
           {form.serviceType === "oneTime" ? "One-Time Service Price" : "Per Visit Total"}
@@ -705,7 +653,7 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {/* Redline/Greenline Pricing Indicator */}
+      {}
       {(form.manualHours > 0 || form.vacuumingSqFt > 0 || form.dustingPlaces > 0) && (
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
@@ -739,7 +687,7 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {/* Weekly total - Only show for recurring */}
+      {}
       {form.serviceType === "recurring" && (
         <div className="svc-row svc-row-charge">
           <label>Weekly Total ({form.visitsPerWeek} visit{form.visitsPerWeek !== 1 ? 's' : ''})</label>
@@ -762,7 +710,7 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {/* Recurring monthly total - Only show for recurring */}
+      {}
       {form.serviceType === "recurring" && (
         <div className="svc-row svc-row-charge">
           <label>Monthly Recurring</label>
@@ -792,7 +740,7 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {/* First month total - Only show for recurring with installation */}
+      {}
       {form.serviceType === "recurring" && form.installation && (
         <div className="svc-row svc-row-charge">
           <label>First Month Total (incl. installation)</label>
@@ -826,7 +774,7 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {/* Contract total - Only show for recurring */}
+      {}
       {form.serviceType === "recurring" && (
         <div className="svc-row svc-row-charge">
           <label>Contract Total</label>

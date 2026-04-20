@@ -1,4 +1,3 @@
-// src/components/VersionDialog.tsx
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -30,14 +29,11 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
   onReplaceMain,
   loading = false
 }) => {
-  const [selectedAction, setSelectedAction] = useState<'create_version' | 'replace_recent'>('create_version'); // ✅ REMOVED: replace_main
+  const [selectedAction, setSelectedAction] = useState<'create_version' | 'replace_recent'>('create_version');
   const [changeNotes, setChangeNotes] = useState("");
 
-  // ✅ FIXED: Define functions before useEffect to avoid TDZ error
   const getRecommendedAction = React.useCallback(() => {
-    // ✅ UPDATED: Only version-based recommendations
     if (versionStatus?.isFirstTime) return 'create_version';
-    // No more "suggest_replace" for main PDF - only for recent versions
     return 'create_version';
   }, [versionStatus]);
 
@@ -46,20 +42,16 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
     setChangeNotes("");
   }, [getRecommendedAction]);
 
-  // ✅ MOVED: All hooks must come before any conditional returns
-  // Auto-set recommended action on first render
   React.useEffect(() => {
     if (versionStatus) {
       resetToRecommended();
     }
   }, [versionStatus, resetToRecommended]);
 
-  // ✅ MOVED: Early return comes AFTER all hooks
   if (!isOpen || !versionStatus) return null;
 
   const handleConfirm = async () => {
     try {
-      // ✅ UPDATED: No more replace main PDF, only version operations
       const replaceRecent = selectedAction === 'replace_recent';
       await onCreateVersion(replaceRecent, changeNotes);
     } catch (error) {
@@ -101,7 +93,6 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
         </div>
 
         <div className="version-dialog__body">
-          {/* Current Status Info */}
           <div className="version-dialog__status">
             <FontAwesomeIcon icon={faInfo} />
             <div className="version-dialog__status-content">
@@ -115,20 +106,17 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
             </div>
           </div>
 
-          {/* Action Options */}
           <div className="version-dialog__actions">
             <h3>How would you like to save this PDF?</h3>
 
-            {/* ✅ UPDATED: Only show version-based options */}
             {renderActionOption(
               'create_version',
               'Create New Version',
               `Create version ${versionStatus.latestVersionNumber + 1}. Recommended for tracking changes.`,
               faPlus,
-              true // Always recommended as default
+              true
             )}
 
-            {/* ✅ UPDATED: Show replace recent option when there are versions */}
             {versionStatus.totalVersions > 0 && renderActionOption(
               'replace_recent',
               'Replace Recent Version',
@@ -138,7 +126,6 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
             )}
           </div>
 
-          {/* Change Notes */}
           <div className="version-dialog__notes">
             <label htmlFor="changeNotes" className="version-dialog__notes-label">
               What changed? *
@@ -154,7 +141,6 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
             />
           </div>
 
-          {/* Version History Preview */}
           {versionStatus.versions.length > 0 && (
             <div className="version-dialog__history">
               <h4>
@@ -199,7 +185,7 @@ export const VersionDialog: React.FC<VersionDialogProps> = ({
             onClick={handleConfirm}
             disabled={
               loading ||
-              !changeNotes.trim() // ✅ UPDATED: Always require change notes for subsequent saves
+              !changeNotes.trim()
             }
           >
             {loading ? (

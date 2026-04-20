@@ -1,11 +1,11 @@
 .prod {
-  /* max-width: 1120px; */
+
   margin: 18px auto 28px;
   padding: 0 12px;
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 
-  /* ✅ PERFORMANCE: Prevent layout shifts */
+
   min-height: 600px;
   contain: layout;
   contain-intrinsic-size: auto 600px;
@@ -48,10 +48,6 @@
 }
 .prod__add:hover{ background:#ffecec; }
 
-/* ===================================
-   PRODUCT TABS NAVIGATION STYLES
-   (Matching Services Tabs Styling)
-   ================================= */
 
 .product-tabs-container {
   margin-bottom: 10px;
@@ -92,7 +88,7 @@
   background: #a00000;
 }
 
-/* ✅ NEW: Tab Content Visibility & Smooth Transitions */
+
 .product-tab-content {
   display: none;
 }
@@ -113,10 +109,6 @@
   }
 }
 
-/* ===================================
-   REFERENCE TABLES STYLES
-   (Matching Existing Form UI)
-   ================================= */
 
 .reference-table-container {
   margin-top: 0;
@@ -147,14 +139,14 @@
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  /* ✅ CLS FIX: Add explicit height to prevent reflow */
+
   min-height: 44px;
   height: 44px;
   box-sizing: border-box;
   contain: layout style;
 }
 
-/* First column header (Product Name) - same sky blue as others */
+
 .reference-table th:first-child {
   background: #dae9f8;
   color: #000;
@@ -195,7 +187,7 @@
   padding-left: 12px;
 }
 
-/* Column widths for better layout */
+
 .reference-table th:nth-child(1),
 .reference-table td:nth-child(1) {
   width: 30%;
@@ -222,7 +214,7 @@
   width: 25%;
 }
 
-/* Loading message */
+
 .loading-message {
   text-align: center;
   padding: 40px 20px;
@@ -230,7 +222,7 @@
   font-style: italic;
 }
 
-/* Responsive adjustments for tabs and tables */
+
 @media (max-width: 768px) {
   .product-tabs {
     gap: 4px;
@@ -261,13 +253,13 @@
     padding-left: 8px;
   }
 
-  /* Allow horizontal scrolling on mobile for better table display */
+
   .reference-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Adjust column widths for mobile */
+
   .reference-table th:nth-child(1),
   .reference-table td:nth-child(1) {
     min-width: 150px;
@@ -275,11 +267,7 @@
   }
 }
 
-/* ===================================
-   EXISTING STYLES CONTINUE BELOW
-   ================================= */
 
-/* Tab Navigation Styles */
 .prod__tabs {
   display: flex;
   gap: 8px;
@@ -330,7 +318,7 @@
   border-bottom: 1px solid #000;
   border-right: 1px solid #000;
   text-align: center;
-  /* ✅ CLS FIX: Add explicit height to prevent reflow */
+
   min-height: 40px;
   height: 40px;
   box-sizing: border-box;
@@ -338,7 +326,7 @@
 .h:first-child { border-left: 1px solid #000; }
 .h-blue {
   background: #dae9f8;
-  /* ✅ CLS FIX: Ensure layout containment */
+
   contain: layout style;
 }
 .center { text-align: center; }
@@ -355,7 +343,7 @@
   vertical-align: top;
 }
 
-/* Force custom columns to stay narrow */
+
 .th-edit,
 .th-edit td,
 td:has(.th-edit) {
@@ -364,7 +352,7 @@ td:has(.th-edit) {
   max-width: 80px !important;
 }
 
-/* Specific targeting for custom columns in products table */
+
 .table-desktop .grid10 th.th-edit,
 .table-desktop .grid10 td:last-child,
 .table-desktop .grid10 td:nth-last-child(2),
@@ -374,7 +362,7 @@ td:has(.th-edit) {
   max-width: 80px !important;
 }
 
-/* Mobile table custom columns */
+
 .gtable th.th-edit,
 .gtable td:last-child,
 .gtable td:nth-last-child(2),
@@ -487,7 +475,7 @@ td:has(.th-edit) {
 .gtable thead th {
   background: #dae9f8; color: #c20000; font-weight: 800; font-size: 14px;
   padding: 8px 10px; border-top: 1px solid #000; border-bottom: 1px solid #000; border-right: 1px solid #000;
-  /* ✅ CLS FIX: Add explicit height to prevent reflow */
+
   min-height: 40px;
   height: 40px;
   box-sizing: border-box;
@@ -501,7 +489,6 @@ td:has(.th-edit) {
   background: #fff;
 }
 
-/* --- Product select dropdown (for +Row) ----------------------------- */
 
 .product-select {
   position: relative;
@@ -572,10 +559,6 @@ td:has(.th-edit) {
 }
 
 
-
-
-/* === Product name cell: wrapped text + dropdown === */
-
 .namecell {
   position: relative;
   display: flex;
@@ -583,7 +566,7 @@ td:has(.th-edit) {
   gap: 6px;
 }
 
-/* Button that fills the cell and supports two lines of text */
+
 .namecell-display {
   flex: 1;
   position: relative;
@@ -611,7 +594,7 @@ td:has(.th-edit) {
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
-/* Text wraps inside the cell instead of overflowing */
+
 .namecell-text {
   display: block;
   white-space: normal;
@@ -621,7 +604,7 @@ td:has(.th-edit) {
   line-height: 1.4;
 }
 
-/* Small ▼ arrow */
+
 .namecell-caret {
   position: absolute;
   right: 8px;
@@ -637,7 +620,7 @@ td:has(.th-edit) {
   color: #333;
 }
 
-/* Row remove button stays to the right, same as before */
+
 .row-remove {
   width: 24px;
   height: 24px;
@@ -660,7 +643,7 @@ td:has(.th-edit) {
   color: #fff;
 }
 
-/* Dropdown panel, directly under the cell */
+
 .namecell-dropdown {
   position: absolute;
   top: 100%;
@@ -688,7 +671,7 @@ td:has(.th-edit) {
   }
 }
 
-/* Search box inside dropdown */
+
 .namecell-search {
   width: 100%;
   box-sizing: border-box;
@@ -712,14 +695,14 @@ td:has(.th-edit) {
   font-style: italic;
 }
 
-/* Scrollable options list */
+
 .namecell-options {
   max-height: 280px;
   overflow-y: auto;
   background: #fff;
 }
 
-/* Custom scrollbar for dropdown */
+
 .namecell-options::-webkit-scrollbar {
   width: 8px;
 }
@@ -737,7 +720,7 @@ td:has(.th-edit) {
   background: #999;
 }
 
-/* Single option row */
+
 .namecell-option {
   width: 100%;
   text-align: left;
@@ -779,7 +762,7 @@ td:has(.th-edit) {
   padding-left: 14px;
 }
 
-/* Custom option styling */
+
 .namecell-option--custom {
   background: #f8f9fa;
   border-top: 2px solid #e0e0e0;

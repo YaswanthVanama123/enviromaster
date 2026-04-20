@@ -1,4 +1,4 @@
-// src/components/common/SanitizedInput.tsx
+
 
 import React, { useState } from 'react';
 import { sanitizeText, detectProblematicCharacters, getReplacementSummary } from '../../utils/textSanitizer';
@@ -10,10 +10,7 @@ interface SanitizedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEl
   label?: string;
 }
 
-/**
- * Input component with automatic text sanitization on blur
- * Use this instead of regular <input> to prevent LaTeX errors
- */
+
 export const SanitizedInput: React.FC<SanitizedInputProps> = ({
   value,
   onChange,
@@ -39,13 +36,13 @@ export const SanitizedInput: React.FC<SanitizedInputProps> = ({
 
       if (showWarning && changes.length > 0) {
         setWarning(changes.join(', '));
-        setTimeout(() => setWarning(null), 5000); // Clear after 5 seconds
+        setTimeout(() => setWarning(null), 5000); 
       }
 
       onChange(detection.cleaned);
     }
 
-    // Call original onBlur if provided
+
     if (props.onBlur) {
       props.onBlur(e);
     }
@@ -90,10 +87,7 @@ interface SanitizedTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLT
   label?: string;
 }
 
-/**
- * Textarea component with automatic text sanitization on blur
- * Use this instead of regular <textarea> to prevent LaTeX errors
- */
+
 export const SanitizedTextarea: React.FC<SanitizedTextareaProps> = ({
   value,
   onChange,

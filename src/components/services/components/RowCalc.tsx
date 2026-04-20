@@ -10,18 +10,18 @@ export default function RowCalc({
   onRemove?: () => void;
   onRename?: (label: string) => void;
 }) {
-  // ✅ NEW: State for quantity and rate to auto-calculate total
+
   const [quantity, setQuantity] = useState<string>(row.defaultQty || "");
   const [rate, setRate] = useState<string>(row.defaultRate || "");
   const [total, setTotal] = useState<string>(row.defaultTotal || "");
 
-  // ✅ NEW: Auto-calculate total when quantity or rate changes
+
   useEffect(() => {
     const qty = parseFloat(quantity) || 0;
     const rateValue = parseFloat(rate) || 0;
     const calculatedTotal = qty * rateValue;
 
-    // Format to 2 decimal places if there's a valid calculation
+
     const formattedTotal = calculatedTotal > 0 ? calculatedTotal.toFixed(2) : "";
     setTotal(formattedTotal);
   }, [quantity, rate]);
@@ -40,7 +40,7 @@ export default function RowCalc({
 
       <div className="svc-row-right">
         <div className="svc-inline svc-inline--tight">
-          {/* ✅ UPDATED: Quantity input with onChange handler */}
+          {}
           <input
             className="svc-in sm"
             name={row.qtyName}
@@ -49,7 +49,7 @@ export default function RowCalc({
             placeholder="Qty"
           />
           <span>@</span>
-          {/* ✅ UPDATED: Rate input with onChange handler */}
+          {}
           <span>$</span>
           <input
             className="svc-in sm"
@@ -59,7 +59,7 @@ export default function RowCalc({
             placeholder="0.00"
           />
           <span>=</span>
-          {/* ✅ UPDATED: Total field - read-only, auto-calculated */}
+          {}
           <span>$</span>
           <input
             className="svc-in sm"

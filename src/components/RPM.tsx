@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 
-/** Simple UI primitives (no external deps) */
 const card = {
   border: "1px solid #e6e6e6",
   borderRadius: 14,
@@ -35,18 +34,14 @@ const money = (n) => (isNaN(n) ? "$0.00" : `$${Number(n).toFixed(2)}`);
 const unmoney = (s) =>
   s && `${s}`.trim() !== "—" ? Number(String(s).replace(/[^0-9.\-]/g, "")) || 0 : null;
 
-/* -------------------------------------------
-   SaniClean (per fixture) — Calculator
--------------------------------------------- */
 function SaniCleanCalculator() {
-  // editable “master” values (seeded to PDF defaults)
   const [master, setMaster] = useState({
     insidePrice: 7,
     insideMin: 40,
     beltwayTrip: 8,
 
     outsidePrice: 6,
-    outsideMin: null, // “—”
+    outsideMin: null,
     outsideTripPDF: 8,
 
     paidBase: 7,
@@ -54,28 +49,24 @@ function SaniCleanCalculator() {
     allIncPrice: 20,
   });
 
-  // inputs
-  const [region, setRegion] = useState("inside"); // inside | outside
+  const [region, setRegion] = useState("inside");
   const [fixtures, setFixtures] = useState(10);
   const [agreementMonths, setAgreementMonths] = useState(12);
-  const [tripType, setTripType] = useState("beltway8"); // beltway8 | standard6 | paid7 | waived
+  const [tripType, setTripType] = useState("beltway8");
   const [parkingAmt, setParkingAmt] = useState(0);
-  const [allInclusive, setAllInclusive] = useState("no"); // no | yes
+  const [allInclusive, setAllInclusive] = useState("no");
   const [smallThreshold, setSmallThreshold] = useState(5);
 
   const { perVisit, perMonth, agreement, ruleText } = useMemo(() => {
-    // resolve base unit/min by region
     let unit = region === "inside" ? master.insidePrice : master.outsidePrice;
     let regMin = region === "inside" ? master.insideMin ?? 0 : master.outsideMin ?? 0;
 
-    // All-Inclusive overrides
     const isAllInc = allInclusive === "yes";
     if (isAllInc) {
       unit = master.allIncPrice;
       regMin = 0;
     }
 
-    // trip
     let trip = 0;
     if (!isAllInc) {
       if (tripType === "beltway8") trip = master.beltwayTrip;
@@ -84,7 +75,6 @@ function SaniCleanCalculator() {
       else trip = 0;
     }
 
-    // compute per-visit
     const fx = Math.max(0, Number(fixtures) || 0);
     let perVisitCalc = Math.max(unit * fx + trip, regMin || 0);
 
@@ -92,13 +82,12 @@ function SaniCleanCalculator() {
       ? "All-Inclusive: trip waived; other services bundled."
       : `Trip = ${money(trip)}; Regional minimum = ${regMin ? money(regMin) : "—"}.`;
 
-    // small-account rule
     if (!isAllInc && fx > 0 && fx <= Math.max(0, Number(smallThreshold) || 0)) {
       perVisitCalc = Math.max(perVisitCalc, master.smallMin);
       rule = `Small-account rule: fixtures ≤ ${smallThreshold}, minimum ${money(master.smallMin)} (trip included).`;
     }
 
-    const perMonthCalc = perVisitCalc * 4.33; // weekly cadence
+    const perMonthCalc = perVisitCalc * 4.33;
     const months = Math.max(1, Number(agreementMonths) || 1);
     const agreementCalc = perMonthCalc * months;
 
@@ -110,7 +99,6 @@ function SaniCleanCalculator() {
     };
   }, [master, region, fixtures, agreementMonths, tripType, parkingAmt, allInclusive, smallThreshold]);
 
-  // helpers to edit master table cells
   const updateMaster = (k, raw) => {
     const val = unmoney(raw);
     setMaster((m) => ({ ...m, [k]: val === null || Number.isNaN(val) ? m[k] : val }));
@@ -271,25 +259,22 @@ function SaniCleanCalculator() {
   );
 }
 
-/* -------------------------------------------
-   RPM Windows (both sides) — Calculator
--------------------------------------------- */
 function RpmWindowsCalculator() {
   const [master, setMaster] = useState({
     rateSmall: 1.5,
     rateMedium: 3,
     rateLarge: 7,
-    multInstall: 3.0, // 300%
-    mult125: 1.25,    // biweekly/monthly
+    multInstall: 3.0,
+    mult125: 1.25,
     multQuarterly: 2.0,
     tripBeltway: 8,
     tripStandard: 6,
     tripPaidBase: 7,
   });
 
-  const [freq, setFreq] = useState("weekly"); // weekly | biweekly | monthly | quarterly
-  const [firstTime, setFirstTime] = useState("no"); // no | yes
-  const [tripType, setTripType] = useState("beltway8"); // beltway8 | standard6 | paid7 | waived
+  const [freq, setFreq] = useState("weekly");
+  const [firstTime, setFirstTime] = useState("no");
+  const [tripType, setTripType] = useState("beltway8");
   const [parkingAmt, setParkingAmt] = useState(0);
   const [agreementMonths, setAgreementMonths] = useState(12);
 
@@ -297,7 +282,7 @@ function RpmWindowsCalculator() {
   const [medium, setMedium] = useState(5);
   const [large, setLarge] = useState(2);
 
-  const [includeMirrors, setIncludeMirrors] = useState("no"); // no | yes
+  const [includeMirrors, setIncludeMirrors] = useState("no");
   const [sm, setSm] = useState(0);
   const [mm, setMm] = useState(0);
   const [lm, setLm] = useState(0);
@@ -567,7 +552,6 @@ function labelForFreq(freq) {
   return { weekly: "Weekly", biweekly: "Biweekly", monthly: "Monthly", quarterly: "Quarterly" }[freq] || "Weekly";
 }
 
-/** Inline money editor (click → edit → Enter/blur to commit) */
 function InlineMoneyEditor({ value, display, onCommit }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(display ?? money(value ?? 0));
@@ -610,18 +594,12 @@ function InlineMoneyEditor({ value, display, onCommit }) {
   );
 }
 
-/* -------------------------------------------
-   Parent: PricingTables
--------------------------------------------- */
 export default function PricingTables() {
   const [tab, setTab] = useState("SaniClean");
 
   const tabs = [
     { key: "SaniClean", component: <SaniCleanCalculator /> },
     { key: "RPM Windows", component: <RpmWindowsCalculator /> },
-    // Add next: { key: "SaniScrub", component: <SaniScrubCalculator /> },
-    // Add next: { key: "Microfiber Mopping", component: <MoppingCalculator /> },
-    // Add next: { key: "Drains", component: <DrainsCalculator /> },
   ];
 
   return (
@@ -631,7 +609,6 @@ export default function PricingTables() {
         Choose a service to configure its rates, rules, and agreement totals.
       </p>
 
-      {/* Tabs */}
       <div style={{ ...card, display: "flex", gap: 8, flexWrap: "wrap" }}>
         {tabs.map((t) => (
           <button
@@ -651,7 +628,6 @@ export default function PricingTables() {
         ))}
       </div>
 
-      {/* Content */}
       {tabs.find((t) => t.key === tab)?.component}
     </div>
   );

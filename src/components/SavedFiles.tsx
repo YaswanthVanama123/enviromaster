@@ -14,11 +14,9 @@ import DocumentSidebar from "./DocumentSidebar";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
-// ✅ OPTIMIZED: Lazy load heavy components (code splitting for better LCP)
 const EmailComposer = lazy(() => import("./EmailComposer"));
 const ZohoUpload = lazy(() => import("./ZohoUpload"));
 
-// Import types separately (not lazy loaded)
 import type { EmailData } from "./EmailComposer";
 
 type FileStatus =
@@ -49,23 +47,19 @@ const STATUS_LABEL: Record<FileStatus, string> = {
 };
 
 export default function SavedFiles() {
-  // ✅ NEW: Use grouped data structure instead of flat files list
   const [groups, setGroups] = useState<SavedFileGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  // ✅ NEW: Pagination state for groups
   const [currentPage, setCurrentPage] = useState(1);
   const [totalGroups, setTotalGroups] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [groupsPerPage] = useState(20);
   const [filesPerPage] = useState(20);
 
-  // Search and sorting
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "status">("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  // Selection states - now per group and per file
   const [selectedGroups, setSelectedGroups] = useState<Record<string, boolean>>({});
   const [selectedFiles, setSelectedFiles] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
@@ -74,69 +68,49 @@ export default function SavedFiles() {
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
 
-  // Zoho upload state
   const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
   const [currentZohoFile, setCurrentZohoFile] = useState<SavedFileListItem | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ NEW: Track first mount to avoid duplicate API calls
   const isFirstMount = useRef(true);
 
-  // Detect if we're in admin context
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
-  console.log("📍 SavedFiles context:", { isInAdminContext, returnPath, currentPath: location.pathname });
-
-  // ✅ FIXED: Fetch grouped files AND draft-only agreements
   const fetchGroups = async (page = 1, search = "") => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`📁 [SAVED-FILES-GROUPED] Fetching page ${page} with search: "${search}"`);
-
-      // 1. Fetch grouped files (agreements with PDFs)
       const groupedResponse = await pdfApi.getSavedFilesGrouped(page, groupsPerPage, {
         search: search.trim() || undefined
       });
 
-      console.log(`📁 [SAVED-FILES-GROUPED] Loaded ${groupedResponse.groups.length} groups with PDFs`);
-
-      // 2. ✅ OPTIMIZED: Use lightweight summary API instead of full customer headers
-      // This avoids loading heavy payload data for all agreements upfront
       const headersResponse = await pdfApi.getCustomerHeadersSummary();
 
-      // Find draft agreements that don't appear in the grouped response (no PDFs)
       const groupedIds = new Set(groupedResponse.groups.map(g => g.id));
       const draftOnlyHeaders = headersResponse.items.filter(header =>
         !groupedIds.has(header._id) &&
         header.status === 'draft' &&
-        // Apply search filter if provided
         (!search.trim() ||
          (header.headerTitle &&
           header.headerTitle.toLowerCase().includes(search.trim().toLowerCase())))
       );
 
-      // 3. ✅ OPTIMIZED: Convert lightweight draft headers to SavedFileGroup format
       const draftGroups: SavedFileGroup[] = draftOnlyHeaders.map(header => ({
         id: header._id,
         agreementTitle: header.headerTitle || `Agreement ${header._id}`,
-        fileCount: 0, // No PDFs yet
+        fileCount: 0,
         latestUpdate: header.updatedAt,
         statuses: [header.status],
         hasUploads: false,
-        files: [] // No files yet - detailed data loaded on-demand
+        files: []
       }));
 
-      console.log(`📁 [DRAFT-ONLY] Found ${draftGroups.length} draft-only agreements`);
-
-      // 4. ✅ NEW: Merge grouped files with draft-only agreements
       const allGroups = [...groupedResponse.groups, ...draftGroups];
 
       setGroups(allGroups);
@@ -144,7 +118,6 @@ export default function SavedFiles() {
       setTotalFiles(groupedResponse.total);
       setCurrentPage(page);
 
-      // Clear selection when changing pages/search
       setSelectedGroups({});
       setSelectedFiles({});
     } catch (err) {
@@ -158,47 +131,35 @@ export default function SavedFiles() {
     }
   };
 
-  // ✅ FIXED: Separate initial load from search to prevent duplicate calls in admin panel
-  // Initial load - runs once on mount
   useEffect(() => {
     if (isFirstMount.current) {
       isFirstMount.current = false;
-      console.log(`📁 [SAVED-FILES] Initial load (context: ${isInAdminContext ? 'admin' : 'normal'})`);
       fetchGroups(1, query);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only runs on mount
+  }, []);
 
-  // Search handler - debounced, only runs when query changes after mount
   useEffect(() => {
-    // Skip if this is the first mount (already handled above)
     if (isFirstMount.current) return;
 
-    console.log(`🔍 [SAVED-FILES] Search query changed to: "${query}"`);
-
-    // Debounce search to avoid excessive API calls while typing
     const timeoutId = setTimeout(() => {
       fetchGroups(1, query);
     }, 500);
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]); // Only depends on query
+  }, [query]);
 
-  // ✅ CLIENT-SIDE SORTING: Sort current page groups
   const sortedGroups = useMemo(() => {
     let out = [...groups];
 
-    // Sort by selected criteria
     out = out.sort((a, b) => {
       if (sortBy === "date") {
-        // Sort by latest update date
         const dateA = new Date(a.latestUpdate).getTime();
         const dateB = new Date(b.latestUpdate).getTime();
-        const order = dateB - dateA; // Default: newest first
+        const order = dateB - dateA;
         return sortDir === "desc" ? order : -order;
       } else {
-        // Sort by most common status in group
         const statusA = a.statuses[0] || '';
         const statusB = b.statuses[0] || '';
         const order = statusA.localeCompare(statusB);
@@ -209,18 +170,15 @@ export default function SavedFiles() {
     return out;
   }, [groups, sortBy, sortDir]);
 
-  // ✅ FIXED: Flatten groups to get all files + create pseudo-files for draft-only agreements
   const sorted = useMemo(() => {
     const allFiles: SavedFileListItem[] = [];
 
     sortedGroups.forEach(group => {
       if (group.files.length > 0) {
-        // Regular group with files
         allFiles.push(...group.files);
       } else {
-        // ✅ NEW: Draft-only agreement with no files - create a pseudo-file for the table
         const pseudoFile: SavedFileListItem = {
-          id: group.id, // Use agreement ID as file ID for editing
+          id: group.id,
           fileName: `${group.agreementTitle}.pdf`,
           fileType: 'main_pdf' as const,
           title: group.agreementTitle,
@@ -231,7 +189,7 @@ export default function SavedFiles() {
           updatedBy: null,
           fileSize: 0,
           pdfStoredAt: null,
-          hasPdf: false, // No PDF generated yet
+          hasPdf: false,
           zohoInfo: {
             biginDealId: null,
             biginFileId: null,
@@ -246,7 +204,6 @@ export default function SavedFiles() {
     return allFiles;
   }, [sortedGroups]);
 
-  // ✅ Selection helpers for backward compatibility
   const selected = useMemo(() => {
     const result: Record<string, boolean> = {};
     sorted.forEach(file => {
@@ -263,7 +220,6 @@ export default function SavedFiles() {
     return Object.values(selected).some(Boolean);
   }, [selected]);
 
-  // ✅ NEW: Group expansion handlers
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => {
       const newSet = new Set(prev);
@@ -276,7 +232,6 @@ export default function SavedFiles() {
     });
   };
 
-  // ✅ NEW: Selection helpers for groups and files
   const isGroupExpanded = (groupId: string) => expandedGroups.has(groupId);
   const isGroupSelected = (groupId: string) => selectedGroups[groupId] || false;
   const isFileSelected = (fileId: string) => selectedFiles[fileId] || false;
@@ -292,13 +247,10 @@ export default function SavedFiles() {
     setSelectedFiles((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  // ✅ Status change with immediate UI update
   function changeStatus(id: string, next: FileStatus) {
-    // Save to backend and refresh data
     saveStatusToBackend(id, next);
   }
 
-  // ✅ Send for approval (batch operation)
   async function sendForApproval() {
     const ids = Object.entries(selected)
       .filter(([, v]) => v)
@@ -309,14 +261,12 @@ export default function SavedFiles() {
     try {
       setLoading(true);
 
-      // Update all selected documents to pending_approval
       const updatePromises = ids.map(id =>
         pdfApi.updateDocumentStatus(id, "pending_approval")
       );
 
       await Promise.all(updatePromises);
 
-      // Clear selection and refresh data
       setSelectedFiles({});
 
       setToastMessage({
@@ -324,7 +274,6 @@ export default function SavedFiles() {
         type: "success"
       });
 
-      // Refresh data from server
       fetchGroups(currentPage, query);
     } catch (err) {
       console.error("Error sending for approval:", err);
@@ -337,15 +286,9 @@ export default function SavedFiles() {
     }
   }
 
-  // ✅ NEW: View handler - Loads full details only when needed
   const handleView = async (file: SavedFileListItem) => {
     try {
-      console.log(`👁️ [VIEW] Loading full details for file: ${file.id}`);
-
-      // First try to get full details to ensure it exists and is accessible
       const response = await pdfApi.getSavedFileDetails(file.id);
-
-      console.log(`👁️ [VIEW] Loaded ${response._metadata.payloadSize} bytes of payload data`);
 
       navigate("/pdf-viewer", {
         state: {
@@ -364,7 +307,6 @@ export default function SavedFiles() {
     }
   };
 
-  // ✅ Download handler (no changes needed - uses existing endpoint)
   const handleDownload = async (file: SavedFileListItem) => {
     try {
       setDownloadingId(file.id);
@@ -389,16 +331,13 @@ export default function SavedFiles() {
     }
   };
 
-  // ✅ Save status handler
   const saveStatusToBackend = async (id: string, status: FileStatus) => {
     try {
       setSavingStatusId(id);
 
       await pdfApi.updateDocumentStatus(id, status);
-      console.log("Status updated successfully");
       setToastMessage({ message: "Status updated successfully!", type: "success" });
 
-      // Refresh data to show updated status
       fetchGroups(currentPage, query);
     } catch (err) {
       console.error("Error updating status:", err);
@@ -408,15 +347,12 @@ export default function SavedFiles() {
     }
   };
 
-  // ✅ Email handler
   const handleEmail = (file: SavedFileListItem) => {
     setCurrentEmailFile(file);
     setEmailComposerOpen(true);
   };
 
-  // ✅ Zoho upload handler
   const handleZohoUpload = (file: SavedFileListItem) => {
-    // Only allow upload for files that have PDFs
     if (!file.hasPdf) {
       setToastMessage({
         message: "This document doesn't have a PDF to upload. Please generate the PDF first.",
@@ -429,12 +365,10 @@ export default function SavedFiles() {
     setZohoUploadOpen(true);
   };
 
-  // ✅ Zoho upload success handler
   const handleZohoUploadSuccess = () => {
     setZohoUploadOpen(false);
     setCurrentZohoFile(null);
 
-    // Refresh the files list to show updated Zoho status
     fetchGroups(currentPage, query);
 
     setToastMessage({
@@ -443,7 +377,6 @@ export default function SavedFiles() {
     });
   };
 
-  // ✅ Send email handler
   const handleSendEmail = async (emailData: EmailData) => {
     if (!currentEmailFile) return;
 
@@ -464,43 +397,33 @@ export default function SavedFiles() {
         type: "success"
       });
 
-      // Close composer
       setEmailComposerOpen(false);
       setCurrentEmailFile(null);
 
     } catch (error) {
       console.error("Error sending email:", error);
-      throw error; // Let EmailComposer handle the error display
+      throw error;
     }
   };
 
-  // ✅ Close email composer
   const handleCloseEmailComposer = () => {
     setEmailComposerOpen(false);
     setCurrentEmailFile(null);
   };
 
-  // ✅ FIXED: Edit handler - Handles both regular files and draft-only agreements
   const handleEdit = async (file: SavedFileListItem) => {
     try {
-      console.log(`✏️ [EDIT] Loading full details for file: ${file.id}`);
-
-      // ✅ FIXED: Handle both regular files and draft-only pseudo-files
       let parentGroup: SavedFileGroup | undefined;
       let agreementId: string;
 
       if (!file.hasPdf && file.fileType === 'main_pdf') {
-        // This is a draft-only pseudo-file - the file ID is the agreement ID
         parentGroup = groups.find(group => group.id === file.id);
         agreementId = file.id;
-        console.log(`✏️ [EDIT] Draft-only agreement: ${agreementId}`);
       } else {
-        // Regular file - find the group that contains this file
         parentGroup = groups.find(group =>
           group.files.some(f => f.id === file.id)
         );
         agreementId = parentGroup?.id || file.id;
-        console.log(`✏️ [EDIT] Regular file, agreement: ${agreementId}`);
       }
 
       if (!parentGroup) {
@@ -511,19 +434,14 @@ export default function SavedFiles() {
         return;
       }
 
-      // Load full details to ensure all form data is available (for regular files)
       if (file.hasPdf) {
         const response = await pdfApi.getSavedFileDetails(file.id);
-        console.log(`✏️ [EDIT] Loaded ${response._metadata.payloadSize} bytes of payload data for editing`);
       }
 
-      console.log(`✏️ [EDIT] Editing agreement: ${agreementId} (was viewing file: ${file.id})`);
-
-      // ✅ FIXED: Navigate using agreement ID, not file ID
       navigate(`/edit/pdf/${agreementId}`, {
         state: {
           editing: true,
-          id: agreementId, // ✅ Use agreement ID, not file ID
+          id: agreementId,
           returnPath: returnPath,
           returnState: null,
         },
@@ -537,7 +455,6 @@ export default function SavedFiles() {
     }
   };
 
-  // ✅ NEW: Pagination helpers
   const totalPages = Math.ceil(totalFiles / filesPerPage);
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;
@@ -560,7 +477,6 @@ export default function SavedFiles() {
     }
   };
 
-  // Calculate status counts for sidebar
   const statusCountsData = useMemo(() => {
     const counts: { [key: string]: number } = {
       draft: 0,
@@ -585,7 +501,6 @@ export default function SavedFiles() {
     ];
   }, [sorted]);
 
-  // Calculate agreement timelines for sidebar
   const agreementTimelinesData = useMemo(() => {
     return groups
       .filter(group => group.startDate && group.contractMonths)
@@ -621,9 +536,7 @@ export default function SavedFiles() {
 
   return (
     <div style={{ display: 'flex', gap: '24px' }}>
-      {/* Main Content */}
       <section className="sf" style={{ flex: 1 }}>
-      {/* <div className="sf__hero">Saved Files</div> */}
 
       <div className="sf__toolbar">
         <div className="sf__search">
@@ -644,7 +557,7 @@ export default function SavedFiles() {
                 setSortDir((d) => (d === "desc" ? "asc" : "desc"));
               } else {
                 setSortBy("date");
-                setSortDir("desc"); // Newest first when switching to date
+                setSortDir("desc");
               }
             }}
             style={sortBy === "date" ? { backgroundColor: "#3b82f6", color: "white" } : {}}
@@ -698,7 +611,6 @@ export default function SavedFiles() {
           </thead>
           <tbody>
             {loading && (
-              // ✅ OPTIMIZED: Skeleton loader reduces CLS by reserving space
               <>
                 {Array.from({ length: 5 }).map((_, idx) => (
                   <tr key={`skeleton-${idx}`} className="skeleton-row">
@@ -846,7 +758,6 @@ export default function SavedFiles() {
         </table>
       </div>
 
-      {/* ✅ NEW: Enhanced Pagination with page info */}
       <div className="sf__pager">
         <div className="sf__page-info">
           Showing {Math.min((currentPage - 1) * filesPerPage + 1, totalFiles)}-{Math.min(currentPage * filesPerPage, totalFiles)} of {totalFiles} files
@@ -862,14 +773,12 @@ export default function SavedFiles() {
             Previous
           </button>
 
-          {/* Page numbers */}
           <div className="sf__page-numbers">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
                 pageNum = i + 1;
               } else {
-                // Show pages around current page
                 const start = Math.max(1, currentPage - 2);
                 const end = Math.min(totalPages, start + 4);
                 pageNum = start + i;
@@ -909,9 +818,7 @@ export default function SavedFiles() {
         />
       )}
 
-      {/* ✅ OPTIMIZED: Lazy loaded modals wrapped in Suspense (code splitting) */}
       <Suspense fallback={null}>
-        {/* Email Composer Modal */}
         <EmailComposer
           isOpen={emailComposerOpen}
           onClose={handleCloseEmailComposer}
@@ -924,10 +831,9 @@ export default function SavedFiles() {
           } : undefined}
           defaultSubject={currentEmailFile ? `${currentEmailFile.title} - ${STATUS_LABEL[currentEmailFile.status as FileStatus]}` : ''}
           defaultBody={currentEmailFile ? `Hello,\n\nPlease find the customer header document attached.\n\nDocument: ${currentEmailFile.title}\nStatus: ${STATUS_LABEL[currentEmailFile.status as FileStatus]}\n\nBest regards` : ''}
-          userEmail="" // TODO: Get from user login context
+          userEmail=""
         />
 
-        {/* Zoho Upload Modal */}
         {zohoUploadOpen && currentZohoFile && (
           <ZohoUpload
             agreementId={currentZohoFile.agreementId || currentZohoFile.id}
@@ -942,7 +848,6 @@ export default function SavedFiles() {
       </Suspense>
     </section>
 
-    {/* Right Sidebar */}
     <DocumentSidebar
       statusCounts={statusCountsData}
       totalDocuments={totalFiles}

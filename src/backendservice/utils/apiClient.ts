@@ -1,4 +1,3 @@
-// src/backendservice/utils/apiClient.ts
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -8,13 +7,11 @@ export interface ApiResponse<T> {
   status: number;
 }
 
-// ✅ Type for the unauthorized callback
 type UnauthorizedCallback = () => void;
 
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
-  // ✅ NEW: Callback to handle 401/403 errors
   private onUnauthorized: UnauthorizedCallback | null = null;
 
   constructor(baseUrl: string) {
@@ -22,14 +19,11 @@ class ApiClient {
     this.token = localStorage.getItem("admin_token");
   }
 
-  // ✅ NEW: Set callback for unauthorized errors
   setUnauthorizedCallback(callback: UnauthorizedCallback | null) {
     this.onUnauthorized = callback;
   }
 
-  // ✅ NEW: Handle unauthorized response
   private handleUnauthorizedResponse(status: number, endpoint: string) {
-    // Only trigger callback for admin panel endpoints (not public endpoints)
     const isAdminEndpoint = endpoint.includes('/admin') ||
                            endpoint.includes('/api/pdf') ||
                            endpoint.includes('/api/email') ||
@@ -76,7 +70,6 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        // ✅ NEW: Handle 401/403 errors
         this.handleUnauthorizedResponse(response.status, endpoint);
 
         return {
@@ -108,7 +101,6 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        // ✅ NEW: Handle 401/403 errors
         this.handleUnauthorizedResponse(response.status, endpoint);
 
         return {
@@ -140,7 +132,6 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        // ✅ NEW: Handle 401/403 errors
         this.handleUnauthorizedResponse(response.status, endpoint);
 
         return {
@@ -180,7 +171,6 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        // ✅ NEW: Handle 401/403 errors
         this.handleUnauthorizedResponse(response.status, endpoint);
 
         return {
@@ -212,7 +202,6 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        // ✅ NEW: Handle 401/403 errors
         this.handleUnauthorizedResponse(response.status, endpoint);
 
         return {
@@ -233,9 +222,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Download a file as blob (for PDF downloads)
-   */
   async downloadBlob(endpoint: string): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "GET",
@@ -246,7 +232,6 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      // ✅ Handle 401/403 errors
       this.handleUnauthorizedResponse(response.status, endpoint);
       throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
     }

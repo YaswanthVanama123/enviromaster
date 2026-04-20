@@ -1,4 +1,3 @@
-// src/components/ManualUploads.tsx
 import { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileAlt, faDownload, faTrash, faUpload, faCheckCircle, faTimes, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
@@ -41,10 +40,8 @@ export default function ManualUploads() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [uploadToDelete, setUploadToDelete] = useState<string | null>(null);
 
-  // ✅ NEW: Track first mount to avoid duplicate API calls
   const isFirstMount = useRef(true);
 
-  // ✅ OPTIMIZED: Fetch uploads ONLY on first mount
   useEffect(() => {
     if (isFirstMount.current) {
       isFirstMount.current = false;
@@ -90,29 +87,24 @@ export default function ManualUploads() {
     let failCount = 0;
 
     try {
-      // Upload files one by one
       for (let i = 0; i < selectedFiles.length; i++) {
         try {
           setUploadProgress({ current: i + 1, total: selectedFiles.length });
           await manualUploadApi.uploadFile(selectedFiles[i], description);
           successCount++;
-          console.log(`Upload ${i + 1}/${selectedFiles.length} successful`);
         } catch (err) {
           console.error(`Error uploading file ${selectedFiles[i].name}:`, err);
           failCount++;
         }
       }
 
-      // Reset form
       setSelectedFiles([]);
       setDescription("");
       setUploadProgress(null);
 
       if (successCount > 0) {
         setUploadSuccess(true);
-        // Refresh list
         fetchUploads();
-        // Clear success message after 3 seconds
         setTimeout(() => setUploadSuccess(false), 3000);
       }
 
@@ -180,7 +172,6 @@ export default function ManualUploads() {
         <p className="subtitle">Upload PDFs manually to Bigin</p>
       </div>
 
-      {/* Upload Section */}
       <div className="upload-section-card">
         <h3>Upload New PDF(s)</h3>
         <div className="upload-form">
@@ -266,7 +257,6 @@ export default function ManualUploads() {
         </div>
       </div>
 
-      {/* Uploads List */}
       <div className="uploads-list-card">
         <h3>Uploaded Files</h3>
         {loading ? (

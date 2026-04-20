@@ -1,4 +1,3 @@
-// src/components/ZohoUpload.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -26,13 +25,11 @@ interface ZohoUploadProps {
   agreementTitle: string;
   onClose: () => void;
   onSuccess: () => void;
-  // ✅ NEW: Optional bulk upload support using existing UI
   bulkFiles?: Array<{ id: string; fileName: string; title: string; fileType?: string }>;
 }
 
 type UploadStep = 'loading' | 'first-time' | 'update' | 'uploading' | 'success' | 'error';
 
-// ✅ NEW: Company with match information for enhanced search
 interface CompanyWithMatch extends ZohoCompany {
   matchType?: MatchType;
   matchScore?: number;
@@ -43,13 +40,12 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   agreementTitle,
   onClose,
   onSuccess,
-  bulkFiles  // ✅ NEW: Optional bulk files array
+  bulkFiles
 }) => {
-  // State management
   const [step, setStep] = useState<UploadStep>('loading');
   const [uploadStatus, setUploadStatus] = useState<ZohoUploadStatus | null>(null);
-  const [allCompanies, setAllCompanies] = useState<ZohoCompany[]>([]); // ✅ NEW: Store all companies fetched from backend
-  const [companies, setCompanies] = useState<CompanyWithMatch[]>([]); // ✅ Filtered/sorted companies to display
+  const [allCompanies, setAllCompanies] = useState<ZohoCompany[]>([]);
+  const [companies, setCompanies] = useState<CompanyWithMatch[]>([]);
   const [pipelineOptions, setPipelineOptions] = useState<ZohoPipelineOptions | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateCompany, setShowCreateCompany] = useState(false);
@@ -57,7 +53,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Form data
   const [selectedCompany, setSelectedCompany] = useState<ZohoCompany | null>(null);
   const [dealName, setDealName] = useState('');
   const [pipelineName, setPipelineName] = useState('Sales Pipeline');
@@ -71,34 +66,27 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     address: ''
   });
 
-  // ✅ NEW: File selection state for checkbox functionality
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [uploadMode, setUploadMode] = useState<"files" | "notes">("files");
 
-  // Initialize component
   useEffect(() => {
     initializeUpload();
-  }, [agreementId, bulkFiles]);  // ✅ Also watch bulkFiles changes
+  }, [agreementId, bulkFiles]);
 
-  // ✅ NEW: Initialize selected files when bulkFiles changes
   useEffect(() => {
     if (bulkFiles && bulkFiles.length > 0) {
-      // ✅ DEBUG: Log bulk files to check fileType
       console.log(`🔍 [BULK-FILES-DEBUG] Received ${bulkFiles.length} bulk files:`);
       bulkFiles.forEach((file, index) => {
         console.log(`   ${index + 1}. ${file.fileName} (ID: ${file.id}, Type: ${file.fileType || 'undefined'})`);
       });
 
-      // Default: select all files initially
       const allFileIds = new Set(bulkFiles.map(file => file.id));
       setSelectedFiles(allFileIds);
     } else {
-      // Single file mode: always selected
       setSelectedFiles(new Set([agreementId]));
     }
   }, [bulkFiles, agreementId]);
 
-  // ✅ NEW: Helper functions for file selection
   const toggleFileSelection = (fileId: string) => {
     setSelectedFiles(prev => {
       const newSet = new Set(prev);
@@ -121,16 +109,13 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     setSelectedFiles(new Set());
   };
 
-  // ✅ NEW: Get only selected files for upload
   const getSelectedBulkFiles = () => {
     if (!bulkFiles) return null;
     return bulkFiles.filter(file => selectedFiles.has(file.id));
   };
 
-  // ✅ FIXED: Proper file type detection for correct API routing
   const getFileUploadStrategy = (file: any) => {
-    // Version PDFs and main agreement files use the main agreement API
-  if (file.fileType === 'main_pdf' || file.fileType === 'version_pdf') {
+    if (file.fileType === 'main_pdf' || file.fileType === 'version_pdf') {
     return {
       type: 'agreement',
       route: 'updateUpload',
@@ -139,7 +124,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     };
   }
 
-  // Manual uploads (attached files) use the attached file API
   if (file.fileType === 'attached_pdf') {
     return {
       type: 'attached',
@@ -158,7 +142,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     };
   }
 
-  // Fallback: filename-based detection for files without clear type
   const fileName = file.fileName?.toLowerCase() || '';
   if (fileName.includes('agreement') || fileName.includes('main')) {
       return {
@@ -169,24 +152,19 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       };
     }
 
-    // Default to agreement route for unknown types
-    return {
-      type: 'agreement',
+    return {      type: 'agreement',
       route: 'updateUpload',
       useAgreementId: true,
       description: 'Unknown (default to agreement)'
     };
   };
 
-  // ✅ Calculate actual Zoho file names (with version numbers)
   const calculateZohoFileName = (file: any, dealName: string, version: number = 1) => {
     const strategy = getFileUploadStrategy(file);
 
     if (strategy.type === 'agreement') {
-      // Agreement files (main PDF, version PDF) get versioned names
       return `${dealName.replace(/[^a-zA-Z0-9-_]/g, '_')}_v${version}.pdf`;
     } else {
-      // Manual uploads get _attached suffix
       const cleanFileName = file.fileName.replace(/[^a-zA-Z0-9\-_.]/g, '_');
       if (file.fileType === 'version_log') {
         return `${cleanFileName.replace('.pdf', '')}_log.pdf`;
@@ -200,19 +178,16 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setLoading(true);
       setError(null);
 
-      // ✅ BULK UPLOAD MODE: Check folder-level mapping status
       if (bulkFiles && bulkFiles.length > 0) {
         console.log(`🔍 [BULK] Checking folder mapping status for ${bulkFiles.length} files`);
 
-        // ✅ FIX: Check multiple files to determine folder mapping state
         let existingMappingFound = false;
         let folderMapping = null;
         let checkedFiles = 0;
-        const maxFilesToCheck = Math.min(3, bulkFiles.length); // Check up to 3 files for efficiency
+        const maxFilesToCheck = Math.min(3, bulkFiles.length);
 
         for (const file of bulkFiles.slice(0, maxFilesToCheck)) {
           try {
-            // ✅ FIX: Use main agreementId for status check, not file.id
             const statusResult = await zohoApi.getUploadStatus(agreementId);
             checkedFiles++;
 
@@ -225,30 +200,25 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
               existingMappingFound = true;
               folderMapping = statusResult.mapping;
               console.log(`♻️ [BULK] Found existing mapping in folder:`, folderMapping);
-              break; // Found a mapping, no need to check more files
+              break;
             }
           } catch (err) {
             console.warn(`⚠️ [BULK] Could not check status for ${file.fileName}:`, err);
-            // Continue checking other files even if one fails
           }
         }
 
         if (existingMappingFound && folderMapping) {
-          // ✅ EXISTING MAPPING: Go to update mode for folder
           console.log(`♻️ [BULK] Using existing folder mapping - Update mode for ${bulkFiles.length} files`);
           setUploadStatus({ isFirstTime: false, mapping: folderMapping });
 
-          // Set default notes for bulk update using actual Zoho file names
           const nextVersion = folderMapping.nextVersion || 2;
           const actualFileNames = bulkFiles.map(file =>
             calculateZohoFileName(file, folderMapping.dealName || 'Deal', nextVersion)
           );
-          // setNoteText(`Bulk update - Adding ${bulkFiles.length} documents:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
           setStep('update');
           return;
         }
 
-        // ✅ NEW FOLDER: Load companies for first-time bulk upload
         console.log(`🆕 [BULK] New folder - Loading companies for ${bulkFiles.length} files`);
         const companiesResult = await zohoApi.getCompanies(1);
 
@@ -256,68 +226,53 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           throw new Error(companiesResult.error || 'Failed to load companies');
         }
 
-        // ✅ NEW: Store ALL companies from backend for client-side filtering
         const allCompaniesData = companiesResult.companies || [];
         setAllCompanies(allCompaniesData);
 
-        // ✅ Initially show all companies (no search term yet)
         setCompanies(allCompaniesData);
 
         console.log(`✅ Loaded ${allCompaniesData.length} companies for client-side search`);
 
-        // Set default deal name for bulk upload
         const defaultDealName = bulkFiles.length === 1
           ? bulkFiles[0].title
           : `Bulk Upload - ${bulkFiles.length} Documents`;
         setDealName(defaultDealName);
 
-        // Set default notes for bulk first-time upload using actual Zoho file names
         const actualFileNames = bulkFiles.map(file =>
           file.fileName || calculateZohoFileName(file, defaultDealName, 1)
         );
-        // setNoteText(`Bulk upload of ${bulkFiles.length} documents to Zoho Bigin:\n${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`);
 
         setStep('first-time');
         return;
       }
 
-      // ✅ SINGLE UPLOAD MODE: Original logic
-      // Check upload status
       const statusResult = await zohoApi.getUploadStatus(agreementId);
       setUploadStatus(statusResult);
 
       if (statusResult.isFirstTime) {
-        // Load companies for first-time upload
         const companiesResult = await zohoApi.getCompanies(1);
 
         if (!companiesResult.success) {
           throw new Error(companiesResult.error || 'Failed to load companies');
         }
 
-        // ✅ NEW: Store ALL companies from backend for client-side filtering
         const allCompaniesData = companiesResult.companies || [];
         setAllCompanies(allCompaniesData);
 
-        // ✅ Initially show all companies (no search term yet)
         setCompanies(allCompaniesData);
 
         console.log(`✅ Loaded ${allCompaniesData.length} companies for client-side search`);
 
-        // ✅ FIX: Don't load pipeline options here - wait for company selection
-
-        // Generate default deal name
         const defaultDealName = generateDealName(statusResult.agreement?.headerTitle || agreementTitle);
         setDealName(defaultDealName);
 
         setStep('first-time');
       } else {
-        // Update mode
         setStep('update');
       }
     } catch (err) {
       console.error('Failed to initialize upload:', err);
 
-      // ✅ NEW: Show helpful error for OAuth issues
       if (err.message?.includes('authorization') || err.message?.includes('auth')) {
         setError('Zoho integration not set up. Please contact your administrator to configure Zoho Bigin access.');
       } else {
@@ -330,11 +285,9 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     }
   };
 
-  // ✅ NEW: Load pipeline options when company is selected
   useEffect(() => {
     const loadPipelineOptions = async () => {
       if (!selectedCompany) {
-        // Clear pipeline options when no company selected
         setPipelineOptions({ success: false, pipelines: [], stages: [] });
         return;
       }
@@ -347,12 +300,10 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           setPipelineOptions(pipelineResult);
           console.log(`✅ Loaded pipeline options:`, pipelineResult.pipelines?.length || 0, 'pipelines');
 
-          // Set default values from the loaded options
           if (pipelineResult.pipelines?.length > 0) {
             setPipelineName(pipelineResult.pipelines[0].value);
           }
           if (pipelineResult.stages?.length > 0) {
-            // ✅ CHANGED: Try to find "Proposal/Price Quote" stage, otherwise use first stage
             const proposalStage = pipelineResult.stages.find(s =>
               s.label?.toLowerCase().includes('proposal') ||
               s.label?.toLowerCase().includes('price quote')
@@ -362,33 +313,28 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
           }
         } else {
           console.error('Failed to load pipeline options:', pipelineResult.error);
-          // Keep existing fallback values
         }
       } catch (error) {
         console.error('Error loading pipeline options:', error);
-        // Keep existing fallback values
       }
     };
 
     loadPipelineOptions();
-  }, [selectedCompany]); // Trigger when company selection changes
+  }, [selectedCompany]);
 
   const generateDealName = (title: string) => {
     const cleanTitle = title?.trim() || 'Service Proposal';
     return `${cleanTitle} - EnviroMaster Services`;
   };
 
-  // ✅ NEW: Client-side search filtering using fuzzy matching
   const filterCompanies = useCallback((search: string) => {
     if (!search.trim()) {
-      // No search term - show all companies without match information
       setCompanies(allCompanies);
       return;
     }
 
     console.log(`🔍 [CLIENT-SEARCH] Filtering ${allCompanies.length} companies for: "${search}"`);
 
-    // Apply fuzzy matching to all companies
     const companiesWithMatch: CompanyWithMatch[] = allCompanies.map(company => {
       const matchResult = matchCompanyName(company.name, search);
       return {
@@ -398,10 +344,8 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       };
     });
 
-    // Filter out companies with no match (below fuzzy threshold)
     const matchedCompanies = companiesWithMatch.filter(c => c.matchType !== 'none');
 
-    // Sort by match quality (exact > partial > fuzzy, then by score)
     const sortedCompanies = matchedCompanies.sort((a, b) => {
       const matchTypePriority: Record<MatchType, number> = {
         exact: 4,
@@ -414,10 +358,9 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       const priorityB = matchTypePriority[b.matchType || 'none'];
 
       if (priorityA !== priorityB) {
-        return priorityB - priorityA; // Higher priority first
+        return priorityB - priorityA;
       }
 
-      // Within same match type, sort by score (higher score first)
       return (b.matchScore || 0) - (a.matchScore || 0);
     });
 
@@ -431,7 +374,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     setCompanies(sortedCompanies);
   }, [allCompanies]);
 
-  // ✅ NEW: Instant client-side filtering (no debounce needed - it's fast!)
   useEffect(() => {
     if (step === 'first-time') {
       filterCompanies(searchTerm);
@@ -451,7 +393,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       if (result.success && result.company) {
         setSelectedCompany(result.company);
 
-        // ✅ NEW: Add to both allCompanies (for search) and companies (for display)
         setAllCompanies(prev => [result.company!, ...prev]);
         setCompanies(prev => [result.company!, ...prev]);
 
@@ -496,7 +437,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setUploadMode(hasAnyFile ? "files" : "notes");
       setStep('uploading');
 
-      // ?o. BULK UPLOAD MODE: Create ONE deal and add only selected files to it
       if (bulkFiles && bulkFiles.length > 0) {
         if (!hasSelectedBulkFiles) {
           const result = await zohoApi.firstTimeUpload(agreementId, {
@@ -758,7 +698,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
       setUploadMode(hasAnyFile ? "files" : "notes");
       setStep('uploading');
 
-      // ✅ BULK UPDATE MODE: Process only selected files for existing folder
       if (bulkFiles && bulkFiles.length > 0) {
         if (selectedBulkFiles.length === 0) {
           await sendUpdateNoteOnly();
@@ -770,7 +709,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         let failCount = 0;
         let isFirstFileUpload = true;
 
-        // ✅ Prepare comprehensive note text for first file upload using actual Zoho file names
         const nextVersion = uploadStatus?.mapping?.nextVersion || 2;
         const actualFileNames = selectedBulkFiles.map(file =>
           file.fileName || calculateZohoFileName(file, uploadStatus?.mapping?.dealName || 'Deal', nextVersion)
@@ -779,7 +717,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
 
         for (const file of selectedBulkFiles) {
           try {
-            // ✅ FIXED: Use strategy to determine correct upload method
             const strategy = getFileUploadStrategy(file);
             console.log(`📤 [BULK-UPDATE] Processing file: ${file.fileName} (${strategy.description})`);
             console.log(`🔍 [BULK-UPDATE] File details:`, {
@@ -792,18 +729,16 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
             let result;
 
             if (strategy.type === 'agreement') {
-              // Version PDFs and main agreement files - use main agreement API
               const targetId = strategy.useAgreementId ? agreementId : file.id;
               console.log(`📝 [BULK-UPDATE] Using agreement route for: ${file.fileName} (targetId: ${targetId})`);
 
               result = await zohoApi.updateUpload(targetId, {
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
-                skipNoteCreation: !isFirstFileUpload,  // ✅ Skip note creation for subsequent files
+                skipNoteCreation: !isFirstFileUpload,
                 versionId: file.id,
                 versionFileName: file.fileName
               });
             } else if (strategy.type === 'attached') {
-              // Manual uploads - use attached file API
               console.log(`📎 [BULK-UPDATE] Using attached file route for: ${file.fileName} (fileId: ${file.id})`);
               const dealId = uploadStatus?.mapping?.dealId;
 
@@ -815,12 +750,10 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
                 dealId: dealId,
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 dealName: uploadStatus?.mapping?.dealName || 'Unknown Deal',
-                skipNoteCreation: !isFirstFileUpload,  // ✅ Skip note creation for subsequent files
+                skipNoteCreation: !isFirstFileUpload,
                 fileType: file.fileType
               });
             } else {
-              // Fallback - shouldn't happen with current logic
-              console.warn(`⚠️ [BULK-UPDATE] Unknown strategy type for ${file.fileName}, using agreement route`);
               result = await zohoApi.updateUpload(agreementId, {
                 noteText: isFirstFileUpload ? bulkUpdateNoteText : `Additional file in bulk update: ${file.fileName}`,
                 skipNoteCreation: !isFirstFileUpload,
@@ -832,7 +765,7 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
             if (result.success) {
               successCount++;
               console.log(`✅ [BULK-UPDATE] Success: ${file.fileName}`);
-              isFirstFileUpload = false; // Only first file gets comprehensive note
+              isFirstFileUpload = false; 
             } else {
               failCount++;
               console.error(`❌ [BULK-UPDATE] Failed: ${file.fileName}:`, result.error);
@@ -857,7 +790,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         return;
       }
 
-      // ✅ SINGLE UPDATE MODE: Check if file is selected
       if (!selectedFiles.has(agreementId)) {
         await sendUpdateNoteOnly();
         return;
@@ -920,9 +852,7 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         </p>
       </div>
 
-      {/* ✅ UPDATED: Show file selection for BOTH single and bulk uploads */}
-      <div className="zoho-upload__section">
-        <label className="zoho-upload__label">
+      <div className="zoho-upload__section">        <label className="zoho-upload__label">
           <FontAwesomeIcon icon={faFileAlt} />
           {bulkFiles && bulkFiles.length > 0
             ? `Select Documents to Upload (${selectedFiles.size} of ${bulkFiles.length} selected)`
@@ -930,7 +860,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
           }
         </label>
 
-        {/* Selection controls - only show for bulk uploads */}
         {bulkFiles && bulkFiles.length > 1 && (
           <div className="zoho-upload__selection-controls" style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
             <button
@@ -953,7 +882,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         )}
 
         <div className="zoho-upload__files-preview">
-          {/* Show bulk files if available */}
           {bulkFiles && bulkFiles.length > 0 ? (
             bulkFiles.map((file, index) => (
               <div key={file.id} className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
@@ -974,7 +902,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
               </div>
             ))
           ) : (
-            /* Show single file selection */
             <div className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
               <input
                 type="checkbox"
@@ -999,7 +926,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
       </div>
 
       <div className="zoho-upload__form">
-        {/* Company Selection */}
         <div className="zoho-upload__section">
           <label className="zoho-upload__label">
             <FontAwesomeIcon icon={faBuilding} />
@@ -1028,8 +954,7 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
                       onClick={() => setSelectedCompany(company)}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                        <div className="company-name">{company.name}</div>
-                        {/* ✅ NEW: Show match type indicator when searching */}
+        <div className="company-name">{company.name}</div>
                         {searchTerm && company.matchType && company.matchType !== 'none' && (
                           <span
                             style={{
@@ -1129,7 +1054,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
           )}
         </div>
 
-        {/* Deal Information */}
         {selectedCompany && !showCreateCompany && (
           <>
             <div className="zoho-upload__section">
@@ -1222,7 +1146,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         </h3>
         <p>This agreement has been uploaded before. Adding version {uploadStatus?.mapping?.nextVersion}.</p>
 
-        {/* ✅ NEW: Show existing deal context prominently */}
         {uploadStatus?.mapping && (
           <div style={{
             background: '#f0f9ff',
@@ -1269,7 +1192,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         )}
       </div>
 
-      {/* ✅ NEW: Show file selection for update uploads too */}
       <div className="zoho-upload__section">
         <label className="zoho-upload__label">
           <FontAwesomeIcon icon={faFileAlt} />
@@ -1279,7 +1201,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
           }
         </label>
 
-        {/* Selection controls - only show for bulk uploads */}
         {bulkFiles && bulkFiles.length > 1 && (
           <div className="zoho-upload__selection-controls" style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
             <button
@@ -1302,7 +1223,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
         )}
 
         <div className="zoho-upload__files-preview">
-          {/* Show bulk files if available */}
           {bulkFiles && bulkFiles.length > 0 ? (
             bulkFiles.map((file, index) => (
               <div key={file.id} className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
@@ -1323,7 +1243,6 @@ ${actualFileNames.map(fileName => `• ${fileName}`).join('\n')}`;
               </div>
             ))
           ) : (
-            /* Show single file selection */
             <div className="zoho-upload__file-preview" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
               <input
                 type="checkbox"

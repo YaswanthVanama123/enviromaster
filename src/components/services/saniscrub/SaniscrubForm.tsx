@@ -10,7 +10,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const FIELD_ORDER = {
   frequency: 1,
-  // location: 2,
+
   restroomFixtures: 10,
   nonBathroomArea: 15,
   totals: {
@@ -25,33 +25,23 @@ const FIELD_ORDER = {
   },
 } as const;
 
-/**
- * SaniScrub form with updated rules:
- *  - Trip charge visible but locked to $0 (not used in any math)
- *  - Monthly uses visitsPerYear/12 (weekly would be 4.33 visits/month)
- *  - No "annual" math; instead a 2–36 month contract dropdown
- *  - First visit = install only
- *  - First month = install-only first visit + (monthlyVisits − 1) × normal service
- *  - Contract total is based on that first month + remaining months
- */
 
-// Helper function to format numbers without unnecessary decimals
 const formatNumber = (num: number): string => {
   return num % 1 === 0 ? num.toString() : num.toFixed(2);
 };
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig, pricingOverrides } = useSaniscrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -60,133 +50,129 @@ export const SaniscrubForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '' } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Check if SaniClean All-Inclusive is active
+
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-  // Push quote up whenever it changes
 
-  // Save form data to context for form submission
   const prevDataRef = React.useRef<string>("");
 
-  // Headline per-fixture rate for the UI row
+
   const displayFixtureRate = (() => {
-    // ✅ UPDATED: Rate selection based on frequency (matches calculation logic)
-    // - One-time, Weekly, Bi-weekly, 2×/month, Monthly → Monthly rate
-    // - Bi-monthly → Bi-monthly rate
-    // - Quarterly → Quarterly rate
-    // - Bi-annual, Annual → Quarterly rate
-    // ✅ FIXED: Convert to number to handle string values from editing
+
+
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
         form.frequency === "monthly") {
-      return Number(form.fixtureRateMonthly) || 0; // Use monthly rate
+      return Number(form.fixtureRateMonthly) || 0; 
     }
     if (form.frequency === "bimonthly") {
-      return Number(form.fixtureRateBimonthly) || 0; // Use bi-monthly rate
+      return Number(form.fixtureRateBimonthly) || 0; 
     }
-    // quarterly, biannual, annual use quarterly rate
+
     return Number(form.fixtureRateQuarterly) || 0;
   })();
 
-  // For the "= ___" box in the Restroom Fixtures row:
-  // Show the BASE amount with minimum applied (not frequency-adjusted)
+
   const fixtureLineDisplayAmount = (() => {
     if (form.fixtureCount <= 0) return 0;
 
-    // ✅ FIXED: Use base amount with minimum applied (before frequency adjustments)
+
     return calc.fixtureBaseAmount || 0;
   })();
 
-  // For the Non-Bathroom Area "= ___" box:
-  // Show the FINAL amount that gets used in calculations (after minimum applied)
+
   const nonBathroomLineDisplayAmount = (() => {
     if (form.nonBathroomSqFt <= 0) return 0;
 
-    // Show the actual final amount (either raw calculation or minimum, whichever is higher)
+
     return calc.nonBathroomPerVisit;
   })();
 
   React.useEffect(() => {
     if (servicesContext) {
-      const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = form.fixtureCount > 0 || form.nonBathroomSqFt > 0 || hasCustomFieldValues;
       const minimumThreshold = form.frequency === "monthly" || form.frequency === "twicePerMonth"
         ? form.minimumMonthly
         : form.minimumBimonthly;
@@ -196,7 +182,7 @@ export const SaniscrubForm: React.FC<
         displayName: "SaniScrub",
         isActive: true,
 
-        // Persist editable pricing config so edit mode reloads saved values (not current backend defaults)
+
         fixtureRateMonthly: form.fixtureRateMonthly,
         fixtureRateBimonthly: form.fixtureRateBimonthly,
         fixtureRateQuarterly: form.fixtureRateQuarterly,
@@ -208,7 +194,7 @@ export const SaniscrubForm: React.FC<
         installMultiplierClean: form.installMultiplierClean,
         twoTimesPerMonthDiscount: form.twoTimesPerMonthDiscount,
 
-        // Persist base inputs/toggles for accurate edit-mode rehydration
+
         fixtureCount: form.fixtureCount,
         nonBathroomSqFt: form.nonBathroomSqFt,
         useExactNonBathroomSqft: form.useExactNonBathroomSqft,
@@ -218,10 +204,10 @@ export const SaniscrubForm: React.FC<
         contractMonths: form.contractMonths,
         applyMinimum: form.applyMinimum !== false,
 
-        // Red/Green Line pricing data
-        perVisitBase: calc.perVisitEffective,  // Raw per-visit cost before minimum/trip
-        perVisit: calc.perVisitEffective,  // Final per-visit price after minimum/trip
-        perVisitMinimum: minimumThreshold,  // Minimum threshold (frequency-dependent)
+
+        perVisitBase: calc.perVisitEffective,  
+        perVisit: calc.perVisitEffective,  
+        perVisitMinimum: minimumThreshold,  
 
         frequency: {
           isDisplay: true,
@@ -232,13 +218,6 @@ export const SaniscrubForm: React.FC<
           frequencyKey: form.frequency,
         },
 
-        // location: {
-        //   isDisplay: true,
-        //   orderNo: FIELD_ORDER.location,
-        //   label: "Location",
-        //   type: "text" as const,
-        //   value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
-        // },
 
         ...(form.fixtureCount > 0 ? {
           restroomFixtures: {
@@ -364,13 +343,10 @@ export const SaniscrubForm: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields, displayFixtureRate, fixtureLineDisplayAmount]);
 
-  //Get the corresponding rate field name for onChange
+
   const fixtureRateFieldName = (() => {
-    // ✅ UPDATED: Rate field selection based on frequency (matches calculation logic)
-    // - One-time, Weekly, Bi-weekly, 2×/month, Monthly → Monthly rate field
-    // - Bi-monthly → Bi-monthly rate field
-    // - Quarterly → Quarterly rate field
-    // - Bi-annual, Annual → Quarterly rate field
+
+
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
         form.frequency === "monthly") {
@@ -379,7 +355,7 @@ export const SaniscrubForm: React.FC<
     if (form.frequency === "bimonthly") {
       return "fixtureRateBimonthly";
     }
-    return "fixtureRateQuarterly"; // quarterly, biannual, annual
+    return "fixtureRateQuarterly"; 
   })();
   const fixtureRateOverride =
     fixtureRateFieldName === "fixtureRateMonthly"
@@ -391,7 +367,7 @@ export const SaniscrubForm: React.FC<
 
   return (
     <div className="svc-card" style={{ position: 'relative' }}>
-      {/* Loading Overlay */}
+      {}
       {isLoadingConfig && (
         <div className="svc-loading-overlay">
           <div className="svc-loading-spinner">
@@ -401,7 +377,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Header */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">SANISCRUB</div>
         <div className="svc-h-actions">
@@ -438,7 +414,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -446,7 +422,7 @@ export const SaniscrubForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Alert when included in SaniClean All-Inclusive */}
+      {}
       {isSanicleanAllInclusive && (
         <div
           className="svc-row"
@@ -468,7 +444,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Combined with SaniClean (required for 2×/month discount) */}
+      {}
       <div className="svc-row">
         <label>Combined with SaniClean?</label>
         <div className="svc-row-right">
@@ -484,7 +460,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Frequency selection */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -505,7 +481,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Restroom fixtures with editable rate */}
+      {}
       <div className="svc-row">
         <label>Restroom Fixtures</label>
         <div className="svc-row-right">
@@ -545,57 +521,10 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Minimum reminder row with editable minimums */}
-      {/* <div className="svc-row svc-row-note">
-        <label></label>
-        <div className="svc-row-right">
-          <span className="svc-micro-note">
-            Minimum per Monthly = $
-            <input
-              className="svc-in svc-in-small"
-              type="number"
-        min="0"
-          min="0"
-            min="0"
-              step="1"
-              name="minimumMonthly"
-              value={form.minimumMonthly.toFixed(2)}
-              onChange={onChange}
-              className="field-qty" style={{ display: "inline" }}
-            />
-            {" · "}
-            Bi-Monthly/Quarterly = $
-            <input
-              className="svc-in svc-in-small"
-              type="number"
-        min="0"
-          min="0"
-            min="0"
-              step="1"
-              name="minimumBimonthly"
-              value={form.minimumBimonthly.toFixed(2)}
-              onChange={onChange}
-              className="field-qty" style={{ display: "inline" }}
-            />
-            . 2× / Month with SaniClean is priced as 2× Monthly − $
-            <input
-              className="svc-in percentage-field"
-              type="number"
-        min="0"
-          min="0"
-            min="0"
-              step="1"
-              name="twoTimesPerMonthDiscount"
-              value={form.twoTimesPerMonthDiscount.toFixed(2)}
-              onChange={onChange}
-              style={{ display: "inline" }}
-            />
-            .
-          </span>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Non-bathroom SaniScrub pricing configuration */}
+      {}
       <div className="svc-row">
         <label>First {calc.nonBathroomUnitSqFt} sq ft Rate</label>
         <div className="svc-row-right">
@@ -638,7 +567,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Non-bathroom SaniScrub area calculation */}
+      {}
       <div className="svc-row">
         <label>Non-Bathroom Area</label>
         <div className="svc-row-right">
@@ -667,7 +596,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Exact sq ft calculation checkbox for non-bathroom */}
+      {}
       <div className="svc-row">
         <label>Calculation Method</label>
         <div className="svc-row-right">
@@ -689,54 +618,13 @@ export const SaniscrubForm: React.FC<
       </div>
 
 
+      {}
+      {}
 
-      {/* Trip & location – still visible for UI, but math is locked to $0 */}
-      {/* <div className="svc-row">
-        <label>Location</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="location"
-            value={form.location}
-            onChange={onChange}
-          >
-            <option value="insideBeltway">Inside Beltway</option>
-            <option value="outsideBeltway">Outside Beltway</option>
-          </select>
+      {}
+      {}
 
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="needsParking"
-              checked={form.needsParking}
-              onChange={onChange}
-            />
-            <span>Parking (+$0)</span>
-          </label>
-        </div>
-      </div> */}
-
-      {/* Trip charge numeric display – locked to $0 */}
-      {/* <div className="svc-row">
-        <label>Trip Charge</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="text"
-            readOnly
-            value="$0.00 / visit"
-          />
-          <span>·</span>
-          <input
-            className="svc-in"
-            type="text"
-            readOnly
-            value="$0.00 / month"
-          />
-        </div>
-      </div> */}
-
-      {/* Install (3× dirty / 1× clean) with editable multipliers */}
+      {}
       <div className="svc-row svc-row-install">
         <label>Install (First Visit Only)</label>
         <div className="svc-row-right">
@@ -784,7 +672,7 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-      {/* Installation Total - Editable */}
+      {}
       {form.includeInstall && (
         <div className="svc-row svc-row-charge">
           <label>Installation Total</label>
@@ -817,7 +705,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-                  {/* Per-Visit Effective (no install, no trip) */}
+                  {}
       <div className="svc-row svc-row-charge">
         <label>Minimum Per Visit</label>
         <div className="svc-row-right">
@@ -850,7 +738,7 @@ export const SaniscrubForm: React.FC<
       </div>
 
 
-      {/* First month/visit total = install-only first visit + (monthlyVisits − 1) × normal service */}
+      {}
       <div className="svc-row svc-row-charge">
         <label>{calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total"}</label>
         <div className="svc-row-right">
@@ -881,41 +769,10 @@ export const SaniscrubForm: React.FC<
       </div>
 
 
+      {}
+      {}
 
-
-      {/* Per Visit Price Override – Show for 2×/month to annually */}
-      {/* {(form.frequency === "twicePerMonth" || form.frequency === "monthly" ||
-        form.frequency === "bimonthly" || form.frequency === "quarterly" ||
-        form.frequency === "biannual" || form.frequency === "annual") && (
-        <div className="svc-row svc-row-charge">
-          <label>Per Visit Price</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                name="customPerVisitPrice"
-                type="number"
-                min="0"
-                step="1"
-                value={getDisplayValue(
-                  'customPerVisitPrice',
-                  form.customPerVisitPrice !== undefined
-                    ? form.customPerVisitPrice
-                    : calc.perVisitEffective
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{ backgroundColor: form.customPerVisitPrice !== undefined ? '#fffacd' : 'white' }}
-                title="Override per visit calculation (clear to use auto-calculated value)"
-              />
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* Redline/Greenline Pricing Indicator */}
+      {}
       {form.fixtureCount > 0 && (
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
@@ -949,7 +806,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring – Show for weekly, biweekly, 2×/month, and monthly */}
+      {}
       {(form.frequency === "weekly" || form.frequency === "biweekly" ||
         form.frequency === "twicePerMonth" || form.frequency === "monthly") && (
         <div className="svc-row svc-row-charge">
@@ -981,7 +838,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Recurring Visit Total – Show for bimonthly, quarterly, biannual, and annual */}
+      {}
       {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
         form.frequency === "biannual" || form.frequency === "annual") && (
         <div className="svc-row svc-row-charge">
@@ -1001,7 +858,7 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Total Price – Show only for one-time */}
+      {}
       {form.frequency === "oneTime" && (
         <div className="svc-row svc-row-charge">
           <label>Total Price</label>
@@ -1031,23 +888,10 @@ export const SaniscrubForm: React.FC<
         </div>
       )}
 
-      {/* Normal recurring month (after first) or per visit for bi-monthly/quarterly */}
-      {/* <div className="svc-row svc-row-charge">
-        <label>{calc.isVisitBasedFrequency ? "Per Visit" : "Monthly Recurring"}</label>
-        <div className="svc-row-right">
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in"
-              type="text"
-              readOnly
-              value={calc.monthlyTotal.toFixed(2)}
-            />
-          </div>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Contract total – dropdown with frequency-specific months */}
+      {}
       {form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-charge">
           <label>Contract Total</label>
@@ -1059,31 +903,31 @@ export const SaniscrubForm: React.FC<
               onChange={onChange}
             >
               {(() => {
-                // ✅ FIXED: Generate frequency-specific contract month options
+
                 const options = [];
 
                 if (calc.frequency === "bimonthly") {
-                  // Bi-monthly: Even numbers only (2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36)
+
                   for (let months = 2; months <= 36; months += 2) {
                     options.push(months);
                   }
                 } else if (calc.frequency === "quarterly") {
-                  // Quarterly: Quarterly values (3,6,9,12,15,18,21,24,27,30,33,36)
+
                   for (let months = 3; months <= 36; months += 3) {
                     options.push(months);
                   }
                 } else if (calc.frequency === "biannual") {
-                  // Bi-annual: Multiples of 6 (6,12,18,24,30,36)
+
                   for (let months = 6; months <= 36; months += 6) {
                     options.push(months);
                   }
                 } else if (calc.frequency === "annual") {
-                  // Annual: Multiples of 12 (12,24,36)
+
                   for (let months = 12; months <= 36; months += 12) {
                     options.push(months);
                   }
                 } else {
-                  // Monthly, weekly, biweekly, 2X/monthly: All months (2,3,4,5...36)
+
                   for (let months = 2; months <= 36; months++) {
                     options.push(months);
                   }

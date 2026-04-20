@@ -1,10 +1,8 @@
-// src/backendservice/hooks/useAdminAuth.ts
 
 import { useState, useCallback } from "react";
 import { adminAuthApi } from "../api";
 import type { LoginPayload, AdminUser } from "../types/api.types";
 
-// Initialize auth state synchronously from localStorage
 const getInitialAuthState = () => {
   const storedUser = adminAuthApi.getStoredAdminUser();
   const authenticated = adminAuthApi.isAuthenticated();
@@ -57,7 +55,6 @@ export function useAdminAuth() {
 
     if (response.error) {
       setError(response.error);
-      // If unauthorized, logout
       if (response.status === 401) {
         logout();
       }

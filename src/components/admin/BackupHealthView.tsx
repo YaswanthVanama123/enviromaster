@@ -316,7 +316,6 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
 
   return (
     <div className="bhv-container" style={styles.container}>
-      {/* Overall Health Status */}
       <div className="bhv-overall-health" style={{ ...styles.overallHealth, ...getHealthColor() }}>
         <div className="bhv-health-icon" style={styles.healthIcon}>{getHealthIcon()}</div>
         <div className="bhv-health-text" style={{ ...styles.healthText, ...getHealthColor() }}>
@@ -324,9 +323,7 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
         </div>
       </div>
 
-      {/* Health Checks Grid */}
       <div className="bhv-grid" style={styles.grid}>
-        {/* Database Connectivity */}
         <div className="bhv-card" style={styles.card}>
           <h3 className="bhv-card-title" style={styles.cardTitle}>
             <FontAwesomeIcon icon={faDatabase} /> Database Connectivity
@@ -345,7 +342,6 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
           </div>
         </div>
 
-        {/* Retention Policy Compliance */}
         <div className="bhv-card" style={styles.card}>
           <h3 className="bhv-card-title" style={styles.cardTitle}>
             <FontAwesomeIcon icon={faClipboard} /> Retention Policy
@@ -366,7 +362,6 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
             {renderCheckStatus(health.checks.retentionPolicyCompliant, true)}
           </div>
 
-          {/* Progress bar for retention */}
           <div className="bhv-progress-bar" style={styles.progressBar}>
             <div
               style={{
@@ -378,7 +373,6 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
           </div>
         </div>
 
-        {/* Backup Activity */}
         <div className="bhv-card" style={styles.card}>
           <h3 className="bhv-card-title" style={styles.cardTitle}>
             <FontAwesomeIcon icon={faChartLine} /> Backup Activity
@@ -415,7 +409,6 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
         </div>
       </div>
 
-      {/* Warnings Section */}
       {health.warnings.length > 0 && (
         <div className="bhv-warnings-container" style={styles.warningsContainer}>
           <h3 className="bhv-card-title" style={styles.cardTitle}>
@@ -434,7 +427,6 @@ export const BackupHealthView: React.FC<BackupHealthViewProps> = ({
         </div>
       )}
 
-      {/* Refresh Button */}
       <div style={{ textAlign: 'center', marginTop: '32px' }}>
         <button
           className="bhv-refresh-button"

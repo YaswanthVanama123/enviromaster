@@ -1,6 +1,3 @@
-/* ServiceConfigManager.css - Responsive styles */
-
-/* Inline loading state - shows in content area */
 .scm-loading-state {
   display: flex;
   flex-direction: column;
@@ -54,7 +51,6 @@
   }
 }
 
-/* Medium devices (tablets, 769px to 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .scm-container {
     padding: 20px !important;
@@ -87,7 +83,6 @@
   }
 }
 
-/* Small devices (phones, up to 768px) */
 @media (max-width: 768px) {
   .scm-container {
     padding: 16px !important;
@@ -174,7 +169,6 @@
   }
 }
 
-/* Extra small devices (phones, up to 480px) */
 @media (max-width: 480px) {
   .scm-container {
     padding: 12px !important;
@@ -299,7 +293,6 @@
   }
 }
 
-/* Hover effects - only for devices that support hover */
 @media (hover: hover) {
   .scm-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
@@ -326,7 +319,6 @@
   }
 }
 
-/* Fix modal overlay on mobile */
 @media (max-width: 768px) {
   .scm-modal {
     padding: 10px !important;
@@ -335,7 +327,6 @@
   }
 }
 
-/* Ensure input fields don't zoom on iOS */
 @media (max-width: 480px) {
   .scm-input,
   .scm-textarea {

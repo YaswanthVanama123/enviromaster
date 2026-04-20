@@ -1,5 +1,4 @@
-// src/pricing/pricingRules.ts
-import type { BillingMultipliers, TripPolicy } from "./pricingTypes"; // 👈 add "type"
+import type { BillingMultipliers, TripPolicy } from "./pricingTypes";
 
 
 export const BILLING: BillingMultipliers = {
@@ -17,5 +16,4 @@ export const TRIP: TripPolicy = {
   twoPersonMonthlyRoute: 10,
 };
 
-// Green = Red * 1.3 (commission logic handled elsewhere)
 export const GREEN_RATE_FACTOR = 1.3;

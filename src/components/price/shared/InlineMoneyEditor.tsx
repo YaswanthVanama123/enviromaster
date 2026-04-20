@@ -15,16 +15,16 @@ export default function InlineMoneyEditor({ value, display, onCommit }) {
   const [cursorPosition, setCursorPosition] = useState(null);
   const inputRef = useRef(null);
 
-  // ✅ FIX: Restore cursor position after state update
+
   useEffect(() => {
     if (editing && inputRef.current && cursorPosition !== null) {
       inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
-      setCursorPosition(null); // Reset after applying
+      setCursorPosition(null); 
     }
   }, [text, editing, cursorPosition]);
 
   const handleChange = (e) => {
-    // ✅ FIX: Store cursor position before updating state
+
     const currentPosition = e.target.selectionStart;
     setCursorPosition(currentPosition);
     setText(e.target.value);

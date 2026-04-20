@@ -2,28 +2,23 @@ import { useEffect } from "react";
 import { q, setVal, toNum } from "../utils/dom";
 import { usePricing } from "./usePricing";
 
-// Helper: safely convert anything to a number
+
 const n = (v: any, fallback = 0): number => {
   const num = Number(v);
   return Number.isFinite(num) ? num : fallback;
 };
 
-/**
- * Hook that wires pricing + formulas to the uncontrolled <input> fields
- * rendered by ServicesSection.
- *
- * Call: useServiceCalcs([groups])
- */
+
 export function useServiceCalcs(deps: any[]) {
   const PRICING = usePricing();
 
   useEffect(() => {
-    /** ---------------- RESTROOM & HYGIENE (Sani) ---------------- */
+
     const recalcSani = () => {
-      // Total fixtures – main driver for SaniClean Weekly
+
       let fixtures = toNum(q("saniTotalFixtures")?.value);
 
-      // If they still fill individual fields (old layout), fold them in:
+
       if (!fixtures) {
         const bowls = toNum(q("saniBowls")?.value);
         const urinals = toNum(q("saniUrinals")?.value);
@@ -32,14 +27,14 @@ export function useServiceCalcs(deps: any[]) {
         if (fixtures) setVal("saniTotalFixtures", fixtures);
       }
 
-      // Determine regional rate (fall back to 0 if missing)
+
       const region = PRICING?.sani?.useRegion === "outside" ? "outside" : "inside";
       const baseRate =
         region === "inside"
           ? n(PRICING?.sani?.insidePrice, 0)
           : n(PRICING?.sani?.outsidePrice, 0);
 
-      // Show per-fixture rate in the "All-Inclusive Rate Per Fixture" / @ field
+
       const rateEl = q("saniRatePerFixture");
       let rate = toNum(rateEl?.value);
       if (!rate && rateEl) {
@@ -47,25 +42,25 @@ export function useServiceCalcs(deps: any[]) {
         rateEl.value = baseRate.toFixed(2);
       }
 
-      // Also show all-inclusive rate if you have a separate field
+
       const allInclEl = q("saniAllInclusiveRate");
       if (allInclEl && !allInclEl.value) {
         allInclEl.value = baseRate.toFixed(2);
       }
 
-      // Minimum weekly charge from pricing (safe)
+
       const regMin =
         region === "inside"
           ? n(PRICING?.sani?.insideMin, 0)
           : n(PRICING?.sani?.outsideMin, 0);
 
-      // Seed "Minimum Weekly Charge" field if empty
+
       const minWeeklyEl = q("saniMinWeeklyCharge");
       if (minWeeklyEl && !toNum(minWeeklyEl.value) && regMin > 0) {
         minWeeklyEl.value = regMin.toFixed(2);
       }
 
-      // Trip charge – if empty, seed from standard trip pricing
+
       const tripEl = q("tripCharge");
       let trip = toNum(tripEl?.value);
       const defaultTrip = n(PRICING?.trip?.standard, 0);
@@ -74,11 +69,11 @@ export function useServiceCalcs(deps: any[]) {
         tripEl.value = trip.toFixed(2);
       }
 
-      // Base weekly = fixtures * rate, respecting regional minimums
+
       let weekly = fixtures * rate;
       weekly = Math.max(weekly, regMin || 0);
 
-      // Small-account rule: if fixtures <= smallThreshold, bump to smallMin
+
       const smallThreshold = n(PRICING?.sani?.smallThreshold, 0);
       const smallMin = n(PRICING?.sani?.smallMin, 0);
 
@@ -86,22 +81,22 @@ export function useServiceCalcs(deps: any[]) {
         weekly = Math.max(weekly, smallMin);
       }
 
-      // Add trip
+
       weekly += trip;
 
       if (weekly > 0) {
         setVal("saniWeeklyTotal", weekly.toFixed(2));
       }
 
-      // ----- Agreement math (monthly + contract total) -----
+
       const freqRaw = (q("saniFrequency")?.value || "").toLowerCase();
       let visitsPerMonth = 0;
       if (freqRaw.includes("week") && freqRaw.includes("bi")) {
-        visitsPerMonth = 2; // Bi-weekly
+        visitsPerMonth = 2; 
       } else if (freqRaw.includes("week")) {
-        visitsPerMonth = 4; // Weekly
+        visitsPerMonth = 4; 
       } else if (freqRaw.includes("month")) {
-        visitsPerMonth = 1; // Monthly
+        visitsPerMonth = 1; 
       }
 
       let agreementMonths = toNum(q("agreementMonths")?.value);
@@ -119,14 +114,14 @@ export function useServiceCalcs(deps: any[]) {
       }
     };
 
-    /** ---------------- RPM WINDOW ---------------- */
+
     const recalcRpm = () => {
-      // Quantities
+
       const smallQty = toNum(q("rpmSmallQty")?.value);
       const mediumQty = toNum(q("rpmMediumQty")?.value);
       const largeQty = toNum(q("rpmLargeQty")?.value);
 
-      // Seed rates from backend pricing if empty (safe numeric)
+
       let smallRate = toNum(q("rpmSmallRate")?.value);
       let mediumRate = toNum(q("rpmMediumRate")?.value);
       let largeRate = toNum(q("rpmLargeRate")?.value);
@@ -148,7 +143,7 @@ export function useServiceCalcs(deps: any[]) {
         setVal("rpmLargeRate", largeRate.toFixed(2));
       }
 
-      // Per-line totals
+
       const smallTotal = smallQty * smallRate;
       const mediumTotal = mediumQty * mediumRate;
       const largeTotal = largeQty * largeRate;
@@ -165,7 +160,7 @@ export function useServiceCalcs(deps: any[]) {
 
       const windowsTotal = smallTotal + mediumTotal + largeTotal;
 
-      // Optional trip + install multiplier for per-visit total
+
       let rpmTrip = toNum(q("rpmTripCharge")?.value);
       const defaultRpmTrip = n(PRICING?.trip?.standard, 0);
       if (!rpmTrip && q("rpmTripCharge") && defaultRpmTrip > 0) {
@@ -185,7 +180,7 @@ export function useServiceCalcs(deps: any[]) {
         setVal("rpmPerVisitTotal", perVisit.toFixed(2));
       }
 
-      // Agreement math for RPM (monthly + contract)
+
       const freqRaw = (q("rpmFrequency")?.value || "").toLowerCase();
       let visitsPerMonth = 0;
       if (freqRaw.includes("week") && freqRaw.includes("bi")) {
@@ -208,24 +203,21 @@ export function useServiceCalcs(deps: any[]) {
       }
     };
 
-    /** ---------------- Generic qty × rate = total ----------------
-     * For other atCharge rows (Foaming Drain, Scrub Service,
-     * Hand Sanitizer, Micromax, SaniPod…)
-     */
+
     const simpleTriples: [string, string, string][] = [
-      // Foaming Drain
+
       ["fdStandardQty", "fdStandardRate", "fdStandardTotal"],
       ["fdLargeQty", "fdLargeRate", "fdLargeTotal"],
-      // Scrub Service
+
       ["scrBathFixturesQty", "scrBathFixturesRate", "scrBathFixturesTotal"],
       ["scrNonBathQty", "scrNonBathRate", "scrNonBathTotal"],
-      // Hand Sanitizer
+
       ["hsFillsQty", "hsFillsRate", "hsFillsTotal"],
-      // Micromax Floor
+
       ["mmBathroomsQty", "mmBathroomsRate", "mmBathroomsTotal"],
       ["mmExtraNonBathQty", "mmExtraNonBathRate", "mmExtraNonBathTotal"],
       ["mmStandaloneQty", "mmStandaloneRate", "mmStandaloneTotal"],
-      // SaniPod
+
       ["spWeeklyQty", "spWeeklyRate", "spWeeklyTotal"],
     ];
 
@@ -239,19 +231,19 @@ export function useServiceCalcs(deps: any[]) {
       });
     };
 
-    /** ---------------- Unified handler ---------------- */
+
     const handler = () => {
       recalcSani();
       recalcRpm();
       recalcSimpleCalcs();
     };
 
-    // Initial run when form first mounts / pricing arrives
+
     handler();
 
-    // Watch relevant field names for changes
+
     const watchNames = [
-      // Sani
+
       "saniTotalFixtures",
       "saniBowls",
       "saniUrinals",
@@ -261,7 +253,7 @@ export function useServiceCalcs(deps: any[]) {
       "tripCharge",
       "saniFrequency",
       "agreementMonths",
-      // RPM
+
       "rpmSmallQty",
       "rpmSmallRate",
       "rpmMediumQty",
@@ -271,7 +263,7 @@ export function useServiceCalcs(deps: any[]) {
       "rpmTripCharge",
       "rpmInstallMultiplier",
       "rpmFrequency",
-      // Simple calc rows
+
       "fdStandardQty",
       "fdStandardRate",
       "fdLargeQty",
@@ -307,6 +299,6 @@ export function useServiceCalcs(deps: any[]) {
         el.removeEventListener("change", handler);
       });
     };
-    // Include PRICING so when backend numbers load, it recomputes
+
   }, [PRICING, ...deps]);
 }

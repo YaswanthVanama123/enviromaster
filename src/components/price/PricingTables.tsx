@@ -10,10 +10,8 @@ export default function PricingTables() {
   const tabs = [
     { key: "SaniClean", component: <SaniCleanCalculator /> },
     { key: "RPM Windows", component: <RpmWindowsCalculator /> },
-    // Add new services easily:
-    // { key: "SaniScrub", component: <SaniScrubCalculator /> },
-    // { key: "Drains", component: <DrainsCalculator /> },
-    // { key: "Microfiber Mopping", component: <MoppingCalculator /> },
+
+
   ];
 
   return (
@@ -23,7 +21,7 @@ export default function PricingTables() {
         Choose a service to configure its rates, rules, and agreement totals.
       </p>
 
-      {/* Tabs */}
+      {}
       <div style={{ ...card, display: "flex", gap: 8, flexWrap: "wrap" }}>
         {tabs.map((t) => (
           <button
@@ -44,7 +42,7 @@ export default function PricingTables() {
         ))}
       </div>
 
-      {/* Current tab content */}
+      {}
       {tabs.find((t) => t.key === tab)?.component}
     </div>
   );

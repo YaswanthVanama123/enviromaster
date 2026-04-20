@@ -1,4 +1,3 @@
-// src/components/admin/ProductCatalogManager.tsx
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,31 +8,26 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faExclamationTriangle, faTrash, faLightbulb, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import "./ProductCatalogManager.css";
 
-// Utility function to truncate text
 const truncateText = (text: string | undefined, maxLength: number): string => {
   if (!text) return "—";
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + "...";
 };
 
-// Utility function to validate and sanitize product key
 const validateProductKey = (key: string): string => {
-  // Remove spaces, slashes, and other invalid characters
-  // Allow only letters, numbers, hyphens, and underscores
   return key.replace(/[^a-zA-Z0-9\-_]/g, '').toLowerCase();
 };
 
-// ✅ NEW: Utility function to generate product key from product name
 const generateProductKeyFromName = (name: string): string => {
   if (!name) return '';
 
   return name
     .toLowerCase()
     .trim()
-    .replace(/[^a-zA-Z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    .replace(/[^a-zA-Z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 };
 
 interface ProductCatalogManagerProps {
@@ -61,8 +55,8 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [customKindSelected, setCustomKindSelected] = useState(false); // Track if custom kind is selected
-  const [customUomSelected, setCustomUomSelected] = useState(false); // Track if custom UOM is selected
+  const [customKindSelected, setCustomKindSelected] = useState(false); 
+  const [customUomSelected, setCustomUomSelected] = useState(false); 
 
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     key: "",
@@ -76,12 +70,10 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     displayByAdmin: true,
   });
 
-  // URL-based modal management
   useEffect(() => {
     if (!catalog || catalog.families.length === 0) return;
 
     if (modalType === 'edit' && itemId) {
-      // Find product by key across all families
       let foundProduct: Product | null = null;
       for (const family of catalog.families) {
         const product = family.products.find(p => p.key === itemId);
@@ -94,10 +86,8 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
         handleEditProduct(foundProduct);
       }
     } else if (modalType === 'create' && itemId) {
-      // Find family by key
       let family = catalog.families.find(f => f.key === itemId);
 
-      // ✅ FIX: If not found and itemId is 'miscellaneous', use the placeholder
       if (!family && itemId === 'miscellaneous') {
         family = {
           key: 'miscellaneous',
@@ -111,7 +101,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
         handleAddProduct(family);
       }
     } else if (modalType === 'delete' && itemId) {
-      // Find product for deletion
       let foundProduct: Product | null = null;
       for (const family of catalog.families) {
         const product = family.products.find(p => p.key === itemId);
@@ -124,7 +113,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
         setDeletingProduct(foundProduct);
       }
     } else if (!modalType) {
-      // Close all modals
       setEditingProduct(null);
       setCreatingProduct(null);
       setDeletingProduct(null);
@@ -132,7 +120,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     }
   }, [modalType, itemId, catalog]);
 
-  // URL navigation helpers
   const openEditModal = (product: Product) => {
     if (isEmbedded && parentPath) {
       navigate(`${parentPath}/products/edit/${product.key}`, { replace: true });
@@ -198,7 +185,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       setIsEditMode(false);
       closeModal();
 
-      // Update the selectedFamily state to reflect changes in the table immediately
       if (selectedFamily) {
         const updatedFamily = updatedCatalog.families.find((f: ProductFamily) => f.key === selectedFamily.key);
         if (updatedFamily) {
@@ -214,8 +200,8 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
 
   const handleAddProduct = (family: ProductFamily) => {
     setCreatingProduct(family);
-    setCustomKindSelected(false); // Reset custom kind selection
-    setCustomUomSelected(false); // Reset custom UOM selection
+    setCustomKindSelected(false); 
+    setCustomUomSelected(false); 
     setNewProduct({
       key: "",
       name: "",
@@ -237,7 +223,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     const updatedCatalog = JSON.parse(JSON.stringify(catalog));
     let family = updatedCatalog.families.find((f: ProductFamily) => f.key === creatingProduct.key);
 
-    // If miscellaneous family doesn't exist yet, create it
     if (!family && creatingProduct.key === 'miscellaneous') {
       const newMiscFamily: ProductFamily = {
         key: 'miscellaneous',
@@ -262,7 +247,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       setSuccessMessage("Product added successfully!");
       closeModal();
 
-      // Update the selectedFamily to show the new product immediately
       if (selectedFamily && selectedFamily.key === creatingProduct.key) {
         const updatedFamily = updatedCatalog.families.find((f: ProductFamily) => f.key === creatingProduct.key);
         if (updatedFamily) {
@@ -284,7 +268,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     const family = updatedCatalog.families.find((f: ProductFamily) => f.key === deletingProduct.familyKey);
 
     if (family) {
-      // Remove the product from the family
       family.products = family.products.filter((p: Product) => p.key !== deletingProduct.key);
     }
 
@@ -297,7 +280,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       setSuccessMessage(`Product "${deletingProduct.name}" deleted successfully!`);
       closeModal();
 
-      // Update the selectedFamily to remove the deleted product immediately
       if (selectedFamily && selectedFamily.key === deletingProduct.familyKey) {
         const updatedFamily = updatedCatalog.families.find((f: ProductFamily) => f.key === deletingProduct.familyKey);
         if (updatedFamily) {
@@ -318,33 +300,29 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     )
   );
 
-  // ✅ NEW: Ensure Miscellaneous category always exists
   const ensureMiscellaneousFamily = () => {
     if (!catalog) return null;
 
     const miscFamily = catalog.families.find(f => f.key === 'miscellaneous');
     if (miscFamily) {
-      return null; // Already exists
+      return null;
     }
 
-    // Return a placeholder miscellaneous family
     return {
       key: 'miscellaneous',
       label: 'Miscellaneous',
-      sortOrder: 9999, // Ensure it appears last
+      sortOrder: 9999,
       products: []
     } as ProductFamily;
   };
 
   const miscellaneousFamily = ensureMiscellaneousFamily();
 
-  // ✅ NEW: Add miscellaneous family to filtered families if it doesn't exist and matches search
   const displayFamilies = React.useMemo(() => {
     if (!filteredFamilies) return [];
 
     const families = [...filteredFamilies];
 
-    // Add miscellaneous if it's a placeholder and matches search criteria
     if (miscellaneousFamily && !families.find(f => f.key === 'miscellaneous')) {
       const matchesSearch = searchTerm === '' ||
         miscellaneousFamily.label.toLowerCase().includes(searchTerm.toLowerCase());
@@ -357,7 +335,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
     return families.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }, [filteredFamilies, miscellaneousFamily, searchTerm]);
 
-  // Extract all unique kinds from all products in the catalog for the dropdown
   const allKinds = React.useMemo(() => {
     if (!catalog) return [];
 
@@ -370,10 +347,9 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       });
     });
 
-    return Array.from(kindsSet).sort(); // Return sorted array of unique kinds
+    return Array.from(kindsSet).sort();
   }, [catalog]);
 
-  // Extract all unique UOMs from all products in the catalog for the dropdown
   const allUoms = React.useMemo(() => {
     if (!catalog) return [];
 
@@ -386,7 +362,7 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
       });
     });
 
-    return Array.from(uomsSet).sort(); // Return sorted array of unique UOMs
+    return Array.from(uomsSet).sort();
   }, [catalog]);
 
   if (loading) {
@@ -422,7 +398,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
             Version: {catalog.version} | Last Updated: {catalog.lastUpdated}
           </p>
         </div>
-        {/* {catalog.isActive && <span style={styles.activeBadge}>Active Catalog</span>} */}
       </div>
 
       {error && <div className="pcm-error" style={styles.error}>{error}</div>}
@@ -855,7 +830,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
                   value={newProduct.name}
                   onChange={(e) => {
                     const name = e.target.value;
-                    // ✅ AUTO-FILL: Generate product key from name
                     const generatedKey = generateProductKeyFromName(name);
                     setNewProduct({ ...newProduct, name, key: generatedKey });
                   }}
@@ -1051,7 +1025,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {deletingProduct && (
         <div className="pcm-modal" style={styles.modal}>
           <div className="pcm-confirmation-modal" style={styles.confirmationModal}>
@@ -1101,7 +1074,6 @@ export const ProductCatalogManager: React.FC<ProductCatalogManagerProps> = ({
         </div>
       )}
 
-      {/* Toast Notifications */}
       {successMessage && (
         <Toast
           message={successMessage}

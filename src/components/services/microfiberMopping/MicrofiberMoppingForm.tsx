@@ -1,4 +1,4 @@
-// src/components/services/microfiberMopping/MicrofiberMoppingForm.tsx
+
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -11,7 +11,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const FIELD_ORDER = {
   frequency: 1,
-  // location: 2,
+
   serviceBreakdown: {
     bathrooms: 10,
     hugeBathrooms: 11,
@@ -21,9 +21,9 @@ const FIELD_ORDER = {
   },
   totals: {
     perVisit: 20,
-    // firstMonth: 21,
+
     monthlyRecurring: 22,
-    // firstVisit: 23,
+
     recurringVisit: 24,
     contract: 25,
     minimum: 26,
@@ -34,16 +34,16 @@ const FIELD_ORDER = {
 export const MicrofiberMoppingForm: React.FC<
   ServiceInitialData<MicrofiberMoppingFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, activeConfig } = useMicrofiberMoppingCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractTermMonths) {
       setForm({ ...form, contractTermMonths: servicesContext.globalContractMonths });
@@ -52,100 +52,102 @@ export const MicrofiberMoppingForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '' } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Check if SaniClean All-Inclusive is active
+
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
-  // ✅ FIXED: Use ACTUAL rates (not calculated from total/qty)
-  // Always use the effective rate (custom override if set, otherwise base rate)
-  // NEVER calculate rate from total/qty as this loses the actual rate value
+
   const bathroomRate = form.customIncludedBathroomRate ?? form.includedBathroomRate;
   const hugeBathroomRate = form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt;
   const extraAreaRate = form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit;
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0 || (form.standaloneSqFt ?? 0) > 0 || (form.chemicalGallons ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.bathroomCount ?? 0) > 0 || (form.hugeBathroomSqFt ?? 0) > 0 || (form.extraAreaSqFt ?? 0) > 0 || (form.standaloneSqFt ?? 0) > 0 || (form.chemicalGallons ?? 0) > 0 || hasCustomFieldValues;
 
       const frequencyLabel = typeof form.frequency === 'string'
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
@@ -162,15 +164,14 @@ export const MicrofiberMoppingForm: React.FC<
         displayName: "Microfiber Mopping",
         isActive: true,
 
-        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-        // This ensures edited values are saved to backend, not just backend defaults
+
         includedBathroomRate: form.customIncludedBathroomRate ?? form.includedBathroomRate,
         hugeBathroomRatePerSqFt: form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt,
         extraAreaRatePerUnit: form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit,
         standaloneRatePerUnit: form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit,
         dailyChemicalPerGallon: form.customDailyChemicalPerGallon ?? form.dailyChemicalPerGallon,
 
-        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+
         bathroomCount: form.bathroomCount,
         isHugeBathroom: form.isHugeBathroom,
         hugeBathroomSqFt: form.hugeBathroomSqFt,
@@ -183,14 +184,14 @@ export const MicrofiberMoppingForm: React.FC<
         contractTermMonths: form.contractTermMonths,
         hasExistingSaniService: form.hasExistingSaniService,
         isAllInclusive: form.isAllInclusive,
-        // location: form.location,
+
         needsParking: form.needsParking,
         applyMinimum: form.applyMinimum !== false,
 
-        // Red/Green Line pricing data
-        perVisitBase: calc.perVisitPrice,  // Per-visit price
-        perVisit: calc.perVisitPrice,  // Final per-visit price
-        minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
+
+        perVisitBase: calc.perVisitPrice,  
+        perVisit: calc.perVisitPrice,  
+        minimumChargePerVisit: calc.minimumChargePerVisit,  
 
         frequency: {
           isDisplay: true,
@@ -200,13 +201,7 @@ export const MicrofiberMoppingForm: React.FC<
           value: frequencyLabel,
           frequencyKey: form.frequency,
         },
-        // location: {
-        //   isDisplay: true,
-        //   orderNo: FIELD_ORDER.location,
-        //   label: "Location",
-        //   type: "text" as const,
-        //   value: form.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
-        // },
+
 
         serviceBreakdown: (() => {
           const breakdown = [];
@@ -353,7 +348,6 @@ export const MicrofiberMoppingForm: React.FC<
   }, [form, calc, customFields]);
 
 
-  // Track previous values to detect actual changes (not just re-renders)
   const prevInputsRef = useRef({
     bathroomCount: form.bathroomCount,
     hugeBathroomSqFt: form.hugeBathroomSqFt,
@@ -374,7 +368,7 @@ export const MicrofiberMoppingForm: React.FC<
     contractTermMonths: form.contractTermMonths,
   });
 
-  // Clear custom totals when base inputs change
+
   useEffect(() => {
     const prev = prevInputsRef.current;
     const hasChanged =
@@ -460,7 +454,7 @@ export const MicrofiberMoppingForm: React.FC<
 
   return (
     <div className="svc-card">
-      {/* Header */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">MICROFIBER MOPPING</div>
         <div className="svc-h-actions">
@@ -497,7 +491,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -505,7 +499,7 @@ export const MicrofiberMoppingForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Alert when included in SaniClean All-Inclusive */}
+      {}
       {isSanicleanAllInclusive && (
         <div
           className="svc-row"
@@ -526,7 +520,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       )}
 
-      {/* Link to existing Sani program */}
+      {}
       <div className="svc-row">
         <label>Combined with Sani program?</label>
         <div className="svc-row-right">
@@ -542,7 +536,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* All-inclusive flag */}
+      {}
       <div className="svc-row">
         <label>All-inclusive package?</label>
         <div className="svc-row-right">
@@ -558,7 +552,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Frequency */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -581,7 +575,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Standard bathrooms */}
+      {}
       <div className="svc-row">
         <label>Standard Bathrooms</label>
         <div className="svc-row-right">
@@ -644,7 +638,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Huge bathroom exception */}
+      {}
       <div className="svc-row">
         <label>Huge Bathroom (sq ft)</label>
         <div className="svc-row-right">
@@ -681,7 +675,7 @@ export const MicrofiberMoppingForm: React.FC<
               title="Huge bathroom rate per sq ft (editable with yellow highlight if overridden)"
             />
           </div>
-          {/* <span className="svc-small">per {cfg.hugeBathroomPricing.sqFtUnit} sq ft</span> */}
+          {}
           <span>=</span>
           <input
             className="svc-in-box field-qty"
@@ -706,7 +700,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Extra non-bathroom area */}
+      {}
       <div className="svc-row">
         <label>Extra non-bathroom(sq ft)</label>
         <div className="svc-row-right">
@@ -743,7 +737,7 @@ export const MicrofiberMoppingForm: React.FC<
               title="Rate per 400 sq ft unit (editable with yellow highlight if overridden)"
             />
           </div>
-          {/* <span className="svc-small">per {cfg.extraAreaPricing.extraAreaSqFtUnit} sq ft</span> */}
+          {}
           <span>=</span>
           <input
             className="svc-in-box field-qty"
@@ -765,13 +759,11 @@ export const MicrofiberMoppingForm: React.FC<
               backgroundColor: form.customExtraAreaTotal !== undefined ? '#fffacd' : 'white'
             }}
           />
-          {/* <span className="svc-small" style={{ marginLeft: "8px", fontStyle: "italic", color: "#666" }}>
-            (≈${extraAreaRatePerSqFt.toFixed(4)}/sq ft; max: $100 flat OR rate × area)
-          </span> */}
+          {}
         </div>
       </div>
 
-      {/* Extra non-bathroom area calculation method checkbox */}
+      {}
       <div className="svc-row">
         <label></label>
         <div className="svc-row-right">
@@ -792,7 +784,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Standalone microfiber mopping */}
+      {}
       <div className="svc-row">
         <label>Standalone microfiber mopping (sq ft)</label>
         <div className="svc-row-right">
@@ -829,7 +821,7 @@ export const MicrofiberMoppingForm: React.FC<
               title="Standalone rate per 200 sq ft (editable with yellow highlight if overridden)"
             />
           </div>
-          {/* <span className="svc-small">per {cfg.standalonePricing.standaloneSqFtUnit} sq ft</span> */}
+          {}
           <span>=</span>
           <input
             className="svc-in-box field-qty"
@@ -854,7 +846,7 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Standalone microfiber mopping calculation method checkbox */}
+      {}
       <div className="svc-row">
         <label></label>
         <div className="svc-row-right">
@@ -875,113 +867,16 @@ export const MicrofiberMoppingForm: React.FC<
         </div>
       </div>
 
-      {/* Standalone trip (location / parking) – layout fixed, math locked to 0 */}
-      {/* <div className="svc-row">
-        <label>Standalone trip (location / parking)</label>
-        <div className="svc-row-right">
+      {}
+      {}
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
-          >
-            <select
-              className="svc-in"
-              name="location"
-              value={form.location}
-              onChange={onChange}
-            >
-              <option value="insideBeltway">Inside beltway</option>
-              <option value="outsideBeltway">Outside beltway</option>
-            </select>
-            <label className="svc-check">
-              <input
-                type="checkbox"
-                name="needsParking"
-                checked={form.needsParking}
-                onChange={onChange}
-              />
-              <span>Parking / garage fees</span>
-            </label>
-            <span style={{ fontSize: "0.85rem", opacity: 0.8 }}>
-              (Trip charge is visible but not used in math – locked to $0.00)
-            </span>
-          </div>
+      {}
+      {}
 
 
-          <div
-            style={{
-              marginTop: "0.25rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.25rem",
-            }}
-          >
-            <span>=</span>
-            <input
-              className="svc-in-box"
-              type="text"
-              readOnly
-              value={`$${calc.standaloneTripCharge.toFixed(2)}`}
-            />
-          </div>
-        </div>
-      </div> */}
-
-      {/* Daily mop chemical */}
-      {/* <div className="svc-row">
-        <label>Daily mop chemical (gallons / month)</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in field-qty"
-            type="number"
-            min="0"
-            name="chemicalGallons"
-            value={form.chemicalGallons}
-            onChange={onChange}
-          />
-          <span>@</span>
-          <div className="svc-dollar">
-            <span>$</span>
-            <input
-              className="svc-in field-qty"
-              type="number"
-            min="0"
-              step="1"
-              name="dailyChemicalPerGallon"
-              value={form.dailyChemicalPerGallon}
-              onChange={onChange}
-            />
-          </div>
-          <span>=</span>
-          <input
-            className="svc-in-box field-qty"
-            type="number"
-            min="0"
-            step="1"
-            name="customChemicalTotal"
-            value={
-              form.customChemicalTotal !== undefined
-                ? form.customChemicalTotal
-                : calc.chemicalSupplyMonthly
-            }
-            onChange={onChange}
-            onBlur={handleBlur}
-            style={{
-              backgroundColor: form.customChemicalTotal !== undefined ? '#fffacd' : 'white'
-            }}
-          />
-        </div>
-      </div> */}
-
-
-
-      {/* Summary block */}
+      {}
       <div className="svc-summary">
-        {/* Minimum charge row */}
+        {}
         <div className="svc-row">
           <label>Minimum Per Visit</label>
           <div className="svc-row-right">
@@ -998,7 +893,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         </div>
 
-        {/* Per-visit service total - always shown */}
+        {}
         <div className="svc-row">
           <label>Per-visit service total</label>
           <div className="svc-dollar">
@@ -1027,7 +922,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         </div>
 
-        {/* Redline/Greenline Pricing Indicator */}
+        {}
         {(form.bathroomCount > 0 || form.hugeBathroomSqFt > 0 || form.extraAreaSqFt > 0 || form.standaloneSqFt > 0) && (
           <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
             <label></label>
@@ -1061,40 +956,18 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         )}
 
-        {/* Weekly approximations - shown for month-based frequencies */}
+        {}
         {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
          form.frequency !== "biannual" && form.frequency !== "annual" &&
          form.frequency !== "bimonthly" && (
           <>
-            {/* <div className="svc-row">
-              <label>Approx. weekly service (no chem)</label>
-              <div className="svc-dollar">
-                <span>$</span>
-                <input
-                  className="svc-in"
-                  type="text"
-                  readOnly
-                  value={calc.weeklyServiceTotal.toFixed(2)}
-                />
-              </div>
-            </div> */}
+            {}
 
-            {/* <div className="svc-row">
-              <label>Approx. weekly total (service + chem)</label>
-              <div className="svc-dollar">
-                <span>$</span>
-                <input
-                  className="svc-in"
-                  type="text"
-                  readOnly
-                  value={calc.weeklyTotalWithChemicals.toFixed(2)}
-                />
-              </div>
-            </div> */}
+            {}
           </>
         )}
 
-        {/* Monthly Recurring – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+        {}
         {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
          form.frequency !== "biannual" && form.frequency !== "annual" &&
          form.frequency !== "bimonthly" && (
@@ -1126,7 +999,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         )}
 
-        {/* First month total – HIDE for oneTime, quarterly, biannual, annual, bimonthly */}
+        {}
         {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
          form.frequency !== "biannual" && form.frequency !== "annual" &&
          form.frequency !== "bimonthly" && (
@@ -1159,7 +1032,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         )}
 
-        {/* First Visit Total – SHOW ONLY for oneTime, quarterly, biannual, annual, bimonthly */}
+        {}
         {(form.frequency === "oneTime" || form.frequency === "quarterly" ||
           form.frequency === "biannual" || form.frequency === "annual" ||
           form.frequency === "bimonthly") && (
@@ -1192,7 +1065,7 @@ export const MicrofiberMoppingForm: React.FC<
           </div>
         )}
 
-        {/* Contract total with inline dropdown – HIDE for oneTime */}
+        {}
         {form.frequency !== "oneTime" && (
           <div className="svc-row">
             <label>Contract Total</label>
@@ -1203,35 +1076,35 @@ export const MicrofiberMoppingForm: React.FC<
                 value={form.contractTermMonths}
                 onChange={onChange}
               >
-                {/* Quarterly: multiples of 3 */}
+                {}
                 {form.frequency === "quarterly"
                   ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
                       <option key={m} value={m}>
                         {m} months
                       </option>
                     ))
-                  /* Bimonthly: even numbers */
+
                   : form.frequency === "bimonthly"
                   ? [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36].map((m) => (
                       <option key={m} value={m}>
                         {m} months
                       </option>
                     ))
-                  /* Biannual: multiples of 6 */
+
                   : form.frequency === "biannual"
                   ? [6, 12, 18, 24, 30, 36].map((m) => (
                       <option key={m} value={m}>
                         {m} months
                       </option>
                     ))
-                  /* Annual: multiples of 12 */
+
                   : form.frequency === "annual"
                   ? [12, 24, 36].map((m) => (
                       <option key={m} value={m}>
                         {m} months
                       </option>
                     ))
-                  /* All other frequencies: 2-36 months */
+
                   : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
                       <option key={m} value={m}>
                         {m} months

@@ -21,7 +21,7 @@ import { CustomService, type CustomServiceData } from "./CustomService";
 import { useServicesContextOptional } from "./ServicesContext";
 import { transformServiceData } from "./common/dataTransformers";
 
-// Map service IDs to their corresponding form components
+
 const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   saniclean: SanicleanForm,
   foamingDrain: FoamingDrainForm,
@@ -31,16 +31,16 @@ const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   refreshPowerScrub: RefreshPowerScrubForm,
   sanipod: SanipodForm,
   carpetclean: CarpetForm,
-  carpetCleaning: CarpetForm,       // Alias for backend compatibility
-  // ✅ REMOVED: janitorial mapping to prevent conflicts
-  pureJanitorial: JanitorialForm,   // Backend only has pureJanitorial service
+  carpetCleaning: CarpetForm,       
+
+  pureJanitorial: JanitorialForm,   
   stripwax: StripWaxForm,
-  stripWax: StripWaxForm,            // Alias for backend compatibility
+  stripWax: StripWaxForm,            
   greaseTrap: GreaseTrapForm,
   electrostaticSpray: ElectrostaticSprayForm,
 };
 
-// Optional prop if you prefill from backend
+
 type ServicesSectionProps = {
   initialServices?: {
     saniclean?: any;
@@ -51,20 +51,20 @@ type ServicesSectionProps = {
     refreshPowerScrub?: any;
     sanipod?: any;
     carpetclean?: any;
-    carpetCleaning?: any;  // Alias for backend compatibility
-    // ✅ REMOVED: janitorial prop to prevent conflicts
-    pureJanitorial?: any;  // Backend only has pureJanitorial service
+    carpetCleaning?: any;  
+
+    pureJanitorial?: any;  
     stripwax?: any;
-    stripWax?: any;        // Alias for backend compatibility
+    stripWax?: any;        
     greaseTrap?: any;
     electrostaticSpray?: any;
-    customServices?: CustomServiceData[];  // Add custom services support
+    customServices?: CustomServiceData[];  
   };
   activeTab?: string;
   onTabChange?: (tab: string | null) => void;
 };
 
-// Export handle to get custom services data
+
 export interface ServicesSectionHandle {
   getCustomServicesData: () => {
     customServices: CustomServiceData[];
@@ -77,17 +77,17 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   activeTab,
   onTabChange,
 }, ref) => {
-  // Fetch service configs to determine which services are active
+
   const { configs, loading } = useServiceConfigs();
   const servicesContext = useServicesContextOptional();
 
-  // Determine current active tab with validation
+
   const validTabs = ['reference', ...configs.map(c => c.serviceId)];
   const currentTab = activeTab && validTabs.includes(activeTab) ? activeTab : null;
 
-  // State for which services are currently visible
+
   const [visibleServices, setVisibleServices] = useState<Set<string>>(() => {
-    // If we have initial services (edit mode), show those services
+
     if (initialServices && typeof initialServices === 'object') {
       const activeServiceIds = Object.keys(initialServices).filter(
         (key) => initialServices[key as keyof typeof initialServices]?.isActive
@@ -95,10 +95,10 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       if (activeServiceIds.length > 0) {
         console.log('📋 [ServicesSection] Edit mode detected, showing saved services:', activeServiceIds);
 
-        // Normalize service IDs to handle aliases
+
         const normalizedIds = activeServiceIds.map(id => {
-          // Map common aliases to their canonical form
-          if (id === 'carpetclean') return 'carpetclean'; // Keep as-is, config will match via alias check
+
+          if (id === 'carpetclean') return 'carpetclean'; 
           if (id === 'carpetCleaning') return 'carpetclean';
           if (id === 'janitorial') return 'janitorial';
           if (id === 'pureJanitorial') return 'janitorial';
@@ -110,15 +110,15 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         return new Set(normalizedIds);
       }
     }
-    // Otherwise, show all active services from configs
+
     return new Set(configs.filter(c => c.isActive).map(c => c.serviceId));
   });
 
-  // State for custom services - initialize from initialServices if available
+
   const [customServices, setCustomServices] = useState<CustomServiceData[]>(() => {
     if (initialServices?.customServices) {
       console.log('📋 [ServicesSection] Initializing custom services from saved data:', initialServices.customServices);
-      // Transform the custom services data using our transformer
+
       const transformedCustomServices = transformServiceData("customServices", initialServices.customServices);
       console.log('📋 [ServicesSection] Transformed custom services:', transformedCustomServices);
       return transformedCustomServices || [];
@@ -126,19 +126,19 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return [];
   });
 
-  // State for "New Service" dropdown
+
   const [showNewServiceDropdown, setShowNewServiceDropdown] = useState(false);
   const [showRemoveServiceDropdown, setShowRemoveServiceDropdown] = useState(false);
 
-  // Use ref to track if configs have been initialized to prevent infinite loop
+
   const configsInitializedRef = useRef(false);
 
-  // Update visible services when configs load (only once, and only if not in edit mode)
+
   React.useEffect(() => {
     if (configs.length > 0 && !configsInitializedRef.current) {
       configsInitializedRef.current = true;
 
-      // Only update visible services if we're NOT in edit mode
+
       const hasInitialServices = initialServices && typeof initialServices === 'object' &&
         Object.keys(initialServices).some((key) => initialServices[key as keyof typeof initialServices]?.isActive);
 
@@ -151,23 +151,23 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     }
   }, [configs, initialServices]);
 
-  // Memoize the array conversion to prevent infinite loops
+
   const visibleServicesArray = useMemo(() => Array.from(visibleServices), [visibleServices]);
 
-  // Use ref to track last saved value to prevent unnecessary updates
+
   const lastSavedCustomServicesRef = useRef<string>("");
 
-  // Save custom services to context whenever they change
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (servicesContext) {
-      // Create a stable string representation to compare
+
       const currentValue = JSON.stringify({
         customServices,
         visibleServices: visibleServicesArray,
       });
 
-      // Only update if data actually changed
+
       if (currentValue !== lastSavedCustomServicesRef.current) {
         lastSavedCustomServicesRef.current = currentValue;
         servicesContext.updateService("customServices" as any, {
@@ -176,11 +176,11 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         });
       }
     }
-    // NOTE: servicesContext omitted from deps to prevent infinite loop
-    // updateService is a stable callback (useCallback with empty deps)
+
+
   }, [customServices, visibleServicesArray]);
 
-  // Expose method to get custom services data
+
   useImperativeHandle(ref, () => ({
     getCustomServicesData: () => ({
       customServices,
@@ -188,12 +188,12 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     }),
   }), [customServices, visibleServicesArray]);
 
-  // Handler to add a service back
+
   const handleAddService = (serviceId: string) => {
     console.log('Adding service:', serviceId);
 
     if (serviceId === "custom") {
-      // Add a new custom service
+
       const newService: CustomServiceData = {
         id: `custom_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         name: "Lorem ipsum",
@@ -202,7 +202,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       setCustomServices((prev) => [...prev, newService]);
       console.log('Custom service added:', newService.id);
     } else {
-      // Add an existing service
+
       setVisibleServices((prev) => {
         const newSet = new Set([...prev, serviceId]);
         console.log('Updated visible services:', Array.from(newSet));
@@ -212,9 +212,9 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     setShowNewServiceDropdown(false);
   };
 
-  // Handler to remove a service
+
   const handleRemoveService = (serviceId: string) => {
-    // ✅ CRITICAL FIX: Map of service aliases (both directions)
+
     const aliasMap: Record<string, string[]> = {
       'carpetCleaning': ['carpetclean'],
       'carpetclean': ['carpetCleaning'],
@@ -224,11 +224,11 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       'stripwax': ['stripWax'],
     };
 
-    // Get all aliases for this service
+
     const aliases = aliasMap[serviceId] || [];
     const allIdsToRemove = [serviceId, ...aliases];
 
-    // ✅ FIXED: Remove BOTH the service ID and all aliases from visible services Set
+
     setVisibleServices((prev) => {
       const next = new Set(prev);
       allIdsToRemove.forEach(id => {
@@ -238,8 +238,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       return next;
     });
 
-    // ✅ FIXED: Clear service data from context for BOTH the service ID and all aliases
-    // This ensures the service is completely removed from context regardless of which ID is used
+
     if (servicesContext) {
       allIdsToRemove.forEach(id => {
         console.log(`🗑️ [ServicesSection] Removing service data from context: ${id}`);
@@ -248,25 +247,24 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     }
   };
 
-  // Handler to update a custom service
+
   const handleUpdateCustomService = (service: CustomServiceData) => {
     setCustomServices((prev) =>
       prev.map((s) => (s.id === service.id ? service : s))
     );
   };
 
-  // Handler to remove a custom service
+
   const handleRemoveCustomService = (id: string) => {
     setCustomServices((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Get available services to add
-  // Only show services that are NOT currently visible
+
   const availableServices = configs.filter((config) => {
-    // Direct check
+
     if (visibleServices.has(config.serviceId)) return false;
 
-    // Check for aliases - if any alias is visible, don't show this service
+
     if ((config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') &&
         (visibleServices.has('carpetCleaning') || visibleServices.has('carpetclean'))) {
       return false;
@@ -283,12 +281,12 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return true;
   });
 
-  // Filter visible services (show all services in visibleServices, active or inactive)
+
   const activeVisibleServices = configs.filter((config) => {
-    // Check if the config's serviceId is in visibleServices
+
     if (visibleServices.has(config.serviceId)) return true;
 
-    // Also check for aliases
+
     if ((config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') &&
         (visibleServices.has('carpetCleaning') || visibleServices.has('carpetclean'))) {
       return true;
@@ -305,8 +303,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return false;
   });
 
-  // ✅ FIXED: Always render all services, use CSS to hide/show based on tab
-  // This prevents unmounting/remounting which was causing data loss
+
   const gridServices = activeVisibleServices.filter(
     (config) => config.serviceId !== "refreshPowerScrub"
   );
@@ -314,20 +311,20 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     (c) => c.serviceId === "refreshPowerScrub"
   );
 
-  // Helper function to determine if a service should be visible based on current tab
+
   const isServiceVisible = (serviceId: string) => {
-    // If no tab is selected (All Services), show all
+
     if (!currentTab) return true;
-    // If specific tab is selected, only show that service
+
     return serviceId === currentTab;
   };
 
-  // Debug logging
+
   console.log('Active Visible Services:', activeVisibleServices.map(c => ({ id: c.serviceId, label: c.label, isActive: c.isActive })));
   console.log('Grid Services:', gridServices.map(c => c.serviceId));
   console.log('Visible Services Set:', Array.from(visibleServices));
 
-  // ✅ Services Reference Table for Salespeople
+
   const ServicesReferenceTable = useMemo(() => (
     <ServicesReferenceSection configs={configs} />
   ), [configs]);
@@ -371,7 +368,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                   onChange={(e) => {
                     if (e.target.value) {
                       handleAddService(e.target.value);
-                      e.target.value = ""; // Reset dropdown
+                      e.target.value = ""; 
                     }
                   }}
                   defaultValue=""
@@ -403,8 +400,8 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                   onChange={(e) => {
                     if (e.target.value) {
                       handleRemoveService(e.target.value);
-                      e.target.value = ""; // Reset dropdown
-                      setShowRemoveServiceDropdown(false); // Close dropdown
+                      e.target.value = ""; 
+                      setShowRemoveServiceDropdown(false); 
                     }
                   }}
                   defaultValue=""
@@ -435,7 +432,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {}
       {onTabChange && activeVisibleServices.length > 0 && (
         <div className="svc-tabs">
           <button
@@ -465,15 +462,15 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         </div>
       )}
 
-      {/* Services Reference Table */}
+      {}
       {currentTab === 'reference' && ServicesReferenceTable}
 
       <div className="svc-grid" style={{ display: currentTab === 'reference' ? 'none' : undefined }}>
-        {/* ✅ FIXED: Always render ALL services, use CSS display to show/hide based on tab */}
+        {}
         {gridServices.map((config) => {
           const ServiceComponent = SERVICE_COMPONENTS[config.serviceId];
           if (!ServiceComponent) {
-            // Service component not found - log warning and show placeholder
+
             console.warn(`Service component not found for serviceId: "${config.serviceId}". Available services:`, Object.keys(SERVICE_COMPONENTS));
             return (
               <div
@@ -513,11 +510,11 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
             >
               <ServiceComponent
                 initialData={(() => {
-                  // ✅ SIMPLIFIED: Since components don't remount anymore, use original logic
-                  // Try to find initial data by checking both the serviceId and common aliases
+
+
                   let rawData = initialServices?.[config.serviceId as keyof typeof initialServices];
 
-                  // If not found, try common aliases
+
                   if (!rawData) {
                     if (config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') {
                       rawData = initialServices?.carpetCleaning || initialServices?.carpetclean;
@@ -530,7 +527,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
                   if (!rawData) return undefined;
 
-                  // Transform structured data back to form state
+
                   const transformedData = transformServiceData(config.serviceId, rawData);
                   return transformedData;
                 })()}
@@ -540,7 +537,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
           );
         })}
 
-        {/* ✅ FIXED: Custom services - only show in "All Services" mode */}
+        {}
         {customServices.map((service) => (
           <div
             key={service.id}
@@ -555,16 +552,16 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         ))}
       </div>
 
-      {/* ✅ FIXED: RefreshPowerScrub - always render if visible, use CSS to show/hide based on tab */}
+      {}
       {refreshPowerScrubVisible && (
         <div style={{ display: (isServiceVisible('refreshPowerScrub') && currentTab !== 'reference') ? 'block' : 'none' }}>
           <RefreshPowerScrubForm
           initialData={(() => {
-            // ✅ SIMPLIFIED: Since components don't remount anymore, use original logic
+
             const rawData = initialServices?.refreshPowerScrub;
             if (!rawData) return undefined;
 
-            // Transform structured data back to form state
+
             const transformedData = transformServiceData("refreshPowerScrub", rawData);
             return transformedData;
           })()}

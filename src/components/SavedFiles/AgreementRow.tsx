@@ -1,5 +1,3 @@
-// src/components/SavedFiles/AgreementRow.tsx
-// ✅ EXTRACTED: Memoized agreement row component for better performance
 import { memo, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -134,7 +132,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
         background: '#fff',
         border: '1px solid #e6e6e6',
         borderRadius: '10px',
-        marginBottom: '8px', // ✅ RESTORED: Original spacing
+        marginBottom: '8px',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
         position: 'relative'
       }}
@@ -149,9 +147,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
           borderBottom: isExpanded ? '1px solid #f0f0f0' : 'none'
         }}
       >
-        {/* Main content area - checkbox, expand, folder, title */}
         <div className="agreement-main-content">
-          {/* Agreement checkbox */}
           <div style={{ marginRight: '12px' }} onClick={(e) => e.stopPropagation()}>
             <FontAwesomeIcon
               icon={selectionState === 'none' ? faSquare : faCheckSquare}
@@ -164,7 +160,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
             />
           </div>
 
-          {/* Expand/collapse arrow */}
           <FontAwesomeIcon
             icon={isExpanded ? faChevronDown : faChevronRight}
             style={{
@@ -175,7 +170,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
             onClick={handleToggleExpand}
           />
 
-          {/* Folder icon */}
           <FontAwesomeIcon
             icon={isExpanded ? faFolderOpen : faFolder}
             style={{
@@ -185,7 +179,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
             }}
           />
 
-          {/* Agreement title and metadata */}
           <div style={{ flex: 1 }} onClick={handleToggleExpand}>
           <span style={{
             fontWeight: '600',
@@ -249,7 +242,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
       </div>
         </div>
 
-        {/* Action buttons */}
         <div className="agreement-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {agreement.startDate && agreement.contractMonths && (
             <AgreementTimelineBadge
@@ -263,7 +255,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
           )}
 
           {isTrashView ? (
-            // ✅ TRASH VIEW: Show Restore button, and Permanent Delete only if agreement itself is deleted
             <>
               <button
                 style={{
@@ -289,7 +280,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
                 Restore
               </button>
 
-              {/* ✅ FIXED: Only show Permanent Delete button if the agreement itself was deleted */}
               {agreement.isDeleted === true && (
                 <button
                   style={{
@@ -317,7 +307,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
               )}
             </>
           ) : (
-            // ✅ NORMAL VIEW: Show regular action buttons
             <>
               <button
                 style={{
@@ -424,7 +413,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
         </div>
       </div>
 
-      {/* Files list - ✅ LAZY RENDERING: Only create DOM elements when expanded */}
       {isExpanded && (
         <div style={{ padding: '0 16px 16px' }}>
           {agreement.files.map((file) => (
@@ -453,10 +441,6 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function for better performance
-  // Only re-render if these specific props changed
-
-  // ✅ FIXED: Compare fileWatermarkStates Map for watermark toggle to work
   const prevWatermarkStr = JSON.stringify(Array.from(prevProps.fileWatermarkStates.entries()));
   const nextWatermarkStr = JSON.stringify(Array.from(nextProps.fileWatermarkStates.entries()));
 
@@ -469,7 +453,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
     prevProps.isTrashView === nextProps.isTrashView &&
     JSON.stringify(prevProps.selectedFiles) === JSON.stringify(nextProps.selectedFiles) &&
     JSON.stringify(prevProps.statusChangeLoading) === JSON.stringify(nextProps.statusChangeLoading) &&
-    prevWatermarkStr === nextWatermarkStr // ✅ FIXED: Compare watermark states
+    prevWatermarkStr === nextWatermarkStr 
   );
 });
 

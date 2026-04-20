@@ -1,4 +1,4 @@
-// src/components/services/ServicesDataCollector.tsx
+
 import { useImperativeHandle, forwardRef } from "react";
 import { useServicesContextOptional } from "./ServicesContext";
 
@@ -20,16 +20,16 @@ export interface ServicesDataHandle {
   };
 }
 
-// This component doesn't render anything, it just collects data from context
+
 const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
   const servicesContext = useServicesContextOptional();
 
-  // Expose getData method - reads from context
+
   useImperativeHandle(ref, () => ({
     getData: () => {
       if (!servicesContext) {
         console.warn('⚠️ [ServicesDataCollector] ServicesContext not available, returning empty data');
-        // Fallback if context not available
+
         return {
           saniclean: null,
           foamingDrain: null,
@@ -47,10 +47,10 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         };
       }
 
-      // Read from context - return null if service data is not present
+
       const state = servicesContext.servicesState;
 
-      // ✅ DEBUG: Log active services to verify all data is collected regardless of tab
+
       const activeServices = Object.entries(state).filter(([key, data]) =>
         data && typeof data === 'object' && data.isActive
       ).map(([key]) => key);
@@ -66,7 +66,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         )
       });
 
-      // Get custom services data (includes customServices array and visibleServices list)
+
       const customServicesData = state.customServices;
 
       const result = {
@@ -96,7 +96,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
     }
   }), [servicesContext]);
 
-  return null; // This component doesn't render anything
+  return null; 
 });
 
 ServicesDataCollector.displayName = "ServicesDataCollector";

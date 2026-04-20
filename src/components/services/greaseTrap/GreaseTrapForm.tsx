@@ -9,35 +9,44 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
   const { form, handleChange, quote } = useGreaseTrapCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       handleChange({ target: { name: 'contractMonths', value: String(servicesContext.globalContractMonths) } } as any);
     }
   }, [servicesContext?.globalContractMonths]);
 
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.numberOfTraps ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const customFieldsTotal = customFields.reduce((sum, f) => {
+        if (f.type === 'dollar' && f.value) return sum + (parseFloat(f.value) || 0);
+        if (f.type === 'calc' && f.calcValues?.right) return sum + (parseFloat(f.calcValues.right) || 0);
+        return sum;
+      }, 0);
+      const isActive = (form.numberOfTraps ?? 0) > 0 || hasCustomFieldValues;
 
       const data = isActive ? {
         serviceId: "greaseTrap",
         displayName: "Grease Trap",
         isActive: true,
 
-        // Red/Green Line pricing data
-        perVisitBase: (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate),  // Raw price
-        perVisit: quote.perVisitTotal,  // Final price (same as raw for grease trap)
-        minimumChargePerVisit: 0,  // No minimum for grease trap
+
+        perVisitBase: (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate),  
+        perVisit: quote.perVisitTotal,  
+        minimumChargePerVisit: 0,  
 
         frequency: {
           label: "Frequency",
@@ -51,7 +60,7 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
           label: "Grease Traps",
           type: "calc" as const,
           qty: form.numberOfTraps,
-          rate: form.perTrapRate || 0,  // Use form value instead of hardcoded constant
+          rate: form.perTrapRate || 0,  
           total: quote.perVisitTotal,
         },
 
@@ -70,9 +79,10 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
             label: "Contract Total",
             type: "dollar" as const,
             months: form.contractMonths,
-            amount: quote.contractTotal,
+            amount: quote.contractTotal + customFieldsTotal,
           },
         },
+        contractTotal: quote.contractTotal + customFieldsTotal,
 
         notes: form.notes || "",
         customFields: customFields,
@@ -114,7 +124,7 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
         </div>
       </div>
 
-      {/* Custom fields manager */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -166,7 +176,7 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
             </select>
           </label>
 
-          {/* Pricing Configuration Section */}
+          {}
           <div className="svc-summary">
             <div className="svc-row">
               <div className="svc-label">

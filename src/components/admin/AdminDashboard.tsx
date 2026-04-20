@@ -1,5 +1,3 @@
-// src/components/admin/AdminDashboard.tsx
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAdminAuth } from "../../backendservice/hooks";
@@ -32,17 +30,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const { subtab, modalType, itemId } = useParams<{ subtab: string; modalType: string; itemId: string }>();
   const { user, isAuthenticated, logout } = useAdminAuth();
 
-  // Use props when embedded, URL params when standalone
   const currentSubtab = isEmbedded ? initialSubtab : subtab;
   const currentModalType = isEmbedded ? propModalType : modalType;
   const currentItemId = isEmbedded ? propItemId : itemId;
 
-  // Determine active tab from URL parameter with fallback to pricing
   const getActiveTabFromUrl = (): TabType => {
     const path = window.location.pathname;
 
     if (isEmbedded) {
-      // When embedded in admin panel, check URL path first
       if (path.includes('/admin-panel/') && (path.includes('/services') || path.includes('/services/'))) {
         return "services";
       }
@@ -53,13 +48,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         return "backup";
       }
 
-      // Then use currentSubtab as fallback
       if (!currentSubtab) return "pricing";
       const validTabs: TabType[] = ["pricing", "services", "products", "backup"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
-    // Check if URL is /pricing-tables/services or /pricing-tables/products or /pricing-tables/backup
     if (path.includes('/pricing-tables/services')) {
       return "services";
     }
@@ -77,7 +70,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const [activeTab, setActiveTab] = useState<TabType>(getActiveTabFromUrl());
 
-  // Update active tab when URL parameter changes
   useEffect(() => {
     const urlTab = getActiveTabFromUrl();
     if (urlTab !== activeTab) {
@@ -85,27 +77,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   }, [currentSubtab, isEmbedded, location.pathname]);
 
-  // Update URL when tab changes
   const handleTabChange = (newTab: TabType) => {
     setActiveTab(newTab);
 
     if (isEmbedded && parentPath) {
-      // When embedded, use admin panel URL structure
       navigate(`${parentPath}/${newTab}`, { replace: true });
     } else {
-      // When standalone, use pricing-tables URL structure
       navigate(`/pricing-tables/${newTab}`, { replace: true });
     }
   };
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/admin-login", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  // Show nothing while redirecting
   if (!isAuthenticated || !user) {
     return null;
   }

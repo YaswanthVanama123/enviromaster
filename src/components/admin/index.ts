@@ -1,5 +1,3 @@
-// src/components/admin/index.ts
-
 export { AdminLogin } from "./AdminLogin";
 export { PricingTables } from "./PricingTables";
 export { PricingTablesView } from "./PricingTablesView";

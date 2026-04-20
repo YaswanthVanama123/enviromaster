@@ -1,4 +1,4 @@
-// src/features/services/foamingDrain/FoamingDrainForm.tsx
+
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -16,7 +16,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const FIELD_ORDER = {
   frequency: 1,
   installFrequency: 2,
-  // location: 3,
+
   breakdown: {
     standard: 10,
     grease: 11,
@@ -42,10 +42,10 @@ interface FoamingDrainFormProps {
   onRemove?: () => void;
 }
 
-// Hide 0.00 when nothing entered
+
 const formatAmount = (n: number): string => (n > 0 ? n.toFixed(2) : "");
 
-// Helper function to format numbers without unnecessary decimals (like SaniScrub)
+
 const formatNumber = (num: number): string => {
   if (!Number.isFinite(num)) {
     return "0";
@@ -57,17 +57,17 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   initialData,
   onRemove,
 }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { state, quote, updateField, reset, refreshConfig, isLoadingConfig, backendConfig } =
     useFoamingDrainCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== state.contractMonths) {
       updateField("contractMonths", servicesContext.globalContractMonths as any);
@@ -76,90 +76,90 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       updateField(name as keyof FoamingDrainFormState, numValue as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       updateField(name as keyof FoamingDrainFormState, undefined as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         updateField(name as keyof FoamingDrainFormState, undefined as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       updateField(name as keyof FoamingDrainFormState, numValue as any);
     }
   };
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
   const breakdown = quote.breakdown;
 
   useEffect(() => {
-    // Calculate effective rates for payload (these match what's shown in the UI)
+
     const isVolume = state.standardDrainCount >= cfg.volumePricing.minimumDrains;
 
     const stdQty = state.isAllInclusive
@@ -179,7 +179,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     const greenRate = greenQty > 0 ? greenTotal / greenQty : state.greenWeeklyRate;
 
     if (servicesContext) {
-      const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = state.standardDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0 || hasCustomFieldValues;
       const dynamicMinimumDrains = backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains;
       const isVolume = state.standardDrainCount >= dynamicMinimumDrains;
       const isInstallProgram = isVolume && !state.useBigAccountTenWeekly && !state.isAllInclusive;
@@ -208,8 +212,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         displayName: "Foaming Drain",
         isActive: true,
 
-        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-        // This ensures edited values are saved to backend, not just backend defaults
+
         standardDrainRate: state.customRatePerDrain ?? state.standardDrainRate,
         altBaseCharge: state.customAltBaseCharge ?? state.altBaseCharge,
         altExtraPerDrain: state.customAltExtraPerDrain ?? state.altExtraPerDrain,
@@ -222,7 +225,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         plumbingAddonRate: state.customPlumbingAddonRate ?? state.plumbingAddonRate,
         filthyMultiplier: state.customFilthyMultiplier ?? state.filthyMultiplier,
 
-        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+
         standardDrainCount: state.standardDrainCount,
         installDrainCount: state.installDrainCount,
         filthyDrainCount: state.filthyDrainCount,
@@ -233,7 +236,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         installFrequency: state.installFrequency,
         contractMonths: state.contractMonths,
         facilityCondition: state.facilityCondition,
-        // location: state.location,
+
         useSmallAltPricingWeekly: state.useSmallAltPricingWeekly,
         useBigAccountTenWeekly: state.useBigAccountTenWeekly,
         isAllInclusive: state.isAllInclusive,
@@ -241,10 +244,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         needsPlumbing: state.needsPlumbing,
         applyMinimum: state.applyMinimum !== false,
 
-        // Red/Green Line pricing data (weekly pricing)
-        perVisitBase: quote.weeklyService,  // Weekly service total
-        perVisit: quote.weeklyTotal,  // Weekly total including all charges
-        minimumChargePerVisit: quote.minimumChargePerVisit,  // Minimum threshold
+
+        perVisitBase: quote.weeklyService,  
+        perVisit: quote.weeklyTotal,  
+        minimumChargePerVisit: quote.minimumChargePerVisit,  
         contractTotal: quote.contractTotal,
         originalContractTotal: quote.originalContractTotal,
 
@@ -265,13 +268,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           type: "text" as const,
           value: state.installFrequency.charAt(0).toUpperCase() + state.installFrequency.slice(1),
         },
-        // location: {
-        //   isDisplay: true,
-        //   orderNo: FIELD_ORDER.location,
-        //   label: "Location",
-        //   type: "text" as const,
-        //   value: state.location === "insideBeltway" ? "Inside Beltway" : "Outside Beltway",
-        // },
+
 
         drainBreakdown: (() => {
           const rows: any[] = [];
@@ -424,7 +421,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
       const dataStr = JSON.stringify(data);
 
-      // Only update if data actually changed
+
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
         console.log('🔧 [FoamingDrainForm] Sending data to context with pricing fields:', {
@@ -439,16 +436,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, quote, breakdown, customFields, backendConfig]);
 
-  // Availability for alt options - ✅ USE DYNAMIC BACKEND CONFIG
+
   const dynamicMinimumDrains = backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains;
   const isWeekly = state.frequency === "weekly";
-  const isVolume = state.standardDrainCount >= dynamicMinimumDrains; // ✅ DYNAMIC from backend
+  const isVolume = state.standardDrainCount >= dynamicMinimumDrains; 
 
-  // Small alt only for weekly, <10 drains
+
   const canUseSmallAlt =
     isWeekly && state.standardDrainCount > 0 && !isVolume;
 
-  // Big account 10$/drain allowed for ANY frequency when 10+ drains
+
   const canUseBigAlt = isVolume;
 
   const isInstallLevelUi =
@@ -461,11 +458,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       const num = raw === "" ? 0 : Number(raw);
       const safe = Number.isFinite(num) && num >= 0 ? num : 0;
 
-      // Special logic for standard drains to auto-clear invalid alt checkboxes
+
       if (field === "standardDrainCount") {
         const newCount = safe;
         const newIsVolume =
-          newCount >= dynamicMinimumDrains; // ✅ USE DYNAMIC from backend
+          newCount >= dynamicMinimumDrains; 
         const newCanSmallAlt =
           state.frequency === "weekly" &&
           newCount > 0 &&
@@ -473,13 +470,11 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
         updateField("standardDrainCount", newCount);
 
-        // If small-alt selection no longer valid, clear it
+
         if (!newCanSmallAlt && state.useSmallAltPricingWeekly) {
           updateField("useSmallAltPricingWeekly", false);
         }
 
-        // Big account is allowed for any frequency as long as 10+ drains,
-        // so no need to auto-clear it here.
 
         return;
       }
@@ -493,15 +488,15 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     const newFreq = e.target.value as FoamingDrainFrequency;
     updateField("frequency", newFreq);
 
-    // Small-alt only meaningful for weekly; big-account works for any frequency
+
     if (newFreq !== "weekly") {
-      // Leaving weekly: turn off only the small alt
+
       updateField("useSmallAltPricingWeekly", false);
     } else {
-      // If we come back to weekly, revalidate small-alt with current count
+
       const count = state.standardDrainCount;
       const newIsVolume =
-        count >= dynamicMinimumDrains; // ✅ USE DYNAMIC from backend
+        count >= dynamicMinimumDrains; 
       const newCanSmallAlt = count > 0 && !newIsVolume;
 
       if (!newCanSmallAlt && state.useSmallAltPricingWeekly) {
@@ -510,7 +505,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     }
   };
 
-  // ✅ UPDATED: Separate handler for install frequency changes (weekly/bimonthly)
+
   const handleInstallFrequencyChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -519,7 +514,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     updateField("installFrequency", newInstallFreq);
   };
 
-  // ✅ REMOVED: Old frequency validation - no longer needed with separate install frequency field
 
   const handleLocationChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -536,10 +530,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     );
   };
 
-  // --------- Calc-line numbers: qty @ rate = total ---------
 
-  // Standard drains: show only the drains that are billed as "standard"
-  // If 12 total drains and 3 are install drains → show 9 here.
   const stdServiceQty = state.isAllInclusive
     ? 0
     : isInstallLevelUi
@@ -549,14 +540,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const stdQty = stdServiceQty;
   const stdTotal = breakdown.weeklyStandardDrains;
 
-  // Use the count that's visible in the input field
+
   const stdQtyForRateCalc = isInstallLevelUi
     ? Math.max(state.standardDrainCount - state.installDrainCount, 0)
     : state.standardDrainCount;
 
-  // ✅ FIXED: Calculate rate for display
-  // When all-inclusive: show the base rate even though total is $0
-  // Otherwise: calculate from actual pricing
+
   const effectiveStandardRate = state.customRatePerDrain ?? state.standardDrainRate;
   let stdRate = effectiveStandardRate;
   if (!state.isAllInclusive && stdQtyForRateCalc > 0 && stdTotal > 0) {
@@ -573,7 +562,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
   const effectivePlumbingRate = state.customPlumbingAddonRate ?? state.plumbingAddonRate;
 
-  // Pricing model label - ✅ DYNAMIC from current form state (updates in real-time when editing)
+
   const pricingLabel = (() => {
     const minimumDrains = backendConfig?.volumePricing?.minimumDrains ?? 10;
     const altBase = formatNumber(state.customAltBaseCharge ?? state.altBaseCharge);
@@ -594,14 +583,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     return `Standard ($${standardRate}/drain)`;
   })();
 
-  // NEW: install-program calc line (qty @ rate = total)
+
   const installQty = isInstallLevelUi ? state.installDrainCount : 0;
   const installTotal = breakdown.weeklyInstallDrains;
   const installRate =
     installQty > 0
       ? installTotal / installQty
       : isInstallLevelUi
-      ? state.installFrequency === "bimonthly"  // ✅ FIXED: Use installFrequency and form values
+      ? state.installFrequency === "bimonthly"  
         ? state.volumeBimonthlyRate
         : state.volumeWeeklyRate
       : 0;
@@ -650,7 +639,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
-        {/* Custom fields manager - appears at the top */}
+        {}
         <CustomFieldManager
           fields={customFields}
           onFieldsChange={setCustomFields}
@@ -658,7 +647,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           onToggleAddDropdown={setShowAddDropdown}
         />
 
-        {/* Frequency */}
+        {}
         <div className="svc-row">
           <div className="svc-label">
             <span>Service Frequency</span>
@@ -683,53 +672,20 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         </div>
 
 
+        {}
+        {}
 
-        {/* How many filthy install drains (for 3× install) */}
-        {/* {state.facilityCondition === "filthy" && isInstallLevelUi && (
-          <div className="svc-row">
-            <div className="svc-label">
-              <span>Filthy Install (3×)</span>
-            </div>
-            <div className="svc-field">
-              <input
-                type="number"
-                min="0"
-                className="svc-in field-rate"
-                value={state.filthyDrainCount || ""}
-                onChange={handleNumberChange("filthyDrainCount")}
-              />{" "}
-              <span className="svc-note">
-                leave 0 = all install drains filthy
-              </span>
-            </div>
-          </div>
-        )} */}
+        {}
+        {}
 
-        {/* Location / trip */}
-        {/* <div className="svc-row">
-          <div className="svc-label">
-            <span>Location</span>
-          </div>
-          <div className="svc-field">
-            <select
-              className="svc-in"
-              value={state.location}
-              onChange={handleLocationChange}
-            >
-              <option value="standard">Standard</option>
-              <option value="beltway">Inside Beltway</option>
-            </select>
-          </div>
-        </div> */}
-
-        {/* Extras */}
+        {}
         <div className="svc-row">
           <div className="svc-label">
             <span>Extras</span>
           </div>
           <div className="svc-field">
             <div className="svc-inline">
-              {/* Plumbing */}
+              {}
               <label>
                 <input
                   type="checkbox"
@@ -782,12 +738,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
-        {/* Alt pricing options (two checkboxes) */}
+        {}
         <div className="svc-row">
           <div className="svc-label" />
           <div className="svc-field">
             <div className="svc-inline">
-              {/* Small-job alternative */}
+              {}
               <label>
                 <input
                   type="checkbox"
@@ -850,7 +806,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </label>
             </div>
             <div className="svc-inline">
-              {/* Big-account alternative */}
+              {}
               <label>
                 <input
                   type="checkbox"
@@ -859,7 +815,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   onChange={(e) => {
                     const checked = e.target.checked && canUseBigAlt;
                     updateField("useBigAccountTenWeekly", checked);
-                    // Clear small alt when enabling big account
+
                     if (checked && state.useSmallAltPricingWeekly) {
                       updateField("useSmallAltPricingWeekly", false);
                     }
@@ -874,24 +830,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
-        {/* All-inclusive */}
-        {/* <div className="svc-row">
-          <div className="svc-label" />
-          <div className="svc-field">
-            <label>
-              <input
-                type="checkbox"
-                checked={state.isAllInclusive}
-                onChange={(e) =>
-                  updateField("isAllInclusive", e.target.checked)
-                }
-              />{" "}
-              All-Inclusive (drains included, trip waived)
-            </label>
-          </div>
-        </div> */}
+        {}
+        {}
 
-        {/* Optional grease trap install */}
+        {}
         <div className="svc-row">
           <div className="svc-label" />
           <div className="svc-field">
@@ -935,16 +877,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           </div>
         </div>
 
-        {/* CALC BREAKDOWN: MAIN INPUT AREA */}
+        {}
         <div className="svc-summary">
-          {/* Standard drains */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Standard Drains</span>
             </div>
             <div className="svc-field">
               <div className="svc-inline">
-                {/* QTY = ALWAYS show actual standardDrainCount for input */}
+                {}
                 <input
                   type="number"
                   min="0"
@@ -959,7 +901,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 )}
 
                 <span>@</span>
-                {/* RATE = Shows effective rate based on active pricing model */}
+                {}
                 <span>$</span>
                 <input
                   type="number"
@@ -989,7 +931,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   }}
                 />
                 <span>=</span>
-                {/* TOTAL = Shows calculated total (0 when all-inclusive) */}
+                {}
                 <span>$</span>
                 <input
                   readOnly
@@ -1009,7 +951,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Drains for Install (10+) – now a calc line */}
+          {}
           {isInstallLevelUi && (
             <div>
                     <div className="svc-row">
@@ -1021,9 +963,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               className="svc-in"
               value={state.installFrequency}
               onChange={handleInstallFrequencyChange}
-              key="install-frequency-select" // ✅ Ensure stable identity
+              key="install-frequency-select" 
             >
-              {/* ✅ UPDATED: Install frequency supports Weekly and Bimonthly per backend config */}
+              {}
               <option value="weekly">Weekly</option>
               <option value="bimonthly">Bimonthly</option>
             </select>
@@ -1035,19 +977,17 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </div>
               <div className="svc-field">
                 <div className="svc-inline">
-                  {/* QTY = INPUT (how many drains go into install program) */}
+                  {}
                   <input
                     type="number"
-            min="0"
                     min={0}
                     max={state.standardDrainCount}
-                    className="svc-in field-qty"
                     className="svc-in field-qty"
                     value={state.installDrainCount || ""}
                     onChange={handleNumberChange("installDrainCount")}
                   />
                   <span>@</span>
-                  {/* RATE depends on frequency: weekly/bimonthly - EDITABLE */}
+                  {}
                   <input
                     type="number"
                     min={0}
@@ -1071,30 +1011,28 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     }}
                   />
                   <span>=</span>
-                  {/* TOTAL weekly cost for install drains */}
+                  {}
                   <input
                     readOnly
                     className="svc-in field-qty"
-                    
+
                     value={formatAmount(installTotal)}
                   />
-                  {/* <span className="svc-note" style={{ marginLeft: 4 }}>
-                    of {state.standardDrainCount || 0} standard drains
-                  </span> */}
+                  {}
                 </div>
               </div>
             </div>
             </div>
           )}
 
-          {/* Grease traps */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Grease Traps</span>
             </div>
             <div className="svc-field">
               <div className="svc-inline">
-                {/* QTY */}
+                {}
                 <input
                   type="number"
             min="0"
@@ -1105,7 +1043,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   onChange={handleNumberChange("greaseTrapCount")}
                 />
                 <span>@</span>
-                {/* RATE - EDITABLE */}
+                {}
                 <span>$</span>
                 <input
                   type="number"
@@ -1128,7 +1066,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   }}
                 />
                 <span>=</span>
-                {/* TOTAL */}
+                {}
                 <span>$</span>
                 <input
                   readOnly
@@ -1140,14 +1078,14 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Green drains */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Green Drains</span>
             </div>
             <div className="svc-field">
               <div className="svc-inline">
-                {/* QTY */}
+                {}
                 <input
                   type="number"
             min="0"
@@ -1158,7 +1096,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   onChange={handleNumberChange("greenDrainCount")}
                 />
                 <span>@</span>
-                {/* RATE - EDITABLE */}
+                {}
                 <span>$</span>
                 <input
                   type="number"
@@ -1181,7 +1119,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   }}
                 />
                 <span>=</span>
-                {/* TOTAL */}
+                {}
                 <span>$</span>
                 <input
                   readOnly
@@ -1193,7 +1131,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Extra Plumbing Work - calc breakdown */}
+          {}
           {state.needsPlumbing && state.plumbingDrainCount > 0 && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1201,7 +1139,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </div>
               <div className="svc-field">
                 <div className="svc-inline">
-                  {/* QTY */}
+                  {}
                   <input
                     readOnly
                     type="number"
@@ -1210,7 +1148,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     value={state.plumbingDrainCount}
                   />
                   <span>@</span>
-                  {/* RATE - shows from state */}
+                  {}
                   <input
                     readOnly
                     type="number"
@@ -1220,7 +1158,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     value={effectivePlumbingRate}
                   />
                   <span>=</span>
-                  {/* TOTAL - calculated */}
+                  {}
                   <input
                     readOnly
                     type="number"
@@ -1245,10 +1183,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           )}
         </div>
 
-        {/* SUMMARY / RESULTS */}
+        {}
         <div className="svc-summary">
 
-          {/* Facility condition */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Facility Condition</span>
@@ -1265,7 +1203,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Filthy Multiplier - Only show when filthy condition */}
+          {}
           {state.facilityCondition === "filthy" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1302,7 +1240,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           )}
 
 
-          {/* Installation total */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Installation Total</span>
@@ -1329,39 +1267,13 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               />
             </div>
           </div>
-          {/* Weekly per visit */}
-          {/* <div className="svc-row">
-            <div className="svc-label">
-              <span>Weekly Subtotal</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                readOnly
-                className="svc-in field-qty"
-                value={formatAmount(quote.weeklyService)}
-              />
-            </div>
-          </div> */}
+          {}
+          {}
 
-          {/* Trip charge (locked to 0, display only) */}
-          {/* <div className="svc-row">
-            <div className="svc-label">
-              <span>Trip Charge</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in field-qty"
-                type="number"
-            min="0"
-                value={tripInputValue}
-                readOnly
-              />
-            </div>
-          </div> */}
+          {}
+          {}
 
-          {/* First Visit Total - Show for ALL frequencies except oneTime */}
+          {}
           {state.frequency !== "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1391,7 +1303,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
-          {/* Minimum Charge Per Visit */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Minimum Per Visit</span>
@@ -1409,7 +1321,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Per Visit Total */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>
@@ -1444,7 +1356,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           </div>
 
-          {/* Redline/Greenline Pricing Indicator */}
+          {}
           {(state.standardDrainCount > 0 || state.filthyDrainCount > 0 || state.greaseTrapCount > 0 || state.greenDrainCount > 0 || state.plumbingDrainCount > 0) && (
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
@@ -1479,8 +1391,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           )}
 
 
-
-          {/* Total Price - Show ONLY for oneTime */}
+          {}
           {state.frequency === "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1511,7 +1422,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           )}
 
 
-          {/* First month total - HIDE for one-time and visit-based frequencies */}
+          {}
           {state.frequency !== "oneTime" &&
            state.frequency !== "bimonthly" &&
            state.frequency !== "quarterly" &&
@@ -1545,7 +1456,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
-          {/* Normal month (recurring) - HIDE for one-time and visit-based frequencies */}
+          {}
           {state.frequency !== "oneTime" &&
            state.frequency !== "bimonthly" &&
            state.frequency !== "quarterly" &&
@@ -1580,8 +1491,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           )}
 
 
-
-          {/* Combined Contract Total with months dropdown and amount - HIDE for one-time */}
+          {}
           {state.frequency !== "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1601,9 +1511,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   }
                 >
                   {state.frequency === "quarterly" ? (
-                    // For quarterly: show multiples of 3 months only
+
                     Array.from({ length: 12 }, (_, i) => {
-                      const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+                      const months = (i + 1) * 3; 
                       return (
                         <option key={months} value={months}>
                           {months} mo
@@ -1611,9 +1521,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                       );
                     })
                   ) : state.frequency === "biannual" ? (
-                    // For bi-annual: show multiples of 6 months only
+
                     Array.from({ length: 6 }, (_, i) => {
-                      const months = (i + 1) * 6; // 6, 12, 18, 24, 30, 36
+                      const months = (i + 1) * 6; 
                       return (
                         <option key={months} value={months}>
                           {months} mo
@@ -1621,9 +1531,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                       );
                     })
                   ) : state.frequency === "annual" ? (
-                    // For annual: show multiples of 12 months only
+
                     Array.from({ length: 3 }, (_, i) => {
-                      const months = (i + 1) * 12; // 12, 24, 36
+                      const months = (i + 1) * 12; 
                       return (
                         <option key={months} value={months}>
                           {months} mo
@@ -1631,7 +1541,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                       );
                     })
                   ) : (
-                    // For all other frequencies: show 2-36 months
+
                     Array.from(
                       {
                         length:
@@ -1677,15 +1587,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
           <div className="svc-row" style={{ marginTop: 6 }}>
             <div className="svc-label" />
-            {/* <div className="svc-field">
-              <button
-                type="button"
-                className="svc-mini svc-mini--neg"
-                onClick={reset}
-              >
-                Reset Foaming Drain
-              </button>
-            </div> */}
+            {}
           </div>
         </div>
       </div>

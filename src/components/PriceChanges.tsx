@@ -6,7 +6,7 @@ type Category = "Small Product" | "Dispenser" | "Big Product";
 type PriceItem = {
   id: number;
   service: string;
-  category: Category;      // 👈 NEW
+  category: Category;
   currentPrice: number;
   newPrice: number;
   effectiveFrom: string;
@@ -43,7 +43,7 @@ export default function PriceChanges() {
     const newItem: PriceItem = {
       id: Date.now(),
       service: "",
-      category: "Small Product",       // 👈 default
+      category: "Small Product",
       currentPrice: 0,
       newPrice: 0,
       effectiveFrom: today,
@@ -68,7 +68,7 @@ export default function PriceChanges() {
           <thead>
             <tr>
               <th>Service</th>
-              <th>Type</th> {/* 👈 NEW COLUMN */}
+              <th>Type</th>
               <th>Current Price</th>
               <th>New Price</th>
               <th>Effective From</th>

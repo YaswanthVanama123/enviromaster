@@ -1,7 +1,3 @@
-/* AgreementRow.css - Responsive styles for agreement rows/cards */
-/* ✅ SCOPED: All styles are under .sf (SavedFiles) or .trash-view-page (TrashView) to prevent affecting ApprovalDocuments */
-
-/* Default styles - inherited from inline styles in component */
 .sf .agreement-card,
 .trash-view-page .agreement-card {
   background: #fff;
@@ -36,7 +32,6 @@
   flex-shrink: 0;
 }
 
-/* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .sf .agreement-header,
   .trash-view-page .agreement-header {
@@ -65,7 +60,6 @@
   }
 }
 
-/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .sf .agreement-card,
   .trash-view-page .agreement-card {
@@ -109,7 +103,6 @@
   }
 }
 
-/* Extra small viewports - max 480px */
 @media (max-width: 480px) {
   .sf .agreement-card,
   .trash-view-page .agreement-card {

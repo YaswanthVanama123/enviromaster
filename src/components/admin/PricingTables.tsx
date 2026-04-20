@@ -1,4 +1,3 @@
-// src/components/admin/PricingTables.tsx
 
 import React, { useState } from "react";
 import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice/hooks";
@@ -426,5 +425,3 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "monospace",
   },
 };
-
-// Media query handling (add to a global CSS file or use CSS-in-JS library for production)

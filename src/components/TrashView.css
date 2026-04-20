@@ -1,6 +1,3 @@
-/* TrashView.css - Responsive styles for trash view */
-/* ✅ SCOPED: All styles are under .trash-view-page to prevent affecting other pages */
-
 .trash-view-page .trash-view-container {
   display: flex;
   gap: 24px;
@@ -98,7 +95,6 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .trash-view-page .trash-view-container {
     gap: 16px;
@@ -148,7 +144,6 @@
   }
 }
 
-/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px) {
   .trash-view-page .trash-view-container {
     gap: 12px;
@@ -223,7 +218,6 @@
     font-size: 13px !important;
   }
 
-  /* Delete confirmation checkbox section */
   .trash-view-page .trash-view-modal-content > div[style*="background: #fef2f2"] {
     padding: 10px !important;
     margin-bottom: 12px !important;
@@ -239,7 +233,6 @@
   }
 }
 
-/* Extra small viewports - max 480px */
 @media (max-width: 480px) {
   .trash-view-page .trash-view-container {
     padding: 10px;

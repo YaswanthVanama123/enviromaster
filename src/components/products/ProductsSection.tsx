@@ -1,4 +1,4 @@
-// src/components/products/ProductsSection.tsx
+
 import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -8,7 +8,7 @@ import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
 import { useServicesContextOptional } from "../services/ServicesContext";
 import { addPriceChange, getFieldDisplayName, getProductTypeFromFamily, getFieldType } from "../../utils/fileLogger";
 
-// Export interface for ref handle
+
 export interface ProductsSectionHandle {
   getData: () => {
     products: ProductRow[];
@@ -49,7 +49,7 @@ const getFrequencyMultiplier = (frequency?: string): number => {
   return FREQUENCY_MONTHLY_MULTIPLIERS[key] ?? 1;
 };
 
-// Initial product data from backend
+
 export interface InitialProductData {
   name: string;
   qty?: number;
@@ -58,11 +58,11 @@ export interface InitialProductData {
   replacementRate?: number;
   amount?: number;
   total?: number;
-  frequency?: string;  // ✅ CRITICAL: Added frequency field
+  frequency?: string;  
   costType?: 'productCost' | 'warranty';
 }
 
-// Props interface
+
 interface ProductsSectionProps {
   initialSmallProducts?: string[] | InitialProductData[];
   initialDispensers?: string[] | InitialProductData[];
@@ -71,14 +71,11 @@ interface ProductsSectionProps {
     products: { id: string; label: string }[];
     dispensers: { id: string; label: string }[];
   };
-  activeTab?: string; // ✅ Added activeTab prop for URL-based tab switching
-  onTabChange?: (tab: string) => void; // ✅ Added tab change callback
+  activeTab?: string; 
+  onTabChange?: (tab: string) => void; 
   onTotalsChange?: (totals: { monthlyTotal: number; contractTotal: number }) => void;
 }
 
-// ---------------------------
-// Responsive breakpoint hook
-// ---------------------------
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -97,11 +94,7 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-// ---------------------------
-// Catalog helpers
-// ---------------------------
 
-// Hook to convert backend catalog to EnvProduct format
 function useProductCatalog() {
   const { catalog, loading } = useActiveProductCatalog();
 
@@ -110,7 +103,7 @@ function useProductCatalog() {
 
     const allProducts: EnvProduct[] = catalog.families.flatMap((family) =>
       family.products
-        // Show ALL products, including those with displayByAdmin: false
+
         .map((p) => ({
           key: p.key,
           name: p.name,
@@ -131,12 +124,12 @@ function useProductCatalog() {
   }, [catalog, loading]);
 }
 
-// Which families live in which band/column group - MERGED: Products = small + big combined
+
 const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
-  // Products column: ALL non-dispenser products (paper + other products combined)
+
   products: (p) => p.familyKey !== "dispensers",
 
-  // Dispensers column: dispensers only
+
   dispensers: (p) => p.familyKey === "dispensers",
 };
 
@@ -146,7 +139,7 @@ function getProductsForColumn(column: ColumnKey, allProducts: EnvProduct[]): Env
 }
 
 function getDefaultRows(column: ColumnKey, allProducts: EnvProduct[]): ProductRow[] {
-  // Return only products with displayByAdmin: true as default rows
+
   return getProductsForColumn(column, allProducts)
     .filter((p) => p.displayByAdmin !== false)
     .map((p) => ({
@@ -165,29 +158,26 @@ function findProductByKey(key: string | null, allProducts: EnvProduct[]): EnvPro
   return allProducts.find((p) => p.key === key);
 }
 
-// For dropdown: products NOT already used + products with displayByAdmin: false
+
 function getAvailableProductsForColumn(
   column: ColumnKey,
   usedKeys: Set<string>,
   allProducts: EnvProduct[]
 ): EnvProduct[] {
   return getProductsForColumn(column, allProducts).filter((p) =>
-    // Show if NOT already used
+
     !usedKeys.has(p.key) ||
-    // OR if displayByAdmin is false (always show these)
+
     p.displayByAdmin === false
   );
 }
 
-// ---------------------------
-// Small re-usable cells
-// ---------------------------
 
 type DollarCellProps = {
   value: number | "" | null | undefined;
   onChange?: (value: number | "") => void;
   readOnly?: boolean;
-  backgroundColor?: string; // ✅ NEW: Support custom background color for highlighting overrides
+  backgroundColor?: string; 
 };
 
 const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, backgroundColor }: DollarCellProps) {
@@ -195,7 +185,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
-  // Clean value: convert NaN, null, undefined to empty string
+
   const cleanValue = (val: number | "" | null | undefined): string => {
     if (val === null || val === undefined || val === "" || (typeof val === 'number' && isNaN(val))) {
       return "";
@@ -203,7 +193,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
     return String(val);
   };
 
-  // Initialize the input value on mount only
+
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
       inputRef.current.value = cleanValue(value);
@@ -211,12 +201,12 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
     }
   }, []);
 
-  // Update only when value changes AND user is not editing
+
   useEffect(() => {
     if (value !== lastValueRef.current) {
       const isFocused = inputRef.current === document.activeElement;
 
-      // Only update if not editing AND not focused
+
       if (inputRef.current && !isEditingRef.current && !isFocused) {
         inputRef.current.value = cleanValue(value);
         lastValueRef.current = value;
@@ -245,7 +235,7 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
   const handleBlur = () => {
     isEditingRef.current = false;
     lastValueRef.current = value;
-    // Sync value on blur
+
     if (inputRef.current) {
       inputRef.current.value = cleanValue(value);
     }
@@ -264,12 +254,12 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
         onChange={handleChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        // disabled={readOnly || !onChange}
+
       />
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Only re-render if value or backgroundColor actually changed
+
   return prevProps.value === nextProps.value &&
          prevProps.readOnly === nextProps.readOnly &&
          prevProps.backgroundColor === nextProps.backgroundColor;
@@ -297,7 +287,7 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
-  // Clean value: convert NaN, null, undefined, 0 to empty string
+
   const cleanValue = (val: number | "" | undefined): string => {
     if (val === undefined || val === "" || (typeof val === 'number' && isNaN(val))) {
       return "";
@@ -305,7 +295,7 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     return String(val);
   };
 
-  // Initialize the input value on mount only
+
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
       inputRef.current.value = cleanValue(value);
@@ -313,12 +303,12 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     }
   }, []);
 
-  // Update only when value changes AND user is not editing
+
   useEffect(() => {
     if (value !== lastValueRef.current) {
       const isFocused = inputRef.current === document.activeElement;
 
-      // Only update if not editing AND not focused
+
       if (inputRef.current && !isEditingRef.current && !isFocused) {
         inputRef.current.value = cleanValue(value);
         lastValueRef.current = value;
@@ -349,7 +339,7 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const handleBlur = () => {
     isEditingRef.current = false;
     lastValueRef.current = value;
-    // Sync value on blur
+
     if (inputRef.current) {
       inputRef.current.value = cleanValue(value);
     }
@@ -369,7 +359,7 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     />
   );
 }, (prevProps, nextProps) => {
-  // Only re-render if value actually changed
+
   return prevProps.value === nextProps.value;
 });
 
@@ -414,19 +404,13 @@ const FrequencyCell = React.memo(function FrequencyCell({ value, onChange }: Fre
 });
 
 
-
-
-// ---------------------------
-// Name cell with wrapped text + custom dropdown
-// ---------------------------
-
 type NameCellProps = {
   product: EnvProduct | undefined;
-  options: EnvProduct[]; // remaining products for this band (+ current row product)
+  options: EnvProduct[]; 
   onChangeProduct: (productKey: string) => void;
   onRemove?: () => void;
 
-  // support custom rows
+
   isCustom?: boolean;
   customName?: string;
   onChangeCustomName?: (name: string) => void;
@@ -447,7 +431,7 @@ const NameCell = React.memo(function NameCell({
   const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // Always call all hooks before any conditional returns
+
   const filteredOptions = useMemo(
     () =>
       options.filter((opt) =>
@@ -456,7 +440,7 @@ const NameCell = React.memo(function NameCell({
     [options, query]
   );
 
-  // close dropdown on outside click
+
   useEffect(() => {
     if (!open) return;
 
@@ -472,7 +456,7 @@ const NameCell = React.memo(function NameCell({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  // If row is "Custom", show a simple text input instead of dropdown
+
   if (isCustom) {
     return (
       <div className="namecell">
@@ -557,7 +541,7 @@ const NameCell = React.memo(function NameCell({
                     {opt.name}
                   </button>
                 ))}
-                {/* Custom option at the bottom */}
+                {}
                 <button
                   type="button"
                   className="namecell-option namecell-option--custom"
@@ -574,11 +558,7 @@ const NameCell = React.memo(function NameCell({
   );
 });
 
-// ---------------------------
-// Main component
-// ---------------------------
 
-// Helper: Check if product is included in SaniClean All-Inclusive
 function isProductIncludedInSaniClean(productKey: string | null): boolean {
   if (!productKey) return false;
 
@@ -598,19 +578,19 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
   return includedProducts.includes(productKey);
 }
 
-// Helper: Convert initial product data to ProductRow objects
+
 function convertInitialToRows(
   bucket: ColumnKey,
   productData: string[] | InitialProductData[],
   allProducts: EnvProduct[]
 ): ProductRow[] {
-  // Create a map of product names to product keys
+
   const nameToProductMap = new Map<string, EnvProduct>();
   allProducts.forEach((p) => {
     nameToProductMap.set(p.name.toLowerCase(), p);
   });
 
-  // Helper to safely get number value (filter out NaN, 0, null, undefined)
+
   const safeNumber = (value: number | undefined | null): number | undefined => {
     if (value === null || value === undefined || isNaN(value) || value === 0) {
       return undefined;
@@ -627,43 +607,43 @@ function convertInitialToRows(
       }
     })
     .map((item, index) => {
-      // Handle both string and InitialProductData formats
+
       const name = typeof item === 'string' ? item : item.name;
       const normalizedName = name.toLowerCase();
       const product = nameToProductMap.get(normalizedName);
 
       if (product) {
-        // Found matching product in catalog
+
         const row: ProductRow = {
           id: `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2)}_${index}`,
           productKey: product.key,
           isCustom: false,
         };
 
-        // Add quantity and price overrides if provided
+
         if (typeof item !== 'string') {
           const qty = safeNumber(item.qty);
           if (qty !== undefined) {
             row.qty = qty;
           }
 
-          // ✅ CRITICAL: Preserve frequency from backend data
+
           if (item.frequency) {
             row.frequency = item.frequency;
           }
 
-          // ✅ Preserve costType from backend data
+
           if (item.costType) {
             row.costType = item.costType;
           }
 
-          // ✅ CRITICAL: Preserve custom fields from backend data
+
           if (item.customFields) {
             row.customFields = item.customFields;
             console.log(`📦 [convertInitialToRows] Preserved custom fields for "${name}":`, item.customFields);
           }
 
-          // For small products
+
           if (bucket === 'products') {
             const unitPrice = safeNumber(item.unitPrice);
             if (unitPrice !== undefined) {
@@ -675,7 +655,7 @@ function convertInitialToRows(
             }
           }
 
-          // For dispensers
+
           if (bucket === 'dispensers') {
             const warrantyRate = safeNumber(item.warrantyRate);
             if (warrantyRate !== undefined) {
@@ -691,7 +671,7 @@ function convertInitialToRows(
             }
           }
 
-          // For big products
+
           if (bucket === 'products') {
             const amount = safeNumber(item.amount);
             if (amount !== undefined) {
@@ -706,7 +686,7 @@ function convertInitialToRows(
 
         return row;
       } else {
-        // Product not found in catalog, treat as custom
+
         const row: ProductRow = {
           id: `${bucket}_${Date.now()}_${Math.random().toString(36).slice(2)}_${index}`,
           productKey: null,
@@ -714,24 +694,24 @@ function convertInitialToRows(
           customName: name,
         };
 
-        // Add quantity and price overrides for custom products too
+
         if (typeof item !== 'string') {
           const qty = safeNumber(item.qty);
           if (qty !== undefined) {
             row.qty = qty;
           }
 
-          // ✅ CRITICAL: Preserve frequency from backend data for custom products too
+
           if (item.frequency) {
             row.frequency = item.frequency;
           }
 
-          // ✅ Preserve costType from backend data for custom products too
+
           if (item.costType) {
             row.costType = item.costType;
           }
 
-          // ✅ CRITICAL: Preserve custom fields from backend data for custom products too
+
           if (item.customFields) {
             row.customFields = item.customFields;
             console.log(`📦 [convertInitialToRows] Preserved custom fields for custom product "${name}":`, item.customFields);
@@ -756,45 +736,43 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     servicesContext?.isSanicleanAllInclusive ?? false;
   const globalContractMonths = servicesContext?.globalContractMonths ?? 0;
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
 
-  // ✅ Tab Management
   const [currentTab, setCurrentTab] = useState<string>(() => {
-    return activeTab || 'form'; // Default to 'form' tab
+    return activeTab || 'form'; 
   });
 
-  // Update tab when activeTab prop changes
+
   useEffect(() => {
     if (activeTab && activeTab !== currentTab) {
       setCurrentTab(activeTab);
     }
   }, [activeTab, currentTab]);
 
-  // Handle tab change with callback to parent
+
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
     onTabChange?.(tab);
   };
 
-  // Valid tab values - MERGED: Only 2 categories now
+
   const validTabs = ['products', 'dispensers'];
 
-  // Fetch products from backend
+
   const { products: allProducts, loading } = useProductCatalog();
 
   const [data, setData] = useState<{
-    products: ProductRow[];      // MERGED: small + big products combined
-    dispensers: ProductRow[];    // Dispensers remain separate
+    products: ProductRow[];      
+    dispensers: ProductRow[];    
   }>(() => ({
     products: [],
     dispensers: [],
   }));
 
-  // Initialize default rows when products load
+
   useEffect(() => {
     if (!loading && allProducts.length > 0) {
-      // If initial data is provided, use it; otherwise use defaults
-      // MERGE small and big products into single "products" category
+
+
       const hasInitialData = initialSmallProducts || initialDispensers || initialBigProducts;
 
       if (hasInitialData) {
@@ -804,13 +782,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           initialBigProducts
         });
 
-        // Combine products + products into single products array
+
         const mergedProducts = [
           ...(initialSmallProducts ? convertInitialToRows("products", initialSmallProducts, allProducts) : []),
           ...(initialBigProducts ? convertInitialToRows("products", initialBigProducts, allProducts) : [])
         ];
 
-        // If no initial data provided, get default rows for both product types
+
         if (!initialSmallProducts && !initialBigProducts) {
           const smallProductDefaults = getProductsForColumn("products", allProducts)
             .filter((p) => p.familyKey === "paper" && p.displayByAdmin !== false)
@@ -832,13 +810,13 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         }
 
         setData({
-          products: mergedProducts,  // MERGED: small + big combined
+          products: mergedProducts,  
           dispensers: initialDispensers
             ? convertInitialToRows("dispensers", initialDispensers, allProducts)
             : getDefaultRows("dispensers", allProducts),
         });
       } else {
-        // Default: merge small and big default rows
+
         const smallProductDefaults = getProductsForColumn("products", allProducts)
           .filter((p) => p.familyKey === "paper" && p.displayByAdmin !== false)
           .map((p) => ({
@@ -858,7 +836,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         const mergedProducts = [...smallProductDefaults, ...bigProductDefaults];
 
         setData({
-          products: mergedProducts,  // MERGED: small + big combined
+          products: mergedProducts,  
           dispensers: getDefaultRows("dispensers", allProducts),
         });
       }
@@ -866,7 +844,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
   }, [loading, allProducts, initialSmallProducts, initialDispensers, initialBigProducts]);
 
   const [extraCols, setExtraCols] = useState<{
-    products: { id: string; label: string }[];    // MERGED: small + big combined
+    products: { id: string; label: string }[];    
     dispensers: { id: string; label: string }[];
   }>(() => ({
     products: initialCustomColumns?.products || [],
@@ -885,7 +863,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     [productMap]
   );
 
-  // Generic row updater with price override logging
+
   const updateRowField = useCallback(
     (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) => {
       setData((prev) => {
@@ -896,15 +874,15 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           r.id === rowId ? { ...r, ...patch } : r
         );
 
-        // Only update if something actually changed
+
         if (JSON.stringify(newBucket) === JSON.stringify(prev[bucket])) {
           return prev;
         }
 
-        // ✅ NEW: Price override logging
+
         const product = getProduct(currentRow);
         if (product && currentRow.productKey) {
-          // Check if any price-related fields are being updated
+
           const priceFields = ['unitPriceOverride', 'amountOverride', 'warrantyPriceOverride', 'replacementPriceOverride', 'totalOverride'];
 
           for (const field of priceFields) {
@@ -912,9 +890,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
               const newValue = patch[field as keyof ProductRow] as number;
               const oldValue = currentRow[field as keyof ProductRow] as number;
 
-              // Only log if there's an actual change from a base price to an override
+
               if (newValue !== oldValue && newValue !== undefined) {
-                // Determine original value (from product catalog or previous override)
+
                 let originalValue = 0;
                 switch (field) {
                   case 'unitPriceOverride':
@@ -930,7 +908,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     originalValue = oldValue || product.basePrice?.amount || 0;
                     break;
                   case 'totalOverride':
-                    // For total, calculate the original based on unit price * qty
+
                     const qty = currentRow.qty || 0;
                     if (bucket === 'dispensers') {
                       originalValue = oldValue || ((product.basePrice?.amount || 0) * qty);
@@ -943,9 +921,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     break;
                 }
 
-                // Only log if override is different from original
+
                 if (originalValue !== newValue) {
-                  // Use file logger for version-based batch logging
+
                   addPriceChange({
                     productKey: product.key,
                     productName: product.name,
@@ -977,7 +955,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         };
       });
     },
-    [getProduct] // ✅ SIMPLIFIED: Removed addChange since we use file logger directly
+    [getProduct] 
   );
 
   const updateRowProductKey = useCallback(
@@ -990,9 +968,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     [updateRowField]
   );
 
-  // ---------------------------
-  // Row operations
-  // ---------------------------
 
   const addRowAll = useCallback(() => {
     setData((prev) => ({
@@ -1028,9 +1003,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     []
   );
 
-  // ---------------------------
-  // Column operations
-  // ---------------------------
 
   const mkCol = (label = "Custom") => ({
     id: `c_${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -1075,20 +1047,17 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     []
   );
 
-  // ---------------------------
-  // Row count for desktop table
-  // ---------------------------
 
   const rowsCount = useMemo(
     () =>
       Math.max(
-        data.products.length,    // MERGED: products column
-        data.dispensers.length   // Dispensers column
+        data.products.length,    
+        data.dispensers.length   
       ),
     [data]
   );
 
-  // Build dropdown options for a particular row
+
   const getRowOptions = useCallback((bucket: ColumnKey, rowId: string): EnvProduct[] => {
     const usedKeys = new Set(
       data[bucket]
@@ -1109,9 +1078,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     return base;
   }, [data, allProducts]);
 
-  // ---------------------------
-  // Helpers for totals
-  // ---------------------------
 
   const getSmallUnitPrice = (row: ProductRow, product?: EnvProduct) =>
     row.unitPriceOverride ?? product?.basePrice?.amount ?? 0;
@@ -1137,7 +1103,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       return basePrice * qty;
     }
 
-    // Dispensers: use warrantyRate for warranty, replacementRate for productCost
+
     const product = getProduct(row);
     const dispCostType = row.costType ?? 'productCost';
     if (dispCostType === 'warranty') {
@@ -1153,15 +1119,15 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     ];
 
     return allRows.reduce((sum, { row, bucket }) => {
-      // Default: products = warranty (recurring), dispensers = productCost (one-time)
+
       const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'warranty');
-      if (costType === 'productCost') return sum; // one-time items don't contribute to monthly
+      if (costType === 'productCost') return sum; 
       const multiplier = getFrequencyMultiplier(row.frequency);
       return sum + getRowTotal(row, bucket) * multiplier;
     }, 0);
   }, [data.products, data.dispensers, getProduct]);
 
-  // One-time (productCost) items — added to contract total once, not × contractMonths
+
   const productOnceTotal = useMemo(() => {
     const allRows = [
       ...data.products.map((row) => ({ row, bucket: "products" as ColumnKey })),
@@ -1188,19 +1154,19 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     });
   }, [onTotalsChange, productMonthlyTotal, productContractTotal]);
 
-  // Expose getData method via ref
+
   useImperativeHandle(ref, () => ({
     getData: () => {
-      // MERGED PRODUCTS: Handle mixed small + big products in single array
-      // Split them back into separate categories for backend compatibility
+
+
       const allProducts = data.products.map((row) => {
         const product = getProduct(row);
 
-        // Determine if this is a small product (paper) or big product (other)
+
         const isSmallProduct = product?.familyKey === "paper";
 
         if (isSmallProduct) {
-          // Small product pricing logic
+
           const unitPrice = row.unitPriceOverride ?? product?.basePrice?.amount;
           const qty = row.qty ?? 0;
           const total = row.totalOverride ?? (unitPrice ? unitPrice * qty : 0);
@@ -1217,7 +1183,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             customFields: row.customFields || {}
           };
         } else {
-          // Big product pricing logic
+
           const qty = row.qty ?? 0;
           const amount = row.amountOverride ?? product?.basePrice?.amount;
           const total = row.totalOverride ?? (amount ? amount * qty : 0);
@@ -1236,7 +1202,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         }
       });
 
-      // Split merged products back into small/big for backend compatibility
+
       const enrichedSmallProducts = allProducts.filter(p => p.productType === 'small');
       const enrichedBigProducts = allProducts.filter(p => p.productType === 'big');
 
@@ -1268,7 +1234,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         customColumnsDispensers: extraCols.dispensers.length
       });
 
-      // Debug: Check if any products have customFields
+
       const productsWithCustomFields = allProducts.filter(p => p.customFields && Object.keys(p.customFields).length > 0);
       const dispensersWithCustomFields = enrichedDispensers.filter(d => d.customFields && Object.keys(d.customFields).length > 0);
 
@@ -1281,7 +1247,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         }
       });
 
-      // Debug: Show sample custom fields if they exist
+
       if (productsWithCustomFields.length > 0) {
         console.log("📊 [ProductsSection] Sample product with custom fields:", productsWithCustomFields[0]);
       }
@@ -1293,7 +1259,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         smallProducts: enrichedSmallProducts,
         dispensers: enrichedDispensers,
         bigProducts: enrichedBigProducts,
-        // Include custom column definitions
+
         customColumns: {
           products: extraCols.products,
           dispensers: extraCols.dispensers
@@ -1312,18 +1278,14 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     }),
   }), [data, getProduct, productMonthlyTotal, productContractTotal]);
 
-  // ---------------------------
-  // Reference Tables for Salespeople
-  // ---------------------------
 
-  // Helper function to get product description
   const getProductDescription = (product: EnvProduct): string => {
     if (product.description?.trim()) {
       return product.description;
     }
 
     const descriptions: Record<string, string> = {
-      // Paper Products
+
       'paper_towel_premium': 'High-quality paper towels for general cleaning and spill control',
       'paper_towel_standard': 'Standard paper towels for everyday cleaning tasks',
       'toilet_paper_premium': 'Premium toilet paper for guest restrooms and high-traffic areas',
@@ -1331,7 +1293,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'napkins_premium': 'High-quality napkins for dining areas and customer-facing spaces',
       'napkins_standard': 'Standard napkins for break rooms and staff areas',
 
-      // Chemical Products
+
       'all_purpose_cleaner': 'Multi-surface cleaner for general cleaning tasks',
       'glass_cleaner': 'Streak-free glass and mirror cleaner',
       'disinfectant_spray': 'EPA-approved disinfectant for sanitizing surfaces',
@@ -1339,14 +1301,14 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'degreaser': 'Heavy-duty degreaser for kitchen and industrial cleaning',
       'bathroom_cleaner': 'Specialized cleaner for bathroom fixtures and surfaces',
 
-      // Dispensers
+
       'paper_towel_dispenser': 'Wall-mounted dispenser for paper towels',
       'toilet_paper_dispenser': 'Commercial toilet paper dispenser',
       'soap_dispenser': 'Automatic or manual soap dispenser',
       'sanitizer_dispenser': 'Touch-free hand sanitizer dispenser',
       'napkin_dispenser': 'Counter-top or wall-mounted napkin dispenser',
 
-      // Default descriptions by family
+
       'paper': 'Paper product for cleaning and hygiene',
       'chemicals': 'Cleaning chemical for maintenance and sanitation',
       'dispensers': 'Dispenser for paper or liquid products',
@@ -1354,26 +1316,26 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'supplies': 'General cleaning supplies and accessories'
     };
 
-    // Try exact key match first
+
     if (descriptions[product.key]) {
       return descriptions[product.key];
     }
 
-    // Try family-based description
+
     if (descriptions[product.familyKey]) {
       return descriptions[product.familyKey];
     }
 
-    // Generate description based on product kind or name
+
     if (product.kind) {
       return `${product.kind} - Professional cleaning product`;
     }
 
-    // Default description
+
     return 'Professional cleaning product for commercial use';
   };
 
-  // ✅ PERFORMANCE: Memoize filtered products for reference tables
+
   const productsForReference = useMemo(() =>
     getProductsForColumn("products", allProducts),
     [allProducts]
@@ -1384,7 +1346,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     [allProducts]
   );
 
-  // ✅ PERFORMANCE: Memoize reference table component
+
   const ProductsReferenceTable = useMemo(() => {
     return (
       <div className="reference-table-container">
@@ -1473,16 +1435,16 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         </div>
       </div>
     );
-  }, [productsForReference]); // Close useMemo with dependency array
+  }, [productsForReference]); 
 
-  // Helper function to get dispenser description
+
   const getDispenserDescription = (dispenser: EnvProduct): string => {
     if (dispenser.description?.trim()) {
       return dispenser.description;
     }
 
     const descriptions: Record<string, string> = {
-      // Specific dispenser descriptions
+
       'paper_towel_dispenser_basic': 'Basic wall-mounted paper towel dispenser for low-traffic areas',
       'paper_towel_dispenser_premium': 'Premium automatic paper towel dispenser with sensor activation',
       'toilet_paper_dispenser_single': 'Single-roll toilet paper dispenser for small restrooms',
@@ -1494,7 +1456,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'napkin_dispenser_counter': 'Counter-top napkin dispenser for dining areas',
       'napkin_dispenser_wall': 'Wall-mounted napkin dispenser for break rooms',
 
-      // General dispenser descriptions by type
+
       'paper_towel_dispenser': 'Reliable paper towel dispenser for commercial restrooms and kitchens',
       'toilet_paper_dispenser': 'Durable toilet paper dispenser designed for heavy commercial use',
       'soap_dispenser': 'Professional soap dispenser for maintaining proper hand hygiene',
@@ -1504,16 +1466,16 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'cup_dispenser': 'Paper cup dispenser for water stations and break rooms',
       'glove_dispenser': 'Disposable glove dispenser for food service and cleaning',
 
-      // Default by family
+
       'dispensers': 'Commercial dispenser for maintaining supplies and hygiene standards'
     };
 
-    // Try exact key match first
+
     if (descriptions[dispenser.key]) {
       return descriptions[dispenser.key];
     }
 
-    // Try partial key matching for common dispenser types
+
     const keyLower = dispenser.key.toLowerCase();
     if (keyLower.includes('paper_towel')) return descriptions['paper_towel_dispenser'];
     if (keyLower.includes('toilet_paper')) return descriptions['toilet_paper_dispenser'];
@@ -1524,7 +1486,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     if (keyLower.includes('cup')) return descriptions['cup_dispenser'];
     if (keyLower.includes('glove')) return descriptions['glove_dispenser'];
 
-    // Try name-based matching
+
     const nameLower = dispenser.name.toLowerCase();
     if (nameLower.includes('paper towel')) return descriptions['paper_towel_dispenser'];
     if (nameLower.includes('toilet paper')) return descriptions['toilet_paper_dispenser'];
@@ -1532,11 +1494,11 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     if (nameLower.includes('sanitizer')) return descriptions['sanitizer_dispenser'];
     if (nameLower.includes('napkin')) return descriptions['napkin_dispenser'];
 
-    // Default description
+
     return descriptions['dispensers'];
   };
 
-  // ✅ PERFORMANCE: Memoize DispensersReferenceTable
+
   const DispensersReferenceTable = useMemo(() => {
     return (
       <div className="reference-table-container">
@@ -1635,11 +1597,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         </div>
       </div>
     );
-  }, [dispensersForReference]); // Close useMemo with dependency array
+  }, [dispensersForReference]); 
 
-  // ---------------------------
-  // Tab Navigation Component
-  // ---------------------------
 
   const TabNavigation = () => (
     <div className="product-tabs-container">
@@ -1669,9 +1628,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     </div>
   );
 
-  // ---------------------------
-  // Desktop table
-  // ---------------------------
 
   const DesktopTable = () => {
     return (
@@ -1683,9 +1639,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
               <button className="prod__add" onClick={addRowAll} type="button">
                 + Row
               </button>
-                {/*    <button className="prod__add" onClick={addColAll} type="button">
-                + Column
-              </button>*/}
+                {}
             </div>
           </div>
         </div>
@@ -1694,7 +1648,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           <table className="grid10">
             <thead>
               <tr>
-                {/* Products band */}
+                {}
                 <th className="h h-blue">Products</th>
                 <th className="h h-blue center">Qty</th>
                 <th className="h h-blue center">Unit Price/Amount</th>
@@ -1722,7 +1676,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   </th>
                 ))}
 
-                {/* Dispensers band */}
+                {}
                 <th className="h h-blue">Dispensers</th>
                 <th className="h h-blue center">Qty</th>
                 <th className="h h-blue center">Warranty Rate</th>
@@ -1761,12 +1715,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 const pProduct = getProduct(rowProduct);
                 const pDisp = getProduct(rowDisp);
 
-                // Row key for React
+
                 const rowKey = `${rowProduct?.id ?? `p${i}`}_${rowDisp?.id ?? `d${i}`}`;
 
                 return (
                   <tr key={rowKey}>
-                    {/* Products column */}
+                    {}
                     {rowProduct ? (
                       <>
                         <td className="label">
@@ -1801,7 +1755,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             onChange={(val) =>
                               updateRowField("products", rowProduct.id, {
                                 qty: val === "" ? undefined : (val as number),
-                                totalOverride: undefined, // ✅ Clear total override when qty changes
+                                totalOverride: undefined, 
                               })
                             }
                           />
@@ -1827,12 +1781,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                               const field = pProduct?.familyKey === "paper" ? "unitPriceOverride" : "amountOverride";
                               updateRowField("products", rowProduct.id, {
                                 [field]: val === "" ? undefined : (val as number),
-                                totalOverride: undefined, // ✅ Clear total override when price changes
+                                totalOverride: undefined, 
                               });
                             }}
                           />
                         </td>
-                        {/* Warranty checkbox */}
+                        {}
                         <td className="center">
                           <input
                             type="checkbox"
@@ -1845,7 +1799,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             }
                           />
                         </td>
-                        {/* Frequency — only shown for warranty */}
+                        {}
                         <td className="center">
                           {(rowProduct.costType ?? 'warranty') === 'warranty' ? (
                             <FrequencyCell
@@ -1913,7 +1867,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                       </>
                     )}
 
-                    {/* Dispensers column */}
+                    {}
                     {rowDisp ? (
                       <>
                         <td className="label">
@@ -1946,7 +1900,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             onChange={(val) =>
                               updateRowField("dispensers", rowDisp.id, {
                                 qty: val === "" ? undefined : (val as number),
-                                totalOverride: undefined, // ✅ Clear total override when qty changes
+                                totalOverride: undefined, 
                               })
                             }
                           />
@@ -1987,12 +1941,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                               updateRowField("dispensers", rowDisp.id, {
                                 replacementPriceOverride:
                                   val === "" ? undefined : (val as number),
-                                totalOverride: undefined, // ✅ Clear total override when replacement price changes
+                                totalOverride: undefined, 
                               })
                             }
                           />
                         </td>
-                        {/* Warranty checkbox */}
+                        {}
                         <td className="center">
                           <input
                             type="checkbox"
@@ -2006,7 +1960,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                             }
                           />
                         </td>
-                        {/* Frequency — only shown for warranty */}
+                        {}
                         <td className="center">
                           {(rowDisp.costType ?? 'productCost') === 'warranty' ? (
                             <FrequencyCell
@@ -2085,9 +2039,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     );
   };
 
-  // ---------------------------
-  // Mobile / grouped tables
-  // ---------------------------
 
   const GroupWrap = ({
     children,
@@ -2103,9 +2054,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         <button className="prod__add" onClick={onAddRow} type="button">
           + Row
         </button>
-        {/* <button className="prod__add" onClick={onAddCol} type="button">
-          + Col
-        </button> */}
+        {}
       </div>
       {children}
     </div>
@@ -2247,12 +2196,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           <div className="prod__title">PRODUCTS</div>
         </div>
 
-        {/* Products grouped table */}
+        {}
         <GroupedTable
           title="Products"
           bucket="products"
           renderAmountCells={(row, product) => {
-            // Determine if this is a paper product (small) or other product (big)
+
             const isSmallProduct = product?.familyKey === "paper";
 
             return (
@@ -2263,7 +2212,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     onChange={(val) =>
                       updateRowField("products", row.id, {
                         qty: val === "" ? undefined : (val as number),
-                        totalOverride: undefined, // ✅ Clear total override when qty changes
+                        totalOverride: undefined, 
                       })
                     }
                   />
@@ -2286,12 +2235,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                       const field = isSmallProduct ? "unitPriceOverride" : "amountOverride";
                       updateRowField("products", row.id, {
                         [field]: val === "" ? undefined : (val as number),
-                        totalOverride: undefined, // ✅ Clear total override when price changes
+                        totalOverride: undefined, 
                       });
                     }}
                   />
                 </td>
-                {/* Warranty checkbox */}
+                {}
                 <td className="center">
                   <input
                     type="checkbox"
@@ -2304,7 +2253,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     }
                   />
                 </td>
-                {/* Frequency — only for warranty */}
+                {}
                 <td className="center">
                   {(row.costType ?? 'warranty') === 'warranty' ? (
                     <FrequencyCell
@@ -2347,7 +2296,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           }}
         />
 
-        {/* Dispensers grouped table */}
+        {}
         <GroupedTable
           title="Dispensers"
           bucket="dispensers"
@@ -2359,7 +2308,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   onChange={(val) =>
                     updateRowField("dispensers", row.id, {
                       qty: val === "" ? undefined : (val as number),
-                      totalOverride: undefined, // ✅ Clear total override when qty changes
+                      totalOverride: undefined, 
                     })
                   }
                 />
@@ -2400,7 +2349,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     updateRowField("dispensers", row.id, {
                       replacementPriceOverride:
                         val === "" ? undefined : (val as number),
-                      totalOverride: undefined, // ✅ Clear total override when replacement price changes
+                      totalOverride: undefined, 
                     })
                   }
                 />
@@ -2418,7 +2367,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   }
                 />
               </td>
-              {/* Frequency — only for warranty */}
+              {}
               <td className="center">
                 {(row.costType ?? 'productCost') === 'warranty' ? (
                   <FrequencyCell
@@ -2475,7 +2424,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
       {!loading && (
         <>
-          {/* ✅ FIXED: Always render all tabs, use CSS display to show/hide based on active tab */}
+          {}
           <div className={`product-tab-content ${currentTab === 'form' ? 'product-tab-content--active' : ''}`}>
             {isDesktop ? DesktopTable() : GroupedTables()}
           </div>

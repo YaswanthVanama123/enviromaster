@@ -1,4 +1,4 @@
-// src/features/services/sanipod/SanipodForm.tsx
+
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -32,17 +32,17 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   initialData,
   onRemove,
 }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, baselineRates } =
     useSanipodCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -51,42 +51,42 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
     onChange({ target: { name, type: "number", value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
     onChange({ target: { name, type: "number", value: '' } } as any);
     }
   };
@@ -97,83 +97,82 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     refreshConfig();
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
-  // Calculate effective rate per pod for payload
-  // ✅ FIXED: Use calc.effectiveRatePerPod directly (only pod service cost, not bags/install)
+
   const effectiveRate = calc.effectiveRatePerPod;
 
-  // Determine if frequency is visit-based (not monthly billing)
+
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
     form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
 
-  // Generate frequency-specific contract month options
+
   const generateContractMonths = () => {
     const months = [];
 
     if (form.frequency === "oneTime") {
-      // For oneTime: no contract (handled separately in UI)
+
       return [];
     } else if (form.frequency === "bimonthly") {
-      // For bi-monthly: show only even numbers (2, 4, 6, 8, ...)
+
       for (let i = 2; i <= cfg.maxContractMonths; i += 2) {
         months.push(i);
       }
     } else if (form.frequency === "quarterly") {
-      // For quarterly: show only multiples of 3 (3, 6, 9, 12, ...)
+
       for (let i = 3; i <= cfg.maxContractMonths; i += 3) {
         months.push(i);
       }
     } else if (form.frequency === "biannual") {
-      // For biannual: show only multiples of 6 (6, 12, 18, 24, 30, 36)
+
       for (let i = 6; i <= cfg.maxContractMonths; i += 6) {
         months.push(i);
       }
     } else if (form.frequency === "annual") {
-      // For annual: show only multiples of 12 (12, 24, 36)
+
       for (let i = 12; i <= cfg.maxContractMonths; i += 12) {
         months.push(i);
       }
     } else {
-      // For weekly, bi-weekly, twicePerMonth, monthly: show all months
+
       for (let i = cfg.minContractMonths; i <= cfg.maxContractMonths; i++) {
         months.push(i);
       }
@@ -198,7 +197,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.podQuantity ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.podQuantity ?? 0) > 0 || hasCustomFieldValues;
 
       const frequencyLabel =
         typeof form.frequency === "string"
@@ -276,10 +279,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         displayName: "SaniPod",
         isActive: true,
 
-        // Red/Green Line pricing data
-        perVisitBase: form.podQuantity * effectiveRate,  // Raw pod price
-        perVisit: calc.perVisit,  // Final per-visit price
-        minimumChargePerVisit: calc.minimumChargePerVisit,  // ✅ NEW: Minimum threshold
+
+        perVisitBase: form.podQuantity * effectiveRate,  
+        perVisit: calc.perVisit,  
+        minimumChargePerVisit: calc.minimumChargePerVisit,  
 
         frequency: {
           isDisplay: true,
@@ -303,10 +306,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           type: "calc" as const,
           qty: form.podQuantity,
           rate: effectiveRate,
-          total: form.podQuantity * effectiveRate, // ✅ FIXED: Pod service only (not perVisit which includes bags)
+          total: form.podQuantity * effectiveRate, 
         },
 
-        // Extra bags (if any)
+
         ...(form.extraBagsPerWeek > 0 ? {
           extraBags: {
             isDisplay: true,
@@ -320,7 +323,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           },
         } : {}),
 
-        // Installation (if new install)
+
         ...(form.isNewInstall && form.installQuantity > 0 ? {
           installation: {
             isDisplay: true,
@@ -342,7 +345,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
         totals,
 
-        // Persist manual overrides so edits keep their yellow highlights and log data matches
+
         customInstallationFee: form.customInstallationFee,
         customPerVisitPrice: form.customPerVisitPrice,
         customMonthlyPrice: form.customMonthlyPrice,
@@ -366,7 +369,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
-  // Track previous values to detect actual changes (not just re-renders)
+
   const prevInputsRef = useRef({
     podQuantity: form.podQuantity,
     extraBagsPerWeek: form.extraBagsPerWeek,
@@ -381,7 +384,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     extraBagsRecurring: form.extraBagsRecurring,
   });
 
-  // Clear custom totals when base inputs change
+
   useEffect(() => {
     const prev = prevInputsRef.current;
     const hasChanged =
@@ -400,7 +403,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     if (hasChanged) {
       setForm((prev) => ({
         ...prev,
-        // Only clear the dependent totals; keep manual overrides that are still valid
+
         customPerVisitPrice: undefined,
         customMonthlyPrice: undefined,
         customAnnualPrice: undefined,
@@ -435,14 +438,14 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     setForm,
   ]);
 
-  // Track previous install values
+
   const prevInstallRef = useRef({
     isNewInstall: form.isNewInstall,
     installQuantity: form.installQuantity,
     installRatePerPod: form.installRatePerPod,
   });
 
-  // Clear installation fee when install-related inputs change
+
   useEffect(() => {
     const prev = prevInstallRef.current;
     const hasChanged =
@@ -461,7 +464,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     }
   }, [form.isNewInstall, form.installQuantity, form.installRatePerPod, setForm]);
 
-  // Track previous custom override values to clear dependent fields
+
   const prevCustomRef = useRef({
     customWeeklyPodRate: form.customWeeklyPodRate,
     customPodServiceTotal: form.customPodServiceTotal,
@@ -469,11 +472,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     customInstallationFee: form.customInstallationFee,
   });
 
-  // Clear dependent custom totals when upstream custom fields change
+
   useEffect(() => {
     const prev = prevCustomRef.current;
 
-    // If pod service rate or total changed, clear all downstream
+
     if (prev.customWeeklyPodRate !== form.customWeeklyPodRate ||
         prev.customPodServiceTotal !== form.customPodServiceTotal ||
         prev.customExtraBagsTotal !== form.customExtraBagsTotal ||
@@ -501,15 +504,15 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     setForm,
   ]);
 
-  // Derive weekly line amounts from calc result
+
   const pods = Math.max(0, form.podQuantity || 0);
 
-  // For display: bag unit label
+
   const bagUnitLabel = form.extraBagsRecurring
     ? "$/bag/wk"
     : "$/bag one-time";
 
-  // Decide the label that appears after "@"
+
   const normalizeRate = (value: number | string | undefined) => {
     const num = Number(value);
     return Number.isFinite(num) ? num : 0;
@@ -528,7 +531,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   return (
     <div className="svc-card">
-      {/* Header row */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">SANIPOD (STANDALONE ONLY)</div>
         <div className="svc-h-actions">
@@ -565,7 +568,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -573,7 +576,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Frequency used only for per-visit view (kept same UI) */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -596,7 +599,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Standalone service checkbox */}
+      {}
       <div className="svc-row">
         <label>Service Type</label>
         <div className="svc-row-right">
@@ -692,7 +695,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* SaniPods line - single rate field that auto-switches */}
+      {}
       <div className="svc-row">
         <label>SaniPods</label>
         <div className="svc-row-right">
@@ -754,7 +757,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Extra bags line with editable rate and recurring checkbox */}
+      {}
       <div className="svc-row">
         <label>Extra Bags</label>
         <div className="svc-row-right">
@@ -817,33 +820,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Trip charge row (visible, but locked to 0 and ignored in pricing) */}
-      {/* <div className="svc-row">
-        <label>Trip Charge</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            min="0"
-            step="1"
-            name="tripChargePerVisit"
-            value={form.tripChargePerVisit}
-            disabled
-            readOnly
-          />
-          <span className="svc-small">$/visit (not used)</span>
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              checked={false}
-              disabled
-            />{" "}
-            Include
-          </label>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Install toggle */}
+      {}
       <div className="svc-row">
         <label>New Install?</label>
         <div className="svc-row-right">
@@ -868,7 +848,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>
 
-      {/* Install details */}
+      {}
       {form.isNewInstall && (
         <>
           <div className="svc-row">
@@ -900,7 +880,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             </div>
           </div>
 
-          {/* Installation Total - Editable */}
+          {}
           <div className="svc-row">
             <label>Installation Total</label>
             <div className="svc-row-right">
@@ -930,23 +910,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </>
       )}
 
-      {/* Rate category */}
-      {/* <div className="svc-row">
-        <label>Rate Category</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="rateCategory"
-            value={form.rateCategory}
-            onChange={onChange}
-          >
-            <option value="redRate">Red (base)</option>
-            <option value="greenRate">Green (+30%)</option>
-          </select>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* First Visit Total - for debugging partial installation */}
+      {}
       {!isVisitBasedFrequency && (
         <div className="svc-row svc-row-total">
           <label>First Visit Total</label>
@@ -958,7 +925,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       )}
 
-            {/* First Visit Total for visit-based (not oneTime) */}
+            {}
       {isVisitBasedFrequency && form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>First Visit Total</label>
@@ -988,10 +955,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       )}
 
-      {/* Totals */}
+      {}
       <div className="svc-row svc-row-total">
         <label>
-          {/* Dynamic label based on frequency */}
+          {}
           {form.frequency === "bimonthly" ||
            form.frequency === "quarterly" ||
            form.frequency === "biannual" ||
@@ -1032,8 +999,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       </div>
 
 
-
-      {/* First Month Total - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+      {}
       {!isVisitBasedFrequency && (
         <div className="svc-row svc-row-total">
           <label>First Month Total</label>
@@ -1063,7 +1029,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       )}
 
-      {/* Total Price - Show ONLY for oneTime */}
+      {}
       {form.frequency === "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>Total Price</label>
@@ -1093,8 +1059,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       )}
 
 
-
-      {/* Monthly Recurring - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+      {}
       {!isVisitBasedFrequency && (
         <div className="svc-row svc-row-total">
           <label>Monthly Recurring</label>
@@ -1114,7 +1079,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       )}
 
-      {/* Contract Total - Hide for oneTime */}
+      {}
       {form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>Contract Total</label>

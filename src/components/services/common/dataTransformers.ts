@@ -1,8 +1,4 @@
-// src/components/services/common/dataTransformers.ts
-/**
- * Transforms structured service data (from backend/saved PDF) back into form state
- * that the service forms can use to initialize their fields.
- */
+
 
 import {
   parseRefreshPowerScrubDraftPayload,
@@ -15,9 +11,7 @@ import { saniscrubFrequencyList } from "../saniscrub/saniscrubConfig";
 import { electrostaticSprayPricingConfig } from "../electrostaticSpray/electrostaticSprayConfig";
 import type { ElectrostaticSprayFrequency } from "../electrostaticSpray/electrostaticSprayTypes";
 
-/**
- * Helper function to extract and format custom fields for all services
- */
+
 function extractCustomFields(structuredData: any): any[] {
   if (structuredData.customFields && Array.isArray(structuredData.customFields)) {
     console.log('🔄 Processing custom fields for reverse mapping:', structuredData.customFields);
@@ -29,7 +23,7 @@ function extractCustomFields(structuredData: any): any[] {
         label: field.label || field.name || 'Custom Field',
       };
 
-      // Handle calc fields with calcValues
+
       if (field.type === 'calc' && field.calcValues) {
         return {
           ...baseField,
@@ -40,7 +34,7 @@ function extractCustomFields(structuredData: any): any[] {
           }
         };
       } else {
-        // Handle text and dollar fields with value
+
         return {
           ...baseField,
           value: field.value || ''
@@ -309,7 +303,7 @@ export function transformRpmWindowsData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract top-level direct fields (saved from form)
+
   if (structuredData.smallWindowRate !== undefined) {
     formState.smallWindowRate = structuredData.smallWindowRate;
   }
@@ -359,40 +353,39 @@ export function transformRpmWindowsData(structuredData: any): any {
     formState.customContractTotal = structuredData.customContractTotal;
   }
 
-  // Extract quantities from windows array (✅ FIXED: Extract both quantities AND rates)
+
   if (structuredData.windows && Array.isArray(structuredData.windows)) {
     structuredData.windows.forEach((window: any) => {
       if (window.label === "Small Windows") {
         formState.smallQty = window.qty || 0;
         if (window.rate !== undefined && window.rate !== null) {
-          formState.smallWindowRate = window.rate; // ✅ Preserve saved rate
+          formState.smallWindowRate = window.rate; 
         }
       } else if (window.label === "Medium Windows") {
         formState.mediumQty = window.qty || 0;
         if (window.rate !== undefined && window.rate !== null) {
-          formState.mediumWindowRate = window.rate; // ✅ Preserve saved rate
+          formState.mediumWindowRate = window.rate; 
         }
       } else if (window.label === "Large Windows") {
         formState.largeQty = window.qty || 0;
         if (window.rate !== undefined && window.rate !== null) {
-          formState.largeWindowRate = window.rate; // ✅ Preserve saved rate
+          formState.largeWindowRate = window.rate; 
         }
       }
     });
   }
 
-  // ✅ FIXED: Only set custom installation fee if it was actually overridden
-  // Don't set custom fields for normal calculated values
+
   if (structuredData.installationFee?.amount != null && structuredData.installationFee?.isCustom === true) {
     formState.customInstallationFee = structuredData.installationFee.amount;
   }
 
-  // Extract install type
+
   if (structuredData.installType) {
     formState.isFirstTimeInstall = structuredData.installType.value?.includes("First Time");
   }
 
-  // Extract frequency
+
   const frequencyField = structuredData.frequency || structuredData.serviceFrequency;
   if (frequencyField) {
     const freqKey = frequencyField.frequencyKey ?? frequencyField.value;
@@ -401,17 +394,17 @@ export function transformRpmWindowsData(structuredData: any): any {
     }
   }
 
-  // Extract mirror cleaning
+
   if (structuredData.mirrorCleaning) {
     formState.includeMirrors = structuredData.mirrorCleaning.value?.includes("Include");
   }
 
-  // Extract rate category
+
   if (structuredData.rateCategory) {
     formState.selectedRateCategory = structuredData.rateCategory.value?.includes("Green") ? "greenRate" : "redRate";
   }
 
-  // Extract extra charges
+
   if (structuredData.extraCharges && Array.isArray(structuredData.extraCharges)) {
     formState.extraCharges = structuredData.extraCharges.map((charge: any, index: number) => ({
       id: Date.now() + index,
@@ -421,10 +414,9 @@ export function transformRpmWindowsData(structuredData: any): any {
     }));
   }
 
-  // ✅ FIXED: Don't automatically set custom override fields for calculated totals
-  // Only set them if they were explicitly marked as custom overrides
+
   if (structuredData.totals) {
-    // Only set custom fields if they were actually overridden by the user
+
     if (structuredData.totals.perVisit?.isCustom === true) {
       formState.customPerVisitPrice = structuredData.totals.perVisit.amount;
     }
@@ -439,7 +431,7 @@ export function transformRpmWindowsData(structuredData: any): any {
     }
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -452,7 +444,7 @@ export function transformSanicleanData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract pricing mode (fallback for older structured field formats)
+
   if (formState.pricingMode === undefined && structuredData.pricingMode) {
     const value = structuredData.pricingMode.value || structuredData.pricingMode;
     if (typeof value === "string") {
@@ -461,14 +453,14 @@ export function transformSanicleanData(structuredData: any): any {
     }
   }
 
-  // Extract location (fallback for older structured field formats)
+
   if (formState.location === undefined && structuredData.location) {
     const value = structuredData.location.value || structuredData.location;
     if (typeof value === "string") {
       formState.location = value.includes("Inside") ? "insideBeltway" : value.includes("Outside") ? "outsideBeltway" : value;
     }
   }
-  // Extract direct saved fields for edit mode (top-level values saved from the form)
+
   if (structuredData.mainServiceFrequency !== undefined) {
     formState.mainServiceFrequency = structuredData.mainServiceFrequency;
   }
@@ -566,7 +558,7 @@ export function transformSanicleanData(structuredData: any): any {
     }
   });
 
-  // ✅ FIXED: Extract All-Inclusive quantity fields (excess soap and paper spend)
+
   if (structuredData.excessSoapGallonsPerWeek !== undefined) {
     formState.excessSoapGallonsPerWeek = normalizeStructuredValue(structuredData.excessSoapGallonsPerWeek);
   }
@@ -581,32 +573,32 @@ export function transformSanicleanData(structuredData: any): any {
 
   const facilityMonthlyValue = normalizeStructuredValue(structuredData.facilityComponentsMonthly);
   if (facilityMonthlyValue !== undefined) {
-    // preserve for edit mode if needed
+
     formState.facilityComponentsMonthly = facilityMonthlyValue;
   }
 
-  // Extract fixture breakdown (quantities + rates)
+
   if (structuredData.fixtureBreakdown && Array.isArray(structuredData.fixtureBreakdown)) {
     structuredData.fixtureBreakdown.forEach((fixture: any) => {
       if (fixture.label === "Sinks") {
         formState.sinks = fixture.qty || 0;
         if (fixture.rate !== undefined && fixture.rate !== null) {
-          formState.sinkRate = fixture.rate; // ✅ Preserve saved rate
+          formState.sinkRate = fixture.rate; 
         }
       } else if (fixture.label === "Urinals") {
         formState.urinals = fixture.qty || 0;
         if (fixture.rate !== undefined && fixture.rate !== null) {
-          formState.urinalRate = fixture.rate; // ✅ Preserve saved rate
+          formState.urinalRate = fixture.rate; 
         }
       } else if (fixture.label === "Male Toilets") {
         formState.maleToilets = fixture.qty || 0;
         if (fixture.rate !== undefined && fixture.rate !== null) {
-          formState.maleToiletRate = fixture.rate; // ✅ Preserve saved rate
+          formState.maleToiletRate = fixture.rate; 
         }
       } else if (fixture.label === "Female Toilets") {
         formState.femaleToilets = fixture.qty || 0;
         if (fixture.rate !== undefined && fixture.rate !== null) {
-          formState.femaleToiletRate = fixture.rate; // ✅ Preserve saved rate
+          formState.femaleToiletRate = fixture.rate; 
         }
       }
     });
@@ -629,7 +621,7 @@ export function transformSanicleanData(structuredData: any): any {
   }
   console.log("🔄 [Saniclean] Derived fixtureRateFallback:", structuredData);
 
-  // Extract soap type
+
   if (structuredData.soapType) {
     const soapValue = normalizeStructuredValue(structuredData.soapType);
     let resolvedType: "luxury" | "standard" = "standard";
@@ -648,12 +640,12 @@ export function transformSanicleanData(structuredData: any): any {
     formState.luxuryUpgradeQty = normalizeStructuredValue(structuredData.luxuryUpgradeQty);
   }
 
-  // Extract contract months
+
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract frequency (new field or legacy serviceFrequency)
+
   const frequencyField = structuredData.frequency || structuredData.serviceFrequency;
   if (frequencyField) {
     const freq = frequencyField.value?.toLowerCase();
@@ -664,7 +656,7 @@ export function transformSanicleanData(structuredData: any): any {
     formState.rateCategory = structuredData.rateCategory.value?.includes("Green") ? "greenRate" : "redRate";
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -677,7 +669,7 @@ export function transformFoamingDrainData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // ✅ STEP 1: Extract top-level direct fields (saved from form)
+
   const foamingFrequencySources = [
     structuredData.frequency,
     structuredData.frequency?.frequencyKey,
@@ -701,15 +693,15 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.frequency = "weekly";
   }
 
-  // ✅ FIXED: Extract installFrequency from object or string format
+
   if (structuredData.installFrequency !== undefined) {
     if (typeof structuredData.installFrequency === 'string') {
       formState.installFrequency = structuredData.installFrequency;
     } else if (typeof structuredData.installFrequency === 'object' && structuredData.installFrequency !== null) {
-      // Extract from object format: { value: "Bimonthly" } → "bimonthly"
+
       const installFreqValue = structuredData.installFrequency.value || structuredData.installFrequency.frequencyKey;
       if (installFreqValue && typeof installFreqValue === 'string') {
-        formState.installFrequency = installFreqValue.toLowerCase(); // "Bimonthly" → "bimonthly"
+        formState.installFrequency = installFreqValue.toLowerCase(); 
       }
     }
   }
@@ -723,7 +715,7 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.facilityCondition = structuredData.facilityCondition;
   }
 
-  // ✅ Extract top-level pricing fields (custom overrides or base values)
+
   if (structuredData.standardDrainRate !== undefined) {
     formState.standardDrainRate = structuredData.standardDrainRate;
   }
@@ -758,7 +750,7 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.filthyMultiplier = structuredData.filthyMultiplier;
   }
 
-  // ✅ Extract quantity inputs
+
   if (structuredData.standardDrainCount !== undefined) {
     formState.standardDrainCount = structuredData.standardDrainCount;
   }
@@ -778,7 +770,7 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.filthyDrainCount = structuredData.filthyDrainCount;
   }
 
-  // ✅ Extract boolean flags
+
   if (structuredData.useSmallAltPricingWeekly !== undefined) {
     formState.useSmallAltPricingWeekly = structuredData.useSmallAltPricingWeekly;
   }
@@ -795,17 +787,17 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.needsPlumbing = structuredData.needsPlumbing;
   }
 
-  // ✅ STEP 2: FALLBACK - Extract from display fields (for backward compatibility with renamed fields)
+
   if (formState.frequency === undefined && structuredData.frequencyDisplay?.value) {
     formState.frequency = structuredData.frequencyDisplay.value.toLowerCase();
   }
-  // ✅ FIXED: Fallback for installFrequency - check both object and display formats
+
   if (formState.installFrequency === undefined) {
-    // Try installFrequencyDisplay first (newer format)
+
     if (structuredData.installFrequencyDisplay?.value) {
       formState.installFrequency = structuredData.installFrequencyDisplay.value.toLowerCase();
     }
-    // Try direct installFrequency object (if not already extracted)
+
     else if (structuredData.installFrequency && typeof structuredData.installFrequency === 'object') {
       const installFreqValue = structuredData.installFrequency.value || structuredData.installFrequency.frequencyKey;
       if (installFreqValue && typeof installFreqValue === 'string') {
@@ -817,7 +809,7 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.location = structuredData.locationDisplay.value.includes("Inside") ? "beltway" : "standard";
   }
 
-  // ✅ STEP 3: FALLBACK - Extract from old structured format (for very old documents)
+
   if (formState.frequency === undefined && structuredData.frequency?.value) {
     formState.frequency = structuredData.frequency.value.toLowerCase() || "weekly";
   }
@@ -825,7 +817,7 @@ export function transformFoamingDrainData(structuredData: any): any {
     formState.location = structuredData.location.value.includes("Inside") ? "beltway" : "standard";
   }
 
-  // ✅ STEP 4: FALLBACK - Extract from drain breakdown (for old documents without top-level pricing)
+
   if (structuredData.drainBreakdown && Array.isArray(structuredData.drainBreakdown)) {
     structuredData.drainBreakdown.forEach((drain: any) => {
       if (drain.label === "Standard Drains") {
@@ -853,12 +845,12 @@ export function transformFoamingDrainData(structuredData: any): any {
     });
   }
 
-  // ✅ STEP 5: FALLBACK - Extract contract months from totals (if not already set)
+
   if (formState.contractMonths === undefined && structuredData.totals?.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -873,7 +865,7 @@ export function transformCarpetCleanData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract frequency
+
   if (structuredData.frequency) {
     const rawValue = structuredData.frequency.value;
     let freqLabel = "";
@@ -956,13 +948,12 @@ export function transformCarpetCleanData(structuredData: any): any {
     }
   }
 
-  // Extract location
+
   if (structuredData.location) {
     formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
   }
 
-  // ✅ FIXED: Extract top-level editable pricing fields (saved from form)
-  // These are the baseline pricing values that should be loaded in edit mode
+
   if (structuredData.firstUnitRate !== undefined) {
     console.log('🔄 [transformCarpetCleanData] Extracting firstUnitRate:', structuredData.firstUnitRate);
     formState.firstUnitRate = structuredData.firstUnitRate;
@@ -988,10 +979,10 @@ export function transformCarpetCleanData(structuredData: any): any {
     formState.useExactSqft = structuredData.useExactSqft;
   }
 
-  // Extract service (carpet area)
+
   if (structuredData.service) {
     formState.areaSqFt = structuredData.service.qty || 0;
-    // ✅ FALLBACK: Only use service.rate if top-level firstUnitRate not already set
+
     if (formState.firstUnitRate === undefined && structuredData.service.rate !== undefined) {
       console.log('🔄 [transformCarpetCleanData] Using fallback firstUnitRate from service.rate:', structuredData.service.rate);
       formState.firstUnitRate = structuredData.service.rate;
@@ -1005,12 +996,12 @@ export function transformCarpetCleanData(structuredData: any): any {
     areaSqFt: formState.areaSqFt,
   });
 
-  // Extract installation data
+
   if (structuredData.installation) {
     formState.includeInstall = true;
     formState.isDirtyInstall = structuredData.installation.isDirty || false;
 
-    // Extract multiplier if available
+
     if (structuredData.installation.multiplier != null) {
       if (formState.isDirtyInstall) {
         formState.installMultiplierDirty = structuredData.installation.multiplier;
@@ -1019,40 +1010,28 @@ export function transformCarpetCleanData(structuredData: any): any {
       }
     }
 
-    // ✅ FIXED: Only set custom installation fee if it was actually overridden
-    // Don't set custom fields for normal calculated values - this was causing
-    // override fields to be set in edit mode, preventing calculations from updating the UI
+
     if (structuredData.installation?.total != null && structuredData.installation?.isCustom === true) {
       formState.customInstallationFee = structuredData.installation.total;
     }
   }
 
-  // ✅ FIXED: Don't automatically set custom override fields for calculated totals
-  // Only set them if they were explicitly marked as custom overrides
-  // This prevents the yellow background "override active" state in edit mode
+
   if (structuredData.totals) {
-    // Contract months (always safe to set)
+
     if (structuredData.totals.contract) {
       formState.contractMonths = structuredData.totals.contract.months || 12;
 
-      // Only set custom contract total if it was actually overridden
+
       if (structuredData.totals.contract.isCustom === true) {
         formState.customContractTotal = structuredData.totals.contract.amount;
       }
     }
 
-    // ✅ REMOVED: Don't set custom override fields for calculated values
-    // The following lines were causing the yellow background bug in carpet cleaning:
-    // - formState.customPerVisitPrice = structuredData.totals.perVisit.amount;
-    // - formState.customMonthlyRecurring = structuredData.totals.monthly.amount;
-    // - formState.customFirstMonthPrice = structuredData.totals.firstMonth.amount;
-    // - formState.customContractTotal = structuredData.totals.contract.amount;
 
-    // These should ONLY be set if the user explicitly overrode the calculated values
-    // in the original form, which would be indicated by an isCustom flag
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -1105,7 +1084,7 @@ export function transformStripWaxData(structuredData: any): any {
     formState.frequency = "weekly";
   }
 
-  // Extract service (floor area)
+
   if (structuredData.service) {
     formState.floorAreaSqFt = structuredData.service.qty || 0;
     if (structuredData.service.rate !== undefined && formState.ratePerSqFt === undefined) {
@@ -1113,7 +1092,7 @@ export function transformStripWaxData(structuredData: any): any {
     }
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -1128,7 +1107,7 @@ export function transformJanitorialData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract service type (recurring vs one-time)
+
   if (structuredData.serviceType) {
     const rawValue =
       typeof structuredData.serviceType === "string"
@@ -1144,11 +1123,11 @@ export function transformJanitorialData(structuredData: any): any {
     }
   }
 
-  // Extract frequency
+
   if (structuredData.frequency) {
     const freq = structuredData.frequency.value?.toLowerCase();
     if (freq) {
-      // Map display names back to internal values
+
       const frequencyMap: Record<string, string> = {
         'daily': 'daily',
         'weekly': 'weekly',
@@ -1160,14 +1139,14 @@ export function transformJanitorialData(structuredData: any): any {
     }
   }
 
-  // Extract scheduling mode from location (if present)
+
   if (structuredData.location) {
     const location = structuredData.location.value?.toLowerCase() || '';
-    // For now, default to normalRoute - adjust if you have specific location mapping
+
     formState.schedulingMode = 'normalRoute';
   }
 
-  // STEP 1: Extract individual components first
+
   let totalHours = 0;
   let manualHours = 0;
   let vacuumingHours = 0;
@@ -1175,23 +1154,23 @@ export function transformJanitorialData(structuredData: any): any {
   let dustingHours = 0;
   let addonTimeMinutes = 0;
 
-  // Extract total hours from service
+
   if (structuredData.service) {
     totalHours = Number(structuredData.service.qty) || 0;
 
-    // Extract rate and set appropriate rate field
+
     if (structuredData.service.rate) {
       const rate = typeof structuredData.service.rate === 'string'
         ? parseFloat(structuredData.service.rate.replace(/[^0-9.]/g, ''))
         : structuredData.service.rate;
 
-      // Set the hourly rate (adjust based on service type when we have that info)
+
       formState.baseHourlyRate = rate;
-      formState.shortJobHourlyRate = rate; // Set both for consistency
+      formState.shortJobHourlyRate = rate; 
     }
   }
 
-  // Extract manual hours (Other Tasks) directly
+
   if (structuredData.otherTasks) {
     const hoursMatch = structuredData.otherTasks.value?.match(/(\d+(?:\.\d+)?)/);
     if (hoursMatch) {
@@ -1200,7 +1179,7 @@ export function transformJanitorialData(structuredData: any): any {
     }
   }
 
-  // Extract vacuuming hours
+
   if (structuredData.vacuuming) {
     const hoursMatch = structuredData.vacuuming.value?.match(/(\d+(?:\.\d+)?)/);
     if (hoursMatch) {
@@ -1209,7 +1188,7 @@ export function transformJanitorialData(structuredData: any): any {
     }
   }
 
-  // Extract dusting places
+
   if (structuredData.dusting) {
     const dustingText = structuredData.dusting.value || "";
     const fullMatch = dustingText.match(/(\d+(?:\.\d+)?)\s*places\s*=\s*(\d+(?:\.\d+)?)/i);
@@ -1234,7 +1213,7 @@ export function transformJanitorialData(structuredData: any): any {
       : 4;
   }
 
-  // Extract add-on time
+
   if (structuredData.addonTime) {
     const minutesMatch = structuredData.addonTime.value?.match(/(\d+(?:\.\d+)?)/);
     if (minutesMatch) {
@@ -1243,7 +1222,7 @@ export function transformJanitorialData(structuredData: any): any {
     }
   }
 
-  // Extract visits per week (for recurring services)
+
   if (structuredData.visitsPerWeek) {
     const visitsMatch = structuredData.visitsPerWeek.value?.match(/(\d+)/);
     if (visitsMatch) {
@@ -1251,30 +1230,29 @@ export function transformJanitorialData(structuredData: any): any {
     }
   }
 
-  // STEP 2: Validate that the breakdown makes sense
-  // If we have individual components but no manual hours extracted, calculate it
+
   if (!manualHours && totalHours > 0) {
-    // Default dustingPlacesPerHour (this should match the backend config default)
+
     const dustingPlacesPerHour = formState.dustingPlacesPerHour || 4;
     const dustingHours = formState.dustingCalculatedHours || (dustingPlaces / dustingPlacesPerHour);
 
     const calculatedManualHours = Math.max(0, totalHours - vacuumingHours - dustingHours);
-    formState.manualHours = Math.round(calculatedManualHours * 100) / 100; // Round to 2 decimal places
+    formState.manualHours = Math.round(calculatedManualHours * 100) / 100; 
     manualHours = formState.manualHours;
   }
 
-  // Extract contract months
+
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
-  // Set defaults for required fields
+
   formState.rateCategory = formState.rateCategory || 'red';
-  formState.dirtyInitial = false; // Default value
-  formState.installation = false; // Default value
+  formState.dirtyInitial = false; 
+  formState.installation = false; 
 
   console.log('🔄 Janitorial reverse mapping breakdown:');
   console.log(`  Total Hours from PDF: ${totalHours}`);
@@ -1295,7 +1273,7 @@ export function transformSaniscrubData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // STEP 1: Extract top-level direct fields (saved from form) - PRIORITY
+
   const directFields = [
     "fixtureCount",
     "nonBathroomSqFt",
@@ -1337,16 +1315,16 @@ export function transformSaniscrubData(structuredData: any): any {
     }
   }
 
-  // Extract location
+
   if (structuredData.location) {
     formState.location = structuredData.location.value?.includes("Inside") ? "insideBeltway" : "outsideBeltway";
   }
 
-  // Extract restroom fixtures (✅ FIXED: Extract both qty AND rate)
+
   if (structuredData.restroomFixtures) {
     formState.fixtureCount = structuredData.restroomFixtures.qty || 0;
     if (structuredData.restroomFixtures.rate !== undefined && structuredData.restroomFixtures.rate !== null) {
-      // Backward compatibility: older documents stored a single per-fixture rate (no monthly/bimonthly split)
+
       const savedRate = structuredData.restroomFixtures.rate;
       const freq = formState.frequency || "monthly";
       if (freq === "bimonthly") formState.fixtureRateBimonthly = formState.fixtureRateBimonthly ?? savedRate;
@@ -1355,11 +1333,11 @@ export function transformSaniscrubData(structuredData: any): any {
     }
   }
 
-  // Extract non-bathroom area (✅ FIXED: Extract both qty AND rate)
+
   if (structuredData.nonBathroomArea) {
     formState.nonBathroomSqFt = structuredData.nonBathroomArea.qty || 0;
     if (structuredData.nonBathroomArea.rate !== undefined && structuredData.nonBathroomArea.rate !== null) {
-      // Backward compatibility: attempt to parse old string format "250/500+125"
+
       const rate = structuredData.nonBathroomArea.rate;
       if (typeof rate === "string") {
         const match = rate.match(/^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)[+](\d+(?:\.\d+)?)$/);
@@ -1371,12 +1349,12 @@ export function transformSaniscrubData(structuredData: any): any {
     }
   }
 
-  // Extract contract months
+
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -1391,8 +1369,7 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // ✅ STEP 1: Extract top-level direct fields (saved from form) - PRIORITY
-  // These are the actual saved rate values (including custom overrides)
+
   if (structuredData.includedBathroomRate !== undefined) {
     formState.includedBathroomRate = structuredData.includedBathroomRate;
     console.log('🔄 [Microfiber] Extracted includedBathroomRate:', structuredData.includedBathroomRate);
@@ -1414,8 +1391,7 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     console.log('🔄 [Microfiber] Extracted dailyChemicalPerGallon:', structuredData.dailyChemicalPerGallon);
   }
 
-  // ✅ STEP 2: Extract quantity inputs from top-level OR serviceBreakdown
-  // Quantities from top-level (saved in useEffect)
+
   if (structuredData.bathroomCount !== undefined) {
     formState.bathroomCount = structuredData.bathroomCount;
   }
@@ -1432,7 +1408,7 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     formState.chemicalGallons = structuredData.chemicalGallons;
   }
 
-  // ✅ STEP 3: Extract frequency
+
   const microfiberFrequencySources = [
     structuredData.frequency?.frequencyKey,
     structuredData.frequency?.value,
@@ -1462,7 +1438,7 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     }
   }
 
-  // ✅ STEP 4: Extract boolean flags
+
   if (structuredData.hasExistingSaniService !== undefined) {
     formState.hasExistingSaniService = structuredData.hasExistingSaniService;
   }
@@ -1479,7 +1455,7 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     formState.useExactStandaloneSqft = structuredData.useExactStandaloneSqft;
   }
 
-  // ✅ STEP 5: Extract location and parking
+
   if (structuredData.location !== undefined) {
     formState.location = structuredData.location;
   }
@@ -1487,8 +1463,7 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     formState.needsParking = structuredData.needsParking;
   }
 
-  // ✅ STEP 6: FALLBACK - Extract from serviceBreakdown (for backward compatibility)
-  // Only use these if top-level fields not already set
+
   if (structuredData.serviceBreakdown && Array.isArray(structuredData.serviceBreakdown)) {
     structuredData.serviceBreakdown.forEach((item: any) => {
       if (item.label === "Bathrooms") {
@@ -1535,15 +1510,15 @@ export function transformMicrofiberMoppingData(structuredData: any): any {
     });
   }
 
-  // ✅ STEP 7: Extract contract months
+
   if (structuredData.contractMonths !== undefined) {
     formState.contractMonths = structuredData.contractMonths;
   } else if (structuredData.totals?.contract) {
-    // Fallback to totals.contract.months
+
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   console.log('🔄 [transformMicrofiberMoppingData] Final form state:', {
@@ -1583,25 +1558,25 @@ export function transformSanipodData(structuredData: any): any {
   hydrateNumberField("tripChargePerVisit");
   hydrateNumberField("installRatePerPod");
 
-  // Extract service (sanipods) (✅ FIXED: Extract rate as well)
+
   if (structuredData.service) {
     formState.podQuantity = structuredData.service.qty || 0;
-    // ✅ Extract rate if available (for recurring service rate per pod)
+
     if (structuredData.service.rate !== undefined && structuredData.service.rate !== null) {
-      formState.recurringPerPod = structuredData.service.rate; // ✅ Preserve saved rate
+      formState.recurringPerPod = structuredData.service.rate; 
     }
   }
 
-  // Extract extra bags
+
   if (structuredData.extraBags) {
     formState.extraBagsPerWeek = structuredData.extraBags.qty || 0;
-    formState.extraBagsRecurring = structuredData.extraBags.recurring !== false; // default true
+    formState.extraBagsRecurring = structuredData.extraBags.recurring !== false; 
     if (structuredData.extraBags.rate != null) {
       formState.extraBagPrice = structuredData.extraBags.rate;
     }
   }
 
-  // Extract frequency
+
   const sanipodFrequencySources = [
     structuredData.frequency?.frequencyKey,
     structuredData.frequency?.value,
@@ -1624,7 +1599,7 @@ export function transformSanipodData(structuredData: any): any {
     formState.frequency = "weekly";
   }
 
-  // Extract installation
+
   if (structuredData.installation) {
     formState.isNewInstall = true;
     formState.installQuantity = structuredData.installation.qty || 0;
@@ -1633,12 +1608,12 @@ export function transformSanipodData(structuredData: any): any {
     }
   }
 
-  // Extract contract months
+
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Restore saved manual overrides so edit mode can rehydrate overrides/highlights
+
   const overrideFields = [
     "customInstallationFee",
     "customPerVisitPrice",
@@ -1654,7 +1629,7 @@ export function transformSanipodData(structuredData: any): any {
     }
   });
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -1667,25 +1642,25 @@ export function transformGreaseTrapData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Extract frequency
+
   if (structuredData.frequency) {
     formState.frequency = structuredData.frequency.value?.toLowerCase() || "weekly";
   }
 
-  // Extract service (grease traps) (✅ FIXED: Extract both qty AND rate)
+
   if (structuredData.service) {
     formState.numberOfTraps = structuredData.service.qty || 0;
     if (structuredData.service.rate !== undefined && structuredData.service.rate !== null) {
-      formState.perTrapWeeklyRate = structuredData.service.rate; // ✅ Preserve saved rate
+      formState.perTrapWeeklyRate = structuredData.service.rate; 
     }
   }
 
-  // Extract contract months
+
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -1726,11 +1701,11 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // Handle NEW CONVERTED FORMAT (from backend edit-format endpoint)
+
   if (!structuredData.services && (structuredData.hourlyRate !== undefined || structuredData.minimumVisit !== undefined)) {
     console.log('?"" [transformRefreshPowerScrubData] Using NEW converted format');
 
-    // Direct values from converted format
+
     formState.hourlyRate = structuredData.hourlyRate ?? REFRESH_FALLBACKS.hourlyRate;
     formState.minimumVisit = structuredData.minimumVisit ?? REFRESH_FALLBACKS.minimumVisit;
     formState.frequency = structuredData.frequency || "monthly";
@@ -1780,7 +1755,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       console.log(`?"" [transformRefreshPowerScrubData] Mapped ${areaKey}:`, areaState);
     }
 
-    // Extract custom fields
+
     formState.customFields = extractCustomFields(structuredData);
 
     const overrideField = formState.customFields.find(
@@ -1876,11 +1851,11 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     console.log('?"" [transformRefreshPowerScrubData] Converted form state:', formState);
     return formState;
   }
-  // Handle CURRENT STORAGE FORMAT (services object structure)
+
   if (structuredData.services) {
     console.log('🔄 [transformRefreshPowerScrubData] Using CURRENT storage format (services object)');
 
-    // Extract global rate info from serviceInfo
+
     if (structuredData.serviceInfo && structuredData.serviceInfo.value) {
       const rateInfoStr = structuredData.serviceInfo.value;
       const hourlyMatch = rateInfoStr.match(/Hourly Rate: \$(\d+)\/hr/);
@@ -1903,7 +1878,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     formState.tripCharge = structuredData.tripCharge ?? REFRESH_FALLBACKS.tripCharge;
     formState.tripChargeIncluded = structuredData.tripChargeIncluded ?? true;
 
-    // Map area naming between stored format and form format
+
     const areaMapping = {
       'dumpster': 'dumpster',
       'patio': 'patio',
@@ -1913,7 +1888,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       'other': 'other'
     };
 
-    // Initialize all areas with defaults first
+
     Object.values(areaMapping).forEach(formAreaKey => {
       formState[formAreaKey] = {
         enabled: false,
@@ -1934,7 +1909,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       };
     });
 
-    // Process each service area from stored data
+
     Object.entries(structuredData.services).forEach(([storedAreaKey, areaData]: [string, any]) => {
       const formAreaKey = areaMapping[storedAreaKey as keyof typeof areaMapping];
       if (!formAreaKey) {
@@ -1944,7 +1919,7 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
 
       console.log(`🔄 Processing area: ${storedAreaKey} -> ${formAreaKey}`, areaData);
 
-      // Map pricing method
+
       let pricingType = "preset";
       if (areaData.pricingMethod?.value) {
         const methodValue = areaData.pricingMethod.value.toLowerCase();
@@ -1955,11 +1930,11 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
         else if (methodValue.includes("preset")) pricingType = "preset";
       }
 
-      // Extract specific data based on pricing method and available fields
+
       const areaState: any = {
-        enabled: areaData.enabled !== false, // Enable if not explicitly false
+        enabled: areaData.enabled !== false, 
         pricingType: pricingType,
-        workers: 2, // Default
+        workers: 2, 
         hours: 0,
         hourlyRate: 200,
         insideSqFt: 0,
@@ -1970,12 +1945,12 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
         customAmount: 0,
         kitchenSize: "smallMedium",
         patioMode: "standalone",
-        includePatioAddon: false, // Default to no add-on
+        includePatioAddon: false, 
         frequencyLabel: areaData.frequency?.value || "",
         contractMonths: areaData.contract?.quantity || 12
       };
 
-      // Extract pricing-specific data
+
       if (pricingType === "perHour" && areaData.hours) {
         areaState.hours = areaData.hours.quantity || 0;
         if (areaData.hours.priceRate !== undefined) {
@@ -1993,16 +1968,16 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
         if (areaData.insideSqft?.priceRate) areaState.insideRate = areaData.insideSqft.priceRate;
         if (areaData.outsideSqft?.priceRate) areaState.outsideRate = areaData.outsideSqft.priceRate;
       } else if (pricingType === "preset") {
-        // Extract preset-specific options
+
         if (storedAreaKey === 'patio') {
-          // For patio, check for add-on selection
-          // This could be stored in various ways, so check multiple possible fields
+
+
           if (areaData.includePatioAddon !== undefined) {
             if (typeof areaData.includePatioAddon === 'object' && areaData.includePatioAddon.value !== undefined) {
-              // Handle new format: { value: boolean, type: "boolean" }
+
               areaState.includePatioAddon = areaData.includePatioAddon.value;
             } else {
-              // Handle direct boolean value
+
               areaState.includePatioAddon = areaData.includePatioAddon;
             }
           } else if (areaData.patioAddon !== undefined) {
@@ -2099,17 +2074,17 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
       console.log(`🔄 Mapped ${storedAreaKey} -> ${formAreaKey}:`, areaState);
     });
 
-    // Extract custom fields
+
     formState.customFields = extractCustomFields(structuredData);
 
     console.log('🔄 [transformRefreshPowerScrubData] Final form state:', formState);
     return formState;
   }
 
-  // Handle LEGACY FORMAT (old areaBreakdown structure)
+
   console.log('🔄 [transformRefreshPowerScrubData] Using LEGACY format');
 
-  // Extract rate info
+
   if (structuredData.rateInfo && structuredData.rateInfo.value) {
     const rateInfoStr = structuredData.rateInfo.value;
     const hourlyMatch = rateInfoStr.match(/\$(\d+)\/hr/);
@@ -2121,12 +2096,12 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     if (minMatch) formState.minimumVisit = parseFloat(minMatch[1]);
   }
 
-  // Extract area breakdown
+
   if (structuredData.areaBreakdown && Array.isArray(structuredData.areaBreakdown)) {
     structuredData.areaBreakdown.forEach((area: any) => {
       const areaKey = area.label?.toLowerCase();
       if (areaKey && structuredData.areaBreakdown) {
-        // Parse the value string: "Weekly - 2 hrs @ $200/hr = $400"
+
         const valueStr = area.value || "";
         const freqMatch = valueStr.match(/^(\w+(?:-\w+)?)\s*-/);
         const hoursMatch = valueStr.match(/(\d+(?:\.\d+)?)\s*hrs/);
@@ -2140,12 +2115,12 @@ export function transformRefreshPowerScrubData(structuredData: any): any {
     });
   }
 
-  // Extract contract months
+
   if (structuredData.totals && structuredData.totals.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -2200,8 +2175,7 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     notes: structuredData.notes || "",
   };
 
-  // ✅ FIXED: Extract top-level editable pricing fields (saved from form)
-  // These are the baseline pricing values that should be loaded in edit mode
+
   if (structuredData.ratePerRoom !== undefined) {
     formState.ratePerRoom = structuredData.ratePerRoom;
   }
@@ -2212,7 +2186,7 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     formState.tripChargePerVisit = structuredData.tripChargePerVisit;
   }
 
-  // ✅ FIXED: Extract top-level quantity/selection inputs (saved from form)
+
   if (structuredData.pricingMethod !== undefined) {
     formState.pricingMethod = structuredData.pricingMethod;
   }
@@ -2241,20 +2215,17 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     formState.location = structuredData.location;
   }
 
-  // ✅ FALLBACK: Extract from structured fields (for backward compatibility)
-  // Only use these if top-level fields not already set
 
-  // Extract pricing method (fallback) - check both new and old field names
   if (formState.pricingMethod === undefined) {
     if (structuredData.pricingMethodDisplay?.value) {
       formState.pricingMethod = structuredData.pricingMethodDisplay.value.includes("Room") ? "byRoom" : "bySqFt";
     } else if (structuredData.pricingMethod?.value) {
-      // Old format for backward compatibility
+
       formState.pricingMethod = structuredData.pricingMethod.value.includes("Room") ? "byRoom" : "bySqFt";
     }
   }
 
-  // Extract service data (fallback)
+
   if (structuredData.service) {
     if (formState.pricingMethod === "byRoom") {
       if (formState.roomCount === undefined) {
@@ -2273,7 +2244,7 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     }
   }
 
-  // Extract frequency (fallback) - check both new and old field names
+
   if (formState.frequency === undefined) {
     const fallbackFromDisplay = normalizeElectrostaticFrequency(structuredData.frequencyDisplay?.value);
     if (fallbackFromDisplay) {
@@ -2286,7 +2257,7 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     }
   }
 
-  // Extract location (fallback) - check both new and old field names
+
   if (formState.location === undefined) {
     if (structuredData.locationDisplay?.value) {
       const loc = structuredData.locationDisplay.value.toLowerCase();
@@ -2294,10 +2265,10 @@ export function transformElectrostaticSprayData(structuredData: any): any {
                           loc.includes("outside") ? "outsideBeltway" : "standard";
     } else if (structuredData.location) {
       if (typeof structuredData.location === 'string') {
-        // Top-level direct value (already handled above, but keep for safety)
+
         formState.location = structuredData.location;
       } else if (structuredData.location.value) {
-        // Old structured field format
+
         const loc = structuredData.location.value.toLowerCase();
         formState.location = loc.includes("inside") ? "insideBeltway" :
                             loc.includes("outside") ? "outsideBeltway" : "standard";
@@ -2305,22 +2276,22 @@ export function transformElectrostaticSprayData(structuredData: any): any {
     }
   }
 
-  // Extract combined flag (fallback)
+
   if (formState.isCombinedWithSaniClean === undefined && structuredData.combinedService) {
     formState.isCombinedWithSaniClean = structuredData.combinedService.value?.includes("Sani-Clean");
   }
 
-  // Extract trip charge if present (fallback)
+
   if (formState.tripChargePerVisit === undefined && structuredData.tripCharge) {
     formState.tripChargePerVisit = structuredData.tripCharge.amount || 0;
   }
 
-  // Extract contract months
+
   if (structuredData.totals?.contract) {
     formState.contractMonths = structuredData.totals.contract.months || 12;
   }
 
-  // Extract custom fields
+
   formState.customFields = extractCustomFields(structuredData);
 
   return formState;
@@ -2338,9 +2309,7 @@ export function transformCustomServicesData(structuredData: any): any {
   }));
 }
 
-/**
- * Main transformer function that routes to the appropriate service transformer
- */
+
 export function transformServiceData(serviceId: string, structuredData: any): any {
   if (!structuredData) return undefined;
 
@@ -2379,4 +2348,3 @@ export function transformServiceData(serviceId: string, structuredData: any): an
       return undefined;
   }
 }
-

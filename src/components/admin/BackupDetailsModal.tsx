@@ -41,7 +41,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
   const { backup: detailedBackup, snapshot, loading: snapshotLoading, error: snapshotError } = usePricingBackupDetails(backup.changeDayId);
   const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'metadata'>('overview');
 
-  // Expandable tree state management
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (itemId: string) => {
@@ -54,7 +53,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
     setExpandedItems(newExpanded);
   };
 
-  // Simple helper function to extract all pricing from service configs using direct mapping
   const extractAllPricingFromConfig = (config: any) => {
     if (!config || typeof config !== 'object') return [];
 
@@ -66,7 +64,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
       category?: string;
     }> = [];
 
-    // Recursively find all numeric pricing values in the config
     const findPricingValues = (obj: any, path: string = '', depth: number = 0) => {
       if (depth > 4 || !obj || typeof obj !== 'object') return;
 
@@ -74,7 +71,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
         const currentPath = path ? `${path}.${key}` : key;
 
         if (typeof value === 'number' && value > 0) {
-          // Check if this looks like a pricing field
           const lowerKey = key.toLowerCase();
           const lowerPath = currentPath.toLowerCase();
 
@@ -87,7 +83,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
               lowerKey.includes('discount') ||
               lowerPath.includes('pricing')) {
 
-            // Determine unit based on key name
             let unit = 'per service';
             if (lowerKey.includes('sqft') || lowerKey.includes('sq')) unit = 'per sq ft';
             else if (lowerKey.includes('hour')) unit = 'per hour';
@@ -104,13 +99,11 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             else if (lowerKey.includes('visit')) unit = 'per visit';
             else if (lowerKey.includes('install')) unit = 'installation';
 
-            // Create readable name from path
             const nameParts = currentPath.split('.');
             const readableName = nameParts
               .map(part => part.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))
               .join(' - ');
 
-            // Determine category from path
             let category = 'Service Pricing';
             if (currentPath.includes('geographic')) category = 'Geographic Pricing';
             else if (currentPath.includes('frequency') || currentPath.includes('fixture')) category = 'Frequency Rates';
@@ -140,22 +133,18 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
     return pricingData;
   };
 
-  // Legacy function for compatibility - now uses the generic extraction
   const extractServicePricing = (config: any, serviceId: string) => {
     return extractAllPricingFromConfig(config);
   };
 
-  // Use detailed backup if available, fallback to prop backup
   const displayBackup = detailedBackup || backup;
 
-  // Derive document counts from snapshot if available
   const documentCounts = snapshot ? {
     priceFixCount: snapshot.dataTypes?.priceFix?.count || 0,
     productCatalogCount: snapshot.dataTypes?.productCatalog?.totalCount || 0,
     serviceConfigCount: snapshot.dataTypes?.serviceConfigs?.count || 0
   } : (displayBackup.snapshotMetadata?.documentCounts || { priceFixCount: 0, productCatalogCount: 0, serviceConfigCount: 0 });
 
-  // Calculate sizes from detailed backup metadata (always prefer this over snapshot)
   const sizeInfo = {
     compressedSize: displayBackup.snapshotMetadata?.compressedSize || 0,
     originalSize: displayBackup.snapshotMetadata?.originalSize || 0,
@@ -394,7 +383,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
       backgroundColor: '#10b981',
       borderRadius: '4px'
     },
-    // Hierarchical tree styles
     treeItem: {
       border: '1px solid #e5e7eb',
       borderRadius: '6px',
@@ -458,7 +446,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
 
   const renderOverview = () => (
     <div>
-      {/* Key Information Grid */}
       <div style={styles.infoGrid}>
         <div style={styles.infoCard}>
           <div style={styles.infoLabel}>Change Day</div>
@@ -493,7 +480,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
         </div>
       </div>
 
-      {/* Document Counts */}
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faChartBar} /> Document Summary</h3>
         <div style={styles.infoGrid}>
@@ -515,7 +501,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
         </div>
       </div>
 
-      {/* Change Context */}
       {displayBackup.changeContext && (
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faEdit} /> Change Information</h3>
@@ -544,7 +529,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
         </div>
       )}
 
-      {/* Storage Efficiency */}
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}><FontAwesomeIcon icon={faHdd} /> Storage Efficiency</h3>
         <div style={styles.dataTypeCard}>
@@ -623,7 +607,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
           </span>
         </div>
 
-        {/* Pricing Summary Section - Show pricing status prominently */}
         <div style={styles.section}>
           <div style={styles.dataTypeCard}>
             <div style={styles.dataTypeHeader}>
@@ -633,7 +616,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
             </div>
 
             <div style={{ padding: '16px' }}>
-              {/* Product Pricing Status */}
               {snapshot.dataTypes?.productCatalog?.active && (
                 <div style={{ marginBottom: '16px' }}>
                   {(() => {
@@ -669,10 +651,8 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                 </div>
               )}
 
-              {/* Service Pricing Status */}
               <div style={{
                 backgroundColor: (() => {
-                  // Use the same calculation as in the detailed breakdown
                   const servicesPricingBreakdown = snapshot.dataTypes?.serviceConfigs?.documents?.map(config => {
                     const hasStandardPricing = config.pricing && Object.keys(config.pricing).length > 0 &&
                       Object.values(config.pricing).some(tier => tier?.basePrice?.amount || tier?.price);
@@ -725,7 +705,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                   })()
                 }}>
                   {(() => {
-                    // Calculate service pricing more comprehensively
                     const servicesPricingBreakdown = snapshot.dataTypes?.serviceConfigs?.documents?.map(config => {
                       const hasStandardPricing = config.pricing && Object.keys(config.pricing).length > 0 &&
                         Object.values(config.pricing).some(tier => tier?.basePrice?.amount || tier?.price);
@@ -781,7 +760,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Hierarchical Product Catalog */}
         {snapshot.dataTypes?.productCatalog && (
           <div style={styles.section}>
             <div style={styles.dataTypeCard}>
@@ -796,7 +774,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
 
               {snapshot.dataTypes.productCatalog.active ? (
                 <div style={styles.hierarchyLevel1}>
-                  {/* Main Catalog Level */}
                   <div style={styles.treeItem}>
                     <div
                       style={{
@@ -857,7 +834,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                             <div><strong>Last Updated:</strong> {new Date(snapshot.dataTypes.productCatalog.active.lastUpdated).toLocaleDateString()}</div>
                           </div>
 
-                          {/* Product Families Level */}
                           {snapshot.dataTypes.productCatalog.active.families?.map((family, familyIndex) => (
                             <div key={familyIndex} style={styles.treeItem}>
                               <div
@@ -902,7 +878,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                       </div>
                                     )}
 
-                                    {/* Products Level */}
                                     {family.products?.map((product, productIndex) => (
                                       <div key={productIndex} style={styles.treeItem}>
                                         <div
@@ -949,7 +924,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
 
                                         {expandedItems.has(`product-${familyIndex}-${productIndex}`) && (
                                           <div style={styles.treeItemContent}>
-                                            {/* Price prominently displayed at top */}
                                             {product.basePrice?.amount ? (
                                               <div style={{
                                                 backgroundColor: '#166534',
@@ -1045,7 +1019,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
           </div>
         )}
 
-        {/* Hierarchical Service Configurations */}
         {snapshot.dataTypes?.serviceConfigs && (
           <div style={styles.section}>
             <div style={styles.dataTypeCard}>
@@ -1126,7 +1099,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                       {expandedItems.has(`service-${configIndex}`) && (
                         <div style={styles.treeItemContent}>
                           <div style={styles.hierarchyLevel2}>
-                            {/* Service Details */}
                             <div style={{ marginBottom: '16px', fontSize: '14px', color: '#374151' }}>
                               {config.description && (
                                 <div style={{ marginBottom: '8px' }}>
@@ -1145,7 +1117,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                               )}
                             </div>
 
-                            {/* Configuration Settings */}
                             {config.settings && Object.keys(config.settings).length > 0 && (
                               <div style={styles.treeItem}>
                                 <div
@@ -1188,7 +1159,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                               </div>
                             )}
 
-                            {/* Service-Specific Pricing Information */}
                             {(() => {
                               const servicePricing = extractServicePricing(config, config.serviceId);
                               const hasStandardPricing = config.pricing && Object.keys(config.pricing).length > 0;
@@ -1227,7 +1197,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                   {expandedItems.has(`pricing-${configIndex}`) && (
                                     <div style={styles.treeItemContent}>
                                       <div style={styles.hierarchyLevel3}>
-                                        {/* Service-Specific Pricing (extracted from config) */}
                                         {hasServicePricing && (
                                           <div style={{ marginBottom: '20px' }}>
                                             <h4 style={{
@@ -1242,7 +1211,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                               <FontAwesomeIcon icon={faTags} /> Current Service Rates
                                             </h4>
                                             {(() => {
-                                              // Group pricing by category for better organization
                                               const groupedPricing = servicePricing.reduce((groups, item) => {
                                                 const category = item.category || 'General Pricing';
                                                 if (!groups[category]) groups[category] = [];
@@ -1305,7 +1273,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                           </div>
                                         )}
 
-                                        {/* Standard Pricing Tiers (if any) */}
                                         {hasStandardPricing && (
                                           <div>
                                             <h4 style={{
@@ -1360,7 +1327,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                                           </div>
                                         )}
 
-                                        {/* No Pricing Available */}
                                         {!hasServicePricing && !hasStandardPricing && (
                                           <div style={{
                                             backgroundColor: '#fef3c7',
@@ -1395,7 +1361,6 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
           </div>
         )}
 
-        {/* Pricing Information */}
         {snapshot.dataTypes?.priceFix && snapshot.dataTypes.priceFix.documents && snapshot.dataTypes.priceFix.documents.length > 0 && (
           <div style={styles.section}>
             <div style={styles.dataTypeCard}>
@@ -1570,7 +1535,7 @@ export const BackupDetailsModal: React.FC<BackupDetailsModalProps> = ({
                       .filter(([, included]) => included)
                       .map(([type]) => type)
                       .join(', ') || 'None specified'
-                    : 'PriceFix, Product Catalog, Service Configs' // Default fallback
+                    : 'PriceFix, Product Catalog, Service Configs' 
                   }
                 </td>
               </tr>

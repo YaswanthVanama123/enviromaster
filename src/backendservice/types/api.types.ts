@@ -1,4 +1,3 @@
-// src/backendservice/types/api.types.ts
 
 export interface AdminUser {
   id: string;

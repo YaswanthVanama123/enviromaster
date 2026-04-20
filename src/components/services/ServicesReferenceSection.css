@@ -1,15 +1,11 @@
-/* ═══════════════════════════════════════════════════════
-   ServicesReferenceSection.css
-   Matches the form-filling / ServiceConfigManager / spd
-   design language — light borders, rounded cards, clean.
-   ═══════════════════════════════════════════════════════ */
+
 
 .srf-root {
   font-family: Arial, Helvetica, sans-serif;
   color: #111827;
 }
 
-/* ── Banner — matches .svc-title exactly ─────────────── */
+
 .srf-banner {
   background: #c00000;
   color: #fff;
@@ -32,7 +28,7 @@
   text-transform: none;
 }
 
-/* ── Toolbar ─────────────────────────────────────────── */
+
 .srf-toolbar {
   display: flex;
   align-items: center;
@@ -89,7 +85,7 @@
   white-space: nowrap;
 }
 
-/* ── Legend ─────────────────────────────────────────── */
+
 .srf-legend {
   display: flex;
   flex-wrap: wrap;
@@ -110,7 +106,7 @@
 .srf-legend__item.srf-val--months     { background: #fff7ed; color: #9a3412; }
 .srf-legend__item.srf-val--count      { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
 
-/* ── Card list — individual rounded cards ────────────── */
+
 .srf-list {
   display: flex;
   flex-direction: column;
@@ -126,7 +122,7 @@
   border-radius: 12px;
 }
 
-/* ═══ Service card — matches scm-card style ═══════════ */
+
 .srf-card {
   background: #fff;
   border: 1.5px solid #e5e7eb;
@@ -143,7 +139,7 @@
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12);
 }
 
-/* ── Card header ─────────────────────────────────────── */
+
 .srf-card__header {
   display: flex;
   align-items: center;
@@ -205,7 +201,7 @@
   opacity: 0.55;
 }
 
-/* ── Badges — same tokens as scm-card ───────────────── */
+
 .srf-badge {
   display: inline-flex;
   align-items: center;
@@ -222,7 +218,7 @@
 .srf-badge--active   { background: #d1fae5; color: #065f46; }
 .srf-badge--inactive { background: #f1f5f9; color: #6b7280; }
 
-/* ── Description strip ──────────────────────────────── */
+
 .srf-card__desc {
   display: flex;
   align-items: flex-start;
@@ -240,7 +236,7 @@
   margin-top: 2px;
   font-size: 13px;
 }
-/* Rich HTML content rendered from CKEditor */
+
 .srf-card__desc-html {
   flex: 1;
   min-width: 0;
@@ -248,7 +244,7 @@
   color: #4b5563;
   line-height: 1.55;
 }
-/* Tighten CKEditor content styles inside the description strip */
+
 .srf-card__desc-html.ck-content h1,
 .srf-card__desc-html.ck-content h2,
 .srf-card__desc-html.ck-content h3 {
@@ -275,13 +271,13 @@
 .srf-card__desc-html.ck-content th { background: #f1f5f9; font-weight: 600; }
 .srf-card__desc-html.ck-content img { max-width: 100%; border-radius: 6px; margin: 6px 0; }
 
-/* ═══ Expanded pricing body ══════════════════════════ */
+
 .srf-card__body {
   border-top: 2px solid #e5e7eb;
   background: #f9fafb;
 }
 
-/* ── Tab strip — matches spd__tabs exactly ───────────── */
+
 .srf-tabs {
   display: flex;
   gap: 8px;
@@ -319,7 +315,7 @@
 }
 .srf-tab__icon { font-size: 12px; }
 
-/* ── Section body ─────────────────────────────────── */
+
 .srf-section-body {
   padding: 16px 20px;
   display: flex;
@@ -327,7 +323,7 @@
   gap: 10px;
 }
 
-/* ── Field row — matches spd__field exactly ─────────── */
+
 .srf-field {
   display: flex;
   justify-content: space-between;
@@ -369,7 +365,7 @@
   min-width: 60px;
 }
 
-/* ── Value colours — matches spd__value ─────────────── */
+
 .srf-val--dollar     { color: #10b981; }
 .srf-val--multiplier { color: #667eea; }
 .srf-val--percent    { color: #7c3aed; }
@@ -379,7 +375,7 @@
 .srf-val--bool       { color: #374151; }
 .srf-val--text       { color: #374151; font-size: 14px; font-weight: 600; }
 
-/* ── Sub-section (nested objects) ─────────────────── */
+
 .srf-subsection {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -416,7 +412,7 @@
   gap: 8px;
 }
 
-/* ── Description tab body (read-only rich text) ─────── */
+
 .srf-desc-body {
   background: #fff;
   border: 1.5px solid #e5e7eb;
@@ -475,7 +471,7 @@
   margin: 0;
 }
 
-/* ─── Responsive ─────────────────────────────────── */
+
 @media (max-width: 768px) {
   .srf-card__badges  { max-width: 42%; }
   .srf-tabs          { padding: 10px 14px 8px; gap: 6px; }
@@ -492,7 +488,7 @@
   .srf-field__right  { align-self: flex-end; }
 }
 
-/* ── Images & Links media sections ────────────────── */
+
 .srf-media-section {
   border-top: 1px solid #e5e7eb;
   padding: 14px 20px;
@@ -514,7 +510,7 @@
   color: #9ca3af;
 }
 
-/* image grid */
+
 .srf-image-grid {
   display: flex;
   flex-wrap: wrap;
@@ -546,7 +542,7 @@
   text-overflow: ellipsis;
 }
 
-/* links list */
+
 .srf-links-list {
   display: flex;
   flex-direction: column;

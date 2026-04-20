@@ -1,8 +1,6 @@
-// src/components/admin/AdminPricingTable.tsx
-// src/components/admin/AdminPricingTable.tsx
 import { useMemo, useState } from "react";
 import { usePricing } from "../../pricing/pricingStore";
-import type { PriceRow, Frequency, UnitType, Category } from "../../pricing/pricingTypes"; // 👈 type-only
+import type { PriceRow, Frequency, UnitType, Category } from "../../pricing/pricingTypes";
 import { toCsv, fromCsv } from "../../pricing/pricingCsv";
 
 

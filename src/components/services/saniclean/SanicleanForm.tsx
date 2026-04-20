@@ -11,7 +11,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const formatMoney = (n: number): string => `$${(isNaN(n) ? 0 : n).toFixed(2)}`;
 const safeNumber = (n: any): number => (typeof n === "number" && !isNaN(n)) ? n : 0;
 
-// Frequency options for SaniClean (matching backend frequencyMetadata keys)
+
 const sanicleanFrequencyLabels: Record<string, string> = {
   oneTime: "One Time",
   weekly: "Weekly",
@@ -46,7 +46,7 @@ const FIELD_ORDER = {
   urinals: 5,
   maleToilets: 6,
   femaleToilets: 7,
-  // soapType: 20,
+
   totalPrice: 200,
   contractTotal: 100,
 };
@@ -60,12 +60,12 @@ const EXTRA_ORDER = {
   sanipods: 17,
   warranty: 18,
   microfiber: 19,
-  excessSoap: 20, // ✅ ADDED: For All-Inclusive excess soap charges
+  excessSoap: 20, 
   baseServiceMonthly: 22,
   facilityComponentsMonthly: 23,
   facilityFrequency: 24,
   includedItems: 25,
-  paperOverage: 26, // ✅ ADDED: For All-Inclusive paper overage
+  paperOverage: 26, 
 };
 
 function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): number {
@@ -81,7 +81,6 @@ function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): 
   return FREQUENCY_MULTIPLIER_FALLBACK[frequency] ?? FREQUENCY_MULTIPLIER_FALLBACK.weekly;
 }
 
-// ─── Editable "What's Included" list ─────────────────────────────────────────
 
 function IncludedItemsEditor({
   items,
@@ -218,12 +217,12 @@ function IncludedItemsEditor({
 export const SanicleanForm: React.FC<
   ServiceInitialData<SanicleanFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const {
     form,
     quote,
@@ -237,14 +236,14 @@ export const SanicleanForm: React.FC<
     setRateTier,
     setNotes,
     backendConfig,
-    // ✅ NEW: Dual frequency setters
+
     setMainServiceFrequency,
     setFacilityComponentsFrequency,
   } = useSanicleanCalc(initialData, customFields);
 
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       updateForm({ contractMonths: servicesContext.globalContractMonths });
@@ -253,9 +252,9 @@ export const SanicleanForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
   const prevDataRef = useRef<string>("");
@@ -272,81 +271,81 @@ export const SanicleanForm: React.FC<
     return Boolean((pricingOverrides as Record<string, boolean> | undefined)?.[fieldName]);
   };
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       updateForm({ [name]: numValue });
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       updateForm({ [name]: undefined });
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         updateForm({ [name]: undefined });
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       updateForm({ [name]: numValue });
     }
   };
 
-  // Calculate derived values
+
   const fixtures = form.sinks + form.urinals + form.maleToilets + form.femaleToilets;
-  const soapDispensers = form.sinks; // 1 soap dispenser per sink
+  const soapDispensers = form.sinks; 
   const luxuryUpgradeQty = form.luxuryUpgradeQty ?? soapDispensers;
 
   const isAllInclusive = form.pricingMode === "all_inclusive";
@@ -357,7 +356,7 @@ export const SanicleanForm: React.FC<
   const excessSoapRateFieldName = form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate";
   const excessSoapRateOverride = hasPricingOverride(excessSoapRateFieldName);
 
-  // Debug logging
+
   console.log('🔍 [SaniClean Debug]', {
     pricingMode: form.pricingMode,
     isAllInclusive,
@@ -375,14 +374,14 @@ export const SanicleanForm: React.FC<
 
   const extraSoapWeekly = Math.max(0, form.excessSoapGallonsPerWeek) * extraSoapRatePerGallon;
 
-  // Form change handlers
+
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
     let processedValue: any = value;
 
-    // ✅ Handle custom override fields for individual components and totals
+
     if (
       name === "customBaseService" ||
       name === "customTripCharge" ||
@@ -423,10 +422,14 @@ export const SanicleanForm: React.FC<
       ? (quote.oneTimeTotal ?? sumBreakdown)
       : undefined;
 
-  // Save form data to context for form submission
+
   useEffect(() => {
     if (servicesContext) {
-      const isActive = fixtures > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = fixtures > 0 || hasCustomFieldValues;
       const frequencyLabel =
         sanicleanFrequencyLabels[form.mainServiceFrequency] ||
         form.mainServiceFrequency ||
@@ -526,7 +529,7 @@ export const SanicleanForm: React.FC<
       addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal, EXTRA_ORDER.warranty);
       addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal, EXTRA_ORDER.microfiber);
 
-      // ✅ FIXED: Add excess soap to PDF for All-Inclusive mode
+
       if (form.pricingMode === "all_inclusive" && form.excessSoapGallonsPerWeek > 0 && extraSoapWeekly > 0) {
         addAtChargeExtra(
           "Excess Soap",
@@ -537,8 +540,7 @@ export const SanicleanForm: React.FC<
         );
       }
 
-      // ✅ FIXED: Add paper overage to PDF for All-Inclusive mode
-      // Show the actual paper overage charge (spend - credit)
+
       if (form.pricingMode === "all_inclusive" && paperOveragePerWeek > 0) {
         addLineExtra(
           "Paper Overage",
@@ -549,7 +551,7 @@ export const SanicleanForm: React.FC<
       }
 
         if (form.mainServiceFrequency !== "oneTime") {
-          // ✅ FIXED: Only show Facility Components Frequency if any facility components are enabled
+
           const hasFacilityComponents = form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents;
 
           if (form.pricingMode === "per_item_charge" && hasFacilityComponents) {
@@ -557,7 +559,7 @@ export const SanicleanForm: React.FC<
           }
           addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold", EXTRA_ORDER.baseServiceMonthly, "wide");
 
-          // ✅ FIXED: Only show Facility Components Monthly Total if there are actual components
+
           if (hasFacilityComponents) {
             addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
           }
@@ -594,14 +596,14 @@ export const SanicleanForm: React.FC<
         displayName: "SaniClean",
         isActive: true,
 
-        // Persist key form state + editable pricing config so edit mode reloads saved values (not current backend defaults)
+
         pricingMode: form.pricingMode,
         location: form.location,
         rateTier: form.rateTier,
         mainServiceFrequency: form.mainServiceFrequency,
         facilityComponentsFrequency: form.facilityComponentsFrequency,
-        frequency: form.frequency, // backward-compat field
-        facilityComponentFrequency: form.facilityComponentFrequency, // backward-compat field
+        frequency: form.frequency, 
+        facilityComponentFrequency: form.facilityComponentFrequency, 
         contractMonths: form.contractMonths,
 
         frequency: {
@@ -612,16 +614,16 @@ export const SanicleanForm: React.FC<
           value: frequencyLabel,
         },
 
-        // Editable pricing config (backend-driven rates)
+
         allInclusiveWeeklyRatePerFixture: form.allInclusiveWeeklyRatePerFixture,
         luxuryUpgradePerDispenser: form.luxuryUpgradePerDispenser,
         luxuryUpgradeQty: form.luxuryUpgradeQty,
         excessStandardSoapRate: form.excessStandardSoapRate,
         excessLuxurySoapRate: form.excessLuxurySoapRate,
-        // ✅ FIXED: Save excess soap gallons for All-Inclusive edit mode and PDF
+
         excessSoapGallonsPerWeek: form.excessSoapGallonsPerWeek,
         paperCreditPerFixture: form.paperCreditPerFixture,
-        // ✅ FIXED: Save paper spend for All-Inclusive edit mode and PDF
+
         estimatedPaperSpendPerWeek: form.estimatedPaperSpendPerWeek,
         microfiberMoppingPerBathroom: form.microfiberMoppingPerBathroom,
 
@@ -647,7 +649,7 @@ export const SanicleanForm: React.FC<
         redRateMultiplier: form.redRateMultiplier,
         greenRateMultiplier: form.greenRateMultiplier,
 
-        // Custom override fields
+
         customBaseService: form.customBaseService,
         customTripCharge: form.customTripCharge,
         customFacilityComponents: form.customFacilityComponents,
@@ -661,7 +663,7 @@ export const SanicleanForm: React.FC<
         customContractTotal: form.customContractTotal,
         applyMinimum: form.applyMinimum !== false,
 
-        // ✅ FIXED: Zero out quantities when facility component checkboxes are unchecked
+
         addUrinalComponents: form.addUrinalComponents,
         urinalScreensQty: form.addUrinalComponents ? form.urinalScreensQty : 0,
         urinalMatsQty: form.addUrinalComponents ? form.urinalMatsQty : 0,
@@ -674,10 +676,10 @@ export const SanicleanForm: React.FC<
         addMicrofiberMopping: form.addMicrofiberMopping,
         microfiberBathrooms: form.addMicrofiberMopping ? form.microfiberBathrooms : 0,
 
-        // Red/Green Line pricing data (weekly pricing)
-        perVisitBase: quote.breakdown.baseService,  // Raw base service weekly
-        perVisit: quote.weeklyTotal,  // Final weekly total
-        minimumChargePerWeek: quote.minimumChargePerWeek,  // Minimum threshold from quote
+
+        perVisitBase: quote.breakdown.baseService,  
+        perVisit: quote.weeklyTotal,  
+        minimumChargePerWeek: quote.minimumChargePerWeek,  
 
         pricingMode: {
           isDisplay: true,
@@ -735,7 +737,7 @@ export const SanicleanForm: React.FC<
                 },
               }
             : {}),
- 
+
         notes: form.notes || "",
         customFields: customFields,
         pdfExtras: extras,
@@ -757,13 +759,13 @@ export const SanicleanForm: React.FC<
     form.contractMonths && form.contractMonths >= 2 && form.contractMonths <= 36
       ? form.contractMonths
       : 12;
-  // ✅ FIXED: Use quote.contractTotal from backend (calculated with correct visit counts for all frequencies)
-  // Don't recalculate here - the backend already handles bimonthly, quarterly, etc. correctly
+
+
   const contractTotal = quote.contractTotal;
 
   return (
     <div className="svc-card" style={{ position: 'relative' }}>
-      {/* Loading Overlay */}
+      {}
       {isLoadingConfig && (
         <div className="svc-loading-overlay">
           <div className="svc-loading-spinner">
@@ -773,7 +775,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* HEADER */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">SANI CLEAN</div>
         <div className="svc-h-actions">
@@ -810,7 +812,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -833,7 +835,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* ✅ NEW: Dual Frequency Selection */}
+      {}
       <div className="svc-row">
         <label>Main Service Frequency</label>
         <div className="svc-row-right">
@@ -855,8 +857,7 @@ export const SanicleanForm: React.FC<
       </div>
 
 
-
-      {/* Total Restroom Fixtures */}
+      {}
       <div className="svc-row">
         <label>Restroom Fixtures</label>
         <div className="svc-row-right">
@@ -871,7 +872,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Location - Only show for Per Item Charge */}
+      {}
        {form.pricingMode === "per_item_charge" && (
         <div className="svc-row">
           <label>Location</label>
@@ -889,30 +890,15 @@ export const SanicleanForm: React.FC<
         </div>
       )} 
 
-      {/* Parking - Only for inside beltway in per item mode */}
-      {/* {form.pricingMode === "per_item_charge" && form.location === "insideBeltway" && (
-        <div className="svc-row">
-          <label>Parking</label>
-          <div className="svc-row-right">
-            <label className="svc-inline">
-              <input
-                type="checkbox"
-                name="needsParking"
-                checked={form.needsParking}
-                onChange={onChange}
-              />
-              <span>Parking needed (+fee)</span>
-            </label>
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
 
-      {/* FIXTURE BREAKDOWN */}
+      {}
       <div className="svc-h-sub" style={{ marginTop: 10 }}>
         FIXTURE BREAKDOWN
       </div>
 
-      {/* Sinks */}
+      {}
       <div className="svc-row">
         <label>Sinks</label>
         <div className="svc-row-right">
@@ -949,7 +935,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Urinals */}
+      {}
       <div className="svc-row">
         <label>Urinals</label>
         <div className="svc-row-right">
@@ -986,7 +972,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Male Toilets */}
+      {}
       <div className="svc-row">
         <label>Male Toilets</label>
         <div className="svc-row-right">
@@ -1023,7 +1009,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Female Toilets */}
+      {}
       <div className="svc-row">
         <label>Female Toilets</label>
         <div className="svc-row-right">
@@ -1060,12 +1046,12 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* SOAP & UPGRADES */}
+      {}
       <div className="svc-h-sub" style={{ marginTop: 10 }}>
         SOAP &amp; UPGRADES
       </div>
 
-      {/* Soap type selector */}
+      {}
       <div className="svc-row">
         <label>Soap Type</label>
         <div className="svc-row-right">
@@ -1081,7 +1067,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Luxury upgrade calc */}
+      {}
       <div className="svc-row">
         <label>Luxury Upgrade</label>
         <div className="svc-row-right">
@@ -1136,7 +1122,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Extra soap usage - Only for All Inclusive */}
+      {}
       {isAllInclusive && (
         <div className="svc-row">
           <label>Extra Soap</label>
@@ -1172,14 +1158,14 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* FACILITY COMPONENTS BREAKDOWN - Only for Per Item Charge */}
+      {}
       {!isAllInclusive && (
         <>
           <div className="svc-h-sub" style={{ marginTop: 10 }}>
             FACILITY COMPONENTS (Monthly Charges)
           </div>
 
-          {/* ✅ NEW: Facility Components Frequency (only show for per-item-charge) */}
+          {}
           {form.pricingMode === "per_item_charge" && form.mainServiceFrequency !== "oneTime" && (
             <div className="svc-row">
               <label>
@@ -1203,7 +1189,7 @@ export const SanicleanForm: React.FC<
       </div>
     )}
 
-          {/* Urinal Components - Only show checkbox if urinals > 0 */}
+          {}
           {form.urinals > 0 && (
             <>
               <div className="svc-row">
@@ -1221,7 +1207,7 @@ export const SanicleanForm: React.FC<
                 </div>
               </div>
 
-              {/* Show urinal component calculations only when enabled */}
+              {}
               {form.addUrinalComponents && (
                 <>
                   <div className="svc-row" style={{ paddingLeft: '20px' }}>
@@ -1298,7 +1284,7 @@ export const SanicleanForm: React.FC<
             </>
           )}
 
-          {/* Male Toilet Components - Only show checkbox if maleToilets > 0 */}
+          {}
           {form.maleToilets > 0 && (
             <>
               <div className="svc-row">
@@ -1316,7 +1302,7 @@ export const SanicleanForm: React.FC<
                 </div>
               </div>
 
-              {/* Show male toilet component calculations only when enabled */}
+              {}
               {form.addMaleToiletComponents && (
                 <>
                   <div className="svc-row" style={{ paddingLeft: '20px' }}>
@@ -1393,7 +1379,7 @@ export const SanicleanForm: React.FC<
             </>
           )}
 
-          {/* Female Toilet Components - Only show checkbox if femaleToilets > 0 */}
+          {}
           {form.femaleToilets > 0 && (
             <>
               <div className="svc-row">
@@ -1411,7 +1397,7 @@ export const SanicleanForm: React.FC<
                 </div>
               </div>
 
-              {/* Show female toilet component calculations only when enabled */}
+              {}
               {form.addFemaleToiletComponents && (
                 <div className="svc-row" style={{ paddingLeft: '20px' }}>
                   <label>SaniPods</label>
@@ -1451,9 +1437,9 @@ export const SanicleanForm: React.FC<
             </>
           )}
 
-          {/* ✅ REMOVED: Old facility component frequency dropdown - now handled by main dual frequency system above */}
+          {}
 
-          {/* Total Facility Components (at facility frequency) - Only show if any components are enabled */}
+          {}
           {(form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) && (
             <>
               <div className="svc-row">
@@ -1476,7 +1462,7 @@ export const SanicleanForm: React.FC<
                 </div>
               </div>
 
-              {/* Facility Component Monthly Total - Shows the monthly recurring cost */}
+              {}
               {form.mainServiceFrequency !== "oneTime" && (
                 <div className="svc-row">
                   <label>Facility Component Monthly Total</label>
@@ -1496,9 +1482,8 @@ export const SanicleanForm: React.FC<
         </>
       )}
 
-      
 
-      {/* Warranty - Only for Per Item Charge and only when there are sinks (dispensers) */}
+      {}
       {!isAllInclusive && form.sinks > 0 && (
         <div className="svc-row">
           <label>Warranty</label>
@@ -1539,25 +1524,10 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Trip Charge - Only for Per Item Charge and not for small facilities */}
-      {/* {!isAllInclusive && fixtures > form.smallFacilityThreshold && (
-        <div className="svc-row">
-          <label>Trip Charge</label>
-          <div className="svc-row-right">
-            <label className="svc-inline">
-              <input
-                type="checkbox"
-                name="addTripCharge"
-                checked={form.addTripCharge}
-                onChange={onChange}
-              />
-              <span>Include trip charge (+${form.location === "insideBeltway" ? form.insideBeltwayTripCharge.toFixed(2) : form.outsideBeltwayTripCharge.toFixed(2)})</span>
-            </label>
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
 
-      {/* MICROFIBER MOPPING */}
+      {}
       <div className="svc-h-sub" style={{ marginTop: 10 }}>
         MICROFIBER MOPPING
       </div>
@@ -1623,7 +1593,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* PAPER - Only for All Inclusive */}
+      {}
       {isAllInclusive && (
         <>
           <div className="svc-h-sub" style={{ marginTop: 10 }}>
@@ -1660,7 +1630,7 @@ export const SanicleanForm: React.FC<
         </>
       )}
 
-      {/* WHAT'S INCLUDED */}
+      {}
       <div className="svc-h-sub" style={{ marginTop: 10 }}>
         WHAT&apos;S INCLUDED
       </div>
@@ -1677,47 +1647,19 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Rate Tier */}
-      {/* <div className="svc-row">
-        <label>Rate Tier</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="rateTier"
-            value={form.rateTier}
-            onChange={onChange}
-          >
-            <option value="redRate">Red</option>
-            <option value="greenRate">Green</option>
-          </select>
-        </div>
-      </div> */}
+      {}
+      {}
 
 
+      {}
+      {}
 
-      {/* PRICING SUMMARY */}
-      {/* <div className="svc-h-sub" style={{ marginTop: 16 }}>
-        PRICING SUMMARY
-      </div>
-
-      <div className="svc-row">
-        <label>Chosen Method</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge"}
-          />
-        </div>
-      </div> */}
-
-      {/* PRICE BREAKDOWN - Individual editable components */}
+      {}
       <div className="svc-h-sub" style={{ marginTop: 16 }}>
         PRICE BREAKDOWN
       </div>
 
-      {/* Minimum Charge */}
+      {}
       <div className="svc-row">
         <label>Minimum Per Visit</label>
         <div className="svc-row-right">
@@ -1734,7 +1676,7 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Base Service */}
+      {}
       <div className="svc-row">
         <label>Base Service</label>
         <div className="svc-row-right">
@@ -1766,40 +1708,10 @@ export const SanicleanForm: React.FC<
         </div>
       </div>
 
-      {/* Trip Charge */}
-      {/* {form.pricingMode === "per_item_charge" && (
-        <div className="svc-row">
-          <label>Trip Charge</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="number"
-                min="0"
-                step="1"
-                name="customTripCharge"
-                value={getDisplayValue(
-                  'customTripCharge',
-                  form.customTripCharge !== undefined
-                    ? form.customTripCharge
-                    : quote.breakdown.tripCharge
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{
-                  backgroundColor: form.customTripCharge !== undefined ? '#fffacd' : 'white',
-                  width: '100px'
-                }}
-                title="Trip charge - editable"
-              />
-            </div>
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
 
-      {/* Facility Components */}
+      {}
       {form.pricingMode === "per_item_charge" && quote.breakdown.facilityComponents > 0 && (
         <div className="svc-row">
           <label>Facility Components</label>
@@ -1833,7 +1745,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Soap Upgrade */}
+      {}
       {quote.breakdown.soapUpgrade > 0 && (
         <div className="svc-row">
           <label>Soap Upgrade</label>
@@ -1866,7 +1778,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Excess Soap */}
+      {}
       {quote.breakdown.excessSoap > 0 && (
         <div className="svc-row">
           <label>Excess Soap</label>
@@ -1899,7 +1811,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Microfiber Mopping */}
+      {}
       {quote.breakdown.microfiberMopping > 0 && (
         <div className="svc-row">
           <label>Microfiber Mopping</label>
@@ -1932,7 +1844,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Warranty Fees */}
+      {}
       {form.pricingMode === "per_item_charge" && quote.breakdown.warrantyFees > 0 && (
         <div className="svc-row">
           <label>Warranty Fees</label>
@@ -1965,7 +1877,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Paper Overage */}
+      {}
       {form.pricingMode === "all_inclusive" && quote.breakdown.paperOverage > 0 && (
         <div className="svc-row">
           <label>Paper Overage</label>
@@ -1998,27 +1910,13 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* PRICING SUMMARY */}
-      {/* <div className="svc-h-sub" style={{ marginTop: 16 }}>
-        PRICING SUMMARY
-      </div>
+      {}
+      {}
 
-      <div className="svc-row">
-        <label>Chosen Method</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in-box"
-            type="text"
-            readOnly
-            value={form.pricingMode === "all_inclusive" ? "All Inclusive" : "Per Item Charge"}
-          />
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* ✅ REMOVED: Per Visit field - confusing in dual frequency model */}
-      {/* User requested removal to avoid confusion with service + facility components */}
-
-      {/* Redline/Greenline Pricing Indicator */}
+      {}
       {fixtures > 0 && (
         <div className="svc-row" style={{ paddingTop: '5px' }}>
           <label></label>
@@ -2052,7 +1950,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* ✅ NEW: Base Service Monthly Total - Only show for weekly, biweekly, twicePerMonth, and monthly frequencies */}
+      {}
       {['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
         <div className="svc-row">
           <label>Base Service Monthly Total</label>
@@ -2075,7 +1973,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* ✅ Facility Component Monthly Total - Only show for per-item-charge and when components are added */}
+      {}
       {form.pricingMode === "per_item_charge" &&
        (form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) &&
        ['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
@@ -2166,7 +2064,7 @@ export const SanicleanForm: React.FC<
         </div>
       )}
 
-      {/* Notes */}
+      {}
       <div className="svc-row">
         <label>Notes</label>
         <div className="svc-row-right">

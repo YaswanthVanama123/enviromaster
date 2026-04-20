@@ -1,4 +1,3 @@
-// src/components/admin/ServiceConfigManager.tsx
 
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -63,7 +62,6 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
   const [newLinkUrl, setNewLinkUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // URL-based modal management
   useEffect(() => {
     if (modalType === 'edit' && itemId && configs.length > 0) {
       const config = configs.find(c => c._id === itemId);
@@ -75,7 +73,6 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
     }
   }, [modalType, itemId, configs]);
 
-  // Update URL when modal opens/closes
   const openEditModal = (config: ServiceConfig) => {
     if (isEmbedded && parentPath) {
       navigate(`${parentPath}/services/edit/${config._id}`, { replace: true });
@@ -129,7 +126,6 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
     setFormData({});
   };
 
-  // ── Image upload ──────────────────────────────────────────────────────────
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editingConfig?._id || !e.target.files?.[0]) return;
     setUploading(true);
@@ -162,7 +158,6 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
     }));
   };
 
-  // ── Link management ───────────────────────────────────────────────────────
   const handleAddLink = () => {
     const trimLabel = newLinkLabel.trim();
     const trimUrl = newLinkUrl.trim();
@@ -370,7 +365,6 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
               />
             </div>
 
-            {/* ── Images ── */}
             <div className="scm-form-group" style={styles.formGroup}>
               <label className="scm-label" style={styles.label}>Images</label>
               <input
@@ -407,7 +401,6 @@ export const ServiceConfigManager: React.FC<ServiceConfigManagerProps> = ({
               )}
             </div>
 
-            {/* ── Links ── */}
             <div className="scm-form-group" style={styles.formGroup}>
               <label className="scm-label" style={styles.label}>Links</label>
               <div style={styles.addLinkRow}>

@@ -1,11 +1,7 @@
-// src/utils/testSanitizer.ts
+
 
 import { sanitizeText, detectProblematicCharacters, sanitizeObject } from './textSanitizer';
 
-/**
- * Test suite for text sanitization
- * Run this in console to verify sanitization works correctly
- */
 
 export function runSanitizationTests() {
   console.log('🧪 Running Text Sanitization Tests...\n');
@@ -100,9 +96,7 @@ export function runSanitizationTests() {
   return { passed, failed };
 }
 
-/**
- * Test object sanitization
- */
+
 export function testObjectSanitization() {
   console.log('🧪 Testing Object Sanitization...\n');
 
@@ -131,9 +125,7 @@ export function testObjectSanitization() {
   return cleaned;
 }
 
-/**
- * Test real-world form data
- */
+
 export function testRealWorldData() {
   console.log('🧪 Testing Real-World Form Data...\n');
 
@@ -173,7 +165,7 @@ export function testRealWorldData() {
   console.log('\nAfter sanitization:');
   console.log(JSON.stringify(cleaned, null, 2));
 
-  // Check if any changes were made
+
   const before = JSON.stringify(formData);
   const after = JSON.stringify(cleaned);
 
@@ -186,7 +178,7 @@ export function testRealWorldData() {
   return cleaned;
 }
 
-// Make functions available in browser console
+
 if (typeof window !== 'undefined') {
   (window as any).testSanitization = {
     runTests: runSanitizationTests,

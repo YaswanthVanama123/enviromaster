@@ -1,29 +1,29 @@
-// src/features/products/productsTypes.ts
+
 
 export type BillingPeriod = "week" | "month" | "year";
 
 export type MoneyAmount = {
   amount: number;
   currency: "USD";
-  uom?: string;            // gallon, case, each, etc.
-  unitSizeLabel?: string;  // "Case/16/250" etc.
+  uom?: string;            
+  unitSizeLabel?: string;  
   billingPeriod?: BillingPeriod;
 };
 
 export type EnvProduct = {
   key: string;
   name: string;
-  familyKey: string;          // "paper" | "dispensers" | "floorProducts" | ...
-  kind?: string;              // floorCleaner, paper, dispenser, etc.
-  basePrice?: MoneyAmount;    // main price (per gallon, case, each, etc.)
+  familyKey: string;          
+  kind?: string;              
+  basePrice?: MoneyAmount;    
   effectivePerRollPriceInternal?: number;
   suggestedCustomerRollPrice?: number;
   quantityPerCase?: number;
   quantityPerCaseLabel?: string;
-  warrantyPricePerUnit?: MoneyAmount; // weekly warranty rates for dispensers, etc.
-  frequency?: string;         // frequency field for service frequency
-  description?: string;       // product description
-  displayByAdmin?: boolean;   // if true => show by default in the table
+  warrantyPricePerUnit?: MoneyAmount; 
+  frequency?: string;         
+  description?: string;       
+  displayByAdmin?: boolean;   
 };
 
 export type EnvProductFamily = {
@@ -40,11 +40,10 @@ export type EnvProductCatalog = {
   families: EnvProductFamily[];
 };
 
-// Columns / buckets in the UI - 2 categories: Products (small+big merged) + Dispensers
+
 export type ColumnKey = "products" | "dispensers";
 
-// Row in the UI table
-// src/components/products/productsTypes.ts  (example)
+
 export type ProductRow = {
   id: string;
   productKey: string | null;
@@ -55,20 +54,19 @@ export type ProductRow = {
   replacementPriceOverride?: number;
   amountOverride?: number;
 
-  // custom rows
+
   isCustom?: boolean;
   customName?: string;
 
-  // NEW – editable Total column
+
   totalOverride?: number;
 
-  // NEW - frequency field
+
   frequency?: string;
 
-  // NEW - cost type: one-time direct price or recurring warranty
+
   costType?: 'productCost' | 'warranty';
 
-  // Custom column data (columnId -> value)
+
   customFields?: Record<string, string | number>;
 };
-

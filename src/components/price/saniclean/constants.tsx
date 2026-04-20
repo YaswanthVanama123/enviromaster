@@ -4,7 +4,7 @@ export const SC_DEFAULTS = {
   beltwayTrip: 8,
 
   outsidePrice: 6,
-  outsideMin: null, // "—"
+  outsideMin: null, 
   outsideTripPDF: 8,
 
   paidBase: 7,

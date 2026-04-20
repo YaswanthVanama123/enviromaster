@@ -1,6 +1,3 @@
-/* BackupListView.css - Responsive styles */
-
-/* Inline loading spinner */
 .blv-spinner-inline {
   width: 48px;
   height: 48px;
@@ -45,7 +42,6 @@
   }
 }
 
-/* Medium devices (tablets, 769px to 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .blv-filters-container {
     gap: 12px !important;
@@ -97,7 +93,6 @@
   }
 }
 
-/* Small devices (phones, up to 768px) */
 @media (max-width: 768px) {
   .blv-filters-container {
     flex-direction: column !important;
@@ -220,7 +215,6 @@
   }
 }
 
-/* Extra small devices (phones, up to 480px) */
 @media (max-width: 480px) {
   .blv-filters-container {
     gap: 10px !important;
@@ -325,7 +319,6 @@
     height: 9px !important;
   }
 
-  /* Make cell text more compact on extra small screens */
   .blv-cell > div:first-child {
     font-size: 12px !important;
   }
@@ -335,7 +328,6 @@
   }
 }
 
-/* Hover effects - only for devices that support hover */
 @media (hover: hover) {
   .blv-header-cell:hover {
     background-color: #f3f4f6 !important;
@@ -359,7 +351,6 @@
   }
 }
 
-/* Scrollbar styling for webkit browsers */
 @media (max-width: 768px) {
   .blv-table-container::-webkit-scrollbar {
     height: 8px;
@@ -380,7 +371,6 @@
   }
 }
 
-/* Firefox scrollbar */
 @media (max-width: 768px) {
   .blv-table-container {
     scrollbar-width: thin;
@@ -388,7 +378,6 @@
   }
 }
 
-/* Ensure proper table layout on small screens */
 @media (max-width: 768px) {
   .blv-table {
     table-layout: auto;

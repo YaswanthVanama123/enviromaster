@@ -90,7 +90,7 @@ type ServicesData = {
   serviceNotes: { name: string; defaultValue?: string }[];
 };
 
-// Backend services payload type (minimal)
+
 type BackendServiceRow = {
   type: "line" | "bold" | "atCharge";
   label: string;

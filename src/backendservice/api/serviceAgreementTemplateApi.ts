@@ -1,11 +1,9 @@
-// src/backendservice/api/serviceAgreementTemplateApi.ts
 
 import { apiClient } from "../utils/apiClient";
 
 export interface ServiceAgreementTemplate {
   id: string;
   name: string;
-  // Terms
   term1: string;
   term2: string;
   term3: string;
@@ -14,7 +12,6 @@ export interface ServiceAgreementTemplate {
   term6: string;
   term7: string;
   noteText: string;
-  // Labels
   titleText: string;
   subtitleText: string;
   retainDispensersLabel: string;
@@ -39,23 +36,13 @@ export interface ServiceAgreementTemplateResponse {
   message?: string;
 }
 
-/**
- * Service Agreement Template API Service
- * Handles service agreement template management
- */
 export const serviceAgreementTemplateApi = {
-  /**
-   * Get active service agreement template
-   */
   async getActiveTemplate(): Promise<ServiceAgreementTemplate> {
     const res = await apiClient.get<{ template: ServiceAgreementTemplate }>(`/api/service-agreement-template/active`);
     if (res.error) throw new Error(res.error);
     return res.data!.template;
   },
 
-  /**
-   * Update service agreement template
-   */
   async updateTemplate(templateData: Partial<ServiceAgreementTemplate>): Promise<ServiceAgreementTemplateResponse> {
     const res = await apiClient.put<ServiceAgreementTemplateResponse>(
       `/api/service-agreement-template`,

@@ -1,25 +1,12 @@
-// src/features/services/microfiberMopping/microfiberMoppingConfig.ts
+
 import type { MicrofiberMoppingPricingConfig } from "./microfiberMoppingTypes";
 
-/**
- * Microfiber Mopping Pricing Configuration
- *
- * NOTE: These are DEFAULT/FALLBACK values.
- * The application will attempt to fetch pricing from the backend API first.
- * If the backend is unavailable or returns an error, these values will be used.
- *
- * To update production pricing:
- * 1. Update the backend ServiceConfig in MongoDB
- * 2. OR run: node scripts/seedMicrofiberMoppingPricing.js (when created)
- * 3. OR use the admin panel (when implemented)
- *
- * Basic rates are fetched from backend on component mount and override these defaults.
- */
+
 export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
-  // $10 per bathroom when bundled with Sani (per visit)
+
   includedBathroomRate: 10,
 
-  // Huge bathrooms: $10 per 300 sq ft
+
   hugeBathroomPricing: {
     enabled: true,
     ratePerSqFt: 10,
@@ -28,8 +15,7 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
       "For huge bathrooms charge $10 per 300 sq ft instead of $10 per bathroom.",
   },
 
-  // Extra non-bathroom area:
-  // $100 minimum for a single large area, or $10 per 400 sq ft (whichever is more)
+
   extraAreaPricing: {
     singleLargeAreaRate: 100,
     extraAreaSqFtUnit: 400,
@@ -37,34 +23,32 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     useHigherRate: true,
   },
 
-  // Stand-alone microfiber mopping (no Sani program)
-  // Rule: $10 per 200 sq ft, $40 minimum.
+
   standalonePricing: {
     standaloneSqFtUnit: 200,
     standaloneRatePerUnit: 10,
     standaloneMinimum: 40,
-    includeTripCharge: true, // kept only for copy; math sets trip = 0
+    includeTripCharge: true, 
   },
 
-  // Chemical for customers doing their own mopping
-  // Rule: sell Daily at $27.34 / gallon (diluted).
+
   chemicalProducts: {
     dailyChemicalPerGallon: 27.34,
     customerSelfMopping: true,
     waterOnlyBetweenServices: true,
   },
 
-  // What we provide physically
+
   equipmentProvision: {
     mopHandlesOnInstall: true,
     microfiberMopsLeftBehind: true,
     commercialGradeMicrofiber: true,
     designedWashes: 500,
-    enhancedCleaningSpeed: 30, // ~30% faster
+    enhancedCleaningSpeed: 30, 
     microfiberDensity: "High-density commercial-grade microfiber",
   },
 
-  // Trip charges (NOT used in math anymore, only for reference/UI copy)
+
   tripCharges: {
     insideBeltway: 75,
     outsideBeltway: 100,
@@ -73,17 +57,17 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     waiveForAllInclusive: true,
   },
 
-  // Minimum charge per visit (for redline/greenline pricing)
+
   minimumChargePerVisit: 50,
 
-  // All-inclusive behavior
+
   allInclusiveIntegration: {
     includedInPackage: true,
     noAdditionalCharge: true,
     standardBathroomCoverage: true,
   },
 
-  // Integration with other services
+
   serviceIntegration: {
     recommendCombineWithSaniScrub: true,
     installUpkeepNeeded: true,
@@ -91,50 +75,49 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     optimalPairing: ["SaniScrub", "SaniClean", "RPM Windows"],
   },
 
-  // Frequency conversions
-  // KEY CHANGE: Monthly = 4.33 weeks everywhere.
+
   billingConversions: {
     oneTime: {
       annualMultiplier: 1,
-      monthlyMultiplier: 0, // oneTime has no monthly billing
+      monthlyMultiplier: 0, 
     },
     weekly: {
       annualMultiplier: 52,
-      monthlyMultiplier: 52 / 12, // 4.33 visits / month
+      monthlyMultiplier: 52 / 12, 
     },
     biweekly: {
       annualMultiplier: 26,
-      monthlyMultiplier: 26 / 12, // ~2.17 visits / month
+      monthlyMultiplier: 26 / 12, 
     },
     twicePerMonth: {
       annualMultiplier: 24,
-      monthlyMultiplier: 2, // 2 visits / month
+      monthlyMultiplier: 2, 
     },
     monthly: {
       annualMultiplier: 12,
-      monthlyMultiplier: 1, // 1 visit / month
+      monthlyMultiplier: 1, 
     },
     bimonthly: {
       annualMultiplier: 6,
-      monthlyMultiplier: 0.5, // 0.5 visits / month (every 2 months)
+      monthlyMultiplier: 0.5, 
     },
     quarterly: {
       annualMultiplier: 4,
-      monthlyMultiplier: 0.333, // 0.333 visits / month (every 3 months)
+      monthlyMultiplier: 0.333, 
     },
     biannual: {
       annualMultiplier: 2,
-      monthlyMultiplier: 0.167, // 0.167 visits / month (every 6 months)
+      monthlyMultiplier: 0.167, 
     },
     annual: {
       annualMultiplier: 1,
-      monthlyMultiplier: 0.083, // 0.083 visits / month (once per year)
+      monthlyMultiplier: 0.083, 
     },
     actualWeeksPerYear: 52,
-    actualWeeksPerMonth: 52 / 12, // 4.33 weeks / month
+    actualWeeksPerMonth: 52 / 12, 
   },
 
-  // Guard rails
+
   pricingRules: {
     canBundleWithSani: true,
     canPriceAsIncluded: true,

@@ -1,4 +1,3 @@
-// src/backendservice/hooks/useServiceConfigs.ts
 
 import { useState, useEffect, useCallback } from "react";
 import { serviceConfigApi } from "../api";
@@ -105,11 +104,6 @@ export function useActiveServiceConfig(serviceId?: string) {
   };
 }
 
-/**
- * ⚡ OPTIMIZED: Hook to fetch all service pricing data + service agreement template in a single API call.
- * This replaces static fallback values for inactive services with real backend data.
- * Also provides service agreement template to avoid separate fetches.
- */
 export function useAllServicePricing() {
   const [pricingData, setPricingData] = useState<ServiceConfig[]>([]);
   const [templateData, setTemplateData] = useState<ServiceAgreementTemplate | null>(null);
@@ -121,7 +115,6 @@ export function useAllServicePricing() {
     setError(null);
 
     try {
-      // ⚡ OPTIMIZED: Fetch both service configs and template in one API call
       const combinedData = await serviceConfigApi.getAllPricing();
 
       console.log('⚡ [USE-ALL-SERVICE-PRICING] Received combined data:', {
@@ -143,14 +136,13 @@ export function useAllServicePricing() {
     fetchAllPricing();
   }, [fetchAllPricing]);
 
-  // Helper function to get pricing config for a specific service
   const getPricingForService = useCallback((serviceId: string): ServiceConfig | null => {
     return pricingData.find(config => config.serviceId === serviceId) || null;
   }, [pricingData]);
 
   return {
     pricingData,
-    templateData, // ⚡ NEW: Also return template data
+    templateData,
     loading,
     error,
     refetch: fetchAllPricing,

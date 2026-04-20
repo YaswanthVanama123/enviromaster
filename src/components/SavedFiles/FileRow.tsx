@@ -1,5 +1,3 @@
-// src/components/SavedFiles/FileRow.tsx
-// ✅ EXTRACTED: Memoized file row component for better performance
 import { memo, useCallback, useMemo, ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -105,12 +103,12 @@ export const FileRow = memo((props: FileRowProps) => {
     onStatusChange(file, e.target.value);
   }, [file, onStatusChange]);
   const handleWatermarkToggle = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation(); // Prevent event bubbling to parent elements
-    e.nativeEvent.stopImmediatePropagation(); // Stop other listeners on the same element
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
     const newValue = e.target.checked;
     console.log(`💧 [FileRow-WATERMARK] File ${file.id}: current=${watermarkEnabled}, new=${newValue}`);
     onWatermarkToggle(file.id, newValue);
-  }, [file.id, onWatermarkToggle]); // ✅ FIXED: Don't include watermarkEnabled in deps to avoid recreating callback
+  }, [file.id, onWatermarkToggle]);
 
   const canEdit = useMemo(() =>
     file.fileType === 'main_pdf' || (file.fileType === 'version_pdf' && file.isLatestVersion === true),
@@ -137,11 +135,10 @@ export const FileRow = memo((props: FileRowProps) => {
         border: '1px solid',
         borderColor: isSelected ? '#bae6fd' : '#f0f0f0',
         borderRadius: '8px',
-        marginBottom: '8px', // ✅ RESTORED: Original spacing
+        marginBottom: '8px',
         transition: 'all 0.2s ease'
       }}
     >
-      {/* File checkbox */}
       <div className="file-row-checkbox" style={{ marginRight: '12px' }}>
         <FontAwesomeIcon
           icon={isSelected ? faCheckSquare : faSquare}
@@ -154,7 +151,6 @@ export const FileRow = memo((props: FileRowProps) => {
         />
       </div>
 
-      {/* File info */}
       <div className="file-row-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
         <div className="file-row-info-main" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <FontAwesomeIcon
@@ -237,7 +233,6 @@ export const FileRow = memo((props: FileRowProps) => {
         )}
       </div>
 
-      {/* Watermark toggle (only for version PDFs) */}
       {file.fileType === 'version_pdf' && (
         <div
           className="file-row-watermark"
@@ -252,7 +247,7 @@ export const FileRow = memo((props: FileRowProps) => {
             marginRight: '12px',
             transition: 'all 0.2s'
           }}
-          onClick={(e) => e.stopPropagation()} // Prevent parent click handlers
+          onClick={(e) => e.stopPropagation()}
         >
           <input
             type="checkbox"
@@ -287,7 +282,6 @@ export const FileRow = memo((props: FileRowProps) => {
         </div>
       )}
 
-      {/* File actions */}
       <div className="file-row-actions" style={{ display: 'flex', gap: '6px' }}>
         {!isTrashView && canEdit && (
           <button
@@ -335,7 +329,6 @@ export const FileRow = memo((props: FileRowProps) => {
           </>
         )}
 
-        {/* Status Dropdown */}
         {!isTrashView && (file.fileType === 'main_pdf' || file.fileType === 'version_pdf' || file.fileType === 'attached_pdf') && (
           <div style={{ position: 'relative', display: 'inline-block' }}>
             {canChangeStatus && !statusChangeLoading ? (
@@ -426,12 +419,11 @@ export const FileRow = memo((props: FileRowProps) => {
     </div>
   );
 }, (prevProps, nextProps) => {
-  // ✅ FIXED: Custom comparison to ensure watermark toggle triggers re-render
   return (
     prevProps.file.id === nextProps.file.id &&
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.statusChangeLoading === nextProps.statusChangeLoading &&
-    prevProps.watermarkEnabled === nextProps.watermarkEnabled && // ✅ CRITICAL: Check watermark state
+    prevProps.watermarkEnabled === nextProps.watermarkEnabled &&
     prevProps.isTrashView === nextProps.isTrashView &&
     prevProps.file.status === nextProps.file.status &&
     prevProps.file.fileName === nextProps.file.fileName

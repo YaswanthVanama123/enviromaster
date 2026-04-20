@@ -11,22 +11,18 @@ import type {
 } from '../types/pricingBackup.types';
 
 export interface UsePricingBackupsResult {
-  // Data state
   backups: PricingBackup[];
   health: BackupSystemHealth | null;
   statistics: BackupStatistics | null;
 
-  // Loading states
   loading: boolean;
   healthLoading: boolean;
   statisticsLoading: boolean;
 
-  // Error states
   error: string | null;
   healthError: string | null;
   statisticsError: string | null;
 
-  // Actions
   fetchBackups: (limit?: number) => Promise<void>;
   fetchHealth: () => Promise<void>;
   fetchStatistics: () => Promise<void>;
@@ -42,42 +38,23 @@ export interface UsePricingBackupsResult {
   enforceRetentionPolicy: () => Promise<{ success: boolean; error?: string; data?: any }>;
   getBackupSnapshot: (changeDayId: string, preview?: boolean) => Promise<{ success: boolean; error?: string; data?: any }>;
 
-  // Utility actions
   refreshAll: () => Promise<void>;
   clearErrors: () => void;
 }
 
-/**
- * Custom hook for managing pricing backups
- * Follows the same pattern as useServiceConfigs and useProductCatalog
- *
- * ✅ OPTIMIZED: Updated to support selective auto-fetch
- * - autoFetch: 'none' | 'list' | 'health' | 'statistics' | 'all'
- * - 'none': No auto-fetch (manual control)
- * - 'list': Only fetch backups list on mount
- * - 'health': Only fetch health on mount
- * - 'statistics': Only fetch statistics on mount
- * - 'all': Fetch all three APIs on mount (legacy behavior)
- */
 export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'statistics' | 'all' = 'none'): UsePricingBackupsResult {
-  // Data state
   const [backups, setBackups] = useState<PricingBackup[]>([]);
   const [health, setHealth] = useState<BackupSystemHealth | null>(null);
   const [statistics, setStatistics] = useState<BackupStatistics | null>(null);
 
-  // Loading states
   const [loading, setLoading] = useState(false);
   const [healthLoading, setHealthLoading] = useState(false);
   const [statisticsLoading, setStatisticsLoading] = useState(false);
 
-  // Error states
   const [error, setError] = useState<string | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [statisticsError, setStatisticsError] = useState<string | null>(null);
 
-  /**
-   * Fetch list of backups
-   */
   const fetchBackups = useCallback(async (limit: number = 10) => {
     setLoading(true);
     setError(null);
@@ -99,9 +76,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, []);
 
-  /**
-   * Fetch system health
-   */
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
     setHealthError(null);
@@ -123,9 +97,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, []);
 
-  /**
-   * Fetch backup statistics
-   */
   const fetchStatistics = useCallback(async () => {
     setStatisticsLoading(true);
     setStatisticsError(null);
@@ -147,9 +118,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, []);
 
-  /**
-   * Create a manual backup
-   */
   const createBackup = useCallback(async (payload: CreateBackupPayload = {}) => {
     try {
       const response = await pricingBackupApi.createBackup(payload);
@@ -157,11 +125,9 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
       if (response.error) {
         return { success: false, error: response.error };
       } else if (response.data?.success) {
-        // Refresh backups list after creation
         await fetchBackups();
         return { success: true, data: response.data.data };
       } else if (response.status === 409 && response.data?.requiresConfirmation) {
-        // Handle confirmation needed (409 status)
         return {
           success: false,
           requiresConfirmation: true,
@@ -176,9 +142,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, [fetchBackups]);
 
-  /**
-   * Restore pricing data from a backup
-   */
   const restoreBackup = useCallback(async (payload: RestoreBackupPayload) => {
     try {
       const response = await pricingBackupApi.restoreBackup(payload);
@@ -186,7 +149,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
       if (response.error) {
         return { success: false, error: response.error };
       } else if (response.data?.success) {
-        // Refresh backups list after restoration
         await fetchBackups();
         return { success: true, data: response.data.data };
       } else {
@@ -197,9 +159,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, [fetchBackups]);
 
-  /**
-   * Delete specific backups
-   */
   const deleteBackups = useCallback(async (changeDayIds: string[]) => {
     try {
       const response = await pricingBackupApi.deleteBackups(changeDayIds);
@@ -207,7 +166,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
       if (response.error) {
         return { success: false, error: response.error };
       } else if (response.data?.success) {
-        // Refresh backups list after deletion
         await fetchBackups();
         return { success: true, data: response.data.data };
       } else {
@@ -218,9 +176,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, [fetchBackups]);
 
-  /**
-   * Enforce retention policy
-   */
   const enforceRetentionPolicy = useCallback(async () => {
     try {
       const response = await pricingBackupApi.enforceRetentionPolicy();
@@ -228,7 +183,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
       if (response.error) {
         return { success: false, error: response.error };
       } else if (response.data?.success) {
-        // Refresh backups list after enforcement
         await fetchBackups();
         return { success: true, data: response.data.data };
       } else {
@@ -239,9 +193,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, [fetchBackups]);
 
-  /**
-   * Get backup snapshot
-   */
   const getBackupSnapshot = useCallback(async (changeDayId: string, preview: boolean = true) => {
     try {
       const response = await pricingBackupApi.getBackupSnapshot(changeDayId, preview);
@@ -258,9 +209,6 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     }
   }, []);
 
-  /**
-   * Refresh all data
-   */
   const refreshAll = useCallback(async () => {
     await Promise.all([
       fetchBackups(),
@@ -269,16 +217,12 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     ]);
   }, [fetchBackups, fetchHealth, fetchStatistics]);
 
-  /**
-   * Clear all error states
-   */
   const clearErrors = useCallback(() => {
     setError(null);
     setHealthError(null);
     setStatisticsError(null);
   }, []);
 
-  // ✅ OPTIMIZED: Auto-fetch based on mode
   useEffect(() => {
     const performAutoFetch = async () => {
       console.log(`🔄 [PRICING-BACKUPS] Auto-fetch mode: ${autoFetch}`);
@@ -312,25 +256,21 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     };
 
     performAutoFetch();
-  }, []); // ✅ Empty deps - only run once on mount
+  }, []);
 
   return {
-    // Data state
     backups,
     health,
     statistics,
 
-    // Loading states
     loading,
     healthLoading,
     statisticsLoading,
 
-    // Error states
     error,
     healthError,
     statisticsError,
 
-    // Actions
     fetchBackups,
     fetchHealth,
     fetchStatistics,
@@ -340,15 +280,11 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
     enforceRetentionPolicy,
     getBackupSnapshot,
 
-    // Utility actions
     refreshAll,
     clearErrors
   };
 }
 
-/**
- * Hook for managing a single backup's details
- */
 export function usePricingBackupDetails(changeDayId?: string) {
   const [backup, setBackup] = useState<PricingBackup | null>(null);
   const [snapshot, setSnapshot] = useState<BackupSnapshot | null>(null);
@@ -362,7 +298,6 @@ export function usePricingBackupDetails(changeDayId?: string) {
     setError(null);
 
     try {
-      // Fetch backup details and snapshot in parallel
       const [detailsResponse, snapshotResponse] = await Promise.all([
         pricingBackupApi.getBackupDetails(changeDayId),
         pricingBackupApi.getBackupSnapshot(changeDayId, true)

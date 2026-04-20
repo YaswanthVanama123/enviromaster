@@ -1,4 +1,4 @@
-// src/components/services/janitorial/useJanitorialCalc.ts
+
 import { useState, useEffect, useMemo, ChangeEvent, useCallback, useRef } from "react";
 import { janitorialPricingConfig as cfg } from "./janitorialConfig";
 import { serviceConfigApi } from "../../../backendservice/api";
@@ -12,7 +12,7 @@ import type {
   JanitorialPricingConfig
 } from "./janitorialTypes";
 
-// Backend interface (matches MongoDB structure)
+
 interface BackendJanitorialConfig {
   baseRates: {
     recurringService: number;
@@ -41,11 +41,11 @@ interface BackendJanitorialConfig {
   };
 }
 
-// Default form state (from config)
+
 const DEFAULT_FORM: JanitorialFormState = {
   serviceId: "janitorial",
 
-  // Business logic fields
+
   serviceType: "recurringService",
   frequency: "weekly",
   location: "insideBeltway",
@@ -56,51 +56,51 @@ const DEFAULT_FORM: JanitorialFormState = {
   needsParking: false,
   parkingCost: 0,
 
-  // Editable pricing rates (initialized from config)
+
   recurringServiceRate: cfg.baseRates.recurringService,
   oneTimeServiceRate: cfg.baseRates.oneTimeService,
   vacuumingRatePerHour: cfg.additionalServices.vacuuming.ratePerHour,
   dustingRatePerHour: cfg.additionalServices.dusting.ratePerHour,
 
-  // Frequency multipliers
+
   dailyMultiplier: cfg.frequencyMultipliers.daily,
   weeklyMultiplier: cfg.frequencyMultipliers.weekly,
   biweeklyMultiplier: cfg.frequencyMultipliers.biweekly,
   monthlyMultiplier: cfg.frequencyMultipliers.monthly,
   oneTimeMultiplier: cfg.frequencyMultipliers.oneTime,
 
-  // Minimums
+
   perVisitMinimum: cfg.minimums.perVisit,
   recurringContractMinimum: cfg.minimums.recurringContract,
 
-  // Trip charges
+
   standardTripCharge: cfg.tripCharges.standard,
   beltwayTripCharge: cfg.tripCharges.insideBeltway,
   paidParkingTripCharge: cfg.tripCharges.paidParking,
 };
 
-// Main hook
+
 export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
-  // ✅ Add refs for tracking override and active state
+
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
 
-  // ✅ Add refs for tracking baseline values and edit mode
+
   const isEditMode = useRef(!!initial);
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-  // Get services context for fallback pricing data
+
   const servicesContext = useServicesContextOptional();
 
-  // State
+
   const [form, setForm] = useState<JanitorialFormState>(() => {
     const baseForm = {
       ...DEFAULT_FORM,
       ...initial
     };
 
-    // ✅ Initialize with global months ONLY if service starts with inputs
+
     const isInitiallyActive = (initial?.baseHours || 0) > 0;
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
@@ -114,11 +114,11 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     };
   });
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendJanitorialConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -144,19 +144,19 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     });
   }, [form.baseHours, form.frequency]);
 
-  // Helper function to update form with config data
+
   const updateFormWithConfig = (config: BackendJanitorialConfig, forceUpdate: boolean = false) => {
-    // ✅ FIXED: In edit mode, NEVER overwrite user's loaded values (unless force refresh)
-    // Only update on manual refresh (when user explicitly clicks refresh button)
+
+
     if (initial && !forceUpdate) {
       console.log('📋 [JANITORIAL] Edit mode: Skipping form update to preserve loaded values');
-      return; // Don't overwrite loaded values in edit mode
+      return; 
     }
 
     console.log('📋 [JANITORIAL] Updating form with backend config', forceUpdate ? '(FORCED by refresh button)' : '');
     setForm((prev) => ({
       ...prev,
-      // Update all rate fields from backend if available
+
       recurringServiceRate: config.baseRates?.recurringService ?? prev.recurringServiceRate,
       oneTimeServiceRate: config.baseRates?.oneTimeService ?? prev.oneTimeServiceRate,
       vacuumingRatePerHour: config.additionalServices?.vacuuming?.ratePerHour ?? prev.vacuumingRatePerHour,
@@ -174,27 +174,27 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     }));
   };
 
-  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("janitorial");
         if (backendData?.config) {
           console.log('✅ [Janitorial] Using cached pricing data from context');
           const config = backendData.config as BackendJanitorialConfig;
 
-          // ✅ Store the ENTIRE backend config for use in calculations
+
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [JANITORIAL] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
               ...prev,
-              // Clear custom RATE overrides
+
               customRecurringServiceRate: undefined,
               customOneTimeServiceRate: undefined,
               customVacuumingRatePerHour: undefined,
@@ -209,7 +209,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
               customStandardTripCharge: undefined,
               customBeltwayTripCharge: undefined,
               customPaidParkingTripCharge: undefined,
-              // Clear custom TOTAL overrides
+
               customPerVisitTotal: undefined,
               customMonthlyTotal: undefined,
               customAnnualTotal: undefined,
@@ -232,23 +232,23 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     } catch (error) {
       console.error('❌ Failed to fetch Janitorial config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("janitorial");
         if (fallbackConfig?.config) {
           console.log('✅ [Janitorial] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendJanitorialConfig;
 
-          // ✅ Store the ENTIRE backend config for use in calculations
+
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
 
-          // ✅ FIXED: Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [JANITORIAL] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
               ...prev,
-              // Clear custom RATE overrides
+
               customRecurringServiceRate: undefined,
               customOneTimeServiceRate: undefined,
               customVacuumingRatePerHour: undefined,
@@ -263,7 +263,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
               customStandardTripCharge: undefined,
               customBeltwayTripCharge: undefined,
               customPaidParkingTripCharge: undefined,
-              // Clear custom TOTAL overrides
+
               customPerVisitTotal: undefined,
               customMonthlyTotal: undefined,
               customAnnualTotal: undefined,
@@ -281,23 +281,23 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     }
   };
 
-  // ✅ FIXED: Always fetch backend config on mount (but do not overwrite in edit mode)
+
   useEffect(() => {
-    // Always fetch backend config to enable override detection in edit mode
+
     console.log('📋 [JANITORIAL-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
-    fetchPricing(false); // false = don't force update in edit mode
+    fetchPricing(false); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ NEW: Detect overrides after backend config loads (for yellow highlighting in edit mode)
+
   useEffect(() => {
     if (!backendConfig) return;
 
-    // ✅ STEP 1: Initialize baseline values ONCE (for logging)
+
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
 
-      // Baseline = loaded/saved value (edit mode) OR backend default (new document) OR current state (fallback)
+
       baselineValues.current = {
         recurringServiceRate: initial?.recurringServiceRate ?? backendConfig.baseRates?.recurringService ?? form.recurringServiceRate,
         oneTimeServiceRate: initial?.oneTimeServiceRate ?? backendConfig.baseRates?.oneTimeService ?? form.oneTimeServiceRate,
@@ -320,11 +320,11 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
         note: initial ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-      // ✅ STEP 2: Detect overrides for yellow highlighting (edit mode only) - ONLY ONCE!
+
       if (initial) {
         console.log('🔍 [JANITORIAL-PRICING] Detecting price overrides for yellow highlighting...');
 
-        // ✅ FIXED: Compare ALL rate fields against backend defaults
+
         const overrides = {
           customRecurringServiceRate: (initial.recurringServiceRate !== undefined &&
                                        initial.recurringServiceRate !== backendConfig.baseRates?.recurringService)
@@ -383,13 +383,13 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
                                    ? initial.oneTimeMultiplier : undefined,
         };
 
-        // Only set overrides that are actually different
+
         const hasAnyOverrides = Object.values(overrides).some(v => v !== undefined);
 
         if (hasAnyOverrides) {
           setForm(prev => ({
             ...prev,
-            ...overrides, // Spread all override fields
+            ...overrides, 
           }));
 
           console.log('✅ [JANITORIAL-PRICING] Set custom override fields for yellow highlighting:',
@@ -404,15 +404,15 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     }
   }, [backendConfig, initial]);
 
-  // Also fetch when services context becomes available (for fallback pricing)
+
   useEffect(() => {
-    // Fetch from context if backend config not loaded yet (even in edit mode, for override detection)
+
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
 
-  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+
   useEffect(() => {
     const isServiceActive = (form.baseHours || 0) > 0;
     const wasActive = wasActiveRef.current;
@@ -437,7 +437,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.baseHours, servicesContext]);
 
-  // ✅ Add setContractMonths function
+
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({
@@ -446,12 +446,12 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     }));
   }, []);
 
-  // Form handlers
+
   const updateField = <K extends keyof JanitorialFormState>(
     field: K,
     value: JanitorialFormState[K]
   ) => {
-    // ✅ Capture original value before update
+
     const originalValue = form[field];
 
     setForm(prev => ({
@@ -459,7 +459,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       [field]: value
     }));
 
-    // ✅ EXPLICIT: Map custom field names to base field names for baseline lookup
+
     const customToBaseFieldMap: Record<string, string> = {
       'customRecurringServiceRate': 'recurringServiceRate',
       'customOneTimeServiceRate': 'oneTimeServiceRate',
@@ -481,7 +481,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       'customContractTotal': 'recurringServiceRate',
     };
 
-    // ✅ Log price override for numeric pricing fields (BASE fields and CUSTOM override fields)
+
     const baseEditableFields = [
       'recurringServiceRate', 'oneTimeServiceRate', 'vacuumingRatePerHour', 'dustingRatePerHour',
       'perVisitMinimum', 'recurringContractMinimum', 'standardTripCharge', 'beltwayTripCharge',
@@ -489,7 +489,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       'dailyMultiplier', 'weeklyMultiplier', 'biweeklyMultiplier', 'monthlyMultiplier', 'oneTimeMultiplier'
     ];
 
-    // ✅ CRITICAL: Custom RATE override fields (set by user editing in UI)
+
     const customRateOverrideFields = [
       'customRecurringServiceRate', 'customOneTimeServiceRate', 'customVacuumingRatePerHour',
       'customDustingRatePerHour', 'customDailyMultiplier', 'customWeeklyMultiplier',
@@ -498,7 +498,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       'customBeltwayTripCharge', 'customPaidParkingTripCharge'
     ];
 
-    // Custom TOTAL override fields
+
     const customTotalOverrideFields = [
       'customPerVisitTotal', 'customMonthlyTotal', 'customAnnualTotal', 'customContractTotal'
     ];
@@ -509,7 +509,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       const newValue = value as number | undefined;
       const keyStr = field as string;
 
-      // ✅ FIXED: Always use base field name for baseline lookup
+
       const baseFieldForLookup = customToBaseFieldMap[keyStr] || keyStr;
       const baselineValue = baselineValues.current[baseFieldForLookup];
 
@@ -520,9 +520,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
         isCustomField: keyStr.startsWith('custom'),
       });
 
-      // ✅ CRITICAL: Always compare newValue with BASELINE (not with previous value)
-      // This ensures Map replaces previous entry with updated value still comparing to baseline
-      // Example: First change 10→15 logs "10→15", second change 15→20 REPLACES with "10→20"
+
       if (newValue !== undefined && baselineValue !== undefined &&
           typeof newValue === 'number' && typeof baselineValue === 'number' &&
           newValue !== baselineValue) {
@@ -546,18 +544,18 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       }
     }
 
-    // ✅ NEW: Log form field changes using universal logger
+
     const allFormFields = [
-      // Quantity fields
+
       'hoursPerWeek', 'weeksPerMonth', 'contractMonths', 'squareFootage',
-      // Selection fields
+
       'frequency', 'serviceType', 'rateTier',
-      // Boolean fields
+
       'includesVacuuming', 'includesDusting', 'includesRestroom', 'includesKitchen',
       'includesTrash', 'includesWindows'
     ];
 
-    // Log non-pricing field changes
+
     if (allFormFields.includes(field as string)) {
       logServiceFieldChanges(
         'janitorial',
@@ -584,14 +582,14 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     updateField(name as keyof JanitorialFormState, value);
   };
 
-  // Fetch on mount
+
   useEffect(() => {
     fetchPricing();
   }, []);
 
-  // Core calculation logic
+
   const calc = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+
     const activeConfig = backendConfig || {
       baseRates: cfg.baseRates,
       additionalServices: cfg.additionalServices,
@@ -601,7 +599,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       tripCharges: cfg.tripCharges,
     };
 
-    // ========== EFFECTIVE VALUES (use custom overrides if set, otherwise base values) ==========
+
     const effectiveRecurringServiceRate = form.customRecurringServiceRate ?? form.recurringServiceRate;
     const effectiveOneTimeServiceRate = form.customOneTimeServiceRate ?? form.oneTimeServiceRate;
     const effectiveVacuumingRatePerHour = form.customVacuumingRatePerHour ?? form.vacuumingRatePerHour;
@@ -629,17 +627,17 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       effectivePaidParkingTripCharge,
     });
 
-    // Base service cost calculation (use effective rates)
+
     const baseServiceRate = form.serviceType === "recurringService"
       ? effectiveRecurringServiceRate
       : effectiveOneTimeServiceRate;
     const baseServiceCost = form.baseHours * baseServiceRate;
 
-    // Additional services (use effective rates)
+
     const vacuumingCost = form.vacuumingHours * effectiveVacuumingRatePerHour;
     const dustingCost = form.dustingHours * effectiveDustingRatePerHour;
 
-    // Trip charge based on location (use effective rates)
+
     let tripCharge = 0;
     if (form.location === "insideBeltway") {
       tripCharge = effectiveBeltwayTripCharge;
@@ -647,23 +645,23 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       tripCharge = effectiveStandardTripCharge;
     }
 
-    // Add parking cost if needed (use effective rate)
+
     if (form.needsParking) {
       tripCharge += form.parkingCost || effectivePaidParkingTripCharge;
     }
 
-    // Per visit total (use effective minimum)
+
     const perVisit = Math.max(
       baseServiceCost + vacuumingCost + dustingCost + tripCharge,
       effectivePerVisitMinimum
     );
 
-    // Frequency multiplier from backend config or form (use effective multipliers)
+
     let frequencyMultiplier = 1;
     if (activeConfig.frequencyMultipliers && form.frequency in activeConfig.frequencyMultipliers) {
       frequencyMultiplier = activeConfig.frequencyMultipliers[form.frequency];
     } else {
-      // Fallback to form values (use effective multipliers)
+
       switch (form.frequency) {
         case "daily": frequencyMultiplier = effectiveDailyMultiplier; break;
         case "weekly": frequencyMultiplier = effectiveWeeklyMultiplier; break;
@@ -674,14 +672,14 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       }
     }
 
-    // Monthly and contract calculations (use effective minimum)
+
     const monthlyTotal = perVisit * frequencyMultiplier;
     const contractTotal = Math.max(
       monthlyTotal * form.contractMonths,
       effectiveRecurringContractMinimum
     );
 
-    // Applied rules tracking
+
     const appliedRules: string[] = [];
     if (baseServiceCost + vacuumingCost + dustingCost + tripCharge < effectivePerVisitMinimum) {
       appliedRules.push(`Per visit minimum applied: $${effectivePerVisitMinimum.toFixed(2)}`);
@@ -701,9 +699,9 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
       frequencyMultiplier,
       appliedRules,
     };
-  }, [backendConfig, form]); // ✅ CRITICAL: Re-calculate when backend config loads OR form changes!
+  }, [backendConfig, form]); 
 
-  // Create quote result
+
   const quote: JanitorialQuoteResult = {
     serviceId: "janitorial",
     displayName: "Janitorial Services",
@@ -727,7 +725,7 @@ export function useJanitorialCalc(initial?: Partial<JanitorialFormState>) {
     quote,
     backendConfig,
     isLoadingConfig,
-    refreshConfig: () => fetchPricing(true), // ✅ FIXED: Force refresh when button clicked
+    refreshConfig: () => fetchPricing(true), 
     setContractMonths,
   };
 }

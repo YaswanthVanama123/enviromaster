@@ -2,9 +2,9 @@ export const RW_DEFAULTS = {
   rateSmall: 1.5,
   rateMedium: 3.0,
   rateLarge: 7.0,
-  multInstall: 3.0,      // 300% first time
-  mult125: 1.25,         // biweekly/monthly
-  multQuarterly: 2.0,    // after first time
+  multInstall: 3.0,      
+  mult125: 1.25,         
+  multQuarterly: 2.0,    
   tripBeltway: 8.0,
   tripStandard: 6.0,
   tripPaidBase: 7.0,

@@ -1,4 +1,4 @@
-// CustomFieldManager.tsx - Manages custom fields for services
+
 import React, { useState } from "react";
 import "./CustomFieldManager.css";
 
@@ -57,10 +57,10 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
 
   return (
     <div className="custom-field-manager">
-      {/* Render existing fields - each as a single row like service fields */}
+      {}
       {fields.filter((field) => !field.isInternal).map((field) => (
         <div key={field.id} className="svc-row">
-          {/* Editable label on the left */}
+          {}
           <label>
             <input
               type="text"
@@ -71,9 +71,9 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
             />
           </label>
 
-          {/* Input on the right */}
+          {}
           <div className="svc-row-right">
-            {/* Text field */}
+            {}
             {field.type === "text" && (
               <input
                 type="text"
@@ -84,7 +84,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
               />
             )}
 
-            {/* Dollar field */}
+            {}
             {field.type === "dollar" && (
               <div className="svc-dollar">
                 <span>$</span>
@@ -98,10 +98,10 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
               </div>
             )}
 
-            {/* Calc field */}
+            {}
             {field.type === "calc" && (
               <div className="svc-inline--tight">
-                {/* ✅ Quantity input */}
+                {}
                 <input
                   type="text"
                   className="svc-in sm"
@@ -110,7 +110,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                     const left = e.target.value;
                     const middle = field.calcValues?.middle || "";
 
-                    // ✅ AUTO-CALCULATE: Total = Quantity × Rate
+
                     const qty = parseFloat(left) || 0;
                     const rate = parseFloat(middle) || 0;
                     const calculatedTotal = qty * rate;
@@ -123,7 +123,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                   placeholder="Qty"
                 />
                 <span>@</span>
-                {/* ✅ Rate input */}
+                {}
                 <input
                   type="text"
                   className="svc-in sm"
@@ -132,7 +132,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                     const middle = e.target.value;
                     const left = field.calcValues?.left || "";
 
-                    // ✅ AUTO-CALCULATE: Total = Quantity × Rate
+
                     const qty = parseFloat(left) || 0;
                     const rate = parseFloat(middle) || 0;
                     const calculatedTotal = qty * rate;
@@ -145,7 +145,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                   placeholder="Rate"
                 />
                 <span>=</span>
-                {/* ✅ Total input - READ ONLY, auto-calculated */}
+                {}
                 <input
                   type="text"
                   className="svc-in sm"
@@ -162,7 +162,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
               </div>
             )}
 
-            {/* Remove button */}
+            {}
             <button
               type="button"
               className="svc-mini svc-mini--neg"
@@ -175,7 +175,7 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
         </div>
       ))}
 
-      {/* Add new field dropdown at bottom */}
+      {}
       {showAddDropdown && (
         <div className="custom-field__add-dropdown">
           <span className="custom-field__add-label">Add</span>

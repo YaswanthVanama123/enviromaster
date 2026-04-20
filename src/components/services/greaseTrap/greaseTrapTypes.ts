@@ -1,4 +1,4 @@
-// src/features/services/greaseTrap/greaseTrapTypes.ts
+
 
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
@@ -8,7 +8,7 @@ export interface GreaseTrapFormState extends BaseServiceFormState {
   pricePerTrap?: number;
   contractMonths?: number;
 
-  // Editable pricing rates
-  perTrapRate: number;      // Rate per trap
-  perGallonRate: number;    // Rate per gallon
+
+  perTrapRate: number;      
+  perGallonRate: number;    
 }

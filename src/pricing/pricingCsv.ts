@@ -1,4 +1,3 @@
-// src/pricing/pricingCsv.ts
 import type { PriceRow } from "./pricingTypes";
 
 const HEADER = [
@@ -32,28 +31,23 @@ const FREQ_KEYS = [
 type HeaderKey = (typeof HEADER)[number];
 type FreqKey = (typeof FREQ_KEYS)[number];
 
-// ---------- CSV helpers (RFC4180-ish) ----------
 function csvEscape(v: unknown): string {
   const s = v == null ? "" : String(v);
-  // quote if contains comma, quote, newline, or leading/trailing spaces
   const needsQuote = /[",\n\r]/.test(s) || /^\s|\s$/.test(s);
   if (!needsQuote) return s;
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-// Accept readonly arrays too (fixes readonly tuple error)
 function csvJoinRow(cols: ReadonlyArray<unknown>): string {
   return cols.map(csvEscape).join(",");
 }
 
-// Split a CSV line into columns, honoring quotes and escaped quotes
 function csvSplitLine(line: string): string[] {
   const out: string[] = [];
   let i = 0;
   const n = line.length;
 
   while (i < n) {
-    // handle empty field between commas
     if (line[i] === ",") {
       out.push("");
       i++;
@@ -62,17 +56,15 @@ function csvSplitLine(line: string): string[] {
 
     let cell = "";
     if (line[i] === '"') {
-      // quoted field
-      i++; // skip opening "
+      i++;
       while (i < n) {
         const ch = line[i];
         if (ch === '"') {
-          // escaped quote?
           if (i + 1 < n && line[i + 1] === '"') {
             cell += '"';
             i += 2;
           } else {
-            i++; // closing quote
+            i++;
             break;
           }
         } else {
@@ -80,27 +72,23 @@ function csvSplitLine(line: string): string[] {
           i++;
         }
       }
-      // move to comma or end
       while (i < n && line[i] !== ",") i++;
-      if (i < n && line[i] === ",") i++; // consume comma
+      if (i < n && line[i] === ",") i++;
     } else {
-      // unquoted field
       const start = i;
       while (i < n && line[i] !== ",") i++;
       cell = line.slice(start, i);
-      if (i < n && line[i] === ",") i++; // consume comma
+      if (i < n && line[i] === ",") i++;
       cell = cell.trim();
     }
     out.push(cell);
   }
 
-  // If line ends with a comma, add trailing empty column
   if (line.endsWith(",")) out.push("");
 
   return out;
 }
 
-// ---------- Public API ----------
 export function toCsv(rows: PriceRow[]): string {
   const head = csvJoinRow(HEADER);
   const data = rows.map((r) =>
@@ -132,7 +120,6 @@ export function fromCsv(csv: string): PriceRow[] {
   const headerLine = lines[0];
   const headerCols = csvSplitLine(headerLine);
 
-  // Map header name -> index
   const idx: Record<string, number> = {};
   headerCols.forEach((h, i) => (idx[h] = i));
 
@@ -145,9 +132,8 @@ export function fromCsv(csv: string): PriceRow[] {
 
   for (let li = 1; li < lines.length; li++) {
     const cols = csvSplitLine(lines[li]);
-    if (cols.every((c) => c.trim() === "")) continue; // skip blank lines
+    if (cols.every((c) => c.trim() === "")) continue;
 
-    // Parse base frequencies
     const base: Partial<Record<FreqKey, number>> = {};
     for (const f of FREQ_KEYS) {
       const raw = get(cols, `base.${f}` as HeaderKey).trim();
@@ -168,7 +154,7 @@ export function fromCsv(csv: string): PriceRow[] {
       unitType: get(cols, "unitType").trim() as PriceRow["unitType"],
       minimum: minimumRaw === "" ? undefined : Number(minimumRaw),
       installMultiplier: installRaw === "" ? undefined : Number(installRaw),
-      base: base as any, // satisfies Partial<Record<Frequency, number>>
+      base: base as any,
       notes: (() => {
         const n = get(cols, "notes");
         return n === "" ? undefined : n;

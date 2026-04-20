@@ -1,5 +1,4 @@
-// src/utils/fileLogger.ts
-// Simple global logging system for version changes
+
 
 import { pdfApi } from "../backendservice/api/pdfApi";
 
@@ -9,13 +8,13 @@ interface FieldChange {
   productType: 'product' | 'dispenser' | 'service' | 'agreement_text';
   fieldType: string;
   fieldDisplayName: string;
-  changeType?: 'numeric' | 'text'; // ✅ NEW: Distinguish change types
-  // Numeric changes
+  changeType?: 'numeric' | 'text'; 
+
   originalValue?: number;
   newValue?: number;
   changeAmount?: number;
   changePercentage?: number;
-  // ✅ NEW: Text changes
+
   originalText?: string;
   newText?: string;
   quantity?: number;
@@ -34,23 +33,23 @@ interface LogData {
   changes: FieldChange[];
 }
 
-// Global logging state
+
 class FileLogger {
-  private changes: Map<string, FieldChange> = new Map(); // ✅ Use Map to keep only ONE change per field
+  private changes: Map<string, FieldChange> = new Map(); 
   private sessionId: string;
     constructor() {
     this.sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     console.log('📝 [FILE-LOGGER] Initialized with session:', this.sessionId);
   }
 
-  // Add or update a change (replaces previous change for same field)
+
   addChange(change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>): void {
     const key = `${change.productKey}_${change.fieldType}`;
     const existingEntry = this.changes.get(key);
 
-    // ✅ NEW: Handle text changes differently from numeric changes
+
     if (change.changeType === 'text') {
-      // For text changes, preserve original text from first change
+
       const resolvedOriginalText = existingEntry && existingEntry.originalText
         ? existingEntry.originalText
         : change.originalText || '';
@@ -78,7 +77,7 @@ class FileLogger {
         to: `"${change.newText}"`
       });
     } else {
-      // Handle numeric changes (existing logic)
+
       const resolvedOriginalValue = existingEntry && existingEntry.originalValue !== undefined
         ? existingEntry.originalValue
         : change.originalValue || 0;
@@ -120,7 +119,7 @@ class FileLogger {
     console.log(`📝 [FILE-LOGGER] Total unique fields changed: ${this.changes.size}`);
   }
 
-  // Remove a specific change
+
   removeChange(productKey: string, fieldType: string): void {
     const key = `${productKey}_${fieldType}`;
     const removed = this.changes.delete(key);
@@ -132,28 +131,28 @@ class FileLogger {
     }
   }
 
-  // Get all changes as array
+
   getChanges(): FieldChange[] {
-    return Array.from(this.changes.values()); // Convert Map to Array
+    return Array.from(this.changes.values()); 
   }
 
-  // Check if there are changes
+
   hasChanges(): boolean {
     return this.changes.size > 0;
   }
 
-  // Clear all changes
+
   clearChanges(): void {
     console.log(`🧹 [FILE-LOGGER] Clearing ${this.changes.size} changes`);
     this.changes = new Map();
   }
 
-  // Get changes count
+
   getChangeCount(): number {
     return this.changes.size;
   }
 
-  // ✅ NEW: Create or overwrite log via API with cumulative change history
+
   async createLogFile(logData: Omit<LogData, 'changes'>, options: {
     overwriteExisting?: boolean;
     overwriteReason?: 'draft_update' | 'version_update' | 'replace_version';
@@ -176,7 +175,7 @@ class FileLogger {
     }
 
     try {
-      // ✅ STEP 1: Fetch ALL logs for this agreement (including same version)
+
       let previousChanges: FieldChange[] = [];
 
       console.log(`🔍 [FILE-LOGGER] Fetching previous logs for agreement: ${logData.agreementId}`);
@@ -187,15 +186,13 @@ class FileLogger {
         if (previousLogs.success && previousLogs.logs.length > 0) {
           console.log(`📚 [FILE-LOGGER] Found ${previousLogs.logs.length} total log(s) for this agreement`);
 
-          // ✅ STEP 2: Include changes from:
-          // 1. All logs from previous versions (versionNumber < current)
-          // 2. All logs from SAME version that were created before now (for multiple edits of same version)
+
           previousLogs.logs.forEach(log => {
             const isFromPreviousVersion = log.versionNumber < logData.versionNumber;
             const isFromSameVersionButEarlier = log.versionNumber === logData.versionNumber;
 
             if (isFromPreviousVersion || isFromSameVersionButEarlier) {
-              // Prefer currentChanges, fallback to changes for backward compatibility
+
               const logChanges = log.currentChanges && log.currentChanges.length > 0
                 ? log.currentChanges
                 : log.changes || [];
@@ -213,16 +210,16 @@ class FileLogger {
         }
       } catch (error) {
         console.warn(`⚠️ [FILE-LOGGER] Failed to fetch previous logs, continuing without history:`, error);
-        // Continue without previous changes rather than failing
+
       }
 
-      // ✅ STEP 3: Structure the log data with TWO sections
+
       const structuredLogData = {
         ...logData,
-        currentChanges, // ✅ NEW: Current save changes only
-        allPreviousChanges: previousChanges, // ✅ NEW: All changes from previous logs (including earlier saves of same version)
-        changes: currentChanges, // Keep for backward compatibility
-        // ✅ NEW: Pass overwriting options to backend
+        currentChanges, 
+        allPreviousChanges: previousChanges, 
+        changes: currentChanges, 
+
         overwriteExisting: options.overwriteExisting || false,
         overwriteReason: options.overwriteReason,
       };
@@ -234,7 +231,7 @@ class FileLogger {
         totalChangesInHistory: currentChanges.length + previousChanges.length
       });
 
-      // ✅ STEP 4: Create the log via API
+
       const result = await pdfApi.createVersionLog(structuredLogData);
 
       console.log(`✅ [FILE-LOGGER] Log created successfully:`, {
@@ -246,7 +243,7 @@ class FileLogger {
         hasSignificantChanges: result.log?.hasSignificantChanges
       });
 
-      // Clear changes after successful logging
+
       this.clearChanges();
 
       return result;
@@ -257,7 +254,7 @@ class FileLogger {
     }
   }
 
-  // Debug method to inspect current state
+
   debug(): void {
     console.log('🔍 [FILE-LOGGER] Debug Info:', {
       sessionId: this.sessionId,
@@ -271,7 +268,7 @@ class FileLogger {
     });
   }
 
-  // Update frequency label for pending service changes
+
   updateServiceChangeFrequency(
     areaName: string,
     frequency: string
@@ -290,18 +287,18 @@ class FileLogger {
   }
 }
 
-// Global singleton instance
+
 const fileLogger = new FileLogger();
 
-// Export the singleton and helper functions
+
 export { fileLogger };
 
-// Helper functions for easier access
+
 export const addPriceChange = (change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>) => {
   fileLogger.addChange(change);
 };
 
-// ✅ NEW: Helper function for adding text changes (agreement text, descriptions, etc.)
+
 export const addTextChange = (change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>) => {
   fileLogger.addChange({
     ...change,
@@ -339,7 +336,7 @@ export const updateRefreshPowerScrubFrequency = (areaName: string, frequency: st
   fileLogger.updateServiceChangeFrequency(areaName, frequency);
 };
 
-// ✅ SIMPLIFIED: Helper function to get all version logs for testing (uses Logs collection)
+
 export const getAllVersionLogsForTesting = async (params?: {
   page?: number;
   limit?: number;
@@ -375,7 +372,7 @@ export const getAllVersionLogsForTesting = async (params?: {
   }
 };
 
-// Utility function to get product type from family key
+
 export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispenser' | 'service' | 'agreement_text' => {
   if (familyKey === 'dispensers') return 'dispenser';
   if (familyKey.includes('service') || familyKey.includes('Service')) return 'service';
@@ -383,7 +380,7 @@ export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispen
   return 'product';
 };
 
-// Utility function to determine field type from the field being overridden
+
 export const getFieldType = (fieldName: string): string => {
   switch (fieldName) {
     case 'unitPriceOverride':
@@ -396,7 +393,7 @@ export const getFieldType = (fieldName: string): string => {
       return 'replacementPrice';
     case 'totalOverride':
       return 'total';
-    // Service-specific field types
+
     case 'hourlyRate':
       return 'hourlyRate';
     case 'minimumVisit':
@@ -420,21 +417,21 @@ export const getFieldType = (fieldName: string): string => {
     case 'sqFtFixedFee':
       return 'sqFtFixedFee';
     default:
-      return fieldName; // Return the field name as-is if not recognized
+      return fieldName; 
   }
 };
 
-// Utility function to get field display name from field type
+
 export const getFieldDisplayName = (fieldType: string): string => {
   const displayNames: Record<string, string> = {
-    // Product/Dispenser fields
+
     'unitPrice': 'Unit Price',
     'amount': 'Amount',
     'warrantyPrice': 'Warranty Price',
     'replacementPrice': 'Replacement Price',
     'total': 'Total',
 
-    // Service fields - SaniClean
+
     'customBaseService': 'Base Service Cost',
     'customTripCharge': 'Trip Charge',
     'customFacilityComponents': 'Facility Components',
@@ -447,7 +444,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customMonthlyTotal': 'Monthly Total',
     'customContractTotal': 'Contract Total',
 
-    // Service fields - Microfiber Mopping
+
     'includedBathroomRate': 'Included Bathroom Rate',
     'hugeBathroomRatePerSqFt': 'Huge Bathroom Rate per Sq Ft',
     'extraAreaRatePerUnit': 'Extra Area Rate per Unit',
@@ -466,7 +463,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'smallMediumRate': 'Small/Medium Rate',
     'largeRate': 'Large Rate',
 
-    // Service fields - SaniScrub
+
     'customBathroomTotal': 'Bathroom Total',
     'customNonBathroomTotal': 'Non-Bathroom Total',
     'customInstallationTotal': 'Installation Total',
@@ -478,7 +475,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'nonBathroomFirstUnitRate': 'Non-Bathroom First Unit Rate',
     'nonBathroomAdditionalRate': 'Non-Bathroom Additional Rate',
 
-    // Service fields - Foaming Drain
+
     'standardDrainRate': 'Standard Drain Rate',
     'altBaseCharge': 'Alt Base Charge',
     'altExtraPerDrain': 'Alt Extra Per Drain',
@@ -492,7 +489,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'filthyMultiplier': 'Filthy Multiplier',
     'customWeeklyService': 'Weekly Service',
 
-    // Service fields - Refresh Power Scrub
+
     'global_hourlyRate': 'Global Hourly Rate',
     'global_minimumVisit': 'Global Minimum Visit',
     'global_customPerVisitTotal': 'Custom Per Visit Total',
@@ -522,7 +519,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'Other_hours': 'Other Hours',
     'Other_customAmount': 'Other Custom Amount',
 
-    // Service fields - Strip Wax
+
     'floorAreaSqFt': 'Floor Area Sq Ft',
     'ratePerSqFt': 'Rate Per Sq Ft',
     'minCharge': 'Minimum Charge',
@@ -540,7 +537,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customOngoingMonthly': 'Custom Ongoing Monthly',
     'customContractTotal': 'Custom Contract Total',
 
-    // Service fields - Electrostatic Spray
+
     'ratePerRoom': 'Rate Per Room',
     'ratePerThousandSqFt': 'Rate Per Thousand Sq Ft',
     'tripChargePerVisit': 'Trip Charge Per Visit',
@@ -549,7 +546,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customMonthlyRecurring': 'Custom Monthly Recurring',
     'customFirstMonthTotal': 'Custom First Month Total',
 
-    // Service fields - Carpet Cleaning
+
     'firstUnitRate': 'First 500 sq ft Rate',
     'additionalUnitRate': 'Additional 500 sq ft Rate',
     'perVisitMinimum': 'Per Visit Minimum',
@@ -558,7 +555,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customPerVisitMinimum': 'Custom Per Visit Minimum',
     'customInstallationFee': 'Custom Installation Fee',
 
-    // Service fields - Janitorial
+
     'recurringServiceRate': 'Recurring Service Rate',
     'oneTimeServiceRate': 'One Time Service Rate',
     'vacuumingRatePerHour': 'Vacuuming Rate Per Hour',
@@ -573,7 +570,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'vacuumingHours': 'Vacuuming Hours',
     'dustingHours': 'Dusting Hours',
 
-    // Service fields - Pure Janitorial
+
     'baseHourlyRate': 'Base Hourly Rate',
     'shortJobHourlyRate': 'Short Job Hourly Rate',
     'minHoursPerVisit': 'Minimum Hours Per Visit',
@@ -591,11 +588,11 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customOngoingMonthly': 'Custom Ongoing Monthly',
     'customContractTotal': 'Custom Contract Total',
 
-    // Service fields - Grease Trap
+
     'perTrapRate': 'Per Trap Rate',
     'perGallonRate': 'Per Gallon Rate',
 
-    // Service fields - RPM Windows
+
     'smallWindowRate': 'Small Window Rate',
     'mediumWindowRate': 'Medium Window Rate',
     'largeWindowRate': 'Large Window Rate',
@@ -608,7 +605,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customAnnualPrice': 'Custom Annual Price',
     'customInstallationFee': 'Custom Installation Fee',
 
-    // ✅ NEW: Agreement text fields
+
     'agreementTerms': 'Agreement Terms',
     'serviceDescription': 'Service Description',
     'specialConditions': 'Special Conditions',
@@ -620,7 +617,7 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'contractClause': 'Contract Clause',
     'serviceScope': 'Service Scope',
 
-    // Add more service fields as needed...
+
   };
 
   if (displayNames[fieldType]) {

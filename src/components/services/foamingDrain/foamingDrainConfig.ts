@@ -1,17 +1,13 @@
-// src/features/services/foamingDrain/foamingDrainConfig.ts
+
 
 export const FOAMING_DRAIN_CONFIG = {
-  // 1. Standard drain pricing
-  //    Option A: $10 / drain
-  //    Option B: $20 + $4 / drain
-  standardDrainRate: 10, // $10 / drain
-  altBaseCharge: 20, // $20 base
-  altExtraPerDrain: 4, // +$4 per drain
 
-  // 2. Volume / install-level pricing (10+ drains)
-  //    If they want install-level service (10+ drains):
-  //      • Weekly      → $20 / drain per visit
-  //      • Every 2 mo  → $10 / drain per visit
+
+  standardDrainRate: 10, 
+  altBaseCharge: 20, 
+  altExtraPerDrain: 4, 
+
+
   volumePricing: {
     minimumDrains: 10,
     weekly: {
@@ -22,75 +18,70 @@ export const FOAMING_DRAIN_CONFIG = {
     },
   },
 
-  // 3. Grease traps (NOT standard drains)
-  //    • Weekly:  $125 / trap
-  //    • Install: $300 PER TRAP (one-time)
+
   grease: {
     weeklyRatePerTrap: 125,
     installPerTrap: 300,
   },
 
-  // 4. Green drains
-  //    • Weekly:  $5 / drain
-  //    • Install: $100 PER DRAIN (one-time)
+
   green: {
     weeklyRatePerDrain: 5,
     installPerDrain: 100,
   },
 
-  // 5. Plumbing add-on
+
   plumbing: {
-    weeklyAddonPerDrain: 10, // +$10 / drain per visit
+    weeklyAddonPerDrain: 10, 
   },
 
-  // 6. Installation rules for filthy standard drains
+
   installationRules: {
-    filthyMultiplier: 3, // filthy = 3× install
+    filthyMultiplier: 3, 
   },
 
-  // 7. Trip charges – kept only for display; NOT in math
+
   tripCharges: {
     standard: 0,
     beltway: 0,
   },
 
-  // 8. Billing conversions (NEW RULES - ALL 9 FREQUENCIES)
-  //    Weekly is the primary frequency; others use monthly multipliers
+
   billingConversions: {
     oneTime: {
-      monthlyMultiplier: 0, // One-time service
+      monthlyMultiplier: 0, 
     },
     weekly: {
-      monthlyVisits: 4.33,         // used to compute MonthlyServiceCharge
-      monthlyMultiplier: 4.33,     // standard monthly multiplier
+      monthlyVisits: 4.33,         
+      monthlyMultiplier: 4.33,     
     },
     biweekly: {
-      monthlyMultiplier: 2.165,    // ~2 visits per month
+      monthlyMultiplier: 2.165,    
     },
     twicePerMonth: {
-      monthlyMultiplier: 2.0,      // exactly 2 visits per month
+      monthlyMultiplier: 2.0,      
     },
     monthly: {
-      monthlyMultiplier: 1.0,      // 1 visit per month
+      monthlyMultiplier: 1.0,      
     },
     bimonthly: {
-      monthlyMultiplier: 0.5,      // 1 visit every 2 months
+      monthlyMultiplier: 0.5,      
     },
     quarterly: {
-      monthlyMultiplier: 0.333,    // 1 visit every 3 months
+      monthlyMultiplier: 0.333,    
     },
     biannual: {
-      monthlyMultiplier: 0.167,    // 1 visit every 6 months
+      monthlyMultiplier: 0.167,    
     },
     annual: {
-      monthlyMultiplier: 0.083,    // 1 visit every 12 months
+      monthlyMultiplier: 0.083,    
     },
-    // Global settings
+
     actualWeeksPerYear: 52,
     actualWeeksPerMonth: 4.33,
   },
 
-  // 9. Contract settings (used for "Annual" field = contract total)
+
   contract: {
     minMonths: 2,
     maxMonths: 36,

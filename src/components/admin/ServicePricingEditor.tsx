@@ -1,4 +1,4 @@
-// src/components/admin/ServicePricingEditor.tsx
+
 
 import React, { useState, useEffect } from "react";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
@@ -42,7 +42,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     setEditedConfig(JSON.parse(JSON.stringify(config.config)));
   }, [config]);
 
-  // Track changes
+
   useEffect(() => {
     const changed = JSON.stringify(editedConfig) !== JSON.stringify(config.config);
     setHasChanges(changed);
@@ -54,7 +54,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     setSaving(false);
   };
 
-  // Helper to update nested config values
+
   const updateConfig = (path: string[], value: any) => {
     setEditedConfig((prev) => {
       const newConfig = JSON.parse(JSON.stringify(prev));
@@ -72,7 +72,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     });
   };
 
-  // Helper to get nested config value
+
   const getConfigValue = (path: string[]): any => {
     let current = editedConfig;
     for (const key of path) {
@@ -82,49 +82,49 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     return current;
   };
 
-  // Get available tabs based on service type
+
   const getAvailableTabs = (): Tab[] => {
     const serviceId = config.serviceId;
     const allTabs: Tab[] = [
       { key: "overview", label: "Overview", icon: "📋" },
     ];
 
-    // Add frequency tab for services with frequency-based pricing
+
     if (["saniscrub", "microfiberMopping", "rpmWindows", "carpetCleaning", "stripWax", "foamingDrain", "sanipod", "electrostaticSpray", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "frequencies", label: "Frequencies", icon: "📅" });
     }
 
-    // Add geographic tab for services with location-based pricing
+
     if (["saniclean"].includes(serviceId)) {
       allTabs.push({ key: "geographic", label: "Geographic Pricing", icon: "🗺️" });
     }
 
-    // Add rate tiers tab for services with red/green rates
+
     if (["saniclean", "sanipod", "microfiberMopping", "rpmWindows", "pureJanitorial", "stripWax"].includes(serviceId)) {
       allTabs.push({ key: "rateTiers", label: "Rate Tiers", icon: "💰" });
     }
 
-    // Add minimums tab
+
     if (["saniscrub", "saniclean", "microfiberMopping"].includes(serviceId)) {
       allTabs.push({ key: "minimums", label: "Minimums", icon: "📊" });
     }
 
-    // Add multipliers tab for services with install/frequency multipliers
+
     if (["saniscrub", "rpmWindows", "carpetCleaning", "pureJanitorial", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "multipliers", label: "Multipliers", icon: "✖️" });
     }
 
-    // Add components tab for services with facility components
+
     if (["saniclean"].includes(serviceId)) {
       allTabs.push({ key: "components", label: "Facility Components", icon: "🏢" });
     }
 
-    // Add addons tab
+
     if (["saniclean", "microfiberMopping", "electrostaticSpray"].includes(serviceId)) {
       allTabs.push({ key: "addons", label: "Add-Ons", icon: "➕" });
     }
 
-    // Add Refresh Power Scrub specific tab
+
     if (serviceId === "refreshPowerScrub") {
       allTabs.push({ key: "refreshPowerScrub", label: "Core Rates & Areas", icon: "🏭" });
     }
@@ -260,7 +260,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
   );
 };
 
-// Overview Tab
+
 const OverviewTab: React.FC<{
   config: ServiceConfig;
   editedConfig: Record<string, any>;
@@ -321,14 +321,14 @@ const OverviewTab: React.FC<{
   );
 };
 
-// Frequencies Tab
+
 const FrequenciesTab: React.FC<{
   serviceId: string;
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
   getConfigValue: (path: string[]) => any;
 }> = ({ serviceId, editedConfig, updateConfig, getConfigValue }) => {
-  // Helper to update linked fields (e.g., monthly and twicePerMonth share same values)
+
   const updateLinkedFields = (
     primaryPath: string[],
     value: any,
@@ -340,7 +340,7 @@ const FrequenciesTab: React.FC<{
     }
   };
 
-  // Get frequency-related configuration based on service type
+
   const renderFrequencyConfig = () => {
     if (serviceId === "saniscrub") {
       const fixtureRates = getConfigValue(["fixtureRates"]) || {};
@@ -349,7 +349,7 @@ const FrequenciesTab: React.FC<{
 
       const frequencies = ["monthly", "twicePerMonth", "bimonthly", "quarterly"];
 
-      // Track if monthly is being edited (to show warning about linked fields)
+
       const monthlyAndTwiceLinked =
         fixtureRates.monthly === fixtureRates.twicePerMonth &&
         minimums.monthly === minimums.twicePerMonth;
@@ -801,7 +801,7 @@ const FrequenciesTab: React.FC<{
   );
 };
 
-// Geographic Tab (for SaniClean)
+
 const GeographicTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -815,7 +815,7 @@ const GeographicTab: React.FC<{
       <h3 className="spe__section-title">Geographic Pricing</h3>
 
       <div className="spe__geo-grid">
-        {/* Inside Beltway */}
+        {}
         <div className="spe__geo-section">
           <h4 className="spe__subsection-title">Inside Beltway</h4>
 
@@ -888,7 +888,7 @@ const GeographicTab: React.FC<{
           </div>
         </div>
 
-        {/* Outside Beltway */}
+        {}
         <div className="spe__geo-section">
           <h4 className="spe__subsection-title">Outside Beltway</h4>
 
@@ -948,7 +948,7 @@ const GeographicTab: React.FC<{
   );
 };
 
-// Rate Tiers Tab
+
 const RateTiersTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -965,7 +965,7 @@ const RateTiersTab: React.FC<{
       <h3 className="spe__section-title">Rate Tiers (Red & Green)</h3>
 
       <div className="spe__geo-grid">
-        {/* Red Rate */}
+        {}
         <div className="spe__geo-section">
           <h4 className="spe__subsection-title">Red Rate (Standard)</h4>
 
@@ -997,7 +997,7 @@ const RateTiersTab: React.FC<{
           </div>
         </div>
 
-        {/* Green Rate */}
+        {}
         <div className="spe__geo-section">
           <h4 className="spe__subsection-title">Green Rate (Premium)</h4>
 
@@ -1034,7 +1034,7 @@ const RateTiersTab: React.FC<{
   );
 };
 
-// Minimums Tab
+
 const MinimumsTab: React.FC<{
   serviceId: string;
   editedConfig: Record<string, any>;
@@ -1216,7 +1216,7 @@ const MinimumsTab: React.FC<{
   );
 };
 
-// Multipliers Tab
+
 const MultipliersTab: React.FC<{
   serviceId: string;
   editedConfig: Record<string, any>;
@@ -1411,7 +1411,7 @@ const MultipliersTab: React.FC<{
   );
 };
 
-// Components Tab (for SaniClean)
+
 const ComponentsTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -1578,7 +1578,7 @@ const ComponentsTab: React.FC<{
   );
 };
 
-// Add-ons Tab
+
 const AddonsTab: React.FC<{
   serviceId: string;
   editedConfig: Record<string, any>;
@@ -1894,7 +1894,7 @@ const AddonsTab: React.FC<{
   );
 };
 
-// Refresh Power Scrub Tab - Core Rates & Area-Specific Pricing
+
 const RefreshPowerScrubTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -1908,7 +1908,7 @@ const RefreshPowerScrubTab: React.FC<{
     <div className="spe__tab-content">
       <h3 className="spe__section-title">Core Rates & Area-Specific Pricing</h3>
 
-      {/* Core Rates Section */}
+      {}
       <div className="spe__geo-section">
         <h4 className="spe__subsection-title">Core Rates</h4>
 
@@ -1993,7 +1993,7 @@ const RefreshPowerScrubTab: React.FC<{
         </div>
       </div>
 
-      {/* Area-Specific Pricing Section */}
+      {}
       <div className="spe__geo-section">
         <h4 className="spe__subsection-title">Area-Specific Pricing</h4>
 
@@ -2082,7 +2082,7 @@ const RefreshPowerScrubTab: React.FC<{
         </div>
       </div>
 
-      {/* Square Footage Pricing Section */}
+      {}
       <div className="spe__geo-section">
         <h4 className="spe__subsection-title">Square Footage Pricing</h4>
 
@@ -2149,7 +2149,7 @@ const RefreshPowerScrubTab: React.FC<{
   );
 };
 
-// Advanced Tab
+
 const AdvancedTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -2167,7 +2167,7 @@ const AdvancedTab: React.FC<{
       const parsed = JSON.parse(value);
       setJsonError(null);
 
-      // Update entire config
+
       Object.keys(editedConfig).forEach((key) => {
         updateConfig([key], parsed[key]);
       });

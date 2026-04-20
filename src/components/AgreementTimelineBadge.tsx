@@ -13,12 +13,12 @@ import './AgreementTimelineBadge.css';
 type ExpiryStatus = 'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired';
 
 type AgreementTimelineBadgeProps = {
-  startDate: string; // ISO format: YYYY-MM-DD
+  startDate: string;
   contractMonths: number;
-  compact?: boolean; // For use in lists/folders
-  showCalendarIcon?: boolean; // Show calendar icon for quick date changes
-  onDateChange?: (newDate: string) => void; // Callback when date changes
-  agreementId?: string; // Optional: for tracking which agreement
+  compact?: boolean;
+  showCalendarIcon?: boolean;
+  onDateChange?: (newDate: string) => void;
+  agreementId?: string;
 };
 
 export function AgreementTimelineBadge({
@@ -35,7 +35,6 @@ export function AgreementTimelineBadge({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [editedDate, setEditedDate] = useState(startDate);
 
-  // Calculate expiry status and days remaining
   useEffect(() => {
     if (!startDate || !contractMonths || contractMonths <= 0) {
       setExpiryStatus('safe');
@@ -56,7 +55,6 @@ export function AgreementTimelineBadge({
     const expiryMidnight = new Date(calculatedExpiry);
     expiryMidnight.setHours(0, 0, 0, 0);
 
-    // Check if agreement hasn't started yet
     const daysUntilStart = Math.ceil((startMidnight.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntilStart > 0) {
@@ -65,7 +63,6 @@ export function AgreementTimelineBadge({
       return;
     }
 
-    // Calculate days until expiry
     const timeDiff = expiryMidnight.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     setDaysRemaining(daysDiff);
@@ -140,7 +137,7 @@ export function AgreementTimelineBadge({
   };
 
   const handleCalendarClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent click events
+    e.stopPropagation();
     setShowDatePicker(!showDatePicker);
   };
 
@@ -207,7 +204,6 @@ export function AgreementTimelineBadge({
     );
   }
 
-  // Full/non-compact version (if needed)
   return (
     <div className={`timeline-badge-full timeline-badge-${expiryStatus}`}>
       <div className="timeline-badge-header">

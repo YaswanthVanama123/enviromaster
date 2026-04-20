@@ -13,28 +13,20 @@ import {
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-/**
- * Carpet Cleaning form – same UI style as SaniScrub:
- *  - Block pricing: 250 (first 500 sq ft) + 125 per extra 500
- *  - Per-visit minimum $250
- *  - No trip charge in math (field shows $0.00)
- *  - Installation fee options (1× clean / 3× dirty)
- *  - First month calculation includes installation + normal service
- *  - Contract term: 2–36 months
- */
+
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -43,84 +35,84 @@ export const CarpetForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '' } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
   const monthlyRecurringFrequencies: CarpetFrequency[] = [
@@ -162,7 +154,11 @@ export const CarpetForm: React.FC<
   useEffect(() => {
     if (servicesContext) {
       const resolvedFrequency = resolveCarpetFrequency(form.frequency);
-      const isActive = (form.areaSqFt ?? 0) > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.areaSqFt ?? 0) > 0 || hasCustomFieldValues;
       const shouldShowMonthlyRecurring = monthlyRecurringFrequencies.includes(resolvedFrequency);
       const shouldShowVisitRecurring = visitBasedRecurringFrequencies.includes(resolvedFrequency);
       const displayFrequencyLabel =
@@ -249,8 +245,7 @@ export const CarpetForm: React.FC<
       displayName: "Carpet Cleaning",
       isActive: true,
 
-      // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-      // This ensures edited values are saved to backend, not just backend defaults
+
       firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate,
       additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate,
       perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,
@@ -260,7 +255,7 @@ export const CarpetForm: React.FC<
       useExactSqft: form.useExactSqft,
       applyMinimum: form.applyMinimum !== false,
 
-      // ✅ NEW: Save quantity inputs for proper loading in edit mode
+
       areaSqFt: form.areaSqFt,
       frequency: form.frequency,
       contractMonths: form.contractMonths,
@@ -268,13 +263,13 @@ export const CarpetForm: React.FC<
       isDirtyInstall: form.isDirtyInstall,
       location: form.location,
 
-      // Ensure contract total is always saved (oneTime may hide contract row in UI)
+
       contractTotal: calc.contractTotal,
       originalContractTotal: calc.originalContractTotal,
 
-        // Red/Green Line pricing data
-        perVisitBase: calc.perVisitBase,  // Raw price before minimum
-        perVisitCharge: calc.perVisitCharge,  // Final price after minimum
+
+        perVisitBase: calc.perVisitBase,  
+        perVisitCharge: calc.perVisitCharge,  
 
         frequency: {
           isDisplay: true,
@@ -299,12 +294,12 @@ export const CarpetForm: React.FC<
           label: "Carpet Area",
           type: "calc" as const,
           qty: form.areaSqFt,
-          rate: form.customFirstUnitRate ?? form.firstUnitRate,  // ✅ FIXED: Use effective value for PDF
+          rate: form.customFirstUnitRate ?? form.firstUnitRate,  
           total: calc.perVisitCharge,
           unit: "sq ft",
         },
 
-        // Installation data
+
         ...(form.includeInstall ? {
           installation: {
             isDisplay: true,
@@ -352,34 +347,32 @@ export const CarpetForm: React.FC<
     if (onQuoteChange) onQuoteChange(quote);
   }, [onQuoteChange, quote]);
 
-  // ✅ OVERRIDE HIERARCHY: Clear downstream overrides ONLY when base quantity inputs change
-  // Do NOT clear when rate overrides change - let the calculation hierarchy handle propagation
+
   useEffect(() => {
     setForm((prev: any) => ({
       ...prev,
       customPerVisitPrice: undefined,
-      customInstallationFee: undefined,  // ✅ Clear installation override when base inputs change
+      customInstallationFee: undefined,  
       customMonthlyRecurring: undefined,
       customFirstMonthPrice: undefined,
       customContractTotal: undefined,
     }));
   }, [
-    // ✅ ONLY base quantity/selection inputs trigger clearing:
-    form.areaSqFt,           // Area changed = recalculate everything
-    form.useExactSqft,       // Calculation method changed = recalculate
-    form.frequency,          // Frequency changed = recalculate monthly/contract
-    form.contractMonths,     // Contract term changed = recalculate contract
-    form.includeInstall,     // Installation added/removed = recalculate totals
-    form.isDirtyInstall,     // Installation type changed = recalculate installation fee
-    // ✅ REMOVED: customFirstUnitRate, customAdditionalUnitRate, customPerVisitMinimum
-    // These are RATE overrides - changing them should NOT clear downstream overrides
-    // Let the calculation hierarchy handle propagation naturally
+
+    form.areaSqFt,           
+    form.useExactSqft,       
+    form.frequency,          
+    form.contractMonths,     
+    form.includeInstall,     
+    form.isDirtyInstall,     
+
+
     setForm,
   ]);
 
   return (
     <div className="svc-card" style={{ position: 'relative' }}>
-      {/* Loading Overlay */}
+      {}
       {isLoadingConfig && (
         <div className="svc-loading-overlay">
           <div className="svc-loading-spinner">
@@ -426,7 +419,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Custom fields manager - appears at the top */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -434,7 +427,7 @@ export const CarpetForm: React.FC<
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Frequency selection */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -455,7 +448,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Pricing Configuration Rates */}
+      {}
       <div className="svc-row">
         <label>First {form.unitSqFt || 500} sq ft Rate</label>
         <div className="svc-row-right">
@@ -549,7 +542,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Carpet area row – ____ @ calculated rate = ____ */}
+      {}
       <div className="svc-row">
         <label>Carpet Area</label>
         <div className="svc-row-right">
@@ -594,7 +587,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Exact sq ft calculation checkbox */}
+      {}
       <div className="svc-row">
         <label>Calculation Method</label>
         <div className="svc-row-right">
@@ -616,54 +609,13 @@ export const CarpetForm: React.FC<
       </div>
 
 
+      {}
+      {}
 
-      {/* Trip & location – visible but $0 in math */}
-      {/* <div className="svc-row">
-        <label>Location</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="location"
-            value={form.location}
-            onChange={onChange}
-          >
-            <option value="insideBeltway">Inside Beltway</option>
-            <option value="outsideBeltway">Outside Beltway</option>
-          </select>
+      {}
+      {}
 
-          <label className="svc-inline">
-            <input
-              type="checkbox"
-              name="needsParking"
-              checked={form.needsParking}
-              onChange={onChange}
-            />
-            <span>Parking (+$0)</span>
-          </label>
-        </div>
-      </div> */}
-
-      {/* Trip charge display – locked at 0 */}
-      {/* <div className="svc-row">
-        <label>Trip Charge</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in"
-            type="text"
-            readOnly
-            value="$0.00 / visit"
-          />
-          <span>·</span>
-          <input
-            className="svc-in"
-            type="text"
-            readOnly
-            value="$0.00 / month"
-          />
-        </div>
-      </div> */}
-
-      {/* Installation options (same as SaniScrub) */}
+      {}
       <div className="svc-row">
         <label>Installation</label>
         <div className="svc-row-right">
@@ -707,7 +659,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-      {/* Installation fee display (when enabled) */}
+      {}
       {form.includeInstall && calc.installOneTime > 0 && (
         <div className="svc-row svc-row-charge">
           <label>Installation Total</label>
@@ -738,10 +690,10 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Per-Visit Total - Always show */}
+      {}
       <div className="svc-row svc-row-total">
         <label>
-          {/* Dynamic label based on frequency */}
+          {}
           {form.frequency === "bimonthly" ||
            form.frequency === "quarterly" ||
            form.frequency === "biannual" ||
@@ -781,7 +733,7 @@ export const CarpetForm: React.FC<
         </div>
       </div>
 
-            {/* Redline/Greenline Pricing Indicator */}
+            {}
       {form.areaSqFt > 0 && (
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
@@ -815,7 +767,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Total Price - Show ONLY for oneTime */}
+      {}
       {form.frequency === "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>Total Price</label>
@@ -847,7 +799,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* First Visit Total - Show for visit-based (not oneTime) */}
+      {}
       {calc.isVisitBasedFrequency && form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>First Visit Total</label>
@@ -879,7 +831,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* First Month Total - Hide for oneTime and visit-based */}
+      {}
       {!calc.isVisitBasedFrequency && form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>First Month Total</label>
@@ -911,7 +863,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Monthly Recurring - Show only for weekly, biweekly, monthly, and twicePerMonth */}
+      {}
       {(form.frequency === "weekly" || form.frequency === "biweekly" || form.frequency === "monthly" || form.frequency === "twicePerMonth") && (
         <div className="svc-row svc-row-total">
           <label>Recurring Month Total</label>
@@ -943,7 +895,7 @@ export const CarpetForm: React.FC<
         </div>
       )}
 
-      {/* Contract Total - Hide for oneTime */}
+      {}
       {form.frequency !== "oneTime" && (
         <div className="svc-row svc-row-total">
           <label>Contract Total</label>

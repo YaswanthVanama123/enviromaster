@@ -20,10 +20,8 @@ import DocumentSidebar from "./DocumentSidebar";
 import "./ApprovalDocuments.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 
-// ✅ OPTIMIZED: Lazy load EmailComposer (code splitting for better LCP)
 const EmailComposer = lazy(() => import("./EmailComposer"));
 
-// Import types separately (not lazy loaded)
 import type { EmailData } from "./EmailComposer";
 
 type FileStatus =
@@ -70,35 +68,27 @@ const STATUS_COLORS: Record<FileStatus, string> = {
   approved_admin: '#10b981',
 };
 
-// ✅ FIX: Convert status to CSS-safe class name
 const getStatusClassName = (status: string) => {
   return status?.toLowerCase()
     .replace(/\s+/g, '_')
     .replace(/[^a-z0-9_]/g, '');
 };
 
-// ✅ FIX: Simplified status dropdown - show appropriate statuses for approval workflow
 const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext: boolean = false) => {
-  // ✅ FIXED: Remove duplicate status entries
   const approvalStatuses = [
     { value: 'pending_approval', label: 'Pending Approval' },
     { value: 'approved_salesman', label: 'Approved by Salesman' },
     { value: 'approved_admin', label: 'Approved by Admin' },
-    // { value: 'draft', label: 'Draft' }
   ];
 
-  // ✅ FIXED: Normalize current status for matching (handle case variations)
   const normalizedCurrent = currentStatus?.toLowerCase().replace(/\s+/g, '_');
 
   return approvalStatuses.filter(status => {
     const normalizedStatus = status.value.toLowerCase().replace(/\s+/g, '_');
 
-    // Always allow current status to stay
     if (normalizedStatus === normalizedCurrent) return true;
 
-    // ✅ SIMPLIFIED: In admin panel, show admin approval options
     if (isInAdminContext) {
-      // Admin can approve as admin, send back to pending, or draft
       const adminAllowedStatuses = [
         'approved_admin',
         'pending_approval',
@@ -106,7 +96,6 @@ const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext
       ];
       return adminAllowedStatuses.includes(status.value);
     } else {
-      // Non-admin users (salesmen) can only use salesman approval
       const salesmanAllowedStatuses = [
         'approved_salesman',
         'pending_approval',
@@ -118,7 +107,6 @@ const getAvailableStatusesForDropdown = (currentStatus: string, isInAdminContext
 };
 
 export default function ApprovalDocuments() {
-  // ✅ UPDATED: Use grouped structure for approval documents
   const [agreements, setAgreements] = useState<SavedFileGroup[]>([]);
   const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
@@ -129,43 +117,34 @@ export default function ApprovalDocuments() {
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // ✅ NEW: Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(20);
 
-  // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
 
-  // Statistics
   const [totalFiles, setTotalFiles] = useState(0);
   const [totalAgreements, setTotalAgreements] = useState(0);
 
-  // ✅ FIX: Use ref instead of module-level flag to prevent React Strict Mode duplicate calls
-  // This ref is scoped to each component instance, so it resets when navigating away
   const hasLoadedRef = useRef(false);
 
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAdminAuth();
 
-  // Detect if we're in admin context
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/approval-documents" : "/approval-documents";
 
   console.log("📍 ApprovalDocuments context:", { isInAdminContext, returnPath, currentPath: location.pathname });
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/admin-login", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  // ---- Fetch approval documents from backend on mount ----
   useEffect(() => {
-    // ✅ FIX: Use ref instead of module-level flag - resets on each mount
     if (!hasLoadedRef.current) {
       hasLoadedRef.current = true;
 
@@ -175,7 +154,6 @@ export default function ApprovalDocuments() {
         try {
           console.log("📋 [APPROVAL-DOCS] Fetching approval documents...");
 
-          // ✅ NEW: Use approval documents grouped API
           const data = await pdfApi.getApprovalDocumentsGrouped();
           const groups = data.groups || [];
 
@@ -208,19 +186,15 @@ export default function ApprovalDocuments() {
     }
   }, []);
 
-  // ✅ OPTIMIZED: Filter and expand/collapse functionality for folder structure
   const filteredAgreements = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    // ✅ PERFORMANCE: Only show documents that are PENDING approval (not already approved)
     const approvalStatuses = ['pending_approval', 'Pending Approval'];
 
-    // ✅ OPTIMIZED: Single pass filtering without console logs
     let filteredList = agreements.map(agreement => {
       const approvalFiles = agreement.files.filter(file => {
         const status = file.status?.trim();
 
-        // Fast status check without logging
         return approvalStatuses.includes(status) ||
           status?.toLowerCase().replace(/\s+/g, '_') === 'pending_approval';
       });
@@ -232,7 +206,6 @@ export default function ApprovalDocuments() {
       };
     }).filter(agreement => agreement.fileCount > 0);
 
-    // Apply search filter
     if (q) {
       filteredList = filteredList.filter(agreement =>
         agreement.agreementTitle.toLowerCase().includes(q) ||
@@ -243,14 +216,12 @@ export default function ApprovalDocuments() {
     return filteredList;
   }, [agreements, query]);
 
-  // ✅ NEW: Paginated agreements
   const paginatedAgreements = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredAgreements.slice(startIndex, endIndex);
   }, [filteredAgreements, currentPage, itemsPerPage]);
 
-  // ✅ NEW: Update total pages when filtered list changes
   useEffect(() => {
     const pages = Math.ceil(filteredAgreements.length / itemsPerPage);
     setTotalPages(pages);
@@ -267,13 +238,11 @@ export default function ApprovalDocuments() {
       } : null
     });
 
-    // Reset to page 1 if current page is beyond total pages
     if (currentPage > pages && pages > 0) {
       setCurrentPage(1);
     }
   }, [filteredAgreements.length, itemsPerPage, currentPage, paginatedAgreements, filteredAgreements]);
 
-  // Get all files from all agreements for selection logic
   const allFiles = useMemo(() => {
     return paginatedAgreements.flatMap(agreement => agreement.files);
   }, [paginatedAgreements]);
@@ -308,7 +277,6 @@ export default function ApprovalDocuments() {
     try {
       setSavingStatusId(file.id);
 
-      // Handle different file types with appropriate API calls
       if (file.fileType === 'main_pdf') {
         await pdfApi.updateDocumentStatus(file.id, newStatus);
       } else if (file.fileType === 'version_pdf') {
@@ -317,7 +285,6 @@ export default function ApprovalDocuments() {
         await manualUploadApi.updateStatus(file.id, newStatus);
       }
 
-      // Update local state to reflect the change
       setAgreements(prev => prev.map(agreement => ({
         ...agreement,
         files: agreement.files.map(f =>
@@ -325,8 +292,7 @@ export default function ApprovalDocuments() {
         )
       })));
 
-      // If status changed away from pending approval, remove from this view
-      const approvalStatuses = ['pending_approval'];  // ✅ Only pending approval should stay in this view
+      const approvalStatuses = ['pending_approval'];
       if (!approvalStatuses.includes(newStatus)) {
         setAgreements(prev => prev.map(agreement => ({
           ...agreement,
@@ -350,14 +316,11 @@ export default function ApprovalDocuments() {
     const selectedFiles = allFiles.filter(file => selected[file.id]);
     if (selectedFiles.length === 0) return;
 
-    // Bulk approve: change all selected to approved_admin
     selectedFiles.forEach((file) => changeFileStatus(file, "approved_admin"));
     setSelected({});
   }
 
-  // ---- View/Edit handler (eye icon) ----
   const handleView = (file: SavedFileListItem) => {
-    // ✅ FIX: Map file type to correct PDFViewer document type
     let documentType: 'agreement' | 'manual-upload' | 'attached-file' | 'version' | undefined = undefined;
 
     if (file.fileType === 'main_pdf') {
@@ -365,7 +328,7 @@ export default function ApprovalDocuments() {
     } else if (file.fileType === 'attached_pdf') {
       documentType = 'attached-file';
     } else if (file.fileType === 'version_pdf') {
-      documentType = 'version';  // ✅ FIX: Map version_pdf to 'version' for PDFViewer
+      documentType = 'version';
     }
 
     console.log(`📄 [APPROVAL-VIEW] Viewing document ${file.id} (file type: ${file.fileType} → PDFViewer type: ${documentType || 'auto-detect'})`);
@@ -374,27 +337,23 @@ export default function ApprovalDocuments() {
       state: {
         documentId: file.id,
         fileName: file.fileName,
-        documentType: documentType, // ✅ NEW: Include correct document type
+        documentType: documentType,
         originalReturnPath: returnPath,
         originalReturnState: null,
       },
     });
   };
 
-  // ---- Download handler ----
   const handleDownload = async (file: SavedFileListItem) => {
     try {
       setDownloadingId(file.id);
 
       let blob: Blob;
       if (file.fileType === 'attached_pdf') {
-        // ✅ FIX: Use attached files API for attached files
         blob = await pdfApi.downloadAttachedFile(file.id);
       } else if (file.fileType === 'version_pdf') {
-        // ✅ FIX: Use version PDF API for version PDFs
         blob = await pdfApi.downloadVersionPdf(file.id);
       } else {
-        // ✅ FIX: Use main PDF API for main agreement PDFs
         blob = await pdfApi.downloadPdf(file.id);
       }
 
@@ -416,13 +375,11 @@ export default function ApprovalDocuments() {
     }
   };
 
-  // ---- Email handler ----
   const handleEmail = (file: SavedFileListItem) => {
     setCurrentEmailFile(file);
     setEmailComposerOpen(true);
   };
 
-  // ---- Send email handler ----
   const handleSendEmail = async (emailData: EmailData) => {
     if (!currentEmailFile) return;
 
@@ -443,23 +400,20 @@ export default function ApprovalDocuments() {
         type: "success"
       });
 
-      // Close composer
       setEmailComposerOpen(false);
       setCurrentEmailFile(null);
 
     } catch (error) {
       console.error("Error sending email:", error);
-      throw error; // Let EmailComposer handle the error display
+      throw error;
     }
   };
 
-  // ---- Close email composer ----
   const handleCloseEmailComposer = () => {
     setEmailComposerOpen(false);
     setCurrentEmailFile(null);
   };
 
-  // ✅ NEW: Pagination helpers
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;
 
@@ -481,12 +435,10 @@ export default function ApprovalDocuments() {
     }
   };
 
-  // Show nothing while checking auth
   if (!isAuthenticated) {
     return null;
   }
 
-  // Calculate status counts for sidebar
   const statusCountsData = useMemo(() => {
     const counts: { [key: string]: number } = {
       pending_approval: 0,
@@ -510,7 +462,6 @@ export default function ApprovalDocuments() {
     ];
   }, [filteredAgreements]);
 
-  // Calculate agreement timelines for sidebar
   const agreementTimelinesData = useMemo(() => {
     return filteredAgreements
       .filter(agreement => agreement.startDate && agreement.contractMonths)
@@ -546,11 +497,7 @@ export default function ApprovalDocuments() {
 
   return (
     <div style={{ display: 'flex', gap: '24px' }}>
-      {/* Main Content */}
       <section className="ad" style={{ flex: 1 }}>
-      {/* <div className="ad__hero">Approval Documents</div> */}
-
-      {/* <div className="ad__breadcrumb">Admin Panel &gt; Approval Documents</div> */}
 
       <div className="ad__toolbar">
         <input
@@ -596,7 +543,6 @@ export default function ApprovalDocuments() {
           </thead>
           <tbody>
             {loading && (
-              // ✅ OPTIMIZED: Skeleton loader reduces CLS by reserving space
               <>
                 {Array.from({ length: 5 }).map((_, idx) => (
                   <tr key={`skeleton-${idx}`} className="skeleton-row">
@@ -641,7 +587,6 @@ export default function ApprovalDocuments() {
 
             {!loading && !error && paginatedAgreements.map((agreement) => (
               <React.Fragment key={agreement.id}>
-                {/* Agreement Header Row */}
                 <tr className="agreement-header">
                   <td>
                     <input
@@ -670,7 +615,6 @@ export default function ApprovalDocuments() {
                       <span style={{ color: '#6b7280', fontSize: '14px' }}>
                         ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
                       </span>
-                      {/* ✅ NEW: Agreement Timeline Badge */}
                       {agreement.startDate && agreement.contractMonths && (
                         <AgreementTimelineBadge
                           startDate={agreement.startDate}
@@ -684,16 +628,10 @@ export default function ApprovalDocuments() {
                   </td>
                   <td>Agreement</td>
                   <td style={{ fontSize: "13px" }}>{timeAgo(agreement.latestUpdate)}</td>
-                  {/* <td>
-                    <span className={`status-badge status-badge--${getStatusClassName(agreement.agreementStatus)}`}>
-                      {STATUS_LABEL[agreement.agreementStatus as FileStatus] || agreement.agreementStatus}
-                    </span>
-                  </td> */}
                   <td></td>
-                  <td></td> {/* ✅ FIXED: Added Actions column to match table header structure */}
+                  <td></td>
                 </tr>
 
-                {/* Agreement Files - Only show when expanded */}
                 {expandedAgreements.has(agreement.id) && agreement.files.map((file) => (
                   <tr key={file.id} className="file-row">
                     <td style={{ paddingLeft: '40px' }}>
@@ -775,7 +713,7 @@ export default function ApprovalDocuments() {
                           type="button"
                           onClick={() => handleEmail(file)}
                           disabled={!file.hasPdf}
-                        > 
+                        >
                           <FontAwesomeIcon icon={faEnvelope} />
                         </button>
                         <button
@@ -796,7 +734,6 @@ export default function ApprovalDocuments() {
         </table>
       </div>
 
-      {/* ✅ NEW: Enhanced Pagination with page info and controls */}
       <div className="ad__pager">
         <div className="ad__page-info">
           Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredAgreements.length)}-{Math.min(currentPage * itemsPerPage, filteredAgreements.length)} of {filteredAgreements.length} agreements ({totalFiles} files)
@@ -812,14 +749,12 @@ export default function ApprovalDocuments() {
             Previous
           </button>
 
-          {/* Page numbers */}
           <div className="ad__page-numbers">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
                 pageNum = i + 1;
               } else {
-                // Show pages around current page
                 const start = Math.max(1, currentPage - 2);
                 const end = Math.min(totalPages, start + 4);
                 pageNum = start + i;
@@ -859,9 +794,7 @@ export default function ApprovalDocuments() {
         />
       )}
 
-      {/* ✅ OPTIMIZED: Lazy loaded modal wrapped in Suspense (code splitting) */}
       <Suspense fallback={null}>
-        {/* Email Composer Modal */}
         <EmailComposer
           isOpen={emailComposerOpen}
           onClose={handleCloseEmailComposer}
@@ -870,7 +803,7 @@ export default function ApprovalDocuments() {
             id: currentEmailFile.id,
             fileName: currentEmailFile.fileName,
             downloadUrl: currentEmailFile.fileType === 'attached_pdf'
-              ? pdfApi.getPdfDownloadUrl(currentEmailFile.id) // Use generic download for attached files
+              ? pdfApi.getPdfDownloadUrl(currentEmailFile.id)
               : pdfApi.getPdfDownloadUrl(currentEmailFile.id),
             documentType: getDocumentTypeForSavedFile(currentEmailFile)
           } : undefined}
@@ -887,12 +820,11 @@ Status: ${STATUS_LABEL[currentEmailFile.status as FileStatus] || currentEmailFil
 Updated: ${timeAgo(currentEmailFile.updatedAt)}
 
 Best regards` : ''}
-          userEmail="" // TODO: Get from admin login context
+          userEmail=""
         />
       </Suspense>
     </section>
 
-    {/* Right Sidebar */}
     <DocumentSidebar
       statusCounts={statusCountsData}
       totalDocuments={totalFiles}

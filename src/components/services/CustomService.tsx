@@ -1,4 +1,4 @@
-// CustomService.tsx - Wrapper for user-created custom services
+
 import React, { useState } from "react";
 import "./ServicesSection.css";
 import { CustomFieldManager, type CustomField } from "./CustomFieldManager";
@@ -32,7 +32,7 @@ export const CustomService: React.FC<CustomServiceProps> = ({
 
   return (
     <div className="svc-card">
-      {/* Header row with editable name and remove button */}
+      {}
       <div className="svc-h-row">
         <input
           type="text"
@@ -59,7 +59,7 @@ export const CustomService: React.FC<CustomServiceProps> = ({
         </button>
       </div>
 
-      {/* Custom fields manager */}
+      {}
       <CustomFieldManager
         fields={service.fields}
         onFieldsChange={handleFieldsChange}

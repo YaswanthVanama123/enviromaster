@@ -12,7 +12,7 @@ export default function RpmWindowsCalculator() {
   const [master, setMaster] = useState(RW_DEFAULTS);
 
   const [freq, setFreq] = useState("weekly");
-  const [firstTime, setFirstTime] = useState("no"); // no | yes
+  const [firstTime, setFirstTime] = useState("no"); 
   const [tripType, setTripType] = useState("beltway8");
   const [parkingAmt, setParkingAmt] = useState(0);
   const [agreementMonths, setAgreementMonths] = useState(12);

@@ -14,28 +14,21 @@ type DocumentType = 'agreement' | 'manual-upload' | 'attached-file' | 'version' 
 type LocationState = {
   documentId?: string;
   fileName?: string;
-  documentType?: DocumentType; // ✅ NEW: Specify document type for correct API selection
-  watermark?: boolean; // ✅ NEW: Initial watermark preference from file list
-  fromEdit?: boolean; // Added to track if coming from edit
-  originalReturnPath?: string; // Added to track original source
-  originalReturnState?: any; // Added to track original state
-  includeDeleted?: boolean; // Support navigation from trash/log downloads
+  documentType?: DocumentType;
+  watermark?: boolean;
+  fromEdit?: boolean;
+  originalReturnPath?: string;
+  originalReturnState?: any;
+  includeDeleted?: boolean;
 };
 
-// ⚡ NEW: Detect if user is on mobile device
 const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
-// ⚡ NEW: Detect if user is on mobile or medium device (tablet)
-// Returns true for mobile phones, tablets, and screens <= 1024px
 const isMobileOrMediumDevice = () => {
-  // Check user agent for mobile/tablet devices
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-  // Check screen width for tablets/medium devices (≤ 1024px)
   const isMediumScreen = window.innerWidth <= 1024;
-
   return isMobile || isMediumScreen;
 };
 
@@ -45,8 +38,8 @@ export default function PDFViewer() {
   const {
     documentId,
     fileName,
-    documentType, // ✅ NEW: Get document type from navigation state
-    watermark: initialWatermark = false, // ✅ NEW: Get initial watermark preference
+    documentType,
+    watermark: initialWatermark = false,
     fromEdit = false,
     originalReturnPath,
     originalReturnState,
@@ -56,12 +49,10 @@ export default function PDFViewer() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorDetails, setErrorDetails] = useState<any>(null); // ✅ NEW: Store detailed error info
+  const [errorDetails, setErrorDetails] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
-  // ✅ NEW: Watermark toggle state (only for version PDFs) - initialize with value from file list
   const [showWatermark, setShowWatermark] = useState(initialWatermark);
-  // ✅ NEW: Text content state for log files (TXT)
   const [textContent, setTextContent] = useState<string | null>(null);
   const isLogFile = documentType === 'version-log';
 
@@ -75,79 +66,49 @@ export default function PDFViewer() {
     const fetchPDF = async () => {
       try {
         setLoading(true);
-        console.log(`📄 [PDF-VIEWER] Fetching document: ${documentId}, type: ${documentType || 'auto-detect'}`);
 
-        // ✅ NEW: Handle log files (TXT) separately
         if (documentType === 'version-log') {
-          console.log(`📝 [PDF-VIEWER] Fetching log file (TXT) for document ${documentId} includeDeleted=${includeDeleted}`);
           const blob = await pdfApi.downloadVersionLog(documentId, includeDeleted);
           const text = await blob.text();
           setTextContent(text);
-          console.log(`✅ [PDF-VIEWER] Log file loaded successfully`);
           return;
         }
 
-        // 🎯 SMART API SELECTION: Use correct endpoint based on document type
         let blob: Blob;
         let detectedType = documentType;
 
         if (documentType === 'manual-upload') {
-          // Use manual upload API
-          console.log(`📁 [PDF-VIEWER] Using manual upload API for document ${documentId}`);
           blob = await manualUploadApi.downloadFile(documentId);
           detectedType = 'manual-upload';
         } else if (documentType === 'attached-file') {
-          // Use attached file API
-          console.log(`📎 [PDF-VIEWER] Using attached file API for document ${documentId}`);
           blob = await pdfApi.downloadAttachedFile(documentId);
           detectedType = 'attached-file';
         } else if (documentType === 'agreement') {
-          // Use agreement API
-          console.log(`📋 [PDF-VIEWER] Using agreement API for document ${documentId}`);
           blob = await pdfApi.downloadPdf(documentId);
           detectedType = 'agreement';
         } else if (documentType === 'version') {
-          // Use version API with watermark parameter
-          console.log(`📝 [PDF-VIEWER] Using version API for document ${documentId} with watermark=${showWatermark}`);
-          blob = await pdfApi.downloadVersionPdf(documentId, showWatermark); // ✅ NEW: Pass watermark flag
+          blob = await pdfApi.downloadVersionPdf(documentId, showWatermark);
           detectedType = 'version';
         } else {
-          // 🔍 AUTO-DETECTION: Try different APIs until one works
-          console.log(`🔍 [PDF-VIEWER] Auto-detecting document type for ${documentId}`);
-
           try {
-            // Try agreement API first (most common)
-            console.log(`🔍 [PDF-VIEWER] Trying agreement API...`);
             blob = await pdfApi.downloadPdf(documentId);
             detectedType = 'agreement';
-            console.log(`✅ [PDF-VIEWER] Auto-detected as agreement document`);
           } catch (agreementErr: any) {
             if (agreementErr.response?.status === 404) {
               try {
-                // Try version API with watermark parameter
-                console.log(`🔍 [PDF-VIEWER] Trying version API with watermark=${showWatermark}...`);
-                blob = await pdfApi.downloadVersionPdf(documentId, showWatermark); // ✅ NEW: Pass watermark flag
+                blob = await pdfApi.downloadVersionPdf(documentId, showWatermark);
                 detectedType = 'version';
-                console.log(`✅ [PDF-VIEWER] Auto-detected as version document`);
               } catch (versionErr: any) {
                 if (versionErr.response?.status === 404) {
                   try {
-                    // Try manual upload API
-                    console.log(`🔍 [PDF-VIEWER] Trying manual upload API...`);
                     blob = await manualUploadApi.downloadFile(documentId);
                     detectedType = 'manual-upload';
-                    console.log(`✅ [PDF-VIEWER] Auto-detected as manual upload document`);
                   } catch (manualErr: any) {
                     if (manualErr.response?.status === 404) {
                       try {
-                        // Try attached file API
-                        console.log(`🔍 [PDF-VIEWER] Trying attached file API...`);
                         blob = await pdfApi.downloadAttachedFile(documentId);
                         detectedType = 'attached-file';
-                        console.log(`✅ [PDF-VIEWER] Auto-detected as attached file document`);
                       } catch (attachedErr: any) {
-                        // All APIs failed, throw the original agreement error
-                        console.error(`❌ [PDF-VIEWER] All APIs failed for document ${documentId}`);
                         throw agreementErr;
                       }
                     } else {
@@ -166,12 +127,7 @@ export default function PDFViewer() {
 
         const url = window.URL.createObjectURL(blob);
         setPdfUrl(url);
-
-        console.log(`✅ [PDF-VIEWER] PDF loaded successfully (type: ${detectedType})`);
       } catch (err: any) {
-        console.error("❌ [PDF-VIEWER] Error fetching PDF:", err);
-
-        // ✅ NEW: Extract detailed error information from API response
         if (err.response?.data) {
           const errorData = err.response.data;
           setErrorDetails(errorData);
@@ -196,35 +152,29 @@ export default function PDFViewer() {
         window.URL.revokeObjectURL(pdfUrl);
       }
     };
-  }, [documentId, showWatermark]); // ✅ NEW: Refetch when watermark toggles
+  }, [documentId, showWatermark]);
 
   const handleEdit = async () => {
-    // Pass original navigation context to edit form
     const editReturnPath = originalReturnPath || "/pdf-viewer";
     const editReturnState = originalReturnState || { documentId, fileName };
 
     let agreementId = documentId;
 
-    // ✅ FIXED: If viewing a version PDF, get the parent agreement ID
     if (documentType === 'version') {
       try {
-        console.log(`📝 [PDF-VIEWER] Getting agreement ID for version: ${documentId}`);
         const versionData = await versionApi.getVersionForEdit(documentId);
         agreementId = versionData.versionInfo?.originalAgreementId || documentId;
-        console.log(`📝 [PDF-VIEWER] Found agreement ID: ${agreementId}`);
       } catch (err) {
         console.error(`❌ [PDF-VIEWER] Failed to get agreement ID for version:`, err);
-        // Fallback to original ID if version lookup fails
       }
     }
 
     navigate(`/edit/pdf/${agreementId}`, {
       state: {
         editing: true,
-        id: agreementId, // ✅ Use agreement ID, not version ID
+        id: agreementId,
         returnPath: editReturnPath,
         returnState: editReturnState,
-        // Mark that we're coming from PDF viewer to avoid loops
         fromPdfViewer: true,
       },
     });
@@ -236,7 +186,6 @@ export default function PDFViewer() {
     try {
       setDownloading(true);
 
-      // ✅ NEW: Handle log files (TXT) separately
       if (documentType === 'version-log') {
         const blob = await pdfApi.downloadVersionLog(documentId);
         const url = window.URL.createObjectURL(blob);
@@ -252,20 +201,15 @@ export default function PDFViewer() {
         return;
       }
 
-      // ✅ FIXED: Use correct API based on document type for downloading
       let blob: Blob;
 
       if (documentType === 'version') {
-        // Use version API for version PDFs with watermark parameter
-        blob = await pdfApi.downloadVersionPdf(documentId, showWatermark); // ✅ NEW: Pass watermark flag
+        blob = await pdfApi.downloadVersionPdf(documentId, showWatermark);
       } else if (documentType === 'manual-upload') {
-        // Use manual upload API
         blob = await manualUploadApi.downloadFile(documentId);
       } else if (documentType === 'attached-file') {
-        // Use attached file API
         blob = await pdfApi.downloadAttachedFile(documentId);
       } else {
-        // Default to agreement API for main PDFs and fallback
         blob = await pdfApi.downloadPdf(documentId);
       }
 
@@ -291,19 +235,12 @@ export default function PDFViewer() {
   };
 
   const handleBack = () => {
-    // Smart navigation logic to break loops
-
-    // If we came from edit form and have original return info, use it
     if (fromEdit && originalReturnPath && originalReturnState) {
-      console.log('📍 PDF Viewer: Returning to original source after edit');
       navigate(originalReturnPath, { state: originalReturnState });
       return;
     }
 
-    // If we came from edit form but no original info, try intelligent defaults
     if (fromEdit) {
-      console.log('📍 PDF Viewer: Returning after edit, using intelligent fallback');
-      // Try to determine source based on current URL or default to saved files
       if (window.location.href.includes('admin')) {
         navigate('/admin-panel');
       } else {
@@ -312,52 +249,36 @@ export default function PDFViewer() {
       return;
     }
 
-    // If we have original return path (came from somewhere specific), use it
     if (originalReturnPath && originalReturnState) {
-      console.log('📍 PDF Viewer: Returning to original source:', originalReturnPath);
       navigate(originalReturnPath, { state: originalReturnState });
       return;
     }
 
-    // If we have original return path without state
     if (originalReturnPath) {
-      console.log('📍 PDF Viewer: Returning to original source:', originalReturnPath);
       navigate(originalReturnPath);
       return;
     }
 
-    // Intelligent fallback based on current context
-    console.log('📍 PDF Viewer: Using intelligent fallback navigation');
     const currentUrl = window.location.href;
 
     if (currentUrl.includes('admin')) {
-      // If accessed from admin context, go to admin panel
       navigate('/admin-panel');
     } else {
-      // Default to saved files for regular users
       navigate('/saved-pdfs');
     }
   };
 
-  // ⚡ FIXED: Open PDF in new tab for mobile devices (better experience)
   const handleOpenPdfInNewTab = () => {
     if (pdfUrl) {
-      // Open blob URL in new tab - mobile browsers handle this better than iframe
       window.open(pdfUrl, '_blank');
     }
   };
 
-  // ⚡ NEW: Open log file (text content) in new tab for mobile devices
   const handleOpenLogFileInNewTab = () => {
     if (textContent) {
-      // Create a blob from text content
       const blob = new Blob([textContent], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
-
-      // Open in new tab
       window.open(url, '_blank');
-
-      // Clean up blob URL after a delay
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
       }, 100);
@@ -385,7 +306,6 @@ export default function PDFViewer() {
           </h2>
           <p className="error-message">{error || `Unable to load ${isLogFile ? 'log file' : 'PDF'}`}</p>
 
-          {/* ✅ NEW: Show detailed suggestions if available */}
           {errorDetails?.suggestions && (
             <div className="error-suggestions">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -400,7 +320,6 @@ export default function PDFViewer() {
             </div>
           )}
 
-          {/* ✅ NEW: Show document info if available */}
           {errorDetails?.documentInfo && (
             <div className="document-info">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -446,7 +365,6 @@ export default function PDFViewer() {
           <h2 className="pdf-viewer__title">{fileName || "Document"}</h2>
         </div>
         <div className="pdf-viewer__toolbar-right">
-          {/* ✅ NEW: Watermark toggle (only for version PDFs) */}
           {documentType === 'version' && (
             <div className="pdf-viewer__watermark-toggle">
               <label htmlFor="watermark-checkbox" className="watermark-toggle-label">
@@ -463,16 +381,6 @@ export default function PDFViewer() {
               </label>
             </div>
           )}
-          {/* ✅ UPDATED: Hide Edit button for log files */}
-          {/* {!isLogFile && (
-            <button
-              onClick={handleEdit}
-              className="pdf-viewer__btn pdf-viewer__btn--edit"
-              title="Edit Document"
-            >
-              ✏️ Edit
-            </button>
-          )} */}
           <button
             onClick={handleDownload}
             className="pdf-viewer__btn pdf-viewer__btn--download"
@@ -496,11 +404,8 @@ export default function PDFViewer() {
       </div>
 
       <div className="pdf-viewer__container">
-        {/* ⚡ FIXED: Check mobile OR medium device FIRST, then handle log files vs PDFs */}
         {isMobileOrMediumDevice() ? (
-          // ⚡ MOBILE/TABLET: Show "Open in Browser" button for both PDFs and log files
           isLogFile && textContent ? (
-            // Log files on mobile/tablet - Show button to open text file
             <div className="pdf-viewer__mobile-message">
               <div className="mobile-pdf-icon">
                 <FontAwesomeIcon icon={faFileAlt} size="3x" style={{ color: '#10b981' }} />
@@ -530,7 +435,6 @@ export default function PDFViewer() {
               </p>
             </div>
           ) : pdfUrl ? (
-            // PDFs and attached files on mobile/tablet - Show button to open PDF
             <div className="pdf-viewer__mobile-message">
               <div className="mobile-pdf-icon">
                 <FontAwesomeIcon
@@ -538,8 +442,8 @@ export default function PDFViewer() {
                   size="3x"
                   style={{
                     color: documentType === 'manual-upload' || documentType === 'attached-file'
-                      ? '#f59e0b'  // Orange for manual/attached files
-                      : '#3b82f6'  // Blue for version/agreement PDFs
+                      ? '#f59e0b'
+                      : '#3b82f6'
                   }}
                 />
               </div>
@@ -575,9 +479,7 @@ export default function PDFViewer() {
             </div>
           ) : null
         ) : (
-          // ⚡ DESKTOP (> 1024px): Show embedded viewer (text for logs, iframe for PDFs)
           isLogFile && textContent ? (
-            // Log files on desktop - Show text viewer
             <pre className="pdf-viewer__text-content" style={{
               padding: '20px',
               backgroundColor: '#1e1e1e',
@@ -594,7 +496,6 @@ export default function PDFViewer() {
               {textContent}
             </pre>
           ) : pdfUrl ? (
-            // PDFs and attached files on desktop - Show iframe
             <iframe
               src={`${pdfUrl}#toolbar=1&navpanes=0`}
               className="pdf-viewer__iframe"

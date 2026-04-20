@@ -1,7 +1,5 @@
-// src/hooks/useVersionChangeCollection.ts
 import { useState, useCallback, useRef } from 'react';
 
-// Interface for a single field change
 interface FieldChange {
   productKey: string;
   productName: string;
@@ -16,7 +14,6 @@ interface FieldChange {
   frequency?: string;
 }
 
-// Interface for the batch logging data
 interface VersionChangesData {
   agreementId: string;
   versionId: string;
@@ -29,7 +26,6 @@ interface VersionChangesData {
   sessionId: string;
 }
 
-// Response from the batch logging API
 interface LogVersionChangesResponse {
   success: boolean;
   message: string;
@@ -46,15 +42,10 @@ interface LogVersionChangesResponse {
 }
 
 interface UseVersionChangeCollectionReturn {
-  // Change collection methods
   addChange: (change: Omit<FieldChange, 'changeAmount' | 'changePercentage'>) => void;
   removeChange: (productKey: string, fieldType: string) => void;
   clearChanges: () => void;
-
-  // Batch logging methods
   logVersionChanges: (data: Omit<VersionChangesData, 'changes'>) => Promise<LogVersionChangesResponse>;
-
-  // State
   changes: FieldChange[];
   hasChanges: boolean;
   isLogging: boolean;
@@ -67,7 +58,6 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
   const [error, setError] = useState<string | null>(null);
   const sessionIdRef = useRef<string>(`session_${Date.now()}_${Math.random().toString(36).slice(2)}`);
 
-  // Add a change to the collection
   const addChange = useCallback((change: Omit<FieldChange, 'changeAmount' | 'changePercentage'>) => {
     const changeAmount = change.newValue - change.originalValue;
     const changePercentage = change.originalValue !== 0
@@ -81,12 +71,9 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
     };
 
     setChanges(prev => {
-      // Remove any existing change for this field
       const filtered = prev.filter(c =>
         !(c.productKey === change.productKey && c.fieldType === change.fieldType)
       );
-
-      // Add the new change
       return [...filtered, fullChange];
     });
 
@@ -98,7 +85,6 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
     });
   }, []);
 
-  // Remove a specific change from the collection
   const removeChange = useCallback((productKey: string, fieldType: string) => {
     setChanges(prev => prev.filter(c =>
       !(c.productKey === productKey && c.fieldType === fieldType)
@@ -107,13 +93,11 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
     console.log(`🗑️ [CHANGE-COLLECTION] Removed change: ${productKey} - ${fieldType}`);
   }, []);
 
-  // Clear all collected changes
   const clearChanges = useCallback(() => {
     setChanges([]);
     console.log('🧹 [CHANGE-COLLECTION] Cleared all changes');
   }, []);
 
-  // Log all collected changes for a version (batch)
   const logVersionChanges = useCallback(async (data: Omit<VersionChangesData, 'changes'>): Promise<LogVersionChangesResponse> => {
     if (changes.length === 0) {
       console.log('ℹ️ [CHANGE-COLLECTION] No changes to log');
@@ -166,7 +150,6 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
         reviewStatus: result.log.reviewStatus
       });
 
-      // Clear changes after successful logging
       clearChanges();
 
       return result;
@@ -176,7 +159,6 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
       console.error('❌ [CHANGE-COLLECTION] Failed to log version changes:', errorMessage);
       setError(errorMessage);
 
-      // Return a default response structure so the component doesn't crash
       return {
         success: false,
         message: errorMessage,
@@ -208,22 +190,17 @@ export const useVersionChangeCollection = (): UseVersionChangeCollectionReturn =
   };
 };
 
-// Utility function to generate session ID if not provided
 export const generateSessionId = (): string => {
   return `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 };
 
-// Utility function to get field display name from field type
 export const getFieldDisplayName = (fieldType: string): string => {
   const displayNames: Record<string, string> = {
-    // Product/Dispenser fields
     'unitPrice': 'Unit Price',
     'amount': 'Amount',
     'warrantyPrice': 'Warranty Price',
     'replacementPrice': 'Replacement Price',
     'total': 'Total',
-
-    // Service fields
     'hourlyRate': 'Hourly Rate',
     'minimumVisit': 'Minimum Visit',
     'customPerVisitTotal': 'Per Visit Total',
@@ -235,8 +212,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'insideRate': 'Inside Rate',
     'outsideRate': 'Outside Rate',
     'sqFtFixedFee': 'Sq Ft Fixed Fee',
-
-    // Custom override fields
     'customStandardBathroomTotal': 'Standard Bathroom Total',
     'customHugeBathroomTotal': 'Huge Bathroom Total',
     'customExtraAreaTotal': 'Extra Area Total',
@@ -251,14 +226,12 @@ export const getFieldDisplayName = (fieldType: string): string => {
   return displayNames[fieldType] || fieldType;
 };
 
-// Utility function to get product type from family key
 export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispenser' | 'service' => {
   if (familyKey === 'dispensers') return 'dispenser';
   if (familyKey.includes('service') || familyKey.includes('Service')) return 'service';
   return 'product';
 };
 
-// Utility function to determine field type from the field being overridden
 export const getFieldType = (fieldName: string): string => {
   switch (fieldName) {
     case 'unitPriceOverride':
@@ -271,7 +244,6 @@ export const getFieldType = (fieldName: string): string => {
       return 'replacementPrice';
     case 'totalOverride':
       return 'total';
-    // Service-specific field types
     case 'hourlyRate':
       return 'hourlyRate';
     case 'minimumVisit':
@@ -295,6 +267,6 @@ export const getFieldType = (fieldName: string): string => {
     case 'sqFtFixedFee':
       return 'sqFtFixedFee';
     default:
-      return fieldName; // Return the field name as-is if not recognized
+      return fieldName;
   }
 };

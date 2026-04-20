@@ -45,73 +45,59 @@ export default function Home() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-  // ✅ OPTIMIZED: Store counts directly instead of full documents
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({
     done: 0,
     pending: 0,
     drafts: 0,
     saved: 0
   });
-  const [chartTimeSeries, setChartTimeSeries] = useState<any[] | null>(null); // ✅ NEW: Store time-series data from backend
+  const [chartTimeSeries, setChartTimeSeries] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploadCount, setUploadCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
   const [hoveredBar, setHoveredBar] = useState<{ index: number; type: string } | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // ✅ OPTIMIZED: Fetch counts using optimized API with date range and grouping
   useEffect(() => {
     const fetchStatusCounts = async () => {
       setLoading(true);
       try {
-        // Calculate date range based on selected filter
         const today = new Date();
         let startDate, endDate, groupBy;
 
         switch (timeFilter) {
           case "This Week":
-            // ✅ FIXED: Use ISO week (Monday-Saturday) to match backend
-            // Get current day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
             const dayOfWeek = today.getDay();
 
-            // Get start of ISO week (Monday)
             const startOfWeek = new Date(today);
-            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days; else go back to Monday
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
             startOfWeek.setDate(today.getDate() - daysToMonday);
             startOfWeek.setHours(0, 0, 0, 0);
 
-            // Get end of ISO week (Sunday)
             const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
 
-            // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
             startDate = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
             endDate = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
             groupBy = 'day';
             break;
 
           case "This Month":
-            // Get start of current month (1st day)
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-            // Get end of current month (last day)
             const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-            // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
             startDate = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(startOfMonth.getDate()).padStart(2, '0')}`;
             endDate = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
             groupBy = 'week';
             break;
 
           case "This Year":
-            // Get start of current year (January 1st)
             const startOfYear = new Date(today.getFullYear(), 0, 1);
 
-            // Get end of current year (December 31st)
             const endOfYear = new Date(today.getFullYear(), 11, 31);
 
-            // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
             startDate = `${startOfYear.getFullYear()}-${String(startOfYear.getMonth() + 1).padStart(2, '0')}-${String(startOfYear.getDate()).padStart(2, '0')}`;
             endDate = `${endOfYear.getFullYear()}-${String(endOfYear.getMonth() + 1).padStart(2, '0')}-${String(endOfYear.getDate()).padStart(2, '0')}`;
             groupBy = 'month';
@@ -119,7 +105,6 @@ export default function Home() {
 
           case "Date Range":
             if (selectedDateFrom && selectedDateTo) {
-              // ✅ FIX: Format dates in YYYY-MM-DD format (no timezone conversion)
               startDate = `${selectedDateFrom.getFullYear()}-${String(selectedDateFrom.getMonth() + 1).padStart(2, '0')}-${String(selectedDateFrom.getDate()).padStart(2, '0')}`;
               endDate = `${selectedDateTo.getFullYear()}-${String(selectedDateTo.getMonth() + 1).padStart(2, '0')}-${String(selectedDateTo.getDate()).padStart(2, '0')}`;
               groupBy = 'day';
@@ -127,7 +112,6 @@ export default function Home() {
             break;
 
           default:
-            // No filter, get all data
             startDate = null;
             endDate = null;
             groupBy = 'day';
@@ -135,7 +119,6 @@ export default function Home() {
 
         console.log(`📊 [FRONTEND] Requesting data with filter: ${timeFilter}, startDate: ${startDate}, endDate: ${endDate}, groupBy: ${groupBy}`);
 
-        // Use the optimized count API with date range and grouping
         const result = await pdfApi.getDocumentStatusCounts({
           startDate,
           endDate,
@@ -144,11 +127,9 @@ export default function Home() {
 
         console.log("📊 Fetched Document Status Counts:", result);
 
-        // Store the time-series data from backend
         if (result.timeSeries) {
           setChartTimeSeries(result.timeSeries);
         } else {
-          // Fallback to legacy total counts format
           setStatusCounts({
             done: result.counts.done,
             pending: result.counts.pending,
@@ -165,52 +146,30 @@ export default function Home() {
     };
 
     fetchStatusCounts();
-  }, [timeFilter, selectedDateFrom, selectedDateTo]); // ✅ Refetch when filter changes
+  }, [timeFilter, selectedDateFrom, selectedDateTo]);
 
-  // ✅ REMOVED: Manual upload API call for optimization (not used on Home page)
-  // useEffect(() => {
-  //   const fetchUploadStats = async () => {
-  //     try {
-  //       const data = await manualUploadApi.getManualUploads();
-  //       const uploads = data.items || [];
-  //       console.log("📤 Manual Uploads:", uploads);
-  //       console.log("📤 Total Upload Count:", uploads.length);
-  //       setUploadCount(uploads.length);
-  //     } catch (err) {
-  //       console.error("Error fetching upload stats:", err);
-  //     }
-  //   };
-
-  //   fetchUploadStats();
-  // }, []);
-
-  // ✅ ENHANCED: Calculate chart data using actual backend time-series data
   const getChartData = (): ChartDataPoint[] => {
     const today = new Date();
     const chartData: ChartDataPoint[] = [];
 
-    // ✅ NEW: Use actual time-series data from backend if available
     if (chartTimeSeries && chartTimeSeries.length > 0) {
       if (timeFilter === "This Week") {
-        // ✅ FIXED: Map backend data to ISO week day names (Mon-Sun)
         const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const startOfWeek = new Date(today);
         const dayOfWeek = today.getDay();
         const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         startOfWeek.setDate(today.getDate() - daysToMonday);
 
-        // Create a map of date to data
         const dataMap = new Map();
         chartTimeSeries.forEach(item => {
           dataMap.set(item.period, item);
         });
 
-        // Generate chart data for all 7 days (Mon-Sun)
         for (let i = 0; i < 7; i++) {
           const date = new Date(startOfWeek);
           date.setDate(startOfWeek.getDate() + i);
-          const dayName = dayNames[i]; // Monday=0, Tuesday=1, ..., Sunday=6
-          const dateKey = date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+          const dayName = dayNames[i];
+          const dateKey = date.toISOString().split('T')[0];
 
           const dayData = dataMap.get(dateKey);
           chartData.push({
@@ -223,7 +182,6 @@ export default function Home() {
         }
       }
       else if (timeFilter === "This Month") {
-        // Map backend weekly data to Week 1, Week 2, etc.
         chartTimeSeries.forEach((item, index) => {
           chartData.push({
             label: `Week ${index + 1}`,
@@ -235,23 +193,19 @@ export default function Home() {
         });
       }
       else if (timeFilter === "This Year") {
-        // Map backend monthly data to Jan, Feb, Mar, etc.
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const dataMap = new Map();
         const currentYear = today.getFullYear();
 
         chartTimeSeries.forEach(item => {
-          // item.period format: "2026-01", "2026-02", etc.
           const [year, monthStr] = item.period.split('-');
 
-          // ✅ FIXED: Only include data from the current year (filter out previous/next years)
           if (parseInt(year) === currentYear) {
-            const month = parseInt(monthStr) - 1; // 0-based (0=Jan, 11=Dec)
+            const month = parseInt(monthStr) - 1;
             dataMap.set(month, item);
           }
         });
 
-        // Generate chart data for all 12 months
         for (let month = 0; month < 12; month++) {
           const monthData = dataMap.get(month);
           chartData.push({
@@ -264,7 +218,6 @@ export default function Home() {
         }
       }
       else if (timeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
-        // Show data for the selected date range
         chartTimeSeries.forEach(item => {
           const date = new Date(item.period);
           const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -281,7 +234,6 @@ export default function Home() {
       return chartData;
     }
 
-    // ✅ FALLBACK: If no time-series data, use legacy distributed counts
     if (timeFilter === "This Week") {
       const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
       const startOfWeek = new Date(today);
@@ -305,7 +257,6 @@ export default function Home() {
       }
     }
     else if (timeFilter === "This Month") {
-      // Show 4 weeks of current month
       for (let week = 1; week <= 4; week++) {
         const isCurrentWeek = week === Math.ceil(today.getDate() / 7);
         chartData.push({
@@ -318,7 +269,6 @@ export default function Home() {
       }
     }
     else if (timeFilter === "This Year") {
-      // Show all 12 months
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const currentMonth = today.getMonth();
 
@@ -334,7 +284,6 @@ export default function Home() {
       }
     }
     else if (timeFilter === "Date Range" && selectedDateFrom && selectedDateTo) {
-      // Show data for the selected date range
       const formattedRange = `${selectedDateFrom.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${selectedDateTo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
       chartData.push({
         label: formattedRange,
@@ -350,20 +299,15 @@ export default function Home() {
 
   const chartData = getChartData();
 
-  // ✅ FIX: Calculate proper scaling to fit bars within container
-  // Find the maximum total value across all bars to normalize heights
   const maxTotal = Math.max(
     ...chartData.map(data => data.done + data.pending + data.saved + data.drafts),
-    1 // Minimum 1 to avoid division by zero
+    1
   );
 
-  // Container height minus some padding for labels
-  const maxBarHeight = 280; // Leave space for labels and padding
+  const maxBarHeight = 280;
 
-  // Calculate height as percentage of max value, fitting within container
   const getBarHeight = (value: number) => {
     if (value === 0) return 0;
-    // Scale to fit within maxBarHeight, with minimum 20px for visibility
     return Math.max((value / maxTotal) * maxBarHeight, 20);
   };
 
@@ -384,10 +328,8 @@ export default function Home() {
     }
   };
 
-  // ✅ NEW: Handle closing date picker - revert to "This Month" if dates not selected
   const handleDatePickerClose = () => {
     if (!selectedDateFrom || !selectedDateTo) {
-      // If dates aren't fully selected, revert back to "This Month"
       setTimeFilter("This Month");
       setSelectedDateFrom(null);
       setSelectedDateTo(null);
@@ -468,7 +410,6 @@ export default function Home() {
     let failCount = 0;
 
     try {
-      // Upload files one by one
       for (let i = 0; i < uploadedFiles.length; i++) {
         try {
           await manualUploadApi.uploadFile(uploadedFiles[i]);
@@ -479,19 +420,12 @@ export default function Home() {
         }
       }
 
-      // Show success message
       if (successCount > 0) {
         setToastMessage({
           message: `Successfully uploaded ${successCount} file(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
           type: successCount === uploadedFiles.length ? "success" : "error"
         });
         setUploadedFiles([]);
-
-        // ✅ REMOVED: Manual upload count refresh (not used on Home page)
-        // const data = await manualUploadApi.getManualUploads();
-        // const newCount = data.items?.length || 0;
-        // console.log("📤 Upload Complete! New count:", newCount);
-        // setUploadCount(newCount);
       } else {
         setToastMessage({ message: "Failed to upload files. Please try again.", type: "error" });
       }
@@ -505,7 +439,6 @@ export default function Home() {
 
   return (
     <section className="home">
-      {/* Hero Section */}
       <div className="home__hero">
         <div className="home__hero-content">
           <h1 className="home__title">Welcome to Enviro-Master</h1>
@@ -518,9 +451,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="home__container">
-        {/* Agreement Management Section */}
         <div className="home__section-header">
           <h2 className="home__section-title">Agreement Management</h2>
         </div>
@@ -549,9 +480,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Bottom Section: Chart and Upload */}
         <div className="home__bottom-section">
-          {/* Chart Section */}
           <div className="home__chart-section">
             <div className="home__chart-header">
               <select
@@ -639,7 +568,6 @@ export default function Home() {
                     return (
                       <div key={index} className="home__chart-bar-group">
                         <div className="home__chart-bars">
-                          {/* Done Bar */}
                           {data.done > 0 && (
                             <div
                               className="home__chart-bar home__chart-bar--done"
@@ -656,7 +584,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Pending Bar */}
                           {data.pending > 0 && (
                             <div
                               className="home__chart-bar home__chart-bar--pending"
@@ -673,7 +600,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Saved Bar */}
                           {data.saved > 0 && (
                             <div
                               className="home__chart-bar home__chart-bar--saved"
@@ -690,7 +616,6 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Drafts Bar */}
                           {data.drafts > 0 && (
                             <div
                               className="home__chart-bar home__chart-bar--drafts"
@@ -713,10 +638,6 @@ export default function Home() {
                   })}
                 </div>
                 <div className="home__chart-legend">
-                  {/* <div className="home__legend-item">
-                    <span className="home__legend-dot home__legend-dot--done"></span>
-                    Done
-                  </div> */}
                   <div className="home__legend-item">
                     <span className="home__legend-dot home__legend-dot--pending"></span>
                     Pending
@@ -733,57 +654,6 @@ export default function Home() {
               </>
             )}
           </div>
-
-          {/* Upload Section */}
-          {/* <div className="home__upload-section">
-            <h3 className="home__upload-title">Manual File Upload</h3>
-            <div
-              className="home__upload-area"
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onClick={() => document.getElementById("file-input")?.click()}
-            >
-              <div className="home__upload-icon">
-                <FontAwesomeIcon icon={faCloudUpload} size="2x" />
-              </div>
-              <p className="home__upload-label">Drag and drop files here</p>
-              <p className="home__upload-text">or click to browse</p>
-              <input
-                id="file-input"
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileSelect}
-                style={{ display: "none" }}
-                multiple
-              />
-            </div>
-            {uploadedFiles.length > 0 && (
-              <div className="home__upload-files-list">
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="home__upload-file-item">
-                    <FontAwesomeIcon icon={faFileAlt} style={{ color: "#3b82f6", fontSize: "16px" }} />
-                    <span className="home__upload-file-name">
-                      {file.name}
-                      <span className="home__upload-file-size"> ({formatFileSize(file.size)})</span>
-                    </span>
-                    <button
-                      className="home__upload-file-remove"
-                      onClick={() => removeFile(index)}
-                      disabled={uploading}
-                      title="Remove file"
-                    >
-                      <FontAwesomeIcon icon={faTrash} size="sm" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button className="home__upload-button" onClick={handleUpload} disabled={uploadedFiles.length === 0 || uploading}>
-              <FontAwesomeIcon icon={faUpload} size="lg" />
-              {uploading ? `Uploading ${uploadedFiles.length} file(s)...` : `Upload ${uploadedFiles.length > 0 ? uploadedFiles.length : ''} File${uploadedFiles.length !== 1 ? 's' : ''}`}
-            </button>
-            <p className="home__upload-formats">PDF, DOC, DOCX</p>
-          </div> */}
         </div>
       </div>
 

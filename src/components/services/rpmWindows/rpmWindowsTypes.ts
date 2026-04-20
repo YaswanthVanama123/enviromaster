@@ -1,4 +1,4 @@
-// src/features/services/rpmWindows/rpmWindowsTypes.ts
+
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type RpmFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
@@ -77,59 +77,59 @@ export interface RpmWindowPricingConfig {
   };
 }
 
-// Extra custom lines added with the + button
+
 export interface RpmExtraChargeLine {
   id: string;
   calcText: string;
   description: string;
-  amount: number; // per-visit extra charge (already in “this frequency” units)
+  amount: number; 
   orderNo?: number;
   isDisplay?: boolean;
 }
 
-// Form state used by the frontend
+
 export interface RpmWindowsFormState extends BaseServiceFormState {
-  // quantities
+
   smallQty: number;
   mediumQty: number;
   largeQty: number;
 
-  // per-window rates (editable but default from config)
+
   smallWindowRate: number;
   mediumWindowRate: number;
   largeWindowRate: number;
 
-  // Custom overrides for line totals (if user wants to manually set total)
+
   customSmallTotal?: number;
   customMediumTotal?: number;
   customLargeTotal?: number;
 
-  // trip charge (always included – checkbox is just visual)
+
   tripCharge: number;
 
-  // pricing choices
-  isFirstTimeInstall: boolean;           // new install?
-  selectedRateCategory: RpmRateCategory; // "redRate" / "greenRate"
-  includeMirrors: boolean;               // flag only; price not yet changed
 
-  // ✅ NEW: Editable installation multipliers (from backend config)
-  installMultiplierFirstTime: number;    // typically 3× (editable)
-  installMultiplierClean: number;        // typically 1× (editable)
+  isFirstTimeInstall: boolean;           
+  selectedRateCategory: RpmRateCategory; 
+  includeMirrors: boolean;               
 
-  // custom installation override (user can manually set installation cost)
-  customInstallationFee?: number;        // if set, overrides calculated installation
 
-  // extra custom per-visit charges (added via + button)
+  installMultiplierFirstTime: number;    
+  installMultiplierClean: number;        
+
+
+  customInstallationFee?: number;        
+
+
   extraCharges: RpmExtraChargeLine[];
 
-  // contract length in months for total pricing (2–36)
+
   contractMonths: number;
 
-  // Custom overrides for final totals
-  customPerVisitPrice?: number;         // override for Total Price (Per Visit)
-  customFirstMonthPrice?: number;       // override for First Month Total
-  customMonthlyRecurring?: number;      // override for Monthly Recurring
-  customContractTotal?: number;         // override for Contract Total (renamed from customAnnualPrice)
+
+  customPerVisitPrice?: number;         
+  customFirstMonthPrice?: number;       
+  customMonthlyRecurring?: number;      
+  customContractTotal?: number;         
   customFirstMonthTotal?: number;
   customAnnualPrice?: number;
 

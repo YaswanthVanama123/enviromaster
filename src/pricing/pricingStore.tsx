@@ -1,8 +1,7 @@
-// src/pricing/pricingStore.tsx
 import { createContext, useContext, useMemo, useState } from "react";
 import { DEFAULT_ROWS } from "./defaultData";
 import { BILLING, TRIP } from "./pricingRules";
-import type { PriceRow, PricingState, PriceFormulaInput, ComputedPrice } from "./pricingTypes"; // 👈 type-only
+import type { PriceRow, PricingState, PriceFormulaInput, ComputedPrice } from "./pricingTypes";
 import { computePrice } from "./compute";
 
 

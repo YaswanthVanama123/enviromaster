@@ -1,8 +1,7 @@
-// Types for the Pricing Backup system
 export interface PricingBackup {
   _id?: string;
   changeDayId: string;
-  changeDay: string; // YYYY-MM-DD format
+  changeDay: string;
   firstChangeTimestamp: string;
   backupTrigger: 'pricefix_update' | 'product_catalog_update' | 'service_config_update' | 'manual' | 'scheduled';
   changedBy?: {
@@ -162,7 +161,6 @@ export interface BackupComparisonData {
   };
 }
 
-// UI State types
 export type BackupViewMode = 'list' | 'statistics' | 'health' | 'compare' | 'restore';
 
 export type BackupSortBy = 'changeDay' | 'backupTrigger' | 'compressionRatio' | 'totalSize';

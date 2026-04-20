@@ -8,13 +8,13 @@ import { SC_DEFAULTS, SC_UI as UI } from "./constants";
 export default function SaniCleanCalculator() {
   const [master, setMaster] = useState(SC_DEFAULTS);
 
-  // inputs
-  const [region, setRegion] = useState("inside");        // inside | outside
+
+  const [region, setRegion] = useState("inside");        
   const [fixtures, setFixtures] = useState(10);
   const [agreementMonths, setAgreementMonths] = useState(12);
-  const [tripType, setTripType] = useState("beltway8");  // beltway8 | standard6 | paid7 | waived
+  const [tripType, setTripType] = useState("beltway8");  
   const [parkingAmt, setParkingAmt] = useState(0);
-  const [allInclusive, setAllInclusive] = useState("no");// no | yes
+  const [allInclusive, setAllInclusive] = useState("no");
   const [smallThreshold, setSmallThreshold] = useState(5);
 
   const updateMaster = (k, raw) => {
@@ -50,7 +50,7 @@ export default function SaniCleanCalculator() {
       rule = `Small-account rule: fixtures ≤ ${smallThreshold}, minimum ${money(master.smallMin)} (trip included).`;
     }
 
-    const perMonthCalc = perVisitCalc * 4.33; // weekly cadence
+    const perMonthCalc = perVisitCalc * 4.33; 
     const months = Math.max(1, Number(agreementMonths) || 1);
     const agreementCalc = perMonthCalc * months;
 

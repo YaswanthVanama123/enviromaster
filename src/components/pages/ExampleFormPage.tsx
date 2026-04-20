@@ -1,9 +1,9 @@
-// src/components/pages/ExampleFormPage.tsx
-// Remove `import React ...` if you’re on the new JSX transform
+
+
 import { useState } from "react";
 import { PricingProvider } from "../../pricing/pricingStore";
-import PriceAwareField from "../forms/PriceAwareField";                 // 👈 fixed path
-import type { Frequency } from "../../pricing/pricingTypes";            // 👈 type-only
+import PriceAwareField from "../forms/PriceAwareField";                 
+import type { Frequency } from "../../pricing/pricingTypes";            
 
 
 export default function ExampleFormPage() {

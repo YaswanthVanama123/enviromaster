@@ -1,7 +1,5 @@
-// src/backendservice/api/zohoApi.ts
 import { apiClient } from "../utils/apiClient";
 
-// Types for Zoho API responses
 export interface ZohoCompany {
   id: string;
   name: string;
@@ -119,16 +117,16 @@ export interface FirstTimeUploadRequest {
   pipelineName?: string;
   stage?: string;
   noteText: string;
-  skipFileUpload?: boolean;  // ✅ NEW: Allow skipping PDF upload for bulk uploads
+  skipFileUpload?: boolean;
 }
 
 export interface UpdateUploadRequest {
   noteText: string;
-  dealId?: string; // ✅ NEW: Optional dealId for bulk uploads
-  skipNoteCreation?: boolean; // ✅ NEW: Skip note creation for bulk uploads
-  versionId?: string; // ✅ NEW: Target a specific version PDF during uploads
-  versionFileName?: string; // Optional actual filename to set on Zoho
-  skipFileUpload?: boolean; // ✅ NEW: Support note-only/update requests
+  dealId?: string;
+  skipNoteCreation?: boolean;
+  versionId?: string;
+  versionFileName?: string;
+  skipFileUpload?: boolean;
 }
 
 export interface ZohoDeal {
@@ -159,9 +157,6 @@ export interface ZohoDealsResponse {
 }
 
 export const zohoApi = {
-  /**
-   * Check if agreement is first-time upload or existing
-   */
   async getUploadStatus(agreementId: string): Promise<ZohoUploadStatus> {
     const res = await apiClient.get<ZohoUploadStatus>(
       `/api/zoho-upload/${agreementId}/status`
@@ -170,9 +165,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Get list of companies with optional search
-   */
   async getCompanies(
     page = 1,
     search?: string
@@ -190,9 +182,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Create new company in Zoho
-   */
   async createCompany(companyData: CreateCompanyRequest): Promise<{
     success: boolean;
     company?: ZohoCompany;
@@ -210,9 +199,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Get deals for a specific company
-   */
   async getCompanyDeals(
     companyId: string,
     page = 1,
@@ -229,9 +215,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Get pipeline and stage options for a specific company
-   */
   async getCompanyPipelineOptions(companyId: string): Promise<ZohoPipelineOptions & {
     companyId: string;
     message?: string;
@@ -246,9 +229,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Get pipeline and stage options (general)
-   */
   async getPipelineOptions(): Promise<ZohoPipelineOptions> {
     const res = await apiClient.get<ZohoPipelineOptions>(
       `/api/zoho-upload/pipeline-options`
@@ -257,9 +237,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Validate pipeline and stage values
-   */
   async validateDealFields(pipelineName: string, stage: string): Promise<{
     success: boolean;
     valid: boolean;
@@ -285,9 +262,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * First-time upload to Zoho
-   */
   async firstTimeUpload(
     agreementId: string,
     uploadData: FirstTimeUploadRequest
@@ -300,9 +274,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Update upload to existing deal
-   */
   async updateUpload(
     agreementId: string,
     updateData: UpdateUploadRequest
@@ -315,10 +286,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ OPTIMIZED: Batch update multiple version PDFs to existing deal in single API call
-   * Reduces N API calls to 1 API call for bulk uploads
-   */
   async batchUpdateUpload(
     agreementId: string,
     versionIds: string[],
@@ -337,9 +304,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Upload attached file to existing Zoho deal
-   */
   async uploadAttachedFile(
     fileId: string,
     dealData: { dealId: string; noteText: string; dealName: string; skipNoteCreation?: boolean; fileType?: string }
@@ -352,10 +316,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * ✅ OPTIMIZED: Batch upload multiple attached files to existing deal in single API call
-   * Reduces N API calls to 1 API call for bulk uploads
-   */
   async batchUploadAttachedFiles(
     fileIds: Array<string | { fileId: string; fileType: string }>,
     dealId: string,
@@ -375,9 +335,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Get upload history for agreement
-   */
   async getUploadHistory(agreementId: string): Promise<ZohoUploadHistory> {
     const res = await apiClient.get<ZohoUploadHistory>(
       `/api/zoho-upload/${agreementId}/history`
@@ -386,9 +343,6 @@ export const zohoApi = {
     return res.data!;
   },
 
-  /**
-   * Get available Zoho modules (for debugging)
-   */
   async getModules(): Promise<{
     success: boolean;
     modules?: Array<{

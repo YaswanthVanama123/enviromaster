@@ -1,6 +1,3 @@
-/* AdminPricingManager Responsive Styles */
-
-/* Medium devices (tablets, 769px to 1024px) */
 @media (max-width: 1024px) {
   .apm-container {
     padding: 20px !important;
@@ -43,7 +40,6 @@
   }
 }
 
-/* Small devices (landscape phones, 481px to 768px) */
 @media (max-width: 768px) {
   .apm-container {
     padding: 16px !important;
@@ -144,7 +140,6 @@
   }
 }
 
-/* Extra small devices (portrait phones, up to 480px) */
 @media (max-width: 480px) {
   .apm-container {
     padding: 12px !important;
@@ -343,7 +338,6 @@
   }
 }
 
-/* Landscape orientation adjustments for small devices */
 @media (max-width: 768px) and (orientation: landscape) {
   .apm-container {
     padding: 16px !important;
@@ -358,7 +352,6 @@
   }
 }
 
-/* Very small devices adjustment (320px and below) */
 @media (max-width: 320px) {
   .apm-container {
     padding: 10px !important;

@@ -1,4 +1,4 @@
-// src/features/products/useProductsTable.ts
+
 
 import { useMemo } from "react";
 import type { ProductTableState, ProductTableSectionKey } from "./productsTableTypes";

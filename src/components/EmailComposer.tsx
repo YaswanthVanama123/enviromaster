@@ -8,7 +8,7 @@ import './EmailComposer.css';
 export interface EmailAttachment {
   id: string;
   fileName: string;
-  documentType: 'agreement' | 'version' | 'manual-upload' | 'version-log'; // ✅ FIXED: Made documentType required
+  documentType: 'agreement' | 'version' | 'manual-upload' | 'version-log';
   watermark?: boolean;
 }
 
@@ -45,7 +45,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
   const [sending, setSending] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Auto-populate form when modal opens
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -65,7 +64,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
   };
 
   const handleSend = async () => {
-    // Validation
     if (!formData.to.trim()) {
       setToastMessage({
         message: 'Please enter a recipient email address',
@@ -85,8 +83,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
     try {
       setSending(true);
 
-      // Pass email data to parent component
-      // Backend will load and attach the PDF automatically
       await onSend(formData);
 
       setToastMessage({
@@ -94,7 +90,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
         type: 'success'
       });
 
-      // Close modal after successful send
       setTimeout(() => {
         onClose();
       }, 1500);
@@ -140,7 +135,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
         </div>
 
         <div className="email-composer-body">
-          {/* To Field */}
           <div className="email-composer-field">
             <label>
               <FontAwesomeIcon icon={faEnvelope} />
@@ -155,7 +149,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
             />
           </div>
 
-          {/* Subject Field */}
           <div className="email-composer-field">
             <label>Subject:</label>
             <input
@@ -167,7 +160,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
             />
           </div>
 
-          {/* Attachment Display */}
           {attachment && (
             <div className="email-composer-attachment">
               <FontAwesomeIcon icon={faFileAlt} />
@@ -178,7 +170,6 @@ export const EmailComposer: React.FC<EmailComposerProps> = ({
             </div>
           )}
 
-          {/* Body Field */}
           <div className="email-composer-field">
             <label>Message:</label>
             <textarea

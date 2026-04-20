@@ -10,7 +10,7 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 import { buildRefreshPowerScrubDraftPayload } from "./refreshPowerScrubDraftPayload";
 
-// Helper function to format numbers without unnecessary decimals
+
 const formatNumber = (num: number | undefined): string => {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
@@ -48,10 +48,10 @@ const AREA_FREQ_OPTIONS = [
 const AREA_ORDER: RefreshAreaKey[] = [
   "dumpster",
   "patio",
-  // "walkway",
+
   "foh",
   "boh",
-  // "other",
+
 ];
 
 const PRICING_TYPES = [
@@ -65,12 +65,12 @@ const PRICING_TYPES = [
 export const RefreshPowerScrubForm: React.FC<
   ServiceInitialData<RefreshPowerScrubFormState>
 > = ({ initialData, onRemove }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const {
     form,
     setHourlyRate,
@@ -87,29 +87,29 @@ export const RefreshPowerScrubForm: React.FC<
     quote,
     refreshConfig,
     isLoadingConfig,
-    backendConfig, // ✅ Get backend config for auto-populated rates
+    backendConfig, 
   } = useRefreshPowerScrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setContractMonths(servicesContext.globalContractMonths);
     }
   }, [servicesContext?.globalContractMonths]);
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ Helper functions to get backend rates with fallbacks
+
   const getWorkerRate = (): number => {
-    return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200; // Backend per worker rate
+    return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200; 
   };
 
   const getHourRate = (): number => {
-    return backendConfig?.coreRates?.perHourRate ?? 400; // Backend per hour rate
+    return backendConfig?.coreRates?.perHourRate ?? 400; 
   };
 
   const getInsideRate = (): number => {
@@ -124,7 +124,7 @@ export const RefreshPowerScrubForm: React.FC<
     return backendConfig?.squareFootagePricing?.fixedFee ?? 200;
   };
 
-  // ✅ Backend-driven preset pricing (replaces static imports)
+
   const getPatioStandalone = (): number => {
     return backendConfig?.areaSpecificPricing?.patio?.standalone ?? 800;
   };
@@ -169,13 +169,17 @@ const getKitchenLarge = (): number => {
         return area?.enabled && areaTotal > 0;
       });
 
-      // Calculate total per-visit cost across active areas only
+
       const totalPerVisitCost = activeAreaKeys.reduce(
         (sum, key) => sum + (areaTotals[key] || 0),
         0
       );
 
-      const isActive = totalPerVisitCost > 0;
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = totalPerVisitCost > 0 || hasCustomFieldValues;
 
       const draftPayload = buildRefreshPowerScrubDraftPayload(form, customFields);
 
@@ -184,14 +188,14 @@ const getKitchenLarge = (): number => {
         displayName: "Refresh Power Scrub",
         isActive: true,
 
-        // Red/Green Line pricing data
-        perVisitBase: isActive ? totalPerVisitCost : 0,  // Raw cost (sum of all areas)
+
+        perVisitBase: isActive ? totalPerVisitCost : 0,  
         perVisit: isActive
           ? Math.max(totalPerVisitCost, form.minimumVisit || 0)
-          : 0,  // Final per-visit price after minimum
-        minimumVisit: form.minimumVisit,  // Minimum threshold
+          : 0,  
+        minimumVisit: form.minimumVisit,  
 
-        // Global service information
+
         serviceInfo: {
           isDisplay: true,
           label: "Service Type",
@@ -201,12 +205,12 @@ const getKitchenLarge = (): number => {
         hourlyRateIsCustom: form.hourlyRateIsCustom,
         minimumVisitIsCustom: form.minimumVisitIsCustom,
 
-        // Services object with new structure
+
         services: activeAreaKeys.reduce((acc, key) => {
             const area = form[key];
             const areaName = key === 'foh' ? 'frontHouse' : key === 'boh' ? 'backHouse' : key;
 
-            // Get pricing method display name
+
             const pricingMethodNames = {
               'perHour': 'Per Hour',
               'perWorker': 'Per Worker',
@@ -215,7 +219,7 @@ const getKitchenLarge = (): number => {
               'custom': 'Custom Amount'
             };
 
-            // Calculate monthly and contract based on frequency
+
             const getFrequencyMultiplier = (freq: string) => {
               switch (freq?.toLowerCase()) {
                 case "one time": return 0;
@@ -238,27 +242,27 @@ const getKitchenLarge = (): number => {
               freqLower === "one time" ? 1 : (baseMultiplier <= 0 ? 1 : baseMultiplier);
             const monthlyAmount = areaTotals[key] * visitsPerMonth;
 
-            // Calculate contract amount based on frequency type
+
             let contractAmount: number;
 
             if (freqLower === "quarterly") {
-              // Quarterly: visits = months / 3
+
               const quarterlyVisits = (area.contractMonths || 12) / 3;
               contractAmount = areaTotals[key] * quarterlyVisits;
             } else if (freqLower === "bi-annual" || freqLower === "biannual") {
-              // Bi-annual: visits = months / 6
+
               const biannualVisits = (area.contractMonths || 12) / 6;
               contractAmount = areaTotals[key] * biannualVisits;
             } else if (freqLower === "annual") {
-              // Annual: visits = months / 12
+
               const annualVisits = (area.contractMonths || 12) / 12;
               contractAmount = areaTotals[key] * annualVisits;
             } else {
-              // All other frequencies: monthly amount × months
+
               contractAmount = monthlyAmount * (area.contractMonths || 12);
             }
 
-            // Base service structure
+
             const serviceData: any = {
               enabled: true,
               pricingMethod: {
@@ -268,7 +272,7 @@ const getKitchenLarge = (): number => {
               }
             };
 
-            // Add pricing-specific fields
+
             if (area.pricingType === 'perHour') {
               serviceData.hours = {
                 isDisplay: true,
@@ -313,7 +317,7 @@ const getKitchenLarge = (): number => {
                   value: area.patioMode === 'upsell' ? 'Upsell' : 'Standalone',
                   type: "text"
                 };
-                // ✅ NEW: Save the patio add-on selection
+
                 serviceData.includePatioAddon = {
                   isDisplay: true,
                   value: area.includePatioAddon || false,
@@ -321,7 +325,7 @@ const getKitchenLarge = (): number => {
                 };
                 console.log(`🔄 [Patio SAVE DEBUG] Saving includePatioAddon:`, serviceData.includePatioAddon);
               } else if (key === 'boh') {
-                // ✅ NEW: Save both small/medium AND large kitchen details
+
                 serviceData.smallMediumQuantity = {
                   isDisplay: true,
                   value: area.smallMediumQuantity || 0,
@@ -355,7 +359,7 @@ const getKitchenLarge = (): number => {
               }
             }
 
-            // Common fields for all pricing types
+
             serviceData.frequency = {
               isDisplay: true,
               value: frequencyLabel,
@@ -440,7 +444,7 @@ const getKitchenLarge = (): number => {
               },
             },
 
-            // ✅ Also add direct contractTotal field for compatibility with ServicesContext
+
             contractTotal: totalServiceCost,
 
         notes: form.notes || "",
@@ -461,12 +465,11 @@ const getKitchenLarge = (): number => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, areaTotals, quote, customFields, totalServiceCost]);
 
-  // For each column, show the default rule price so the user
-  // knows the starting point even before typing anything.
+
   const getPresetAmount = (areaKey: RefreshAreaKey): number => {
     switch (areaKey) {
       case "dumpster":
-        // Default is the minimum visit (e.g. $475)
+
         return form.minimumVisit;
 
       case "patio":
@@ -485,7 +488,7 @@ const getKitchenLarge = (): number => {
       case "walkway":
       case "other":
       default:
-        // These are usually custom – no fixed preset
+
         return 0;
     }
   };
@@ -496,7 +499,7 @@ const getKitchenLarge = (): number => {
 
     switch (area.pricingType) {
       case "preset":
-        // Show preset-specific options (patio mode, kitchen size)
+
         return (
           <div className="rps-inline">
             {areaKey === "patio" && (
@@ -589,7 +592,7 @@ const getKitchenLarge = (): number => {
             )}
             {areaKey === "boh" && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* ✅ NEW: Small/Medium Kitchen Row - Always visible, independent */}
+                {}
                 <div className="rps-inline">
                   <span className="rps-label" style={{ fontSize: '11px' }}>S/M:</span>
                   <input
@@ -635,7 +638,7 @@ const getKitchenLarge = (): number => {
                     title={`Small/Medium Kitchen total - editable (default: $${formatAmount((area.smallMediumQuantity || 0) * (area.smallMediumRate === null ? 0 : (area.smallMediumRate ?? getKitchenSmallMed())))})`}
                   />
                 </div>
-                {/* ✅ NEW: Large Kitchen Row - Always visible, independent */}
+                {}
                 <div className="rps-inline">
                   <span className="rps-label" style={{ fontSize: '11px' }}>Large:</span>
                   <input
@@ -889,7 +892,7 @@ const getKitchenLarge = (): number => {
 
   return (
     <div className="svc-card svc-card-wide refresh-rps" style={{ position: 'relative' }}>
-      {/* Loading Overlay */}
+      {}
       {isLoadingConfig && (
         <div className="svc-loading-overlay">
           <div className="svc-loading-spinner">
@@ -932,7 +935,7 @@ const getKitchenLarge = (): number => {
         </div>
       </div>
 
-      {/* Custom fields manager */}
+      {}
       <CustomFieldManager
         fields={customFields}
         onFieldsChange={setCustomFields}
@@ -940,35 +943,13 @@ const getKitchenLarge = (): number => {
         onToggleAddDropdown={setShowAddDropdown}
       />
 
-      {/* Global rule controls */}
+      {}
       <div className="rps-config-row">
-        {/* <div className="rps-inline">
-          <span className="rps-label">Hourly Rate</span>
-          <span>$</span>
-          <input
-            type="number"
-            min="0"
-            className="rps-line rps-num"
-            value={form.hourlyRate || ""}
-            onChange={(e) => setHourlyRate(e.target.value)}
-          />
-          <span>/hr/worker</span>
-        </div> */}
-        {/* <div className="rps-inline">
-          <span className="rps-label">Minimum Visit</span>
-          <span>$</span>
-          <input
-            type="number"
-            min="0"
-            className="rps-line rps-num"
-            value={form.minimumVisit || ""}
-            onChange={(e) => setMinimumVisit(e.target.value)}
-            style={{ backgroundColor: form.minimumVisitIsCustom ? '#fffacd' : 'white' }}
-          />
-        </div> */}
+        {}
+        {}
       </div>
 
-      {/* Minimum Per Visit / Apply Minimum */}
+      {}
       <div className="rps-config-row">
         <div className="rps-inline">
           <span className="rps-label">Minimum: ${form.minimumVisit}</span>
@@ -985,7 +966,7 @@ const getKitchenLarge = (): number => {
 
       <div className="rps-wrap rps-wrap-full">
         <div className="rps-grid rps-full">
-          {/* Header row – Service names + pricing type dropdown */}
+          {}
           <div className="rps-header-row">
             {AREA_ORDER.map((areaKey) => (
               <div key={`head-${areaKey}`} className="rps-column">
@@ -1030,7 +1011,7 @@ const getKitchenLarge = (): number => {
             ))}
           </div>
 
-          {/* Content row – Conditional calculation fields + frequency + total */}
+          {}
           <div className="rps-content-row">
             {AREA_ORDER.map((areaKey) => (
               <div key={`calc-${areaKey}`} className="rps-column">
@@ -1054,7 +1035,7 @@ const getKitchenLarge = (): number => {
                       </select>
                     </div>
 
-                    {/* For OneTime frequency, show "Total Visit" instead of regular Total + Monthly */}
+                    {}
                     {form[areaKey].frequencyLabel?.toLowerCase() === "one time" ? (
                       <div className="rps-inline" style={{ marginTop: '8px' }}>
                         <span className="rps-label" style={{ color: '#0066cc', fontWeight: 'bold' }}>
@@ -1067,7 +1048,7 @@ const getKitchenLarge = (): number => {
                           <span className="rps-label">Total: ${formatAmount(areaTotals[areaKey])}</span>
                         </div>
 
-                        {/* Monthly Total – HIDE for visit-based frequencies (Bi-monthly, Quarterly, Bi-annual, Annual) */}
+                        {}
                         {form[areaKey].frequencyLabel?.toLowerCase() !== "bi-monthly" &&
                          form[areaKey].frequencyLabel?.toLowerCase() !== "quarterly" &&
                          form[areaKey].frequencyLabel?.toLowerCase() !== "bi-annual" &&
@@ -1079,7 +1060,7 @@ const getKitchenLarge = (): number => {
                       </>
                     )}
 
-                    {/* Hide Contract for OneTime frequency */}
+                    {}
                     {form[areaKey].frequencyLabel?.toLowerCase() !== "one time" && (
                       <div className="rps-inline" style={{ marginTop: '8px' }}>
                         <span className="rps-label">Contract:</span>
@@ -1090,9 +1071,9 @@ const getKitchenLarge = (): number => {
                           onChange={(e) => setAreaField(areaKey, "contractMonths", e.target.value)}
                         >
                           {form[areaKey].frequencyLabel?.toLowerCase() === "quarterly" ? (
-                            // For quarterly: show multiples of 3 months only
+
                             Array.from({ length: 12 }, (_, i) => {
-                              const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+                              const months = (i + 1) * 3; 
                               return (
                                 <option key={months} value={months}>
                                   {months} mo
@@ -1100,9 +1081,9 @@ const getKitchenLarge = (): number => {
                               );
                             })
                           ) : form[areaKey].frequencyLabel?.toLowerCase() === "bi-annual" ? (
-                            // For bi-annual: show multiples of 6 months only
+
                             Array.from({ length: 6 }, (_, i) => {
-                              const months = (i + 1) * 6; // 6, 12, 18, 24, 30, 36
+                              const months = (i + 1) * 6; 
                               return (
                                 <option key={months} value={months}>
                                   {months} mo
@@ -1110,9 +1091,9 @@ const getKitchenLarge = (): number => {
                               );
                             })
                           ) : form[areaKey].frequencyLabel?.toLowerCase() === "annual" ? (
-                            // For annual: show multiples of 12 months only
+
                             Array.from({ length: 3 }, (_, i) => {
-                              const months = (i + 1) * 12; // 12, 24, 36
+                              const months = (i + 1) * 12; 
                               return (
                                 <option key={months} value={months}>
                                   {months} mo
@@ -1120,9 +1101,9 @@ const getKitchenLarge = (): number => {
                               );
                             })
                           ) : (
-                            // For all other frequencies: show 2-36 months
+
                             Array.from({ length: 35 }, (_, i) => {
-                              const months = i + 2; // 2 to 36 months
+                              const months = i + 2; 
                               return (
                                 <option key={months} value={months}>
                                   {months} mo
@@ -1142,91 +1123,24 @@ const getKitchenLarge = (): number => {
         </div>
       </div>
 
-      {/* Summary */}
+      {}
           <div className="rps-config-row" style={{ marginTop: '16px', borderTop: '2px solid #ccc', paddingTop: '16px' }}>
         <div className="rps-inline">
           <span className="rps-label-strong">TOTAL REFRESH POWER SCRUB COST: ${formatAmount(totalServiceCost)}</span>
         </div>
       </div>
 
-      {/* Frequency Selection */}
-      {/* <div className="rps-config-row" style={{ marginTop: '16px' }}>
-        <div className="rps-inline">
-          <span className="rps-label">Frequency:</span>
-          <select
-            className="rps-line"
-            value={form.frequency}
-            onChange={(e) => setFrequency(e.target.value)}
-            style={{ width: '120px', marginLeft: '8px' }}
-          >
-            {FREQ_OPTIONS.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Monthly Total – HIDE for Quarterly */}
-      {/* {form.frequency !== "quarterly" && (
-        <div className="rps-config-row">
-          <div className="rps-inline">
-            <span className="rps-label">Monthly Total: ${formatAmount(quote.monthlyRecurring)}</span>
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
 
-      {/* Combined Contract Total with months dropdown and amount */}
-      {/* <div className="rps-config-row">
-        <div className="rps-inline">
-          <span className="rps-label">Contract Total:</span>
-          <select
-            className="rps-line"
-            style={{ width: '80px', marginLeft: '8px', marginRight: '8px' }}
-            value={form.contractMonths}
-            onChange={(e) => setContractMonths(Number(e.target.value))}
-          >
-            {form.frequency === "quarterly" ? (
-              // For quarterly: show multiples of 3 months (3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36)
-              Array.from({ length: 12 }, (_, i) => {
-                const months = (i + 1) * 3; // 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
-                return (
-                  <option key={months} value={months}>
-                    {months} mo
-                  </option>
-                );
-              })
-            ) : (
-              // For all other frequencies: show 2-36 months
-              Array.from({ length: 35 }, (_, i) => {
-                const months = i + 2; // 2 to 36 months
-                return (
-                  <option key={months} value={months}>
-                    {months} mo
-                  </option>
-                );
-              })
-            )}
-          </select>
-          <span className="rps-label" style={{ marginRight: '4px' }}>$</span>
-          <span className="rps-label-strong">{formatAmount(quote.contractTotal)}</span>
-        </div>
-      </div> */}
+      {}
+      {}
 
-      {/* Notes */}
-      {/* <div className="rps-config-row" style={{ marginTop: '16px' }}>
-        <div className="rps-inline">
-          <span className="rps-label">Notes</span>
-          <textarea
-            className="rps-line"
-            style={{ width: '100%', minHeight: '60px' }}
-            value={form.notes || ""}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional notes..."
-          />
-        </div>
-      </div> */}
+      {}
+      {}
     </div>
   );
 };

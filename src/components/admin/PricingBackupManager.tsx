@@ -32,8 +32,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   const { modalType, itemId } = useParams();
   const location = useLocation();
 
-  // ✅ OPTIMIZED: Use manual fetch control (no auto-fetch)
-  // APIs will be called based on active tab instead
   const {
     backups,
     health,
@@ -55,7 +53,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     clearErrors
   } = usePricingBackups('none');
 
-  // Local state
   const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -63,7 +60,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   const [toastMessage, setToastMessage] = useState<ToastMessage | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -93,13 +89,11 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     }
   });
 
-  // Pending backup creation data
   const [pendingBackupCreation, setPendingBackupCreation] = useState<{
     description?: string;
     existingBackup?: any;
   } | null>(null);
 
-  // ✅ OPTIMIZED: Initialize activeView from URL BEFORE first render
   const [activeView, setActiveView] = useState<BackupViewMode>(() => {
     const pathSegments = location.pathname.split('/');
     const viewFromUrl = pathSegments[pathSegments.length - 1] as BackupViewMode;
@@ -113,7 +107,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     return initialView;
   });
 
-  // Sync view with URL changes (after initial mount)
   useEffect(() => {
     const pathSegments = location.pathname.split('/');
     const viewFromUrl = pathSegments[pathSegments.length - 1] as BackupViewMode;
@@ -128,9 +121,8 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]); // ✅ Only run when URL changes, not when activeView changes
+  }, [location.pathname]);
 
-  // ✅ OPTIMIZED: Fetch data based on active tab only
   useEffect(() => {
     console.log(`📋 [BACKUP-MANAGER] Active view changed to: ${activeView} - triggering fetch`);
 
@@ -155,9 +147,8 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
         break;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView]); // ✅ Only depend on activeView, functions are stable (wrapped in useCallback)
+  }, [activeView]);
 
-  // Handle modal actions from URL
   useEffect(() => {
     if (modalType === 'restore' && itemId && backups.length > 0) {
       const backup = backups.find(b => b.changeDayId === itemId);
@@ -170,14 +161,12 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     }
   }, [modalType, itemId, backups]);
 
-  // Handle view changes
   const handleViewChange = (newView: BackupViewMode) => {
     setActiveView(newView);
     const newPath = newView === 'list' ? parentPath : `${parentPath}/${newView}`;
     navigate(newPath, { replace: true });
   };
 
-  // Handle backup actions
   const handleCreateBackup = async (description?: string, forceReplace?: boolean) => {
     setActionLoading(true);
     clearErrors();
@@ -198,7 +187,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
         setShowCreateModal(false);
         setPendingBackupCreation(null);
       } else if (result.requiresConfirmation) {
-        // Store pending backup data and show text confirmation modal
         const existingBackup = result.existingBackup;
         setPendingBackupCreation({ description, existingBackup });
 
@@ -239,7 +227,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     setConfirmationModal(prev => ({ ...prev, isOpen: false }));
 
     if (pendingBackupCreation) {
-      // Retry with forceReplace = true
       await handleCreateBackup(pendingBackupCreation.description, true);
     }
   };
@@ -282,7 +269,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
   const handleDeleteBackups = async (changeDayIds: string[]) => {
     if (changeDayIds.length === 0) return;
 
-    // Show deletion confirmation modal
     const backupText = changeDayIds.length === 1 ? 'backup' : 'backups';
     const backupList = changeDayIds.join(', ');
 
@@ -361,7 +347,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     }
   };
 
-  // Close modals
   const closeModals = () => {
     setShowCreateModal(false);
     setShowRestoreModal(false);
@@ -373,7 +358,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     setConfirmationModal(prev => ({ ...prev, isOpen: false }));
     setPendingBackupCreation(null);
 
-    // If canceling backup creation, show info message
     if (pendingBackupCreation) {
       setToastMessage({
         message: 'Manual backup creation cancelled',
@@ -382,7 +366,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     }
   };
 
-  // Styles
   const styles: Record<string, React.CSSProperties> = {
     container: {
       minHeight: '100vh',
@@ -482,7 +465,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
     }
   };
 
-  // Add hover styles dynamically
   useEffect(() => {
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
@@ -516,14 +498,12 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>Pricing Backup Management</h1>
         <p style={styles.subtitle}>
           Manage and restore pricing data backups. The system automatically maintains backups of the last 10 days with pricing changes.
         </p>
 
-        {/* Navigation Tabs */}
         <div style={styles.tabContainer}>
           {[
             { key: 'list', label: 'Backup List' },
@@ -545,9 +525,7 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
         </div>
       </div>
 
-      {/* Content Area */}
       <div style={styles.content}>
-        {/* Action Bar */}
         <div style={styles.actionBar}>
           <div style={styles.actionButtons}>
             <button
@@ -592,7 +570,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
           </div>
         </div>
 
-        {/* Main Content */}
         {activeView === 'list' && (
           <BackupListView
             backups={backups}
@@ -627,7 +604,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
         )}
       </div>
 
-      {/* Modals */}
       {showCreateModal && (
         <CreateBackupModal
           onClose={closeModals}
@@ -645,7 +621,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
         />
       )}
 
-      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={confirmationModal.isOpen}
         title={confirmationModal.title}
@@ -658,22 +633,6 @@ export const PricingBackupManager: React.FC<PricingBackupManagerProps> = ({
         onCancel={closeConfirmationModal}
         loading={actionLoading}
       />
-      {/* {confirmationModal.isOpen && (
-  <TextConfirmationModal
-    isOpen={confirmationModal.isOpen}
-    title={confirmationModal.title}
-    message={confirmationModal.message}
-    details={confirmationModal.details}
-    type={confirmationModal.type}
-    confirmText={confirmationModal.confirmText}
-    cancelText={confirmationModal.cancelText}
-    onConfirm={confirmationModal.onConfirm}
-    onCancel={closeConfirmationModal}
-    textConfirmation={confirmationModal.textConfirmation}
-  />
-)} */}
-
-      {/* Toast Notifications */}
       {toastMessage && (
         <Toast
           message={toastMessage.message}

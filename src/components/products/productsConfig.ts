@@ -1,4 +1,4 @@
-// src/features/products/productsConfig.ts
+
 import type { EnvProductCatalog } from "./productsTypes";
 
 export const envProductCatalog: EnvProductCatalog = {
@@ -6,9 +6,8 @@ export const envProductCatalog: EnvProductCatalog = {
   lastUpdated: "2025-11-23",
   currency: "USD",
   families: [
-    // ---------------------------------
-    // FLOOR PRODUCTS (floor cleaners / degreasers)
-    // ---------------------------------
+
+
     {
       key: "floorProducts",
       label: "Floor Products",
@@ -46,7 +45,7 @@ export const envProductCatalog: EnvProductCatalog = {
             currency: "USD",
             uom: "gallon",
           },
-          // show by default in EXTRAS column (matches old “bigProducts”)
+
           displayByAdmin: true,
         },
         {
@@ -107,9 +106,7 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-    // ---------------------------------
-    // SANI PRODUCTS (restroom cleaners / disinfectants)
-    // ---------------------------------
+
     {
       key: "saniProducts",
       label: "Sani Products",
@@ -162,9 +159,7 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-    // ---------------------------------
-    // THREE SINK COMPONENTS (dish / sanitizer)
-    // ---------------------------------
+
     {
       key: "threeSink",
       label: "Three Sink Components",
@@ -206,9 +201,7 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-    // ---------------------------------
-    // OTHER CHEMICALS (drain, oven, Berry Good, etc.)
-    // ---------------------------------
+
     {
       key: "otherChemicals",
       label: "Other Chemicals",
@@ -283,9 +276,7 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-    // ---------------------------------
-    // SOAP PRODUCTS (bulk soap, quality levels)
-    // ---------------------------------
+
     {
       key: "soap",
       label: "Soap Products",
@@ -296,7 +287,7 @@ export const envProductCatalog: EnvProductCatalog = {
           name: "Orange Premium Foam Soap",
           familyKey: "soap",
           kind: "handSoap",
-          // price not explicitly in sheet – leave basePrice undefined
+
         },
         {
           key: "soap_foaming_pear",
@@ -325,28 +316,26 @@ export const envProductCatalog: EnvProductCatalog = {
           name: "Low Quality Lotion Soap",
           familyKey: "soap",
           kind: "handSoap",
-          // “ask Alex or Jeff” – keep price open
+
         },
         {
           key: "soap_grit_soap",
           name: "Grit Soap",
           familyKey: "soap",
           kind: "handSoap",
-          // no explicit price – treat as product without basePrice
-          displayByAdmin: true, // appears by default in EXTRAS column (old smallProducts last row)
+
+          displayByAdmin: true, 
         },
       ],
     },
 
-    // ---------------------------------
-    // PAPER (cases & per-roll economics)
-    // ---------------------------------
+
     {
       key: "paper",
       label: "Paper",
       sortOrder: 6,
       products: [
-        // --- “generic” tower / hard-wound / household / JRT ---
+
         {
           key: "paper_multifold_tower",
           name: "Multifold Tower",
@@ -428,7 +417,6 @@ export const envProductCatalog: EnvProductCatalog = {
           quantityPerCaseLabel: "Case/12",
         },
 
-        // --- Enviro-Master branded SKUs (mapped to EM names used in UI) ---
 
         {
           key: "paper_em_jrt_tissue",
@@ -445,7 +433,7 @@ export const envProductCatalog: EnvProductCatalog = {
           suggestedCustomerRollPrice: 7.0,
           quantityPerCase: 12,
           quantityPerCaseLabel: "Case/12",
-          displayByAdmin: true, // shown by default in LEFT column
+          displayByAdmin: true, 
         },
         {
           key: "paper_em_hardwound_natural",
@@ -533,7 +521,7 @@ export const envProductCatalog: EnvProductCatalog = {
           displayByAdmin: true,
         },
 
-        // Toilet seat covers (pack)
+
         {
           key: "paper_toilet_seat_covers",
           name: "Toilet Seat Covers",
@@ -547,20 +535,18 @@ export const envProductCatalog: EnvProductCatalog = {
           },
           quantityPerCase: 250,
           quantityPerCaseLabel: "Pack of 250",
-          displayByAdmin: true, // Seat Cover Sleeve in smallProducts
+          displayByAdmin: true, 
         },
       ],
     },
 
-    // ---------------------------------
-    // DISPENSERS
-    // ---------------------------------
+
     {
       key: "dispensers",
       label: "Dispensers",
       sortOrder: 7,
       products: [
-        // main Enviro-Master dispenser list from sheet
+
         {
           key: "disp_manual_soap",
           name: "Enviro-Master Manual Soap Dispenser",
@@ -715,7 +701,7 @@ export const envProductCatalog: EnvProductCatalog = {
           },
         },
 
-        // generic install/warranty rules turned into actual SKUs
+
         {
           key: "disp_toilet_seat_dispenser",
           name: "Toilet Seat Dispenser",
@@ -732,7 +718,7 @@ export const envProductCatalog: EnvProductCatalog = {
             uom: "dispenser",
             billingPeriod: "week",
           },
-          // warranty explicitly free
+
         },
         {
           key: "disp_toilet_paper_dispenser",
@@ -750,7 +736,7 @@ export const envProductCatalog: EnvProductCatalog = {
             uom: "dispenser",
             billingPeriod: "week",
           },
-          
+
         },
         {
           key: "disp_paper_towel_dispenser",
@@ -770,7 +756,7 @@ export const envProductCatalog: EnvProductCatalog = {
           },
         },
 
-        // “UI names” used in your old dummyResponse – marked displayByAdmin
+
         {
           key: "disp_em_twin_jrt",
           name: "EM Proprietary Twin JRT",
@@ -915,7 +901,7 @@ export const envProductCatalog: EnvProductCatalog = {
           familyKey: "dispensers",
           kind: "dispenser",
           basePrice: {
-            amount: 20, // install $20
+            amount: 20, 
             currency: "USD",
             uom: "dispenser",
           },
@@ -951,7 +937,7 @@ export const envProductCatalog: EnvProductCatalog = {
           familyKey: "dispensers",
           kind: "dispenser",
           basePrice: {
-            amount: 25, // install
+            amount: 25, 
             currency: "USD",
             uom: "receptacle",
           },
@@ -966,9 +952,7 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-    // ---------------------------------
-    // EXTRAS / FACILITIES PRODUCTS (mats, clips, screens, microfiber, green drain, etc.)
-    // ---------------------------------
+
     {
       key: "extras",
       label: "Extras / Facilities Products",
@@ -1157,7 +1141,7 @@ export const envProductCatalog: EnvProductCatalog = {
           quantityPerCaseLabel: "Case/50",
         },
 
-        // Chemicals that you previously showed in the “bigProducts” column
+
         {
           key: "extra_daily_default",
           name: "Daily (Floor Cleaner)",

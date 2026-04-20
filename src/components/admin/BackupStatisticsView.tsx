@@ -24,7 +24,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
   error,
   onRefresh
 }) => {
-  // Process statistics for display
   const processedStats = useMemo(() => {
     if (!statistics || !statistics.sizeStatistics) return null;
 
@@ -288,12 +287,12 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
   }
 
   const triggerColors = [
-    '#3b82f6', // blue
-    '#10b981', // green
-    '#f59e0b', // yellow
-    '#ef4444', // red
-    '#8b5cf6', // purple
-    '#f97316'  // orange
+    '#3b82f6', 
+    '#10b981', 
+    '#f59e0b', 
+    '#ef4444', 
+    '#8b5cf6', 
+    '#f97316'  
   ];
 
   const maxTriggerCount = processedStats?.triggerStatistics?.length
@@ -302,9 +301,7 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
 
   return (
     <div className="bsv-container" style={styles.container}>
-      {/* Overview Cards */}
       <div className="bsv-grid" style={styles.grid}>
-        {/* Total Backups */}
         <div className="bsv-card" style={styles.card}>
           <div className="bsv-card-header" style={styles.cardHeader}>
             <h3 className="bsv-card-title" style={styles.cardTitle}>Total Backups</h3>
@@ -328,7 +325,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
           </div>
         </div>
 
-        {/* Storage Efficiency */}
         <div className="bsv-card" style={styles.card}>
           <div className="bsv-card-header" style={styles.cardHeader}>
             <h3 className="bsv-card-title" style={styles.cardTitle}>Storage Efficiency</h3>
@@ -350,7 +346,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
           </div>
         </div>
 
-        {/* Total Size */}
         <div className="bsv-card" style={styles.card}>
           <div className="bsv-card-header" style={styles.cardHeader}>
             <h3 className="bsv-card-title" style={styles.cardTitle}>Storage Usage</h3>
@@ -368,7 +363,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
           </div>
         </div>
 
-        {/* System Health */}
         <div className="bsv-card" style={styles.card}>
           <div className="bsv-card-header" style={styles.cardHeader}>
             <h3 className="bsv-card-title" style={styles.cardTitle}>System Health</h3>
@@ -403,7 +397,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         </div>
       </div>
 
-      {/* Backup Triggers Chart */}
       <div className="bsv-chart-container" style={styles.chartContainer}>
         <h3 className="bsv-chart-title" style={styles.chartTitle}>Backup Triggers</h3>
         <div className="bsv-card" style={styles.card}>
@@ -430,7 +423,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         </div>
       </div>
 
-      {/* Recent Backups */}
       <div className="bsv-recent-backups-container" style={styles.recentBackupsContainer}>
         <h3 className="bsv-chart-title" style={styles.chartTitle}>Recent Backups</h3>
         <div className="bsv-card" style={styles.card}>
@@ -464,7 +456,6 @@ export const BackupStatisticsView: React.FC<BackupStatisticsViewProps> = ({
         </div>
       </div>
 
-      {/* Compression Details */}
       <div className="bsv-chart-container" style={styles.chartContainer}>
         <h3 className="bsv-chart-title" style={styles.chartTitle}>Compression Analysis</h3>
         <div className="bsv-card" style={styles.card}>

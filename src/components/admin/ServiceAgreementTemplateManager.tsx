@@ -1,4 +1,3 @@
-// src/components/admin/ServiceAgreementTemplateManager.tsx
 import React, { useState, useEffect } from 'react';
 import { serviceAgreementTemplateApi, type ServiceAgreementTemplate } from '../../backendservice/api/serviceAgreementTemplateApi';
 import { Toast } from './Toast';
@@ -10,7 +9,6 @@ import './ServiceAgreementTemplateManager.css';
 export const ServiceAgreementTemplateManager: React.FC = () => {
   const [template, setTemplate] = useState<ServiceAgreementTemplate | null>(null);
   const [formData, setFormData] = useState({
-    // Terms
     term1: '',
     term2: '',
     term3: '',
@@ -19,7 +17,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
     term6: '',
     term7: '',
     noteText: '',
-    // Labels
     titleText: '',
     subtitleText: '',
     retainDispensersLabel: '',
@@ -41,12 +38,10 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState<'terms' | 'labels'>('terms');
 
-  // Load active template on component mount
   useEffect(() => {
     loadTemplate();
   }, []);
 
-  // Track changes
   useEffect(() => {
     if (template) {
       const changed = Object.keys(formData).some(
@@ -97,7 +92,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
   };
 
   const handleSave = async () => {
-    // Validate all required fields
     const requiredFields = ['term1', 'term2', 'term3', 'term4', 'term5', 'term6', 'term7', 'noteText'];
     for (const field of requiredFields) {
       if (!formData[field as keyof typeof formData].trim()) {
@@ -186,7 +180,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Section Tabs */}
       <div className="sa-template-tabs">
         <button
           type="button"
@@ -214,12 +207,10 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Terms Section */}
             {activeSection === 'terms' && (
               <div className="sa-section">
                 <h3>Agreement Terms</h3>
 
-                {/* Term 1 */}
                 <div className="sa-template-field">
                   <label htmlFor="term1">
                     Term 1: Property Ownership
@@ -235,7 +226,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Term 2 */}
                 <div className="sa-template-field">
                   <label htmlFor="term2">
                     Term 2: Promise of Good Service
@@ -251,7 +241,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Term 3 */}
                 <div className="sa-template-field">
                   <label htmlFor="term3">
                     Term 3: Payment Terms
@@ -267,7 +256,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Term 4 */}
                 <div className="sa-template-field">
                   <label htmlFor="term4">
                     Term 4: Indemnification
@@ -283,7 +271,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Term 5 */}
                 <div className="sa-template-field">
                   <label htmlFor="term5">
                     Term 5: Expiration/Termination
@@ -299,7 +286,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Term 6 */}
                 <div className="sa-template-field">
                   <label htmlFor="term6">
                     Term 6: Install Warranty/Scope of Service
@@ -315,7 +301,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Term 7 */}
                 <div className="sa-template-field">
                   <label htmlFor="term7">
                     Term 7: Sale of Customer Business
@@ -331,7 +316,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   />
                 </div>
 
-                {/* Note Text */}
                 <div className="sa-template-field">
                   <label htmlFor="noteText">
                     Agreement Note/Duration Text
@@ -349,12 +333,10 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
               </div>
             )}
 
-            {/* Labels Section */}
             {activeSection === 'labels' && (
               <div className="sa-section">
                 <h3>Document Labels</h3>
 
-                {/* Header Labels */}
                 <div className="sa-subsection">
                   <h4>Header Section</h4>
 
@@ -383,7 +365,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Dispenser Options */}
                 <div className="sa-subsection">
                   <h4>Dispenser Options</h4>
 
@@ -412,7 +393,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Representative Labels */}
                 <div className="sa-subsection">
                   <h4>Representative Labels</h4>
 
@@ -441,7 +421,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Signature Labels */}
                 <div className="sa-subsection">
                   <h4>Signature Section</h4>
 
@@ -530,7 +509,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer */}
                 <div className="sa-subsection">
                   <h4>Footer</h4>
 
@@ -549,7 +527,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="sa-template-actions">
               <button
                 type="button"
@@ -571,7 +548,6 @@ export const ServiceAgreementTemplateManager: React.FC = () => {
               </button>
             </div>
 
-            {/* Last Updated Info */}
             {template && (
               <div className="sa-template-meta">
                 Last updated: {new Date(template.updatedAt).toLocaleString()}

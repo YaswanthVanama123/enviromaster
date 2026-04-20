@@ -39,11 +39,9 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
   const [filterRestored, setFilterRestored] = useState<string>('all');
   const [detailsBackup, setDetailsBackup] = useState<PricingBackup | null>(null);
 
-  // Sort and filter backups
   const processedBackups = useMemo(() => {
     let filtered = [...backups];
 
-    // Apply filters
     if (filterTrigger !== 'all') {
       filtered = filtered.filter(backup => backup.backupTrigger === filterTrigger);
     }
@@ -53,7 +51,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
       filtered = filtered.filter(backup => backup.restorationInfo?.hasBeenRestored === showRestored);
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       let aValue: any;
       let bValue: any;
@@ -92,7 +89,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
     return filtered;
   }, [backups, sortConfig, filterTrigger, filterRestored]);
 
-  // Handle sorting
   const handleSort = (key: SortConfig['key']) => {
     setSortConfig(prevConfig => ({
       key,
@@ -100,7 +96,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
     }));
   };
 
-  // Handle selection
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       onSelectionChange(processedBackups.map(backup => backup.changeDayId));
@@ -117,7 +112,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
     }
   };
 
-  // Get unique triggers for filter
   const uniqueTriggers = useMemo(() => {
     const triggers = [...new Set(backups.map(backup => backup.backupTrigger))];
     return triggers.sort();
@@ -320,7 +314,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
 
   return (
     <div className="blv-container" style={styles.container}>
-      {/* Filters */}
       <div className="blv-filters-container" style={styles.filtersContainer}>
         <div className="blv-filter-group" style={styles.filterGroup}>
           <label className="blv-filter-label" style={styles.filterLabel}>Trigger Type</label>
@@ -361,7 +354,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
         </div>
       </div>
 
-      {/* Table */}
       {processedBackups.length === 0 ? (
         <div className="blv-empty-state" style={styles.emptyState}>
           {backups.length === 0
@@ -567,7 +559,6 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
         </div>
       )}
 
-      {/* Backup Details Modal */}
       {detailsBackup && (
         <BackupDetailsModal
           backup={detailsBackup}

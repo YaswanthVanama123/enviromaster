@@ -1,18 +1,16 @@
-// src/components/AdminPanel.tsx
-
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminAuth, useAdminAuthGuard } from "../backendservice/hooks";
 import { pdfApi, manualUploadApi } from "../backendservice/api";
 import type { SavedFileGroup, SavedFileListItem } from "../backendservice/api/pdfApi";
-import SavedFilesAgreements from "./SavedFilesAgreements"; // ✅ UPDATED: Use new folder-like component
+import SavedFilesAgreements from "./SavedFilesAgreements";
 import { AdminDashboard } from "./admin/AdminDashboard";
 import ManualUploads from "./ManualUploads";
 import ApprovalDocuments from "./ApprovalDocuments";
 import EmailTemplateManager from "./admin/EmailTemplateManager";
 import ServiceAgreementTemplateManager from "./admin/ServiceAgreementTemplateManager";
 import AgreementTimelineBadge from "./AgreementTimelineBadge";
-import TrashView from "./TrashView"; // ✅ NEW: Import TrashView component
+import TrashView from "./TrashView";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileAlt,
@@ -33,7 +31,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 
-// type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "manual-uploads" | "pricing-details" | "email-template";
 type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template" | "service-agreement-template" | "trash";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
@@ -58,10 +55,8 @@ export default function AdminPanel() {
   const { isAuthenticated, user, logout } = useAdminAuth();
   const isNavigatingRef = useRef(false);
 
-  // ✅ NEW: Set up automatic logout on 401/403 errors for admin panel
   useAdminAuthGuard();
 
-  // Extract subtab from URL path for nested routes
   const getSubtabFromUrl = (): string | undefined => {
     const path = window.location.pathname;
     if (path.includes('/admin-panel/') && path.includes('/services/')) {
@@ -75,11 +70,9 @@ export default function AdminPanel() {
 
   const currentSubtab = getSubtabFromUrl();
 
-  // Determine active tab from URL parameter with fallback to dashboard
   const getActiveTabFromUrl = (): TabType => {
     if (!tab) return "dashboard";
 
-    // const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "manual-uploads", "pricing-details", "email-template"];
     const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template", "service-agreement-template", "trash"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
@@ -94,14 +87,12 @@ export default function AdminPanel() {
   const [lastUploadDate, setLastUploadDate] = useState<string>("");
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // ✅ NEW: Dashboard statistics from admin API
   const [dashboardStats, setDashboardStats] = useState({
     manualUploads: 0,
     savedDocuments: 0,
     totalDocuments: 0
   });
 
-  // Pie chart states
   const [pieTimeFilter, setPieTimeFilter] = useState("This Month");
   const [selectedDateFrom, setSelectedDateFrom] = useState<Date | null>(null);
   const [selectedDateTo, setSelectedDateTo] = useState<Date | null>(null);
@@ -130,7 +121,6 @@ export default function AdminPanel() {
     };
   }, [pieCounts]);
 
-  // Update active tab when URL parameter changes
   useEffect(() => {
     const urlTab = getActiveTabFromUrl();
     if (urlTab !== activeTab) {
@@ -138,14 +128,12 @@ export default function AdminPanel() {
     }
   }, [tab]);
 
-  // Update URL when tab changes
   const handleTabChange = (newTab: TabType) => {
     setActiveTab(newTab);
     navigate(`/admin-panel/${newTab}`, { replace: true });
   };
 
   const fetchPieStatusCounts = useCallback(async () => {
-    // ⚡ CRITICAL: Skip if not on dashboard tab
     if (activeTab !== "dashboard") {
       console.log(`⏭️ [ADMIN-PANEL] Skipping pie chart API call - active tab is: ${activeTab}`);
       return;
@@ -185,15 +173,13 @@ export default function AdminPanel() {
     } catch (err) {
       console.error("Error fetching pie status counts:", err);
     }
-  }, [activeTab, pieTimeFilter, selectedDateFrom, selectedDateTo]); // ✅ FIXED: Added activeTab dependency
+  }, [activeTab, pieTimeFilter, selectedDateFrom, selectedDateTo]);
 
   useEffect(() => {
     fetchPieStatusCounts();
   }, [fetchPieStatusCounts]);
 
-  // Hide global navigation when admin panel is open
   useEffect(() => {
-    // Hide all navigation elements
     const globalNav = document.querySelector('nav');
     const header = document.querySelector('header');
     const topBar = document.querySelector('.top-bar');
@@ -212,7 +198,6 @@ export default function AdminPanel() {
       (mainHeader as HTMLElement).style.display = 'none';
     }
 
-    // Show them again when component unmounts
     return () => {
       if (globalNav) {
         (globalNav as HTMLElement).style.display = '';
@@ -229,9 +214,7 @@ export default function AdminPanel() {
     };
   }, []);
 
-  // ✅ OPTIMIZED: Fetch dashboard data ONLY when dashboard tab is active
   useEffect(() => {
-    // Skip if not on dashboard tab
     if (activeTab !== "dashboard") {
       console.log(`⏭️ [ADMIN-PANEL] Skipping dashboard API call - active tab is: ${activeTab}`);
       return;
@@ -242,10 +225,8 @@ export default function AdminPanel() {
       try {
         console.log("📊 [ADMIN-PANEL] Fetching dashboard data...");
 
-        // ✅ OPTIMIZED: Fetch dashboard stats (no longer includes recentDocuments)
         const dashboardData = await pdfApi.getAdminDashboardData();
 
-        // ✅ Fetch grouped recent documents for both folder view and document list
         const groupedData = await pdfApi.getSavedFilesGrouped(1, 10, {
           includeLogs: true,
           isDeleted: false,
@@ -253,7 +234,6 @@ export default function AdminPanel() {
         });
         setRecentAgreements(groupedData.groups || []);
 
-        // ✅ Transform grouped data into Document[] format for document list
         const recentDocs: Document[] = groupedData.groups
           .flatMap(group =>
             group.files.map(file => ({
@@ -268,15 +248,13 @@ export default function AdminPanel() {
               updatedAt: file.updatedAt || file.createdAt,
             }))
           )
-          .slice(0, 10); // Get first 10 files across all agreements
+          .slice(0, 10);
 
         setDocuments(recentDocs);
 
-        // ✅ Set all statistics from the dashboard API response
         setUploadCount(dashboardData.stats.manualUploads);
         setDashboardStats(dashboardData.stats);
 
-        // Set last upload date from the most recent document
         if (recentDocs.length > 0) {
           setLastUploadDate(recentDocs[0].createdAt);
         } else {
@@ -293,7 +271,6 @@ export default function AdminPanel() {
       } catch (err) {
         console.error("❌ [ADMIN-PANEL] Error fetching dashboard data:", err);
 
-        // ✅ Simple error handling - no fallback to old API
         setDocuments([]);
         setRecentAgreements([]);
         setDashboardStats({
@@ -307,9 +284,8 @@ export default function AdminPanel() {
     };
 
     fetchDashboardData();
-  }, [activeTab]); // ✅ FIXED: Depend on activeTab to refetch when switching back to dashboard
+  }, [activeTab]);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated && !isNavigatingRef.current) {
       isNavigatingRef.current = true;
@@ -319,7 +295,6 @@ export default function AdminPanel() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Show loading while checking auth
   if (!isAuthenticated) {
     return null;
   }
@@ -334,13 +309,10 @@ export default function AdminPanel() {
       if (fileType === 'version_log') {
         blob = await pdfApi.downloadVersionLog(docId);
       } else if (fileType === 'attached_pdf') {
-        // ✅ FIX: Use attached files API for attached files
         blob = await pdfApi.downloadAttachedFile(docId);
       } else if (fileType === 'version_pdf') {
-        // ✅ FIX: Use version PDF API for version PDFs
         blob = await pdfApi.downloadVersionPdf(docId);
       } else {
-        // ✅ FIX: Use main PDF API for main agreement PDFs
         blob = await pdfApi.downloadPdf(docId);
       }
 
@@ -361,11 +333,8 @@ export default function AdminPanel() {
   };
 
   const handleViewPDF = (docId: string, fileName: string, docType?: string) => {
-    // Navigate to PDF viewer with context-aware return path
     const adminReturnPath = `/admin-panel/${activeTab}`;
 
-    // ✅ SMART DOCUMENT TYPE DETECTION: For admin panel, try to determine document type
-    // If docType is provided, use it; otherwise rely on PDFViewer auto-detection
     let documentType: 'agreement' | 'manual-upload' | 'attached-file' | 'version' | undefined = undefined;
 
     if (docType === 'agreement' || docType === 'main_pdf') {
@@ -377,9 +346,8 @@ export default function AdminPanel() {
     } else if (docType === 'version_log') {
       documentType = 'version-log';
     } else if (docType === 'version_pdf') {
-      documentType = 'version';  // ✅ FIX: Map version_pdf to 'version' for PDFViewer
+      documentType = 'version';
     }
-    // If no type specified, PDFViewer will auto-detect by trying different APIs
 
     console.log(`📄 [ADMIN-VIEW] Viewing document ${docId} (detected type: ${documentType || 'auto-detect'})`);
 
@@ -387,8 +355,7 @@ export default function AdminPanel() {
       state: {
         documentId: docId,
         fileName: fileName,
-        documentType: documentType, // ✅ NEW: Include document type when available
-        // Add navigation context to prevent loops - use current admin tab context
+        documentType: documentType,
         originalReturnPath: adminReturnPath,
         originalReturnState: null,
       },
@@ -446,8 +413,6 @@ export default function AdminPanel() {
         return "Saved PDFs";
       case "approval-documents":
         return "Approval Documents";
-      // case "manual-uploads":
-      //   return "Manual Uploads";
       case "pricing-details":
         return "Pricing Details";
       case "email-template":
@@ -478,10 +443,8 @@ export default function AdminPanel() {
     }
   };
 
-  // ✅ NEW: Handle closing date picker - revert to "This Month" if dates not selected
   const handleDatePickerClose = () => {
     if (!selectedDateFrom || !selectedDateTo) {
-      // If dates aren't fully selected, revert back to "This Month"
       setPieTimeFilter("This Month");
       setSelectedDateFrom(null);
       setSelectedDateTo(null);
@@ -491,7 +454,6 @@ export default function AdminPanel() {
 
   return (
     <div className="admin-panel-redesign">
-      {/* Modern Top Navigation */}
       <header className="modern-top-nav">
         <div className="nav-left">
           <div className="brand-section">
@@ -533,7 +495,6 @@ export default function AdminPanel() {
         </div>
       </header>
 
-      {/* Secondary Navigation Tabs */}
       <nav className="secondary-nav">
         <button
           className={`secondary-nav-item ${activeTab === "dashboard" ? "active" : ""}`}
@@ -553,12 +514,6 @@ export default function AdminPanel() {
         >
           Approval Documents
         </button>
-        {/* <button
-          className={`secondary-nav-item ${activeTab === "manual-uploads" ? "active" : ""}`}
-          onClick={() => handleTabChange("manual-uploads")}
-        >
-          Manual Uploads
-        </button> */}
         <button
           className={`secondary-nav-item ${activeTab === "trash" ? "active" : ""}`}
           onClick={() => handleTabChange("trash")}
@@ -589,12 +544,10 @@ export default function AdminPanel() {
         </button>
       </nav>
 
-      {/* Main Content Area */}
       <main className="modern-content">
         {activeTab === "dashboard" && (
           <div className="dashboard-grid">
             <div className="dashboard-main">
-              {/* Stats Cards */}
               <div className="stats-grid">
                 <div className="stat-card-modern stat-card-1">
                   <div className="stat-icon-wrapper">
@@ -633,7 +586,6 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Recent Documents - Grouped by Agreement */}
               <div className="recent-section">
                 <div className="section-header">
                   <h2 className="section-heading">Recent Documents</h2>
@@ -652,7 +604,6 @@ export default function AdminPanel() {
                       </tr>
                     </thead>
                     <tbody>
-                      {/* ✅ OPTIMIZED: Skeleton loader to prevent CLS */}
                       {loading ? (
                         <>
                           {Array.from({ length: 4 }).map((_, idx) => (
@@ -727,7 +678,6 @@ export default function AdminPanel() {
                         ) : (
                           recentAgreements.slice(0, 10).map((agreement) => (
                           <React.Fragment key={agreement.id}>
-                            {/* Agreement Header Row */}
                             <tr className="agreement-header-admin">
                               <td>
                                 <div
@@ -758,7 +708,6 @@ export default function AdminPanel() {
                                 </span>
                               </td>
                               <td>
-                                {/* ✅ MOVED: Agreement Timeline Badge to right side */}
                                 {agreement.startDate && agreement.contractMonths && (
                                   <AgreementTimelineBadge
                                     startDate={agreement.startDate}
@@ -771,7 +720,6 @@ export default function AdminPanel() {
                               </td>
                             </tr>
 
-                            {/* Agreement Files - Only show when expanded and limit to 3 files per agreement */}
                             {expandedAgreements.has(agreement.id) && agreement.files.slice(0, 3).map((file) => (
                               <tr key={file.id} className="file-row-admin">
                                 <td style={{ paddingLeft: '40px' }}>
@@ -838,23 +786,8 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            {/* Right Sidebar */}
+            {}
             <aside className="dashboard-sidebar">
-              {/* <div className="sidebar-card upload-card-modern">
-                <button
-                  className="upload-btn-large"
-                  onClick={() => handleTabChange("manual-uploads")}
-                >
-                  <FontAwesomeIcon icon={faUpload} size="lg" />
-                  Upload
-                </button>
-                <div className="upload-info">
-                  <span className="upload-info-label">Last uploaded on</span>
-                  <div className="upload-info-date">{formatUploadDate(lastUploadDate)}</div>
-                </div>
-              </div> */}
-
-              {/* Pie Chart Card */}
               <div className="sidebar-card pie-chart-card">
                 <div className="pie-chart-header">
                   <h3 className="pie-chart-title">Document Status</h3>

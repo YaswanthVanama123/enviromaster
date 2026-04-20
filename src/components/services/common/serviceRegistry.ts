@@ -1,4 +1,4 @@
-// src/features/services/common/serviceRegistry.ts
+
 import type { ServiceId, ServiceMeta } from "./serviceTypes";
 
 export const SERVICE_META: Record<ServiceId, ServiceMeta> = {

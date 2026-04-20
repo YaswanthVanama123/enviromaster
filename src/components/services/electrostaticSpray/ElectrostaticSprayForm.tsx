@@ -1,4 +1,4 @@
-// src/components/services/electrostaticSpray/ElectrostaticSprayForm.tsx
+
 
 import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,7 +12,7 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
 const FIELD_ORDER = {
   frequency: 1,
-  // location: 2,
+
   combinedService: 5,
   service: 10,
   calculationMethod: 11,
@@ -27,7 +27,7 @@ const FIELD_ORDER = {
   },
 } as const;
 
-// Helper function to format numbers without unnecessary decimals
+
 const formatNumber = (num: number): string => {
   return num % 1 === 0 ? num.toString() : num.toFixed(2);
 };
@@ -36,16 +36,16 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   initialData,
   onRemove,
 }) => {
-  // Custom fields state - initialize with initialData if available
+
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
 
-  // ✅ UPDATED: Pass customFields to calculation hook
+
   const { form, setForm, onChange, calc, isLoadingConfig, refreshConfig, activeConfig } = useElectrostaticSprayCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Sync global contract months to individual service
+
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -54,127 +54,127 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-  // ✅ LOCAL STATE: Store raw string values during editing to allow free decimal editing
+
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-  // ✅ NEW: Track original values when focusing to detect actual changes
+
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
-  // ✅ Helper to get display value (local state while editing, or calculated value)
+
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
-    // If currently editing, show the raw input
+
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
-    // Otherwise show the calculated/override value
+
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-  // ✅ Handler for starting to edit a field
+
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Store current value in editing state AND original value for comparison
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handler for typing in a field (updates both local state AND form state)
+
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update local state for display (allows free editing)
+
     setEditingValues(prev => ({ ...prev, [name]: value }));
 
-    // Also parse and update form state immediately (triggers calculations)
+
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       onChange({ target: { name, value: String(numValue) } } as any);
     } else if (value === '') {
-      // If field is cleared, update form to clear the override
+
       onChange({ target: { name, value: '' } } as any);
     }
   };
 
-  // ✅ Handler for finishing editing (blur) - parse and update form only
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Get the original value when we started editing
+
     const originalValue = originalValues[name];
 
-    // Clear editing state for this field
+
     setEditingValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Clear original value
+
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-    // Parse the value
+
     const numValue = parseFloat(value);
 
-    // ✅ FIXED: Only update if value actually changed
+
     if (originalValue !== value) {
-      // If empty or invalid, clear the override
+
       if (value === '' || isNaN(numValue)) {
         onChange({ target: { name, value: '' } } as any);
         return;
       }
 
-      // ✅ Update form state with parsed numeric value ONLY if changed
+
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-  // Check if SaniClean All-Inclusive is active
+
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-  // Save form data to context for form submission
+
   const prevDataRef = useRef<string>("");
 
-  // Calculate effective rate for payload
+
   const serviceRate = form.pricingMethod === "byRoom"
     ? form.ratePerRoom
     : form.ratePerThousandSqFt;
 
-  // Frequency-specific UI helpers
+
   const { isVisitBasedFrequency, monthsPerVisit } = calc;
 
-  // Generate frequency-specific contract month options
+
   const generateContractMonths = () => {
     const months = [];
 
     if (form.frequency === "oneTime") {
-      // For oneTime: no contract (handled separately in UI)
+
       return [];
     } else if (form.frequency === "bimonthly") {
-      // For bi-monthly: show only even numbers (2, 4, 6, 8, ...)
+
       for (let i = 2; i <= cfg.maxContractMonths; i += 2) {
         months.push(i);
       }
     } else if (form.frequency === "quarterly") {
-      // For quarterly: show only multiples of 3 (3, 6, 9, 12, ...)
+
       for (let i = 3; i <= cfg.maxContractMonths; i += 3) {
         months.push(i);
       }
     } else if (form.frequency === "biannual") {
-      // For biannual: show only multiples of 6 (6, 12, 18, 24, 30, 36)
+
       for (let i = 6; i <= cfg.maxContractMonths; i += 6) {
         months.push(i);
       }
     } else if (form.frequency === "annual") {
-      // For annual: show only multiples of 12 (12, 24, 36)
+
       for (let i = 12; i <= cfg.maxContractMonths; i += 12) {
         months.push(i);
       }
     } else {
-      // For weekly, bi-weekly, twicePerMonth, monthly: show all months
+
       for (let i = cfg.minContractMonths; i <= cfg.maxContractMonths; i++) {
         months.push(i);
       }
@@ -187,7 +187,11 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
   useEffect(() => {
     if (servicesContext) {
-      const isActive = (form.roomCount > 0 || form.squareFeet > 0);
+      const hasCustomFieldValues = customFields.some(f =>
+        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
+        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
+      );
+      const isActive = (form.roomCount > 0 || form.squareFeet > 0) || hasCustomFieldValues;
 
       const frequencyLabel = typeof form.frequency === 'string'
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
@@ -201,13 +205,12 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         displayName: "Electrostatic Spray",
         isActive: true,
 
-        // ✅ FIXED: Save EFFECTIVE pricing fields (custom override if set, otherwise base value)
-        // This ensures edited values are saved to backend and used in PDF generation
+
         ratePerRoom: form.customRatePerRoom ?? form.ratePerRoom,
         ratePerThousandSqFt: form.customRatePerThousandSqFt ?? form.ratePerThousandSqFt,
         tripChargePerVisit: form.customTripChargePerVisit ?? form.tripChargePerVisit,
 
-        // ✅ NEW: Save quantity inputs for proper loading in edit mode
+
         pricingMethod: form.pricingMethod,
         roomCount: form.roomCount,
         squareFeet: form.squareFeet,
@@ -215,15 +218,15 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         frequency: form.frequency,
         contractMonths: form.contractMonths,
         isCombinedWithSaniClean: form.isCombinedWithSaniClean,
-        // location: form.location,
+
         applyMinimum: form.applyMinimum !== false,
 
-        // Red/Green Line pricing data
-        perVisitBase: calc.serviceCharge,  // Raw service charge before trip/minimum
-        perVisit: calc.perVisit,  // Final price after minimum
-        minimumChargePerVisit: calc.minimumChargePerVisit,  // Minimum threshold
 
-        // ✅ FIXED: Display fields with different names to avoid overwriting saved values
+        perVisitBase: calc.serviceCharge,  
+        perVisit: calc.perVisit,  
+        minimumChargePerVisit: calc.minimumChargePerVisit,  
+
+
         pricingMethodDisplay: {
           isDisplay: true,
           label: "Pricing Method",
@@ -249,14 +252,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           frequencyKey: form.frequency,
         },
 
-        // locationDisplay: {
-        //   isDisplay: true,
-        //   orderNo: FIELD_ORDER.location,
-        //   label: "Location",
-        //   type: "text" as const,
-        //   value: form.location === "insideBeltway" ? "Inside Beltway" :
-        //          form.location === "outsideBeltway" ? "Outside Beltway" : "Standard",
-        // },
 
         ...(form.isCombinedWithSaniClean ? {
           combinedService: {
@@ -311,13 +306,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           };
 
           if (visitBasedFrequency) {
-            // totals.firstVisit = {
-            //   isDisplay: true,
-            //   orderNo: FIELD_ORDER.totals.firstVisit,
-            //   label: form.frequency === "oneTime" ? "Total Price" : "First Visit Total",
-            //   type: "dollar" as const,
-            //   amount: calc.perVisit,
-            // };
+
+
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -327,13 +317,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               gap: "normal",
             };
           } else {
-            // totals.firstMonth = {
-            //   isDisplay: true,
-            //   orderNo: FIELD_ORDER.totals.firstMonth,
-            //   label: "First Month Total",
-            //   type: "dollar" as const,
-            //   amount: calc.monthlyRecurring,
-            // };
+
+
             totals.monthlyRecurring = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.monthlyRecurring,
@@ -392,14 +377,14 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc, customFields]); // form already includes useExactCalculation
+  }, [form, calc, customFields]); 
 
-  // Ensure valid contract months when frequency changes
+
   useEffect(() => {
     const validMonths = generateContractMonths();
 
     if (!validMonths.includes(form.contractMonths)) {
-      // Find the closest valid month
+
       const closestMonth = validMonths.find(month => month >= form.contractMonths) || validMonths[0];
 
       setForm(prev => ({
@@ -407,9 +392,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         contractMonths: closestMonth
       }));
     }
-  }, [form.frequency]); // Only run when frequency changes
+  }, [form.frequency]); 
 
-  // Clear custom overrides when base inputs change
+
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
@@ -430,7 +415,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     form.frequency,
     form.contractMonths,
     form.isCombinedWithSaniClean,
-    // form.location,
+
   ]);
 
   return (
@@ -472,7 +457,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         </div>
 
-        {/* Loading indicator */}
+        {}
         {isLoadingConfig && (
           <div className="svc-row">
             <div className="svc-field" style={{ textAlign: 'center', padding: '10px', color: '#666' }}>
@@ -481,7 +466,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         )}
 
-        {/* Custom fields manager */}
+        {}
         <CustomFieldManager
           fields={customFields}
           onFieldsChange={setCustomFields}
@@ -489,7 +474,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           onToggleAddDropdown={setShowAddDropdown}
         />
 
-        {/* Alert when included in SaniClean All-Inclusive */}
+        {}
         {isSanicleanAllInclusive && (
           <div
             className="svc-row"
@@ -511,7 +496,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         )}
 
-        {/* Combined with Sani-Clean */}
+        {}
         <div className="svc-row">
           <div className="svc-label" />
           <div className="svc-field">
@@ -527,7 +512,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         </div>
 
-        {/* Frequency */}
+        {}
         <div className="svc-row">
           <div className="svc-label">
             <span>Frequency</span>
@@ -552,7 +537,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         </div>
 
-        {/* Pricing Method */}
+        {}
         <div className="svc-row">
           <div className="svc-label">
             <span>Pricing Method</span>
@@ -571,12 +556,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         </div>
 
 
-        {/* Calculation Breakdown */}
+        {}
         <div className="svc-summary">
           <div className="svc-row" style={{ marginBottom: '5px' }}>
-            {/* <div className="svc-label">
-              <span style={{ color: '#28a745', fontSize: '0.85em' }}>💡 Tip: Rate fields below are editable</span>
-            </div> */}
+            {}
           </div>
           {form.pricingMethod === "byRoom" && (
             <div className="svc-row">
@@ -702,14 +685,12 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     title="Total service charge - editable"
                   />
                 </div>
-                {/* <div className="svc-note" style={{ marginTop: '4px', fontSize: '0.85em' }}>
-                  Rate applies per 1000 sq ft ({(form.squareFeet / 1000).toFixed(2)} units)
-                </div> */}
+                {}
               </div>
             </div>
           )}
 
-          {/* Exact Calculation Checkbox - only show when using square feet pricing */}
+          {}
           {form.pricingMethod === "bySqFt" && (
             <div className="svc-row">
               <div className="svc-label" />
@@ -735,92 +716,21 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         </div>
 
 
-
-        {/* Location */}
-        {/* <div className="svc-row">
-          <div className="svc-label">
-            <span>Location</span>
-          </div>
-          <div className="svc-field">
-            <select
-              name="location"
-              className="svc-in"
-              value={form.location}
-              onChange={onChange}
-            >
-              <option value="standard">Standard</option>
-              <option value="insideBeltway">Inside Beltway</option>
-              <option value="outsideBeltway">Outside Beltway</option>
-            </select>
-          </div>
-        </div> */}
+        {}
+        {}
 
 
+        {}
+        {}
 
-
-
-        {/* Value Proposition Info */}
-        {/* <div className="svc-row">
-          <div className="svc-label">
-            <span className="svc-note">Value:</span>
-          </div>
-          <div className="svc-field">
-            <span className="svc-note">
-              {cfg.valueProposition.bacteriaReduction} reduction in bacteria in air and walls.
-              Bathroom goes from clean to {cfg.valueProposition.cleanlinessLevel.toLowerCase()}.
-            </span>
-          </div>
-        </div> */}
-
-        {/* SUMMARY / RESULTS */}
+        {}
         <div className="svc-summary">
-          {/* <div className="svc-row">
-            <div className="svc-label">
-              <span>Service Charge</span>
-            </div>
-            <div className="svc-field svc-dollar">
-              <span>$</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                name="customServiceCharge"
-                className="svc-in sm"
-                value={getDisplayValue(
-                  'customServiceCharge',
-                  form.customServiceCharge !== undefined
-                    ? form.customServiceCharge
-                    : calc.serviceCharge
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{
-                  backgroundColor: form.customServiceCharge !== undefined ? '#fffacd' : 'white'
-                }}
-                title="Calculated service charge (based on quantity × rate) - editable"
-              />
-            </div>
-          </div> */}
+          {}
 
-          {/* Trip Charge */}
-          {/* {!form.isCombinedWithSaniClean && (
-            <div className="svc-row">
-              <div className="svc-label">
-                <span>Trip Charge</span>
-              </div>
-              <div className="svc-field svc-dollar">
-                <span>$</span>
-                <input
-                  readOnly
-                  className="svc-in sm"
-                  value={formatNumber(calc.tripCharge)}
-                />
-              </div>
-            </div>
-          )} */}
+          {}
+          {}
 
-          {/* Minimum Charge Per Visit */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Minimum Per Visit</span>
@@ -839,7 +749,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           </div>
 
-          {/* Per Visit Total */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Per Visit Total</span>
@@ -870,7 +780,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           </div>
 
-          {/* Redline/Greenline Pricing Indicator */}
+          {}
           {(form.roomCount > 0 || form.squareFeet > 0) && (
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
@@ -904,7 +814,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )}
 
-          {/* Monthly Recurring / Per Visit - Hide for oneTime, quarterly, biannual, annual, bimonthly */}
+          {}
           {!isVisitBasedFrequency && (
             <div className="svc-row">
               <div className="svc-label">
@@ -937,7 +847,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )}
 
-          {/* Recurring Visit Total - Show ONLY for visit-based frequencies (not oneTime) */}
+          {}
           {isVisitBasedFrequency && form.frequency !== "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -970,7 +880,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )}
 
-          {/* Total Price - Show ONLY for oneTime */}
+          {}
           {form.frequency === "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1003,7 +913,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )}
 
-          {/* Contract Total with inline dropdown - Hide for oneTime */}
+          {}
           {form.frequency !== "oneTime" && (
             <div className="svc-row">
               <div className="svc-label">
@@ -1056,7 +966,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             </div>
           )}
 
-          {/* Notes */}
+          {}
           <div className="svc-row">
             <div className="svc-label">
               <span>Notes</span>

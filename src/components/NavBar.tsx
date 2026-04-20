@@ -27,7 +27,6 @@ export default function NavBar() {
         <img src={logo} alt="EM" className="topnav__logo" />
       </div>
 
-      {/* Desktop */}
       <nav className="topnav__menu desktop">
         {links.map(link => (
           <Link
@@ -42,7 +41,6 @@ export default function NavBar() {
         ))}
       </nav>
 
-      {/* Mobile */}
       <button
         className="topnav__hamburger mobile"
         aria-label="Menu"

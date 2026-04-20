@@ -1,4 +1,3 @@
-// src/backendservice/hooks/useProductCatalog.ts
 
 import { useState, useEffect, useCallback } from "react";
 import { productCatalogApi } from "../api";

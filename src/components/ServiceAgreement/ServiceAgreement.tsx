@@ -1,4 +1,3 @@
-// src/components/ServiceAgreement/ServiceAgreement.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import './ServiceAgreement.css';
 import logo from "../../assets/em-logo.png";
@@ -7,21 +6,15 @@ import { serviceAgreementTemplateApi } from '../../backendservice/api/serviceAgr
 import type { ServiceAgreementTemplate } from '../../backendservice/api/serviceAgreementTemplateApi';
 
 interface ServiceAgreementProps {
-  /** Optional callback so the parent form can capture the agreement fields. */
   onAgreementChange?: (data: ServiceAgreementData) => void;
-  /** Optional logo (URL). If omitted, a simple inline "EM" mark is shown. */
   logoSrc?: string;
   logoAlt?: string;
-  /** ✅ Optional initial data for editing existing agreements */
   initialData?: ServiceAgreementData;
-  /** ⚡ OPTIMIZED: Optional template data from combined API call (avoids separate fetch) */
   templateData?: ServiceAgreementTemplate | null;
-  /** ⚡ OPTIMIZED: Loading state for template data (prevents premature separate fetch) */
   templateLoading?: boolean;
 }
 
 export interface ServiceAgreementData {
-  // ✅ NEW: Flag to control whether to include service agreement in PDF
   includeInPdf: boolean;
   retainDispensers: boolean;
   disposeDispensers: boolean;
@@ -33,7 +26,6 @@ export interface ServiceAgreementData {
   emSignatureDate: string;
   insideSalesRepresentative: string;
   emSalesRepresentative: string;
-  // Editable terms
   term1: string;
   term2: string;
   term3: string;
@@ -42,7 +34,6 @@ export interface ServiceAgreementData {
   term6: string;
   term7: string;
   noteText: string;
-  // Editable labels
   titleText: string;
   subtitleText: string;
   retainDispensersLabel: string;
@@ -63,21 +54,17 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
   onAgreementChange,
   logoSrc,
   logoAlt,
-  initialData, // ✅ Accept initial data prop
-  templateData, // ⚡ OPTIMIZED: Accept template data from combined API call
-  templateLoading = false, // ⚡ OPTIMIZED: Accept loading state (default false for backward compatibility)
+  initialData,
+  templateData,
+  templateLoading = false,
 }) => {
-  // ✅ Initialize showAgreement from initialData if provided
   const [showAgreement, setShowAgreement] = useState(initialData?.includeInPdf ?? true);
-  // ⚡ OPTIMIZED: Only show loading if we're waiting for template (not editing and template is loading)
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(!initialData && templateLoading);
   const [agreementData, setAgreementData] = useState<ServiceAgreementData>(() => {
-    // ✅ If initialData is provided, use it (editing existing agreement)
     if (initialData) {
       return initialData;
     }
 
-    // ✅ CHANGED: Return empty defaults - will be filled by template fetch
     return {
       includeInPdf: true,
       retainDispensers: true,
@@ -90,7 +77,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
       emSignatureDate: '',
       insideSalesRepresentative: '',
       emSalesRepresentative: '',
-      // Temporary defaults - will be replaced by template
       term1: '',
       term2: '',
       term3: '',
@@ -116,20 +102,16 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
     };
   });
 
-  // ⚡ OPTIMIZED: Load template data (from prop or backend fetch)
   useEffect(() => {
     const loadTemplate = async () => {
-      // Skip if we have initialData (editing mode)
       if (initialData) {
         console.log('📄 [SERVICE-AGREEMENT] Using initial data from edit mode');
         return;
       }
 
-      // ⚡ OPTIMIZED: Use template data from props if available (from combined API call)
       if (templateData) {
         console.log('⚡ [SERVICE-AGREEMENT] Using template from combined API call (no separate fetch needed)');
 
-        // Update agreement data with template values
         setAgreementData(prev => ({
           ...prev,
           term1: templateData.term1,
@@ -160,15 +142,12 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         return;
       }
 
-      // ⚡ CRITICAL: Wait if parent is still loading combined data - DON'T fetch separately yet!
       if (templateLoading) {
         console.log('⏳ [SERVICE-AGREEMENT] Waiting for combined API call to complete...');
         setIsLoadingTemplate(true);
         return;
       }
 
-      // ⚠️ FALLBACK: Fetch from backend only if parent finished loading but no template provided
-      // This shouldn't normally happen if parent uses the optimized hook
       if (!templateData && !templateLoading) {
         console.warn('⚠️ [SERVICE-AGREEMENT] Parent finished loading but no template provided - fetching separately (fallback)');
         try {
@@ -177,7 +156,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
 
           console.log('✅ [SERVICE-AGREEMENT] Template loaded via fallback fetch');
 
-          // Update agreement data with template values
           setAgreementData(prev => ({
             ...prev,
             term1: template.term1,
@@ -205,7 +183,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
           }));
         } catch (error) {
           console.error('❌ [SERVICE-AGREEMENT] Failed to load template:', error);
-          // Keep existing default values if template fetch fails
         } finally {
           setIsLoadingTemplate(false);
         }
@@ -213,12 +190,10 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
     };
 
     loadTemplate();
-  }, [initialData, templateData, templateLoading]); // ⚡ OPTIMIZED: Depend on templateLoading to know when to stop waiting
+  }, [initialData, templateData, templateLoading]);
 
-  // ✅ NEW: Track original term values for change logging
   const originalTermsRef = useRef<Record<string, string>>({});
 
-  // Initialize original terms after data is loaded (either from template or initialData)
   useEffect(() => {
     if (Object.keys(originalTermsRef.current).length === 0 && agreementData.term1) {
       originalTermsRef.current = {
@@ -234,7 +209,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         subtitleText: agreementData.subtitleText,
       };
     }
-  }, [agreementData]); // Re-run when agreementData changes (after template loads)
+  }, [agreementData]);
 
   const prevDataRef = useRef<string>('');
 
@@ -275,13 +250,11 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
   };
 
   const handleTextEdit = (field: keyof ServiceAgreementData, value: string) => {
-    // ✅ NEW: Log text changes for agreement terms
     const fieldsToTrack = ['term1', 'term2', 'term3', 'term4', 'term5', 'term6', 'term7', 'noteText', 'titleText', 'subtitleText'];
 
     if (fieldsToTrack.includes(field)) {
       const originalValue = originalTermsRef.current[field] || '';
 
-      // Only log if the value actually changed
       if (originalValue !== value && value.trim().length > 0) {
         const fieldDisplayNames: Record<string, string> = {
           term1: 'Agreement Term 1 (Property Ownership)',
@@ -313,7 +286,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
           frequency: '',
         });
 
-        // Update the original value to the new value so subsequent edits track correctly
         originalTermsRef.current[field] = value;
       }
     }
@@ -326,7 +298,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
 
   return (
     <div style={{ width: '100%', margin: '30px 0' }}>
-      {/* Toggle Checkbox */}
       <div style={{
         padding: '20px',
         background: '#f5f5f5',
@@ -347,7 +318,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
             onChange={(e) => {
               const checked = e.target.checked;
               setShowAgreement(checked);
-              // ✅ Update includeInPdf flag when checkbox changes
               setAgreementData(prev => ({
                 ...prev,
                 includeInPdf: checked
@@ -363,7 +333,6 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         </label>
       </div>
 
-      {/* Loading State - Show while fetching template */}
       {isLoadingTemplate && showAgreement && (
         <div style={{
           display: 'flex',
@@ -401,14 +370,13 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
         </div>
       )}
 
-      {/* Agreement Content - Only show when checkbox is checked and template loaded */}
       {showAgreement && !isLoadingTemplate && (
         <div className="sa-page" role="group" aria-label="Service Agreement">
           <header className="sa-header">
             <div className="sa-logo" aria-label="Enviro-Master logo">
-           
+
                 <img src={logo} alt="Enviro-Master Logo" className="cua2__logo-img" />
-           
+
                 <svg className="sa-logo-fallback" viewBox="0 0 160 80" aria-hidden="true">
                   <rect x="0" y="0" width="160" height="80" fill="#ffffff" />
                   <g transform="translate(0,10)">
@@ -418,7 +386,7 @@ export const ServiceAgreement: React.FC<ServiceAgreementProps> = ({
                   </g>
                   <text x="102" y="48" fontFamily="Arial, Helvetica, sans-serif" fontSize="44" fontWeight="700" fill="#111">EM</text>
                 </svg>
-        
+
             </div>
 
             <div

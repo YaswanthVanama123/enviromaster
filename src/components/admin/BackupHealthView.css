@@ -1,6 +1,3 @@
-/* BackupHealthView.css - Responsive styles */
-
-/* Inline loading state - shows in content area */
 .bhv-loading-state {
   display: flex;
   flex-direction: column;
@@ -54,7 +51,6 @@
   }
 }
 
-/* Medium devices (tablets, 769px to 1024px) */
 @media (max-width: 1024px) and (min-width: 769px) {
   .bhv-overall-health {
     padding: 28px !important;
@@ -108,7 +104,6 @@
   }
 }
 
-/* Small devices (phones, up to 768px) */
 @media (max-width: 768px) {
   .bhv-overall-health {
     flex-direction: column !important;
@@ -218,7 +213,6 @@
   }
 }
 
-/* Extra small devices (phones, up to 480px) */
 @media (max-width: 480px) {
   .bhv-overall-health {
     padding: 20px !important;
@@ -355,7 +349,6 @@
   }
 }
 
-/* Hover effects - only for devices that support hover */
 @media (hover: hover) {
   .bhv-refresh-button:hover {
     background-color: #2563eb !important;
@@ -370,7 +363,6 @@
   }
 }
 
-/* Ensure proper spacing on small screens */
 @media (max-width: 768px) {
   .bhv-container > div:last-child {
     margin-top: 24px !important;

@@ -1,4 +1,4 @@
-// src/backendservice/types/serviceConfig.types.ts
+
 
 export interface ServiceImage {
   url: string;

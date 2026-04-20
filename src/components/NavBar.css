@@ -65,7 +65,6 @@
   border-radius:2px;
 }
 
-/* Mobile dropdown */
 .mobilemenu{
   position:absolute;
   top:56px;
@@ -80,7 +79,7 @@
   transform:translateY(-8px);
   pointer-events:none;
   transition:opacity .18s ease, transform .18s ease;
-  z-index:1002; /* ✅ FIXED: Ensure menu is above backdrop */
+  z-index:1002;
 }
 .mobilemenu--open{
   opacity:1;
@@ -100,7 +99,7 @@
   font-weight:600;
   font-size:15px;
   color:#222;
-  position:relative; /* ✅ FIXED: Create stacking context for clickable links */
+  position:relative;
 }
 .mobilemenu__item.active{
   background:#c00000;
@@ -110,16 +109,12 @@
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.08);
-  z-index:1001; /* ✅ FIXED: Backdrop below menu but above rest of page */
+  z-index:1001;
 }
 
-/* Breakpoints */
 .desktop{ display:flex; }
 .mobile{ display:none; }
 
-/* ✅ ENHANCED: Comprehensive responsive design */
-
-/* Medium viewports (tablets) - 769px to 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
   .topnav {
     padding: 9px 14px;
@@ -140,7 +135,6 @@
   }
 }
 
-/* Small viewports (mobile) - max 768px */
 @media (max-width: 768px){
   .topnav {
     padding: 8px 12px;
@@ -181,7 +175,6 @@
   }
 }
 
-/* Extra small viewports - max 480px */
 @media (max-width: 480px) {
   .topnav {
     padding: 6px 10px;

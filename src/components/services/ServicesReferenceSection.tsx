@@ -17,7 +17,7 @@ import type { ServiceConfig } from "../../backendservice/types/serviceConfig.typ
 import "ckeditor5/ckeditor5-content.css";
 import "./ServicesReferenceSection.css";
 
-// ─── Per-service icon + accent colour ────────────────────────────────────────
+
 interface ServiceMeta { icon: IconDefinition; color: string; bg: string }
 const SERVICE_META: Record<string, ServiceMeta> = {
   rpmWindows:        { icon: faWindowMaximize, color: "#0ea5e9", bg: "#e0f2fe" },
@@ -38,7 +38,7 @@ const SERVICE_META: Record<string, ServiceMeta> = {
 };
 const FALLBACK_META: ServiceMeta = { icon: faCog, color: "#6b7280", bg: "#f3f4f6" };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function camelToLabel(key: string): string {
   return key
     .replace(/([A-Z])/g, " $1")
@@ -77,7 +77,7 @@ function formatPrimitive(key: string, value: unknown): { display: string; unit: 
 type FieldEntry  = { key: string; label: string; display: string; unit: string; vtype: VType };
 type Section     = { sectionKey: string; title: string; icon: IconDefinition; fields: FieldEntry[]; subsections: Section[] };
 
-// Map known section keys to icons (mirrors getTabs() in ServicePricingDetailedView)
+
 const SECTION_ICONS: Record<string, IconDefinition> = {
   windowPricingBothSidesIncluded: faWindowMaximize,
   installPricing: faBolt,
@@ -163,7 +163,7 @@ function buildSections(obj: Record<string, unknown>): Section[] {
   return sections;
 }
 
-// ─── FieldRow — matches spd__field style ─────────────────────────────────────
+
 function FieldRow({ label, display, unit, vtype }: FieldEntry) {
   const valueClass = {
     dollar: "srf-val--dollar", multiplier: "srf-val--multiplier",
@@ -183,7 +183,7 @@ function FieldRow({ label, display, unit, vtype }: FieldEntry) {
   );
 }
 
-// ─── SubSection ───────────────────────────────────────────────────────────────
+
 function SubSection({ section }: { section: Section }) {
   const [open, setOpen] = useState(true);
   if (section.fields.length === 0 && section.subsections.length === 0) return null;
@@ -204,7 +204,7 @@ function SubSection({ section }: { section: Section }) {
   );
 }
 
-// ─── ServiceReferenceCard ─────────────────────────────────────────────────────
+
 function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
   const [expanded, setExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -213,7 +213,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
 
   const sections = useMemo(() => buildSections(config.config ?? {}), [config.config]);
 
-  // "__desc__" is a synthetic tab key for the description tab
+
   const hasDescription = Boolean(config.description);
   const allTabs = useMemo(() => {
     if (!hasDescription) return sections;
@@ -229,25 +229,25 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
   return (
     <div className={`srf-card ${expanded ? "srf-card--open" : ""}`}>
 
-      {/* ── Header row ── */}
+      {}
       <button
         type="button"
         className="srf-card__header"
         onClick={() => setExpanded((e) => !e)}
         style={{ borderLeftColor: meta.color }}
       >
-        {/* Icon badge */}
+        {}
         <span className="srf-card__icon-wrap" style={{ background: meta.bg, color: meta.color }}>
           <FontAwesomeIcon icon={meta.icon} />
         </span>
 
-        {/* Name + ID */}
+        {}
         <div className="srf-card__titles">
           <span className="srf-card__name">{config.label || config.serviceId}</span>
           <span className="srf-card__id">{config.serviceId}</span>
         </div>
 
-        {/* Badges */}
+        {}
         <div className="srf-card__badges">
           {config.version && (
             <span className="srf-badge srf-badge--version">v{config.version}</span>
@@ -266,7 +266,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
           </span>
         </div>
 
-        {/* Expand chevron */}
+        {}
         <FontAwesomeIcon
           icon={expanded ? faChevronUp : faChevronDown}
           className="srf-card__chevron"
@@ -274,7 +274,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
         />
       </button>
 
-      {/* ── Description strip (always visible when present) ── */}
+      {}
       {config.description && (
         <div className="srf-card__desc">
           <FontAwesomeIcon icon={faInfoCircle} className="srf-card__desc-icon" />
@@ -285,14 +285,14 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
         </div>
       )}
 
-      {/* ── Expanded pricing body ── */}
+      {}
       {expanded && (
         <div className="srf-card__body">
           {allTabs.length === 0 ? (
             <p className="srf-empty">No pricing configuration available.</p>
           ) : (
             <>
-              {/* Tab strip */}
+              {}
               <div className="srf-tabs">
                 {allTabs.map((s) => (
                   <button
@@ -310,7 +310,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
                 ))}
               </div>
 
-              {/* Description tab body */}
+              {}
               {activeKey === "__desc__" ? (
                 <div className="srf-section-body">
                   <div
@@ -319,7 +319,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
                   />
                 </div>
               ) : (
-                /* Pricing section fields */
+
                 activeSecObj && (
                   <div className="srf-section-body">
                     {activeSecObj.fields.map((f) => <FieldRow key={f.key} {...f} />)}
@@ -335,7 +335,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
             </>
           )}
 
-          {/* ── Images gallery ── */}
+          {}
           {config.images && config.images.length > 0 && (
             <div className="srf-media-section">
               <div className="srf-media-header">
@@ -358,7 +358,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
             </div>
           )}
 
-          {/* ── Links ── */}
+          {}
           {config.links && config.links.length > 0 && (
             <div className="srf-media-section">
               <div className="srf-media-header">
@@ -387,7 +387,7 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
   );
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
+
 interface Props { configs: ServiceConfig[] }
 
 export function ServicesReferenceSection({ configs }: Props) {
@@ -407,7 +407,7 @@ export function ServicesReferenceSection({ configs }: Props) {
 
   return (
     <div className="srf-root">
-      {/* ── Banner (matches svc-title style) ── */}
+      {}
       <div className="srf-banner">
         <div className="srf-banner__title">SERVICES REFERENCE</div>
         <div className="srf-banner__sub">
@@ -415,7 +415,7 @@ export function ServicesReferenceSection({ configs }: Props) {
         </div>
       </div>
 
-      {/* ── Search + count ── */}
+      {}
       <div className="srf-toolbar">
         <div className="srf-search-wrap">
           <FontAwesomeIcon icon={faSearch} className="srf-search__icon" />
@@ -437,7 +437,7 @@ export function ServicesReferenceSection({ configs }: Props) {
         </span>
       </div>
 
-      {/* ── Legend ── */}
+      {}
       <div className="srf-legend">
         <span className="srf-legend__item srf-val--dollar">
           <FontAwesomeIcon icon={faDollarSign} style={{ marginRight: 4 }} /> Price / Rate
@@ -456,7 +456,7 @@ export function ServicesReferenceSection({ configs }: Props) {
         </span>
       </div>
 
-      {/* ── Cards ── */}
+      {}
       <div className="srf-list">
         {filtered.length === 0 ? (
           <div className="srf-no-results">No services match &ldquo;{search}&rdquo;</div>

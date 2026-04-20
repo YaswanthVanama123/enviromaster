@@ -11,7 +11,6 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Forgot password states
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<'developer' | 'reset'>('developer');
   const [developerName, setDeveloperName] = useState("");
@@ -27,24 +26,20 @@ export default function AdminLogin() {
   const { login, error, isAuthenticated } = useAdminAuth();
   const isNavigatingRef = useRef(false);
 
-  // If authenticated, redirect to admin panel
   useEffect(() => {
     if (isAuthenticated && !isNavigatingRef.current) {
       isNavigatingRef.current = true;
       navigate("/admin-panel", { replace: true });
     } else if (!isAuthenticated) {
-      // Reset navigation flag when not authenticated
       isNavigatingRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]); // Only depend on isAuthenticated, navigate is stable
+  }, [isAuthenticated]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     await login({ username, password });
-    // Navigation will be handled by useEffect when isAuthenticated changes
 
     setLoading(false);
   };
@@ -75,7 +70,6 @@ export default function AdminLogin() {
     setResetError("");
     setResetLoading(true);
 
-    // Validation
     if (newPassword.length < 6) {
       setResetError("Password must be at least 6 characters long");
       setResetLoading(false);
@@ -188,7 +182,6 @@ export default function AdminLogin() {
         </form>
       </div>
 
-      {/* Forgot Password Modal */}
       {showForgotPasswordModal && (
         <div className="forgot-password-overlay" onClick={closeForgotPasswordModal}>
           <div className="forgot-password-modal" onClick={(e) => e.stopPropagation()}>

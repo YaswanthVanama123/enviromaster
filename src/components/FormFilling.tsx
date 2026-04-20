@@ -103,7 +103,7 @@ type AgreementPayload = {
   additionalMonths: string;
   paymentOption?: PaymentOption;
   paymentNote?: string;
-  startDate?: string; // ✅ NEW: Agreement start date for expiry tracking
+  startDate?: string; 
 };
 
 const PAYMENT_OPTION_DETAILS: { value: PaymentOption; label: string; description: string }[] = [
@@ -135,7 +135,7 @@ export type FormPayload = {
     products: { id: string; label: string }[];
     dispensers: { id: string; label: string }[];
   };
-  serviceAgreement?: any; // ✅ Service agreement data (using any to avoid circular dependency)
+  serviceAgreement?: any; 
 };
 
 type LocationState = {
@@ -143,23 +143,22 @@ type LocationState = {
   id?: string;
   returnPath?: string;
   returnState?: any;
-  fromPdfViewer?: boolean; // Added to track if coming from PDF viewer
-  // ✅ NEW: Version info for status updates when editing versioned PDFs
+  fromPdfViewer?: boolean; 
+
   editingVersionId?: string;
   editingVersionFile?: string;
 };
 
-// customer document we were using before (for saving when not editing an existing one)
+
 const CUSTOMER_FALLBACK_ID = "6918cecbf0b2846a9c562fd6";
-// admin template for "new" forms (read-only template to prefill)
+
 const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 
-// ✅ NEW: Contract Summary Component
-// Displays global contract months and total agreement amount
+
 type ContractSummaryProps = {
   productTotals?: ProductTotals;
-  initialStartDate?: string; // ✅ NEW: Load start date from backend
-  onStartDateChange?: (startDate: string) => void; // ✅ NEW: Notify parent of start date changes
+  initialStartDate?: string; 
+  onStartDateChange?: (startDate: string) => void; 
 };
 
 function ContractSummary({ productTotals, initialStartDate, onStartDateChange }: ContractSummaryProps) {
@@ -199,9 +198,9 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const tripFreqDropdownRef = useRef<HTMLDivElement>(null);
   const parkingFreqDropdownRef = useRef<HTMLDivElement>(null);
 
-  // ✅ NEW: Agreement Timeline - Start Date & Expiry Tracking
+
   const [agreementStartDate, setAgreementStartDate] = useState<string>(() => {
-    // Use initialStartDate from props if available, otherwise default to today
+
     if (initialStartDate) {
       return initialStartDate;
     }
@@ -212,13 +211,13 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [expiryStatus, setExpiryStatus] = useState<'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired'>('safe');
 
-  // ✅ NEW: Notify parent when start date changes
+
   const handleStartDateChange = (newDate: string) => {
     setAgreementStartDate(newDate);
     onStartDateChange?.(newDate);
   };
 
-  // ✅ FIX: Sync with initialStartDate prop when it changes (for edit mode)
+
   useEffect(() => {
     if (initialStartDate) {
       console.log('📅 [CONTRACT-SUMMARY] Syncing start date from prop:', initialStartDate);
@@ -226,7 +225,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     }
   }, [initialStartDate]);
 
-  // ✅ Close dropdown when clicking outside
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -244,14 +243,14 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Red/Green Line: currentContractTotal vs originalContractTotal × 1.20
+
   useEffect(() => {
     const threshold = totalOriginalContract * 1.20;
     setGreenLineThreshold(threshold);
     setpricingIndicator(totalCurrentContract > threshold ? 'green' : 'red');
   }, [totalCurrentContract, totalOriginalContract]);
 
-  // ✅ NEW: Calculate Agreement Expiry & Days Remaining with "Yet to Start" status
+
   useEffect(() => {
     if (!agreementStartDate || !globalContractMonths || globalContractMonths <= 0) {
       setExpiryDate(null);
@@ -260,25 +259,25 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
       return;
     }
 
-    // Calculate expiry date: start date + contract months
+
     const startDate = new Date(agreementStartDate);
     const calculatedExpiryDate = new Date(startDate);
     calculatedExpiryDate.setMonth(calculatedExpiryDate.getMonth() + globalContractMonths);
     setExpiryDate(calculatedExpiryDate);
 
-    // Calculate days remaining
+
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time for accurate day comparison
+    today.setHours(0, 0, 0, 0); 
     const startDateMidnight = new Date(startDate);
     startDateMidnight.setHours(0, 0, 0, 0);
     const expiryDateMidnight = new Date(calculatedExpiryDate);
     expiryDateMidnight.setHours(0, 0, 0, 0);
 
-    // Check if agreement hasn't started yet (future start date)
+
     const daysUntilStart = Math.ceil((startDateMidnight.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     if (daysUntilStart > 0) {
-      // Agreement hasn't started yet - show "Yet to Start"
+
       setDaysRemaining(daysUntilStart);
       setExpiryStatus('yet-to-start' as any);
 
@@ -290,20 +289,20 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
       return;
     }
 
-    // Agreement has started - calculate days until expiry
+
     const timeDiff = expiryDateMidnight.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     setDaysRemaining(daysDiff);
 
-    // Determine expiry status with color coding
+
     if (daysDiff < 0) {
-      setExpiryStatus('expired'); // Red - Already expired
+      setExpiryStatus('expired'); 
     } else if (daysDiff <= 30) {
-      setExpiryStatus('critical'); // Red - 30 days or less
+      setExpiryStatus('critical'); 
     } else if (daysDiff <= 90) {
-      setExpiryStatus('warning'); // Orange/Yellow - 31-90 days
+      setExpiryStatus('warning'); 
     } else {
-      setExpiryStatus('safe'); // Green - More than 90 days
+      setExpiryStatus('safe'); 
     }
 
     console.log('📅 [AGREEMENT TIMELINE] Active Agreement:', {
@@ -344,7 +343,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
         <h2>Contract Summary</h2>
       </div>
 
-      {/* Red/Green Line Status Banner */}
+      {}
       <div className={`pricing-status-banner ${pricingIndicator}-line-banner`}>
         <div className="status-banner-content">
           {pricingIndicator === 'red' ? (
@@ -394,11 +393,11 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
       </div>
 
       <div className="contract-summary-grid">
-        {/* ✅ Left Column: Contract Details */}
+        {}
         <div className="contract-card">
           <h3 className="card-title">Contract Details</h3>
 
-          {/* Contract Duration */}
+          {}
           {!allServicesOneTime && (
           <div className="contract-field-group" ref={dropdownRef}>
             <label htmlFor="global-contract-months" className="contract-label">
@@ -457,7 +456,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
           </div>
           )}
 
-          {/* ✅ NEW: Agreement Start Date */}
+          {}
           <div className="contract-field-group">
             <label htmlFor="agreement-start-date" className="contract-label">
               <span className="label-icon">
@@ -481,7 +480,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
             />
           </div>
 
-          {/* ✅ NEW: Agreement Expiry Timeline */}
+          {}
           {!allServicesOneTime && expiryDate && daysRemaining !== null && (
             <div className="contract-field-group">
               <div className="agreement-timeline-section">
@@ -494,7 +493,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                   </label>
                 </div>
 
-                {/* Expiry Status Badge */}
+                {}
                 <div className={`expiry-status-badge expiry-status-${expiryStatus}`}>
                   <div className="badge-content">
                     <div className="badge-icon">
@@ -524,7 +523,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                   </div>
                 </div>
 
-                {/* Timeline Bar */}
+                {}
                 <div className="timeline-bar-container">
                   <div className="timeline-bar">
                     <div
@@ -544,7 +543,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                   </div>
                 </div>
 
-                {/* Days Breakdown */}
+                {}
                 <div className="timeline-stats">
                   <div className="timeline-stat">
                     <span className="stat-labels">Total Duration</span>
@@ -567,7 +566,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
             </div>
           )}
 
-          {/* Trip Charge */}
+          {}
           <div className="contract-field-group">
             <label htmlFor="global-trip-charge" className="contract-label">
               <span className="label-icon">
@@ -655,7 +654,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
             </div>
           </div>
 
-          {/* Parking Charge */}
+          {}
           <div className="contract-field-group">
             <label htmlFor="global-parking-charge" className="contract-label">
               <span className="label-icon">
@@ -744,7 +743,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
           </div>
         </div>
 
-        {/* ✅ Right Column: Pricing Breakdown */}
+        {}
         <div className="contract-card">
           <h3 className="card-title">Pricing Breakdown</h3>
 
@@ -762,7 +761,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               <span className="breakdown-value target">${greenLineThreshold.toFixed(2)}</span>
             </div>
 
-            {/* Show profit margin */}
+            {}
             <div className="breakdown-divider"></div>
             <div className="breakdown-row highlight">
               <span className="breakdown-label">Price Change</span>
@@ -777,7 +776,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
         </div>
       </div>
 
-      {/* ✅ Total Service Agreement Total - Full Width at Bottom */}
+      {}
       <div className="contract-total-section">
         <div className="total-label">Total Service Agreement Total</div>
         <div className="total-amount">${totalAmount.toFixed(2)}</div>
@@ -837,7 +836,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   );
 }
 
-// ✅ NEW: Helper component to access ServicesContext inside FormFilling
+
 function FormFillingContent({
   serviceAgreementTemplate,
   templateLoading,
@@ -850,7 +849,7 @@ function FormFillingContent({
   const { id: urlId } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ✅ PERFORMANCE FIX: Stabilize locationState to prevent unnecessary re-renders
+
   const locationState = useMemo(() => (location.state ?? {}) as LocationState, [
     location.state?.editing,
     location.state?.id,
@@ -864,7 +863,7 @@ function FormFillingContent({
   const [loading, setLoading] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
 
-  // ✅ DEBUG: Track loading state changes
+
   useEffect(() => {
     console.log("🔄 [LOADING STATE CHANGED]", { loading });
   }, [loading]);
@@ -872,13 +871,13 @@ function FormFillingContent({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
-  const [isEditMode, setIsEditMode] = useState(false); // Track if we're in edit mode
-  const [agreementData, setAgreementData] = useState<ServiceAgreementData | null>(null); // Service Agreement data
+  const [isEditMode, setIsEditMode] = useState(false); 
+  const [agreementData, setAgreementData] = useState<ServiceAgreementData | null>(null); 
   const [paymentOption, setPaymentOption] = useState<PaymentOption>("online");
   const [paymentNote, setPaymentNote] = useState<string>("");
   const [includeProductsTable, setIncludeProductsTable] = useState<boolean>(true);
 
-  // ✅ NEW: Version dialog state for PDF versioning
+
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
@@ -887,13 +886,13 @@ function FormFillingContent({
     contractTotal: 0,
   });
 
-  // ✅ NEW: Agreement start date for expiry tracking
+
   const [agreementStartDate, setAgreementStartDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
 
-  // ✅ NEW: Access ServicesContext for pricing calculations
+
   const {
     servicesState,
     getTotalAgreementAmount,
@@ -920,7 +919,7 @@ function FormFillingContent({
     setPaymentNote(payload.agreement?.paymentNote ?? "");
     setIncludeProductsTable((payload as any).includeProductsTable !== false);
 
-    // ✅ NEW: Load start date from payload if available
+
     if (payload.agreement?.startDate) {
       setAgreementStartDate(payload.agreement.startDate);
     }
@@ -928,7 +927,7 @@ function FormFillingContent({
 
   const currentPaymentLabel = PAYMENT_OPTION_DETAILS.find((entry) => entry.value === paymentOption)?.label ?? "Payment Option";
 
-  // ✅ NEW: Calculate pricing status (Red/Green Line) for approval workflow
+
   const calculatePricingStatus = useCallback((): 'red' | 'green' | 'neutral' => {
     const threshold = totalOriginalContract * 1.20;
 
@@ -1002,16 +1001,16 @@ function FormFillingContent({
     setProductTotals,
   ]);
 
-  // ƒo. NEW: Determine document status based on pricing
+
   const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
     const pricingStatus = calculatePricingStatus();
 
-    // Check if any active service has manual notes text entered
+
     const hasServiceNotes = Object.values(servicesState).some((sd: any) =>
       sd?.isActive && typeof sd.notes === 'string' && sd.notes.trim().length > 0
     );
 
-    // Check if any active service has custom (manually added) fields
+
     const hasCustomFields = Object.values(servicesState).some((sd: any) =>
       sd?.isActive && Array.isArray(sd.customFields) && sd.customFields.length > 0
     );
@@ -1041,35 +1040,35 @@ function FormFillingContent({
     return status;
   }, [calculatePricingStatus, paymentOption, servicesState]);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const hasChanges = hasPriceChanges();
   const changesCount = getPriceChangeCount();
 
-  // ✅ DEBUG: Log change collection status
+
   console.log(`🔍 [FORMFILLING] File logger status:`, {
     hasChanges,
     changesCount
   });
 
-  // Debug file logger on every render
+
   debugFileLogger();
 
-  // Detect if we're in edit mode based on URL path
+
   const isInEditMode = location.pathname.startsWith('/edit/pdf');
 
-  // Get tab parameters from URL
+
   const productTab = searchParams.get('productTab') || undefined;
   const serviceTab = searchParams.get('serviceTab') || undefined;
 
-  // Refs to collect data from child components
+
   const productsRef = useRef<ProductsSectionHandle>(null);
   const servicesRef = useRef<ServicesDataHandle>(null);
 
-  // ✅ PERFORMANCE FIX: Prevent duplicate initial API calls in React 18 Strict Mode
-  const hasInitiallyFetched = useRef(false);
-  const previousDocId = useRef<string | null>(null); // Track previous document ID to detect changes
 
-  // Handle back navigation
+  const hasInitiallyFetched = useRef(false);
+  const previousDocId = useRef<string | null>(null); 
+
+
   const handleBack = () => {
     console.log('📍 Edit Form: Handling back navigation', {
       fromPdfViewer: locationState.fromPdfViewer,
@@ -1077,7 +1076,7 @@ function FormFillingContent({
       hasReturnState: !!locationState.returnState
     });
 
-    // If we came from PDF viewer, return to PDF viewer with special flag
+
     if (locationState.fromPdfViewer && locationState.returnPath && locationState.returnState) {
       console.log('📍 Edit Form: Returning to PDF viewer with original context');
       navigate('/pdf-viewer', {
@@ -1091,21 +1090,21 @@ function FormFillingContent({
       return;
     }
 
-    // If we have return path info (normal flow)
+
     if (locationState.returnPath && locationState.returnState) {
       console.log('📍 Edit Form: Using return path:', locationState.returnPath);
       navigate(locationState.returnPath, { state: locationState.returnState });
       return;
     }
 
-    // If we have return path but no state
+
     if (locationState.returnPath) {
       console.log('📍 Edit Form: Using return path without state:', locationState.returnPath);
       navigate(locationState.returnPath);
       return;
     }
 
-    // Intelligent fallback - avoid browser back to prevent loops
+
     console.log('📍 Edit Form: Using intelligent fallback navigation');
     const currentUrl = window.location.href;
 
@@ -1117,14 +1116,11 @@ function FormFillingContent({
   };
 
   useEffect(() => {
-    // ✅ PERFORMANCE FIX: Prevent duplicate API calls in React 18 Strict Mode
-    // In development, Strict Mode runs effects twice to detect side effects
-    // We use a ref to track if we've already fetched for this document
+
+
     const currentDocId = urlId || locationState.id;
 
-    // ✅ FIX: Only reset hasInitiallyFetched when document ID actually changes
-    // This ensures the loading spinner displays when navigating to a different document
-    // but prevents double-fetching in React 18 Strict Mode for the same document
+
     if (previousDocId.current !== currentDocId) {
       hasInitiallyFetched.current = false;
       previousDocId.current = currentDocId;
@@ -1133,7 +1129,7 @@ function FormFillingContent({
       console.log("⏭️ [FETCH SKIP] Same document ID, keeping hasInitiallyFetched:", currentDocId);
     }
 
-    // Extract editing and id from location.state inside useEffect to ensure fresh values
+
     const { editing = false, id } = locationState;
 
     console.log("🔍 [FORMFILLING DEBUG] Location state values:", {
@@ -1143,26 +1139,26 @@ function FormFillingContent({
       urlId,
       currentDocId,
       hasInitiallyFetched: hasInitiallyFetched.current,
-      // ✅ NEW: Debug version info
+
       editingVersionId: locationState.editingVersionId,
       editingVersionFile: locationState.editingVersionFile,
       hasVersionInfo: !!(locationState.editingVersionId)
     });
 
-    // ✅ FIXED: Always use agreement ID directly - no version mapping needed
+
     const agreementId = urlId || id;
 
-    // Set documentId to agreement ID (form data always lives in the agreement)
+
     setDocumentId(agreementId || null);
     console.log("🔍 [DOCUMENT ID] Set to agreement ID:", agreementId);
 
-    setIsEditMode(editing || isInEditMode); // Set edit mode state based on URL or state
+    setIsEditMode(editing || isInEditMode); 
 
-    // ---- PICK API FOR INITIAL DATA ----
+
     const useCustomerDoc = (editing || isInEditMode) && !!agreementId;
 
     const fetchHeaders = async () => {
-      // ✅ PERFORMANCE: Skip if already fetched (prevents React 18 Strict Mode double-fetch)
+
       if (hasInitiallyFetched.current) {
         console.log('⏭️ [FETCH HEADERS] Skipping duplicate fetch (already loaded)');
         return;
@@ -1175,14 +1171,14 @@ function FormFillingContent({
         editing: locationState.editing
       });
 
-      hasInitiallyFetched.current = true; // Mark as fetched BEFORE the fetch
+      hasInitiallyFetched.current = true; 
       console.log("🔄 [LOADING] Setting loading to TRUE - starting data fetch");
       setLoading(true);
       try {
         let json;
 
         if (useCustomerDoc) {
-          // ✅ FIXED: Always load agreement document for editing
+
           console.log("🔍 [ENDPOINT DEBUG] Loading agreement document for editing:", {
             useCustomerDoc,
             agreementId,
@@ -1192,7 +1188,7 @@ function FormFillingContent({
           console.log("📝 [AGREEMENT EDIT] Loading agreement for editing:", agreementId);
           json = await pdfApi.getCustomerHeaderForEdit(agreementId!);
         } else {
-          // New document - use admin template
+
           json = await pdfApi.getAdminHeaderById(ADMIN_TEMPLATE_ID);
         }
 
@@ -1209,15 +1205,15 @@ function FormFillingContent({
           productsStructure: fromBackend.products ? Object.keys(fromBackend.products) : []
         });
 
-        // Helper function to generate title from customer name
+
         const generateTitleFromCustomerName = (headerRows: HeaderRow[]): string => {
           console.log("🔍 [TITLE DEBUG] Searching for customer name in headerRows:", headerRows);
 
-          // Extract customer name from headerRows
+
           for (const row of headerRows) {
             console.log("🔍 [TITLE DEBUG] Checking row:", { labelLeft: row.labelLeft, valueLeft: row.valueLeft, labelRight: row.labelRight, valueRight: row.valueRight });
 
-            // Check left side for various customer name patterns
+
             if (row.labelLeft) {
               const leftLabel = row.labelLeft.toUpperCase();
               if (leftLabel.includes("CUSTOMER NAME") || leftLabel.includes("CUSTOMER") || leftLabel.includes("CLIENT NAME") || leftLabel.includes("COMPANY NAME")) {
@@ -1229,7 +1225,7 @@ function FormFillingContent({
               }
             }
 
-            // Check right side for various customer name patterns
+
             if (row.labelRight) {
               const rightLabel = row.labelRight.toUpperCase();
               if (rightLabel.includes("CUSTOMER NAME") || rightLabel.includes("CUSTOMER") || rightLabel.includes("CLIENT NAME") || rightLabel.includes("COMPANY NAME")) {
@@ -1243,11 +1239,11 @@ function FormFillingContent({
           }
 
           console.log("⚠️ [TITLE DEBUG] No customer name found in headerRows, using fallback");
-          // Fallback to default if no customer name found
+
           return "Customer Update Addendum";
         };
 
-        // ✅ FIXED: Simplified title logic - always use agreement title
+
         const dynamicTitle = generateTitleFromCustomerName(fromBackend.headerRows || []);
         const shouldUseBackendTitle = dynamicTitle === "Customer Update Addendum" && fromBackend.headerTitle && fromBackend.headerTitle !== "Customer Update Addendum";
         const finalTitle = shouldUseBackendTitle ? fromBackend.headerTitle : dynamicTitle;
@@ -1272,13 +1268,13 @@ function FormFillingContent({
               fromBackend.agreement?.customerExecutedOn ?? "",
             additionalMonths:
               fromBackend.agreement?.additionalMonths ?? "",
-            paymentOption: fromBackend.agreement?.paymentOption, // ✅ Include payment option for edit mode
-            paymentNote: fromBackend.agreement?.paymentNote ?? "",  // ✅ Include payment note for edit mode
-            startDate: fromBackend.agreement?.startDate, // ✅ NEW: Include start date for expiry tracking
+            paymentOption: fromBackend.agreement?.paymentOption, 
+            paymentNote: fromBackend.agreement?.paymentNote ?? "",  
+            startDate: fromBackend.agreement?.startDate, 
           },
-          customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, // ← Include custom columns from backend
+          customColumns: fromBackend.customColumns ?? { products: [], dispensers: [] }, 
           includeProductsTable: (fromBackend as any).includeProductsTable !== false,
-          serviceAgreement: fromBackend.serviceAgreement, // ✅ Include service agreement data for editing
+          serviceAgreement: fromBackend.serviceAgreement, 
           summary: fromBackend.summary,
         };
 
@@ -1292,36 +1288,36 @@ function FormFillingContent({
     };
 
     fetchHeaders();
-  }, [urlId, locationState.editing, locationState.id]); // ✅ FIXED: Only reload when document ID changes, not on tab switches
+  }, [urlId, locationState.editing, locationState.id]); 
 
   const handleHeaderRowsChange = (rows: HeaderRow[]) => {
     console.log('📝 [HEADER CHANGE] Customer header data updated:', rows);
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
   };
 
-  // Helper function to transform products data to backend format
+
   const transformProductsToBackendFormat = (productsData: any) => {
     const { smallProducts, dispensers, bigProducts } = productsData;
 
-    // MERGE small and big products into single "products" array for 2-category backend
+
     const mergedProducts = [
-      // Small products with unitPrice
+
       ...smallProducts.map((p: any) => ({
         displayName: p.displayName || "",
         qty: p.qty || 0,
         unitPrice: p.unitPrice || 0,
         frequency: p.frequency || "",
         total: p.total || 0,
-        customFields: p.customFields || {}, // ✅ Include custom fields
+        customFields: p.customFields || {}, 
       })),
-      // Big products with amount
+
       ...bigProducts.map((b: any) => ({
         displayName: b.displayName || "",
         qty: b.qty || 0,
         amount: b.amount || 0,
         frequency: b.frequency || "",
         total: b.total || 0,
-        customFields: b.customFields || {}, // ✅ Include custom fields
+        customFields: b.customFields || {}, 
       }))
     ];
 
@@ -1332,19 +1328,19 @@ function FormFillingContent({
       replacementRate: d.replacementRate || 0,
       frequency: d.frequency || "",
       total: d.total || 0,
-      customFields: d.customFields || {}, // ✅ Include custom fields
+      customFields: d.customFields || {}, 
     }));
 
-    // Return 2-category structure that backend expects
+
     return {
-      products: mergedProducts,  // MERGED: small + big products combined
+      products: mergedProducts,  
       dispensers: transformedDispensers,
     };
   };
 
-  // Helper function to collect all current form data
+
   const collectFormData = () => {
-    // Get products data from ProductsSection ref
+
     const productsData = productsRef.current?.getData() as any || {
       smallProducts: [],
       dispensers: [],
@@ -1354,14 +1350,14 @@ function FormFillingContent({
 
     console.log("📦 Products data from ProductsSection:", productsData);
 
-    // Transform products to backend format
+
     const productsForBackend = transformProductsToBackendFormat(productsData);
 
     console.log("📦 Products transformed for backend (2-category):", productsForBackend);
     console.log("📦 Merged products count:", productsForBackend.products.length);
     console.log("📦 Dispensers count:", productsForBackend.dispensers.length);
 
-    // Get services data from ServicesDataCollector ref
+
     const servicesData = servicesRef.current?.getData() || {
       saniclean: null,
       foamingDrain: null,
@@ -1375,10 +1371,10 @@ function FormFillingContent({
       stripwax: null,
     };
 
-    // Extract customer name from headerRows for both filename and title
+
     const customerName = extractCustomerName(payload?.headerRows || []);
 
-    // 🔧 DRAFT TITLE FIX: Use customer name as title when available, fallback to current title
+
     const titleForSave = customerName !== "Unnamed_Customer" ? customerName : (payload?.headerTitle || "Customer Update Addendum");
 
     console.log("💾 [SAVE DEBUG] Title selection for save:", {
@@ -1420,12 +1416,12 @@ function FormFillingContent({
         ...agreementBase,
         paymentOption,
         paymentNote,
-        startDate: agreementStartDate, // ✅ NEW: Include start date for expiry tracking
+        startDate: agreementStartDate, 
       },
-      serviceAgreement: agreementData, // Include Service Agreement data
-      customerName, // Add customer name for PDF filename
+      serviceAgreement: agreementData, 
+      customerName, 
       includeProductsTable,
-      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, // Move to top level
+      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, 
       summary,
     };
   };
@@ -1488,14 +1484,14 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
   };
 };
 
-  // Helper function to extract customer name from headerRows
+
   const extractCustomerName = (headerRows: HeaderRow[]): string => {
     for (const row of headerRows) {
-      // Check left side
+
       if (row.labelLeft && row.labelLeft.toUpperCase().includes("CUSTOMER NAME")) {
         return row.valueLeft?.trim() || "Unnamed_Customer";
       }
-      // Check right side
+
       if (row.labelRight && row.labelRight.toUpperCase().includes("CUSTOMER NAME")) {
         return row.valueRight?.trim() || "Unnamed_Customer";
       }
@@ -1503,22 +1499,22 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     return "Unnamed_Customer";
   };
 
-  // Draft handler: Save without PDF compilation and Zoho
+
   const handleDraft = async () => {
     if (!payload) return;
 
     setIsSaving(true);
 
-    // ✅ NEW: Log pricing status for debugging
+
     const pricingStatus = calculatePricingStatus();
     console.log(`💾 [DRAFT] Pricing status: ${pricingStatus} (Red/Green Line check - drafts always use "draft" status)`);
 
     const currentFormData = collectFormData();
     const payloadToSend = {
-      ...currentFormData, // Collect current data from all child components
+      ...currentFormData, 
       services: replaceRefreshPowerScrubWithDraftPayload(currentFormData.services),
-      status: "draft", // Drafts are always "draft" regardless of pricing
-      // ✅ NEW: Include version context for backend to update correct version status
+      status: "draft", 
+
       versionContext: locationState.editingVersionId ? {
         editingVersionId: locationState.editingVersionId,
         editingVersionFile: locationState.editingVersionFile,
@@ -1527,31 +1523,31 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     };
 
     try {
-      // ✅ SIMPLIFIED: documentId is always the agreement ID now
+
       if (documentId) {
-        // Update existing agreement (backend will also update version status if versionContext provided)
+
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
         console.log("Draft updated successfully for agreement:", documentId);
 
-        // ✅ FIXED: Use proper MVC architecture for version status update
+
         if (locationState.editingVersionId) {
           try {
             console.log(`🔄 Attempting to update version PDF status for ID: ${locationState.editingVersionId}`);
             console.log(`🔄 Using proper MVC API: /api/versions/${locationState.editingVersionId}/status`);
-            // Use the proper MVC version status API
+
             await pdfApi.updateVersionStatus(locationState.editingVersionId, "draft");
             console.log("✅ Version PDF status updated to draft for:", locationState.editingVersionId);
           } catch (statusError) {
             console.error("❌ Failed to update version PDF status:", statusError);
             console.error("❌ Version ID used:", locationState.editingVersionId);
             console.error("❌ Full error:", statusError.response || statusError);
-            // Don't fail the draft save if status update fails
+
           }
         }
 
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
-        // ✅ SIMPLIFIED: Log version changes using file logger
+
         console.log(`📝 [DEBUG] Checking changes before draft save:`, {
           hasChanges,
           changesCount
@@ -1564,36 +1560,35 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
             console.log(`📝 [DRAFT-SAVE] Creating NEW log file with ${currentChangesCount} changes for draft save`);
 
-            // ✅ FIXED: Create NEW log file per draft save (don't overwrite)
-            // Each time a salesman makes changes and clicks "Save as Draft", a new log is created
+
             await createVersionLogFile({
               agreementId: documentId,
-              versionId: locationState.editingVersionId || documentId, // Use version ID if editing a version, otherwise agreement ID
-              versionNumber: locationState.editingVersionId ? undefined : 1, // Version number will be looked up or defaulted
-              salespersonId: 'salesperson_001', // TODO: Get from auth context
-              salespersonName: 'Sales Person', // TODO: Get from auth context
+              versionId: locationState.editingVersionId || documentId, 
+              versionNumber: locationState.editingVersionId ? undefined : 1, 
+              salespersonId: 'salesperson_001', 
+              salespersonName: 'Sales Person', 
               saveAction: 'save_draft',
               documentTitle,
             }, {
-              overwriteExisting: false, // ✅ FIXED: Create new log, don't overwrite
-              overwriteReason: undefined // Not overwriting, so no reason needed
+              overwriteExisting: false, 
+              overwriteReason: undefined 
             });
 
             console.log(`✅ [DRAFT-SAVE] Successfully created NEW log file and cleared changes`);
           } catch (logError) {
             console.error('❌ [DRAFT-SAVE] Failed to create log file:', logError);
-            // Don't fail the draft save if logging fails
+
           }
         }
       } else {
-        // Create new draft
+
         const result = await pdfApi.createCustomerHeader(payloadToSend);
         const newId = result.data?._id || result.data?.id || result.headers["x-customerheaderdoc-id"];
         setDocumentId(newId);
         console.log("Draft created successfully with ID:", newId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
-        // ✅ SIMPLIFIED: Log version changes using file logger for new draft
+
         const currentHasChanges = hasPriceChanges();
         const currentChangesCount = getPriceChangeCount();
         if (currentHasChanges && newId) {
@@ -1601,24 +1596,24 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
             console.log(`📝 [DRAFT-CREATE] Creating NEW log file with ${currentChangesCount} changes for new draft`);
 
-            // ✅ FIXED: Create NEW log file (don't overwrite) - even for first draft
+
             await createVersionLogFile({
               agreementId: newId,
-              versionId: newId, // For drafts, use agreement ID as version ID
-              versionNumber: 1, // Drafts are always version 1 until they become PDFs
-              salespersonId: 'salesperson_001', // TODO: Get from auth context
-              salespersonName: 'Sales Person', // TODO: Get from auth context
+              versionId: newId, 
+              versionNumber: 1, 
+              salespersonId: 'salesperson_001', 
+              salespersonName: 'Sales Person', 
               saveAction: 'save_draft',
               documentTitle,
             }, {
-              overwriteExisting: false, // ✅ FIXED: Create new log, don't overwrite
-              overwriteReason: undefined // Not overwriting, so no reason needed
+              overwriteExisting: false, 
+              overwriteReason: undefined 
             });
 
             console.log(`✅ [DRAFT-CREATE] Successfully created NEW log file and cleared changes`);
           } catch (logError) {
             console.error('❌ [DRAFT-CREATE] Failed to create log file:', logError);
-            // Don't fail the draft save if logging fails
+
           }
         } else {
           console.log(`ℹ️ [DRAFT-CREATE] No changes to log (hasChanges: ${currentHasChanges}, newId: ${newId})`);
@@ -1632,14 +1627,14 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-  // Save handler: Save with PDF compilation (simplified version logic)
+
   const handleSave = async () => {
     if (!payload) return;
 
     setIsSaving(true);
     setShowSaveModal(false);
 
-    // ✅ FIXED: Handle new documents separately
+
     if (!documentId) {
       console.log("💾 [SAVE] New document - delegating to handleNormalSave");
       await handleNormalSave();
@@ -1649,7 +1644,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     console.log("💾 [SAVE] Starting save process for agreement:", documentId);
 
     try {
-      // ✅ NEW: Determine status based on Red/Green Line pricing
+
       const documentStatus = getDocumentStatus();
       const pricingStatus = calculatePricingStatus();
 
@@ -1660,12 +1655,12 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         console.log(`✅ [AUTO-APPROVED] Green Line pricing - document auto-approved`);
       }
 
-      // 1. ✅ FIXED: Always update the main agreement data first
+
       const currentFormData = collectFormData();
       const payloadToSend = {
         ...currentFormData,
         services: stripRefreshPowerScrubDraftMetadata(currentFormData.services),
-        status: documentStatus, // ✅ NEW: Dynamic status based on pricing
+        status: documentStatus, 
       };
 
       console.log(`📤 [UPDATE-PAYLOAD] Sending to backend:`, {
@@ -1675,7 +1670,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         fullPayload: payloadToSend
       });
 
-      // Update the agreement data (no PDF generation yet)
+
       const updateResponse = await pdfApi.updateCustomerHeader(documentId, payloadToSend);
       console.log("✅ [SAVE] Agreement data updated successfully:", {
         response: updateResponse,
@@ -1683,21 +1678,21 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         responseStatus: updateResponse?.data?.status || updateResponse?.status
       });
 
-      // 2. ✅ NEW: Check version status for PDF generation
+
       setIsCheckingVersions(true);
       const status = await versionApi.checkVersionStatus(documentId);
       setVersionStatus(status);
       setIsCheckingVersions(false);
 
-      // Show version dialog to ask user: Replace current PDF or create new PDF
+
       if (status.isFirstTime) {
-        // First time - auto-create v1
+
         console.log("🎯 [FIRST TIME] Auto-creating v1");
         await handleCreateFirstVersion();
       } else {
-        // Subsequent saves - show dialog
+
         console.log("📋 [SUBSEQUENT] Showing version dialog for user choice");
-        // ✅ FIXED: Reset saving state before showing dialog
+
         setIsSaving(false);
         setShowVersionDialog(true);
       }
@@ -1713,17 +1708,17 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-  // ✅ FIXED: Auto-create first version (v1) - simplified
+
   const handleCreateFirstVersion = async () => {
     if (!documentId) return;
 
     try {
       setIsSaving(true);
 
-      // ✅ FIXED: Agreement data was already updated in handleSave, just create PDF
+
       console.log("📝 [FIRST VERSION] Creating v1 PDF for agreement:", documentId);
 
-      // Create v1 (first version PDF)
+
       const result = await versionApi.createVersion(documentId, {
         changeNotes: "Initial version",
         replaceRecent: false,
@@ -1732,7 +1727,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
       console.log("✅ [FIRST VERSION SUCCESS] v1 created successfully:", result);
 
-      // ✅ SIMPLIFIED: Log version changes using file logger for PDF generation
+
       const currentHasChanges = hasPriceChanges();
       const currentChangesCount = getPriceChangeCount();
       if (currentHasChanges && result.version?.id) {
@@ -1743,8 +1738,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             agreementId: documentId,
             versionId: result.version.id,
             versionNumber: result.version.versionNumber || 1,
-            salespersonId: 'salesperson_001', // TODO: Get from auth context
-            salespersonName: 'Sales Person', // TODO: Get from auth context
+            salespersonId: 'salesperson_001', 
+            salespersonName: 'Sales Person', 
             saveAction: 'generate_pdf',
             documentTitle: payload?.headerTitle || 'Untitled Document',
           });
@@ -1752,11 +1747,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           console.log(`✅ [FIRST-VERSION-PDF] Successfully created log file and cleared changes`);
         } catch (logError) {
           console.error('❌ [FIRST-VERSION-PDF] Failed to create log file:', logError);
-          // Don't fail the PDF generation if logging fails
+
         }
       }
 
-      // ✅ NEW: Show appropriate message based on approval status
+
       const documentStatus = getDocumentStatus();
       const pricingStatus = calculatePricingStatus();
 
@@ -1772,7 +1767,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         });
       }
 
-      // Redirect to saved PDFs
+
       setTimeout(() => {
         navigate("/saved-pdfs");
       }, 1500);
@@ -1788,9 +1783,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-  // Normal save handler (for new documents - also creates v1 in new system)
+
   const handleNormalSave = async () => {
-    // ✅ NEW: Determine status based on Red/Green Line pricing
+
     const documentStatus = getDocumentStatus();
     const pricingStatus = calculatePricingStatus();
 
@@ -1805,27 +1800,27 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     const payloadToSend = {
       ...currentFormData,
       services: stripRefreshPowerScrubDraftMetadata(currentFormData.services),
-      status: documentStatus, // ✅ NEW: Dynamic status based on pricing
+      status: documentStatus, 
     };
 
-    // Log the complete payload being sent to backend
+
     console.log("📤 [FormFilling] COMPLETE PAYLOAD BEING SENT TO BACKEND:");
     console.log(JSON.stringify(payloadToSend, null, 2));
 
     try {
       if (documentId) {
-        // ✅ UPDATED: For existing documents, don't use updateAndRecompileCustomerHeader
-        // Instead, let the version system handle PDF creation
+
+
         console.log("⚠️ [SAVE] Existing document should use version system, not normal save");
-        await handleSave(); // Redirect to version system
+        await handleSave(); 
         return;
       } else {
-        // ✅ NEW: Backend now returns JSON (not PDF binary) since PDF creation happens in version system
+
         const result = await pdfApi.createCustomerHeader(payloadToSend);
 
         console.log("🔍 [NEW DOCUMENT] Full createCustomerHeader response:", result);
 
-        // ✅ FIXED: Backend now returns JSON with ID in response body
+
         const newId = result.data?._id ||
                      result.data?.id ||
                      result.headers["x-customerheaderdoc-id"] ||
@@ -1844,7 +1839,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         console.log("✅ [NEW DOCUMENT] Agreement created successfully:", newId);
         console.log("🎯 [NEW DOCUMENT] Now auto-creating v1...");
 
-        // Auto-create v1 for new document
+
         const versionResult = await versionApi.createVersion(newId, {
           changeNotes: "Initial version",
           replaceRecent: false,
@@ -1853,7 +1848,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
         console.log("✅ [NEW DOCUMENT] v1 created successfully:", versionResult);
 
-        // ✅ SIMPLIFIED: Log version changes using file logger for new document PDF
+
         const currentHasChanges = hasPriceChanges();
         const currentChangesCount = getPriceChangeCount();
         if (currentHasChanges && versionResult.version?.id) {
@@ -1865,8 +1860,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               agreementId: newId,
               versionId: versionResult.version.id,
               versionNumber: versionResult.version.versionNumber || 1,
-              salespersonId: 'salesperson_001', // TODO: Get from auth context
-              salespersonName: 'Sales Person', // TODO: Get from auth context
+              salespersonId: 'salesperson_001', 
+              salespersonName: 'Sales Person', 
               saveAction: 'generate_pdf',
               documentTitle,
             });
@@ -1874,11 +1869,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             console.log(`✅ [NEW-DOCUMENT-PDF] Successfully created log file and cleared changes`);
           } catch (logError) {
             console.error('❌ [NEW-DOCUMENT-PDF] Failed to create log file:', logError);
-            // Don't fail the PDF generation if logging fails
+
           }
         }
 
-        // ✅ NEW: Show appropriate message based on approval status
+
         if (documentStatus === 'pending_approval') {
           setToastMessage({
             message: `Agreement created! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval before finalization.`,
@@ -1891,7 +1886,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           });
         }
 
-        // Redirect to saved PDFs
+
         setTimeout(() => {
           navigate("/saved-pdfs");
         }, 1500);
@@ -1899,7 +1894,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     } catch (err: any) {
       console.error("❌ [SAVE ERROR] Error saving document:", err);
 
-      // Handle other errors normally
+
       setToastMessage({
         message: err.response?.data?.message || "Failed to save document. Please try again.",
         type: "error"
@@ -1907,7 +1902,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-  // Version dialog handlers
+
   const handleCreateVersion = async (replaceRecent: boolean, changeNotes: string) => {
     if (!documentId) return;
 
@@ -1916,16 +1911,16 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
       console.log("📝 [VERSION CREATE] Creating PDF version for agreement:", documentId);
 
-      // ✅ FIXED: Agreement data was already updated in handleSave, just create PDF version
+
       const result = await versionApi.createVersion(documentId, {
         changeNotes,
-        replaceRecent, // Replace current version or create new version
+        replaceRecent, 
         isFirstTime: false
       });
 
       console.log("✅ [VERSION SUCCESS] Version created successfully:", result);
 
-      // ✅ SIMPLIFIED: Log version changes using file logger for subsequent PDF
+
       const currentHasChanges = hasPriceChanges();
       const currentChangesCount = getPriceChangeCount();
       if (currentHasChanges && result.version?.id) {
@@ -1936,8 +1931,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             agreementId: documentId,
             versionId: result.version.id,
             versionNumber: result.version.versionNumber || 1,
-            salespersonId: 'salesperson_001', // TODO: Get from auth context
-            salespersonName: 'Sales Person', // TODO: Get from auth context
+            salespersonId: 'salesperson_001', 
+            salespersonName: 'Sales Person', 
             saveAction: 'generate_pdf',
             documentTitle: payload?.headerTitle || 'Untitled Document',
           });
@@ -1945,11 +1940,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           console.log(`✅ [VERSION-PDF] Successfully created log file and cleared changes`);
         } catch (logError) {
           console.error('❌ [VERSION-PDF] Failed to create log file:', logError);
-          // Don't fail the PDF generation if logging fails
+
         }
       }
 
-      // ✅ NEW: Show approval-aware messages based on pricing status
+
       const documentStatus = getDocumentStatus();
       const pricingStatus = calculatePricingStatus();
 
@@ -1972,7 +1967,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       setShowVersionDialog(false);
       setVersionStatus(null);
 
-      // Redirect to saved PDFs
+
       setTimeout(() => {
         navigate("/saved-pdfs");
       }, 1500);
@@ -1988,7 +1983,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-  // Helper function to safely parse numbers, returning undefined for empty/invalid values
+
   const safeParseFloat = (value: string | undefined): number | undefined => {
     if (!value || value.trim() === "") return undefined;
     const parsed = parseFloat(value);
@@ -2001,7 +1996,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     return isNaN(parsed) ? undefined : parsed;
   };
 
-  // Helper function to extract products from backend format
+
   const extractProductsFromBackend = () => {
     const products = payload?.products;
     if (!products) {
@@ -2014,11 +2009,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
     console.log("🔍 [extractProductsFromBackend] Raw products data:", products);
 
-    // Check if backend sent data in edit-format (products[] + dispensers[])
+
     if (products.products && products.dispensers) {
       console.log("✅ [extractProductsFromBackend] Using edit-format structure");
 
-      // Extract products array (which contains merged small + big products)
+
       const extractedProducts = products.products.map((p: any) => {
         const name = p.displayName || p.customName || p.productName || p.productKey || "";
         const productType = p._productType || (p.unitPrice ? 'small' : 'big');
@@ -2028,27 +2023,27 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             name,
             unitPrice: safeParseFloat(String(p.unitPrice || "")),
             qty: safeParseInt(String(p.qty || "")),
-            frequency: p.frequency || "", // ← PRESERVED from edit-format endpoint
+            frequency: p.frequency || "", 
             total: safeParseFloat(String(p.total || "")),
-            customFields: p.customFields || {}, // ← PRESERVE custom fields
+            customFields: p.customFields || {}, 
           };
         } else {
           return {
             name,
             qty: safeParseInt(String(p.qty || "")),
             amount: safeParseFloat(String(p.amount || "")),
-            frequency: p.frequency || "", // ← PRESERVED from edit-format endpoint
+            frequency: p.frequency || "", 
             total: safeParseFloat(String(p.total || "")),
-            customFields: p.customFields || {}, // ← PRESERVE custom fields
+            customFields: p.customFields || {}, 
           };
         }
       });
 
-      // Separate small and big products
+
       const smallProducts = extractedProducts.filter(p => 'unitPrice' in p);
       const bigProducts = extractedProducts.filter(p => 'amount' in p);
 
-      // Extract dispensers with preserved frequency
+
       const extractedDispensers = products.dispensers.map((d: any) => {
         const name = d.displayName || d.customName || d.productName || d.productKey || "";
         return {
@@ -2056,9 +2051,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           qty: safeParseInt(String(d.qty || "")),
           warrantyRate: safeParseFloat(String(d.warrantyRate || "")),
           replacementRate: safeParseFloat(String(d.replacementRate || "")),
-          frequency: d.frequency || "", // ← CRITICAL: PRESERVED from edit-format endpoint
+          frequency: d.frequency || "", 
           total: safeParseFloat(String(d.total || "")),
-          customFields: d.customFields || {}, // ← PRESERVE custom fields
+          customFields: d.customFields || {}, 
         };
       });
 
@@ -2081,14 +2076,14 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       };
     }
 
-    // Check if backend sent data in legacy format (smallProducts/dispensers/bigProducts)
+
     if (products.smallProducts || products.dispensers || products.bigProducts) {
       console.log("⚠️ [extractProductsFromBackend] Using legacy 3-array structure");
 
-      // Legacy format - extract fields the backend sends
+
       const extractProductData = (productArray: any[], type: 'small' | 'dispenser' | 'big') => {
         return productArray.map((p: any) => {
-          // Backend can send: displayName, productName, customName, or productKey
+
           const name = p.displayName || p.productName || p.customName || p.productKey || "";
 
           if (type === 'small') {
@@ -2108,7 +2103,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               frequency: p.frequency || "",
               total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
             };
-          } else { // big
+          } else { 
             return {
               name,
               qty: safeParseInt(String(p.qty || p.quantity || "")),
@@ -2127,7 +2122,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       };
     }
 
-    // Legacy format - extract from rows (for backward compatibility)
+
     const rows = products.rows;
     if (!rows || rows.length === 0) {
       return {
@@ -2142,7 +2137,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     const bigProducts: any[] = [];
 
     rows.forEach((row: string[]) => {
-      // Small products (columns 0-4): name, unitPrice, frequency, qty, total
+
       if (row[0] && row[0].trim() !== "") {
         smallProducts.push({
           name: row[0],
@@ -2153,7 +2148,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         });
       }
 
-      // Dispensers (columns 5-10): name, qty, warrantyRate, replacementRate, frequency, total
+
       if (row[5] && row[5].trim() !== "") {
         dispensers.push({
           name: row[5],
@@ -2165,7 +2160,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         });
       }
 
-      // Big products (columns 11-15): name, qty, amount, frequency, total
+
       if (row[11] && row[11].trim() !== "") {
         bigProducts.push({
           name: row[11],
@@ -2184,15 +2179,14 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     };
   };
 
-  // Extract products when payload is available
-  // ONLY use initial products if we're in EDIT MODE
+
   const extractedProducts = useMemo(() => {
-    // If NOT in edit mode, return undefined so ProductsSection uses catalog defaults
+
     if (!isEditMode) {
       return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
     }
 
-    // If in edit mode, use saved products
+
     if (!payload?.products) return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
     return extractProductsFromBackend();
   }, [payload?.products, isEditMode]);
@@ -2225,7 +2219,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         </div>
       )}
 
-        {/* ✅ LOADING SPINNER: Shows during initial data fetch */}
+        {}
         {loading && (
           <div className="formfilling__loading-overlay" role="status" aria-live="polite">
             {console.log("🎨 [RENDERING] Loading overlay is being rendered - loading state is TRUE")}
@@ -2247,7 +2241,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         )}
         {console.log("🎨 [RENDERING] Loading overlay check - loading state:", loading)}
 
-        {/* ✅ PERFORMANCE FIX: Skeleton loader to prevent layout shift */}
+        {}
         {loading && (
           <div className="formfilling__skeleton" style={{
             padding: '20px',
@@ -2256,7 +2250,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             gap: '28px',
             minHeight: '2600px'
           }}>
-            {/* Customer Section skeleton - 250px */}
+            {}
             <div style={{
               minHeight: '250px',
               background: '#f9fafb',
@@ -2284,7 +2278,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               </div>
             </div>
 
-            {/* Products Section skeleton - 600px */}
+            {}
             <div style={{
               minHeight: '600px',
               background: '#f9fafb',
@@ -2313,7 +2307,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               </div>
             </div>
 
-            {/* Services Section skeleton - 700px */}
+            {}
             <div style={{
               minHeight: '700px',
               background: '#f9fafb',
@@ -2342,7 +2336,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               </div>
             </div>
 
-            {/* Contract Summary skeleton - 300px */}
+            {}
             <div style={{
               minHeight: '300px',
               background: '#f9fafb',
@@ -2360,7 +2354,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               ))}
             </div>
 
-            {/* Buttons skeleton */}
+            {}
             <div style={{
               display: 'flex',
               gap: '12px',
@@ -2393,9 +2387,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
         {payload && (
           <div style={{
-            /* ✅ PERFORMANCE: Wrapper to prevent layout shifts */
+
             minHeight: '2600px',
-            /* ✅ CLS FIX: Match skeleton dimensions */
+
             padding: '20px'
           }}>
             <CustomerSection
@@ -2447,7 +2441,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             />
             <ServicesDataCollector ref={servicesRef} />
 
-            {/* ✅ NEW: Contract Summary - Global contract months and total agreement amount */}
+            {}
             <ContractSummary
               productTotals={productTotals}
               initialStartDate={agreementStartDate}
@@ -2495,12 +2489,12 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               </div>
             </div>
 
-            {/* Service Agreement Component */}
+            {}
             <ServiceAgreement
               onAgreementChange={setAgreementData}
-              initialData={payload.serviceAgreement} // ✅ Pass loaded service agreement data for editing
-              templateData={serviceAgreementTemplate} // ⚡ OPTIMIZED: Pass template from combined API call
-              templateLoading={templateLoading} // ⚡ OPTIMIZED: Pass loading state to prevent separate fetch
+              initialData={payload.serviceAgreement} 
+              templateData={serviceAgreementTemplate} 
+              templateLoading={templateLoading} 
             />
 
             <div className="formfilling__actions">
@@ -2593,9 +2587,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
   );
 }
 
-// ✅ Export the main component as default (with ServicesProvider wrapper)
+
 export default function FormFilling() {
-  // ⚡ OPTIMIZED: Fetch all service pricing data + service agreement template in one API call
+
   const { pricingData, templateData, loading: templateLoading } = useAllServicePricing();
 
   return (

@@ -1,4 +1,4 @@
-// src/features/services/rpmWindows/useRpmWindowsCalc.ts
+
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ChangeEvent } from "react";
 import type { ServiceQuoteResult } from "../common/serviceTypes";
@@ -15,45 +15,45 @@ import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
 export const RPM_OVERRIDE_TOLERANCE = 0.005;
 
-// ✅ Backend config interface matching the EXACT MongoDB JSON structure provided
+
 interface BackendRpmConfig {
   windowPricingBothSidesIncluded: {
-    smallWindowPrice: number;      // 5
-    mediumWindowPrice: number;     // 10
-    largeWindowPrice: number;      // 15
+    smallWindowPrice: number;      
+    mediumWindowPrice: number;     
+    largeWindowPrice: number;      
   };
   installPricing: {
-    installationMultiplier: number; // 3
-    cleanInstallationMultiplier: number; // 1
+    installationMultiplier: number; 
+    cleanInstallationMultiplier: number; 
   };
-  minimumChargePerVisit: number;   // 50
+  minimumChargePerVisit: number;   
   tripCharges: {
-    standard: number;              // 25
-    beltway: number;               // 40
+    standard: number;              
+    beltway: number;               
   };
   frequencyPriceMultipliers: {
-    biweeklyPriceMultiplier: number;              // 1.15
-    monthlyPriceMultiplier: number;               // 1.5
-    quarterlyPriceMultiplierAfterFirstTime: number; // 2.5
-    quarterlyFirstTimeMultiplier: number;         // 3
+    biweeklyPriceMultiplier: number;              
+    monthlyPriceMultiplier: number;               
+    quarterlyPriceMultiplierAfterFirstTime: number; 
+    quarterlyFirstTimeMultiplier: number;         
   };
   frequencyMetadata: {
     weekly: {
-      monthlyRecurringMultiplier: number;    // 4.33
-      firstMonthExtraMultiplier: number;     // 3.33
+      monthlyRecurringMultiplier: number;    
+      firstMonthExtraMultiplier: number;     
     };
     biweekly: {
-      monthlyRecurringMultiplier: number;    // 2.165
-      firstMonthExtraMultiplier: number;     // 1.165
+      monthlyRecurringMultiplier: number;    
+      firstMonthExtraMultiplier: number;     
     };
-    monthly: { cycleMonths: number };        // 1
-    bimonthly: { cycleMonths: number };      // 2
-    quarterly: { cycleMonths: number };      // 3
-    biannual: { cycleMonths: number };       // 6
-    annual: { cycleMonths: number };         // 12
+    monthly: { cycleMonths: number };        
+    bimonthly: { cycleMonths: number };      
+    quarterly: { cycleMonths: number };      
+    biannual: { cycleMonths: number };       
+    annual: { cycleMonths: number };         
   };
-  minContractMonths: number;         // 2
-  maxContractMonths: number;         // 36
+  minContractMonths: number;         
+  maxContractMonths: number;         
 }
 
 const DEFAULT_FORM: RpmWindowsFormState = {
@@ -73,7 +73,7 @@ const DEFAULT_FORM: RpmWindowsFormState = {
   notes: "",
   contractMonths: 12,
 
-  // ✅ NEW: Editable installation multipliers from config (will be overridden by backend)
+
   installMultiplierFirstTime: cfg.installMultiplierFirstTime,
   installMultiplierClean: cfg.installMultiplierClean,
   applyMinimum: true,
@@ -127,7 +127,7 @@ function getBackendBaseRates(backendConfig: BackendRpmConfig | null) {
 }
 
 export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, customFields?: any[]) {
-  // ✅ Add refs for tracking override and active state
+
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
   const isEditMode = useRef(!!initial);
@@ -171,13 +171,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     });
   };
 
-  // ✅ State to store ALL backend config (NO hardcoded values in calculations)
+
   const [backendConfig, setBackendConfig] = useState<BackendRpmConfig | null>(null);
 
-  // Get services context for fallback pricing data
+
   const servicesContext = useServicesContextOptional();
 
-  // ✅ NEW: Calculate sum of all calc field totals (add directly to contract, no frequency)
+
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -193,7 +193,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     return total;
   }, [customFields]);
 
-  // ✅ NEW: Calculate sum of all dollar field values (add directly to contract, no frequency)
+
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -209,7 +209,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     return total;
   }, [customFields]);
 
-  // ✅ Store base weekly rates (initialize with config, will be updated by backend)
+
   const [baseWeeklyRates, setBaseWeeklyRates] = useState({
     small: cfg.smallWindowRate,
     medium: cfg.mediumWindowRate,
@@ -217,14 +217,14 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     trip: cfg.tripCharge,
   });
 
-  // ✅ Initialize form state (will be updated when backend config loads)
+
   const [form, setForm] = useState<RpmWindowsFormState>(() => {
     const baseForm = {
       ...DEFAULT_FORM,
       ...initial,
     };
 
-    // ✅ Initialize with global months ONLY if service starts with inputs
+
     const isInitiallyActive = (initial?.smallQty || 0) + (initial?.mediumQty || 0) + (initial?.largeQty || 0) > 0;
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
@@ -238,10 +238,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     };
   });
 
-  // ✅ Loading state for refresh button
+
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  // ⚡ OPTIMIZED: Fetch pricing config from context (NO API call)
+
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     forceRefreshRef.current = forceRefresh;
@@ -252,7 +252,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     }
     const shouldApplyConfig = !isEditMode.current || forceRefresh;
     try {
-      // ⚡ Use context's backend pricing data directly (already loaded by useAllServicePricing)
+
       if (servicesContext?.getBackendPricingForService) {
         const backendData = servicesContext.getBackendPricingForService("rpmWindows");
         if (backendData?.config) {
@@ -274,19 +274,19 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           console.log('📊 [RPM Windows] Updating base rates from config:', newBaseRates);
           setBaseWeeklyRates(newBaseRates);
 
-          // ✅ FORCE UPDATE FORM with backend values immediately
+
           setForm(prev => ({
             ...prev,
             smallWindowRate: newBaseRates.small,
             mediumWindowRate: newBaseRates.medium,
             largeWindowRate: newBaseRates.large,
             tripCharge: newBaseRates.trip,
-            // ✅ NEW: Update installation multipliers from backend
+
             installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
             installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
           }));
 
-          // ✅ Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [RPM-WINDOWS] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
@@ -320,7 +320,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     } catch (error) {
       console.error('❌ Failed to fetch RPM Windows config from context:', error);
 
-      // FALLBACK: Use context's backend pricing data
+
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("rpmWindows");
         if (fallbackConfig?.config) {
@@ -341,19 +341,19 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
           setBaseWeeklyRates(newBaseRates);
 
-          // ✅ FORCE UPDATE FORM with backend values immediately
+
           setForm(prev => ({
             ...prev,
             smallWindowRate: newBaseRates.small,
             mediumWindowRate: newBaseRates.medium,
             largeWindowRate: newBaseRates.large,
             tripCharge: newBaseRates.trip,
-            // ✅ NEW: Update installation multipliers from backend
+
             installMultiplierFirstTime: config.installPricing?.installationMultiplier ?? prev.installMultiplierFirstTime,
             installMultiplierClean: config.installPricing?.cleanInstallationMultiplier ?? prev.installMultiplierClean,
           }));
 
-          // ✅ FIXED: Only clear custom overrides on manual refresh
+
           if (forceRefresh) {
             console.log('🔄 [RPM-WINDOWS] Manual refresh: Clearing all custom overrides');
             setForm(prev => ({
@@ -378,20 +378,20 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     }
   };
 
-  // Fetch on mount (used for baseline/override detection)
+
   useEffect(() => {
     console.log('[RPM-WINDOWS-PRICING] Fetching backend prices for baseline/override detection');
     fetchPricing(false);
-  }, [initial]); // Run once on mount (baseline detection even when editing)
+  }, [initial]); 
 
-  // Also fetch when services context becomes available
+
   useEffect(() => {
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing(false);
     }
   }, [initial, servicesContext?.backendPricingData, backendConfig]);
 
-  // Initialize base weekly rates from loaded form values in edit mode
+
   useEffect(() => {
     if (!initial || baseRatesInitialized.current) return;
 
@@ -419,7 +419,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     backendConfig,
   ]);
 
-  // Initialize baseline values for logging (backend defaults for new, saved values for edit mode)
+
   useEffect(() => {
     setBaselineReady(false);
     if (!backendConfig) {
@@ -495,7 +495,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     setManualOverrides(prev => ({ ...prev, ...overrides }));
   }, [baselineReady, initial]);
 
-  // ✅ Add sync effect to adopt global months when service becomes active or when global months change
+
   useEffect(() => {
     const isServiceActive = (form.smallQty || 0) + (form.mediumQty || 0) + (form.largeQty || 0) > 0;
     const wasActive = wasActiveRef.current;
@@ -520,7 +520,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.smallQty, form.mediumQty, form.largeQty, servicesContext]);
 
-  // ✅ SIMPLIFIED: Use file logger instead of complex React context
+
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -589,7 +589,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     form.installMultiplierClean,
   ]);
 
-  // ✅ Update rate fields when frequency changes (apply frequency multiplier)
+
   useEffect(() => {
     const freqKey = mapFrequency(form.frequency);
     const freqChanged = prevFrequencyRef.current !== form.frequency;
@@ -612,7 +612,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       baseRates: baseWeeklyRates,
     });
 
-    // Apply frequency multiplier to base weekly rates
+
     setForm((prev) => ({
       ...prev,
       smallWindowRate: baseWeeklyRates.small * freqMult,
@@ -624,9 +624,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     if (forceRefreshRef.current) {
       forceRefreshRef.current = false;
     }
-  }, [form.frequency, backendConfig, baseWeeklyRates]); // Run when frequency, backend config, or base rates change
+  }, [form.frequency, backendConfig, baseWeeklyRates]); 
 
-  // ✅ Add setContractMonths function
+
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({
@@ -639,7 +639,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     const { name, value, checked } = e.target as any;
 
     setForm((prev) => {
-      // ✅ Capture original value before update for price override logging
+
       const originalValue = prev[name as keyof RpmWindowsFormState];
 
       let newFormState = prev;
@@ -671,7 +671,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           newFormState = { ...prev, contractMonths: Number(value) || 0 };
           break;
 
-        // Custom total overrides
+
         case "customSmallTotal":
         case "customMediumTotal":
         case "customLargeTotal":
@@ -679,7 +679,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
         case "customMonthlyRecurring":
         case "customAnnualPrice":
         case "customContractTotal": {
-          // Allow empty string to clear the field (set to undefined)
+
           if (value === '') {
             newFormState = { ...prev, [name]: undefined };
           } else {
@@ -707,17 +707,17 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           break;
         }
 
-        // Rate fields - when manually edited, update base weekly rate
+
         case "smallWindowRate":
         case "mediumWindowRate":
         case "largeWindowRate":
         case "tripCharge": {
           const displayVal = Number(value) || 0;
 
-          // Calculate base weekly rate from current frequency-adjusted value
+
           const freqKey = mapFrequency(prev.frequency);
 
-          // ✅ Apply same special pricing rules as useEffect
+
           let effectiveFreqKey = freqKey;
           if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
             effectiveFreqKey = "monthly";
@@ -725,12 +725,12 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
             effectiveFreqKey = "quarterly";
           }
 
-          // ✅ Apply same frequency multiplier logic as useEffect
+
           let freqMult = 1;
           if (backendConfig?.frequencyPriceMultipliers) {
-            // Use backend frequency multipliers for the effective frequency
+
             if (effectiveFreqKey === "weekly") {
-              freqMult = 1; // Weekly is base rate
+              freqMult = 1; 
             } else if (effectiveFreqKey === "biweekly" && backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier) {
               freqMult = backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier;
             } else if (effectiveFreqKey === "monthly" && backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier) {
@@ -738,19 +738,19 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
             } else if (effectiveFreqKey === "quarterly" && backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime) {
               freqMult = backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime;
             } else {
-              // Use fallback config multipliers
+
               const activeFreqMult = cfg.frequencyMultipliers;
               freqMult = activeFreqMult[effectiveFreqKey] || 1;
             }
           } else {
-            // Use fallback config multipliers
+
             const activeFreqMult = cfg.frequencyMultipliers;
             freqMult = activeFreqMult[effectiveFreqKey] || 1;
           }
 
           const weeklyBase = displayVal / freqMult;
 
-          // Update base weekly rates
+
           if (name === "smallWindowRate") {
             setBaseWeeklyRates(b => ({ ...b, small: weeklyBase }));
           } else if (name === "mediumWindowRate") {
@@ -767,7 +767,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           break;
         }
 
-        // ✅ NEW: Handle editable installation multipliers
+
         case "installMultiplierFirstTime":
         case "installMultiplierClean": {
           const displayVal = Number(value) || 0;
@@ -781,13 +781,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           break;
       }
 
-      // ✅ Log price override for numeric pricing fields
+
       const pricingFields = [
         'smallWindowRate', 'mediumWindowRate', 'largeWindowRate', 'tripCharge',
         'customSmallTotal', 'customMediumTotal', 'customLargeTotal',
         'customPerVisitPrice', 'customMonthlyRecurring', 'customFirstMonthTotal',
         'customAnnualPrice', 'customInstallationFee', 'customContractTotal',
-        // ✅ NEW: Installation multiplier fields
+
         'installMultiplierFirstTime', 'installMultiplierClean'
       ];
 
@@ -796,7 +796,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
         const oldValue = originalValue as number | undefined;
         const baselineValue = baselineValues.current[name] ?? oldValue;
 
-        // Handle undefined values (when cleared) - don't log clearing to undefined
+
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
@@ -808,7 +808,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     });
   };
 
-  // + Button handlers
+
   const addExtraCharge = () => {
     setForm((prev) => ({
       ...prev,
@@ -846,21 +846,21 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     }));
   };
 
-  // ✅ Helper function to get cycle months from backend configuration
+
   const getCycleMonths = (frequency: string, backendConfig: any): number => {
     const cycleMonths = backendConfig?.frequencyMetadata?.[frequency]?.cycleMonths;
 
-    // Handle special case: monthly has cycleMonths: 0, which means 1 month cycle
+
     if (frequency === "monthly") {
       return cycleMonths === 0 ? 1 : (cycleMonths ?? 1);
     }
 
-    // For other frequencies, use cycleMonths or fallback to hardcoded values
+
     if (typeof cycleMonths === 'number' && cycleMonths > 0) {
       return cycleMonths;
     }
 
-    // Fallback to hardcoded values if backend config is unavailable
+
     const fallbackCycles: Record<string, number> = {
       bimonthly: 2,
       quarterly: 3,
@@ -872,7 +872,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
   };
 
   const calc = useMemo(() => {
-    // ========== ✅ USE BACKEND CONFIG (if loaded), otherwise fallback to hardcoded ==========
+
     const activeConfig = {
       smallWindowRate: backendConfig?.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate,
       mediumWindowRate: backendConfig?.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate,
@@ -881,54 +881,53 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       installMultiplierFirstTime: backendConfig?.installPricing?.installationMultiplier ?? cfg.installMultiplierFirstTime,
       installMultiplierClean: backendConfig?.installPricing?.cleanInstallationMultiplier ?? cfg.installMultiplierClean,
       minimumChargePerVisit: backendConfig?.minimumChargePerVisit ?? 0,
-      // Map backend frequency structure to expected format
+
       frequencyMultipliers: {
         weekly: 1,
         biweekly: backendConfig?.frequencyPriceMultipliers?.biweeklyPriceMultiplier ?? cfg.frequencyMultipliers.biweekly,
         monthly: backendConfig?.frequencyPriceMultipliers?.monthlyPriceMultiplier ?? cfg.frequencyMultipliers.monthly,
         quarterly: backendConfig?.frequencyPriceMultipliers?.quarterlyPriceMultiplierAfterFirstTime ?? cfg.frequencyMultipliers.quarterly,
-        bimonthly: cfg.frequencyMultipliers.bimonthly, // Use fallback for missing frequencies
+        bimonthly: cfg.frequencyMultipliers.bimonthly, 
         annual: cfg.frequencyMultipliers.annual,
         biannual: cfg.frequencyMultipliers.biannual,
         twicePerMonth: cfg.frequencyMultipliers.twicePerMonth,
         oneTime: cfg.frequencyMultipliers.oneTime,
         quarterlyFirstTime: backendConfig?.frequencyPriceMultipliers?.quarterlyFirstTimeMultiplier ?? cfg.frequencyMultipliers.quarterlyFirstTime,
       },
-      // Map backend frequency metadata to monthly conversions
+
       monthlyConversions: {
         weekly: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? cfg.monthlyConversions.weekly,
         biweekly: backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? (cfg.monthlyConversions.weekly / 2),
         actualWeeksPerMonth: backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? cfg.monthlyConversions.actualWeeksPerMonth,
         actualWeeksPerYear: 52,
       },
-      // Use fallback for annual frequencies (not in backend structure)
+
       annualFrequencies: cfg.annualFrequencies,
-      // Use fallback rate categories (not in current backend structure)
+
       rateCategories: cfg.rateCategories,
     };
 
     const freqKey = mapFrequency(form.frequency);
 
-    // ✅ NEW: Apply special pricing rules for certain frequencies (same as useEffect)
+
     let effectiveFreqKey = freqKey;
 
-    // 2×/Month and Bi-Monthly use Monthly pricing
+
     if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
       effectiveFreqKey = "monthly";
     }
-    // Bi-Annual and Annual use Quarterly pricing
+
     else if (freqKey === "biannual" || freqKey === "annual") {
       effectiveFreqKey = "quarterly";
     }
 
-    // ✅ FREQUENCY MULTIPLIER FROM BACKEND (using effective frequency for pricing)
-    // Use backend frequency multipliers with the same logic as useEffect
+
     let freqMult = 1;
 
     if (backendConfig?.frequencyPriceMultipliers) {
-      // Use backend frequency multipliers for the effective frequency
+
       if (effectiveFreqKey === "weekly") {
-        freqMult = 1; // Weekly is base rate
+        freqMult = 1; 
       } else if (effectiveFreqKey === "biweekly" && backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier) {
         freqMult = backendConfig.frequencyPriceMultipliers.biweeklyPriceMultiplier;
       } else if (effectiveFreqKey === "monthly" && backendConfig.frequencyPriceMultipliers.monthlyPriceMultiplier) {
@@ -936,23 +935,23 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       } else if (effectiveFreqKey === "quarterly" && backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime) {
         freqMult = backendConfig.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime;
       } else {
-        // Use fallback config multipliers
+
         const activeFreqMult = cfg.frequencyMultipliers;
         freqMult = activeFreqMult[effectiveFreqKey] || 1;
       }
     } else {
-      // Use fallback config multipliers
+
       const activeFreqMult = cfg.frequencyMultipliers;
       freqMult = activeFreqMult[effectiveFreqKey] || 1;
     }
 
-    // ✅ USE FREQUENCY-ADJUSTED RATES FROM FORM (already multiplied by useEffect)
+
     const weeklySmall = baseWeeklyRates.small;
     const weeklyMedium = baseWeeklyRates.medium;
     const weeklyLarge = baseWeeklyRates.large;
-    const weeklyTrip = baseWeeklyRates.trip; // will be 0, used only for display
+    const weeklyTrip = baseWeeklyRates.trip; 
 
-    // Weekly base window cost
+
     const weeklyWindows =
       form.smallQty * weeklySmall +
       form.mediumQty * weeklyMedium +
@@ -960,13 +959,13 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
     const hasWindows = weeklyWindows > 0;
 
-    // Use form rates directly (already frequency-adjusted by useEffect)
+
     const effSmall = form.smallWindowRate;
     const effMedium = form.mediumWindowRate;
     const effLarge = form.largeWindowRate;
-    const effTrip = form.tripCharge; // display only
+    const effTrip = form.tripCharge; 
 
-    // Per-visit, at chosen frequency (NO TRIP CHARGE ANYMORE)
+
     const perVisitWindows =
       form.smallQty * effSmall +
       form.mediumQty * effMedium +
@@ -981,70 +980,65 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
     const recurringPerVisitBase = perVisitService + extrasTotal;
 
-    // ✅ RATE CATEGORY FROM BACKEND (red/green multipliers)
+
     const rateCfg =
       activeConfig.rateCategories[form.selectedRateCategory] ??
       activeConfig.rateCategories.redRate;
 
     const recurringPerVisitRated = recurringPerVisitBase * (rateCfg?.multiplier ?? 1);
 
-    // ✅ INSTALLATION MULTIPLIER FROM FORM (editable by user)
-    // First time install = 3x (editable), Clean = 1x (editable)
+
     const installMultiplier = form.isFirstTimeInstall
       ? (form.installMultiplierFirstTime ?? activeConfig.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime)
       : (form.installMultiplierClean ?? activeConfig.installMultiplierClean ?? cfg.installMultiplierClean);
 
-    // ✅ FIXED: Apply minimum BEFORE installation calculation
-    // - When service < minimum: installation = minimum × multiplier
-    // - When service ≥ minimum: installation = service × multiplier
+
     const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? activeConfig.minimumChargePerVisit ?? cfg.minimumChargePerVisit ?? 50;
     const weeklyWindowsWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(weeklyWindows, minimumChargePerVisit) : weeklyWindows) : 0;
 
     const installOneTimeBase =
       form.isFirstTimeInstall && hasWindows
-        ? weeklyWindowsWithMinimum * installMultiplier  // ✅ Use minimum-applied amount
+        ? weeklyWindowsWithMinimum * installMultiplier  
         : 0;
 
     const installOneTime = installOneTimeBase * (rateCfg?.multiplier ?? 1);
 
-    // ✅ APPLY CUSTOM OVERRIDES EARLY so they cascade to all dependent calculations
+
     const effectiveInstallation = form.customInstallationFee ?? installOneTime;
     const effectivePerVisit = form.customPerVisitPrice ?? recurringPerVisitRated;
 
-    // FIRST VISIT PRICE = INSTALLATION ONLY (now uses effective installation)
+
     const firstVisitTotalRated = effectiveInstallation;
 
-    // ✅ MONTHLY VISITS FROM BACKEND CONFIG (using original frequency for visit counts)
-    // Uses your monthlyConversions.weekly: 4.33 from MongoDB
-    // ✅ FIXED: Use backend frequencyMetadata for monthly visit calculations
+
     let monthlyVisits = 0;
     const weeksPerMonth = activeConfig.monthlyConversions.actualWeeksPerMonth ?? 4.33;
 
-    // Use ORIGINAL frequency key for visit counts (use backend metadata when available)
+
     if (freqKey === "oneTime") {
-      monthlyVisits = 0; // oneTime has no monthly billing
+      monthlyVisits = 0; 
     } else if (freqKey === "weekly") {
-      // Use backend weekly monthlyRecurringMultiplier if available
+
       monthlyVisits = backendConfig?.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? weeksPerMonth;
     } else if (freqKey === "biweekly") {
-      // ✅ FIXED: Use backend biweekly monthlyRecurringMultiplier instead of weekly/2
+
       monthlyVisits = backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? (weeksPerMonth / 2);
       console.log(`🔧 [RPM Windows] Using biweekly monthly multiplier: ${monthlyVisits} (backend: ${backendConfig?.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier}, fallback: ${weeksPerMonth / 2})`);
     } else if (freqKey === "twicePerMonth") {
-      monthlyVisits = 2; // 2×/month = 2 visits per month
+      monthlyVisits = 2; 
     } else if (freqKey === "monthly") {
-      monthlyVisits = 1; // monthly = 1 visit per month
+      monthlyVisits = 1; 
     } else if (freqKey === "bimonthly") {
-      monthlyVisits = 0.5; // every 2 months = 0.5 per month
+      monthlyVisits = 0.5; 
     } else if (freqKey === "quarterly") {
-      monthlyVisits = 0; // no monthly for quarterly
+      monthlyVisits = 0; 
     } else if (freqKey === "biannual") {
-      monthlyVisits = 0; // no monthly for biannual
+      monthlyVisits = 0; 
     } else if (freqKey === "annual") {
-      monthlyVisits = 0; // no monthly for annual
+      monthlyVisits = 0; 
     }
 
-    // Standard ongoing monthly bill (after the first month) - use effective per visit
+
     let standardMonthlyBillRated = effectivePerVisit * monthlyVisits;
 
     console.log(`🔧 [RPM Windows] Frequency calculation summary:`, {
@@ -1056,37 +1050,32 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       fallbackWeeksPerMonth: weeksPerMonth,
     });
 
-    // ✅ SPECIAL FIX: Make 2×/month monthly total equal to monthly frequency total
-    // User wants 2×/month to have same monthly recurring as monthly
+
     if (freqKey === "twicePerMonth") {
-      // For 2×/month, show same monthly total as monthly (1 visit worth instead of 2)
+
       standardMonthlyBillRated = effectivePerVisit * 1;
     }
 
-    // ✅ FIXED: Monthly recurring for display (show prorated amount for visit-based frequencies)
-    // For quarterly/biannual/annual, show the per-visit cost divided by months between visits
+
     let displayMonthlyBillRated = standardMonthlyBillRated;
     if (standardMonthlyBillRated === 0 && effectivePerVisit > 0) {
-      // Visit-based frequencies: prorate the per-visit cost over the visit interval
+
       if (freqKey === "quarterly") {
-        const cycleMonths = getCycleMonths("quarterly", backendConfig); // ✅ FROM BACKEND (3)
+        const cycleMonths = getCycleMonths("quarterly", backendConfig); 
         displayMonthlyBillRated = effectivePerVisit / cycleMonths;
       } else if (freqKey === "biannual") {
-        const cycleMonths = getCycleMonths("biannual", backendConfig); // ✅ FROM BACKEND (6)
+        const cycleMonths = getCycleMonths("biannual", backendConfig); 
         displayMonthlyBillRated = effectivePerVisit / cycleMonths;
       } else if (freqKey === "annual") {
-        const cycleMonths = getCycleMonths("annual", backendConfig); // ✅ FROM BACKEND (12)
+        const cycleMonths = getCycleMonths("annual", backendConfig); 
         displayMonthlyBillRated = effectivePerVisit / cycleMonths;
       } else if (freqKey === "bimonthly") {
-        const cycleMonths = getCycleMonths("bimonthly", backendConfig); // ✅ FROM BACKEND (2)
+        const cycleMonths = getCycleMonths("bimonthly", backendConfig); 
         displayMonthlyBillRated = effectivePerVisit / cycleMonths;
       }
     }
 
-    // First month bill:
-    //  - for oneTime: just the first visit (installation or service)
-    //  - for quarterly/biannual/annual: first visit only (installation or service)
-    //  - for other frequencies: first visit + remaining visits in the month
+
     const isVisitBasedFrequency = freqKey === "oneTime" || freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly";
     const effectiveServiceVisitsFirstMonth =
       isVisitBasedFrequency ? 0 : (monthlyVisits > 1 ? monthlyVisits - 1 : 0);
@@ -1094,44 +1083,44 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     let firstMonthBillRated = 0;
     if (form.isFirstTimeInstall) {
       if (isVisitBasedFrequency) {
-        // For visit-based frequencies install: just the installation cost (use effective)
+
         firstMonthBillRated = effectiveInstallation;
       } else {
-        // For other frequencies: installation + remaining service visits in first month (use effective)
+
         firstMonthBillRated = effectiveInstallation +
           effectivePerVisit * effectiveServiceVisitsFirstMonth;
       }
     } else {
-      // No installation, use effective per-visit for monthly calculation
+
       firstMonthBillRated = effectivePerVisit * monthlyVisits;
     }
 
-    // Displayed "Monthly Recurring" value (includes prorated amounts for visit-based frequencies)
+
     const monthlyBillRated = displayMonthlyBillRated;
 
-    // CONTRACT TOTAL for N months (2–36)
+
     const contractMonths = Math.max(form.contractMonths ?? 0, 0);
 
     let contractTotalRated = 0;
     if (contractMonths > 0) {
       if (freqKey === "oneTime") {
-        // ✅ For oneTime: just the first visit (installation or service)
+
         contractTotalRated = firstMonthBillRated;
       } else if (freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly") {
-        // ✅ For visit-based frequencies: use backend cycleMonths consistently
+
         const cycleMonths = getCycleMonths(freqKey, backendConfig);
         const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
 
         if (form.isFirstTimeInstall) {
-          // First visit is install only, remaining visits are service (use effective values)
+
           const serviceVisits = Math.max(totalVisits - 1, 0);
           contractTotalRated = effectiveInstallation + (serviceVisits * effectivePerVisit);
         } else {
-          // No install, all visits are service (use effective per visit)
+
           contractTotalRated = totalVisits * effectivePerVisit;
         }
       } else {
-        // For weekly, biweekly, twicePerMonth, monthly: use monthly-based calculation
+
         if (form.isFirstTimeInstall) {
           const remainingMonths = Math.max(contractMonths - 1, 0);
           contractTotalRated =
@@ -1142,60 +1131,58 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       }
     }
 
-    // ✅ NEW: Apply minimum charge per visit from backend ONLY when there are windows
-    // CRITICAL: Apply minimum to EFFECTIVE per-visit (which includes custom override)
-    // Note: minimumChargePerVisit is already defined earlier for installation calculation
+
     const recurringPerVisitWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(effectivePerVisit, minimumChargePerVisit) : effectivePerVisit) : 0;
 
-    // ✅ RECALCULATE MONTHLY VALUES with minimum charge applied
+
     const standardMonthlyBillWithMinimum = recurringPerVisitWithMinimum * monthlyVisits;
     let displayMonthlyBillWithMinimum = standardMonthlyBillWithMinimum;
 
-    // For visit-based frequencies, use prorated amounts
+
     if (isVisitBasedFrequency) {
       if (freqKey === "quarterly") {
-        const cycleMonths = getCycleMonths("quarterly", backendConfig); // ✅ FROM BACKEND (3)
+        const cycleMonths = getCycleMonths("quarterly", backendConfig); 
         displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
       } else if (freqKey === "biannual") {
-        const cycleMonths = getCycleMonths("biannual", backendConfig); // ✅ FROM BACKEND (6)
+        const cycleMonths = getCycleMonths("biannual", backendConfig); 
         displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
       } else if (freqKey === "annual") {
-        const cycleMonths = getCycleMonths("annual", backendConfig); // ✅ FROM BACKEND (12)
+        const cycleMonths = getCycleMonths("annual", backendConfig); 
         displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
       } else if (freqKey === "bimonthly") {
-        const cycleMonths = getCycleMonths("bimonthly", backendConfig); // ✅ FROM BACKEND (2)
+        const cycleMonths = getCycleMonths("bimonthly", backendConfig); 
         displayMonthlyBillWithMinimum = recurringPerVisitWithMinimum / cycleMonths;
       }
     }
 
-    // First month bill recalculation
+
     let firstMonthBillWithMinimum = 0;
     if (form.isFirstTimeInstall) {
       if (isVisitBasedFrequency) {
-        // For visit-based frequencies install: just the installation cost (use effective)
+
         firstMonthBillWithMinimum = effectiveInstallation;
       } else {
-        // For other frequencies: installation + remaining service visits in first month (use effective)
+
         firstMonthBillWithMinimum = effectiveInstallation +
           recurringPerVisitWithMinimum * effectiveServiceVisitsFirstMonth;
       }
     } else {
-      // No installation, use recurringPerVisitWithMinimum for monthly calculation
+
       firstMonthBillWithMinimum = recurringPerVisitWithMinimum * monthlyVisits;
     }
 
-    // Contract total recalculation
+
     let contractTotalWithMinimum = 0;
     if (contractMonths > 0) {
       if (isVisitBasedFrequency) {
-        // For visit-based: total number of visits × per-visit price
-        // ✅ Use backend cycleMonths instead of hardcoded divisors
+
+
         const cycleMonths = getCycleMonths(freqKey, backendConfig);
         const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
         contractTotalWithMinimum = (form.isFirstTimeInstall ? effectiveInstallation : 0) +
           recurringPerVisitWithMinimum * (totalVisits - (form.isFirstTimeInstall ? 1 : 0));
       } else {
-        // For monthly/weekly/biweekly: standard monthly calculation
+
         if (form.isFirstTimeInstall && firstMonthBillWithMinimum !== standardMonthlyBillWithMinimum) {
           const remainingMonths = Math.max(contractMonths - 1, 0);
           contractTotalWithMinimum = firstMonthBillWithMinimum + standardMonthlyBillWithMinimum * remainingMonths;
@@ -1205,14 +1192,14 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       }
     }
 
-    // ✅ Apply custom overrides for monthly recurring (first month is calculated, not editable)
+
     const finalFirstMonth = firstMonthBillWithMinimum;
     const finalMonthlyRecurring = form.customMonthlyRecurring ?? standardMonthlyBillWithMinimum;
 
-    // ✅ Recalculate contract total using custom first month and monthly recurring if set
+
     let finalContractTotal = contractTotalWithMinimum;
     if (contractMonths > 0 && !isVisitBasedFrequency) {
-      // For non-visit-based frequencies: use custom first month and monthly recurring
+
       if (form.isFirstTimeInstall && finalFirstMonth !== finalMonthlyRecurring) {
         const remainingMonths = Math.max(contractMonths - 1, 0);
         finalContractTotal = finalFirstMonth + finalMonthlyRecurring * remainingMonths;
@@ -1221,10 +1208,10 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       }
     }
 
-    // ✅ Apply custom override for contract total
+
     const contractTotalBeforeCustomFields = form.customContractTotal ?? finalContractTotal;
 
-    // ✅ NEW: Add calc field totals AND dollar field totals directly to contract (no frequency dependency)
+
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotalBeforeCustomFields + customFieldsTotal;
 
@@ -1236,9 +1223,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
-    // ✅ ORIGINAL CONTRACT TOTAL: computed using baseline (pricing table) rates × current quantities
-    // Apply the SAME minimum floor as the current calculation so that when no price changes are made,
-    // originalContractTotal === contractTotalRated and the greenline comparison is 1:1.
+
     const pricingTableSmall = backendConfig?.windowPricingBothSidesIncluded?.smallWindowPrice ?? cfg.smallWindowRate;
     const pricingTableMedium = backendConfig?.windowPricingBothSidesIncluded?.mediumWindowPrice ?? cfg.mediumWindowRate;
     const pricingTableLarge = backendConfig?.windowPricingBothSidesIncluded?.largeWindowPrice ?? cfg.largeWindowRate;
@@ -1251,7 +1236,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       ? form.smallQty * baselineSmallRate + form.mediumQty * baselineMediumRate + form.largeQty * baselineLargeRate
       : 0;
     const originalPerVisitRated = originalPerVisitWindows * (rateCfg?.multiplier ?? 1);
-    // Apply same minimum floor so baseline reflects what would actually be charged at table rates
+
     const originalPerVisitWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(originalPerVisitRated, minimumChargePerVisit) : originalPerVisitRated) : 0;
     const originalStandardMonthlyBill = originalPerVisitWithMinimum * monthlyVisits;
 
@@ -1273,20 +1258,20 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
       effMedium,
       effLarge,
       effTrip,
-      // ✅ Apply custom overrides with hierarchy and minimum charge
+
       recurringPerVisitRated: form.customPerVisitPrice ?? recurringPerVisitWithMinimum,
-      installOneTime: effectiveInstallation, // Already includes custom override
-      firstVisitTotalRated: firstVisitTotalRated, // Already includes custom override
+      installOneTime: effectiveInstallation, 
+      firstVisitTotalRated: firstVisitTotalRated, 
       standardMonthlyBillRated: finalMonthlyRecurring,
       firstMonthBillRated: finalFirstMonth,
       monthlyBillRated: form.customMonthlyRecurring ?? displayMonthlyBillWithMinimum,
-      contractTotalRated: contractTotalWithCustomFields, // ✅ UPDATED: Total contract value with custom fields
-      minimumChargePerVisit, // ✅ NEW: Export minimum charge for redline/greenline indicator
-      originalContractTotal, // ✅ NEW: Contract total using baseline (pricing table) rates for greenline comparison
+      contractTotalRated: contractTotalWithCustomFields, 
+      minimumChargePerVisit, 
+      originalContractTotal, 
     };
   }, [
-    backendConfig, // ✅ CRITICAL: Re-calculate when backend config loads!
-    baseWeeklyRates, // ✅ CRITICAL: Re-calculate when base rates change!
+    backendConfig, 
+    baseWeeklyRates, 
     form.smallQty,
     form.mediumQty,
     form.largeQty,
@@ -1299,15 +1284,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     form.isFirstTimeInstall,
     form.extraCharges,
     form.contractMonths,
-    // ✅ NEW: Installation multiplier fields
+
     form.installMultiplierFirstTime,
     form.installMultiplierClean,
-    // ✅ NEW: Custom override fields
+
     form.customPerVisitPrice,
     form.customMonthlyRecurring,
     form.customContractTotal,
     form.customInstallationFee,
-    // ✅ NEW: Re-calculate when custom fields change
+
     calcFieldsTotal,
     dollarFieldsTotal,
     form.applyMinimum,
@@ -1317,7 +1302,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     serviceId: "rpmWindows",
     displayName: "RPM Window",
     perVisitPrice: calc.recurringPerVisitRated,
-    // now represents TOTAL for selected contract months (not "per year")
+
     annualPrice: calc.contractTotalRated,
     detailsBreakdown: [],
   };
@@ -1343,10 +1328,3 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     setContractMonths,
   };
 }
-
-
-
-
-
-
-
