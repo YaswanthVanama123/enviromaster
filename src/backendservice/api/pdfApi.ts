@@ -1056,4 +1056,31 @@ export const pdfApi = {
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
+
+  async exportPricingCatalogPdf(services: any[], catalog: any): Promise<Blob> {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const token = apiClient.getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Accept': 'application/pdf' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${baseUrl}/api/pdf/pricing-catalog/export`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ services, catalog }),
+    });
+    if (!res.ok) throw new Error(`Failed to export pricing catalog: ${res.status} ${res.statusText}`);
+    return res.blob();
+  },
+
+  async exportPricingCatalogFromDb(): Promise<Blob> {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const token = apiClient.getToken();
+    const headers: Record<string, string> = { 'Accept': 'application/pdf' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${baseUrl}/api/pdf/pricing-catalog/export`, {
+      method: 'GET',
+      headers,
+    });
+    if (!res.ok) throw new Error(`Failed to export pricing catalog: ${res.status} ${res.statusText}`);
+    return res.blob();
+  },
 };

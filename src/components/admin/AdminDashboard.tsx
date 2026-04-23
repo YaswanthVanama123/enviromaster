@@ -5,6 +5,7 @@ import { PricingTablesView } from "./PricingTablesView";
 import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
 import { PricingBackupManager } from "./PricingBackupManager";
+import { pdfApi } from "../../backendservice/api/pdfApi";
 import { MdAttachMoney, MdSettings, MdInventory, MdBackup } from "react-icons/md";
 import "./AdminDashboard.css";
 
@@ -69,6 +70,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const [activeTab, setActiveTab] = useState<TabType>(getActiveTabFromUrl());
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const blob = await pdfApi.exportPricingCatalogFromDb();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pricing-catalog-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export PDF failed:", err);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   useEffect(() => {
     const urlTab = getActiveTabFromUrl();
@@ -114,45 +133,54 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       <div className="admin-dashboard-navigation" style={styles.navigation}>
+        <div style={styles.navTabs}>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "pricing" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("pricing")}
+          >
+            <MdAttachMoney size={20} style={{ marginRight: "8px" }} /> Pricing Tables
+          </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "services" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("services")}
+          >
+            <MdSettings size={20} style={{ marginRight: "8px" }} /> Service Configs
+          </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "products" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("products")}
+          >
+            <MdInventory size={20} style={{ marginRight: "8px" }} /> Product Catalog
+          </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "backup" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("backup")}
+          >
+            <MdBackup size={20} style={{ marginRight: "8px" }} /> Backup Management
+          </button>
+        </div>
         <button
-          className="admin-dashboard-nav-button"
-          style={{
-            ...styles.navButton,
-            ...(activeTab === "pricing" ? styles.navButtonActive : {}),
-          }}
-          onClick={() => handleTabChange("pricing")}
+          style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
+          onClick={handleExportPdf}
+          disabled={exportingPdf}
         >
-          <MdAttachMoney size={20} style={{ marginRight: "8px" }} /> Pricing Tables
-        </button>
-        <button
-          className="admin-dashboard-nav-button"
-          style={{
-            ...styles.navButton,
-            ...(activeTab === "services" ? styles.navButtonActive : {}),
-          }}
-          onClick={() => handleTabChange("services")}
-        >
-          <MdSettings size={20} style={{ marginRight: "8px" }} /> Service Configs
-        </button>
-        <button
-          className="admin-dashboard-nav-button"
-          style={{
-            ...styles.navButton,
-            ...(activeTab === "products" ? styles.navButtonActive : {}),
-          }}
-          onClick={() => handleTabChange("products")}
-        >
-          <MdInventory size={20} style={{ marginRight: "8px" }} /> Product Catalog
-        </button>
-        <button
-          className="admin-dashboard-nav-button"
-          style={{
-            ...styles.navButton,
-            ...(activeTab === "backup" ? styles.navButtonActive : {}),
-          }}
-          onClick={() => handleTabChange("backup")}
-        >
-          <MdBackup size={20} style={{ marginRight: "8px" }} /> Backup Management
+          {exportingPdf ? "⏳ Generating..." : "⬇ Export Pricing PDF"}
         </button>
       </div>
 
@@ -238,11 +266,18 @@ const styles: Record<string, React.CSSProperties> = {
   },
   navigation: {
     display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: "8px",
     padding: "16px 24px",
     backgroundColor: "white",
     borderBottom: "1px solid #e5e5e5",
     overflowX: "auto",
+  },
+  navTabs: {
+    display: "flex",
+    gap: "8px",
+    flexWrap: "nowrap" as const,
   },
   navButton: {
     padding: "10px 20px",
@@ -261,6 +296,18 @@ const styles: Record<string, React.CSSProperties> = {
   navButtonActive: {
     backgroundColor: "#2563eb",
     color: "white",
+  },
+  exportPdfButton: {
+    padding: "10px 18px",
+    backgroundColor: "#8B1A1A",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
   },
   content: {
     padding: "0",

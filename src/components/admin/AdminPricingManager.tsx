@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useServiceConfigs, useActiveProductCatalog } from "../../backendservice/hooks";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import { ServicePricingEditor } from "./ServicePricingEditor";
+import { pdfApi } from "../../backendservice/api/pdfApi";
 import "./AdminPricingManager.css";
 
 import { SanicleanForm } from "../services/saniclean/SanicleanForm";
@@ -26,6 +27,24 @@ export const AdminPricingManager: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedService, setSelectedService] = useState<ServiceConfig | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const blob = await pdfApi.exportPricingCatalogPdf(configs, catalog);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pricing-catalog-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export PDF failed:", err);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const handleViewService = (config: ServiceConfig) => {
     setSelectedService(config);
@@ -104,6 +123,14 @@ export const AdminPricingManager: React.FC = () => {
             onClick={() => setViewMode("products")}
           >
             📦 View Product Catalog
+          </button>
+          <button
+            className="apm-export-pdf-button"
+            style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+          >
+            {exportingPdf ? "⏳ Generating..." : "⬇ Export Pricing PDF"}
           </button>
         </div>
 
@@ -222,6 +249,14 @@ export const AdminPricingManager: React.FC = () => {
               Version: {catalog.version} | Currency: {catalog.currency}
             </p>
           </div>
+          <button
+            className="apm-export-pdf-button"
+            style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+          >
+            {exportingPdf ? "⏳ Generating..." : "⬇ Export Pricing PDF"}
+          </button>
         </div>
 
         <div className="apm-product-grid" style={styles.productGrid}>
@@ -318,6 +353,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   topActions: {
     marginBottom: "24px",
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+  },
+  exportPdfButton: {
+    padding: "10px 20px",
+    backgroundColor: "#8B1A1A",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
   },
   viewButton: {
     padding: "10px 20px",
