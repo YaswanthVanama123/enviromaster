@@ -868,6 +868,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           return activeConfig.billingConversions.twicePerMonth?.monthlyMultiplier ?? 2.0;
         case 'monthly':
           return activeConfig.billingConversions.monthly?.monthlyMultiplier ?? 1.0;
+        case 'everyfourweeks':
+          return activeConfig.billingConversions.everyFourWeeks?.monthlyMultiplier ?? 1.0833;
         case 'bimonthly':
           return activeConfig.billingConversions.bimonthly?.monthlyMultiplier ?? 0.5;
         case 'quarterly':

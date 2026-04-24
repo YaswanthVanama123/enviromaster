@@ -13,7 +13,7 @@ export const sanipodPricingConfig: SanipodPricingConfig = {
   tripChargePerVisit: 0.0,
 
   defaultFrequency: "weekly",
-  allowedFrequencies: ["oneTime", "weekly", "biweekly", "twicePerMonth", "monthly", "bimonthly", "quarterly", "biannual", "annual"],
+  allowedFrequencies: ["oneTime", "weekly", "biweekly", "twicePerMonth", "monthly", "everyFourWeeks", "bimonthly", "quarterly", "biannual", "annual"],
 
 
   annualFrequencies: {
@@ -22,6 +22,7 @@ export const sanipodPricingConfig: SanipodPricingConfig = {
     biweekly: 26,
     twicePerMonth: 24,
     monthly: 12,
+    everyFourWeeks: 13,
     bimonthly: 6,
     quarterly: 4,
     biannual: 2,
@@ -34,7 +35,8 @@ export const sanipodPricingConfig: SanipodPricingConfig = {
     weekly: 4.33,    
     biweekly: 2.165, 
     twicePerMonth: 2, 
-    monthly: 1.0,    
+    monthly: 1.0,
+    everyFourWeeks: 1.0833,
     bimonthly: 0.5,  
     quarterly: 0,    
     biannual: 0,     

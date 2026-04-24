@@ -102,6 +102,7 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
         biweekly: 2.165,
         twicePerMonth: 2,
         monthly: 1.0,
+        everyFourWeeks: 1.0833,
         bimonthly: 0.5,
         quarterly: 0,
         biannual: 0,
@@ -113,6 +114,7 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
         biweekly: 26,
         twicePerMonth: 24,
         monthly: 12,
+        everyFourWeeks: 13,
         bimonthly: 6,
         quarterly: 4,
         biannual: 2,
@@ -162,12 +164,13 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
       oneTime: 0,
       weekly: backendConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? 4.33,
       biweekly: backendConfig.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? 2.165,
-      twicePerMonth: 2, 
-      monthly: 1.0, 
-      bimonthly: 0.5, 
-      quarterly: 0, 
-      biannual: 0, 
-      annual: 0, 
+      twicePerMonth: 2,
+      monthly: 1.0,
+      everyFourWeeks: 1.0833,
+      bimonthly: 0.5,
+      quarterly: 0,
+      biannual: 0,
+      annual: 0,
     },
 
 
@@ -177,6 +180,7 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
       biweekly: 26,
       twicePerMonth: 24,
       monthly: 12,
+      everyFourWeeks: 13,
       bimonthly: backendConfig.frequencyMetadata?.bimonthly?.cycleMonths ? 12 / backendConfig.frequencyMetadata.bimonthly.cycleMonths : 6,
       quarterly: backendConfig.frequencyMetadata?.quarterly?.cycleMonths ? 12 / backendConfig.frequencyMetadata.quarterly.cycleMonths : 4,
       biannual: backendConfig.frequencyMetadata?.biannual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.biannual.cycleMonths : 2,
@@ -757,7 +761,8 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
                                    form.frequency === "quarterly" ||
                                    form.frequency === "biannual" ||
                                    form.frequency === "annual" ||
-                                   form.frequency === "bimonthly";
+                                   form.frequency === "bimonthly" ||
+                                   form.frequency === "everyFourWeeks";
 
     const getVariantConfig = (variant: StripWaxServiceVariant) => {
       if (variant === "standardFull") {

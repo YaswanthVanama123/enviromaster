@@ -18,6 +18,7 @@ export const stripWaxPricingConfig: StripWaxPricingConfig = {
     biweekly: { annualMultiplier: 26, monthlyMultiplier: 2.165 },
     twicePerMonth: { annualMultiplier: 24, monthlyMultiplier: 2 },
     monthly: { annualMultiplier: 12, monthlyMultiplier: 1 },
+    everyFourWeeks: { annualMultiplier: 13, monthlyMultiplier: 1.0833 },
     bimonthly: { annualMultiplier: 6, monthlyMultiplier: 0.5 },
     quarterly: { annualMultiplier: 4, monthlyMultiplier: 0.333 },
     biannual: { annualMultiplier: 2, monthlyMultiplier: 0.167 },

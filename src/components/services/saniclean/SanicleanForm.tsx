@@ -18,13 +18,14 @@ const sanicleanFrequencyLabels: Record<string, string> = {
   biweekly: "Bi-Weekly",
   twicePerMonth: "2× / Month (with SaniClean)",
   monthly: "Monthly",
+  everyFourWeeks: "Every 4 Weeks",
   bimonthly: "Bi-Monthly (Every 2 Months)",
   quarterly: "Quarterly",
   biannual: "Bi-Annual",
   annual: "Annual",
 };
 
-const MONTHLY_OR_BELOW_FREQUENCIES = new Set(["weekly", "biweekly", "twicePerMonth", "monthly"]);
+const MONTHLY_OR_BELOW_FREQUENCIES = new Set(["weekly", "biweekly", "twicePerMonth", "monthly", "everyFourWeeks"]);
 const ABOVE_MONTHLY_FREQUENCIES = new Set(["bimonthly", "quarterly", "biannual", "annual"]);
 
 const FREQUENCY_MULTIPLIER_FALLBACK: Record<string, number> = {
@@ -32,6 +33,7 @@ const FREQUENCY_MULTIPLIER_FALLBACK: Record<string, number> = {
   biweekly: 2.165,
   twicePerMonth: 2.0,
   monthly: 1.0,
+  everyFourWeeks: 1.0833,
   bimonthly: 0.5,
   quarterly: 0.33,
   biannual: 0.17,
@@ -1184,6 +1186,7 @@ export const SanicleanForm: React.FC<
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi Weekly</option>
             <option value="monthly">Monthly</option>
+            <option value="everyFourWeeks">Every 4 Weeks</option>
           </select>
         </div>
       </div>
@@ -1951,7 +1954,7 @@ export const SanicleanForm: React.FC<
       )}
 
       {}
-      {['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
+      {['weekly', 'biweekly', 'twicePerMonth', 'monthly', 'everyFourWeeks'].includes(form.mainServiceFrequency) && (
         <div className="svc-row">
           <label>Base Service Monthly Total</label>
           <div className="svc-row-right">
@@ -1976,7 +1979,7 @@ export const SanicleanForm: React.FC<
       {}
       {form.pricingMode === "per_item_charge" &&
        (form.addUrinalComponents || form.addMaleToiletComponents || form.addFemaleToiletComponents) &&
-       ['weekly', 'biweekly', 'twicePerMonth', 'monthly'].includes(form.mainServiceFrequency) && (
+       ['weekly', 'biweekly', 'twicePerMonth', 'monthly', 'everyFourWeeks'].includes(form.mainServiceFrequency) && (
         <div className="svc-row">
           <label>Facility Component Monthly Total</label>
           <div className="svc-row-right">

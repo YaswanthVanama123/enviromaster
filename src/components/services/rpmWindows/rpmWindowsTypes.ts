@@ -1,7 +1,7 @@
 
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
-export type RpmFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
+export type RpmFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
 export type RpmRateCategory = "redRate" | "greenRate";
 
 export interface RpmWindowPricingConfig {
@@ -20,6 +20,7 @@ export interface RpmWindowPricingConfig {
     biweekly: number;
     twicePerMonth: number;
     monthly: number;
+    everyFourWeeks: number;
     bimonthly: number;
     quarterly: number;
     biannual: number;
@@ -33,6 +34,7 @@ export interface RpmWindowPricingConfig {
     biweekly: number;
     twicePerMonth: number;
     monthly: number;
+    everyFourWeeks: number;
     bimonthly: number;
     quarterly: number;
     biannual: number;

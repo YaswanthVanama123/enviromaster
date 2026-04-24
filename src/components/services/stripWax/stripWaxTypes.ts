@@ -1,6 +1,6 @@
 
 
-export type StripWaxFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
+export type StripWaxFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
 export type StripWaxRateCategory = "redRate" | "greenRate";
 
 export type StripWaxServiceVariant =

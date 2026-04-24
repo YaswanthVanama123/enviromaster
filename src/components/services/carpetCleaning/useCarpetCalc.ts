@@ -699,7 +699,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     const visitsPerMonth = visitsPerYear / 12;
 
     const frequentFrequencies: CarpetFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
-    const infrequentFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
+    const infrequentFrequencies: CarpetFrequency[] = ["bimonthly", "quarterly", "biannual", "annual", "everyFourWeeks"];
 
     const shouldShowMonthlyRecurring = frequentFrequencies.includes(freq);
     const shouldShowVisitRecurring = infrequentFrequencies.includes(freq);
@@ -829,9 +829,16 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       } else if (freq === "monthly") {
 
         if (form.includeInstall && installOneTime > 0) {
-          calculatedFirstMonthTotal = installOneTime; 
+          calculatedFirstMonthTotal = installOneTime;
         } else {
-          calculatedFirstMonthTotal = perVisitCharge; 
+          calculatedFirstMonthTotal = perVisitCharge;
+        }
+      } else if (freq === "everyFourWeeks") {
+
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime;
+        } else {
+          calculatedFirstMonthTotal = perVisitCharge;
         }
       } else if (freq === "bimonthly") {
 
@@ -928,12 +935,19 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         totalVisitsForContract = Math.round(contractMonths / cycleMonths);
 
         if (form.includeInstall && installOneTime > 0) {
-
-
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
+          calculatedContractTotal = contractMonths * monthlyRecurring;
+        }
+      } else if (freq === "everyFourWeeks") {
 
+        totalVisitsForContract = Math.round(contractMonths * 1.0833);
+
+        if (form.includeInstall && installOneTime > 0) {
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+        } else {
           calculatedContractTotal = contractMonths * monthlyRecurring;
         }
       } else if (freq === "bimonthly") {

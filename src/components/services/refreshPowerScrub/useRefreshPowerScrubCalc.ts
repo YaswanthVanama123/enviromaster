@@ -181,8 +181,9 @@ function getBillingMultiplier(
     "onetime": 0,
     "weekly": 4.33,
     "biweekly": 2.165,
-    "twicepermonth": 2.0,  
+    "twicepermonth": 2.0,
     "monthly": 1.0,
+    "everyfourweeks": 1.0833,
     "bimonthly": 0.5,
     "quarterly": 0.333,
     "biannual": 0.167,
@@ -201,6 +202,8 @@ function getBillingMultiplier(
         return defaultMultipliers.twicepermonth; 
       case "monthly":
         return conversions.monthly?.monthlyMultiplier ?? defaultMultipliers.monthly;
+      case "everyfourweeks":
+        return defaultMultipliers.everyfourweeks;
       case "bimonthly":
         return conversions.bimonthly?.monthlyMultiplier ?? defaultMultipliers.bimonthly;
       case "quarterly":

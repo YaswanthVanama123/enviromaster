@@ -81,14 +81,14 @@ const DEFAULT_FORM: RpmWindowsFormState = {
 
 function mapFrequency(v: string): RpmFrequencyKey {
   if (v === "oneTime" || v === "weekly" || v === "biweekly" || v === "twicePerMonth" ||
-      v === "monthly" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
+      v === "monthly" || v === "everyFourWeeks" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
     return v;
   }
   return "weekly";
 }
 
 function getEffectiveFrequencyKey(freqKey: RpmFrequencyKey): RpmFrequencyKey {
-  if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+  if (freqKey === "twicePerMonth" || freqKey === "bimonthly" || freqKey === "everyFourWeeks") {
     return "monthly";
   }
   if (freqKey === "biannual" || freqKey === "annual") {
@@ -719,7 +719,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
 
           let effectiveFreqKey = freqKey;
-          if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+          if (freqKey === "twicePerMonth" || freqKey === "bimonthly" || freqKey === "everyFourWeeks") {
             effectiveFreqKey = "monthly";
           } else if (freqKey === "biannual" || freqKey === "annual") {
             effectiveFreqKey = "quarterly";
@@ -913,7 +913,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     let effectiveFreqKey = freqKey;
 
 
-    if (freqKey === "twicePerMonth" || freqKey === "bimonthly") {
+    if (freqKey === "twicePerMonth" || freqKey === "bimonthly" || freqKey === "everyFourWeeks") {
       effectiveFreqKey = "monthly";
     }
 
@@ -1027,7 +1027,9 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     } else if (freqKey === "twicePerMonth") {
       monthlyVisits = 2; 
     } else if (freqKey === "monthly") {
-      monthlyVisits = 1; 
+      monthlyVisits = 1;
+    } else if (freqKey === "everyFourWeeks") {
+      monthlyVisits = 1.0833; // 13 visits/year ÷ 12 months — same per-visit price as monthly
     } else if (freqKey === "bimonthly") {
       monthlyVisits = 0.5; 
     } else if (freqKey === "quarterly") {

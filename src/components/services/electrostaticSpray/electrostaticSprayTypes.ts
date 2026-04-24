@@ -1,6 +1,6 @@
 
 
-export type ElectrostaticSprayFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
+export type ElectrostaticSprayFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
 export interface ElectrostaticSprayPricingConfig {
 
@@ -24,6 +24,7 @@ export interface ElectrostaticSprayPricingConfig {
     biweekly: { monthlyMultiplier: number; annualMultiplier: number };
     twicePerMonth: { monthlyMultiplier: number; annualMultiplier: number };
     monthly: { monthlyMultiplier: number; annualMultiplier: number };
+    everyFourWeeks: { monthlyMultiplier: number; annualMultiplier: number };
     bimonthly: { monthlyMultiplier: number; annualMultiplier: number };
     quarterly: { monthlyMultiplier: number; annualMultiplier: number };
     biannual: { monthlyMultiplier: number; annualMultiplier: number };

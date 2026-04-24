@@ -126,7 +126,8 @@ export const StripWaxForm: React.FC<
 
 
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
-    form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
+    form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" ||
+    form.frequency === "everyFourWeeks";
 
 
   const formatDisplayNumber = (value: number | undefined): string => {
@@ -405,6 +406,7 @@ export const StripWaxForm: React.FC<
             <option value="biweekly">Bi-Weekly</option>
             <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="everyFourWeeks">Every 4 Weeks</option>
             <option value="bimonthly">Every 2 Months</option>
             <option value="quarterly">Quarterly</option>
             <option value="biannual">Bi-Annual</option>
@@ -624,7 +626,8 @@ export const StripWaxForm: React.FC<
 
       {}
       {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
-        form.frequency === "biannual" || form.frequency === "annual") && (
+        form.frequency === "biannual" || form.frequency === "annual" ||
+        form.frequency === "everyFourWeeks") && (
         <div className="svc-row svc-row-total">
           <label>Recurring Visit Total</label>
           <div className="svc-dollar">

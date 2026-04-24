@@ -142,7 +142,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
 
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
-    form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
+    form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" ||
+    form.frequency === "everyFourWeeks";
 
 
   const generateContractMonths = () => {
@@ -591,6 +592,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             <option value="biweekly">Bi-Weekly</option>
             <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="everyFourWeeks">Every 4 Weeks</option>
             <option value="bimonthly">Every 2 Months</option>
             <option value="quarterly">Quarterly</option>
             <option value="biannual">Bi-Annual</option>
@@ -962,7 +964,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           {form.frequency === "bimonthly" ||
            form.frequency === "quarterly" ||
            form.frequency === "biannual" ||
-           form.frequency === "annual"
+           form.frequency === "annual" ||
+           form.frequency === "everyFourWeeks"
             ? "Recurring Visit Total"
             : "Per Visit Service"}
         </label>

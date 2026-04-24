@@ -614,7 +614,8 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
 
     const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
-      form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly";
+      form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" ||
+      form.frequency === "everyFourWeeks";
     const monthsPerVisit = form.frequency === "oneTime" ? 0 :
       form.frequency === "bimonthly" ? 2 :
       form.frequency === "quarterly" ? 3 :

@@ -511,6 +511,7 @@ export const RpmWindowsForm: React.FC<
             <option value="biweekly">Bi-Weekly</option>
             <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="everyFourWeeks">Every 4 Weeks</option>
             <option value="bimonthly">Every 2 Months</option>
             <option value="quarterly">Quarterly</option>
             <option value="biannual">Bi-Annual</option>
@@ -848,7 +849,8 @@ export const RpmWindowsForm: React.FC<
 
       {}
       {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
-        form.frequency === "biannual" || form.frequency === "annual") && (
+        form.frequency === "biannual" || form.frequency === "annual" ||
+        form.frequency === "everyFourWeeks") && (
         <div className="svc-row svc-row-charge">
           <label>Recurring Visit Total</label>
           <div className="svc-row-right">
@@ -902,7 +904,7 @@ export const RpmWindowsForm: React.FC<
       )}
 
       {}
-      {form.frequency !== "oneTime" && form.frequency !== "quarterly" && form.frequency !== "biannual" && form.frequency !== "annual" && form.frequency !== "bimonthly" && (
+      {form.frequency !== "oneTime" && form.frequency !== "quarterly" && form.frequency !== "biannual" && form.frequency !== "annual" && form.frequency !== "bimonthly" && form.frequency !== "everyFourWeeks" && (
         <div className="svc-row svc-row-charge">
           <label>First Month Total</label>
           <div className="svc-row-right">
@@ -956,7 +958,7 @@ export const RpmWindowsForm: React.FC<
 
 
       {}
-      {(form.frequency === "oneTime" || form.frequency === "quarterly" || form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly") && (
+      {(form.frequency === "oneTime" || form.frequency === "quarterly" || form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" || form.frequency === "everyFourWeeks") && (
         <div className="svc-row svc-row-charge">
           <label>{form.frequency === "oneTime" ? "Total Price" : "First Visit Total"}</label>
           <div className="svc-row-right">

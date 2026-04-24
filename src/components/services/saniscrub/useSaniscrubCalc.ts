@@ -192,12 +192,13 @@ function buildActiveConfig(backendConfig: BackendSaniscrubConfig | null) {
       oneTime: 0,
       weekly: backendConfig.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? 4.33,
       biweekly: backendConfig.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier ?? 2.165,
-      twicePerMonth: 2, 
-      monthly: 1.0, 
-      bimonthly: 0.5, 
-      quarterly: 0, 
-      biannual: 0, 
-      annual: 0, 
+      twicePerMonth: 2,
+      monthly: 1.0,
+      everyFourWeeks: 1.0833,
+      bimonthly: 0.5,
+      quarterly: 0,
+      biannual: 0,
+      annual: 0,
     },
 
 
@@ -207,6 +208,7 @@ function buildActiveConfig(backendConfig: BackendSaniscrubConfig | null) {
       biweekly: 26,
       twicePerMonth: 24,
       monthly: 12,
+      everyFourWeeks: 13,
       bimonthly: backendConfig.frequencyMetadata?.bimonthly?.cycleMonths ? 12 / backendConfig.frequencyMetadata.bimonthly.cycleMonths : 6,
       quarterly: backendConfig.frequencyMetadata?.quarterly?.cycleMonths ? 12 / backendConfig.frequencyMetadata.quarterly.cycleMonths : 4,
       biannual: backendConfig.frequencyMetadata?.biannual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.biannual.cycleMonths : 2,
@@ -810,7 +812,8 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
                                    freq === "quarterly" ||
                                    freq === "biannual" ||
                                    freq === "annual" ||
-                                   freq === "bimonthly";
+                                   freq === "bimonthly" ||
+                                   freq === "everyFourWeeks";
 
     const fixtureCount = form.fixtureCount ?? 0;
     const nonBathSqFt = form.nonBathroomSqFt ?? 0;
@@ -1228,12 +1231,12 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       originalContractTotal: (() => {
 
         if (!serviceActive) return 0;
-        const baselineFixtureRate = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth"
+        const baselineFixtureRate = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth" || freq === "everyFourWeeks"
           ? activeConfig.fixtureRates.monthly
           : freq === "bimonthly"
           ? activeConfig.fixtureRates.bimonthly
-          : activeConfig.fixtureRates.quarterly; 
-        const baselineMinimum = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth"
+          : activeConfig.fixtureRates.quarterly;
+        const baselineMinimum = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth" || freq === "everyFourWeeks"
           ? activeConfig.minimums.monthly
           : freq === "bimonthly"
           ? activeConfig.minimums.bimonthly

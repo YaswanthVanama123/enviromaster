@@ -26,6 +26,7 @@ const FREQ_OPTIONS = [
   { value: "biweekly", label: "Bi-weekly" },
   { value: "twicePerMonth", label: "2× / Month" },
   { value: "monthly", label: "Monthly" },
+  { value: "everyFourWeeks", label: "Every 4 Weeks" },
   { value: "bimonthly", label: "Bi-monthly" },
   { value: "quarterly", label: "Quarterly" },
   { value: "biannual", label: "Bi-annual" },
@@ -39,6 +40,7 @@ const AREA_FREQ_OPTIONS = [
   "Bi-weekly",
   "2× / Month",
   "Monthly",
+  "Every 4 Weeks",
   "Bi-monthly",
   "Quarterly",
   "Bi-annual",
@@ -227,6 +229,7 @@ const getKitchenLarge = (): number => {
                 case "bi-weekly": return 2.165;
                 case "2× / month": return 2.0;
                 case "monthly": return 1;
+                case "every 4 weeks": return 1.0833;
                 case "bi-monthly": return 0.5;
                 case "quarterly": return 0.333;
                 case "bi-annual": return 0.167;

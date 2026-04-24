@@ -663,6 +663,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <option value="biweekly">Bi-weekly</option>
               <option value="twicePerMonth">2× / Month</option>
               <option value="monthly">Monthly</option>
+              <option value="everyFourWeeks">Every 4 Weeks</option>
               <option value="bimonthly">Bi-monthly</option>
               <option value="quarterly">Quarterly</option>
               <option value="biannual">Bi-annual</option>
@@ -1328,7 +1329,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 {state.frequency === "bimonthly" ||
                  state.frequency === "quarterly" ||
                  state.frequency === "biannual" ||
-                 state.frequency === "annual"
+                 state.frequency === "annual" ||
+                 state.frequency === "everyFourWeeks"
                   ? "Recurring Visit Total"
                   : "Per Visit Total"}
               </span>
@@ -1427,7 +1429,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
            state.frequency !== "bimonthly" &&
            state.frequency !== "quarterly" &&
            state.frequency !== "biannual" &&
-           state.frequency !== "annual" && (
+           state.frequency !== "annual" &&
+           state.frequency !== "everyFourWeeks" && (
             <div className="svc-row">
               <div className="svc-label">
                 <span>First Month Total</span>
@@ -1461,7 +1464,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
            state.frequency !== "bimonthly" &&
            state.frequency !== "quarterly" &&
            state.frequency !== "biannual" &&
-           state.frequency !== "annual" && (
+           state.frequency !== "annual" &&
+           state.frequency !== "everyFourWeeks" && (
             <div className="svc-row">
               <div className="svc-label">
                 <span>Monthly Recurring</span>

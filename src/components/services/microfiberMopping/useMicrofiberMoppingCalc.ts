@@ -125,7 +125,7 @@ type InputChangeEvent =
 
 function mapFrequency(v: string): MicrofiberFrequencyKey {
   if (v === "oneTime" || v === "weekly" || v === "biweekly" || v === "twicePerMonth" ||
-      v === "monthly" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
+      v === "monthly" || v === "everyFourWeeks" || v === "bimonthly" || v === "quarterly" || v === "biannual" || v === "annual") {
     return v;
   }
   return "weekly";
@@ -1095,7 +1095,7 @@ export function useMicrofiberMoppingCalc(
 
 
     const isVisitBasedFrequency = freq === "oneTime" || freq === "quarterly" ||
-      freq === "biannual" || freq === "annual" || freq === "bimonthly";
+      freq === "biannual" || freq === "annual" || freq === "bimonthly" || freq === "everyFourWeeks";
 
     const monthlyVisits = conv.monthlyMultiplier; 
     const calculatedMonthlyService = perVisitPrice * monthlyVisits;

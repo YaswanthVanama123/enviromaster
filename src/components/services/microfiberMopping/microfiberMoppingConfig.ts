@@ -95,7 +95,11 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     },
     monthly: {
       annualMultiplier: 12,
-      monthlyMultiplier: 1, 
+      monthlyMultiplier: 1,
+    },
+    everyFourWeeks: {
+      annualMultiplier: 13,
+      monthlyMultiplier: 1.0833,
     },
     bimonthly: {
       annualMultiplier: 6,
@@ -158,7 +162,7 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
   },
 
   defaultFrequency: "weekly",
-  allowedFrequencies: ["weekly", "biweekly", "monthly"],
+  allowedFrequencies: ["weekly", "biweekly", "monthly", "everyFourWeeks"],
 
   serviceType: "microfiberMopping",
   category: "Floor Maintenance",

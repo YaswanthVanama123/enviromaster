@@ -6,13 +6,13 @@ export type SanicleanPricingMode = "all_inclusive" | "per_item_charge";
 export type SanicleanRateTier = "redRate" | "greenRate";
 
 
-export type SanicleanFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
+export type SanicleanFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
 
 export type SanicleanCalculationMode = "monthly" | "perVisit";
 
 
-export const MONTHLY_AND_BELOW: SanicleanFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly"];
+export const MONTHLY_AND_BELOW: SanicleanFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly", "everyFourWeeks"];
 export const ABOVE_MONTHLY: SanicleanFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
 
 

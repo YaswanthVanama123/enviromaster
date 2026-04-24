@@ -126,6 +126,7 @@ export const CarpetForm: React.FC<
     "quarterly",
     "biannual",
     "annual",
+    "everyFourWeeks",
   ];
 
   const resolveCarpetFrequency = (value: string): CarpetFrequency => {

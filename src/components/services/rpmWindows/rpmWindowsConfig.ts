@@ -17,6 +17,7 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     biweekly: 1.25,
     twicePerMonth: 1.2,
     monthly: 1.25,
+    everyFourWeeks: 1.25,
     bimonthly: 1.5,
     quarterly: 2.0,
     biannual: 2.5,
@@ -31,6 +32,7 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     biweekly: 26,
     twicePerMonth: 24,
     monthly: 12,
+    everyFourWeeks: 13,
     bimonthly: 6,
     quarterly: 4,
     biannual: 2,
@@ -55,7 +57,7 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     },
   },
 
-  allowedFrequencies: ["Weekly", "Bi-Weekly", "Monthly", "Quarterly"],
+  allowedFrequencies: ["Weekly", "Bi-Weekly", "Monthly", "Every 4 Weeks", "Quarterly"],
 
   additionalServices: {
     mirrorCleaning: true,

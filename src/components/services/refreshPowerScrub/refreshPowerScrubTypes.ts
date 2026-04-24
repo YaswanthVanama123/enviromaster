@@ -10,6 +10,7 @@ export type RefreshFrequency =
   | "biweekly"
   | "twicePerMonth"
   | "monthly"
+  | "everyFourWeeks"
   | "bimonthly"
   | "quarterly"
   | "biannual"

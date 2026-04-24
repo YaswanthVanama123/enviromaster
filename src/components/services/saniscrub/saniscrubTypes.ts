@@ -6,6 +6,7 @@ export type SaniscrubFrequency =
   | "biweekly"
   | "twicePerMonth"
   | "monthly"
+  | "everyFourWeeks"
   | "bimonthly"
   | "quarterly"
   | "biannual"

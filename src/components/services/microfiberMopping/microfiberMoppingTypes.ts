@@ -1,7 +1,7 @@
 
 import type { BaseServiceFormState } from "../common/serviceTypes";
 
-export type MicrofiberFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "bimonthly" | "quarterly" | "biannual" | "annual";
+export type MicrofiberFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
 
 export interface MicrofiberMoppingPricingConfig {
@@ -96,7 +96,11 @@ export interface MicrofiberMoppingPricingConfig {
     };
     monthly: {
       annualMultiplier: number;
-      monthlyMultiplier: number; 
+      monthlyMultiplier: number;
+    };
+    everyFourWeeks: {
+      annualMultiplier: number;
+      monthlyMultiplier: number;
     };
     bimonthly: {
       annualMultiplier: number;

@@ -152,7 +152,7 @@ export const MicrofiberMoppingForm: React.FC<
       const frequencyLabel = typeof form.frequency === 'string'
         ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
         : String(form.frequency || '');
-      const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly"].includes(form.frequency);
+      const visitBasedFrequency = ["oneTime", "quarterly", "biannual", "annual", "bimonthly", "everyFourWeeks"].includes(form.frequency);
 
       const totalPriceValue =
         form.customFirstMonthPrice !== undefined
@@ -567,6 +567,7 @@ export const MicrofiberMoppingForm: React.FC<
             <option value="biweekly">Bi-weekly</option>
             <option value="twicePerMonth">2× / Month</option>
             <option value="monthly">Monthly</option>
+            <option value="everyFourWeeks">Every 4 Weeks</option>
             <option value="bimonthly">Every 2 Months</option>
             <option value="quarterly">Quarterly</option>
             <option value="biannual">Bi-Annual</option>
@@ -970,7 +971,7 @@ export const MicrofiberMoppingForm: React.FC<
         {}
         {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
          form.frequency !== "biannual" && form.frequency !== "annual" &&
-         form.frequency !== "bimonthly" && (
+         form.frequency !== "bimonthly" && form.frequency !== "everyFourWeeks" && (
           <div className="svc-row">
             <label>Monthly recurring</label>
             <div className="svc-dollar">
@@ -1002,7 +1003,7 @@ export const MicrofiberMoppingForm: React.FC<
         {}
         {form.frequency !== "oneTime" && form.frequency !== "quarterly" &&
          form.frequency !== "biannual" && form.frequency !== "annual" &&
-         form.frequency !== "bimonthly" && (
+         form.frequency !== "bimonthly" && form.frequency !== "everyFourWeeks" && (
           <div className="svc-row">
             <label>First month total</label>
             <div className="svc-dollar">
@@ -1035,7 +1036,7 @@ export const MicrofiberMoppingForm: React.FC<
         {}
         {(form.frequency === "oneTime" || form.frequency === "quarterly" ||
           form.frequency === "biannual" || form.frequency === "annual" ||
-          form.frequency === "bimonthly") && (
+          form.frequency === "bimonthly" || form.frequency === "everyFourWeeks") && (
           <div className="svc-row">
             <label>{form.frequency === "oneTime" ? "Total Price" : "First Visit Total"}</label>
             <div className="svc-dollar">
@@ -1051,7 +1052,7 @@ export const MicrofiberMoppingForm: React.FC<
                   'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
                     ? form.customFirstMonthPrice
-                    : calc.contractTotal
+                    : calc.firstMonthPrice
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -1060,6 +1061,27 @@ export const MicrofiberMoppingForm: React.FC<
                   backgroundColor: form.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
                   border: 'none'
                 }}
+              />
+            </div>
+          </div>
+        )}
+
+        {}
+        {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
+          form.frequency === "biannual" || form.frequency === "annual" ||
+          form.frequency === "everyFourWeeks") && (
+          <div className="svc-row">
+            <label>Recurring Visit Total</label>
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in"
+                type="number"
+                min="0"
+                readOnly
+                step="1"
+                value={calc.perVisitPrice.toFixed(2)}
+                style={{ border: 'none' }}
               />
             </div>
           </div>

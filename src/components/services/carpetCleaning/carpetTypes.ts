@@ -6,6 +6,7 @@ export type CarpetFrequency =
   | "biweekly"
   | "twicePerMonth"
   | "monthly"
+  | "everyFourWeeks"
   | "bimonthly"
   | "quarterly"
   | "biannual"

@@ -7,6 +7,7 @@ export type FoamingDrainFrequency =
   | "biweekly"
   | "twicePerMonth"
   | "monthly"
+  | "everyFourWeeks"
   | "bimonthly"
   | "quarterly"
   | "biannual"

@@ -62,7 +62,10 @@ export const FOAMING_DRAIN_CONFIG = {
       monthlyMultiplier: 2.0,      
     },
     monthly: {
-      monthlyMultiplier: 1.0,      
+      monthlyMultiplier: 1.0,
+    },
+    everyFourWeeks: {
+      monthlyMultiplier: 1.0833,
     },
     bimonthly: {
       monthlyMultiplier: 0.5,      
@@ -95,6 +98,7 @@ export const FOAMING_DRAIN_CONFIG = {
     "biweekly",
     "twicePerMonth",
     "monthly",
+    "everyFourWeeks",
     "bimonthly",
     "quarterly",
     "biannual",

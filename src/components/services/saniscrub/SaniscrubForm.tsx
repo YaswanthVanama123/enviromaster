@@ -840,7 +840,8 @@ export const SaniscrubForm: React.FC<
 
       {}
       {(form.frequency === "bimonthly" || form.frequency === "quarterly" ||
-        form.frequency === "biannual" || form.frequency === "annual") && (
+        form.frequency === "biannual" || form.frequency === "annual" ||
+        form.frequency === "everyFourWeeks") && (
         <div className="svc-row svc-row-charge">
           <label>Recurring Visit Total</label>
           <div className="svc-row-right">

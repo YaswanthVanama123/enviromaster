@@ -529,6 +529,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
               <option value="twicePerMonth">2× / Month</option>
               <option value="monthly">Monthly</option>
+              <option value="everyFourWeeks">Every 4 Weeks</option>
               <option value="bimonthly">Bi-Monthly (every 2 months)</option>
               <option value="quarterly">Quarterly</option>
               <option value="biannual">Bi-Annual</option>

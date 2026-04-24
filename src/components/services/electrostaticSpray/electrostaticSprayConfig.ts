@@ -24,6 +24,7 @@ export const electrostaticSprayPricingConfig: ElectrostaticSprayPricingConfig = 
     biweekly: { monthlyMultiplier: 2.165, annualMultiplier: 26 },
     twicePerMonth: { monthlyMultiplier: 2, annualMultiplier: 24 },
     monthly: { monthlyMultiplier: 1, annualMultiplier: 12 },
+    everyFourWeeks: { monthlyMultiplier: 1.0833, annualMultiplier: 13 },
     bimonthly: { monthlyMultiplier: 0.5, annualMultiplier: 6 },
     quarterly: { monthlyMultiplier: 0, annualMultiplier: 4 },
     biannual: { monthlyMultiplier: 0, annualMultiplier: 2 },
@@ -43,5 +44,5 @@ export const electrostaticSprayPricingConfig: ElectrostaticSprayPricingConfig = 
   },
 
   defaultFrequency: "weekly",
-  allowedFrequencies: ["oneTime", "weekly", "biweekly", "twicePerMonth", "monthly", "bimonthly", "quarterly", "biannual", "annual"],
+  allowedFrequencies: ["oneTime", "weekly", "biweekly", "twicePerMonth", "monthly", "everyFourWeeks", "bimonthly", "quarterly", "biannual", "annual"],
 };
