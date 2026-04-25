@@ -170,6 +170,12 @@ export interface ZohoCreateTaskPayload {
   description?: string;
   ownerId?: string;
   seModule?: string;
+  reminder?: boolean;
+  reminderWhen?: string;
+  reminderTime?: string;
+  repeat?: boolean;
+  repeatFrequency?: string;
+  repeatUntil?: string;
 }
 
 export interface ZohoTask {

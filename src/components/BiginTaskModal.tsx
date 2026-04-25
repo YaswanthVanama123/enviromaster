@@ -37,6 +37,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
 }) => {
   const [step, setStep] = useState<Step>("loading");
   const [linkedCompany, setLinkedCompany] = useState<{ id: string; name: string } | null>(null);
+  const [linkedDeal, setLinkedDeal] = useState<{ id: string; name: string } | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<ZohoCompany | null>(null);
 
   // Company search
@@ -52,7 +53,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
   const ownerRef = useRef<HTMLDivElement>(null);
 
   // Related To module
-  const [seModule, setSeModule] = useState("Accounts");
+  const [seModule, setSeModule] = useState("Pipelines");
   const [moduleDropOpen, setModuleDropOpen] = useState(false);
   const moduleRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +61,11 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
   const [taskName, setTaskName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [repeat, setRepeat] = useState(false);
+  const [repeatFrequency, setRepeatFrequency] = useState("Every Day");
+  const [repeatUntil, setRepeatUntil] = useState("");
   const [reminder, setReminder] = useState(false);
+  const [reminderWhen, setReminderWhen] = useState("On due date");
+  const [reminderTime, setReminderTime] = useState("08:00");
   const [description, setDescription] = useState("");
   const [highPriority, setHighPriority] = useState(false);
   const [markCompleted, setMarkCompleted] = useState(false);
@@ -82,17 +87,22 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     setStep("loading");
     setErrorMsg("");
     setLinkedCompany(null);
+    setLinkedDeal(null);
     setSelectedCompany(null);
     setSelectedOwner(null);
     setOwnerSearch("");
     setTaskName("");
     setDueDate("");
     setRepeat(false);
+    setRepeatFrequency("Every Day");
+    setRepeatUntil("");
     setReminder(false);
+    setReminderWhen("On due date");
+    setReminderTime("08:00");
     setDescription("");
     setHighPriority(false);
     setMarkCompleted(false);
-    setSeModule("Accounts");
+    setSeModule("Pipelines");
 
     Promise.allSettled([
       zohoApi.getUploadStatus(agreementId),
@@ -105,6 +115,9 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
         const status = statusResult.value as ZohoUploadStatus;
         if (status.mapping?.companyId && status.mapping?.companyName) {
           setLinkedCompany({ id: status.mapping.companyId, name: status.mapping.companyName });
+          if (status.mapping.dealId && status.mapping.dealName) {
+            setLinkedDeal({ id: status.mapping.dealId, name: status.mapping.dealName });
+          }
           setStep("form");
           return;
         }
@@ -135,6 +148,44 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     const company = linkedCompany ?? (selectedCompany ? { id: selectedCompany.id, name: selectedCompany.name } : null);
     if (!company) { setErrorMsg("Please select a company."); return; }
 
+    // ── Validations matching Bigin ─────────────────────────────────────────────
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    if (dueDate) {
+      const due = new Date(dueDate);
+      if (due < today) {
+        setErrorMsg("Due Date cannot be in the past.");
+        return;
+      }
+    }
+
+    if (repeat && repeatUntil) {
+      const until = new Date(repeatUntil);
+      const due = dueDate ? new Date(dueDate) : today;
+      if (until <= due) {
+        setErrorMsg("'Until' date must be greater than the Due Date.");
+        return;
+      }
+    }
+
+    if (reminder) {
+      if (!dueDate && reminderWhen !== "On due date") {
+        setErrorMsg("A Due Date is required when using a day-based reminder.");
+        return;
+      }
+      // Calculate reminder datetime and check it's in the future
+      const base = dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000);
+      if (reminderWhen === "A day before due date") base.setDate(base.getDate() - 1);
+      else if (reminderWhen === "2 days before due date") base.setDate(base.getDate() - 2);
+      const [hh, mm] = reminderTime.split(":").map(Number);
+      base.setHours(hh, mm, 0, 0);
+      if (base <= new Date()) {
+        setErrorMsg("The reminder date and time must be in the future.");
+        return;
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     setErrorMsg("");
     setStep("submitting");
 
@@ -147,6 +198,12 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
         description: description.trim() || undefined,
         ownerId: selectedOwner?.id || undefined,
         seModule,
+        reminder: reminder || undefined,
+        reminderWhen: reminder ? reminderWhen : undefined,
+        reminderTime: reminder ? reminderTime : undefined,
+        repeat: repeat || undefined,
+        repeatFrequency: repeat ? repeatFrequency : undefined,
+        repeatUntil: repeat ? repeatUntil || undefined : undefined,
       };
 
       const result = linkedCompany
@@ -159,14 +216,13 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
       setErrorMsg(err instanceof Error ? err.message : "Task creation failed.");
       setStep("form");
     }
-  }, [taskName, dueDate, description, highPriority, markCompleted, selectedOwner, seModule, linkedCompany, selectedCompany, agreementId, onSuccess]);
-
+  }, [taskName, dueDate, description, highPriority, markCompleted, selectedOwner, seModule, reminder, reminderWhen, reminderTime, repeat, repeatFrequency, repeatUntil, linkedCompany, selectedCompany, agreementId, onSuccess]);
   const effectiveCompany = linkedCompany ?? (selectedCompany ? { id: selectedCompany.id, name: selectedCompany.name } : null);
+  // For "Related To" display: linked agreements show the deal (pipeline), unlinked show the selected company
+  const relatedToName = linkedDeal ? linkedDeal.name : effectiveCompany?.name;
   const filteredUsers = users.filter(u =>
     !ownerSearch || u.name.toLowerCase().includes(ownerSearch.toLowerCase()) || u.email.toLowerCase().includes(ownerSearch.toLowerCase())
   );
-  const currentModuleLabel = SE_MODULES.find(m => m.value === seModule)?.label ?? "Companies";
-
   const initials = (name: string) => name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
 
   return (
@@ -197,7 +253,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
             <FontAwesomeIcon icon={faCheckCircle} style={{ fontSize: 44, color: "#16a34a" }} />
             <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>Task Created!</div>
             <div style={{ fontSize: 14, color: "#6b7280", textAlign: "center" }}>
-              Added to {effectiveCompany?.name ?? "the company"} in Bigin.
+              Added to {linkedDeal ? `pipeline "${linkedDeal.name}"` : (effectiveCompany?.name ?? "the company")} in Bigin.
             </div>
             <button style={greenBtn} onClick={onClose}>Done</button>
           </div>
@@ -300,24 +356,66 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
               <div style={checkbox(repeat)} />
               <span style={{ fontSize: 14, color: "#374151" }}>Repeat</span>
             </div>
+            {repeat && (
+              <div style={{ marginBottom: 12, marginTop: -6, paddingLeft: 26 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <select style={subSelect} value={repeatFrequency} onChange={e => setRepeatFrequency(e.target.value)}>
+                    <option>Every Day</option>
+                    <option>Every Week</option>
+                    <option>Every Month</option>
+                    <option>Every Year</option>
+                  </select>
+                  <span style={{ fontSize: 13, color: "#6b7280" }}>Until</span>
+                  <input type="date" style={{ ...subSelect, flex: 1, ...(repeatUntil && dueDate && new Date(repeatUntil) <= new Date(dueDate) ? { borderColor: "#ef4444" } : {}) }}
+                    value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} />
+                </div>
+                {repeatUntil && dueDate && new Date(repeatUntil) <= new Date(dueDate) && (
+                  <div style={inlineError}>'Until' date must be greater than the Due Date.</div>
+                )}
+              </div>
+            )}
 
             {/* Reminder */}
             <div style={checkRow} onClick={() => setReminder(v => !v)}>
               <div style={checkbox(reminder)} />
               <span style={{ fontSize: 14, color: "#374151" }}>Reminder</span>
             </div>
+            {reminder && (
+              <div style={{ marginBottom: 12, marginTop: -6, paddingLeft: 26 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <select style={subSelect} value={reminderWhen} onChange={e => setReminderWhen(e.target.value)}>
+                    <option>On due date</option>
+                    <option>A day before due date</option>
+                    <option>2 days before due date</option>
+                  </select>
+                  <input type="time" style={subSelect} value={reminderTime} onChange={e => setReminderTime(e.target.value)} />
+                </div>
+                {(() => {
+                  if (!dueDate) return null;
+                  const base = new Date(dueDate);
+                  if (reminderWhen === "A day before due date") base.setDate(base.getDate() - 1);
+                  else if (reminderWhen === "2 days before due date") base.setDate(base.getDate() - 2);
+                  const [hh, mm] = reminderTime.split(":").map(Number);
+                  base.setHours(hh, mm, 0, 0);
+                  return base <= new Date() ? <div style={inlineError}>The reminder date and time must be in the future.</div> : null;
+                })()}
+              </div>
+            )}
 
             {/* Related To */}
             <div style={formRow}>
               <label style={fieldLabel}>Related To</label>
               <div style={relatedToRow}>
-                {/* Module type dropdown */}
+                {/* Module type dropdown — locked to Pipelines when linked to a deal */}
                 <div ref={moduleRef} style={{ position: "relative" }}>
-                  <button style={moduleBtn} onClick={() => setModuleDropOpen(v => !v)}>
-                    {currentModuleLabel}
-                    <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 10, color: "#9ca3af" }} />
+                  <button
+                    style={{ ...moduleBtn, ...(linkedDeal ? { background: "#f9fafb", cursor: "default", color: "#6b7280" } : {}) }}
+                    onClick={() => { if (!linkedDeal) setModuleDropOpen(v => !v); }}
+                  >
+                    {linkedDeal ? "Pipelines" : (SE_MODULES.find(m => m.value === seModule)?.label ?? "Pipelines")}
+                    {!linkedDeal && <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 10, color: "#9ca3af" }} />}
                   </button>
-                  {moduleDropOpen && (
+                  {moduleDropOpen && !linkedDeal && (
                     <div style={{ ...dropdownBox, width: 150, left: 0 }}>
                       {SE_MODULES.map(m => (
                         <button key={m.value} style={{ ...listItem, background: seModule === m.value ? "#f0fdf4" : "#fff" }}
@@ -328,13 +426,20 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
                     </div>
                   )}
                 </div>
-                {/* Company name box */}
+                {/* Record name box */}
                 <div style={relatedToValue}>
                   <FontAwesomeIcon icon={faBuilding} style={{ color: "#6b7280", fontSize: 12 }} />
-                  <span style={{ flex: 1, fontSize: 14, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {effectiveCompany?.name}
-                  </span>
-                  {!linkedCompany && (
+                  <div style={{ flex: 1, overflow: "hidden" }}>
+                    {linkedDeal && linkedCompany && (
+                      <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {linkedCompany.name}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 14, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {relatedToName}
+                    </div>
+                  </div>
+                  {!linkedDeal && !linkedCompany && (
                     <button style={changeLinkBtn} onClick={() => { setSelectedCompany(null); setStep("select-company"); }}>×</button>
                   )}
                 </div>
@@ -409,9 +514,9 @@ const ownerAvatar: React.CSSProperties = { width: 22, height: 22, borderRadius: 
 
 const dropdownBox: React.CSSProperties = { position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 100, width: 260, overflow: "hidden" };
 
-const relatedToRow: React.CSSProperties = { display: "flex", gap: 8 };
+const relatedToRow: React.CSSProperties = { display: "flex", gap: 8, alignItems: "center" };
 const moduleBtn: React.CSSProperties = { display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, padding: "8px 10px", cursor: "pointer", fontSize: 13, color: "#374151", whiteSpace: "nowrap" };
-const relatedToValue: React.CSSProperties = { flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 6, background: "#f9fafb", overflow: "hidden" };
+const relatedToValue: React.CSSProperties = { flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", border: "1px solid #d1d5db", borderRadius: 6, background: "#f9fafb", overflow: "hidden" };
 const changeLinkBtn: React.CSSProperties = { background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#9ca3af", padding: 0, lineHeight: 1 };
 
 const searchBox: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: "1px solid #f0f0f0" };
@@ -424,3 +529,5 @@ const footerRow: React.CSSProperties = { display: "flex", justifyContent: "flex-
 const cancelBtn: React.CSSProperties = { padding: "8px 20px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: "pointer", color: "#374151" };
 const greenBtn: React.CSSProperties = { padding: "8px 24px", background: "#16a34a", border: "none", borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#fff" };
 const errorBanner: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, fontSize: 13, color: "#b91c1c", marginBottom: 12 };
+const subSelect: React.CSSProperties = { padding: "6px 8px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13, color: "#374151", background: "#fff", outline: "none" };
+const inlineError: React.CSSProperties = { fontSize: 12, color: "#ef4444", marginTop: 4 };
