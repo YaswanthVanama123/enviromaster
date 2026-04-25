@@ -156,6 +156,30 @@ export interface ZohoDealsResponse {
   error?: string;
 }
 
+export interface ZohoUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ZohoCreateTaskPayload {
+  subject: string;
+  dueDate?: string;
+  status?: 'Not Started' | 'In Progress' | 'Completed' | 'Waiting' | 'Deferred';
+  priority?: 'High' | 'Medium' | 'Low';
+  description?: string;
+  ownerId?: string;
+  seModule?: string;
+}
+
+export interface ZohoTask {
+  id: string;
+  subject: string;
+  dueDate?: string;
+  status: string;
+  priority: string;
+}
+
 export const zohoApi = {
   async getUploadStatus(agreementId: string): Promise<ZohoUploadStatus> {
     const res = await apiClient.get<ZohoUploadStatus>(
@@ -343,6 +367,14 @@ export const zohoApi = {
     return res.data!;
   },
 
+  async getUsers(): Promise<{ success: boolean; users: ZohoUser[]; error?: string }> {
+    const res = await apiClient.get<{ success: boolean; users: ZohoUser[]; error?: string }>(
+      `/api/zoho-upload/users`
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
   async getModules(): Promise<{
     success: boolean;
     modules?: Array<{
@@ -363,6 +395,30 @@ export const zohoApi = {
       }>;
       error?: string;
     }>(`/api/zoho-upload/modules`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  async createTaskForAgreement(
+    agreementId: string,
+    payload: ZohoCreateTaskPayload
+  ): Promise<{ success: boolean; task?: ZohoTask; error?: string }> {
+    const res = await apiClient.post<{ success: boolean; task?: ZohoTask; error?: string }>(
+      `/api/zoho-upload/${agreementId}/tasks`,
+      payload
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  async createTaskForCompany(
+    companyId: string,
+    payload: ZohoCreateTaskPayload
+  ): Promise<{ success: boolean; task?: ZohoTask; error?: string }> {
+    const res = await apiClient.post<{ success: boolean; task?: ZohoTask; error?: string }>(
+      `/api/zoho-upload/companies/${companyId}/tasks`,
+      payload
+    );
     if (res.error) throw new Error(res.error);
     return res.data!;
   },

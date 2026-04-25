@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolder, faFolderOpen, faChevronDown, faChevronRight,
   faPlus, faCheckSquare, faSquare, faCloudUploadAlt,
-  faTrash, faPencilAlt, faRedo, faFileAlt
+  faTrash, faPencilAlt, faRedo, faFileAlt, faTasks
 } from "@fortawesome/free-solid-svg-icons";
 import type { SavedFileGroup, SavedFileListItem } from "../../backendservice/api/pdfApi";
 import { FileRow } from "./FileRow";
@@ -68,6 +68,7 @@ interface AgreementRowProps {
   onEditAgreement: (agreement: SavedFileGroup) => void;
   onDelete: (type: 'file' | 'folder', id: string, title: string, fileType?: string) => void;
   onAgreementZohoUpload: (agreement: SavedFileGroup) => void;
+  onAgreementTaskCreate: (agreement: SavedFileGroup) => void;
   onDateChange: (agreementId: string, newDate: string) => Promise<void>;
   onView: (file: SavedFileListItem, watermark: boolean) => void;
   onDownload: (file: SavedFileListItem, watermark: boolean) => void;
@@ -96,6 +97,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
     onEditAgreement,
     onDelete,
     onAgreementZohoUpload,
+    onAgreementTaskCreate,
     onDateChange,
     onView,
     onDownload,
@@ -123,6 +125,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
   const handleEditAgreement = useCallback(() => onEditAgreement(agreement), [agreement, onEditAgreement]);
   const handleDelete = useCallback(() => onDelete('folder', agreement.id, agreement.agreementTitle), [agreement.id, agreement.agreementTitle, onDelete]);
   const handleZohoUpload = useCallback(() => onAgreementZohoUpload(agreement), [agreement, onAgreementZohoUpload]);
+  const handleTaskCreate = useCallback(() => onAgreementTaskCreate(agreement), [agreement, onAgreementTaskCreate]);
   const handleDateChange = useCallback((newDate: string) => onDateChange(agreement.id, newDate), [agreement.id, onDateChange]);
 
   return (
@@ -336,6 +339,30 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
 
               <button
                 style={{
+                  background: '#16a34a',
+                  border: '1px solid #15803d',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  color: '#fff',
+                  fontWeight: '500',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTaskCreate();
+                }}
+                title="Create a Bigin task for this agreement"
+              >
+                <FontAwesomeIcon icon={faTasks} style={{ fontSize: '10px' }} />
+                Task
+              </button>
+
+              <button
+                style={{
                   background: '#f3f4f6',
                   border: '1px solid #d1d5db',
                   borderRadius: '6px',
@@ -451,9 +478,10 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
     prevProps.agreement.latestUpdate === nextProps.agreement.latestUpdate &&
     prevProps.agreement.fileCount === nextProps.agreement.fileCount &&
     prevProps.isTrashView === nextProps.isTrashView &&
+    prevProps.onAgreementTaskCreate === nextProps.onAgreementTaskCreate &&
     JSON.stringify(prevProps.selectedFiles) === JSON.stringify(nextProps.selectedFiles) &&
     JSON.stringify(prevProps.statusChangeLoading) === JSON.stringify(nextProps.statusChangeLoading) &&
-    prevWatermarkStr === nextWatermarkStr 
+    prevWatermarkStr === nextWatermarkStr
   );
 });
 

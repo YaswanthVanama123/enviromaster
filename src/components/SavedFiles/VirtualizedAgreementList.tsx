@@ -19,6 +19,7 @@ interface VirtualizedAgreementListProps {
   onEditAgreement: (agreement: SavedFileGroup) => void;
   onDelete: (type: 'file' | 'folder', id: string, title: string, fileType?: string) => void;
   onAgreementZohoUpload: (agreement: SavedFileGroup) => void;
+  onAgreementTaskCreate: (agreement: SavedFileGroup) => void;
   onDateChange: (agreementId: string, newDate: string) => Promise<void>;
   onView: (file: SavedFileListItem, watermark: boolean) => void;
   onDownload: (file: SavedFileListItem, watermark: boolean) => void;
@@ -47,6 +48,7 @@ export const VirtualizedAgreementList = memo((props: VirtualizedAgreementListPro
     onEditAgreement,
     onDelete,
     onAgreementZohoUpload,
+    onAgreementTaskCreate,
     onDateChange,
     onView,
     onDownload,
@@ -115,6 +117,7 @@ export const VirtualizedAgreementList = memo((props: VirtualizedAgreementListPro
           onEditAgreement={onEditAgreement}
           onDelete={onDelete}
           onAgreementZohoUpload={onAgreementZohoUpload}
+          onAgreementTaskCreate={onAgreementTaskCreate}
           onDateChange={onDateChange}
           onView={onView}
           onDownload={onDownload}

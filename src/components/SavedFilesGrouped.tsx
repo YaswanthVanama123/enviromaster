@@ -10,6 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import EmailComposer, { type EmailData } from "./EmailComposer";
 import { ZohoUpload } from "./ZohoUpload";
+import { BiginTaskModal } from "./BiginTaskModal";
 import "./SavedFiles.css";
 import { getDocumentTypeForSavedFile } from "../utils/savedFileDocumentType";
 import { AgreementRow } from "./SavedFiles/AgreementRow";
@@ -90,6 +91,9 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
   const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
   const [currentZohoFile, setCurrentZohoFile] = useState<SavedFileListItem | null>(null);
 
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [currentTaskAgreement, setCurrentTaskAgreement] = useState<{ id: string; title: string } | null>(null);
+
   const [bulkZohoUploadOpen, setBulkZohoUploadOpen] = useState(false);
   const [selectedFilesForBulkUpload, setSelectedFilesForBulkUpload] = useState<SavedFileListItem[]>([]);
 
@@ -122,6 +126,11 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
 
   const handleAgreementZohoUpload = useCallback((group: SavedFileGroup) => {
     console.log('Agreement Zoho upload not implemented in SavedFilesGrouped');
+  }, []);
+
+  const handleAgreementTaskCreate = useCallback((group: SavedFileGroup) => {
+    setCurrentTaskAgreement({ id: group.id, title: group.agreementTitle });
+    setTaskModalOpen(true);
   }, []);
 
   const handleDateChange = useCallback(async (agreementId: string, newDate: string) => {
@@ -786,6 +795,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
               onEditAgreement={handleEditAgreement}
               onDelete={handleDelete}
               onAgreementZohoUpload={handleAgreementZohoUpload}
+              onAgreementTaskCreate={handleAgreementTaskCreate}
               onDateChange={handleDateChange}
               onView={handleView}
               onDownload={handleDownload}
@@ -871,6 +881,17 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
               message: "Successfully uploaded to Zoho Bigin!",
               type: "success"
             });
+          }}
+        />
+      )}
+
+      {taskModalOpen && currentTaskAgreement && (
+        <BiginTaskModal
+          agreementId={currentTaskAgreement.id}
+          agreementTitle={currentTaskAgreement.title}
+          onClose={() => { setTaskModalOpen(false); setCurrentTaskAgreement(null); }}
+          onSuccess={() => {
+            setToastMessage({ message: "Task created in Bigin!", type: "success" });
           }}
         />
       )}

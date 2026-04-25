@@ -17,5 +17,8 @@ export {
   type ZohoCompaniesResponse,
   type CreateCompanyRequest,
   type FirstTimeUploadRequest,
-  type UpdateUploadRequest
+  type UpdateUploadRequest,
+  type ZohoCreateTaskPayload,
+  type ZohoTask,
+  type ZohoUser
 } from "./zohoApi";
