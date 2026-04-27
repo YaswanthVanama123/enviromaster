@@ -208,7 +208,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
 
       const result = linkedCompany
         ? await zohoApi.createTaskForAgreement(agreementId, payload)
-        : await zohoApi.createTaskForCompany(company.id, payload);
+        : await zohoApi.createTaskForCompany(company.id, { ...payload, companyName: company.name, agreementId });
 
       if (result.success) { setStep("success"); onSuccess(); }
       else { setErrorMsg(result.error ?? "Task creation failed."); setStep("form"); }

@@ -176,6 +176,8 @@ export interface ZohoCreateTaskPayload {
   repeat?: boolean;
   repeatFrequency?: string;
   repeatUntil?: string;
+  companyName?: string;
+  agreementId?: string;
 }
 
 export interface ZohoTask {
