@@ -28,9 +28,11 @@ export const AdminPricingManager: React.FC = () => {
   const [selectedService, setSelectedService] = useState<ServiceConfig | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const handleExportPdf = async () => {
     setExportingPdf(true);
+    setExportError(null);
     try {
       const blob = await pdfApi.exportPricingCatalogPdf(configs, catalog);
       const url = URL.createObjectURL(blob);
@@ -39,8 +41,14 @@ export const AdminPricingManager: React.FC = () => {
       a.download = `pricing-catalog-${new Date().toISOString().slice(0, 10)}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Export PDF failed:", err);
+      if (err?.code === 'PUPPETEER_BUSY') {
+        setExportError('Export in progress — a PDF is already being generated. Please wait a moment and try again.');
+      } else {
+        setExportError('Failed to generate the pricing catalog PDF. Please try again.');
+      }
+      setTimeout(() => setExportError(null), 6000);
     } finally {
       setExportingPdf(false);
     }
@@ -115,6 +123,7 @@ export const AdminPricingManager: React.FC = () => {
 
         {error && <div className="apm-error" style={styles.error}>{error}</div>}
         {successMessage && <div className="apm-success" style={styles.success}>{successMessage}</div>}
+        {exportError && <div className="apm-export-error" style={styles.exportError}>{exportError}</div>}
 
         <div className="apm-top-actions" style={styles.topActions}>
           <button
@@ -350,6 +359,15 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#15803d",
     borderRadius: "8px",
     marginBottom: "16px",
+  },
+  exportError: {
+    padding: "12px 16px",
+    backgroundColor: "#fef2f2",
+    color: "#b91c1c",
+    border: "1px solid #fca5a5",
+    borderRadius: "8px",
+    marginBottom: "16px",
+    fontWeight: 500,
   },
   topActions: {
     marginBottom: "24px",

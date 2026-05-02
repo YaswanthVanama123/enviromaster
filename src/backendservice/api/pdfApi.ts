@@ -1067,7 +1067,15 @@ export const pdfApi = {
       headers,
       body: JSON.stringify({ services, catalog }),
     });
-    if (!res.ok) throw new Error(`Failed to export pricing catalog: ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      if (res.status === 429) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.error || 'A PDF export is already in progress. Please wait and try again.');
+        (err as any).code = 'PUPPETEER_BUSY';
+        throw err;
+      }
+      throw new Error(`Failed to export pricing catalog: ${res.status} ${res.statusText}`);
+    }
     return res.blob();
   },
 
@@ -1080,7 +1088,15 @@ export const pdfApi = {
       method: 'GET',
       headers,
     });
-    if (!res.ok) throw new Error(`Failed to export pricing catalog: ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      if (res.status === 429) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.error || 'A PDF export is already in progress. Please wait and try again.');
+        (err as any).code = 'PUPPETEER_BUSY';
+        throw err;
+      }
+      throw new Error(`Failed to export pricing catalog: ${res.status} ${res.statusText}`);
+    }
     return res.blob();
   },
 };
