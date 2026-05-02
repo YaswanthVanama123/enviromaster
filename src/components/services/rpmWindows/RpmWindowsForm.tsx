@@ -109,13 +109,16 @@ export const RpmWindowsForm: React.FC<
   };
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -191,7 +194,7 @@ export const RpmWindowsForm: React.FC<
       );
       const isActive = (form.smallQty ?? 0) > 0 || (form.mediumQty ?? 0) > 0 || (form.largeQty ?? 0) > 0 || hasCustomFieldValues;
 
-      const formatDollars = (value: number) => `$${value.toFixed(2)}`;
+      const formatDollars = (value: number) => `$${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       const frequencyLabel =
         typeof form.frequency === "string"
           ? form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)
@@ -550,7 +553,7 @@ export const RpmWindowsForm: React.FC<
           <input
             className="svc-in-box field-qty"
             name="customSmallTotal"
-            type="number"
+            type="text"
             min="0"
             readOnly
             step="1"
@@ -558,7 +561,8 @@ export const RpmWindowsForm: React.FC<
               'customSmallTotal',
               form.customSmallTotal !== undefined
                 ? form.customSmallTotal
-                : (form.smallQty * calc.effSmall)
+                : (form.smallQty * calc.effSmall),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -599,7 +603,7 @@ export const RpmWindowsForm: React.FC<
           <input
             className="svc-in-box field-qty"
             name="customMediumTotal"
-            type="number"
+            type="text"
             readOnly
             min="0"
             step="1"
@@ -607,7 +611,8 @@ export const RpmWindowsForm: React.FC<
               'customMediumTotal',
               form.customMediumTotal !== undefined
                 ? form.customMediumTotal
-                : (form.mediumQty * calc.effMedium)
+                : (form.mediumQty * calc.effMedium),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -649,14 +654,15 @@ export const RpmWindowsForm: React.FC<
             className="svc-in-box field-qty"
             name="customLargeTotal"
             readOnly
-            type="number"
+            type="text"
             min="0"
             step="1"
             value={getDisplayValue(
               'customLargeTotal',
               form.customLargeTotal !== undefined
                 ? form.customLargeTotal
-                : (form.largeQty * calc.effLarge)
+                : (form.largeQty * calc.effLarge),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -782,14 +788,15 @@ export const RpmWindowsForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
               name="customInstallationFee"
               value={getDisplayValue(
                 'customInstallationFee',
-                form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay
+                form.customInstallationFee !== undefined ? form.customInstallationFee : installationFeeDisplay,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -808,7 +815,7 @@ export const RpmWindowsForm: React.FC<
       <div className="svc-row">
         <label>Minimum Per Visit</label>
         <div className="svc-row-right">
-          <span className="svc-small">${calc.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+          <span className="svc-small">${calc.minimumChargePerVisit != null ? calc.minimumChargePerVisit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "0.00"}</span>
           <label className="svc-inline" style={{ marginLeft: '10px' }}>
             <input
               type="checkbox"
@@ -830,13 +837,14 @@ export const RpmWindowsForm: React.FC<
             <input
               className="svc-in"
               name="customPerVisitPrice"
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
               value={getDisplayValue(
                 'customPerVisitPrice',
-                form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice
+                form.customPerVisitPrice !== undefined ? form.customPerVisitPrice : quote.perVisitPrice,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -935,7 +943,7 @@ export const RpmWindowsForm: React.FC<
               <input
                 className="svc-in"
                 name="customMonthlyRecurring"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -943,7 +951,8 @@ export const RpmWindowsForm: React.FC<
                   'customMonthlyRecurring',
                   form.customMonthlyRecurring !== undefined
                     ? form.customMonthlyRecurring
-                    : calc.monthlyBillRated ?? 0
+                    : calc.monthlyBillRated ?? 0,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -967,7 +976,7 @@ export const RpmWindowsForm: React.FC<
               <input
                 className="svc-in"
                 name="customFirstMonthTotal"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -977,7 +986,8 @@ export const RpmWindowsForm: React.FC<
                     ? form.customFirstMonthTotal
                     : (form.isFirstTimeInstall
                       ? calc.firstVisitTotalRated ?? 0
-                      : calc.recurringPerVisitRated ?? 0)
+                      : calc.recurringPerVisitRated ?? 0),
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}

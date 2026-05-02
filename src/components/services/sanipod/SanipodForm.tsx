@@ -57,13 +57,16 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -713,7 +716,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-multi">@</span>
           <input
             className="svc-in svc-in-small field-qty"
-            type="number"
+            type="text"
             min="0"
             readOnly
             step="1"
@@ -722,7 +725,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               'customWeeklyPodRate',
               form.customWeeklyPodRate !== undefined
                 ? form.customWeeklyPodRate
-                : parseFloat(calc.effectiveRatePerPod.toFixed(2))
+                : parseFloat(calc.effectiveRatePerPod.toFixed(2)),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -734,7 +738,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-eq">=</span>
           <input
             className="svc-in svc-in-small field-qty"
-            type="number"
+            type="text"
             min="0"
             readOnly
             step="1"
@@ -743,7 +747,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               'customPodServiceTotal',
               form.customPodServiceTotal !== undefined
                 ? form.customPodServiceTotal
-                : parseFloat(calc.adjustedPodServiceTotal.toFixed(2))
+                : parseFloat(calc.adjustedPodServiceTotal.toFixed(2)),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -789,7 +794,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <span className="svc-eq">=</span>
           <input
             className="svc-in svc-in-small field-qty"
-            type="number"
+            type="text"
             readOnly
             min="0"
             step="1"
@@ -798,7 +803,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               'customExtraBagsTotal',
               form.customExtraBagsTotal !== undefined
                 ? form.customExtraBagsTotal
-                : parseFloat(calc.adjustedBagsTotal.toFixed(2))
+                : parseFloat(calc.adjustedBagsTotal.toFixed(2)),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -890,7 +896,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 <span>$</span>
                 <input
                   className="svc-in svc-in-small"
-                  type="number"
+                  type="text"
                   min="0"
                   readOnly
                   step="1"
@@ -899,7 +905,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                     'customInstallationFee',
                     form.customInstallationFee !== undefined
                       ? form.customInstallationFee
-                      : parseFloat(calc.installCost.toFixed(2))
+                      : parseFloat(calc.installCost.toFixed(2)),
+                    true
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}
@@ -934,7 +941,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <div className="svc-dollar">
             $<input
               className="svc-in svc-in-small"
-              type="number"
+              type="text"
               readOnly
               step="1"
               name="customMonthlyPrice"
@@ -942,7 +949,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 'customMonthlyPrice',
                 form.customMonthlyPrice !== undefined
                   ? form.customMonthlyPrice
-                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+                  : parseFloat(calc.adjustedMonthly.toFixed(2)),
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -972,7 +980,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         <div className="svc-dollar">
           $<input
             className="svc-in svc-in-small"
-            type="number"
+            type="text"
             min="0"
             readOnly
             step="1"
@@ -981,7 +989,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               'customPerVisitPrice',
               form.customPerVisitPrice !== undefined
                 ? form.customPerVisitPrice
-                : parseFloat(calc.adjustedPerVisit.toFixed(2))
+                : parseFloat(calc.adjustedPerVisit.toFixed(2)),
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -1009,7 +1018,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <div className="svc-dollar">
             $<input
               className="svc-in svc-in-small"
-              type="number"
+              type="text"
               readOnly
               step="1"
               name="customMonthlyPrice"
@@ -1017,7 +1026,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 'customMonthlyPrice',
                 form.customMonthlyPrice !== undefined
                   ? form.customMonthlyPrice
-                  : parseFloat(calc.adjustedMonthly.toFixed(2))
+                  : parseFloat(calc.adjustedMonthly.toFixed(2)),
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

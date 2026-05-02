@@ -50,13 +50,16 @@ export const StripWaxForm: React.FC<
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -532,7 +535,7 @@ export const StripWaxForm: React.FC<
         <label>Per Visit Total</label>
         <div className="svc-dollar">
           $<input
-            type="number"
+            type="text"
             min="0"
             readOnly
             step="1"
@@ -542,7 +545,8 @@ export const StripWaxForm: React.FC<
               'customPerVisit',
               form.customPerVisit !== undefined
                 ? form.customPerVisit
-                : calc.perVisit
+                : calc.perVisit,
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -564,7 +568,7 @@ export const StripWaxForm: React.FC<
           <label>First Visit Total</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               step="1"
               readOnly
@@ -574,7 +578,8 @@ export const StripWaxForm: React.FC<
                 'customMonthly',
                 form.customMonthly !== undefined
                   ? form.customMonthly
-                  : calc.monthly
+                  : calc.monthly,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -674,7 +679,7 @@ export const StripWaxForm: React.FC<
           <label>First Month Total</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -684,7 +689,8 @@ export const StripWaxForm: React.FC<
                 'customMonthly',
                 form.customMonthly !== undefined
                   ? form.customMonthly
-                  : calc.monthly
+                  : calc.monthly,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -706,7 +712,7 @@ export const StripWaxForm: React.FC<
           <label>Monthly Recurring</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -716,7 +722,8 @@ export const StripWaxForm: React.FC<
                 'customOngoingMonthly',
                 form.customOngoingMonthly !== undefined
                   ? form.customOngoingMonthly
-                  : calc.ongoingMonthly
+                  : calc.ongoingMonthly,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

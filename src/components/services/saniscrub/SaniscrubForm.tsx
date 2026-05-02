@@ -56,13 +56,16 @@ export const SaniscrubForm: React.FC<
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -514,7 +517,7 @@ export const SaniscrubForm: React.FC<
             readOnly
             value={
               fixtureLineDisplayAmount > 0
-                ? `$${fixtureLineDisplayAmount.toFixed(2)}`
+                ? `$${fixtureLineDisplayAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
                 : "$0.00"
             }
           />
@@ -542,7 +545,7 @@ export const SaniscrubForm: React.FC<
               title={`Rate for first ${calc.nonBathroomUnitSqFt} sq ft (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ {calc.nonBathroomUnitSqFt} sq ft (${((form.nonBathroomFirstUnitRate || 250) / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {calc.nonBathroomUnitSqFt} sq ft (${((form.nonBathroomFirstUnitRate || 250) / calc.nonBathroomUnitSqFt).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/sq ft)</span>
         </div>
       </div>
 
@@ -563,7 +566,7 @@ export const SaniscrubForm: React.FC<
               title={`Rate per additional ${calc.nonBathroomUnitSqFt} sq ft block (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ {calc.nonBathroomUnitSqFt} sq ft (${((form.nonBathroomAdditionalUnitRate || 125) / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {calc.nonBathroomUnitSqFt} sq ft (${((form.nonBathroomAdditionalUnitRate || 125) / calc.nonBathroomUnitSqFt).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/sq ft)</span>
         </div>
       </div>
 
@@ -611,7 +614,7 @@ export const SaniscrubForm: React.FC<
           </label>
           <span className="svc-small">
             {form.useExactNonBathroomSqft
-              ? `(Exact: $${form.nonBathroomFirstUnitRate} + extra sq ft × $${((form.nonBathroomAdditionalUnitRate || 125) / calc.nonBathroomUnitSqFt).toFixed(2)}/sq ft)`
+              ? `(Exact: $${form.nonBathroomFirstUnitRate} + extra sq ft × $${((form.nonBathroomAdditionalUnitRate || 125) / calc.nonBathroomUnitSqFt).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/sq ft)`
               : `(Block: $${form.nonBathroomFirstUnitRate} + blocks × $${form.nonBathroomAdditionalUnitRate})`}
           </span>
         </div>
@@ -681,7 +684,7 @@ export const SaniscrubForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -690,7 +693,8 @@ export const SaniscrubForm: React.FC<
                   'customInstallationFee',
                   form.customInstallationFee !== undefined
                     ? form.customInstallationFee
-                    : calc.installOneTime
+                    : calc.installOneTime,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -709,7 +713,7 @@ export const SaniscrubForm: React.FC<
       <div className="svc-row svc-row-charge">
         <label>Minimum Per Visit</label>
         <div className="svc-row-right">
-          <span className="svc-small">${(form.frequency === "monthly" || form.frequency === "twicePerMonth" ? form.minimumMonthly : form.minimumBimonthly)?.toFixed(2) ?? "0.00"}</span>
+          <span className="svc-small">${(form.frequency === "monthly" || form.frequency === "twicePerMonth" ? form.minimumMonthly : form.minimumBimonthly) != null ? (form.frequency === "monthly" || form.frequency === "twicePerMonth" ? form.minimumMonthly : form.minimumBimonthly)!.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "0.00"}</span>
           <label className="svc-inline" style={{ marginLeft: '10px' }}>
             <input
               type="checkbox"
@@ -731,7 +735,7 @@ export const SaniscrubForm: React.FC<
               className="svc-in"
               type="text"
               readOnly
-              value={calc.perVisitEffective.toFixed(2)}
+              value={calc.perVisitEffective.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
             />
           </div>
         </div>
@@ -851,7 +855,7 @@ export const SaniscrubForm: React.FC<
                 className="svc-in"
                 type="text"
                 readOnly
-                value={calc.perVisitEffective.toFixed(2)}
+                value={calc.perVisitEffective.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 title="Cost per recurring visit (after first visit)"
               />
             </div>

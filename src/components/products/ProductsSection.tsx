@@ -1408,7 +1408,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     fontWeight: '600',
                     color: '#059669'
                   }}>
-                    ${product.basePrice?.amount ? product.basePrice.amount.toFixed(2) : 'N/A'}
+                    ${product.basePrice?.amount ? product.basePrice.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A'}
                   </td>
                   <td className="center" style={{
                     padding: '12px 8px',
@@ -1555,7 +1555,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     fontWeight: '600',
                     color: '#059669'
                   }}>
-                    ${dispenser.basePrice?.amount ? dispenser.basePrice.amount.toFixed(2) : 'N/A'}
+                    ${dispenser.basePrice?.amount ? dispenser.basePrice.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A'}
                   </td>
                   <td className="center" style={{
                     padding: '12px 8px',
@@ -1569,7 +1569,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     fontWeight: '600',
                     color: '#dc2626'
                   }}>
-                    ${dispenser.warrantyPricePerUnit?.amount ? dispenser.warrantyPricePerUnit.amount.toFixed(2) : 'N/A'}
+                    ${dispenser.warrantyPricePerUnit?.amount ? dispenser.warrantyPricePerUnit.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'N/A'}
                   </td>
                   <td className="center" style={{
                     padding: '12px 8px',

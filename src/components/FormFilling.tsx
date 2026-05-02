@@ -358,12 +358,12 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               <div className="status-values">
                 <div className="status-value-item">
                   <span className="value-label">Current Contract</span>
-                  <span className="value-amount">${totalCurrentContract.toFixed(2)}</span>
+                  <span className="value-amount">${totalCurrentContract.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 <div className="status-divider">≤</div>
                 <div className="status-value-item">
                   <span className="value-label">Target (Original ×1.20)</span>
-                  <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
+                  <span className="value-amount">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
             </>
@@ -379,12 +379,12 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               <div className="status-values">
                 <div className="status-value-item">
                   <span className="value-label">Current Contract</span>
-                  <span className="value-amount">${totalCurrentContract.toFixed(2)}</span>
+                  <span className="value-amount">${totalCurrentContract.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
                 <div className="status-divider">≥</div>
                 <div className="status-value-item">
                   <span className="value-label">Target (Original ×1.20)</span>
-                  <span className="value-amount">${greenLineThreshold.toFixed(2)}</span>
+                  <span className="value-amount">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
             </>
@@ -750,15 +750,15 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
           <div className="pricing-breakdown">
             <div className="breakdown-row">
               <span className="breakdown-label">Original Contract Total</span>
-              <span className="breakdown-value original">${totalOriginalContract.toFixed(2)}</span>
+              <span className="breakdown-value original">${totalOriginalContract.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div className="breakdown-row">
               <span className="breakdown-label">Current Contract Total</span>
-              <span className="breakdown-value minimum">${totalCurrentContract.toFixed(2)}</span>
+              <span className="breakdown-value minimum">${totalCurrentContract.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div className="breakdown-row">
               <span className="breakdown-label">Green Line Target (+20%)</span>
-              <span className="breakdown-value target">${greenLineThreshold.toFixed(2)}</span>
+              <span className="breakdown-value target">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
 
             {}
@@ -779,7 +779,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
       {}
       <div className="contract-total-section">
         <div className="total-label">Total Service Agreement Total</div>
-        <div className="total-amount">${totalAmount.toFixed(2)}</div>
+        <div className="total-amount">${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
         <div className="total-breakdown">
           Sum of all active service contract totals (includes Refresh Power Scrub cost){!allServicesOneTime && <> across {globalContractMonths} month agreement</>}
           {(globalTripCharge > 0 || globalParkingCharge > 0) && (
@@ -795,8 +795,8 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                                  globalTripChargeFrequency === 0.08 ? 'Annually' :
                                  `${globalTripChargeFrequency}×/mo`;
                 return globalTripChargeFrequency === 0
-                  ? ` + Trip ($${globalTripCharge.toFixed(2)} - ${freqLabel})`
-                  : ` + Trip ($${globalTripCharge.toFixed(2)} × ${freqLabel})`;
+                  ? ` + Trip ($${globalTripCharge.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} - ${freqLabel})`
+                  : ` + Trip ($${globalTripCharge.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} × ${freqLabel})`;
               })()}
               {globalParkingCharge > 0 && (() => {
                 const freqLabel = globalParkingChargeFrequency === 0 ? 'One-time' :
@@ -809,8 +809,8 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                                  globalParkingChargeFrequency === 0.08 ? 'Annually' :
                                  `${globalParkingChargeFrequency}×/mo`;
                 return globalParkingChargeFrequency === 0
-                  ? ` + Parking ($${globalParkingCharge.toFixed(2)} - ${freqLabel})`
-                  : ` + Parking ($${globalParkingCharge.toFixed(2)} × ${freqLabel})`;
+                  ? ` + Parking ($${globalParkingCharge.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} - ${freqLabel})`
+                  : ` + Parking ($${globalParkingCharge.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} × ${freqLabel})`;
               })()}
             </span>
           )}
@@ -822,12 +822,12 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
         <div className="pricing-breakdown">
           <div className="breakdown-row">
             <span className="breakdown-label">Monthly Product Total</span>
-            <span className="breakdown-value product-monthly">${productMonthlyTotal.toFixed(2)}</span>
+            <span className="breakdown-value product-monthly">${productMonthlyTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
           {!allServicesOneTime && (
           <div className="breakdown-row">
             <span className="breakdown-label">Products × {globalContractMonths} Months</span>
-            <span className="breakdown-value product-contract">${productContractTotal.toFixed(2)}</span>
+            <span className="breakdown-value product-contract">${productContractTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
           )}
         </div>

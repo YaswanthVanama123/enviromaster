@@ -8,7 +8,7 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-const formatMoney = (n: number): string => `$${(isNaN(n) ? 0 : n).toFixed(2)}`;
+const formatMoney = (n: number): string => `$${(isNaN(n) ? 0 : n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 const safeNumber = (n: any): number => (typeof n === "number" && !isNaN(n)) ? n : 0;
 
 
@@ -274,13 +274,16 @@ export const SanicleanForm: React.FC<
   };
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -441,7 +444,7 @@ export const SanicleanForm: React.FC<
         form.facilityComponentsFrequency ||
         "TBD";
 
-      const formatDollars = (amount: number) => `$${amount.toFixed(2)}`;
+      const formatDollars = (amount: number) => `$${amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       type PdfExtra = {
         label: string;
         type?: "line" | "bold" | "atCharge";
@@ -1666,7 +1669,7 @@ export const SanicleanForm: React.FC<
       <div className="svc-row">
         <label>Minimum Per Visit</label>
         <div className="svc-row-right">
-          <span className="svc-small">${quote.minimumChargePerWeek?.toFixed(2) ?? "0.00"}</span>
+          <span className="svc-small">${quote.minimumChargePerWeek != null ? quote.minimumChargePerWeek.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "0.00"}</span>
           <label className="svc-inline" style={{ marginLeft: '10px' }}>
             <input
               type="checkbox"
@@ -1687,7 +1690,7 @@ export const SanicleanForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="number"
+              type="text"
               readOnly
               min="0"
               step="1"
@@ -1696,7 +1699,8 @@ export const SanicleanForm: React.FC<
                 'customBaseService',
                 form.customBaseService !== undefined
                   ? form.customBaseService
-                  : quote.breakdown.baseService
+                  : quote.breakdown.baseService,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -1723,7 +1727,7 @@ export const SanicleanForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 readOnly
                 min="0"
                 step="1"
@@ -1732,7 +1736,8 @@ export const SanicleanForm: React.FC<
                   'customFacilityComponents',
                   form.customFacilityComponents !== undefined
                     ? form.customFacilityComponents
-                    : quote.breakdown.facilityComponents
+                    : quote.breakdown.facilityComponents,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -1964,7 +1969,7 @@ export const SanicleanForm: React.FC<
                 className="svc-in"
                 type="text"
                 readOnly
-                value={quote.baseServiceMonthly?.toFixed(2) || '0.00'}
+                value={quote.baseServiceMonthly != null ? quote.baseServiceMonthly.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}
                 style={{
                   backgroundColor: 'white',
                   width: '100px'
@@ -1989,7 +1994,7 @@ export const SanicleanForm: React.FC<
                 className="svc-in"
                 type="text"
                 readOnly
-                value={quote.facilityComponentsMonthly?.toFixed(2) || '0.00'}
+                value={quote.facilityComponentsMonthly != null ? quote.facilityComponentsMonthly.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}
                 style={{
                   backgroundColor: 'white',
                   width: '100px'
@@ -2059,7 +2064,7 @@ export const SanicleanForm: React.FC<
                 className="svc-in"
                 type="text"
                 readOnly
-                value={totalPriceValue.toFixed(2)}
+                value={totalPriceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 style={{ width: "100px" }}
               />
             </div>

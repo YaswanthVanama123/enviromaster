@@ -235,11 +235,11 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
           <div className="svc-summary">
             <div className="svc-summary-row">
               <span>Per Visit</span>
-              <span>${quote.perVisitPrice.toFixed(2)}</span>
+              <span>${quote.perVisitPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div className="svc-summary-row">
               <span>Annual Price</span>
-              <span>${quote.annualPrice.toFixed(2)}</span>
+              <span>${quote.annualPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <ul className="svc-summary-list">
               {quote.detailsBreakdown.map((line) => (

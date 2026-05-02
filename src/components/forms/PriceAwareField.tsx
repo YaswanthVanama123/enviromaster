@@ -71,7 +71,7 @@ export default function PriceAwareField(props: Props) {
   return (
     <div className="price-field">
       <div className="pf__name">{row.displayName}</div>
-      <div className="pf__money">${price.total.toFixed(2)}</div>
+      <div className="pf__money">${price.total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
       {price.applied?.length > 0 && (
         <div className="pf__notes">{price.applied.join(" · ")}</div>
       )}

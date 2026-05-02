@@ -69,13 +69,16 @@ export const JanitorialForm: React.FC<
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -628,7 +631,7 @@ export const JanitorialForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="0.01"
@@ -637,7 +640,8 @@ export const JanitorialForm: React.FC<
                 'customPerVisit',
                 form.customPerVisit !== undefined
                   ? form.customPerVisit
-                  : calc?.contractTotal || 0
+                  : calc?.contractTotal || 0,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

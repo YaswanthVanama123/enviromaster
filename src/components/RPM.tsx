@@ -30,7 +30,7 @@ const tableStyle = {
 const thtd = { borderBottom: "1px solid #e6e6e6", padding: "10px 12px", textAlign: "left", verticalAlign: "middle" };
 const pill = { border: "1px solid #e6e6e6", borderRadius: 999, padding: "8px 12px", display: "inline-block" };
 
-const money = (n) => (isNaN(n) ? "$0.00" : `$${Number(n).toFixed(2)}`);
+const money = (n) => (isNaN(n) ? "$0.00" : `$${Number(n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
 const unmoney = (s) =>
   s && `${s}`.trim() !== "—" ? Number(String(s).replace(/[^0-9.\-]/g, "")) || 0 : null;
 

@@ -58,13 +58,16 @@ export const MicrofiberMoppingForm: React.FC<
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -901,7 +904,7 @@ export const MicrofiberMoppingForm: React.FC<
             <span>$</span>
             <input
               className="svc-in"
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -910,7 +913,8 @@ export const MicrofiberMoppingForm: React.FC<
                 'customPerVisitPrice',
                 form.customPerVisitPrice !== undefined
                   ? form.customPerVisitPrice
-                  : calc.perVisitPrice
+                  : calc.perVisitPrice,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -986,7 +990,8 @@ export const MicrofiberMoppingForm: React.FC<
                   'customMonthlyRecurring',
                   form.customMonthlyRecurring !== undefined
                     ? form.customMonthlyRecurring
-                    : calc.monthlyRecurring
+                    : calc.monthlyRecurring,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -1010,7 +1015,7 @@ export const MicrofiberMoppingForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -1019,7 +1024,8 @@ export const MicrofiberMoppingForm: React.FC<
                   'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
                     ? form.customFirstMonthPrice
-                    : calc.firstMonthPrice
+                    : calc.firstMonthPrice,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -1043,7 +1049,7 @@ export const MicrofiberMoppingForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -1052,7 +1058,8 @@ export const MicrofiberMoppingForm: React.FC<
                   'customFirstMonthPrice',
                   form.customFirstMonthPrice !== undefined
                     ? form.customFirstMonthPrice
-                    : calc.firstMonthPrice
+                    : calc.firstMonthPrice,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}

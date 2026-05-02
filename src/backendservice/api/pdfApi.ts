@@ -380,7 +380,7 @@ export const mapLogToSavedFileItem = (log: LogDocument, agreementTitle?: string)
     fileSize: Math.max(1000, log.totalChanges * 200),
     pdfStoredAt: null,
     hasPdf: true,
-    description: `Version ${log.versionNumber} changes: ${log.totalChanges} modifications ($${log.totalPriceImpact.toFixed(2)} impact)`,
+    description: `Version ${log.versionNumber} changes: ${log.totalChanges} modifications ($${log.totalPriceImpact.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} impact)`,
     versionNumber: log.versionNumber,
     versionStatus: undefined,
     isLatestVersion: false,

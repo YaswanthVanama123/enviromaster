@@ -324,8 +324,8 @@ export function useGreaseTrapCalc(initialData: GreaseTrapFormState) {
       monthlyTotal,
       contractTotal,
       detailsBreakdown: [
-        `Number of traps: ${form.numberOfTraps} @ $${form.perTrapRate.toFixed(2)}`,
-        `Size of traps (gallons): ${form.sizeOfTraps} @ $${form.perGallonRate.toFixed(2)}`,
+        `Number of traps: ${form.numberOfTraps} @ $${form.perTrapRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+        `Size of traps (gallons): ${form.sizeOfTraps} @ $${form.perGallonRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
         `Frequency: ${form.frequency}`,
       ],
     };

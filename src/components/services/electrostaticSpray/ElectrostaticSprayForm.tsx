@@ -60,13 +60,16 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -601,7 +604,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <span>=</span>
                   <span>$</span>
                   <input
-                    type="number"
+                    type="text"
                     min="0"
                     readOnly
                     step="0.01"
@@ -611,7 +614,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                       'customServiceCharge',
                       form.customServiceCharge !== undefined
                         ? form.customServiceCharge
-                        : calc.serviceCharge
+                        : calc.serviceCharge,
+                      true
                     )}
                     onChange={handleLocalChange}
                     onFocus={handleFocus}
@@ -665,7 +669,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   <span>=</span>
                   <span>$</span>
                   <input
-                    type="number"
+                    type="text"
                     min="0"
                     readOnly
                     step="0.01"
@@ -675,7 +679,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                       'customServiceCharge',
                       form.customServiceCharge !== undefined
                         ? form.customServiceCharge
-                        : calc.serviceCharge
+                        : calc.serviceCharge,
+                      true
                     )}
                     onChange={handleLocalChange}
                     onFocus={handleFocus}
@@ -759,7 +764,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               <span>$</span>
               <input
                 readOnly
-                type="number"
+                type="text"
                 min="0"
                 step="0.01"
                 name="customPerVisitPrice"
@@ -768,7 +773,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                   'customPerVisitPrice',
                   form.customPerVisitPrice !== undefined
                     ? form.customPerVisitPrice
-                    : calc.perVisit
+                    : calc.perVisit,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -825,7 +831,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   readOnly
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   name="customMonthlyRecurring"
@@ -834,7 +840,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customMonthlyRecurring',
                     form.customMonthlyRecurring !== undefined
                       ? form.customMonthlyRecurring
-                      : calc.monthlyRecurring
+                      : calc.monthlyRecurring,
+                    true
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}
@@ -858,7 +865,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   readOnly
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
@@ -867,7 +874,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customFirstMonthTotal',
                     form.customFirstMonthTotal !== undefined
                       ? form.customFirstMonthTotal
-                      : calc.contractTotal
+                      : calc.contractTotal,
+                    true
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}
@@ -891,7 +899,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span>$</span>
                 <input
                   readOnly
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   name="customFirstMonthTotal"
@@ -900,7 +908,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customFirstMonthTotal',
                     form.customFirstMonthTotal !== undefined
                       ? form.customFirstMonthTotal
-                      : calc.contractTotal
+                      : calc.contractTotal,
+                    true
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}
@@ -936,7 +945,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                 <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
                 <input
                   readOnly
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   name="customContractTotal"
@@ -945,7 +954,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customContractTotal',
                     form.customContractTotal !== undefined
                       ? form.customContractTotal
-                      : calc.contractTotal
+                      : calc.contractTotal,
+                    true
                   )}
                   onChange={handleLocalChange}
                   onFocus={handleFocus}

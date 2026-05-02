@@ -65,7 +65,7 @@ function formatPrimitive(key: string, value: unknown): { display: string; unit: 
   if (typeof value !== "number")  return { display: String(value), unit: "", vtype: "text" };
   const vtype = classifyKey(key);
   switch (vtype) {
-    case "dollar":     return { display: `$${value.toFixed(2)}`,  unit: "per visit",   vtype };
+    case "dollar":     return { display: `$${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,  unit: "per visit",   vtype };
     case "multiplier": return { display: `${value}×`,             unit: "multiplier",  vtype };
     case "percent":    return { display: `${value}%`,             unit: "percent",     vtype };
     case "months":     return { display: String(value),           unit: "months",      vtype };

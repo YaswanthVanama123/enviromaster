@@ -1031,7 +1031,7 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                         color: log.totalPriceImpact >= 0 ? '#059669' : '#dc2626',
                         marginBottom: '4px'
                       }}>
-                        {log.totalPriceImpact >= 0 ? '+' : ''}${log.totalPriceImpact?.toFixed(2) || '0.00'}
+                        {log.totalPriceImpact >= 0 ? '+' : ''}${log.totalPriceImpact != null ? log.totalPriceImpact.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}
                       </div>
                       <div style={{
                         fontSize: '12px',
@@ -1133,15 +1133,15 @@ export default function SavedFilesGrouped({ onDataLoaded }: SavedFilesGroupedPro
                               color: '#6b7280',
                               marginBottom: '2px'
                             }}>
-                              <span>${change.originalValue?.toFixed(2) || '0.00'}</span>
+                              <span>${change.originalValue != null ? change.originalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}</span>
                               <span>→</span>
-                              <span>${change.newValue?.toFixed(2) || '0.00'}</span>
+                              <span>${change.newValue != null ? change.newValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}</span>
                             </div>
                             <div style={{
                               fontWeight: '600',
                               color: change.changeAmount >= 0 ? '#059669' : '#dc2626'
                             }}>
-                              {change.changeAmount >= 0 ? '+' : ''}${change.changeAmount?.toFixed(2) || '0.00'}
+                              {change.changeAmount >= 0 ? '+' : ''}${change.changeAmount != null ? change.changeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}
                               {change.changePercentage !== undefined && change.changePercentage !== null && (
                                 <span style={{ marginLeft: '4px' }}>
                                   ({change.changePercentage >= 0 ? '+' : ''}{change.changePercentage.toFixed(1)}%)

@@ -67,7 +67,7 @@ export const PricingTablesView: React.FC = () => {
     if (field.unit) {
 
       if (field.unit === "$" || field.unit.startsWith("$")) {
-        return `$${field.value.toFixed(2)}`;
+        return `$${field.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       }
 
       return `${field.value.toFixed(2)} ${field.unit}`;
@@ -123,7 +123,7 @@ export const PricingTablesView: React.FC = () => {
     if (label.includes("rate") || label.includes("charge") || label.includes("price") ||
         label.includes("fee") || label.includes("minimum") || label.includes("credit") ||
         label.includes("addon") || label.includes("base") || label.includes("upgrade")) {
-      return `$${field.value.toFixed(2)}`;
+      return `$${field.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
 

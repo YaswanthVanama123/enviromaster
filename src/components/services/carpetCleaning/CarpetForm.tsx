@@ -41,13 +41,16 @@ export const CarpetForm: React.FC<
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -474,7 +477,7 @@ export const CarpetForm: React.FC<
               title={`Rate for first ${form.unitSqFt || 500} sq ft (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ {form.unitSqFt || 500} sq ft (${(((form.customFirstUnitRate ?? form.firstUnitRate) || 250) / (form.unitSqFt || 500)).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {form.unitSqFt || 500} sq ft (${(((form.customFirstUnitRate ?? form.firstUnitRate) || 250) / (form.unitSqFt || 500)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/sq ft)</span>
         </div>
       </div>
 
@@ -502,7 +505,7 @@ export const CarpetForm: React.FC<
               title={`Rate per additional ${form.unitSqFt || 500} sq ft block (from backend, editable)`}
             />
           </div>
-          <span className="svc-small">/ {form.unitSqFt || 500} sq ft (${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / (form.unitSqFt || 500)).toFixed(2)}/sq ft)</span>
+          <span className="svc-small">/ {form.unitSqFt || 500} sq ft (${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / (form.unitSqFt || 500)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/sq ft)</span>
         </div>
       </div>
 
@@ -567,7 +570,7 @@ export const CarpetForm: React.FC<
             <span>$</span>
             <input
               className="svc-in-box"
-              type="number"
+              type="text"
               readOnly
               min="0"
               step="1"
@@ -576,7 +579,8 @@ export const CarpetForm: React.FC<
                 'customPerVisitPrice',
                 form.customPerVisitPrice !== undefined
                   ? form.customPerVisitPrice
-                  : calc.perVisitCharge
+                  : calc.perVisitCharge,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -603,7 +607,7 @@ export const CarpetForm: React.FC<
           </label>
           <small style={{ color: "#666", fontSize: "11px", marginLeft: "10px" }}>
             {form.useExactSqft
-              ? `(Excess × $${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / (form.unitSqFt || 500)).toFixed(2)}/sq ft)`
+              ? `(Excess × $${(((form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125) / (form.unitSqFt || 500)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/sq ft)`
               : `(Excess in ${form.unitSqFt || 500} sq ft blocks × $${(form.customAdditionalUnitRate ?? form.additionalUnitRate) || 125})`}
           </small>
         </div>
@@ -669,7 +673,7 @@ export const CarpetForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -678,7 +682,8 @@ export const CarpetForm: React.FC<
                   'customInstallationFee',
                   form.customInstallationFee !== undefined
                     ? form.customInstallationFee
-                    : calc.installOneTime
+                    : calc.installOneTime,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -704,7 +709,7 @@ export const CarpetForm: React.FC<
         </label>
         <div className="svc-dollar">
           $<input
-            type="number"
+            type="text"
             min="0"
             step="1"
             readOnly
@@ -714,7 +719,8 @@ export const CarpetForm: React.FC<
               'customPerVisitPrice',
               form.customPerVisitPrice !== undefined
                 ? form.customPerVisitPrice
-                : calc.perVisitCharge
+                : calc.perVisitCharge,
+              true
             )}
             onChange={handleLocalChange}
             onFocus={handleFocus}
@@ -774,7 +780,7 @@ export const CarpetForm: React.FC<
           <label>Total Price</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -784,7 +790,8 @@ export const CarpetForm: React.FC<
                 'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
                   ? form.customFirstMonthPrice
-                  : calc.contractTotal
+                  : calc.contractTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -806,7 +813,7 @@ export const CarpetForm: React.FC<
           <label>First Visit Total</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -816,7 +823,8 @@ export const CarpetForm: React.FC<
                 'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
                   ? form.customFirstMonthPrice
-                  : calc.firstMonthTotal
+                  : calc.firstMonthTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -838,7 +846,7 @@ export const CarpetForm: React.FC<
           <label>First Month Total</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -848,7 +856,8 @@ export const CarpetForm: React.FC<
                 'customFirstMonthPrice',
                 form.customFirstMonthPrice !== undefined
                   ? form.customFirstMonthPrice
-                  : calc.firstMonthTotal
+                  : calc.firstMonthTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -870,7 +879,7 @@ export const CarpetForm: React.FC<
           <label>Recurring Month Total</label>
           <div className="svc-dollar">
             $<input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -880,7 +889,8 @@ export const CarpetForm: React.FC<
                 'customMonthlyRecurring',
                 form.customMonthlyRecurring !== undefined
                   ? form.customMonthlyRecurring
-                  : calc.monthlyTotal
+                  : calc.monthlyTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -915,7 +925,7 @@ export const CarpetForm: React.FC<
             </select>
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
             <input
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -925,7 +935,8 @@ export const CarpetForm: React.FC<
                 'customContractTotal',
                 form.customContractTotal !== undefined
                   ? form.customContractTotal
-                  : calc.contractTotal
+                  : calc.contractTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}
