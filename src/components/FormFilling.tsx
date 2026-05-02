@@ -168,6 +168,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
     setGlobalContractMonths,
     getTotalAgreementAmount,
     getTotalOriginalContractTotal,
+    getTotalPerVisitAmount,
     allServicesOneTime,
     globalTripCharge,
     setGlobalTripCharge,
@@ -188,6 +189,9 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const totalAmount = getTotalAgreementAmount();
   const totalCurrentContract = getTotalAgreementAmount();
   const totalOriginalContract = getTotalOriginalContractTotal();
+  const totalPerVisit = getTotalPerVisitAmount();
+  const CROSS_SERVICE_MIN_PER_VISIT = 50;
+  const perVisitMeetsMinimum = totalPerVisit >= CROSS_SERVICE_MIN_PER_VISIT;
 
   const [pricingIndicator, setpricingIndicator] = useState<'red' | 'green'>('red');
   const [greenLineThreshold, setGreenLineThreshold] = useState(0);
@@ -772,6 +776,40 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 }
               </span>
             </div>
+
+            {}
+            {!allServicesOneTime && totalPerVisit > 0 && (
+              <>
+                <div className="breakdown-divider"></div>
+                <div className={`cross-service-minimum-banner ${perVisitMeetsMinimum ? 'meets-minimum' : 'below-minimum'}`}>
+                  <div className="cross-min-header">
+                    <FontAwesomeIcon
+                      icon={perVisitMeetsMinimum ? faCheckCircle : faExclamationTriangle}
+                      className="cross-min-icon"
+                    />
+                    <span className="cross-min-title">Cross-Service Per Visit Minimum</span>
+                  </div>
+                  <div className="cross-min-rows">
+                    <div className="cross-min-row">
+                      <span className="cross-min-label">Total Per Visit (all services)</span>
+                      <span className={`cross-min-value ${perVisitMeetsMinimum ? 'value-ok' : 'value-warn'}`}>
+                        ${totalPerVisit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                      </span>
+                    </div>
+                    <div className="cross-min-row">
+                      <span className="cross-min-label">Required Minimum Per Visit</span>
+                      <span className="cross-min-value value-target">$50.00</span>
+                    </div>
+                  </div>
+                  <div className={`cross-min-status ${perVisitMeetsMinimum ? 'status-ok' : 'status-warn'}`}>
+                    {perVisitMeetsMinimum
+                      ? `Meets minimum — $${(totalPerVisit - CROSS_SERVICE_MIN_PER_VISIT).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} above $50.00`
+                      : `Below minimum — $${(CROSS_SERVICE_MIN_PER_VISIT - totalPerVisit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} short of $50.00`
+                    }
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -896,6 +934,7 @@ function FormFillingContent({
   const {
     servicesState,
     getTotalAgreementAmount,
+    getTotalPerVisitAmount,
     getTotalOriginalContractTotal,
     globalContractMonths,
     globalTripCharge,

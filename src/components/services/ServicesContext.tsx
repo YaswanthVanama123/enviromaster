@@ -36,11 +36,12 @@ interface ServicesContextValue {
 
   globalContractMonths: number; 
   setGlobalContractMonths: (months: number) => void;
-  getTotalAgreementAmount: () => number; 
-  allServicesOneTime: boolean; 
+  getTotalAgreementAmount: () => number;
+  getTotalPerVisitAmount: () => number;
+  allServicesOneTime: boolean;
 
 
-  getTotalOriginalContractTotal: () => number; 
+  getTotalOriginalContractTotal: () => number;
 
 
   globalTripCharge: number; 
@@ -269,6 +270,26 @@ export const ServicesProvider: React.FC<{
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
 
+  const getTotalPerVisitAmount = useCallback((): number => {
+    let totalPerVisit = 0;
+    Object.keys(servicesState).forEach((serviceName) => {
+      const serviceData = servicesState[serviceName as keyof ServicesState];
+      if (serviceData?.isActive && !isOneTimeService(serviceData)) {
+        const perVisit =
+          (typeof serviceData.perVisit === 'number' && serviceData.perVisit > 0
+            ? serviceData.perVisit
+            : typeof serviceData.totals?.perVisit?.amount === 'number' && serviceData.totals.perVisit.amount > 0
+              ? serviceData.totals.perVisit.amount
+              : 0);
+        if (perVisit > 0) {
+          totalPerVisit += perVisit;
+        }
+      }
+    });
+    return totalPerVisit;
+  }, [servicesState]);
+
+
   const getTotalOriginalContractTotal = useCallback((): number => {
     let totalOriginal = 0;
 
@@ -344,6 +365,7 @@ export const ServicesProvider: React.FC<{
       globalContractMonths,
       setGlobalContractMonths,
       getTotalAgreementAmount,
+      getTotalPerVisitAmount,
       allServicesOneTime,
 
       getTotalOriginalContractTotal,
@@ -358,7 +380,7 @@ export const ServicesProvider: React.FC<{
       globalParkingChargeFrequency,
       setGlobalParkingChargeFrequency,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); 
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); 
 
   return (
     <ServicesContext.Provider value={value}>
