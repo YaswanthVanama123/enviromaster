@@ -781,7 +781,7 @@ export const SaniscrubForm: React.FC<
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
+            {calc.contractTotal > calc.originalContractTotal * 1.30 ? (
                 <span style={{
                   color: '#388e3c',
                   fontSize: '13px',

@@ -245,7 +245,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
 
 
   useEffect(() => {
-    const threshold = totalOriginalContract * 1.20;
+    const threshold = totalOriginalContract * 1.30;
     setGreenLineThreshold(threshold);
     setpricingIndicator(totalCurrentContract > threshold ? 'green' : 'red');
   }, [totalCurrentContract, totalOriginalContract]);
@@ -353,7 +353,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               </span>
               <div className="status-info">
                 <div className="status-title">Red Line Pricing</div>
-                <div className="status-subtitle">Below 20% above original — requires approval</div>
+                <div className="status-subtitle">Below 30% above original — requires approval</div>
               </div>
               <div className="status-values">
                 <div className="status-value-item">
@@ -362,7 +362,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 </div>
                 <div className="status-divider">≤</div>
                 <div className="status-value-item">
-                  <span className="value-label">Target (Original ×1.20)</span>
+                  <span className="value-label">Target (Original ×1.30)</span>
                   <span className="value-amount">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
@@ -374,7 +374,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               </span>
               <div className="status-info">
                 <div className="status-title">Green Line Pricing</div>
-                <div className="status-subtitle">20%+ above original — auto approved</div>
+                <div className="status-subtitle">30%+ above original — auto approved</div>
               </div>
               <div className="status-values">
                 <div className="status-value-item">
@@ -383,7 +383,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 </div>
                 <div className="status-divider">≥</div>
                 <div className="status-value-item">
-                  <span className="value-label">Target (Original ×1.20)</span>
+                  <span className="value-label">Target (Original ×1.30)</span>
                   <span className="value-amount">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
@@ -757,7 +757,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
               <span className="breakdown-value minimum">${totalCurrentContract.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div className="breakdown-row">
-              <span className="breakdown-label">Green Line Target (+20%)</span>
+              <span className="breakdown-label">Green Line Target (+30%)</span>
               <span className="breakdown-value target">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
 
@@ -929,7 +929,7 @@ function FormFillingContent({
 
 
   const calculatePricingStatus = useCallback((): 'red' | 'green' | 'neutral' => {
-    const threshold = totalOriginalContract * 1.20;
+    const threshold = totalOriginalContract * 1.30;
 
     if (totalCurrentContract > threshold) {
       return 'green';

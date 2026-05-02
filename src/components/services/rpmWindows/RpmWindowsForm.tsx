@@ -882,7 +882,7 @@ export const RpmWindowsForm: React.FC<
         <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {calc.contractTotalRated > calc.originalContractTotal * 1.20 ? (
+            {calc.contractTotalRated > calc.originalContractTotal * 1.30 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',

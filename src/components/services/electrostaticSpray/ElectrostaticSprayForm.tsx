@@ -792,7 +792,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
               <div className="svc-field">
-                {calc.contractTotal > calc.originalContractTotal * 1.20 ? (
+                {calc.contractTotal > calc.originalContractTotal * 1.30 ? (
                   <span style={{
                     color: '#388e3c',
                     fontSize: '13px',

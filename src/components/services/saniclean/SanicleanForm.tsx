@@ -1929,7 +1929,7 @@ export const SanicleanForm: React.FC<
         <div className="svc-row" style={{ paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {(servicesContext?.getTotalAgreementAmount() ?? 0) > (servicesContext?.getTotalOriginalContractTotal() ?? 0) * 1.20 ? (
+            {(servicesContext?.getTotalAgreementAmount() ?? 0) > (servicesContext?.getTotalOriginalContractTotal() ?? 0) * 1.30 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',

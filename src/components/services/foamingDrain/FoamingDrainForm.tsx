@@ -1363,7 +1363,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
               <div className="svc-field">
-                {quote.contractTotal > quote.originalContractTotal * 1.20 ? (
+                {quote.contractTotal > quote.originalContractTotal * 1.30 ? (
                   <span style={{
                     color: '#388e3c',
                     fontSize: '13px',
