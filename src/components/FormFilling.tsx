@@ -28,6 +28,7 @@ import type { ToastType } from "./admin/Toast";
 import { pdfApi } from "../backendservice/api";
 import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
+import { zohoApi } from "../backendservice/api/zohoApi";
 import { useAllServicePricing } from "../backendservice/hooks";
 import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
 import { ServiceAgreement } from "./ServiceAgreement";
@@ -1799,6 +1800,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           message: `PDF created successfully! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval before finalization.`,
           type: "warning"
         });
+        zohoApi.createAutoApprovalTask(documentId, payload?.headerTitle || 'Agreement').catch(() => {});
       } else {
         setToastMessage({
           message: "First version (v1) created and approved successfully! ✅ Green Line pricing.",
@@ -1918,6 +1920,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             message: `Agreement created! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval before finalization.`,
             type: "warning"
           });
+          zohoApi.createAutoApprovalTask(newId, payloadToSend.headerTitle || 'Agreement').catch(() => {});
         } else {
           setToastMessage({
             message: "Agreement created and approved successfully! ✅ Green Line pricing.",
@@ -1994,6 +1997,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             : `Version ${result.version?.versionNumber} created! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval.`,
           type: "warning"
         });
+        zohoApi.createAutoApprovalTask(documentId, payload?.headerTitle || 'Agreement').catch(() => {});
       } else {
         setToastMessage({
           message: replaceRecent

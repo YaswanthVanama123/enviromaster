@@ -430,4 +430,16 @@ export const zohoApi = {
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
+
+  async createAutoApprovalTask(
+    agreementId: string,
+    agreementTitle: string
+  ): Promise<{ success: boolean; skipped?: boolean; task?: ZohoTask }> {
+    const res = await apiClient.post<{ success: boolean; skipped?: boolean; task?: ZohoTask }>(
+      `/api/zoho-upload/${agreementId}/auto-approval-task`,
+      { agreementTitle }
+    );
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
 };

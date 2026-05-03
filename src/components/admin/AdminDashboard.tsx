@@ -5,11 +5,12 @@ import { PricingTablesView } from "./PricingTablesView";
 import { ServiceConfigManager } from "./ServiceConfigManager";
 import { ProductCatalogManager } from "./ProductCatalogManager";
 import { PricingBackupManager } from "./PricingBackupManager";
+import { ApprovalTaskSettings } from "./ApprovalTaskSettings";
 import { pdfApi } from "../../backendservice/api/pdfApi";
-import { MdAttachMoney, MdSettings, MdInventory, MdBackup } from "react-icons/md";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces } from "react-icons/md";
 import "./AdminDashboard.css";
 
-type TabType = "pricing" | "services" | "products" | "backup";
+type TabType = "pricing" | "services" | "products" | "backup" | "workflow";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -48,9 +49,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/backup') || path.includes('/backup/'))) {
         return "backup";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/workflow') || path.includes('/workflow/'))) {
+        return "workflow";
+      }
 
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products", "backup"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
@@ -63,9 +67,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/pricing-tables/backup')) {
       return "backup";
     }
+    if (path.includes('/pricing-tables/workflow')) {
+      return "workflow";
+    }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products", "backup"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -174,6 +181,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <MdBackup size={20} style={{ marginRight: "8px" }} /> Backup Management
           </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "workflow" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("workflow")}
+          >
+            <MdWorkspaces size={20} style={{ marginRight: "8px" }} /> Workflow
+          </button>
         </div>
         <button
           style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
@@ -208,6 +225,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             parentPath={parentPath ? `${parentPath}/backup` : '/pricing-tables/backup'}
           />
         )}
+        {activeTab === "workflow" && <ApprovalTaskSettings />}
       </div>
     </div>
   );

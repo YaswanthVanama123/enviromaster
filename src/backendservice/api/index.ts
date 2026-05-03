@@ -7,6 +7,8 @@ export { manualUploadApi } from "./manualUploadApi";
 export { pricingApi } from "./pricingApi";
 export { emailApi } from "./emailApi";
 export { serviceAgreementTemplateApi } from "./serviceAgreementTemplateApi";
+export { adminSettingsApi } from "./adminSettingsApi";
+export type { AdminSettings } from "./adminSettingsApi";
 export {
   zohoApi,
   type ZohoCompany,
