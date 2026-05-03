@@ -192,6 +192,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const totalOriginalContract = getTotalOriginalContractTotal();
   const totalPerVisit = getTotalPerVisitAmount();
   const CROSS_SERVICE_MIN_PER_VISIT = 50;
+  const effectiveTotalAmount = totalAmount > 0 ? Math.max(totalAmount, CROSS_SERVICE_MIN_PER_VISIT) : 0;
   const perVisitMeetsMinimum = totalPerVisit >= CROSS_SERVICE_MIN_PER_VISIT;
 
   const [pricingIndicator, setpricingIndicator] = useState<'red' | 'green'>('red');
@@ -818,7 +819,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
       {}
       <div className="contract-total-section">
         <div className="total-label">Total Service Agreement Total</div>
-        <div className="total-amount">${totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+        <div className="total-amount">${effectiveTotalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
         <div className="total-breakdown">
           Sum of all active service contract totals (includes Refresh Power Scrub cost){!allServicesOneTime && <> across {globalContractMonths} month agreement</>}
           {(globalTripCharge > 0 || globalParkingCharge > 0) && (
