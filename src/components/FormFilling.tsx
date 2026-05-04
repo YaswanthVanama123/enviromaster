@@ -755,7 +755,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
 
           <div className="pricing-breakdown">
             <div className="breakdown-row">
-              <span className="breakdown-label">Original Contract Total</span>
+              <span className="breakdown-label">Redline Price Charge</span>
               <span className="breakdown-value original">${totalOriginalContract.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
             <div className="breakdown-row">
