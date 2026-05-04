@@ -1052,12 +1052,13 @@ export const RpmWindowsForm: React.FC<
               <input
                 className="svc-in"
                 name="customAnnualPrice"
-                type="number"
+                type="text"
                 min="0"
                 step="1"
                 value={getDisplayValue(
                   'customAnnualPrice',
-                  form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice ?? 0
+                  form.customAnnualPrice !== undefined ? form.customAnnualPrice : quote.annualPrice ?? 0,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
