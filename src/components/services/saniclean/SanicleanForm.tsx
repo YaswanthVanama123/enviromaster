@@ -1762,7 +1762,7 @@ export const SanicleanForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 step="1"
                 name="customSoapUpgrade"
@@ -1770,7 +1770,8 @@ export const SanicleanForm: React.FC<
                   'customSoapUpgrade',
                   form.customSoapUpgrade !== undefined
                     ? form.customSoapUpgrade
-                    : quote.breakdown.soapUpgrade
+                    : quote.breakdown.soapUpgrade,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -1828,7 +1829,7 @@ export const SanicleanForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 step="1"
                 name="customMicrofiberMopping"
@@ -1836,7 +1837,8 @@ export const SanicleanForm: React.FC<
                   'customMicrofiberMopping',
                   form.customMicrofiberMopping !== undefined
                     ? form.customMicrofiberMopping
-                    : quote.breakdown.microfiberMopping
+                    : quote.breakdown.microfiberMopping,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -1861,7 +1863,7 @@ export const SanicleanForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 step="1"
                 name="customWarrantyFees"
@@ -1869,7 +1871,8 @@ export const SanicleanForm: React.FC<
                   'customWarrantyFees',
                   form.customWarrantyFees !== undefined
                     ? form.customWarrantyFees
-                    : quote.breakdown.warrantyFees
+                    : quote.breakdown.warrantyFees,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
@@ -2024,7 +2027,7 @@ export const SanicleanForm: React.FC<
             </select>
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
             <input
-              type="number"
+              type="text"
               min="0"
               step="1"
               name="customContractTotal"
@@ -2033,7 +2036,8 @@ export const SanicleanForm: React.FC<
                 'customContractTotal',
                 form.customContractTotal !== undefined
                   ? form.customContractTotal
-                  : contractTotal
+                  : contractTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

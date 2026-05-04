@@ -884,7 +884,7 @@ export const MicrofiberMoppingForm: React.FC<
         <div className="svc-row">
           <label>Minimum Per Visit</label>
           <div className="svc-row-right">
-            <span className="svc-small">${calc.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+            <span className="svc-small">${calc.minimumChargePerVisit?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}</span>
             <label className="svc-inline" style={{ marginLeft: '10px' }}>
               <input
                 type="checkbox"
@@ -1083,11 +1083,11 @@ export const MicrofiberMoppingForm: React.FC<
               <span>$</span>
               <input
                 className="svc-in"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
-                value={calc.perVisitPrice.toFixed(2)}
+                value={calc.perVisitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 style={{ border: 'none' }}
               />
             </div>

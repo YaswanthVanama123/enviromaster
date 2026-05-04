@@ -13,7 +13,7 @@ const formatNumber = (num: number | undefined): string => {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
   }
-  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const FIELD_ORDER = {

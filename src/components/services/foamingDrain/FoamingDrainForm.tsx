@@ -43,14 +43,14 @@ interface FoamingDrainFormProps {
 }
 
 
-const formatAmount = (n: number): string => (n > 0 ? n.toFixed(2) : "");
-
+const formatAmount = (n: number): string =>
+  n > 0 ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
 const formatNumber = (num: number): string => {
   if (!Number.isFinite(num)) {
     return "0";
   }
-  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
@@ -82,13 +82,16 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
 
 
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
+  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
       return editingValues[fieldName];
     }
 
-    return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
+    if (calculatedValue === undefined) return '';
+    return formatted
+      ? calculatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : calculatedValue.toFixed(2);
   };
 
 
@@ -1162,7 +1165,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   {}
                   <input
                     readOnly
-                    type="number"
+                    type="text"
                     min="0"
                     step="0.01"
                     name="customPlumbingTotal"
@@ -1171,7 +1174,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                       'customPlumbingTotal',
                       state.customPlumbingTotal !== undefined
                         ? state.customPlumbingTotal
-                        : parseFloat(formatAmount(breakdown.weeklyPlumbing) || '0')
+                        : breakdown.weeklyPlumbing,
+                      true
                     )}
                     style={{
                       backgroundColor: state.customPlumbingTotal !== undefined ? '#fffacd' : 'white',
@@ -1249,7 +1253,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="0.01"
@@ -1259,7 +1263,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   'customInstallationTotal',
                   state.customInstallationTotal !== undefined
                     ? state.customInstallationTotal
-                    : parseFloat(formatAmount(quote.installation) || '0')
+                    : quote.installation,
+                  true
                 )}
                 style={{
                   backgroundColor: state.customInstallationTotal !== undefined ? '#fffacd' : 'white',
@@ -1284,7 +1289,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <span>$</span>
                 <input
                   readOnly
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   name="customFirstMonthPrice"
@@ -1293,7 +1298,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     'customFirstMonthPrice',
                     state.customFirstMonthPrice !== undefined
                       ? state.customFirstMonthPrice
-                      : parseFloat(formatAmount(quote.firstVisitPrice) || '0')
+                      : quote.firstVisitPrice,
+                    true
                   )}
                   style={{
                     backgroundColor: state.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -1310,7 +1316,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <span>Minimum Per Visit</span>
             </div>
             <div className="svc-field">
-              <span className="svc-small">${quote.minimumChargePerVisit?.toFixed(2) ?? "0.00"}</span>
+              <span className="svc-small">${quote.minimumChargePerVisit?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}</span>
               <label className="svc-inline" style={{ marginLeft: '10px' }}>
                 <input
                   type="checkbox"
@@ -1338,7 +1344,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-field svc-dollar">
               <span>$</span>
               <input
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="0.01"
@@ -1348,7 +1354,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   'customWeeklyService',
                   state.customWeeklyService !== undefined
                     ? state.customWeeklyService
-                    : parseFloat(formatAmount(quote.weeklyTotal) || '0')
+                    : quote.weeklyTotal,
+                  true
                 )}
                 style={{
                   backgroundColor: state.customWeeklyService !== undefined ? '#fffacd' : 'white',
@@ -1403,7 +1410,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <span>$</span>
                 <input
                   readOnly
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   name="customWeeklyService"
@@ -1412,7 +1419,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     'customWeeklyService',
                     state.customWeeklyService !== undefined
                       ? state.customWeeklyService
-                      : quote.contractTotal
+                      : quote.contractTotal,
+                    true
                   )}
                   style={{
                     backgroundColor: state.customWeeklyService !== undefined ? '#fffacd' : 'white',
@@ -1438,7 +1446,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <div className="svc-field svc-dollar">
                 <span>$</span>
                 <input
-                  type="number"
+                  type="text"
                   min="0"
                   step="0.01"
                   readOnly
@@ -1448,7 +1456,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     'customFirstMonthPrice',
                     state.customFirstMonthPrice !== undefined
                       ? state.customFirstMonthPrice
-                      : parseFloat(formatAmount(quote.firstMonthPrice) || '0')
+                      : quote.firstMonthPrice,
+                    true
                   )}
                   style={{
                     backgroundColor: state.customFirstMonthPrice !== undefined ? '#fffacd' : 'white',
@@ -1473,7 +1482,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               <div className="svc-field svc-dollar">
                 <span>$</span>
                 <input
-                  type="number"
+                  type="text"
                   min="0"
                   readOnly
                   step="0.01"
@@ -1483,7 +1492,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     'customMonthlyRecurring',
                     state.customMonthlyRecurring !== undefined
                       ? state.customMonthlyRecurring
-                      : parseFloat(formatAmount(quote.monthlyRecurring) || '0')
+                      : quote.monthlyRecurring,
+                    true
                   )}
                   style={{
                     backgroundColor: state.customMonthlyRecurring !== undefined ? '#fffacd' : 'white',
@@ -1565,7 +1575,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                 <div className="svc-field svc-dollar" style={{ display: 'inline-flex', alignItems: 'center' }}>
                   <span style={{ marginRight: '4px' }}>$</span>
                   <input
-                    type="number"
+                    type="text"
                     min="0"
                     readOnly
                     step="0.01"
@@ -1579,7 +1589,8 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                       'customContractTotal',
                       state.customContractTotal !== undefined
                         ? state.customContractTotal
-                        : parseFloat(formatAmount(quote.annualRecurring) || '0')
+                        : quote.annualRecurring,
+                      true
                     )}
                     title="Contract total"
                   />

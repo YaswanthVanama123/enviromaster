@@ -134,11 +134,11 @@ export const StripWaxForm: React.FC<
 
 
   const formatDisplayNumber = (value: number | undefined): string => {
-    return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+    return Number.isFinite(value) ? (value as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
   };
 
   const formatCalcValue = (value: number | undefined): string => {
-    return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+    return Number.isFinite(value) ? (value as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
   };
 
   const generateContractMonths = () => {
@@ -758,7 +758,7 @@ export const StripWaxForm: React.FC<
             </select>
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
             <input
-              type="number"
+              type="text"
             min="0"
               step="1"
               name="customContractTotal"
@@ -767,7 +767,8 @@ export const StripWaxForm: React.FC<
                 'customContractTotal',
                 form.customContractTotal !== undefined
                   ? form.customContractTotal
-                  : calc.contractTotal
+                  : calc.contractTotal,
+                true
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

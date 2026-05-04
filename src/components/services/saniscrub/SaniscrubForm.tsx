@@ -27,7 +27,7 @@ const FIELD_ORDER = {
 
 
 const formatNumber = (num: number): string => {
-  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 export const SaniscrubForm: React.FC<
   ServiceInitialData<SaniscrubFormState>
@@ -592,7 +592,7 @@ export const SaniscrubForm: React.FC<
               className="svc-in-box"
               type="text"
               readOnly
-              value={nonBathroomLineDisplayAmount.toFixed(2)}
+              value={nonBathroomLineDisplayAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               title="Calculated non-bathroom area total per visit"
             />
           </div>
@@ -751,7 +751,7 @@ export const SaniscrubForm: React.FC<
             <input
               className="svc-in"
               name="customFirstMonthPrice"
-              type="number"
+              type="text"
               min="0"
               readOnly
               step="1"
@@ -759,8 +759,8 @@ export const SaniscrubForm: React.FC<
                 editingValues['customFirstMonthPrice'] !== undefined
                   ? editingValues['customFirstMonthPrice']
                   : (form.customFirstMonthPrice !== undefined
-                      ? form.customFirstMonthPrice.toFixed(2)
-                      : calc.firstMonthTotal.toFixed(2))
+                      ? form.customFirstMonthPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                      : calc.firstMonthTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
               }
               onChange={handleLocalChange}
               onFocus={handleFocus}
@@ -821,7 +821,7 @@ export const SaniscrubForm: React.FC<
               <input
                 className="svc-in"
                 name="customMonthlyRecurring"
-                type="number"
+                type="text"
                 min="0"
                 readOnly
                 step="1"
@@ -948,7 +948,7 @@ export const SaniscrubForm: React.FC<
             <div className="svc-dollar">
               <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$</span>
               <input
-                type="number"
+                type="text"
                 min="0"
                 step="1"
                 name="customContractTotal"
@@ -957,7 +957,8 @@ export const SaniscrubForm: React.FC<
                   'customContractTotal',
                   form.customContractTotal !== undefined
                     ? form.customContractTotal
-                    : calc.annualTotal
+                    : calc.annualTotal,
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}

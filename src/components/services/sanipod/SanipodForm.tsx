@@ -9,7 +9,10 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
+const fmt = (n: number): string =>
+  n > 0
+    ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "0.00";
 
 const FIELD_ORDER = {
   frequency: 1,
@@ -521,8 +524,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     const num = Number(value);
     return Number.isFinite(num) ? num : 0;
   };
-  const formatRateLabel = (value: number | string | undefined) => `$${normalizeRate(value).toFixed(2)}`;
-  const formatRatePlain = (value: number | string | undefined) => normalizeRate(value).toFixed(2);
+  const formatRateLabel = (value: number | string | undefined) => `$${normalizeRate(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatRatePlain = (value: number | string | undefined) => normalizeRate(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const customRateActive = form.customWeeklyPodRate !== undefined;
   const effectiveRuleLabel = customRateActive
     ? formatRateLabel(form.customWeeklyPodRate)
@@ -928,7 +931,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           <label>First Visit Total</label>
           <div className="svc-dollar">
             <span className="svc-dollar">
-              $  {parseFloat(calc.firstVisit.toFixed(2))}
+              $  {calc.firstVisit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -1081,7 +1084,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               className="svc-in svc-in-small"
               type="text"
               readOnly
-              value={calc.ongoingMonthly.toFixed(2)}
+              value={calc.ongoingMonthly.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               style={{
                 backgroundColor: '#f5f5f5',
                 border: 'none',
@@ -1112,14 +1115,15 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             <div className="svc-dollar">
               $<input
                 className="svc-in svc-in-small"
-                type="number"
+                type="text"
                 step="1"
                 name="customAnnualPrice"
                 value={getDisplayValue(
                   'customAnnualPrice',
                   form.customAnnualPrice !== undefined
                     ? form.customAnnualPrice
-                    : parseFloat(calc.adjustedAnnual.toFixed(2))
+                    : parseFloat(calc.adjustedAnnual.toFixed(2)),
+                  true
                 )}
                 onChange={handleLocalChange}
                 onFocus={handleFocus}
