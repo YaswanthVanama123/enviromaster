@@ -1211,7 +1211,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         const qty = row.qty ?? 0;
         const warrantyRate = row.warrantyPriceOverride ?? product?.warrantyPricePerUnit?.amount;
         const replacementRate = row.replacementPriceOverride ?? product?.basePrice?.amount;
-        const total = row.totalOverride ?? (replacementRate ? replacementRate * qty : 0);
+        const dispCostType = row.costType ?? 'productCost';
+        const total = row.totalOverride ?? (
+          dispCostType === 'warranty'
+            ? (warrantyRate ? warrantyRate * qty : 0)
+            : (replacementRate ? replacementRate * qty : 0)
+        );
 
         return {
           ...row,

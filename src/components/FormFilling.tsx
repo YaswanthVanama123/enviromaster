@@ -1369,7 +1369,8 @@ function FormFillingContent({
       replacementRate: d.replacementRate || 0,
       frequency: d.frequency || "",
       total: d.total || 0,
-      customFields: d.customFields || {}, 
+      costType: d.costType || "productCost",
+      customFields: d.customFields || {},
     }));
 
 
@@ -2095,9 +2096,10 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           qty: safeParseInt(String(d.qty || "")),
           warrantyRate: safeParseFloat(String(d.warrantyRate || "")),
           replacementRate: safeParseFloat(String(d.replacementRate || "")),
-          frequency: d.frequency || "", 
+          frequency: d.frequency || "",
+          costType: d.costType || "productCost",
           total: safeParseFloat(String(d.total || "")),
-          customFields: d.customFields || {}, 
+          customFields: d.customFields || {},
         };
       });
 
@@ -2145,6 +2147,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               warrantyRate: safeParseFloat(String(p.warrantyRate || p.warrantyPriceOverride || p.warranty || "")),
               replacementRate: safeParseFloat(String(p.replacementRate || p.replacementPriceOverride || p.replacement || "")),
               frequency: p.frequency || "",
+              costType: p.costType || "productCost",
               total: safeParseFloat(String(p.total || p.totalOverride || p.lineTotal || p.extPrice || "")),
             };
           } else { 
