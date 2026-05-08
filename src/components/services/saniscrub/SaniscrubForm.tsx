@@ -905,43 +905,23 @@ export const SaniscrubForm: React.FC<
               className="svc-in"
               name="contractMonths"
               value={form.contractMonths}
-              onChange={onChange}
+              disabled
             >
               {(() => {
-
                 const options = [];
-
                 if (calc.frequency === "bimonthly") {
-
-                  for (let months = 2; months <= 36; months += 2) {
-                    options.push(months);
-                  }
+                  for (let months = 2; months <= 36; months += 2) options.push(months);
                 } else if (calc.frequency === "quarterly") {
-
-                  for (let months = 3; months <= 36; months += 3) {
-                    options.push(months);
-                  }
+                  for (let months = 3; months <= 36; months += 3) options.push(months);
                 } else if (calc.frequency === "biannual") {
-
-                  for (let months = 6; months <= 36; months += 6) {
-                    options.push(months);
-                  }
+                  for (let months = 6; months <= 36; months += 6) options.push(months);
                 } else if (calc.frequency === "annual") {
-
-                  for (let months = 12; months <= 36; months += 12) {
-                    options.push(months);
-                  }
+                  for (let months = 12; months <= 36; months += 12) options.push(months);
                 } else {
-
-                  for (let months = 2; months <= 36; months++) {
-                    options.push(months);
-                  }
+                  for (let months = 2; months <= 36; months++) options.push(months);
                 }
-
                 return options.map((months) => (
-                  <option key={months} value={months}>
-                    {months} mo
-                  </option>
+                  <option key={months} value={months}>{months} mo</option>
                 ));
               })()}
             </select>

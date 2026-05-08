@@ -1104,7 +1104,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               className="svc-in"
               name="contractMonths"
               value={form.contractMonths}
-              onChange={onChange}
+              disabled
             >
               {contractMonthOptions.map((m) => (
                 <option key={m} value={m}>

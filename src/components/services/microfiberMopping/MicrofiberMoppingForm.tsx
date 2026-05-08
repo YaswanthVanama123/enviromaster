@@ -1103,41 +1103,26 @@ export const MicrofiberMoppingForm: React.FC<
                 className="svc-in"
                 name="contractTermMonths"
                 value={form.contractTermMonths}
-                onChange={onChange}
+                disabled
               >
-                {}
                 {form.frequency === "quarterly"
                   ? Array.from({ length: 12 }, (_, i) => (i + 1) * 3).map((m) => (
-                      <option key={m} value={m}>
-                        {m} months
-                      </option>
+                      <option key={m} value={m}>{m} months</option>
                     ))
-
                   : form.frequency === "bimonthly"
                   ? [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36].map((m) => (
-                      <option key={m} value={m}>
-                        {m} months
-                      </option>
+                      <option key={m} value={m}>{m} months</option>
                     ))
-
                   : form.frequency === "biannual"
                   ? [6, 12, 18, 24, 30, 36].map((m) => (
-                      <option key={m} value={m}>
-                        {m} months
-                      </option>
+                      <option key={m} value={m}>{m} months</option>
                     ))
-
                   : form.frequency === "annual"
                   ? [12, 24, 36].map((m) => (
-                      <option key={m} value={m}>
-                        {m} months
-                      </option>
+                      <option key={m} value={m}>{m} months</option>
                     ))
-
                   : Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
-                      <option key={m} value={m}>
-                        {m} months
-                      </option>
+                      <option key={m} value={m}>{m} months</option>
                     ))
                 }
               </select>

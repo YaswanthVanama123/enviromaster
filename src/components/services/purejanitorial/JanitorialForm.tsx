@@ -787,7 +787,7 @@ export const JanitorialForm: React.FC<
               className="svc-in"
               name="contractMonths"
               value={form.contractMonths}
-              onChange={onChange}
+              disabled
               style={{
                 borderBottom: '2px solid #000',
                 borderTop: 'none',
@@ -803,9 +803,7 @@ export const JanitorialForm: React.FC<
                   options.push(months);
                 }
                 return options.map((months) => (
-                  <option key={months} value={months}>
-                    {months} mo
-                  </option>
+                  <option key={months} value={months}>{months} mo</option>
                 ));
               })()}
             </select>

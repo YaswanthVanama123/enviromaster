@@ -914,8 +914,8 @@ export const CarpetForm: React.FC<
             <select
               className="svc-in"
               name="contractMonths"
-              value={form.contractMonths} 
-              onChange={onChange}
+              value={form.contractMonths}
+              disabled
             >
               {getContractOptions(form.frequency).map((m) => (
                 <option key={m} value={m}>

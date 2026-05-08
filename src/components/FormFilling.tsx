@@ -368,7 +368,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 </div>
                 <div className="status-divider">≤</div>
                 <div className="status-value-item">
-                  <span className="value-label">Target (Original ×1.30)</span>
+                  <span className="value-label">Greenline Price</span>
                   <span className="value-amount">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>
@@ -389,7 +389,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 </div>
                 <div className="status-divider">≥</div>
                 <div className="status-value-item">
-                  <span className="value-label">Target (Original ×1.30)</span>
+                  <span className="value-label">Greenline Price</span>
                   <span className="value-amount">${greenLineThreshold.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                 </div>
               </div>

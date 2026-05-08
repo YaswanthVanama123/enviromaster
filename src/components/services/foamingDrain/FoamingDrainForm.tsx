@@ -1517,57 +1517,29 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                   className="svc-in field-qty"
                   style={{ width: '80px', marginRight: '8px' }}
                   value={state.contractMonths}
-                  onChange={(e) =>
-                    updateField(
-                      "contractMonths",
-                      Number(e.target.value) as any
-                    )
-                  }
+                  disabled
                 >
                   {state.frequency === "quarterly" ? (
-
                     Array.from({ length: 12 }, (_, i) => {
-                      const months = (i + 1) * 3; 
-                      return (
-                        <option key={months} value={months}>
-                          {months} mo
-                        </option>
-                      );
+                      const months = (i + 1) * 3;
+                      return <option key={months} value={months}>{months} mo</option>;
                     })
                   ) : state.frequency === "biannual" ? (
-
                     Array.from({ length: 6 }, (_, i) => {
-                      const months = (i + 1) * 6; 
-                      return (
-                        <option key={months} value={months}>
-                          {months} mo
-                        </option>
-                      );
+                      const months = (i + 1) * 6;
+                      return <option key={months} value={months}>{months} mo</option>;
                     })
                   ) : state.frequency === "annual" ? (
-
                     Array.from({ length: 3 }, (_, i) => {
-                      const months = (i + 1) * 12; 
-                      return (
-                        <option key={months} value={months}>
-                          {months} mo
-                        </option>
-                      );
+                      const months = (i + 1) * 12;
+                      return <option key={months} value={months}>{months} mo</option>;
                     })
                   ) : (
-
                     Array.from(
-                      {
-                        length:
-                          cfg.contract.maxMonths - cfg.contract.minMonths + 1,
-                      },
+                      { length: cfg.contract.maxMonths - cfg.contract.minMonths + 1 },
                       (_, i) => {
                         const m = cfg.contract.minMonths + i;
-                        return (
-                          <option key={m} value={m}>
-                            {m} mo
-                          </option>
-                        );
+                        return <option key={m} value={m}>{m} mo</option>;
                       }
                     )
                   )}

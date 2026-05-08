@@ -748,7 +748,7 @@ export const StripWaxForm: React.FC<
               className="svc-in"
               name="contractMonths"
               value={form.contractMonths}
-              onChange={onChange}
+              disabled
             >
               {contractMonthOptions.map((m) => (
                 <option key={m} value={m}>

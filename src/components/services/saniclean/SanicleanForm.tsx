@@ -2017,7 +2017,7 @@ export const SanicleanForm: React.FC<
               className="svc-in"
               name="contractMonths"
               value={contractMonths}
-              onChange={onChange}
+              disabled
             >
               {Array.from({ length: 35 }, (_, i) => i + 2).map((m) => (
                 <option key={m} value={m}>
