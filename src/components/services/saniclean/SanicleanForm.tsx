@@ -1189,7 +1189,6 @@ export const SanicleanForm: React.FC<
             <option value="weekly">Weekly</option>
             <option value="biweekly">Bi Weekly</option>
             <option value="monthly">Monthly</option>
-            <option value="everyFourWeeks">Every 4 Weeks</option>
           </select>
         </div>
       </div>
