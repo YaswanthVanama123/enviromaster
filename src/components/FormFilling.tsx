@@ -1058,8 +1058,7 @@ function FormFillingContent({
 
     const requiresApproval =
       paymentOption === "others" ||
-      pricingStatus === 'red' ||
-      pricingStatus === 'neutral' ||
+      totalOriginalContract > totalCurrentContract ||
       hasServiceNotes ||
       hasCustomFields;
 
@@ -1070,16 +1069,14 @@ function FormFillingContent({
         ? "Custom fields added to service(s)"
         : hasServiceNotes
           ? "Manual notes added to service(s)"
-          : pricingStatus === 'red'
-            ? "Red Line pricing"
-            : pricingStatus === 'neutral'
-              ? "Neutral (below green line)"
-              : "Green Line pricing";
+          : totalOriginalContract > totalCurrentContract
+            ? "Redline pricing (current below original)"
+            : "Green Line pricing";
 
-    console.log(`📋 [STATUS-CALC] Pricing: ${pricingStatus} | Payment: ${paymentOption} → Document Status: ${status} (${reason})`);
+    console.log(`📋 [STATUS-CALC] Pricing: ${pricingStatus} | Original: ${totalOriginalContract} | Current: ${totalCurrentContract} | Payment: ${paymentOption} → Document Status: ${status} (${reason})`);
 
     return status;
-  }, [calculatePricingStatus, paymentOption, servicesState]);
+  }, [calculatePricingStatus, paymentOption, servicesState, totalOriginalContract, totalCurrentContract]);
 
 
   const hasChanges = hasPriceChanges();
