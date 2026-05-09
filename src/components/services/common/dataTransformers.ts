@@ -153,6 +153,14 @@ function detectSaniscrubFrequencyText(cleaned: string): string | undefined {
   ) {
     return "twicePerMonth";
   }
+  if (
+    collapsed.includes("every4weeks") ||
+    collapsed.includes("everyfourweeks") ||
+    cleaned.includes("every 4 weeks") ||
+    cleaned.includes("every four weeks")
+  ) {
+    return "everyFourWeeks";
+  }
   if (cleaned.includes("monthly") && !cleaned.includes("twice per")) {
     return "monthly";
   }
@@ -223,6 +231,9 @@ const normalizeFrequencyLabel = (raw?: string): RefreshFrequency | undefined => 
       return "twicePerMonth";
     case "monthly":
       return "monthly";
+    case "every4weeks":
+    case "everyfourweeks":
+      return "everyFourWeeks";
     case "bimonthly":
       return "bimonthly";
     case "quarterly":
