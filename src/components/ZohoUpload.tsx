@@ -220,8 +220,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
         }
 
         console.log(`🆕 [BULK] New folder - Loading companies for ${bulkFiles.length} files`);
-        const companiesResult = await zohoApi.getCompanies(1);
-
+        const companiesResult = await zohoApi.getCompanies();
         if (!companiesResult.success) {
           throw new Error(companiesResult.error || 'Failed to load companies');
         }
@@ -250,8 +249,7 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
       setUploadStatus(statusResult);
 
       if (statusResult.isFirstTime) {
-        const companiesResult = await zohoApi.getCompanies(1);
-
+        const companiesResult = await zohoApi.getCompanies();
         if (!companiesResult.success) {
           throw new Error(companiesResult.error || 'Failed to load companies');
         }

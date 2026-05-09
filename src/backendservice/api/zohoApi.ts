@@ -198,17 +198,15 @@ export const zohoApi = {
   },
 
   async getCompanies(
-    page = 1,
     search?: string
   ): Promise<ZohoCompaniesResponse> {
     const params = new URLSearchParams();
-    params.set("page", page.toString());
     if (search && search.trim()) {
       params.set("search", search.trim());
     }
-
+    const query = params.toString();
     const res = await apiClient.get<ZohoCompaniesResponse>(
-      `/api/zoho-upload/companies?${params}`
+      `/api/zoho-upload/companies${query ? `?${query}` : ''}`
     );
     if (res.error) throw new Error(res.error);
     return res.data!;
