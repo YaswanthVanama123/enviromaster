@@ -1078,7 +1078,7 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     }
 
 
-    const isVisitBasedFrequency = freqKey === "oneTime" || freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly";
+    const isVisitBasedFrequency = freqKey === "oneTime" || freqKey === "quarterly" || freqKey === "biannual" || freqKey === "annual" || freqKey === "bimonthly" || freqKey === "everyFourWeeks";
     const effectiveServiceVisitsFirstMonth =
       isVisitBasedFrequency ? 0 : (monthlyVisits > 1 ? monthlyVisits - 1 : 0);
 
@@ -1119,6 +1119,16 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
           contractTotalRated = effectiveInstallation + (serviceVisits * effectivePerVisit);
         } else {
 
+          contractTotalRated = totalVisits * effectivePerVisit;
+        }
+      } else if (freqKey === "everyFourWeeks") {
+
+        const totalVisits = Math.round(contractMonths * 1.0833);
+
+        if (form.isFirstTimeInstall) {
+          const serviceVisits = Math.max(totalVisits - 1, 0);
+          contractTotalRated = effectiveInstallation + (serviceVisits * effectivePerVisit);
+        } else {
           contractTotalRated = totalVisits * effectivePerVisit;
         }
       } else {
@@ -1176,7 +1186,12 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
     let contractTotalWithMinimum = 0;
     if (contractMonths > 0) {
-      if (isVisitBasedFrequency) {
+      if (freqKey === "everyFourWeeks") {
+
+        const totalVisits = Math.round(contractMonths * 1.0833);
+        contractTotalWithMinimum = (form.isFirstTimeInstall ? effectiveInstallation : 0) +
+          recurringPerVisitWithMinimum * (totalVisits - (form.isFirstTimeInstall ? 1 : 0));
+      } else if (isVisitBasedFrequency) {
 
 
         const cycleMonths = getCycleMonths(freqKey, backendConfig);

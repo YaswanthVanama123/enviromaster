@@ -942,13 +942,14 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         }
       } else if (freq === "everyFourWeeks") {
 
-        totalVisitsForContract = Math.round(contractMonths * 1.0833);
+        const totalVisits = Math.round(contractMonths * 1.0833);
+        totalVisitsForContract = totalVisits;
 
         if (form.includeInstall && installOneTime > 0) {
-          const remainingMonths = Math.max(contractMonths - 1, 0);
-          calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
+          const remainingVisits = Math.max(totalVisits - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingVisits * perVisitCharge);
         } else {
-          calculatedContractTotal = contractMonths * monthlyRecurring;
+          calculatedContractTotal = totalVisits * perVisitCharge;
         }
       } else if (freq === "bimonthly") {
 

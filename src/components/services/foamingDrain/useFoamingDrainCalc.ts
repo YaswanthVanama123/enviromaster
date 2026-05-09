@@ -957,6 +957,16 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       } else {
         contractTotalRaw = effectiveWeeklyService * totalVisits;
       }
+    } else if (freqLower === "everyfourweeks") {
+
+      const totalVisits = Math.round(contractMonths * 1.0833);
+
+      if (effectiveInstallation > 0) {
+        const remainingVisits = Math.max(totalVisits - 1, 0);
+        contractTotalRaw = firstVisitPrice + (effectiveWeeklyService * remainingVisits);
+      } else {
+        contractTotalRaw = effectiveWeeklyService * totalVisits;
+      }
     } else {
 
       contractTotalRaw = firstMonthPrice + (contractMonths - 1) * normalMonth;

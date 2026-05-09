@@ -143,8 +143,8 @@ export const SaniscrubForm: React.FC<
 
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
-        form.frequency === "monthly") {
-      return Number(form.fixtureRateMonthly) || 0; 
+        form.frequency === "monthly" || form.frequency === "everyFourWeeks") {
+      return Number(form.fixtureRateMonthly) || 0;
     }
     if (form.frequency === "bimonthly") {
       return Number(form.fixtureRateBimonthly) || 0; 
@@ -352,7 +352,7 @@ export const SaniscrubForm: React.FC<
 
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
-        form.frequency === "monthly") {
+        form.frequency === "monthly" || form.frequency === "everyFourWeeks") {
       return "fixtureRateMonthly";
     }
     if (form.frequency === "bimonthly") {

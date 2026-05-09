@@ -830,9 +830,9 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
 
 
       if (freq === "oneTime" || freq === "weekly" || freq === "biweekly" ||
-          freq === "twicePerMonth" || freq === "monthly") {
+          freq === "twicePerMonth" || freq === "monthly" || freq === "everyFourWeeks") {
 
-        baseRate = form.fixtureRateMonthly; 
+        baseRate = form.fixtureRateMonthly;
         minimumAmount = form.minimumMonthly; 
       } else if (freq === "bimonthly") {
 
@@ -1025,10 +1025,17 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         } else {
           calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip;
         }
+      } else if (freq === "everyFourWeeks") {
+
+        if (form.includeInstall && installOneTime > 0) {
+          calculatedFirstMonthTotal = installOneTime;
+        } else {
+          calculatedFirstMonthTotal = basePerVisitCost + perVisitTrip;
+        }
       } else if (freq === "twicePerMonth") {
 
         if (form.includeInstall && installOneTime > 0) {
-          const remainingVisits = monthlyVisits - 1; 
+          const remainingVisits = monthlyVisits - 1;
           calculatedFirstMonthTotal = installOneTime + (remainingVisits * (basePerVisitCost + perVisitTrip));
 
 
@@ -1150,6 +1157,17 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         } else {
 
           calculatedContractTotal = totalServices * (basePerVisitCost + perVisitTrip);
+        }
+      } else if (freq === "everyFourWeeks") {
+
+        const totalVisits = Math.round(contractMonths * 1.0833);
+        totalVisitsForContract = totalVisits;
+
+        if (form.includeInstall && installOneTime > 0) {
+          const remainingVisits = Math.max(totalVisits - 1, 0);
+          calculatedContractTotal = firstMonthTotal + (remainingVisits * (basePerVisitCost + perVisitTrip));
+        } else {
+          calculatedContractTotal = totalVisits * (basePerVisitCost + perVisitTrip);
         }
       } else if (freq === "twicePerMonth") {
 

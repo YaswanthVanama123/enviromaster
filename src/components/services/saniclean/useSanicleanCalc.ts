@@ -239,13 +239,14 @@ const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number 
 
 
   const fallbackMultipliers: Record<string, number> = {
-    weekly: 4.33,      
-    biweekly: 2.165,   
-    monthly: 1.0,      
-    bimonthly: 0.5,    
-    quarterly: 0.33,   
-    biannual: 0.17,    
-    annual: 0.083,     
+    weekly: 4.33,
+    biweekly: 2.165,
+    monthly: 1.0,
+    everyFourWeeks: 1.0833,
+    bimonthly: 0.5,
+    quarterly: 0.33,
+    biannual: 0.17,
+    annual: 0.083,
   };
 
   console.log(`⚠️ [SaniClean] Using fallback multiplier for frequency: ${frequency}. Consider adding to backend frequencyMetadata.`);
@@ -291,6 +292,7 @@ const calculateVisitsInContract = (
       biweekly: 26,
       twicePerMonth: 24,
       monthly: 12,
+      everyFourWeeks: 13,
       bimonthly: 6,
       quarterly: 4,
       biannual: 2,

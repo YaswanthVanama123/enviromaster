@@ -163,7 +163,11 @@ function convertFrequencyMetadataToBillingConversions(config: any): BackendMicro
         },
         monthly: {
           annualMultiplier: 12,
-          monthlyMultiplier: 1, 
+          monthlyMultiplier: 1,
+        },
+        everyFourWeeks: {
+          annualMultiplier: 13,
+          monthlyMultiplier: 1.0833,
         },
         bimonthly: {
           annualMultiplier: 6,
