@@ -335,7 +335,14 @@ const calculateDualFrequency = (
 
     const mainServiceMonthly = mainServiceBasePrice * mainServiceMultiplier;
     const monthlyTotal = mainServiceMonthly + facilityComponentsMonthly;
-    const contractTotal = (mainServiceMonthly * contractMonths) + facilityContractTotal;
+
+    let contractTotal: number;
+    if (mainServiceFrequency === "everyFourWeeks") {
+      const totalVisits = Math.round(contractMonths * 1.0833);
+      contractTotal = (mainServiceBasePrice * totalVisits) + (facilityComponentsMonthly * totalVisits);
+    } else {
+      contractTotal = (mainServiceMonthly * contractMonths) + facilityContractTotal;
+    }
 
     console.log(`📊 [SaniClean] Monthly mode calculation:`, {
       mainServiceMonthly,
