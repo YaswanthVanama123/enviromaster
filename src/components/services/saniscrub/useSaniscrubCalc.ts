@@ -1261,8 +1261,27 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
           : activeConfig.minimums.quarterly;
         const baselineRawAmount = fixtureCount > 0 ? fixtureCount * baselineFixtureRate : 0;
         const baselineBaseAmount = fixtureCount > 0 ? (form.applyMinimum !== false ? Math.max(baselineRawAmount, baselineMinimum) : baselineRawAmount) : 0;
-        const baselinePerVisit = baselineBaseAmount;
-        const baselineMonthlyTwice = baselineBaseAmount * 2;
+
+        // Include non-bathroom area at standard rates — entering sq footage at
+        // configured rates is not a discount and should not affect Redline/Greenline.
+        let baselineNonBathroomPerVisit = 0;
+        if (nonBathSqFt > 0) {
+          if (nonBathSqFt <= activeConfig.nonBathroomUnitSqFt) {
+            baselineNonBathroomPerVisit = form.nonBathroomFirstUnitRate;
+          } else {
+            const extraSqFt = nonBathSqFt - activeConfig.nonBathroomUnitSqFt;
+            if (form.useExactNonBathroomSqft) {
+              const ratePerSqFt = form.nonBathroomAdditionalUnitRate / activeConfig.nonBathroomUnitSqFt;
+              baselineNonBathroomPerVisit = form.nonBathroomFirstUnitRate + (extraSqFt * ratePerSqFt);
+            } else {
+              const additionalBlocks = Math.ceil(extraSqFt / activeConfig.nonBathroomUnitSqFt);
+              baselineNonBathroomPerVisit = form.nonBathroomFirstUnitRate + (additionalBlocks * form.nonBathroomAdditionalUnitRate);
+            }
+          }
+        }
+
+        const baselinePerVisit = baselineBaseAmount + baselineNonBathroomPerVisit;
+        const baselineMonthlyTwice = (baselineBaseAmount * 2) + (baselineNonBathroomPerVisit * 2);
         let baselineContractTotal = 0;
         if (freq === "oneTime") {
           baselineContractTotal = baselinePerVisit;
