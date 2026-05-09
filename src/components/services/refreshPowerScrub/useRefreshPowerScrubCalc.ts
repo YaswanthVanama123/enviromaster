@@ -176,6 +176,10 @@ function getBillingMultiplier(
     normalizedFrequency = "twicepermonth";
   }
 
+  if (normalizedFrequency === "every4weeks") {
+    normalizedFrequency = "everyfourweeks";
+  }
+
 
   const defaultMultipliers: Record<string, number> = {
     "onetime": 0,
@@ -1260,12 +1264,18 @@ const getAreaFieldFallback = (
 
   const setContractMonths = (months: number) => {
     hasContractMonthsOverride.current = true;
-    const originalValue = form.contractMonths;
 
-    setForm((prev) => ({
-      ...prev,
-      contractMonths: months,
-    }));
+    setForm((prev) => {
+      const updatedAreas: any = {};
+      for (const area of AREA_KEYS) {
+        updatedAreas[area] = { ...prev[area], contractMonths: months };
+      }
+      return {
+        ...prev,
+        contractMonths: months,
+        ...updatedAreas,
+      };
+    });
 
   };
 
@@ -1303,6 +1313,9 @@ const getAreaFieldFallback = (
       } else if (effectiveFrequency === "annual") {
         const annualVisits = (form[area].contractMonths || 12) / 12;
         contractTotals[area] = cost * annualVisits;
+      } else if (effectiveFrequency === "every 4 weeks" || effectiveFrequency === "everyfourweeks") {
+        const totalVisits = Math.round((form[area].contractMonths || 12) * 1.0833);
+        contractTotals[area] = cost * totalVisits;
       } else {
         contractTotals[area] = monthlyRecurring * (form[area].contractMonths || 12);
       }
@@ -1350,6 +1363,9 @@ const getAreaFieldFallback = (
     } else if (form.frequency === "annual") {
       const annualVisits = (form.contractMonths || 12) / 12;
       contractTotal = rounded * annualVisits;
+    } else if (form.frequency === "everyFourWeeks") {
+      const totalVisits = Math.round((form.contractMonths || 12) * 1.0833);
+      contractTotal = rounded * totalVisits;
     } else {
       contractTotal = monthlyRecurring * (form.contractMonths || 12);
     }

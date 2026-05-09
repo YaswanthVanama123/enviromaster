@@ -1070,8 +1070,9 @@ const getKitchenLarge = (): number => {
                         <select
                           className="rps-line"
                           style={{ width: '60px', marginLeft: '4px', marginRight: '4px' }}
-                          value={form[areaKey].contractMonths}
+                          value={form.contractMonths}
                           onChange={(e) => setAreaField(areaKey, "contractMonths", e.target.value)}
+                          disabled={true}
                         >
                           {form[areaKey].frequencyLabel?.toLowerCase() === "quarterly" ? (
 
