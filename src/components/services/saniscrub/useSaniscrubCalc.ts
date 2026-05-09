@@ -1262,20 +1262,27 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         const baselineRawAmount = fixtureCount > 0 ? fixtureCount * baselineFixtureRate : 0;
         const baselineBaseAmount = fixtureCount > 0 ? (form.applyMinimum !== false ? Math.max(baselineRawAmount, baselineMinimum) : baselineRawAmount) : 0;
 
-        // Include non-bathroom area at standard rates — entering sq footage at
-        // configured rates is not a discount and should not affect Redline/Greenline.
+        // Include non-bathroom area at ADMIN-CONFIGURED baseline rates.
+        // Using backendActiveConfig rates (not form rates) means:
+        //   • Entering sq footage at standard rates keeps ratio neutral (no Greenline/Redline shift)
+        //   • Raising non-bathroom rates above admin baseline pushes toward Greenline
+        //   • Lowering non-bathroom rates below admin baseline pushes toward Redline
+        const baselineNonBathroomFirstUnitRate =
+          backendActiveConfig.nonBathroomFirstUnitRate ?? form.nonBathroomFirstUnitRate;
+        const baselineNonBathroomAdditionalUnitRate =
+          backendActiveConfig.nonBathroomAdditionalUnitRate ?? form.nonBathroomAdditionalUnitRate;
         let baselineNonBathroomPerVisit = 0;
         if (nonBathSqFt > 0) {
           if (nonBathSqFt <= activeConfig.nonBathroomUnitSqFt) {
-            baselineNonBathroomPerVisit = form.nonBathroomFirstUnitRate;
+            baselineNonBathroomPerVisit = baselineNonBathroomFirstUnitRate;
           } else {
             const extraSqFt = nonBathSqFt - activeConfig.nonBathroomUnitSqFt;
             if (form.useExactNonBathroomSqft) {
-              const ratePerSqFt = form.nonBathroomAdditionalUnitRate / activeConfig.nonBathroomUnitSqFt;
-              baselineNonBathroomPerVisit = form.nonBathroomFirstUnitRate + (extraSqFt * ratePerSqFt);
+              const ratePerSqFt = baselineNonBathroomAdditionalUnitRate / activeConfig.nonBathroomUnitSqFt;
+              baselineNonBathroomPerVisit = baselineNonBathroomFirstUnitRate + (extraSqFt * ratePerSqFt);
             } else {
               const additionalBlocks = Math.ceil(extraSqFt / activeConfig.nonBathroomUnitSqFt);
-              baselineNonBathroomPerVisit = form.nonBathroomFirstUnitRate + (additionalBlocks * form.nonBathroomAdditionalUnitRate);
+              baselineNonBathroomPerVisit = baselineNonBathroomFirstUnitRate + (additionalBlocks * baselineNonBathroomAdditionalUnitRate);
             }
           }
         }
