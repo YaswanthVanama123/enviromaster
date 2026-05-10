@@ -482,42 +482,28 @@ export const PricingTablesView: React.FC = () => {
 
 
     if (serviceId === "pureJanitorial") {
-
-    if (config.standardHourlyPricing?.standardHourlyRate !== undefined) fields.push({ label: "Standard Hourly Rate", value: config.standardHourlyPricing.standardHourlyRate, path: ["standardHourlyPricing", "standardHourlyRate"], unit: "$ per hour" });
-    if (config.standardHourlyPricing?.minimumHoursPerTrip !== undefined) fields.push({ label: "Minimum Hours Per Trip", value: config.standardHourlyPricing.minimumHoursPerTrip, path: ["standardHourlyPricing", "minimumHoursPerTrip"], unit: "hours" });
-
-
-    if (config.shortJobHourlyPricing?.shortJobHourlyRate !== undefined) fields.push({ label: "Short Job Hourly Rate", value: config.shortJobHourlyPricing.shortJobHourlyRate, path: ["shortJobHourlyPricing", "shortJobHourlyRate"], unit: "$ per hour" });
-
-
-    if (config.dusting?.itemsPerHour !== undefined) fields.push({ label: "Dusting - Items Per Hour", value: config.dusting.itemsPerHour, path: ["dusting", "itemsPerHour"], unit: "items/hour" });
-    if (config.dusting?.pricePerItem !== undefined) fields.push({ label: "Dusting - Price Per Item", value: config.dusting.pricePerItem, path: ["dusting", "pricePerItem"], unit: "$ per item" });
-    if (config.dusting?.dirtyFirstTimeMultiplier !== undefined) fields.push({ label: "Dusting - Dirty First Time Multiplier", value: config.dusting.dirtyFirstTimeMultiplier, path: ["dusting", "dirtyFirstTimeMultiplier"], unit: "×" });
-    if (config.dusting?.infrequentServiceMultiplier4PerYear !== undefined) fields.push({ label: "Dusting - Infrequent Service Multiplier (4x/year)", value: config.dusting.infrequentServiceMultiplier4PerYear, path: ["dusting", "infrequentServiceMultiplier4PerYear"], unit: "×" });
-
-
-    if (config.vacuuming?.estimatedTimeHoursPerJob !== undefined) fields.push({ label: "Vacuuming - Estimated Time Hours Per Job", value: config.vacuuming.estimatedTimeHoursPerJob, path: ["vacuuming", "estimatedTimeHoursPerJob"], unit: "hours" });
-    if (config.vacuuming?.largeJobMinimumTimeHours !== undefined) fields.push({ label: "Vacuuming - Large Job Minimum Time Hours", value: config.vacuuming.largeJobMinimumTimeHours, path: ["vacuuming", "largeJobMinimumTimeHours"], unit: "hours" });
-
-
-    if (config.smoothBreakdownPricingTable && Array.isArray(config.smoothBreakdownPricingTable)) {
-      config.smoothBreakdownPricingTable.forEach((row: any, index: number) => {
-        const label = row.description || `Pricing Tier ${index + 1}`;
-        const value = row.price || row.ratePerHour || 0;
-        const unit = row.upToMinutes !== undefined ? `up to ${row.upToMinutes} min` : (row.upToHours !== undefined ? `up to ${row.upToHours} hrs` : "$");
-        fields.push({ label, value, path: ["smoothBreakdownPricingTable", index.toString(), row.price !== undefined ? "price" : "ratePerHour"], unit });
+      // Production Rates — dynamic, from backend only
+      const pr = config.productionRates || {};
+      Object.entries(pr).forEach(([k, v]) => {
+        const label = k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, ' $1');
+        fields.push({ label: `${label} (Production Rate)`, value: Number(v), path: ["productionRates", k], unit: "sq ft/hr" });
       });
-    }
 
+      // Labor Defaults
+      fields.push({ label: "Cost Per Labor Hour", value: config.costPerHour    ?? 20, path: ["costPerHour"],    unit: "$/hr" });
+      fields.push({ label: "Labor Tax %",         value: config.laborTaxPct    ?? 15, path: ["laborTaxPct"],    unit: "%" });
+      fields.push({ label: "Gross Profit %",      value: config.grossProfitPct ?? 33, path: ["grossProfitPct"], unit: "%" });
 
-    if (config.frequencyMetadata) {
-      if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
-      if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
-      if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
-      if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
-
-
-    }
+      // Default Supply Line Items
+      const ds = config.defaultSupplies || {};
+      fields.push({ label: "Supplies - Vacuums",           value: ds.vacuums          ?? 100, path: ["defaultSupplies", "vacuums"],          unit: "$/yr" });
+      fields.push({ label: "Supplies - Mops",              value: ds.mops             ?? 500, path: ["defaultSupplies", "mops"],             unit: "$/yr" });
+      fields.push({ label: "Supplies - Mop Buckets",       value: ds.mopBuckets       ?? 200, path: ["defaultSupplies", "mopBuckets"],       unit: "$/yr" });
+      fields.push({ label: "Supplies - Dust Mops",         value: ds.dustMops         ?? 300, path: ["defaultSupplies", "dustMops"],         unit: "$/yr" });
+      fields.push({ label: "Supplies - Microfiber",        value: ds.microfiber       ?? 0,   path: ["defaultSupplies", "microfiber"],       unit: "$/yr" });
+      fields.push({ label: "Supplies - Cleaning Products", value: ds.cleaningProducts ?? 0,   path: ["defaultSupplies", "cleaningProducts"], unit: "$/yr" });
+      fields.push({ label: "Supplies - Consumables",       value: ds.consumables      ?? 0,   path: ["defaultSupplies", "consumables"],      unit: "$/yr" });
+      fields.push({ label: "Supplies - Miscellaneous",     value: ds.miscellaneous    ?? 0,   path: ["defaultSupplies", "miscellaneous"],    unit: "$/yr" });
     } 
 
 

@@ -1,359 +1,120 @@
 
-import React, { useEffect, useRef, useState, type ChangeEvent } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { useJanitorialCalc } from "./useJanitorialCalc";
+import { useJanitorialCalc, DEFAULT_SUPPLIES } from "./useJanitorialCalc";
 import type { JanitorialFormState } from "./useJanitorialCalc";
-import { janitorialPricingConfig as cfg } from "./janitorialConfig";
+import { janitorialFrequencyLabels, janitorialFrequencyList } from "./janitorialConfig";
 import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
-import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
+const fmt = (n: number): string =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const formatNumber = (num: number | undefined): string => {
-  if (num === undefined || num === null || isNaN(num)) {
-    return "0";
-  }
-  return num % 1 === 0 ? num.toString() : num.toFixed(2);
+const DEFAULT_PLACE_TYPE_LABELS: Record<string, string> = {
+  office:        "Office",
+  home:          "Home",
+  restaurant:    "Restaurant",
+  businessPlace: "Business Place",
 };
 
-const fmt = (n: number): string => (n > 0 ? n.toFixed(2) : "0.00");
+function placeTypeLabel(key: string): string {
+  if (DEFAULT_PLACE_TYPE_LABELS[key]) {return DEFAULT_PLACE_TYPE_LABELS[key];}
+  return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+}
 
-const FIELD_ORDER = {
-  frequency: 1,
-  serviceType: 2,
-  visitsPerWeek: 3,
-  service: 10,
-  otherTasks: 20,
-  vacuuming: 21,
-  dusting: 22,
-  addonTime: 23,
-  installation: 24,
-  totals: {
-    perVisit: 30,
-    weekly: 31,
-
-    monthlyRecurring: 33,
-
-    recurringVisit: 35,
-    totalPrice: 36,
-    contract: 37,
-    minimum: 38,
-  },
-} as const;
-
-export const JanitorialForm: React.FC<
-  ServiceInitialData<JanitorialFormState>
-> = ({ initialData, onRemove }) => {
-
-  const [customFields, setCustomFields] = useState<CustomField[]>(
-    initialData?.customFields || []
-  );
-
-
-  const { form, onChange, calc, refreshConfig, isLoadingConfig } = useJanitorialCalc(initialData, customFields);
+export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> = ({
+  initialData,
+  onRemove,
+}) => {
+  const { form, setForm, onChange, calc, adminRates, refreshConfig, isLoadingConfig } =
+    useJanitorialCalc(initialData);
   const servicesContext = useServicesContextOptional();
-
-
-  useEffect(() => {
-    if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
-      onChange({ target: { name: 'contractMonths', value: String(servicesContext.globalContractMonths) } } as any);
-    }
-  }, [servicesContext?.globalContractMonths]);
-
-  const [showAddDropdown, setShowAddDropdown] = useState(false);
-
-
-  const [editingValues, setEditingValues] = useState<Record<string, string>>({});
-
-  const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
-
-  const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
-
-    if (editingValues[fieldName] !== undefined) {
-      return editingValues[fieldName];
-    }
-
-    if (calculatedValue === undefined) return '';
-    return formatted
-      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
-      : calculatedValue.toFixed(2);
-  };
-
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-    setEditingValues(prev => ({ ...prev, [name]: value }));
-    setOriginalValues(prev => ({ ...prev, [name]: value }));
-  };
-
-
-  const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-
-    setEditingValues(prev => ({ ...prev, [name]: value }));
-
-
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      onChange({ target: { name, value: String(numValue) } } as any);
-    } else if (value === '') {
-
-      onChange({ target: { name, value: '' } } as any);
-    }
-  };
-
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-
-    const originalValue = originalValues[name];
-
-
-    setEditingValues(prev => {
-      const newState = { ...prev };
-      delete newState[name];
-      return newState;
-    });
-
-
-    setOriginalValues(prev => {
-      const newState = { ...prev };
-      delete newState[name];
-      return newState;
-    });
-
-
-    const numValue = parseFloat(value);
-
-
-    if (originalValue !== value) {
-
-      if (value === '' || isNaN(numValue)) {
-        onChange({ target: { name, value: '' } } as any);
-        return;
-      }
-
-
-      onChange({ target: { name, value: String(numValue) } } as any);
-    }
-  };
-
-
   const prevDataRef = useRef<string>("");
 
+  // Update a supply item amount
+  const updateSupply = (index: number, rawValue: string) => {
+    const amount = rawValue === "" ? 0 : parseFloat(rawValue);
+    setForm(prev => ({
+      ...prev,
+      supplies: prev.supplies.map((s, i) =>
+        i === index ? { ...s, amount: isNaN(amount) ? 0 : amount } : s,
+      ),
+    }));
+  };
+
+  // Sync to services context
   useEffect(() => {
-    if (servicesContext) {
-      const hasCustomFieldValues = customFields.some(f =>
-        (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
-        (f.type === 'calc' && !!f.calcValues?.right && parseFloat(f.calcValues.right) > 0)
-      );
-      const isActive = (form.manualHours ?? 0) > 0 || (form.vacuumingHours ?? 0) > 0 || (form.dustingTotalPlaces ?? 0) > 0 || hasCustomFieldValues;
-      const frequencyKey = form.serviceType === "recurring" ? "weekly" : "oneTime";
-      const frequencyLabel =
-        form.serviceType === "recurring"
-          ? `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`
-          : "One-Time Service";
-      const frequencyField = {
-        isDisplay: true,
-        orderNo: FIELD_ORDER.frequency,
-        label: "Frequency",
-        type: "text" as const,
-        value: frequencyLabel,
-        frequencyKey,
-      };
-      const serviceTypeField = {
-        isDisplay: true,
-        orderNo: FIELD_ORDER.serviceType,
-        label: "Service Type",
-        type: "text" as const,
-        value: form.serviceType === "recurring" ? "Recurring Service" : "One-Time Service",
-      };
-      const visitsPerWeekField = form.serviceType === "recurring" ? {
-        isDisplay: true,
-        orderNo: FIELD_ORDER.visitsPerWeek,
-        label: "Visits per Week",
-        type: "text" as const,
-        value: `${form.visitsPerWeek} visit${form.visitsPerWeek !== 1 ? 's' : ''} per week`,
-      } : undefined;
-      const totalPriceValue = form.customPerVisit ?? calc.contractTotal ?? 0;
+    if (!servicesContext) return;
+    const isActive = form.sqFt > 0;
 
-      const totals = (() => {
-        const payload: any = {
-          perVisit: {
+    const data = isActive
+      ? {
+          serviceId: "pureJanitorial",
+          displayName: "Janitorial",
+          isActive: true,
+          contractTotal: calc.contractTotal,
+          originalContractTotal: calc.originalContractTotal,
+          frequency: {
             isDisplay: true,
-            orderNo: FIELD_ORDER.totals.perVisit,
-            label: "Per Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisit,
+            orderNo: 1,
+            label: "Frequency",
+            type: "text" as const,
+            value: janitorialFrequencyLabels[form.frequency] ?? form.frequency,
+            frequencyKey: form.frequency,
           },
-        };
-        if (form.serviceType === "recurring") {
-          payload.weekly = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.weekly,
-            label: "Weekly Total",
-            type: "dollar" as const,
-            amount: calc.weekly,
-          };
-
-
-          payload.monthlyRecurring = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.monthlyRecurring,
-            label: "Monthly Recurring",
-            type: "dollar" as const,
-            amount: calc.recurringMonthly,
-            gap: "normal",
-          };
-          payload.contract = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.contract,
-            label: "Contract Total",
-            type: "dollar" as const,
-            months: form.contractMonths,
-            amount: calc.contractTotal,
-          };
-        } else {
-
-
-          payload.recurringVisit = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.recurringVisit,
-            label: "Recurring Visit Total",
-            type: "dollar" as const,
-            amount: calc.perVisit,
-            gap: "normal",
-          };
-          payload.totalPrice = {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.totals.totalPrice,
-            label: "Total Price",
-            type: "dollar" as const,
-            amount: totalPriceValue,
-          };
+          totals: {
+            annualBaseLabor: {
+              isDisplay: true, orderNo: 30, label: "Annual Base Labor",
+              type: "dollar" as const, amount: calc.annualBaseLabor,
+            },
+            annualLaborTax: {
+              isDisplay: true, orderNo: 31, label: `Annual Labor Tax (${form.laborTaxPct}%)`,
+              type: "dollar" as const, amount: calc.annualLaborTax,
+            },
+            annualSupplies: {
+              isDisplay: true, orderNo: 32, label: "Annual Supplies",
+              type: "dollar" as const, amount: calc.totalAnnualSupplies,
+            },
+            totalAnnualCost: {
+              isDisplay: true, orderNo: 33, label: "Total Annual Cost",
+              type: "dollar" as const, amount: calc.totalAnnualCost,
+            },
+            grossProfit: {
+              isDisplay: true, orderNo: 34,
+              label: `Gross Profit (${form.grossProfitPct}%)`,
+              type: "dollar" as const, amount: calc.grossProfit,
+            },
+            annualContractValue: {
+              isDisplay: true, orderNo: 35, label: "Annual Contract Value",
+              type: "dollar" as const, amount: calc.annualContractValue,
+            },
+            monthlyRecurring: {
+              isDisplay: true, orderNo: 36, label: "Monthly Recurring",
+              type: "dollar" as const, amount: calc.monthlyRecurring,
+            },
+            contract: {
+              isDisplay: true, orderNo: 37, label: "Contract Total",
+              type: "dollar" as const, months: form.contractMonths,
+              amount: calc.contractTotal,
+            },
+          },
+          notes: form.notes ?? "",
         }
-        payload.minimum = {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.totals.minimum,
-          label: "Minimum",
-          type: "dollar" as const,
-          amount: calc.minimumChargePerVisit,
-        };
-        return payload;
-      })();
+      : null;
 
-      const data = isActive ? {
-        serviceId: "pureJanitorial", 
-        displayName: "Pure Janitorial",
-        isActive: true,
-
-
-        rawPrice: calc.breakdown.basePrice,  
-        perVisit: calc.perVisit,  
-        minCharge: calc.minimumChargePerVisit || 0,  
-
-        frequency: frequencyField,
-        serviceType: serviceTypeField,
-        ...(visitsPerWeekField ? { visitsPerWeek: visitsPerWeekField } : {}),
-
-        service: {
-          isDisplay: true,
-          orderNo: FIELD_ORDER.service,
-          label: "Service",
-          type: "calc" as const,
-          qty: parseFloat(calc.totalHours.toFixed(2)),
-          rate: form.serviceType === "recurring" ? form.baseHourlyRate : form.shortJobHourlyRate,
-          total: calc.perVisit,
-          unit: "hours",
-        },
-
-        ...(form.manualHours !== undefined ? {
-          otherTasks: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.otherTasks,
-            label: "Other Tasks",
-            type: "text" as const,
-            value: `${form.manualHours} hours`,
-          },
-        } : {}),
-
-        ...(form.vacuumingHours !== undefined ? {
-          vacuuming: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.vacuuming,
-            label: "Vacuuming",
-            type: "text" as const,
-            value: `${form.vacuumingHours} hours`,
-          },
-        } : {}),
-
-        ...(form.dustingTotalPlaces !== undefined ? {
-          dusting: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.dusting,
-            label: "Dusting",
-            type: "text" as const,
-            value: `${form.dustingTotalPlaces} places = ${form.dustingCalculatedHours?.toFixed(2) || 0} hours`,
-          },
-        } : {}),
-
-        ...(form.addonTimeMinutes !== undefined ? {
-          addonTime: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.addonTime,
-            label: "Add-on Time",
-            type: "text" as const,
-            value: `${form.addonTimeMinutes} minutes`,
-          },
-        } : {}),
-
-        ...(form.serviceType === "recurring" && form.installation ? {
-          installation: {
-            isDisplay: true,
-            orderNo: FIELD_ORDER.installation,
-            label: "Installation",
-            type: "text" as const,
-            value: "Included",
-          },
-        } : {}),
-
-        totals,
-        ...(form.serviceType === "oneTime"
-          ? {
-              totalPrice: totalPriceValue,
-            }
-          : {}),
-
-        notes: form.notes || "", 
-        customFields: customFields,
-        contractTotal: calc.contractTotal,
-        originalContractTotal: calc.originalContractTotal,
-      } : null;
-
-      const dataStr = JSON.stringify(data);
-
-      if (dataStr !== prevDataRef.current) {
-        console.log('🔄 Janitorial form updating services context with data:');
-        console.log('✅ Full data being sent:', JSON.stringify(data, null, 2));
-        console.log('✅ Totals section:', JSON.stringify(data?.totals, null, 2));
-
-        prevDataRef.current = dataStr;
-        servicesContext.updateService("pureJanitorial", data); 
-      }
+    const dataStr = JSON.stringify(data);
+    if (dataStr !== prevDataRef.current) {
+      prevDataRef.current = dataStr;
+      servicesContext.updateService("pureJanitorial", data);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, calc, customFields]);
+  }, [form, calc, servicesContext]);
 
   return (
     <div className="svc-card">
-      {}
+      {/* Header */}
       <div className="svc-h-row">
-        <div className="svc-h">PURE JANITORIAL ADD-ONS</div>
+        <div className="svc-h">JANITORIAL</div>
         <div className="svc-h-actions">
           <button
             type="button"
@@ -362,18 +123,7 @@ export const JanitorialForm: React.FC<
             disabled={isLoadingConfig}
             title="Refresh config from database"
           >
-            <FontAwesomeIcon
-              icon={isLoadingConfig ? faSpinner : faSync}
-              spin={isLoadingConfig}
-            />
-          </button>
-          <button
-            type="button"
-            className="svc-mini"
-            onClick={() => setShowAddDropdown(!showAddDropdown)}
-            title="Add custom field"
-          >
-            +
+            <FontAwesomeIcon icon={isLoadingConfig ? faSpinner : faSync} spin={isLoadingConfig} />
           </button>
           {onRemove && (
             <button
@@ -388,302 +138,248 @@ export const JanitorialForm: React.FC<
         </div>
       </div>
 
-      {}
-      <CustomFieldManager
-        fields={customFields}
-        onFieldsChange={setCustomFields}
-        showAddDropdown={showAddDropdown}
-        onToggleAddDropdown={setShowAddDropdown}
-      />
-
-      {}
-      {}
-
-      {}
+      {/* Frequency */}
       <div className="svc-row">
-        <label>Service Type</label>
+        <label>Frequency</label>
         <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="serviceType"
-            value={form.serviceType}
-            onChange={onChange}
-          >
-            <option value="recurring">Recurring Service (${form.baseHourlyRate}/hr)</option>
-            <option value="oneTime">One-Time Service (${form.shortJobHourlyRate}/hr)</option>
+          <select className="svc-in" name="frequency" value={form.frequency} onChange={onChange}>
+            {janitorialFrequencyList.map(key => (
+              <option key={key} value={key}>
+                {janitorialFrequencyLabels[key]}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
-      {}
-      {form.serviceType === "recurring" && (
-        <div className="svc-row">
-          <label>Visits per Week</label>
-          <div className="svc-row-right">
-            <select
-              className="svc-in"
-              name="visitsPerWeek"
-              value={form.visitsPerWeek}
-              onChange={onChange}
-            >
-              <option value={1}>1 visit per week</option>
-              <option value={2}>2 visits per week</option>
-              <option value={3}>3 visits per week</option>
-              <option value={4}>4 visits per week</option>
-              <option value={5}>5 visits per week</option>
-              <option value={6}>6 visits per week</option>
-              <option value={7}>7 visits per week (daily)</option>
-            </select>
-            {}
-          </div>
+      {/* Visits per Week */}
+      <div className="svc-row">
+        <label>Visits per Week</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            value={form.visitsPerWeek}
+            onChange={e => setForm(prev => ({ ...prev, visitsPerWeek: Number(e.target.value) }))}
+          >
+            {[1, 2, 3, 4, 5, 6, 7].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
         </div>
-      )}
-
-      {}
-      <div className="svc-h-row svc-h-row-sub">
-        <div className="svc-h-sub">Task-Specific Inputs</div>
       </div>
 
-      {}
-      {form.serviceType === "oneTime" && (
-        <div className="svc-row">
-          <label>One-Time Rate</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in svc-in-small"
-                type="number"
-                min={0}
-                step={0.01}
-                name="shortJobHourlyRate"
-                value={form.shortJobHourlyRate || ""}
-                onChange={onChange}
-                title="One-time service hourly rate (from backend)"
-                style={{
-                  backgroundColor: form.customShortJobHourlyRate !== undefined ? '#fffacd' : 'white'
-                }}
-              />
-            </div>
-            <span className="svc-small">/hr (min {form.minHoursPerVisit || 0} hours = ${formatNumber((form.minHoursPerVisit || 0) * (form.shortJobHourlyRate || 0))} minimum)</span>
-          </div>
-        </div>
-      )}
-
-      {}
-      {form.serviceType === "recurring" && (
-        <div className="svc-row">
-          <label>Recurring Rate</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in svc-in-small"
-                type="number"
-                min={0}
-                step={0.01}
-                name="baseHourlyRate"
-                value={form.baseHourlyRate || ""}
-                onChange={onChange}
-                title="Recurring service hourly rate (from backend)"
-                style={{
-                  backgroundColor: form.customBaseHourlyRate !== undefined ? '#fffacd' : 'white'
-                }}
-              />
-            </div>
-            <span className="svc-small">/hr (min {form.minHoursPerVisit || 0} hours = ${formatNumber((form.minHoursPerVisit || 0) * (form.baseHourlyRate || 0))} minimum)</span>
-          </div>
-        </div>
-      )}
-
-      {}
+      {/* Place Type */}
       <div className="svc-row">
-        <label>Vacuuming (hours)</label>
+        <label>Place Type</label>
+        <div className="svc-row-right">
+          <select
+            className="svc-in"
+            value={form.placeType}
+            onChange={e => setForm(prev => ({ ...prev, placeType: e.target.value }))}
+          >
+            {Object.keys(adminRates.productionRates).map(key => (
+              <option key={key} value={key}>{placeTypeLabel(key)}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Square Feet */}
+      <div className="svc-row">
+        <label>Square Feet</label>
         <div className="svc-row-right">
           <input
             className="svc-in svc-in-small"
             type="number"
             min={0}
             step={1}
-            name="vacuumingHours"
-            value={form.vacuumingHours || ""}
-            onChange={onChange}
-            placeholder={cfg.vacuumingDefaultHours.toString()}
-          />
-          <span className="svc-small">
-            hr
-          </span>
-        </div>
-      </div>
-
-      {}
-      {}
-
-      {}
-      <div className="svc-row">
-        <label>Dusting (Places → Hours)</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in svc-in-small field-qty"
-            type="number"
-            min={0}
-            step={1}
-            name="dustingTotalPlaces"
-            value={form.dustingTotalPlaces || ""}
-            onChange={onChange}
-            placeholder="90"
-          />
-          <span className="svc-small">total places ÷ </span>
-          <input
-            className="svc-in svc-in-small field-qty"
-            type="number"
-            min={1}
-            step={1}
-            name="dustingPlacesPerHour"
-            value={form.dustingPlacesPerHour || ""}
-            onChange={onChange}
-            title="Places per hour (from admin panel, editable by salesman)"
-            style={{
-              backgroundColor: form.customDustingPlacesPerHour !== undefined ? '#fffacd' : 'white'
-            }}
-          />
-          <span className="svc-small">places/hr = </span>
-          <input
-            className="svc-in svc-in-small field-qty"
-            type="number"
-              min="0"
-            value={form.dustingCalculatedHours?.toFixed(2) || 0}
-            readOnly
-            style={{ backgroundColor: '#f0f8ff' }}
-            title="Calculated hours (auto-calculated)"
-          />
-          {}
-        </div>
-      </div>
-
-      {}
-      <div className="svc-row">
-        <label>Other Tasks (hrs)</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            min={0}
-            step={1}
-            name="manualHours"
-            value={form.manualHours || ""}
-            onChange={onChange}
-          />
-          <span className="svc-small">
-            Extra sweeping, spot mopping, small wipe-downs.
-          </span>
-        </div>
-      </div>
-
-      {}
-      <div className="svc-row">
-        <label>Add-on Time (mins)</label>
-        <div className="svc-row-right">
-          <input
-            className="svc-in svc-in-small"
-            type="number"
-            min={0}
-            step={1}
-            name="addonTimeMinutes"
-            value={form.addonTimeMinutes || ""}
+            name="sqFt"
+            value={form.sqFt || ""}
             onChange={onChange}
             placeholder="0"
           />
-          <span className="svc-small">
-            mins (Tiered pricing applied automatically based on time entered)
-          </span>
+          <span className="svc-small">sq ft</span>
         </div>
       </div>
 
-      {}
-      {}
-
-      {}
-      <div className="svc-h-row svc-h-row-sub">
-        <div className="svc-h-sub">Pricing Summary</div>
-      </div>
-
-      {}
+      {/* Hours Per Visit (read-only) */}
       <div className="svc-row">
-        <label>Total Hours (per visit)</label>
+        <label>Hours Per Visit</label>
         <div className="svc-row-right">
           <input
-            className="svc-in"
+            className="svc-in svc-in-small"
             type="text"
             readOnly
-            value={`${fmt(calc.totalHours)} hrs`}
+            value={`${calc.hoursPerVisit.toFixed(2)} hrs`}
+            style={{ backgroundColor: "#f0f8ff" }}
+            title={`Production rate: ${adminRates.productionRates[form.placeType]} sq ft/hr`}
           />
         </div>
       </div>
 
-      {}
-      <div className="svc-row svc-row-charge">
-        <label>
-          {form.serviceType === "oneTime" ? "One-Time Service Price" : "Per Visit Total"}
-        </label>
+      <hr style={{ margin: "8px 0", borderColor: "#e5e7eb" }} />
+
+      {/* Cost Per Hour */}
+      <div className="svc-row">
+        <label>Cost Per Hour</label>
         <div className="svc-row-right">
           <div className="svc-dollar">
             <span>$</span>
             <input
-              className="svc-in"
-              type="text"
-              min="0"
-              readOnly
-              step="0.01"
-              name="customPerVisit"
-              value={getDisplayValue(
-                'customPerVisit',
-                form.customPerVisit !== undefined
-                  ? form.customPerVisit
-                  : calc?.contractTotal || 0,
-                true
-              )}
-              onChange={handleLocalChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={{
-                backgroundColor: form.customPerVisit !== undefined ? '#fffacd' : 'white',
-                border: 'none',
-                width: '100px'
-              }}
-              title="Per visit total - editable"
+              className="svc-in svc-in-small"
+              type="number"
+              min={0}
+              step={0.01}
+              name="costPerHour"
+              value={form.costPerHour || ""}
+              onChange={onChange}
             />
           </div>
+          <span className="svc-small">/hr (admin default: ${adminRates.costPerHour})</span>
         </div>
       </div>
 
-      {}
-      {(form.manualHours > 0 || form.vacuumingSqFt > 0 || form.dustingPlaces > 0) && (
-        <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
+      {/* Labor Tax % */}
+      <div className="svc-row">
+        <label>Labor Tax %</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min={0}
+            step={0.1}
+            name="laborTaxPct"
+            value={form.laborTaxPct || ""}
+            onChange={onChange}
+          />
+          <span className="svc-small">% (admin default: {adminRates.laborTaxPct}%)</span>
+        </div>
+      </div>
+
+      {/* Gross Profit % */}
+      <div className="svc-row">
+        <label>Gross Profit %</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in svc-in-small"
+            type="number"
+            min={0}
+            max={99}
+            step={0.1}
+            name="grossProfitPct"
+            value={form.grossProfitPct || ""}
+            onChange={onChange}
+          />
+          <span className="svc-small">% (admin default: {adminRates.grossProfitPct}%)</span>
+        </div>
+      </div>
+
+      <hr style={{ margin: "8px 0", borderColor: "#e5e7eb" }} />
+
+      {/* Supply Line Items */}
+      <div className="svc-h-row svc-h-row-sub">
+        <div className="svc-h-sub">Supply Line Items (Annual)</div>
+      </div>
+      {form.supplies.map((s, i) => (
+        <div key={i} className="svc-row">
+          <label>{s.name}</label>
+          <div className="svc-row-right">
+            <div className="svc-dollar">
+              <span>$</span>
+              <input
+                className="svc-in svc-in-small"
+                type="number"
+                min={0}
+                step={1}
+                value={s.amount || ""}
+                onChange={e => updateSupply(i, e.target.value)}
+                placeholder="0"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Pricing Summary */}
+      <div className="svc-h-row svc-h-row-sub">
+        <div className="svc-h-sub">Pricing Summary</div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Annual Base Labor</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.annualBaseLabor)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Annual Labor Tax ({form.laborTaxPct}%)</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.annualLaborTax)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Total Annual Labor</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.annualBaseLabor + calc.annualLaborTax)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Annual Supplies</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.totalAnnualSupplies)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Total Annual Cost</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.totalAnnualCost)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Gross Profit ({form.grossProfitPct}%)</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.grossProfit)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Annual Contract Value</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.annualContractValue)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      <div className="svc-row svc-row-charge">
+        <label>Monthly Recurring</label>
+        <div className="svc-row-right">
+          <span className="svc-small">$</span>
+          <input className="svc-in" type="text" readOnly value={fmt(calc.monthlyRecurring)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+        </div>
+      </div>
+
+      {/* Greenline / Redline indicator */}
+      {form.sqFt > 0 && (
+        <div className="svc-row" style={{ marginTop: "-10px", paddingTop: "5px" }}>
           <label></label>
           <div className="svc-row-right">
             {calc.contractTotal > calc.originalContractTotal * 1.30 ? (
-              <span style={{
-                color: '#388e3c',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#e8f5e9',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
+              <span style={{ color: "#388e3c", fontSize: "13px", fontWeight: 600, padding: "4px 8px", backgroundColor: "#e8f5e9", borderRadius: "4px", display: "inline-block" }}>
                 🟢 Greenline Pricing
               </span>
             ) : (
-              <span style={{
-                color: '#d32f2f',
-                fontSize: '13px',
-                fontWeight: '600',
-                padding: '4px 8px',
-                backgroundColor: '#ffebee',
-                borderRadius: '4px',
-                display: 'inline-block'
-              }}>
+              <span style={{ color: "#d32f2f", fontSize: "13px", fontWeight: 600, padding: "4px 8px", backgroundColor: "#ffebee", borderRadius: "4px", display: "inline-block" }}>
                 🔴 Redline Pricing
               </span>
             )}
@@ -691,151 +387,46 @@ export const JanitorialForm: React.FC<
         </div>
       )}
 
-      {}
-      {form.serviceType === "recurring" && (
-        <div className="svc-row svc-row-charge">
-          <label>Weekly Total ({form.visitsPerWeek} visit{form.visitsPerWeek !== 1 ? 's' : ''})</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="text"
-                readOnly
-                value={formatNumber(calc?.weekly || 0)}
-                style={{
-                  backgroundColor: 'white',
-                  border: 'none',
-                  width: '100px'
-                }}
-              />
-            </div>
-          </div>
+      {/* Contract Total */}
+      <div className="svc-row svc-row-charge">
+        <label>Contract Total ({form.contractMonths} mo)</label>
+        <div className="svc-row-right">
+          <span style={{ fontSize: "18px", fontWeight: "bold", marginLeft: "10px" }}>$</span>
+          <input
+            type="text"
+            readOnly
+            className="svc-in"
+            value={fmt(calc.contractTotal)}
+            style={{
+              borderBottom: "2px solid #ff0000",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              backgroundColor: "transparent",
+              fontSize: "16px",
+              fontWeight: "bold",
+              padding: "4px",
+              width: "140px",
+              marginLeft: "5px",
+            }}
+          />
         </div>
-      )}
+      </div>
 
-      {}
-      {form.serviceType === "recurring" && (
-        <div className="svc-row svc-row-charge">
-          <label>Monthly Recurring</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="text"
-                readOnly
-                name="customOngoingMonthly"
-                value={(() => {
-                  const val = form.customOngoingMonthly !== undefined
-                    ? form.customOngoingMonthly
-                    : calc?.recurringMonthly || 0;
-                  return val.toFixed(2);
-                })()}
-                style={{
-                  backgroundColor: form.customOngoingMonthly !== undefined ? '#fffacd' : 'white',
-                  border: 'none',
-                  width: '100px'
-                }}
-                title="Monthly recurring (fixed 2 decimals)"
-              />
-            </div>
-          </div>
+      {/* Notes */}
+      <div className="svc-row">
+        <label>Notes</label>
+        <div className="svc-row-right">
+          <input
+            className="svc-in"
+            type="text"
+            name="notes"
+            value={form.notes ?? ""}
+            onChange={onChange}
+            placeholder="Service notes..."
+          />
         </div>
-      )}
-
-      {}
-      {form.serviceType === "recurring" && form.installation && (
-        <div className="svc-row svc-row-charge">
-          <label>First Month Total (incl. installation)</label>
-          <div className="svc-row-right">
-            <div className="svc-dollar">
-              <span>$</span>
-              <input
-                className="svc-in"
-                type="number"
-              min="0"
-                step="0.01"
-                name="customMonthly"
-                value={getDisplayValue(
-                  'customMonthly',
-                  form.customMonthly !== undefined
-                    ? form.customMonthly
-                    : calc?.firstMonth || 0
-                )}
-                onChange={handleLocalChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={{
-                  backgroundColor: form.customMonthly !== undefined ? '#fffacd' : 'white',
-                  border: 'none',
-                  width: '100px'
-                }}
-                title="First month total - editable"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {}
-      {form.serviceType === "recurring" && (
-        <div className="svc-row svc-row-charge">
-          <label>Contract Total</label>
-          <div className="svc-row-right">
-            <select
-              className="svc-in"
-              name="contractMonths"
-              value={form.contractMonths}
-              disabled
-              style={{
-                borderBottom: '2px solid #000',
-                borderTop: 'none',
-                borderLeft: 'none',
-                borderRight: 'none',
-                backgroundColor: 'transparent',
-                padding: '4px 20px 4px 4px'
-              }}
-            >
-              {(() => {
-                const options = [];
-                for (let months = cfg.minContractMonths; months <= cfg.maxContractMonths; months++) {
-                  options.push(months);
-                }
-                return options.map((months) => (
-                  <option key={months} value={months}>{months} mo</option>
-                ));
-              })()}
-            </select>
-            <span style={{ fontSize: '18px', fontWeight: 'bold', marginLeft: '10px' }}>$</span>
-            <input
-              type="text"
-              readOnly
-              name="customContractTotal"
-              className="svc-in"
-              value={(() => {
-                const val = form.customContractTotal !== undefined
-                  ? form.customContractTotal
-                  : calc?.contractTotal || 0;
-                return val.toFixed(2);
-              })()}
-              style={{
-                borderBottom: '2px solid #ff0000',
-                borderTop: 'none',
-                borderLeft: 'none',
-                borderRight: 'none',
-                backgroundColor: form.customContractTotal !== undefined ? '#fffacd' : 'transparent',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                padding: '4px',
-                width: '140px',
-                marginLeft: '5px'
-              }}
-              title="Contract total (fixed 2 decimals)"
-            />
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

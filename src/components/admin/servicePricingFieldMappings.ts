@@ -347,149 +347,53 @@ function getElectrostaticSprayFields(config: any): Record<string, PricingField[]
 }
 
 function getPureJanitorialFields(config: any): Record<string, PricingField[]> {
-  const standardHourly = getValue(config, ["standardHourlyPricing"]) || {};
-  const shortJob = getValue(config, ["shortJobHourlyPricing"]) || {};
-  const vacuuming = getValue(config, ["vacuuming"]) || {};
-  const dusting = getValue(config, ["dusting"]) || {};
-  const contract = getValue(config, ["contract"]) || {};
-  const tripCharges = getValue(config, ["tripCharges"]) || {};
-  const freqMeta = getValue(config, ["frequencyMetadata"]) || {};
-  const smoothBreakdown = getValue(config, ["smoothBreakdownPricingTable"]) || [];
+  const pr = getValue(config, ["productionRates"]) || {};
+  const ds = getValue(config, ["defaultSupplies"]) || {};
 
-  const baseRates: PricingField[] = [
+  const productionRates: PricingField[] = Object.entries(pr).map(([k, v]) => ({
+    label: k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, ' $1'),
+    value: Number(v),
+    path: ["productionRates", k],
+    unit: "sq ft/hr",
+    description: `Production rate for ${k.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
+  }));
+
+  const laborDefaults: PricingField[] = [
     {
-      label: "Standard Hourly Rate",
-      value: standardHourly.standardHourlyRate ?? 0,
-      path: ["standardHourlyPricing", "standardHourlyRate"],
-      unit: "$ per hour",
-      description: "Standard hourly rate for janitorial services (typically $30)",
+      label: "Cost Per Labor Hour",
+      value: getValue(config, ["costPerHour"]) ?? 20,
+      path: ["costPerHour"],
+      unit: "$/hr",
+      description: "Admin-configured baseline labor cost per hour. Default: $20",
     },
     {
-      label: "Minimum Hours Per Trip",
-      value: standardHourly.minimumHoursPerTrip ?? 0,
-      path: ["standardHourlyPricing", "minimumHoursPerTrip"],
-      unit: "hours",
-      description: "Minimum billable hours per visit (typically 4 hours)",
+      label: "Labor Tax %",
+      value: getValue(config, ["laborTaxPct"]) ?? 15,
+      path: ["laborTaxPct"],
+      unit: "%",
+      description: "Payroll tax and benefits percentage added to base labor. Default: 15%",
     },
     {
-      label: "Short Job Hourly Rate",
-      value: shortJob.shortJobHourlyRate ?? 0,
-      path: ["shortJobHourlyPricing", "shortJobHourlyRate"],
-      unit: "$ per hour",
-      description: "Premium hourly rate for short jobs (typically $50)",
-    },
-    {
-      label: "Minimum Charge Per Visit",
-      value: getValue(config, ["minimumChargePerVisit"]) ?? 0,
-      path: ["minimumChargePerVisit"],
-      unit: "$",
-      description: "Minimum charge per service visit",
+      label: "Gross Profit %",
+      value: getValue(config, ["grossProfitPct"]) ?? 33,
+      path: ["grossProfitPct"],
+      unit: "%",
+      description: "Target gross profit margin. Contract Value = Total Cost ÷ (1 − GP%). Default: 33%",
     },
   ];
 
-  const dustingVacuuming: PricingField[] = [
-    {
-      label: "Dusting - Items Per Hour",
-      value: dusting.itemsPerHour ?? 0,
-      path: ["dusting", "itemsPerHour"],
-      unit: "items/hour",
-      description: "Number of items that can be dusted per hour (typically 30)",
-    },
-    {
-      label: "Dusting - Price Per Item",
-      value: dusting.pricePerItem ?? 0,
-      path: ["dusting", "pricePerItem"],
-      unit: "$",
-      description: "Price per individual dusting item",
-    },
-    {
-      label: "Dusting - Dirty First Time Multiplier",
-      value: dusting.dirtyFirstTimeMultiplier ?? 0,
-      path: ["dusting", "dirtyFirstTimeMultiplier"],
-      unit: "×",
-      description: "Multiplier for first-time dirty facilities (typically 3x)",
-    },
-    {
-      label: "Dusting - Infrequent Service Multiplier (4/Year)",
-      value: dusting.infrequentServiceMultiplier4PerYear ?? 0,
-      path: ["dusting", "infrequentServiceMultiplier4PerYear"],
-      unit: "×",
-      description: "Multiplier for infrequent service (typically 3x)",
-    },
-    {
-      label: "Vacuuming - Estimated Time Hours Per Job",
-      value: vacuuming.estimatedTimeHoursPerJob ?? 0,
-      path: ["vacuuming", "estimatedTimeHoursPerJob"],
-      unit: "hours",
-      description: "Estimated hours for vacuuming job",
-    },
-    {
-      label: "Vacuuming - Large Job Minimum Time Hours",
-      value: vacuuming.largeJobMinimumTimeHours ?? 0,
-      path: ["vacuuming", "largeJobMinimumTimeHours"],
-      unit: "hours",
-      description: "Minimum hours for large vacuuming jobs",
-    },
+  const supplyDefaults: PricingField[] = [
+    { label: "Vacuums",           value: ds.vacuums          ?? 100, path: ["defaultSupplies", "vacuums"],          unit: "$/yr", description: "Default annual cost for vacuum equipment. Default: $100" },
+    { label: "Mops",              value: ds.mops             ?? 500, path: ["defaultSupplies", "mops"],             unit: "$/yr", description: "Default annual cost for mops. Default: $500" },
+    { label: "Mop Buckets",       value: ds.mopBuckets       ?? 200, path: ["defaultSupplies", "mopBuckets"],       unit: "$/yr", description: "Default annual cost for mop buckets. Default: $200" },
+    { label: "Dust Mops",         value: ds.dustMops         ?? 300, path: ["defaultSupplies", "dustMops"],         unit: "$/yr", description: "Default annual cost for dust mops. Default: $300" },
+    { label: "Microfiber",        value: ds.microfiber       ?? 0,   path: ["defaultSupplies", "microfiber"],       unit: "$/yr", description: "Default annual cost for microfiber cloths. Default: $0" },
+    { label: "Cleaning Products", value: ds.cleaningProducts ?? 0,   path: ["defaultSupplies", "cleaningProducts"], unit: "$/yr", description: "Default annual cost for cleaning products. Default: $0" },
+    { label: "Consumables",       value: ds.consumables      ?? 0,   path: ["defaultSupplies", "consumables"],      unit: "$/yr", description: "Default annual cost for consumables. Default: $0" },
+    { label: "Miscellaneous",     value: ds.miscellaneous    ?? 0,   path: ["defaultSupplies", "miscellaneous"],    unit: "$/yr", description: "Default annual cost for miscellaneous supplies. Default: $0" },
   ];
 
-  const contractTerms: PricingField[] = [
-    {
-      label: "Minimum Contract Months",
-      value: contract.minMonths ?? 0,
-      path: ["contract", "minMonths"],
-      unit: "months",
-      description: "Minimum contract duration (typically 2 months)",
-    },
-    {
-      label: "Maximum Contract Months",
-      value: contract.maxMonths ?? 0,
-      path: ["contract", "maxMonths"],
-      unit: "months",
-      description: "Maximum contract duration (typically 36 months)",
-    },
-  ];
-
-  const tripChargeFields: PricingField[] = [
-    {
-      label: "Standard Trip Charge",
-      value: tripCharges.standard ?? 0,
-      path: ["tripCharges", "standard"],
-      unit: "$",
-      description: "Standard trip charge",
-    },
-    {
-      label: "Beltway Trip Charge",
-      value: tripCharges.beltway ?? 0,
-      path: ["tripCharges", "beltway"],
-      unit: "$",
-      description: "Beltway area trip charge",
-    },
-  ];
-
-  const frequencyConversions: PricingField[] = [
-    {
-      label: "Weekly - Monthly Recurring Multiplier",
-      value: freqMeta.weekly?.monthlyRecurringMultiplier ?? 0,
-      path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"],
-      unit: "×",
-      description: "Weekly to monthly conversion (typically 4.33)",
-    },
-    {
-      label: "Biweekly - Monthly Recurring Multiplier",
-      value: freqMeta.biweekly?.monthlyRecurringMultiplier ?? 0,
-      path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"],
-      unit: "×",
-      description: "Biweekly to monthly conversion (typically 2.165)",
-    },
-  ];
-
-  return {
-    baseRates,
-    dustingVacuuming,
-    contractTerms,
-    tripCharges: tripChargeFields,
-    frequencyConversions,
-  };
+  return { productionRates, laborDefaults, supplyDefaults };
 }
 
 function getSaniCleanFields(config: any): Record<string, PricingField[]> {

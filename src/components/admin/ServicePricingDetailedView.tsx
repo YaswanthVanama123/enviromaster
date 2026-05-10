@@ -26,6 +26,7 @@ type TabKey =
   | "standardRates" | "volumePricing" | "greaseTrap" | "greenDrain" | "addonsMultipliers" | "tripCharges" | "billingConversions" | "contractTerms"
   | "basicRates" | "hugeBathrooms" | "extraAreas" | "standalonePricing" | "moppingMetadata" | "contractTerms"
   | "baseRates" | "shortJobPricing" | "serviceMultipliers" | "monthlyConversions" | "contractSettings" | "dustingVacuuming" | "rateTiers" | "smoothBreakdown"
+  | "janProductionRates" | "janLaborDefaults" | "janSupplyDefaults"
   | "insideBeltway" | "outsideBeltway" | "allInclusive" | "smallFacility" | "soapUpgrades" | "warrantyCredits" | "sanicleanBillingConversions" | "sanicleanRateTiers" | "includedItems" | "monthlyAddOns" | "microfiberMoppingAddon" | "contractTerms"
   | "podRates" | "extraBags" | "installation" | "standaloneService" | "frequencySettings" | "sanipodBillingConversions" | "sanipodContractTerms" | "sanipodRateTiers"
   | "fixtureRates" | "saniscrubMinimums" | "nonBathroomPricing" | "saniscrubInstallMultipliers" | "serviceFrequencies" | "discountsAndFees" | "contractTerms"
@@ -51,7 +52,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     if (service.serviceId === "electrostaticSpray") return "sprayRates";
     if (service.serviceId === "foamingDrain") return "standardRates";
     if (service.serviceId === "microfiberMopping") return "basicRates";
-    if (service.serviceId === "pureJanitorial") return "baseRates";
+    if (service.serviceId === "pureJanitorial") return "janProductionRates";
     if (service.serviceId === "saniclean") return "insideBeltway";
     if (service.serviceId === "sanipod") return "podRates";
     if (service.serviceId === "saniscrub") return "fixtureRates";
@@ -65,6 +66,10 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showNewPT, setShowNewPT] = useState(false);
+  const [newPTLabel, setNewPTLabel] = useState("");
+  const [newPTRate, setNewPTRate] = useState("1000");
+  const [savingNewPT, setSavingNewPT] = useState(false);
 
   useEffect(() => {
     if (successMessage) {
@@ -890,149 +895,50 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
     if (service.serviceId === "pureJanitorial") {
 
-      const standardHourly = getValue(["standardHourlyPricing"]) || {};
-      categories.baseRates = [
+      const pr = getValue(["productionRates"]) || {};
+      categories.janProductionRates = Object.entries(pr).map(([k, v]) => ({
+        label: k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, ' $1'),
+        value: Number(v),
+        path: ["productionRates", k],
+        unit: "sq ft/hr",
+        description: `Production rate for ${k.replace(/([A-Z])/g, ' $1').toLowerCase()}`,
+      }));
+
+      categories.janLaborDefaults = [
         {
-          label: "Standard Hourly Rate",
-          value: standardHourly.standardHourlyRate ?? 0,
-          path: ["standardHourlyPricing", "standardHourlyRate"],
-          unit: "$ per hour",
-          description: "Standard hourly rate for janitorial services (typically $30/hour)",
+          label: "Cost Per Labor Hour",
+          value: getValue(["costPerHour"]) ?? 20,
+          path: ["costPerHour"],
+          unit: "$/hr",
+          description: "Admin-configured baseline labor cost per hour. Salespeople can override per quote. Default: $20",
         },
         {
-          label: "Minimum Hours Per Trip",
-          value: standardHourly.minimumHoursPerTrip ?? 0,
-          path: ["standardHourlyPricing", "minimumHoursPerTrip"],
-          unit: "hours",
-          description: "Minimum billable hours required per service visit (typically 4 hours minimum)",
-        },
-      ];
-
-
-      const shortJobPricing = getValue(["shortJobHourlyPricing"]) || {};
-      categories.shortJobPricing = [
-        {
-          label: "Short Job Hourly Rate",
-          value: shortJobPricing.shortJobHourlyRate ?? 0,
-          path: ["shortJobHourlyPricing", "shortJobHourlyRate"],
-          unit: "$ per hour",
-          description: "Premium hourly rate for jobs under minimum hours (typically $50/hour)",
-        },
-      ];
-
-
-      const dustingData = getValue(["dusting"]) || {};
-      categories.serviceMultipliers = [
-        {
-          label: "Dirty First Time Multiplier",
-          value: dustingData.dirtyFirstTimeMultiplier ?? 0,
-          path: ["dusting", "dirtyFirstTimeMultiplier"],
-          unit: "×",
-          description: "Multiplier for first-time dirty/heavily soiled facilities (typically 3x dusting time)",
+          label: "Labor Tax %",
+          value: getValue(["laborTaxPct"]) ?? 15,
+          path: ["laborTaxPct"],
+          unit: "%",
+          description: "Percentage added on top of base labor to cover payroll taxes and benefits. Default: 15%",
         },
         {
-          label: "Infrequent Service Multiplier (4x/year)",
-          value: dustingData.infrequentServiceMultiplier4PerYear ?? 0,
-          path: ["dusting", "infrequentServiceMultiplier4PerYear"],
-          unit: "×",
-          description: "Multiplier for infrequent service like quarterly (typically 3x dusting time)",
+          label: "Gross Profit %",
+          value: getValue(["grossProfitPct"]) ?? 33,
+          path: ["grossProfitPct"],
+          unit: "%",
+          description: "Target gross profit margin. Contract Value = Total Cost ÷ (1 − Gross Profit%). Default: 33%",
         },
       ];
 
-
-      const freqMeta = getValue(["frequencyMetadata"]) || {};
-      categories.monthlyConversions = [
-        {
-          label: "Weekly - Monthly Recurring Multiplier",
-          value: freqMeta.weekly?.monthlyRecurringMultiplier ?? 0,
-          path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"],
-          unit: "×",
-          description: "Multiply weekly rate to get monthly billing (typically 4.33)",
-        },
-        {
-          label: "Weekly - First Month Extra Multiplier",
-          value: freqMeta.weekly?.firstMonthExtraMultiplier ?? 0,
-          path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"],
-          unit: "×",
-          description: "Additional multiplier for first month (typically 3.33)",
-        },
-        {
-          label: "Biweekly - Monthly Recurring Multiplier",
-          value: freqMeta.biweekly?.monthlyRecurringMultiplier ?? 0,
-          path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"],
-          unit: "×",
-          description: "Multiply biweekly rate to get monthly billing (typically 2.165)",
-        },
-        {
-          label: "Biweekly - First Month Extra Multiplier",
-          value: freqMeta.biweekly?.firstMonthExtraMultiplier ?? 0,
-          path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"],
-          unit: "×",
-          description: "Additional multiplier for first month (typically 1.165)",
-        },
-
-
+      const ds = getValue(["defaultSupplies"]) || {};
+      categories.janSupplyDefaults = [
+        { label: "Vacuums",           value: ds.vacuums          ?? 100, path: ["defaultSupplies", "vacuums"],          unit: "$/yr", description: "Default annual cost for vacuum equipment. Default: $100" },
+        { label: "Mops",              value: ds.mops             ?? 500, path: ["defaultSupplies", "mops"],             unit: "$/yr", description: "Default annual cost for mops. Default: $500" },
+        { label: "Mop Buckets",       value: ds.mopBuckets       ?? 200, path: ["defaultSupplies", "mopBuckets"],       unit: "$/yr", description: "Default annual cost for mop buckets. Default: $200" },
+        { label: "Dust Mops",         value: ds.dustMops         ?? 300, path: ["defaultSupplies", "dustMops"],         unit: "$/yr", description: "Default annual cost for dust mops. Default: $300" },
+        { label: "Microfiber",        value: ds.microfiber       ?? 0,   path: ["defaultSupplies", "microfiber"],       unit: "$/yr", description: "Default annual cost for microfiber cloths. Default: $0" },
+        { label: "Cleaning Products", value: ds.cleaningProducts ?? 0,   path: ["defaultSupplies", "cleaningProducts"], unit: "$/yr", description: "Default annual cost for cleaning products. Default: $0" },
+        { label: "Consumables",       value: ds.consumables      ?? 0,   path: ["defaultSupplies", "consumables"],      unit: "$/yr", description: "Default annual cost for consumables. Default: $0" },
+        { label: "Miscellaneous",     value: ds.miscellaneous    ?? 0,   path: ["defaultSupplies", "miscellaneous"],    unit: "$/yr", description: "Default annual cost for miscellaneous supplies. Default: $0" },
       ];
-
-
-      const contract = getValue(["contract"]) || {};
-      categories.contractSettings = [
-
-
-      ];
-
-
-      const vacuumingData = getValue(["vacuuming"]) || {};
-      categories.dustingVacuuming = [
-        {
-          label: "Dusting Items Per Hour",
-          value: dustingData.itemsPerHour ?? 0,
-          path: ["dusting", "itemsPerHour"],
-          unit: "items/hour",
-          description: "Number of dusting items that can be cleaned per hour (typically 30)",
-        },
-        {
-          label: "Dusting Price Per Item",
-          value: dustingData.pricePerItem ?? 0,
-          path: ["dusting", "pricePerItem"],
-          unit: "$ per item",
-          description: "Price per individual dusting item (typically $1)",
-        },
-        {
-          label: "Vacuuming Estimated Time Per Job",
-          value: vacuumingData.estimatedTimeHoursPerJob ?? 0,
-          path: ["vacuuming", "estimatedTimeHoursPerJob"],
-          unit: "hours",
-          description: "Estimated hours per vacuuming job (typically 1 hour)",
-        },
-        {
-          label: "Vacuuming Large Job Minimum Time",
-          value: vacuumingData.largeJobMinimumTimeHours ?? 0,
-          path: ["vacuuming", "largeJobMinimumTimeHours"],
-          unit: "hours",
-          description: "Minimum hours for large vacuuming jobs (typically 1 hour)",
-        },
-      ];
-
-
-      categories.rateTiers = [];
-
-
-      const smoothBreakdown = getValue(["smoothBreakdownPricingTable"]) || [];
-      console.log("🔍 [DEBUG] Pure Janitorial smoothBreakdown data:", smoothBreakdown);
-      categories.smoothBreakdown = smoothBreakdown.map((row: any, index: number) => {
-        console.log(`🔍 [DEBUG] Row ${index}:`, row);
-        console.log(`🔍 [DEBUG] standalonePrice:`, row.standalonePrice);
-        const description = `${row.description || ""} - ${row.addonOnly ? "Add-on only" : "Standalone"}${row.standalonePrice ? ` (Standalone: $${row.standalonePrice})` : ""}`;
-        console.log(`🔍 [DEBUG] Final description:`, description);
-        return {
-          label: row.description || `Tier ${index + 1}`,
-          value: row.price || row.ratePerHour || 0,
-          path: ["smoothBreakdownPricingTable", index.toString(), row.price !== undefined ? "price" : "ratePerHour"],
-          unit: row.upToMinutes !== undefined ? `up to ${row.upToMinutes} min` : (row.upToHours !== undefined ? `up to ${row.upToHours} hrs` : ""),
-          description: description,
-        };
-      });
     }
 
 
@@ -1905,6 +1811,27 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     setEditingField(null);
   };
 
+  const handleAddPlaceType = async () => {
+    const label = newPTLabel.trim();
+    if (!label) return;
+    // Convert "Business Place" → "businessPlace"
+    const key = label
+      .split(/\s+/)
+      .map((w, i) => i === 0 ? w.charAt(0).toLowerCase() + w.slice(1) : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join('');
+    setSavingNewPT(true);
+    try {
+      await onUpdateField(["productionRates", key], parseFloat(newPTRate) || 1000);
+      setSuccessMessage(`✓ Added "${label}" place type!`);
+      setShowNewPT(false);
+      setNewPTLabel("");
+      setNewPTRate("1000");
+    } catch {
+      setErrorMessage("❌ Failed to add place type. Please try again.");
+    } finally {
+      setSavingNewPT(false);
+    }
+  };
   const categories = getFieldsByCategory();
 
 
@@ -1965,14 +1892,9 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
 
     if (service.serviceId === "pureJanitorial") {
       return [
-        { key: "baseRates", label: "Base Rates", icon: faClock },
-        { key: "shortJobPricing", label: "Short Job Pricing", icon: faBolt },
-        { key: "serviceMultipliers", label: "Service Multipliers", icon: faTimes },
-        { key: "monthlyConversions", label: "Monthly Conversions", icon: faCalendar },
-
-        { key: "dustingVacuuming", label: "Dusting & Vacuuming", icon: faBroom },
-        { key: "smoothBreakdown", label: "Smooth Breakdown Pricing", icon: faChartBar },
-
+        { key: "janProductionRates", label: "Production Rates", icon: faRuler },
+        { key: "janLaborDefaults",   label: "Labor Defaults",   icon: faDollarSign },
+        { key: "janSupplyDefaults",  label: "Supply Defaults",  icon: faBox },
       ];
     }
 
@@ -2134,7 +2056,65 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           })}
         </div>
 
-        {categories[activeTab].length === 0 && (
+        {activeTab === "janProductionRates" && (
+          <div style={{ padding: "12px 0 4px" }}>
+            {!showNewPT ? (
+              <button
+                className="spd__btn spd__btn--edit"
+                style={{ marginLeft: "0", display: "flex", alignItems: "center", gap: "6px", fontWeight: 700 }}
+                onClick={() => setShowNewPT(true)}
+              >
+                + New Place Type
+              </button>
+            ) : (
+              <div className="spd__field" style={{ flexWrap: "wrap", gap: "8px", alignItems: "flex-start" }}>
+                <div className="spd__field-info" style={{ minWidth: "160px" }}>
+                  <div className="spd__field-label">New Place Type</div>
+                  <div className="spd__field-description">Enter a name and production rate</div>
+                </div>
+                <div className="spd__field-edit" style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    className="spd__input"
+                    placeholder="e.g. Warehouse"
+                    value={newPTLabel}
+                    onChange={e => setNewPTLabel(e.target.value)}
+                    style={{ minWidth: "140px" }}
+                    autoFocus
+                  />
+                  <input
+                    type="number"
+                    className="spd__input"
+                    placeholder="1000"
+                    value={newPTRate}
+                    onChange={e => setNewPTRate(e.target.value)}
+                    min="1"
+                    step="50"
+                    style={{ width: "90px" }}
+                  />
+                  <span className="spd__unit">sq ft/hr</span>
+                  <div className="spd__actions">
+                    <button
+                      className="spd__btn spd__btn--save"
+                      onClick={handleAddPlaceType}
+                      disabled={savingNewPT || !newPTLabel.trim()}
+                    >
+                      {savingNewPT ? "..." : "Add"}
+                    </button>
+                    <button
+                      className="spd__btn spd__btn--cancel"
+                      onClick={() => { setShowNewPT(false); setNewPTLabel(""); setNewPTRate("1000"); }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {categories[activeTab].length === 0 && !showNewPT && (
           <div className="spd__empty">
             No fields available in this category
           </div>

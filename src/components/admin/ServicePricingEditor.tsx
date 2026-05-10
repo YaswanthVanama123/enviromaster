@@ -20,6 +20,7 @@ type TabKey =
   | "components"
   | "addons"
   | "refreshPowerScrub"
+  | "janitorial"
   | "advanced";
 
 interface Tab {
@@ -100,7 +101,7 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     }
 
 
-    if (["saniclean", "sanipod", "microfiberMopping", "rpmWindows", "pureJanitorial", "stripWax"].includes(serviceId)) {
+    if (["saniclean", "sanipod", "microfiberMopping", "rpmWindows", "stripWax"].includes(serviceId)) {
       allTabs.push({ key: "rateTiers", label: "Rate Tiers", icon: "💰" });
     }
 
@@ -110,8 +111,13 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     }
 
 
-    if (["saniscrub", "rpmWindows", "carpetCleaning", "pureJanitorial", "refreshPowerScrub"].includes(serviceId)) {
+    if (["saniscrub", "rpmWindows", "carpetCleaning", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "multipliers", label: "Multipliers", icon: "✖️" });
+    }
+
+
+    if (serviceId === "pureJanitorial") {
+      allTabs.push({ key: "janitorial", label: "Janitorial Config", icon: "🧹" });
     }
 
 
@@ -243,6 +249,14 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
 
         {activeTab === "refreshPowerScrub" && (
           <RefreshPowerScrubTab
+            editedConfig={editedConfig}
+            updateConfig={updateConfig}
+            getConfigValue={getConfigValue}
+          />
+        )}
+
+        {activeTab === "janitorial" && (
+          <JanitorialAdminTab
             editedConfig={editedConfig}
             updateConfig={updateConfig}
             getConfigValue={getConfigValue}
@@ -2198,6 +2212,160 @@ const AdvancedTab: React.FC<{
         rows={30}
         spellCheck={false}
       />
+    </div>
+  );
+};
+
+
+const JANITORIAL_SUPPLY_DEFAULTS = [
+  { key: "vacuums",          label: "Vacuums",           defaultAmount: 100 },
+  { key: "mops",             label: "Mops",              defaultAmount: 500 },
+  { key: "mopBuckets",       label: "Mop Buckets",       defaultAmount: 200 },
+  { key: "dustMops",         label: "Dust Mops",         defaultAmount: 300 },
+  { key: "microfiber",       label: "Microfiber",        defaultAmount: 0   },
+  { key: "cleaningProducts", label: "Cleaning Products", defaultAmount: 0   },
+  { key: "consumables",      label: "Consumables",       defaultAmount: 0   },
+  { key: "miscellaneous",    label: "Miscellaneous",     defaultAmount: 0   },
+];
+
+const JanitorialAdminTab: React.FC<{
+  editedConfig: Record<string, any>;
+  updateConfig: (path: string[], value: any) => void;
+  getConfigValue: (path: string[]) => any;
+}> = ({ getConfigValue, updateConfig }) => {
+
+  const num = (path: string[], fallback: number) => {
+    const v = getConfigValue(path);
+    return v !== undefined && v !== null ? Number(v) : fallback;
+  };
+
+  return (
+    <div className="spe__tab-content">
+
+      {/* Production Rates */}
+      <h3 className="spe__section-title">Production Rates (sq ft per hour)</h3>
+      <p className="spe__hint" style={{ marginBottom: "16px" }}>
+        Sets how many square feet one worker cleans per hour for each place type.
+        Hours Per Visit = Square Feet ÷ Production Rate.
+      </p>
+      <div className="spe__geo-grid">
+        {[
+          { key: "office",        label: "Office",         default: 1000 },
+          { key: "home",          label: "Home",           default: 500  },
+          { key: "restaurant",    label: "Restaurant",     default: 750  },
+          { key: "businessPlace", label: "Business Place", default: 2000 },
+        ].map(pt => (
+          <div key={pt.key} className="spe__geo-section">
+            <h4 className="spe__subsection-title">{pt.label}</h4>
+            <div className="spe__field-group">
+              <label className="spe__label">sq ft / hr</label>
+              <input
+                type="number"
+                className="spe__input"
+                value={num(["productionRates", pt.key], pt.default)}
+                onChange={e => updateConfig(["productionRates", pt.key], Number(e.target.value) || 0)}
+                min="1"
+                step="50"
+              />
+              <div className="spe__hint">Default: {pt.default} sq ft/hr</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Labor Defaults */}
+      <h3 className="spe__section-title" style={{ marginTop: "24px" }}>Labor Defaults</h3>
+      <p className="spe__hint" style={{ marginBottom: "16px" }}>
+        These are the admin-configured baseline values. Salespeople can override them per quote.
+      </p>
+      <div className="spe__geo-grid">
+        <div className="spe__geo-section">
+          <h4 className="spe__subsection-title">Cost Per Labor Hour</h4>
+          <div className="spe__field-group">
+            <label className="spe__label">$ / hr</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={num(["costPerHour"], 20)}
+              onChange={e => updateConfig(["costPerHour"], Number(e.target.value) || 0)}
+              min="0"
+              step="0.5"
+            />
+            <div className="spe__hint">Default: $20/hr</div>
+          </div>
+        </div>
+
+        <div className="spe__geo-section">
+          <h4 className="spe__subsection-title">Labor Tax %</h4>
+          <div className="spe__field-group">
+            <label className="spe__label">%</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={num(["laborTaxPct"], 15)}
+              onChange={e => updateConfig(["laborTaxPct"], Number(e.target.value) || 0)}
+              min="0"
+              max="100"
+              step="0.5"
+            />
+            <div className="spe__hint">Default: 15%</div>
+          </div>
+        </div>
+
+        <div className="spe__geo-section">
+          <h4 className="spe__subsection-title">Gross Profit %</h4>
+          <div className="spe__field-group">
+            <label className="spe__label">%</label>
+            <input
+              type="number"
+              className="spe__input"
+              value={num(["grossProfitPct"], 33)}
+              onChange={e => updateConfig(["grossProfitPct"], Number(e.target.value) || 0)}
+              min="0"
+              max="99"
+              step="0.5"
+            />
+            <div className="spe__hint">
+              Default: 33% — Contract Value = Total Cost ÷ (1 − Gross Profit%)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Default Supply Line Items */}
+      <h3 className="spe__section-title" style={{ marginTop: "24px" }}>Default Supply Line Items (Annual $)</h3>
+      <p className="spe__hint" style={{ marginBottom: "16px" }}>
+        These are the default annual supply costs pre-filled when creating a new quote.
+        Salespeople can edit them per quote.
+      </p>
+      <table className="spe__table">
+        <thead>
+          <tr>
+            <th>Supply Item</th>
+            <th>Default Annual Amount ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {JANITORIAL_SUPPLY_DEFAULTS.map(item => (
+            <tr key={item.key}>
+              <td className="spe__freq-label">{item.label}</td>
+              <td>
+                <input
+                  type="number"
+                  className="spe__input"
+                  value={num(["defaultSupplies", item.key], item.defaultAmount)}
+                  onChange={e =>
+                    updateConfig(["defaultSupplies", item.key], Number(e.target.value) || 0)
+                  }
+                  min="0"
+                  step="10"
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
     </div>
   );
 };
