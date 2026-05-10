@@ -251,7 +251,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         perVisitBase: quote.weeklyService,  
         perVisit: quote.weeklyTotal,  
         minimumChargePerVisit: quote.minimumChargePerVisit,  
-        contractTotal: quote.contractTotal,
+        contractTotal: quote.annualRecurring,
         originalContractTotal: quote.originalContractTotal,
 
         frequency: {
@@ -1370,7 +1370,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             <div className="svc-row" style={{ marginTop: '-10px', paddingTop: '5px' }}>
               <div className="svc-label"></div>
               <div className="svc-field">
-                {quote.contractTotal > quote.originalContractTotal * 1.30 ? (
+                {quote.annualRecurring > quote.originalContractTotal * 1.30 ? (
                   <span style={{
                     color: '#388e3c',
                     fontSize: '13px',
