@@ -1249,12 +1249,12 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
       originalContractTotal: (() => {
 
         if (!serviceActive) return 0;
-        const baselineFixtureRate = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth" || freq === "everyFourWeeks"
+        const baselineFixtureRate = freq === "oneTime" || freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth" || freq === "everyFourWeeks"
           ? activeConfig.fixtureRates.monthly
           : freq === "bimonthly"
           ? activeConfig.fixtureRates.bimonthly
           : activeConfig.fixtureRates.quarterly;
-        const baselineMinimum = freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth" || freq === "everyFourWeeks"
+        const baselineMinimum = freq === "oneTime" || freq === "monthly" || freq === "weekly" || freq === "biweekly" || freq === "twicePerMonth" || freq === "everyFourWeeks"
           ? activeConfig.minimums.monthly
           : freq === "bimonthly"
           ? activeConfig.minimums.bimonthly
@@ -1291,16 +1291,69 @@ export function useSaniscrubCalc(initial?: Partial<SaniscrubFormState>, customFi
         const baselineMonthlyTwice = (baselineBaseAmount * 2) + (baselineNonBathroomPerVisit * 2);
         let baselineContractTotal = 0;
         if (freq === "oneTime") {
-          baselineContractTotal = baselinePerVisit;
+          // One-time: include installation multiplier at admin rates (mirrors actual calc)
+          if (form.includeInstall && baselinePerVisit > 0) {
+            const baselineInstallMultiplier = form.isDirtyInstall
+              ? activeConfig.installMultipliers.dirty
+              : activeConfig.installMultipliers.clean;
+            baselineContractTotal = baselinePerVisit * baselineInstallMultiplier;
+          } else {
+            baselineContractTotal = baselinePerVisit;
+          }
         } else if (freq === "weekly" || freq === "biweekly") {
-          baselineContractTotal = contractMonths * monthlyVisits * baselinePerVisit;
+          if (form.includeInstall && baselinePerVisit > 0) {
+            const baselineInstallMultiplier = form.isDirtyInstall
+              ? activeConfig.installMultipliers.dirty
+              : activeConfig.installMultipliers.clean;
+            const baselineInstallOneTime = baselinePerVisit * baselineInstallMultiplier;
+            const baselineFirstMonth = baselineInstallOneTime + Math.max(monthlyVisits - 1, 0) * baselinePerVisit;
+            baselineContractTotal = baselineFirstMonth + Math.max(contractMonths - 1, 0) * monthlyVisits * baselinePerVisit;
+          } else {
+            baselineContractTotal = contractMonths * monthlyVisits * baselinePerVisit;
+          }
         } else if (freq === "monthly") {
-          baselineContractTotal = contractMonths * baselinePerVisit;
+          if (form.includeInstall && baselinePerVisit > 0) {
+            const baselineInstallMultiplier = form.isDirtyInstall
+              ? activeConfig.installMultipliers.dirty
+              : activeConfig.installMultipliers.clean;
+            const baselineInstallOneTime = baselinePerVisit * baselineInstallMultiplier;
+            baselineContractTotal = baselineInstallOneTime + Math.max(contractMonths - 1, 0) * baselinePerVisit;
+          } else {
+            baselineContractTotal = contractMonths * baselinePerVisit;
+          }
         } else if (freq === "twicePerMonth") {
-          baselineContractTotal = contractMonths * baselineMonthlyTwice;
+          if (form.includeInstall && baselinePerVisit > 0) {
+            const baselineInstallMultiplier = form.isDirtyInstall
+              ? activeConfig.installMultipliers.dirty
+              : activeConfig.installMultipliers.clean;
+            const baselineInstallOneTime = baselinePerVisit * baselineInstallMultiplier;
+            let baselineFirstMonth = baselineInstallOneTime + Math.max(monthlyVisits - 1, 0) * baselinePerVisit;
+            if (form.hasSaniClean) {
+              baselineFirstMonth = Math.max(0, baselineFirstMonth - activeConfig.twoTimesPerMonthDiscountFlat);
+            }
+            let baselineMonthlyRecurring = baselineMonthlyTwice;
+            if (form.hasSaniClean) {
+              baselineMonthlyRecurring = Math.max(0, baselineMonthlyRecurring - activeConfig.twoTimesPerMonthDiscountFlat);
+            }
+            baselineContractTotal = baselineFirstMonth + Math.max(contractMonths - 1, 0) * baselineMonthlyRecurring;
+          } else {
+            let baselineMonthlyRecurring = baselineMonthlyTwice;
+            if (form.hasSaniClean) {
+              baselineMonthlyRecurring = Math.max(0, baselineMonthlyRecurring - activeConfig.twoTimesPerMonthDiscountFlat);
+            }
+            baselineContractTotal = contractMonths * baselineMonthlyRecurring;
+          }
         } else {
-
-          baselineContractTotal = totalVisitsForContract * baselinePerVisit;
+          // bimonthly, quarterly, biannual, annual, everyFourWeeks
+          if (form.includeInstall && baselinePerVisit > 0) {
+            const baselineInstallMultiplier = form.isDirtyInstall
+              ? activeConfig.installMultipliers.dirty
+              : activeConfig.installMultipliers.clean;
+            const baselineInstallOneTime = baselinePerVisit * baselineInstallMultiplier;
+            baselineContractTotal = baselineInstallOneTime + Math.max(totalVisitsForContract - 1, 0) * baselinePerVisit;
+          } else {
+            baselineContractTotal = totalVisitsForContract * baselinePerVisit;
+          }
         }
         return baselineContractTotal;
       })(),
