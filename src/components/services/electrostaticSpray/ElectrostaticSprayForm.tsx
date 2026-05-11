@@ -874,7 +874,7 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
                     'customFirstMonthTotal',
                     form.customFirstMonthTotal !== undefined
                       ? form.customFirstMonthTotal
-                      : calc.contractTotal,
+                      : calc.perVisit,
                     true
                   )}
                   onChange={handleLocalChange}
