@@ -207,7 +207,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
       const totalPriceValue =
         state.frequency === "oneTime"
-          ? state.customWeeklyService ?? quote.contractTotal
+          ? state.customWeeklyService ?? quote.annualRecurring
           : undefined;
 
       const data = isActive ? {
@@ -1419,7 +1419,7 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
                     'customWeeklyService',
                     state.customWeeklyService !== undefined
                       ? state.customWeeklyService
-                      : quote.contractTotal,
+                      : quote.annualRecurring,
                     true
                   )}
                   style={{
