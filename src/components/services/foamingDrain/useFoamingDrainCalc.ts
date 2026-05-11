@@ -1049,7 +1049,21 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       originalContractTotal: (() => {
         if (!weeklyServiceRaw) return 0;
-        const baselineStandardDrains = standardDrainsActive * activeConfig.standardDrainRate;
+        // Use same alt pricing logic as the main calculation (lines 710-744)
+        const bTenTotal = standardDrainsActive * activeConfig.standardDrainRate;
+        const bAltTotal = standardDrainsActive > 0
+          ? activeConfig.altBaseCharge + activeConfig.altExtraPerDrain * standardDrainsActive
+          : 0;
+        let baselineUseAlt = false;
+        if (standardDrainsActive > 0 && !state.isAllInclusive) {
+          if (state.useSmallAltPricingWeekly) {
+            baselineUseAlt = bAltTotal <= bTenTotal && bAltTotal > 0;
+          } else if (!state.useBigAccountTenWeekly) {
+            baselineUseAlt = bAltTotal > 0 && bAltTotal < bTenTotal;
+          }
+        }
+        const baselineStandardDrains = state.isAllInclusive ? 0
+          : baselineUseAlt ? bAltTotal : bTenTotal;
         const baselineInstallDrains = installDrains > 0 && canUseInstallProgram
           ? (state.installFrequency === "bimonthly"
               ? activeConfig.volumePricing.bimonthlyRatePerDrain
@@ -1065,18 +1079,21 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         const baselineNormalMonth = baselineWeekly * frequencyMultiplier;
         const freqLowerOct = frequency.toLowerCase();
 
-        // Baseline installation charges (using admin config rates)
+        // Baseline installation charges (using admin config rates + same alt pricing logic)
         let baselineInstallation = 0;
         if (condition === "filthy" && standardDrainsActive > 0 && !state.useBigAccountTenWeekly) {
           const filthyDrainCount = filthyDrains > 0 && filthyDrains <= standardDrainsActive
             ? filthyDrains : standardDrainsActive;
-          const bTenTotal = standardDrainsActive * activeConfig.standardDrainRate;
-          const bAltTotal = standardDrainsActive > 0
+          const bInstTenTotal = standardDrainsActive * activeConfig.standardDrainRate;
+          const bInstAltTotal = standardDrainsActive > 0
             ? activeConfig.altBaseCharge + activeConfig.altExtraPerDrain * standardDrainsActive : 0;
-          const bUseAlt = state.useSmallAltPricingWeekly
-            ? (bAltTotal <= bTenTotal && bAltTotal > 0)
-            : state.useBigAccountTenWeekly;
-          const bFilthyCost = bUseAlt
+          let bInstUseAlt = false;
+          if (state.useSmallAltPricingWeekly) {
+            bInstUseAlt = bInstAltTotal <= bInstTenTotal && bInstAltTotal > 0;
+          } else if (!state.useBigAccountTenWeekly) {
+            bInstUseAlt = bInstAltTotal > 0 && bInstAltTotal < bInstTenTotal;
+          }
+          const bFilthyCost = bInstUseAlt
             ? activeConfig.altBaseCharge + activeConfig.altExtraPerDrain * filthyDrainCount
             : activeConfig.standardDrainRate * filthyDrainCount;
           baselineInstallation += bFilthyCost * activeConfig.installationRules.filthyMultiplier;
@@ -1154,7 +1171,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
           }
         }
-        return round2(baselineContractRaw);
+        // Include custom fields in baseline (same extra charges apply regardless of rates)
+        return round2(baselineContractRaw) + customFieldsTotal;
       })(),
     };
 
