@@ -1332,11 +1332,36 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       }
     });
 
+    // Compute originalContractTotal using admin baseline rates (not user-modified rates)
+    const baselineFixtureRateInside = config.standardALaCartePricing?.insideBeltway?.pricePerFixture ?? SANICLEAN_CONFIG.perItemCharge.insideBeltway.ratePerFixture;
+    const baselineFixtureRateOutside = config.standardALaCartePricing?.outsideBeltway?.pricePerFixture ?? SANICLEAN_CONFIG.perItemCharge.outsideBeltway.ratePerFixture;
+    const baselineAllInclusiveRate = config.allInclusivePricing?.pricePerFixture ?? SANICLEAN_CONFIG.allInclusivePackage.weeklyRatePerFixture;
+    const baselineForm = {
+      ...mappedForm,
+      insideBeltwayRatePerFixture: baselineFixtureRateInside,
+      outsideBeltwayRatePerFixture: baselineFixtureRateOutside,
+      allInclusiveWeeklyRatePerFixture: baselineAllInclusiveRate,
+      customBaseService: undefined,
+      customWeeklyTotal: undefined,
+      customMonthlyTotal: undefined,
+      customContractTotal: undefined,
+      customTripCharge: undefined,
+    } as SanicleanFormState;
+
+    let baselineQuote: SanicleanQuoteResult;
+    if (baselineForm.pricingMode === "all_inclusive") {
+      baselineQuote = calculateAllInclusive(baselineForm, config);
+    } else {
+      baselineQuote = calculatePerItemCharge(baselineForm, config);
+    }
+    const originalContractTotal = baselineQuote.contractTotal;
+
     return {
       ...baseQuote,
       weeklyTotal: effectiveWeeklyTotal,
       monthlyTotal: effectiveMonthlyTotal,
-      contractTotal: effectiveContractTotal, 
+      contractTotal: effectiveContractTotal,
+      originalContractTotal,
     };
   }, [form, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 

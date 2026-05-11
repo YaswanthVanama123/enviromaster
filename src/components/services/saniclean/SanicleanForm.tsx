@@ -610,6 +610,7 @@ export const SanicleanForm: React.FC<
         frequency: form.frequency, 
         facilityComponentFrequency: form.facilityComponentFrequency, 
         contractMonths: form.contractMonths,
+        originalContractTotal: quote.originalContractTotal ?? quote.contractTotal,
 
         frequency: {
           isDisplay: true,
@@ -1931,7 +1932,7 @@ export const SanicleanForm: React.FC<
         <div className="svc-row" style={{ paddingTop: '5px' }}>
           <label></label>
           <div className="svc-row-right">
-            {(servicesContext?.getTotalAgreementAmount() ?? 0) > (servicesContext?.getTotalOriginalContractTotal() ?? 0) * 1.30 ? (
+            {quote.contractTotal > (quote.originalContractTotal ?? quote.contractTotal) * 1.30 ? (
               <span style={{
                 color: '#388e3c',
                 fontSize: '13px',

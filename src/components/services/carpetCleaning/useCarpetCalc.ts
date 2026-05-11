@@ -1005,7 +1005,8 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
         if (form.includeInstall && installOneTime > 0) {
 
-          calculatedContractTotal = installOneTime;
+          const remainingServices = Math.max(totalServices - 1, 0);
+          calculatedContractTotal = installOneTime + (remainingServices * perVisitCharge);
         } else {
 
           calculatedContractTotal = totalServices * perVisitCharge;
@@ -1065,13 +1066,37 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           baselinePerVisitBase = baselineFirstUnitRate + (additionalBlocks * baselineAdditionalUnitRate);
         }
       }
+      const baselinePerVisitCharge = form.applyMinimum !== false
+        ? Math.max(baselinePerVisitBase, baseConfig.perVisitMinimum ?? 0)
+        : baselinePerVisitBase;
+      const baselineInstallOneTime = form.includeInstall
+        ? baselinePerVisitCharge * (form.isDirtyInstall
+            ? baseConfig.installMultipliers.dirty
+            : baseConfig.installMultipliers.clean)
+        : 0;
+      const baselineMonthlyRecurring = baselinePerVisitCharge * monthlyVisits;
+
       if (freq === "oneTime") {
-        originalContractTotal = baselinePerVisitBase;
+        originalContractTotal = form.includeInstall && baselineInstallOneTime > 0
+          ? baselineInstallOneTime
+          : baselinePerVisitCharge;
       } else if (isVisitBasedFrequency) {
-        const totalVisits = totalVisitsForContract;
-        originalContractTotal = totalVisits * baselinePerVisitBase;
+        if (form.includeInstall && baselineInstallOneTime > 0) {
+          const remainingVisits = Math.max(totalVisitsForContract - 1, 0);
+          originalContractTotal = baselineInstallOneTime + (remainingVisits * baselinePerVisitCharge);
+        } else {
+          originalContractTotal = totalVisitsForContract * baselinePerVisitCharge;
+        }
       } else {
-        originalContractTotal = contractMonths * monthlyVisits * baselinePerVisitBase;
+        if (form.includeInstall && baselineInstallOneTime > 0) {
+          const backendMeta = backendConfig?.frequencyMetadata?.[freq];
+          const extraVisits = backendMeta?.firstMonthExtraMultiplier ?? Math.max(monthlyVisits - 1, 0);
+          const baselineFirstMonth = baselineInstallOneTime + (extraVisits * baselinePerVisitCharge);
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          originalContractTotal = baselineFirstMonth + (remainingMonths * baselineMonthlyRecurring);
+        } else {
+          originalContractTotal = contractMonths * baselineMonthlyRecurring;
+        }
       }
     }
 

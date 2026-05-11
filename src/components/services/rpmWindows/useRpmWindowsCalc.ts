@@ -1257,16 +1257,38 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     const originalPerVisitWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(originalPerVisitRated, minimumChargePerVisit) : originalPerVisitRated) : 0;
     const originalStandardMonthlyBill = originalPerVisitWithMinimum * monthlyVisits;
 
+    // Baseline installation (using admin config multiplier, not user override)
+    const baselineInstallMultiplier = form.isFirstTimeInstall
+      ? (activeConfig.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime)
+      : (activeConfig.installMultiplierClean ?? cfg.installMultiplierClean);
+    const baselineInstallOneTime = form.isFirstTimeInstall && hasWindows
+      ? Math.max(weeklyWindows, minimumChargePerVisit) * baselineInstallMultiplier * (rateCfg?.multiplier ?? 1)
+      : 0;
+
     let originalContractTotal = 0;
     if (contractMonths > 0 && hasWindows) {
       if (freqKey === "oneTime") {
-        originalContractTotal = originalPerVisitWithMinimum;
+        originalContractTotal = form.isFirstTimeInstall
+          ? baselineInstallOneTime
+          : originalPerVisitWithMinimum;
       } else if (isVisitBasedFrequency) {
         const cycleMonths = getCycleMonths(freqKey, backendConfig);
         const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
-        originalContractTotal = totalVisits * originalPerVisitWithMinimum;
+        if (form.isFirstTimeInstall && baselineInstallOneTime > 0) {
+          const serviceVisits = Math.max(totalVisits - 1, 0);
+          originalContractTotal = baselineInstallOneTime + (serviceVisits * originalPerVisitWithMinimum);
+        } else {
+          originalContractTotal = totalVisits * originalPerVisitWithMinimum;
+        }
       } else {
-        originalContractTotal = originalStandardMonthlyBill * contractMonths;
+        if (form.isFirstTimeInstall && baselineInstallOneTime > 0) {
+          const effectiveServiceVisitsFirst = monthlyVisits > 1 ? monthlyVisits - 1 : 0;
+          const baselineFirstMonth = baselineInstallOneTime + originalPerVisitWithMinimum * effectiveServiceVisitsFirst;
+          const remainingMonths = Math.max(contractMonths - 1, 0);
+          originalContractTotal = baselineFirstMonth + (originalStandardMonthlyBill * remainingMonths);
+        } else {
+          originalContractTotal = originalStandardMonthlyBill * contractMonths;
+        }
       }
     }
 

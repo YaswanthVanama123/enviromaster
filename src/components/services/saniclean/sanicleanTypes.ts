@@ -293,6 +293,7 @@ export interface SanicleanQuoteResult {
   weeklyTotal: number;
   monthlyTotal: number;
   contractTotal: number;
+  originalContractTotal?: number;
   oneTimeTotal?: number;
 
 

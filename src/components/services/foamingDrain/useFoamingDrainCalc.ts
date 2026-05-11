@@ -1059,21 +1059,90 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         const baselineWeekly = baselineWeeklyRaw > 0 ? (state.applyMinimum !== false ? Math.max(round2(baselineWeeklyRaw), minimumChargePerVisit) : round2(baselineWeeklyRaw)) : 0;
         const baselineNormalMonth = baselineWeekly * frequencyMultiplier;
         const freqLowerOct = frequency.toLowerCase();
+
+        // Baseline installation charges (using admin config rates)
+        let baselineInstallation = 0;
+        if (condition === "filthy" && standardDrainsActive > 0 && !state.useBigAccountTenWeekly) {
+          const filthyDrainCount = filthyDrains > 0 && filthyDrains <= standardDrainsActive
+            ? filthyDrains : standardDrainsActive;
+          const bTenTotal = standardDrainsActive * activeConfig.standardDrainRate;
+          const bAltTotal = standardDrainsActive > 0
+            ? activeConfig.altBaseCharge + activeConfig.altExtraPerDrain * standardDrainsActive : 0;
+          const bUseAlt = state.useSmallAltPricingWeekly
+            ? (bAltTotal <= bTenTotal && bAltTotal > 0)
+            : state.useBigAccountTenWeekly;
+          const bFilthyCost = bUseAlt
+            ? activeConfig.altBaseCharge + activeConfig.altExtraPerDrain * filthyDrainCount
+            : activeConfig.standardDrainRate * filthyDrainCount;
+          baselineInstallation += bFilthyCost * activeConfig.installationRules.filthyMultiplier;
+        }
+        if (state.chargeGreaseTrapInstall && greaseTraps > 0) {
+          baselineInstallation += activeConfig.grease.installPerTrap * greaseTraps;
+        }
+        if (greenDrains > 0) {
+          baselineInstallation += activeConfig.green.installPerDrain * greenDrains;
+        }
+        baselineInstallation = round2(baselineInstallation);
+
+        // Baseline first visit service (subset of weekly during install visit)
+        let baselineFirstVisitService = 0;
+        if (baselineInstallation > 0) {
+          baselineFirstVisitService = baselineInstallDrains + baselinePlumbing;
+          if (condition === "normal") baselineFirstVisitService += baselineStandardDrains;
+          if (!state.chargeGreaseTrapInstall) baselineFirstVisitService += baselineGrease;
+          baselineFirstVisitService = round2(baselineFirstVisitService);
+        }
+        const baselineFirstVisitPrice = baselineInstallation + baselineFirstVisitService;
+
         let baselineContractRaw = 0;
         if (freqLowerOct === "bimonthly") {
           const contractVisitsForTerm = Math.round(contractMonths / 2);
-          baselineContractRaw = baselineWeekly * contractVisitsForTerm;
+          if (baselineInstallation > 0) {
+            const remainingVisits = Math.max(contractVisitsForTerm - 1, 0);
+            baselineContractRaw = baselineFirstVisitPrice + (baselineWeekly * remainingVisits);
+          } else {
+            baselineContractRaw = baselineWeekly * contractVisitsForTerm;
+          }
         } else if (freqLowerOct === "quarterly") {
           const totalVisits = Math.max(Math.floor(contractMonths / 3), 1);
-          baselineContractRaw = baselineWeekly * totalVisits;
+          if (baselineInstallation > 0) {
+            const remainingVisits = Math.max(totalVisits - 1, 0);
+            baselineContractRaw = baselineFirstVisitPrice + (baselineWeekly * remainingVisits);
+          } else {
+            baselineContractRaw = baselineWeekly * totalVisits;
+          }
         } else if (freqLowerOct === "biannual") {
           const totalVisits = Math.max(Math.floor(contractMonths / 6), 1);
-          baselineContractRaw = baselineWeekly * totalVisits;
+          if (baselineInstallation > 0) {
+            const remainingVisits = Math.max(totalVisits - 1, 0);
+            baselineContractRaw = baselineFirstVisitPrice + (baselineWeekly * remainingVisits);
+          } else {
+            baselineContractRaw = baselineWeekly * totalVisits;
+          }
         } else if (freqLowerOct === "annual") {
           const totalVisits = Math.max(Math.floor(contractMonths / 12), 1);
-          baselineContractRaw = baselineWeekly * totalVisits;
+          if (baselineInstallation > 0) {
+            const remainingVisits = Math.max(totalVisits - 1, 0);
+            baselineContractRaw = baselineFirstVisitPrice + (baselineWeekly * remainingVisits);
+          } else {
+            baselineContractRaw = baselineWeekly * totalVisits;
+          }
+        } else if (freqLowerOct === "everyfourweeks") {
+          const totalVisits = Math.round(contractMonths * 1.0833);
+          if (baselineInstallation > 0) {
+            const remainingVisits = Math.max(totalVisits - 1, 0);
+            baselineContractRaw = baselineFirstVisitPrice + (baselineWeekly * remainingVisits);
+          } else {
+            baselineContractRaw = baselineWeekly * totalVisits;
+          }
         } else {
-          baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
+          // Standard frequencies (weekly, biweekly, twicePerMonth, monthly)
+          if (baselineInstallation > 0) {
+            const baselineFirstMonth = baselineFirstVisitPrice + baselineWeekly * Math.max(0, frequencyMultiplier - 1);
+            baselineContractRaw = baselineFirstMonth + (contractMonths - 1) * baselineNormalMonth;
+          } else {
+            baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
+          }
         }
         return round2(baselineContractRaw);
       })(),
