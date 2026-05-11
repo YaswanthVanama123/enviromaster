@@ -1274,6 +1274,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
         originalContractTotal = form.isFirstTimeInstall
           ? baselineInstallOneTime
           : originalPerVisitWithMinimum;
+      } else if (freqKey === "everyFourWeeks") {
+        // Every 4 Weeks uses 1.0833 visits/month (13/year), matching actual contract total formula
+        const totalVisits = Math.round(contractMonths * 1.0833);
+        if (form.isFirstTimeInstall && baselineInstallOneTime > 0) {
+          const serviceVisits = Math.max(totalVisits - 1, 0);
+          originalContractTotal = baselineInstallOneTime + (serviceVisits * originalPerVisitWithMinimum);
+        } else {
+          originalContractTotal = totalVisits * originalPerVisitWithMinimum;
+        }
       } else if (isVisitBasedFrequency) {
         const cycleMonths = getCycleMonths(freqKey, backendConfig);
         const totalVisits = Math.max(Math.floor(contractMonths / cycleMonths), 1);
