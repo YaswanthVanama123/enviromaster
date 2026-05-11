@@ -11,6 +11,8 @@ import { useServicesContextOptional } from "../ServicesContext";
 const fmt = (n: number): string =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const VISIT_BASED_FREQUENCIES = ["everyFourWeeks", "bimonthly", "quarterly", "biannual", "annual"];
+
 const DEFAULT_PLACE_TYPE_LABELS: Record<string, string> = {
   office:        "Office",
   home:          "Home",
@@ -55,6 +57,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           isActive: true,
           contractTotal: calc.contractTotal,
           originalContractTotal: calc.originalContractTotal,
+          perVisit: calc.perVisit,
           frequency: {
             isDisplay: true,
             orderNo: 1,
@@ -89,13 +92,22 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
               isDisplay: true, orderNo: 35, label: "Annual Contract Value",
               type: "dollar" as const, amount: calc.annualContractValue,
             },
-            monthlyRecurring: {
-              isDisplay: true, orderNo: 36, label: "Monthly Recurring",
-              type: "dollar" as const, amount: calc.monthlyRecurring,
-            },
+            ...(form.frequency !== "oneTime" && !VISIT_BASED_FREQUENCIES.includes(form.frequency) ? {
+              monthlyRecurring: {
+                isDisplay: true, orderNo: 36, label: "Monthly Recurring",
+                type: "dollar" as const, amount: calc.monthlyRecurring,
+              },
+            } : {}),
+            ...(VISIT_BASED_FREQUENCIES.includes(form.frequency) ? {
+              recurringVisitTotal: {
+                isDisplay: true, orderNo: 36, label: "Recurring Visit Total",
+                type: "dollar" as const, amount: calc.perVisit,
+              },
+            } : {}),
             contract: {
-              isDisplay: true, orderNo: 37, label: "Contract Total",
-              type: "dollar" as const, months: form.contractMonths,
+              isDisplay: true, orderNo: 37,
+              label: form.frequency === "oneTime" ? "Total Price" : "Contract Total",
+              type: "dollar" as const, months: form.frequency === "oneTime" ? undefined : form.contractMonths,
               amount: calc.contractTotal,
             },
           },
@@ -361,13 +373,27 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      <div className="svc-row svc-row-charge">
-        <label>Monthly Recurring</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.monthlyRecurring)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+      {/* Show Monthly Recurring for month-based frequencies */}
+      {form.frequency !== "oneTime" && !VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
+        <div className="svc-row svc-row-charge">
+          <label>Monthly Recurring</label>
+          <div className="svc-row-right">
+            <span className="svc-small">$</span>
+            <input className="svc-in" type="text" readOnly value={fmt(calc.monthlyRecurring)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Show Recurring Visit Total for visit-based frequencies */}
+      {VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
+        <div className="svc-row svc-row-charge">
+          <label>Recurring Visit Total</label>
+          <div className="svc-row-right">
+            <span className="svc-small">$</span>
+            <input className="svc-in" type="text" readOnly value={fmt(calc.perVisit)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+          </div>
+        </div>
+      )}
 
       {/* Greenline / Redline indicator */}
       {form.sqFt > 0 && (
@@ -389,7 +415,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
 
       {/* Contract Total */}
       <div className="svc-row svc-row-charge">
-        <label>Contract Total ({form.contractMonths} mo)</label>
+        <label>{form.frequency === "oneTime" ? "Total Price" : `Contract Total (${form.contractMonths} mo)`}</label>
         <div className="svc-row-right">
           <span style={{ fontSize: "18px", fontWeight: "bold", marginLeft: "10px" }}>$</span>
           <input

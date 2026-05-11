@@ -56,6 +56,7 @@ export interface JanitorialCalcResult {
   originalContractTotal: number;
   grossProfit: number;
   monthlyRecurring: number;
+  perVisit: number;
 }
 
 export interface JanitorialRateCategoryConfig {

@@ -275,7 +275,12 @@ const calculateVisitsInContract = (
   backendConfig?: any
 ): number => {
 
-  let visitsPerYear = 12; 
+  // One-time is always 1 visit
+  if (frequency === "oneTime") {
+    return 1;
+  }
+
+  let visitsPerYear = 12;
 
   if (backendConfig?.frequencyMetadata?.[frequency]?.visitsPerYear) {
     visitsPerYear = backendConfig.frequencyMetadata[frequency].visitsPerYear;
@@ -325,9 +330,14 @@ const calculateDualFrequency = (
   });
 
 
-  const facilityMultiplier = getFrequencyMultiplier(facilityComponentsFrequency, backendConfig);
+  // For oneTime, facility components should not be multiplied — just use base price
+  const facilityMultiplier = mainServiceFrequency === "oneTime"
+    ? 1
+    : getFrequencyMultiplier(facilityComponentsFrequency, backendConfig);
   const facilityComponentsMonthly = facilityComponentsBasePrice * facilityMultiplier;
-  const facilityContractTotal = facilityComponentsMonthly * contractMonths;
+  const facilityContractTotal = mainServiceFrequency === "oneTime"
+    ? facilityComponentsMonthly
+    : facilityComponentsMonthly * contractMonths;
 
   if (calculationMode === "monthly") {
 

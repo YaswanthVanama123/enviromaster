@@ -70,26 +70,52 @@ export function computeJanitorialCalc(
   const productionRate = adminRates.productionRates[form.placeType] ?? 0;
   console.log("[JAN DEBUG] placeType:", form.placeType, "| productionRates:", JSON.stringify(adminRates.productionRates), "| rate:", productionRate, "| sqFt:", form.sqFt);
   const hoursPerVisit = productionRate > 0 ? form.sqFt / productionRate : 0;
-  const weeklyLabor = hoursPerVisit * form.costPerHour * form.visitsPerWeek;
-  const annualBaseLabor = weeklyLabor * 52;
+
+  // Per-occurrence labor (cost for one service period's visits)
+  const perOccurrenceLabor = hoursPerVisit * form.costPerHour * form.visitsPerWeek;
+
+  // Use frequency-based annualMultiplier instead of hardcoded 52
+  const freqConversion = cfg.billingConversions[form.frequency] ?? cfg.billingConversions.weekly;
+  const annualMultiplier = freqConversion.annualMultiplier;
+
+  const weeklyLabor = perOccurrenceLabor; // kept for display compatibility
+  const annualBaseLabor = perOccurrenceLabor * annualMultiplier;
   const annualLaborTax = annualBaseLabor * (form.laborTaxPct / 100);
   const totalAnnualSupplies = form.supplies.reduce((s, x) => s + x.amount, 0);
   const totalAnnualCost = annualBaseLabor + annualLaborTax + totalAnnualSupplies;
   const gp = Math.min(Math.max(form.grossProfitPct / 100, 0), 0.999);
   const annualContractValue = gp < 1 ? totalAnnualCost / (1 - gp) : 0;
-  const contractTotal = annualContractValue * form.contractMonths / 12;
+
+  // Contract total: for oneTime, it's just the single-occurrence cost
+  let contractTotal: number;
+  if (form.frequency === "oneTime") {
+    contractTotal = annualContractValue; // annualMultiplier=1, so this IS the one-time cost
+  } else {
+    contractTotal = annualContractValue * form.contractMonths / 12;
+  }
+
   const grossProfit = annualContractValue - totalAnnualCost;
-  const monthlyRecurring = form.contractMonths > 0 ? contractTotal / form.contractMonths : 0;
+  const monthlyRecurring = (form.frequency !== "oneTime" && form.contractMonths > 0)
+    ? contractTotal / form.contractMonths
+    : 0;
+
+  // Per-visit cost (for visit-based frequency display)
+  const perVisit = annualMultiplier > 0 ? annualContractValue / annualMultiplier : 0;
 
   // originalContractTotal uses admin-baseline rates (no user modifications)
-  const origWeeklyLabor = hoursPerVisit * adminRates.costPerHour * form.visitsPerWeek;
-  const origAnnualBaseLabor = origWeeklyLabor * 52;
+  const origPerOccurrenceLabor = hoursPerVisit * adminRates.costPerHour * form.visitsPerWeek;
+  const origAnnualBaseLabor = origPerOccurrenceLabor * annualMultiplier;
   const origAnnualLaborTax = origAnnualBaseLabor * (adminRates.laborTaxPct / 100);
   const origTotalAnnualSupplies = adminRates.defaultSupplies.reduce((s, x) => s + x.amount, 0);
   const origTotalAnnualCost = origAnnualBaseLabor + origAnnualLaborTax + origTotalAnnualSupplies;
   const origGp = Math.min(Math.max(adminRates.grossProfitPct / 100, 0), 0.999);
   const origAnnualContractValue = origGp < 1 ? origTotalAnnualCost / (1 - origGp) : 0;
-  const originalContractTotal = origAnnualContractValue * form.contractMonths / 12;
+  let originalContractTotal: number;
+  if (form.frequency === "oneTime") {
+    originalContractTotal = origAnnualContractValue;
+  } else {
+    originalContractTotal = origAnnualContractValue * form.contractMonths / 12;
+  }
 
   return {
     hoursPerVisit,
@@ -103,6 +129,7 @@ export function computeJanitorialCalc(
     originalContractTotal,
     grossProfit,
     monthlyRecurring,
+    perVisit,
   };
 }
 
