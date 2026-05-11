@@ -1118,9 +1118,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
         let baselineContractRaw = 0;
         if (freqLowerOct === "onetime" || freqLowerOct === "one time") {
-          // One-time: contract total = first visit or just per-visit
+          // One-time: installation + full per-visit service (all components)
           baselineContractRaw = baselineInstallation > 0
-            ? baselineFirstVisitPrice
+            ? baselineInstallation + baselineWeekly
             : baselineWeekly;
         } else if (freqLowerOct === "bimonthly") {
           const contractVisitsForTerm = Math.round(contractMonths / 2);
