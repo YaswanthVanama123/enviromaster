@@ -1076,7 +1076,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         const baselineGreen = greenDrains > 0 ? greenDrains * activeConfig.green.weeklyRatePerDrain : 0;
         const baselineWeeklyRaw = baselineStandardDrains + baselineInstallDrains + baselinePlumbing + baselineGrease + baselineGreen;
         const baselineWeekly = baselineWeeklyRaw > 0 ? (state.applyMinimum !== false ? Math.max(round2(baselineWeeklyRaw), minimumChargePerVisit) : round2(baselineWeeklyRaw)) : 0;
-        const baselineNormalMonth = baselineWeekly * frequencyMultiplier;
+        const baselineNormalMonth = round2(baselineWeekly * frequencyMultiplier);
         const freqLowerOct = frequency.toLowerCase();
 
         // Baseline installation charges (using admin config rates + same alt pricing logic)
@@ -1165,7 +1165,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         } else {
           // Standard frequencies (weekly, biweekly, twicePerMonth, monthly)
           if (baselineInstallation > 0) {
-            const baselineFirstMonth = baselineFirstVisitPrice + baselineWeekly * Math.max(0, frequencyMultiplier - 1);
+            const baselineFirstMonth = round2(baselineFirstVisitPrice + baselineWeekly * Math.max(0, frequencyMultiplier - 1));
             baselineContractRaw = baselineFirstMonth + (contractMonths - 1) * baselineNormalMonth;
           } else {
             baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
