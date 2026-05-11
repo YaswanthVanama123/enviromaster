@@ -87,9 +87,10 @@ export const RefreshPowerScrubForm: React.FC<
     areaMonthlyTotals,
     areaContractTotals,
     quote,
+    originalContractTotal,
     refreshConfig,
     isLoadingConfig,
-    backendConfig, 
+    backendConfig,
   } = useRefreshPowerScrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
@@ -449,6 +450,7 @@ const getKitchenLarge = (): number => {
 
 
             contractTotal: totalServiceCost,
+            originalContractTotal: originalContractTotal,
 
         notes: form.notes || "",
         applyMinimum: form.applyMinimum !== false,
@@ -466,7 +468,7 @@ const getKitchenLarge = (): number => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, areaTotals, quote, customFields, totalServiceCost]);
+  }, [form, areaTotals, quote, customFields, totalServiceCost, originalContractTotal]);
 
 
   const getPresetAmount = (areaKey: RefreshAreaKey): number => {

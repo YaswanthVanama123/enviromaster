@@ -621,6 +621,138 @@ function calcPresetPackage(
 }
 
 
+/**
+ * Computes the baseline area cost using ADMIN default rates (never user-modified rates).
+ * Used for originalContractTotal so Greenline doesn't move when user changes rates.
+ */
+function calcBaselineAreaCost(
+  area: RefreshAreaKey,
+  form: RefreshPowerScrubFormState,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
+): number {
+  const state = form[area];
+  if (!state.enabled) return 0;
+
+  // Admin baseline rates from config/fallback — never user-modified
+  const baselineHourlyRate = backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+  const baselinePerHourRate = backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
+  const baselinePerWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
+  const baselineMinimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
+  const applyMinimum = form.applyMinimum !== false;
+
+  // If user set a custom amount override, use it (it's a quantity-like override, not a rate)
+  if (state.customAmount && state.customAmount > 0) {
+    return state.customAmount;
+  }
+
+  switch (state.pricingType) {
+    case "preset":
+      // Preset uses config-defined package rates — calcPresetPackage already uses config defaults
+      // But user can override presetRate — for baseline, use the config default
+      return calcBaselinePresetPackage(area, state, backendConfig);
+
+    case "perWorker": {
+      const calculatedAmount = (state.workers || 0) * baselinePerWorkerRate;
+      return state.workers > 0 ? (applyMinimum ? Math.max(calculatedAmount, baselineMinimumVisit) : calculatedAmount) : 0;
+    }
+
+    case "perHour": {
+      const calculatedAmount = (state.hours || 0) * baselinePerHourRate;
+      return state.hours > 0 ? (applyMinimum ? Math.max(calculatedAmount, baselineMinimumVisit) : calculatedAmount) : 0;
+    }
+
+    case "squareFeet": {
+      const fixedFee = backendConfig?.squareFootagePricing?.fixedFee ?? FALLBACK_SQFT_FIXED_FEE;
+      const insideRate = backendConfig?.squareFootagePricing?.insideRate ?? FALLBACK_SQFT_INSIDE_RATE;
+      const outsideRate = backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE;
+      const insideCost = (state.insideSqFt || 0) * insideRate;
+      const outsideCost = (state.outsideSqFt || 0) * outsideRate;
+      const calculatedAmount = fixedFee + insideCost + outsideCost;
+      const hasAnyValue = (state.insideSqFt || 0) > 0 || (state.outsideSqFt || 0) > 0 || fixedFee > 0;
+      return hasAnyValue ? (applyMinimum ? Math.max(calculatedAmount, baselineMinimumVisit) : calculatedAmount) : 0;
+    }
+
+    case "custom":
+      return state.customAmount || 0;
+
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Baseline preset package calculation — uses admin config rates, ignoring user overrides to presetRate/smallMediumRate/largeRate.
+ */
+function calcBaselinePresetPackage(
+  area: RefreshAreaKey,
+  state: RefreshAreaCalcState,
+  backendConfig?: BackendRefreshPowerScrubConfig | null
+): number {
+  const config = {
+    coreRates: {
+      minimumVisit: backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN,
+    },
+    areaSpecificPricing: {
+      kitchen: {
+        smallMedium: backendConfig?.areaSpecificPricing?.kitchen?.smallMedium ?? FALLBACK_KITCHEN_SMALL_MED,
+        large: backendConfig?.areaSpecificPricing?.kitchen?.large ?? FALLBACK_KITCHEN_LARGE,
+      },
+      frontOfHouse: backendConfig?.areaSpecificPricing?.frontOfHouse ?? FALLBACK_FOH_RATE,
+      patio: {
+        standalone: backendConfig?.areaSpecificPricing?.patio?.standalone ?? FALLBACK_PATIO_STANDALONE,
+        upsell: backendConfig?.areaSpecificPricing?.patio?.upsell ?? FALLBACK_PATIO_UPSELL,
+      },
+    },
+  };
+
+  let defaultRate: number;
+
+  switch (area) {
+    case "dumpster":
+      defaultRate = config.coreRates.minimumVisit;
+      break;
+    case "patio":
+      defaultRate = config.areaSpecificPricing.patio.standalone;
+      break;
+    case "foh":
+      defaultRate = config.areaSpecificPricing.frontOfHouse;
+      break;
+    case "boh": {
+      // Use quantities from form but ADMIN rates
+      const smallMediumQty = state.smallMediumQuantity || 0;
+      const baseSmRate = config.areaSpecificPricing.kitchen.smallMedium;
+      const smallMediumTotal = state.smallMediumCustomAmount > 0
+        ? state.smallMediumCustomAmount
+        : (smallMediumQty * baseSmRate);
+
+      const largeQty = state.largeQuantity || 0;
+      const baseLgRate = config.areaSpecificPricing.kitchen.large;
+      const largeTotal = state.largeCustomAmount > 0
+        ? state.largeCustomAmount
+        : (largeQty * baseLgRate);
+
+      return smallMediumTotal + largeTotal;
+    }
+    case "walkway":
+    case "other":
+    default:
+      defaultRate = 0;
+      break;
+  }
+
+  // Use quantity from form but ADMIN default rate (ignore user's presetRate override)
+  const quantity = (state.presetQuantity && state.presetQuantity > 0) ? state.presetQuantity : 1;
+  let baseAmount = quantity * defaultRate;
+
+  // Patio addon uses admin upsell rate
+  if (area === "patio" && state.includePatioAddon) {
+    baseAmount += config.areaSpecificPricing.patio.upsell;
+  }
+
+  return baseAmount;
+}
+
+
 function calcAreaCost(
   area: RefreshAreaKey,
   form: RefreshPowerScrubFormState,
@@ -1428,6 +1560,59 @@ const getAreaFieldFallback = (
     };
   }, [areaTotals, hasPackagePrice, form.minimumVisit, form.applyMinimum, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 
+  // Compute originalContractTotal using admin baseline rates (never changes with user rate edits)
+  const { originalContractTotal, baselineAreaTotals, baselineAreaContractTotals } = useMemo(() => {
+    const bAreaTotals: any = {};
+    const bAreaContractTotals: any = {};
+
+    for (const area of AREA_KEYS) {
+      const baselineCost = calcBaselineAreaCost(area, form, backendConfig);
+      bAreaTotals[area] = baselineCost;
+
+      // Same contract calculation logic as the normal areaTotals/areaContractTotals
+      const areaFrequencyLabel = form[area].frequencyLabel?.toLowerCase();
+      const effectiveFrequency = areaFrequencyLabel || form.frequency.toLowerCase();
+      const multiplier = getBillingMultiplier(effectiveFrequency, backendConfig);
+      const monthlyRecurring = baselineCost * multiplier;
+
+      if (effectiveFrequency === "quarterly") {
+        bAreaContractTotals[area] = baselineCost * ((form[area].contractMonths || 12) / 3);
+      } else if (effectiveFrequency === "bi-annual" || effectiveFrequency === "biannual") {
+        bAreaContractTotals[area] = baselineCost * ((form[area].contractMonths || 12) / 6);
+      } else if (effectiveFrequency === "annual") {
+        bAreaContractTotals[area] = baselineCost * ((form[area].contractMonths || 12) / 12);
+      } else if (effectiveFrequency === "every 4 weeks" || effectiveFrequency === "everyfourweeks") {
+        bAreaContractTotals[area] = baselineCost * Math.round((form[area].contractMonths || 12) * 1.0833);
+      } else {
+        bAreaContractTotals[area] = monthlyRecurring * (form[area].contractMonths || 12);
+      }
+    }
+
+    // Mirror the totalServiceCost logic in the form: sum area values using one-time vs contract
+    const isOneTimeLabel = (label?: string) => {
+      if (!label) return false;
+      const normalized = label.toLowerCase().replace(/-/g, " ").trim();
+      return normalized === "one time" || normalized === "one time service";
+    };
+
+    let baselineTotalServiceCost = 0;
+    for (const area of AREA_KEYS) {
+      const areaFreqLabel = form[area].frequencyLabel || form.frequency;
+      const isOneTime = isOneTimeLabel(areaFreqLabel);
+      baselineTotalServiceCost += isOneTime ? (bAreaTotals[area] || 0) : (bAreaContractTotals[area] || 0);
+    }
+
+    // Add custom fields (same as regular — these aren't rate-based)
+    const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
+    const finalOriginalContractTotal = baselineTotalServiceCost + customFieldsTotal;
+
+    return {
+      originalContractTotal: finalOriginalContractTotal,
+      baselineAreaTotals: bAreaTotals as RefreshAreaTotals,
+      baselineAreaContractTotals: bAreaContractTotals as RefreshAreaTotals,
+    };
+  }, [form, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
+
   const setNotes = (notes: string) => {
     setForm((prev) => ({
       ...prev,
@@ -1456,8 +1641,9 @@ const getAreaFieldFallback = (
     areaMonthlyTotals,
     areaContractTotals,
     quote,
+    originalContractTotal,
     refreshConfig: fetchPricing,
     isLoadingConfig,
-    backendConfig, 
+    backendConfig,
   };
 }
