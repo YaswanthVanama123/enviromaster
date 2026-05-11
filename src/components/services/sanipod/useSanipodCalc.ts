@@ -565,7 +565,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         backendConfigEntry.config as BackendSanipodConfig
       );
       baselineRatesRef.current = {
+        ...baselineRatesRef.current,
+        weeklyRatePerUnit: activeConfig.weeklyRatePerUnit,
+        altWeeklyRatePerUnit: activeConfig.altWeeklyRatePerUnit,
+        standaloneExtraWeeklyCharge: activeConfig.standaloneExtraWeeklyCharge,
         extraBagPrice: activeConfig.extraBagPrice,
+        tripChargePerVisit: activeConfig.tripChargePerVisit,
         installRatePerPod: activeConfig.installChargePerUnit,
       };
     }
@@ -1105,7 +1110,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         if (pods === 0) return 0;
         const baseWeeklyRate = Number(baselineRatesRef.current.weeklyRatePerUnit) || activeConfig.weeklyRatePerUnit;
         const baseAltRate = Number(baselineRatesRef.current.altWeeklyRatePerUnit) || activeConfig.altWeeklyRatePerUnit;
-        const baseStandalone = Number(baselineRatesRef.current.standaloneExtraWeeklyCharge) || 0;
+        const baseStandalone = Number(baselineRatesRef.current.standaloneExtraWeeklyCharge) || activeConfig.standaloneExtraWeeklyCharge;
         const baseExtraBagPrice = Number(baselineRatesRef.current.extraBagPrice) || activeConfig.extraBagPrice;
         const baseInstallRate = Number(baselineRatesRef.current.installRatePerPod) || activeConfig.installChargePerUnit;
         const baseWeeklyBags = form.extraBagsRecurring ? bags * baseExtraBagPrice : 0;
@@ -1117,7 +1122,25 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
           : baseWeeklyService;
         const baseInstall = form.isNewInstall && installQty > 0 ? installQty * baseInstallRate : 0;
         const baseOneTimeBags = form.extraBagsRecurring ? 0 : bags * baseExtraBagPrice;
-        const baseFirstVisit = basePerVisit + baseInstall + baseOneTimeBags;
+        // Mirror actual first visit logic: deduct install pods from service pods (lines 879-898)
+        let baseFirstVisit: number;
+        if (form.isNewInstall && installQty > 0) {
+          const baseServicePods = Math.max(0, pods - installQty);
+          let baseFirstVisitServiceCost = 0;
+          if (baseServicePods > 0) {
+            // Use same option (A/B) as determined by per-visit comparison (all pods)
+            const usingBaseOptA = baseOptA <= baseOptB;
+            if (usingBaseOptA) {
+              baseFirstVisitServiceCost = baseServicePods * baseAltRate;
+            } else {
+              baseFirstVisitServiceCost = baseServicePods * baseWeeklyRate + (form.isStandalone ? baseStandalone : 0);
+            }
+          }
+          const baseFirstVisitBagsCost = bags > 0 ? bags * baseExtraBagPrice : 0;
+          baseFirstVisit = baseInstall + baseFirstVisitServiceCost + baseFirstVisitBagsCost + baseOneTimeBags;
+        } else {
+          baseFirstVisit = basePerVisit + baseOneTimeBags;
+        }
         let baseContractTotal: number;
         if (selectedFrequency === "oneTime") {
           baseContractTotal = baseFirstVisit;
@@ -1138,7 +1161,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
             : baseFirstVisit + Math.max(monthlyVisits - 1, 0) * basePerVisit;
           baseContractTotal = baseFirstMonth + Math.max(contractMonths - 1, 0) * baseOngoing;
         }
-        return Math.round(baseContractTotal * 100) / 100;
+        // Include custom fields in baseline (same extra charges apply regardless of rates)
+        return Math.round(baseContractTotal * 100) / 100 + customFieldsTotal;
       })(),
     };
   }, [
