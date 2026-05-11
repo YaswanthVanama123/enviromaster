@@ -1186,7 +1186,12 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
 
     let contractTotalWithMinimum = 0;
     if (contractMonths > 0) {
-      if (freqKey === "everyFourWeeks") {
+      if (freqKey === "oneTime") {
+        // One-time: single visit only
+        contractTotalWithMinimum = form.isFirstTimeInstall
+          ? effectiveInstallation
+          : recurringPerVisitWithMinimum;
+      } else if (freqKey === "everyFourWeeks") {
 
         const totalVisits = Math.round(contractMonths * 1.0833);
         contractTotalWithMinimum = (form.isFirstTimeInstall ? effectiveInstallation : 0) +
