@@ -1348,14 +1348,45 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     const baselineAllInclusiveRate = config.allInclusivePricing?.pricePerFixture ?? SANICLEAN_CONFIG.allInclusivePackage.weeklyRatePerFixture;
     const baselineForm = {
       ...mappedForm,
+      // Reset ALL rate fields to admin baseline values
       insideBeltwayRatePerFixture: baselineFixtureRateInside,
       outsideBeltwayRatePerFixture: baselineFixtureRateOutside,
       allInclusiveWeeklyRatePerFixture: baselineAllInclusiveRate,
+      insideBeltwayMinimum: config.standardALaCartePricing?.insideBeltway?.minimumPrice ?? SANICLEAN_CONFIG.perItemCharge.insideBeltway.weeklyMinimum,
+      insideBeltwayTripCharge: config.standardALaCartePricing?.insideBeltway?.tripCharge ?? SANICLEAN_CONFIG.perItemCharge.insideBeltway.tripCharge,
+      insideBeltwayParkingFee: config.standardALaCartePricing?.insideBeltway?.parkingFeeAddOn ?? SANICLEAN_CONFIG.perItemCharge.insideBeltway.parkingFee,
+      outsideBeltwayTripCharge: config.standardALaCartePricing?.outsideBeltway?.tripCharge ?? SANICLEAN_CONFIG.perItemCharge.outsideBeltway.tripCharge,
+      smallFacilityThreshold: config.smallBathroomMinimums?.minimumFixturesThreshold ?? SANICLEAN_CONFIG.perItemCharge.smallFacility.fixtureThreshold,
+      smallFacilityMinimum: config.smallBathroomMinimums?.minimumPriceUnderThreshold ?? SANICLEAN_CONFIG.perItemCharge.smallFacility.minimumWeekly,
+      luxuryUpgradePerDispenser: config.soapUpgrades?.standardToLuxuryPerDispenserPerWeek ?? SANICLEAN_CONFIG.allInclusivePackage.soapUpgrade.luxuryUpgradePerDispenser,
+      excessStandardSoapRate: config.soapUpgrades?.excessUsageCharges?.standardSoapPerGallon ?? SANICLEAN_CONFIG.allInclusivePackage.soapUpgrade.excessUsageCharges.standardSoap,
+      excessLuxurySoapRate: config.soapUpgrades?.excessUsageCharges?.luxurySoapPerGallon ?? SANICLEAN_CONFIG.allInclusivePackage.soapUpgrade.excessUsageCharges.luxurySoap,
+      paperCreditPerFixture: config.paperCredit?.creditPerFixturePerWeek ?? SANICLEAN_CONFIG.allInclusivePackage.paperCredit.creditPerFixturePerWeek,
+      microfiberMoppingPerBathroom: config.microfiberMoppingIncludedWithSaniClean?.pricePerBathroom ?? SANICLEAN_CONFIG.allInclusivePackage.microfiberMopping.pricePerBathroom,
+      warrantyFeePerDispenserPerWeek: config.warrantyFees?.soapDispenserWarrantyFeePerWeek ?? SANICLEAN_CONFIG.perItemCharge.warrantyFees.perDispenserPerWeek,
+      urinalScreenMonthly: (typeof config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number'
+        ? config.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice
+        : SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalScreen),
+      urinalMatMonthly: config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalMat,
+      toiletClipsMonthly: config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.toiletClips,
+      seatCoverDispenserMonthly: (typeof config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'number'
+        ? config.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice
+        : SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.seatCoverDispenser),
+      sanipodServiceMonthly: config.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.femaleToilets.components.sanipodService,
+      redRateMultiplier: SANICLEAN_CONFIG.rateTiers.redRate.multiplier,
+      greenRateMultiplier: SANICLEAN_CONFIG.rateTiers.greenRate.multiplier,
+      // Clear all custom overrides
       customBaseService: undefined,
       customWeeklyTotal: undefined,
       customMonthlyTotal: undefined,
       customContractTotal: undefined,
       customTripCharge: undefined,
+      customFacilityComponents: undefined,
+      customSoapUpgrade: undefined,
+      customExcessSoap: undefined,
+      customMicrofiberMopping: undefined,
+      customWarrantyFees: undefined,
+      customPaperOverage: undefined,
     } as SanicleanFormState;
 
     let baselineQuote: SanicleanQuoteResult;
@@ -1364,7 +1395,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     } else {
       baselineQuote = calculatePerItemCharge(baselineForm, config);
     }
-    const originalContractTotal = baselineQuote.contractTotal;
+    // Include custom fields in baseline (same extra charges apply regardless of rates)
+    const originalContractTotal = baselineQuote.contractTotal + customFieldsTotal;
 
     return {
       ...baseQuote,
