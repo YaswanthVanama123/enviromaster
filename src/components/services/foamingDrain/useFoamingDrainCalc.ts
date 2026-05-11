@@ -909,9 +909,9 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const freqLower = frequency.toLowerCase();
 
     if (freqLower === "onetime" || freqLower === "one time") {
-      // One-time service: contract total = first visit price (install + per-visit) or just per-visit
+      // One-time service: installation + full per-visit service (all components)
       contractTotalRaw = effectiveInstallation > 0
-        ? firstVisitPrice
+        ? effectiveInstallation + effectiveWeeklyService
         : effectiveWeeklyService;
     } else if (freqLower === "bimonthly") {
 
