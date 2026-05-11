@@ -1257,12 +1257,15 @@ export function useRpmWindowsCalc(initial?: Partial<RpmWindowsFormState>, custom
     const originalPerVisitWithMinimum = hasWindows ? (form.applyMinimum !== false ? Math.max(originalPerVisitRated, minimumChargePerVisit) : originalPerVisitRated) : 0;
     const originalStandardMonthlyBill = originalPerVisitWithMinimum * monthlyVisits;
 
+    // Baseline weekly windows total using admin rates (NOT user-modified baseWeeklyRates)
+    const baselineWeeklyWindows = form.smallQty * pricingTableSmall + form.mediumQty * pricingTableMedium + form.largeQty * pricingTableLarge;
+
     // Baseline installation (using admin config multiplier, not user override)
     const baselineInstallMultiplier = form.isFirstTimeInstall
       ? (activeConfig.installMultiplierFirstTime ?? cfg.installMultiplierFirstTime)
       : (activeConfig.installMultiplierClean ?? cfg.installMultiplierClean);
     const baselineInstallOneTime = form.isFirstTimeInstall && hasWindows
-      ? Math.max(weeklyWindows, minimumChargePerVisit) * baselineInstallMultiplier * (rateCfg?.multiplier ?? 1)
+      ? Math.max(baselineWeeklyWindows, minimumChargePerVisit) * baselineInstallMultiplier * (rateCfg?.multiplier ?? 1)
       : 0;
 
     let originalContractTotal = 0;
