@@ -1366,27 +1366,27 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       warrantyFeePerDispenserPerWeek: config.warrantyFees?.soapDispenserWarrantyFeePerWeek ?? SANICLEAN_CONFIG.perItemCharge.warrantyFees.perDispenserPerWeek,
       urinalScreenMonthly: (typeof config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number'
         ? config.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice
-        : SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalScreen),
+        : config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'included'
+          ? (config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalMat)
+          : SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalScreen),
       urinalMatMonthly: config.monthlyAddOnSupplyPricing?.urinalMatMonthlyPrice ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalMat,
       toiletClipsMonthly: config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.toiletClips,
       seatCoverDispenserMonthly: (typeof config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'number'
         ? config.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice
-        : SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.seatCoverDispenser),
+        : config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'included'
+          ? (config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.toiletClips)
+          : SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.seatCoverDispenser),
       sanipodServiceMonthly: config.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.femaleToilets.components.sanipodService,
       redRateMultiplier: SANICLEAN_CONFIG.rateTiers.redRate.multiplier,
       greenRateMultiplier: SANICLEAN_CONFIG.rateTiers.greenRate.multiplier,
-      // Clear all custom overrides
+      // Clear only total-level overrides and formula-reconstructable fields
       customBaseService: undefined,
+      customTripCharge: undefined,
       customWeeklyTotal: undefined,
       customMonthlyTotal: undefined,
       customContractTotal: undefined,
-      customTripCharge: undefined,
-      customFacilityComponents: undefined,
-      customSoapUpgrade: undefined,
-      customExcessSoap: undefined,
-      customMicrofiberMopping: undefined,
-      customWarrantyFees: undefined,
-      customPaperOverage: undefined,
+      // Keep component-level customs (facility, soap, microfiber, warranty, excess soap, paper)
+      // because their formulas depend on toggles/conditions that may not reflect actual state
     } as SanicleanFormState;
 
     let baselineQuote: SanicleanQuoteResult;
