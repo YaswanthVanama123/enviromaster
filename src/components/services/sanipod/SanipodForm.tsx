@@ -66,10 +66,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       return editingValues[fieldName];
     }
 
-    if (calculatedValue === undefined) return '';
+    if (calculatedValue == null) return '';
+    const n = Number(calculatedValue);
     return formatted
-      ? calculatedValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
-      : calculatedValue.toFixed(2);
+      ? n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+      : n.toFixed(2);
   };
 
 
@@ -363,6 +364,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
         notes: form.notes || "",
         customFields: customFields,
+        contractTotal: calc.contractTotal,
+        originalContractTotal: calc.originalContractTotal,
       } : null;
 
       const dataStr = JSON.stringify(data);
@@ -1135,6 +1138,31 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                 }}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {form.frequency !== "oneTime" && form.podQuantity > 0 && (
+        <div className="svc-row">
+          <div className="svc-label"></div>
+          <div className="svc-field">
+            {calc.contractTotal > calc.originalContractTotal * 1.30 ? (
+              <span style={{
+                color: '#388e3c', fontSize: '13px', fontWeight: '600',
+                padding: '4px 8px', backgroundColor: '#e8f5e9',
+                borderRadius: '4px', display: 'inline-block'
+              }}>
+                🟢 Greenline Pricing
+              </span>
+            ) : (
+              <span style={{
+                color: '#d32f2f', fontSize: '13px', fontWeight: '600',
+                padding: '4px 8px', backgroundColor: '#ffebee',
+                borderRadius: '4px', display: 'inline-block'
+              }}>
+                🔴 Redline Pricing
+              </span>
+            )}
           </div>
         </div>
       )}

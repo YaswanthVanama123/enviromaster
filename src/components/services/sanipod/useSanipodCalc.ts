@@ -280,6 +280,7 @@ export interface SanipodCalcResult {
 
 
   contractTotal: number;
+  originalContractTotal: number;
 
 
   adjustedPerVisit: number;
@@ -743,12 +744,14 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         firstVisit: 0,
         ongoingMonthly: 0,
         contractTotal: 0,
+        originalContractTotal: 0,
         adjustedPerVisit: 0,
         adjustedMonthly: 0,
         adjustedAnnual: 0,
         adjustedPodServiceTotal: 0,
         adjustedBagsTotal: 0,
         effectiveRatePerPod: 0,
+        minimumChargePerVisit: 0,
       };
     }
 
@@ -1087,16 +1090,56 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       chosenServiceRule,
       weeklyPodServiceRed,
       firstVisit,
-      ongoingMonthly: ongoingMonthlyCalc, 
-      contractTotal: contractTotalWithCustomFields, 
+      ongoingMonthly: ongoingMonthlyCalc,
+      contractTotal: contractTotalWithCustomFields,
       adjustedPerVisit,
       adjustedMonthly,
-      adjustedAnnual, 
+      adjustedAnnual,
       adjustedPodServiceTotal,
       adjustedBagsTotal,
       effectiveRatePerPod,
 
       minimumChargePerVisit: form.isStandalone ? form.standaloneExtraWeeklyCharge : 0,
+
+      originalContractTotal: (() => {
+        if (pods === 0) return 0;
+        const baseWeeklyRate = Number(baselineRatesRef.current.weeklyRatePerUnit) || activeConfig.weeklyRatePerUnit;
+        const baseAltRate = Number(baselineRatesRef.current.altWeeklyRatePerUnit) || activeConfig.altWeeklyRatePerUnit;
+        const baseStandalone = Number(baselineRatesRef.current.standaloneExtraWeeklyCharge) || 0;
+        const baseExtraBagPrice = Number(baselineRatesRef.current.extraBagPrice) || activeConfig.extraBagPrice;
+        const baseInstallRate = Number(baselineRatesRef.current.installRatePerPod) || activeConfig.installChargePerUnit;
+        const baseWeeklyBags = form.extraBagsRecurring ? bags * baseExtraBagPrice : 0;
+        const baseOptA = pods * baseAltRate + baseWeeklyBags;
+        const baseOptB = pods * baseWeeklyRate + (form.isStandalone ? baseStandalone : 0) + baseWeeklyBags;
+        const baseWeeklyService = Math.min(baseOptA, baseOptB);
+        const basePerVisit = form.isStandalone
+          ? Math.max(baseWeeklyService, baseStandalone)
+          : baseWeeklyService;
+        const baseInstall = form.isNewInstall && installQty > 0 ? installQty * baseInstallRate : 0;
+        const baseOneTimeBags = form.extraBagsRecurring ? 0 : bags * baseExtraBagPrice;
+        const baseFirstVisit = basePerVisit + baseInstall + baseOneTimeBags;
+        let baseContractTotal: number;
+        if (selectedFrequency === "oneTime") {
+          baseContractTotal = baseFirstVisit;
+        } else if (isVisitBasedFrequency) {
+          const visitsPerYear = activeConfig.annualFrequencies[selectedFrequency];
+          const totalVisits = (contractMonths / 12) * visitsPerYear;
+          if (form.isNewInstall && installQty > 0) {
+            baseContractTotal = baseFirstVisit + Math.max(totalVisits - 1, 0) * basePerVisit;
+          } else {
+            baseContractTotal = totalVisits * basePerVisit;
+          }
+        } else if (contractMonths <= 0) {
+          baseContractTotal = 0;
+        } else {
+          const baseOngoing = monthlyVisits * basePerVisit;
+          const baseFirstMonth = selectedFrequency === "monthly"
+            ? baseFirstVisit
+            : baseFirstVisit + Math.max(monthlyVisits - 1, 0) * basePerVisit;
+          baseContractTotal = baseFirstMonth + Math.max(contractMonths - 1, 0) * baseOngoing;
+        }
+        return Math.round(baseContractTotal * 100) / 100;
+      })(),
     };
   }, [
     backendConfig,  
