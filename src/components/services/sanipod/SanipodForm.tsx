@@ -217,10 +217,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           : String(form.frequency || "");
       const rateCategoryLabel = form.rateCategory === "greenRate" ? "Green Rate" : "Red Rate";
 
-      const oneTimeTotalPrice =
-        form.customMonthlyPrice !== undefined
-          ? form.customMonthlyPrice
-          : parseFloat(calc.contractTotal.toFixed(2));
+      const oneTimeTotalPrice = parseFloat(calc.contractTotal.toFixed(2));
 
       const totals = (() => {
         const base: any = {
@@ -418,6 +415,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         customMonthlyPrice: undefined,
         customAnnualPrice: undefined,
       }));
+
+      // Clear editing values to prevent stale display when switching frequencies
+      setEditingValues({});
+      setOriginalValues({});
 
       prevInputsRef.current = {
         podQuantity: form.podQuantity,
@@ -1060,9 +1061,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
               name="customMonthlyPrice"
               value={getDisplayValue(
                 'customMonthlyPrice',
-                form.customMonthlyPrice !== undefined
-                  ? form.customMonthlyPrice
-                  : parseFloat(calc.contractTotal.toFixed(2))
+                parseFloat(calc.contractTotal.toFixed(2))
               )}
               onChange={handleLocalChange}
               onFocus={handleFocus}

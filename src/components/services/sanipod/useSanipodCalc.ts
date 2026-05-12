@@ -835,6 +835,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       ? weeklyPodOptA_Red
       : weeklyPodOptB_Red;
 
+    const effectiveRatePerPod = pods > 0 ? weeklyPodServiceRed / pods : 0;
+
     const chosenServiceRule: SanipodServiceRuleKey = usingOptA
       ? "perPod8"
       : "perPod3Plus40";
@@ -877,15 +879,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
     let firstVisitServiceCost = 0;
     if (servicePods > 0) {
-      if (usingOptA) {
-
-        const perPodRate = form.altWeeklyRatePerUnit;
-        firstVisitServiceCost = servicePods * perPodRate * rateCfg.multiplier;
-      } else {
-
-        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + (form.isStandalone ? form.standaloneExtraWeeklyCharge : 0);
-        firstVisitServiceCost = optBServiceCost * rateCfg.multiplier;
-      }
+      // Use effective per-pod rate (accounts for standalone proportionally)
+      firstVisitServiceCost = servicePods * effectiveRatePerPod * rateCfg.multiplier;
     }
 
 
@@ -972,9 +967,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     }
 
 
-    const effectiveRatePerPod = pods > 0 ? weeklyPodServiceRed / pods : 0;
-
-
     const bagLineAmount = bags * form.extraBagPrice;
 
 
@@ -1011,14 +1003,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         ? form.customWeeklyPodRate
         : effectiveRatePerPod;
 
-      if (usingOptA) {
-
-        adjustedFirstVisitServiceCost = servicePods * effectiveRateForServicePods * rateCfg.multiplier;
-      } else {
-
-        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + (form.isStandalone ? form.standaloneExtraWeeklyCharge : 0);
-        adjustedFirstVisitServiceCost = optBServiceCost * rateCfg.multiplier;
-      }
+      // Use effective per-pod rate for remaining service pods (same as base calc)
+      adjustedFirstVisitServiceCost = servicePods * effectiveRateForServicePods * rateCfg.multiplier;
     }
 
 
@@ -1129,14 +1115,10 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         if (form.isNewInstall && installQty > 0) {
           const baseServicePods = Math.max(0, pods - installQty);
           let baseFirstVisitServiceCost = 0;
+        // Mirror actual first visit logic: use effective per-pod rate for service pods
+        const baseEffectiveRatePerPod = pods > 0 ? (Math.min(baseOptA, baseOptB) - baseWeeklyBags) / pods : 0;
           if (baseServicePods > 0) {
-            // Use same option (A/B) as determined by per-visit comparison (all pods)
-            const usingBaseOptA = baseOptA <= baseOptB;
-            if (usingBaseOptA) {
-              baseFirstVisitServiceCost = baseServicePods * baseAltRate;
-            } else {
-              baseFirstVisitServiceCost = baseServicePods * baseWeeklyRate + (form.isStandalone ? baseStandalone : 0);
-            }
+            baseFirstVisitServiceCost = baseServicePods * baseEffectiveRatePerPod;
           }
           const baseFirstVisitBagsCost = bags > 0 ? bags * baseExtraBagPrice : 0;
           baseFirstVisit = baseInstall + baseFirstVisitServiceCost + baseFirstVisitBagsCost + baseOneTimeBags;
