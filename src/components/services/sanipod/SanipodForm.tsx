@@ -612,7 +612,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       </div>
 
       {}
-      <div className="svc-row">
+      {/* <div className="svc-row">
         <label>Service Type</label>
         <div className="svc-row-right">
           <select
@@ -639,7 +639,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             </option>
           </select>
         </div>
-      </div>
+      </div> */}
 
       <div className="svc-row">
         <label>Package base rate (${formatRatePlain(form.weeklyRatePerUnit)}/pod)</label>
