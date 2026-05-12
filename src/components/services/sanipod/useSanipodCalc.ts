@@ -791,7 +791,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       ? form.customPodServiceTotal
       : pods * effectiveOptAPerPodRate;
     const weeklyPodOptB_Red =
-      pods * weeklyRatePerUnit + standaloneCharge;
+      pods * weeklyRatePerUnit + (form.isStandalone ? standaloneCharge : 0);
 
     const weeklyServiceOptA_Red = weeklyPodOptA_Red + weeklyBagsRed;
     const weeklyServiceOptB_Red = weeklyPodOptB_Red + weeklyBagsRed;
@@ -810,9 +810,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
     const serviceRuleSelection = form.serviceRule || "auto";
     const applyStandaloneMinimum = (value: number) => {
-      if (form.isStandalone) {
-        return Math.max(value, standaloneCharge);
-      }
       return value;
     };
 
@@ -886,7 +883,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         firstVisitServiceCost = servicePods * perPodRate * rateCfg.multiplier;
       } else {
 
-        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + form.standaloneExtraWeeklyCharge;
+        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + (form.isStandalone ? form.standaloneExtraWeeklyCharge : 0);
         firstVisitServiceCost = optBServiceCost * rateCfg.multiplier;
       }
     }
@@ -911,8 +908,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     let firstMonth;
 
     if (selectedFrequency === "oneTime") {
-
-      firstMonth = firstVisit;
+      // One-time: match contractTotal logic
+      if (form.isNewInstall && installQty > 0) {
+        firstMonth = firstVisit;
+      } else {
+        firstMonth = perVisit + oneTimeBagsCost;
+      }
     } else if (isVisitBasedFrequency) {
 
       firstMonth = firstVisit;
@@ -940,8 +941,13 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
     let contractTotal: number;
     if (selectedFrequency === "oneTime") {
-
-      contractTotal = firstVisit;
+      // One-time: use firstVisit when installing (handles install + partial service pods),
+      // otherwise use perVisit (respects standalone minimum) + one-time bags
+      if (form.isNewInstall && installQty > 0) {
+        contractTotal = firstVisit;
+      } else {
+        contractTotal = perVisit + oneTimeBagsCost;
+      }
     } else if (isVisitBasedFrequency) {
 
       const visitsPerYear = activeConfig.annualFrequencies[selectedFrequency];
@@ -987,9 +993,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       : (adjustedPodServiceTotal + (form.extraBagsRecurring ? adjustedBagsTotal : 0)) * rateCfg.multiplier;
 
 
-    const adjustedPerVisit = form.isStandalone
-      ? Math.max(adjustedPerVisitBeforeMinimum, form.standaloneExtraWeeklyCharge)
-      : adjustedPerVisitBeforeMinimum;
+    const adjustedPerVisit = adjustedPerVisitBeforeMinimum;
 
     console.log(`💰 [SANIPOD-ADJUSTED-MINIMUM] Applying minimum to adjusted per visit:`, {
       isStandalone: form.isStandalone,
@@ -1012,7 +1016,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         adjustedFirstVisitServiceCost = servicePods * effectiveRateForServicePods * rateCfg.multiplier;
       } else {
 
-        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + form.standaloneExtraWeeklyCharge;
+        const optBServiceCost = (servicePods * form.weeklyRatePerUnit) + (form.isStandalone ? form.standaloneExtraWeeklyCharge : 0);
         adjustedFirstVisitServiceCost = optBServiceCost * rateCfg.multiplier;
       }
     }
@@ -1117,9 +1121,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         const baseOptA = pods * baseAltRate + baseWeeklyBags;
         const baseOptB = pods * baseWeeklyRate + (form.isStandalone ? baseStandalone : 0) + baseWeeklyBags;
         const baseWeeklyService = Math.min(baseOptA, baseOptB);
-        const basePerVisit = form.isStandalone
-          ? Math.max(baseWeeklyService, baseStandalone)
-          : baseWeeklyService;
+        const basePerVisit = baseWeeklyService;
         const baseInstall = form.isNewInstall && installQty > 0 ? installQty * baseInstallRate : 0;
         const baseOneTimeBags = form.extraBagsRecurring ? 0 : bags * baseExtraBagPrice;
         // Mirror actual first visit logic: deduct install pods from service pods (lines 879-898)

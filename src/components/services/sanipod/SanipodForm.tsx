@@ -225,7 +225,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       const totals = (() => {
         const base: any = {
           perVisit: {
-            isDisplay: true,
+            isDisplay: form.frequency !== "oneTime",
             orderNo: FIELD_ORDER.totals.perVisit,
             label: "Per Visit Total",
             type: "dollar" as const,
@@ -972,7 +972,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       )}
 
       {}
-      <div className="svc-row svc-row-total">
+      {form.frequency !== "oneTime" && <div className="svc-row svc-row-total">
         <label>
           {}
           {form.frequency === "bimonthly" ||
@@ -1014,7 +1014,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
                     : "Per visit service - editable"}
           />
         </div>
-      </div>
+      </div>}
 
 
       {}
