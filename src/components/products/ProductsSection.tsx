@@ -1120,7 +1120,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
     return allRows.reduce((sum, { row, bucket }) => {
 
-      const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'warranty');
+      const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'productCost');
       if (costType === 'productCost') return sum; 
       const multiplier = getFrequencyMultiplier(row.frequency);
       return sum + getRowTotal(row, bucket) * multiplier;
@@ -1135,7 +1135,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     ];
 
     return allRows.reduce((sum, { row, bucket }) => {
-      const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'warranty');
+      const costType = row.costType ?? (bucket === 'dispensers' ? 'productCost' : 'productCost');
       if (costType !== 'productCost') return sum;
       return sum + getRowTotal(row, bucket);
     }, 0);
@@ -1178,7 +1178,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             qty,
             total,
             frequency: row.frequency,
-            costType: row.costType ?? 'warranty',
+            costType: row.costType ?? 'productCost',
             productType: 'small',
             customFields: row.customFields || {}
           };
@@ -1195,7 +1195,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             amount,
             total,
             frequency: row.frequency,
-            costType: row.costType ?? 'warranty',
+            costType: row.costType ?? 'productCost',
             productType: 'big',
             customFields: row.customFields || {}
           };
@@ -1796,7 +1796,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                           <input
                             type="checkbox"
                             title="Check for recurring warranty billing; uncheck for one-time direct price"
-                            checked={(rowProduct.costType ?? 'warranty') === 'warranty'}
+                            checked={(rowProduct.costType ?? 'productCost') === 'warranty'}
                             onChange={(e) =>
                               updateRowField("products", rowProduct.id, {
                                 costType: e.target.checked ? 'warranty' : 'productCost',
@@ -1806,7 +1806,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                         </td>
                         {}
                         <td className="center">
-                          {(rowProduct.costType ?? 'warranty') === 'warranty' ? (
+                          {(rowProduct.costType ?? 'productCost') === 'warranty' ? (
                             <FrequencyCell
                               value={rowProduct.frequency}
                               onChange={(val) =>
@@ -2250,7 +2250,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                   <input
                     type="checkbox"
                     title="Check for recurring warranty billing; uncheck for one-time direct price"
-                    checked={(row.costType ?? 'warranty') === 'warranty'}
+                    checked={(row.costType ?? 'productCost') === 'warranty'}
                     onChange={(e) =>
                       updateRowField("products", row.id, {
                         costType: e.target.checked ? 'warranty' : 'productCost',
@@ -2260,7 +2260,7 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                 </td>
                 {}
                 <td className="center">
-                  {(row.costType ?? 'warranty') === 'warranty' ? (
+                  {(row.costType ?? 'productCost') === 'warranty' ? (
                     <FrequencyCell
                       value={row.frequency}
                       onChange={(val) =>
