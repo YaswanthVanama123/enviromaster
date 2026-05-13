@@ -27,11 +27,15 @@ import {
   faChevronRight,
   faEnvelope,
   faTrash,
-  faFileContract
+  faFileContract,
+  faUsers,
+  faHistory
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
+import { UserManagement } from "./admin/UserManagement";
+import { EditHistory } from "./admin/EditHistory";
 
-type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "email-template" | "service-agreement-template" | "trash";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "user-management" | "edit-history" | "email-template" | "service-agreement-template" | "trash";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -73,7 +77,7 @@ export default function AdminPanel() {
   const getActiveTabFromUrl = (): TabType => {
     if (!tab) return "dashboard";
 
-    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "email-template", "service-agreement-template", "trash"];
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "user-management", "edit-history", "email-template", "service-agreement-template", "trash"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
 
@@ -415,6 +419,10 @@ export default function AdminPanel() {
         return "Approval Documents";
       case "pricing-details":
         return "Pricing Details";
+      case "user-management":
+        return "User Management";
+      case "edit-history":
+        return "Edit History";
       case "email-template":
         return "Email Template";
       case "service-agreement-template":
@@ -527,6 +535,20 @@ export default function AdminPanel() {
         >
           <FontAwesomeIcon icon={faDollarSign} size="lg" />
           Pricing Details
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "user-management" ? "active" : ""}`}
+          onClick={() => handleTabChange("user-management")}
+        >
+          <FontAwesomeIcon icon={faUsers} size="lg" />
+          User Management
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "edit-history" ? "active" : ""}`}
+          onClick={() => handleTabChange("edit-history")}
+        >
+          <FontAwesomeIcon icon={faHistory} size="lg" />
+          Edit History
         </button>
         <button
           className={`secondary-nav-item ${activeTab === "email-template" ? "active" : ""}`}
@@ -995,6 +1017,18 @@ export default function AdminPanel() {
         {activeTab === "trash" && (
           <div className="tab-content-full">
             <TrashView />
+          </div>
+        )}
+
+        {activeTab === "user-management" && (
+          <div className="tab-content-full">
+            <UserManagement />
+          </div>
+        )}
+
+        {activeTab === "edit-history" && (
+          <div className="tab-content-full">
+            <EditHistory />
           </div>
         )}
       </main>

@@ -1,37 +1,99 @@
+import type { AuthUser, UserRole } from '../types/api.types';
 
 const STORAGE_KEYS = {
+  AUTH_TOKEN: "auth_token",
+  AUTH_USER: "auth_user",
+  USER_ROLE: "user_role",
+  // Legacy keys for backward compatibility
   ADMIN_TOKEN: "admin_token",
   ADMIN_USER: "admin_user",
 } as const;
 
 export const storage = {
   getToken(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+    // Check new key first, then legacy
+    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+           localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
   },
 
   setToken(token: string): void {
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    // Also set legacy key for backward compatibility
     localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
   },
 
   removeToken(): void {
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
   },
 
-  getAdminUser(): any {
-    const user = localStorage.getItem(STORAGE_KEYS.ADMIN_USER);
-    return user ? JSON.parse(user) : null;
+  getUser(): AuthUser | null {
+    const user = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
+    if (user) {
+      return JSON.parse(user);
+    }
+    // Check legacy admin user
+    const adminUser = localStorage.getItem(STORAGE_KEYS.ADMIN_USER);
+    if (adminUser) {
+      const parsed = JSON.parse(adminUser);
+      return { ...parsed, role: 'admin' as UserRole };
+    }
+    return null;
+  },
+
+  setUser(user: AuthUser): void {
+    localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
+    // Also set legacy admin user for backward compatibility
+    if (user.role === 'admin') {
+      localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(user));
+    }
+  },
+
+  removeUser(): void {
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    localStorage.removeItem(STORAGE_KEYS.ADMIN_USER);
+  },
+
+  getRole(): UserRole | null {
+    const role = localStorage.getItem(STORAGE_KEYS.USER_ROLE) as UserRole | null;
+    if (role) return role;
+    // Check from user object
+    const user = this.getUser();
+    return user?.role || null;
+  },
+
+  setRole(role: UserRole): void {
+    localStorage.setItem(STORAGE_KEYS.USER_ROLE, role);
+  },
+
+  removeRole(): void {
+    localStorage.removeItem(STORAGE_KEYS.USER_ROLE);
+  },
+
+  // Legacy methods for backward compatibility
+  getAdminUser(): AuthUser | null {
+    return this.getUser();
   },
 
   setAdminUser(user: any): void {
-    localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(user));
+    const authUser: AuthUser = {
+      ...user,
+      role: 'admin' as UserRole,
+    };
+    this.setUser(authUser);
   },
 
   removeAdminUser(): void {
-    localStorage.removeItem(STORAGE_KEYS.ADMIN_USER);
+    this.removeUser();
   },
 
   clearAuth(): void {
     this.removeToken();
-    this.removeAdminUser();
+    this.removeUser();
+    this.removeRole();
+  },
+
+  isAuthenticated(): boolean {
+    return !!this.getToken() && !!this.getUser();
   },
 };

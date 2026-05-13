@@ -210,3 +210,133 @@
     border-radius: 6px;
   }
 }
+
+/* User info styles */
+.topnav__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 16px;
+  padding-left: 16px;
+  border-left: 1px solid #e6e6e6;
+}
+
+.topnav__username {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.topnav__role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.topnav__role-badge--admin {
+  background: #c00000;
+  color: #fff;
+}
+
+.topnav__role-badge--employee {
+  background: #2563eb;
+  color: #fff;
+}
+
+.topnav__logout-btn {
+  background: none;
+  border: 1px solid #e6e6e6;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topnav__logout-btn:hover {
+  background: #f3f3f3;
+  border-color: #ccc;
+  color: #333;
+}
+
+/* Mobile menu user styles */
+.mobilemenu__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border-bottom: 1px solid #e6e6e6;
+  margin-bottom: 4px;
+}
+
+.mobilemenu__username {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mobilemenu__role-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mobilemenu__role-badge--admin {
+  background: #c00000;
+  color: #fff;
+}
+
+.mobilemenu__role-badge--employee {
+  background: #2563eb;
+  color: #fff;
+}
+
+.mobilemenu__logout-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid #e6e6e6;
+  margin-top: 4px;
+  padding: 12px 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #c00000;
+  cursor: pointer;
+}
+
+.mobilemenu__logout-btn:hover {
+  background: #fef2f2;
+}
+
+/* Responsive adjustments for user info */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .topnav__user {
+    gap: 8px;
+    margin-left: 12px;
+    padding-left: 12px;
+  }
+
+  .topnav__username {
+    font-size: 13px;
+  }
+
+  .topnav__role-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .topnav__logout-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+}

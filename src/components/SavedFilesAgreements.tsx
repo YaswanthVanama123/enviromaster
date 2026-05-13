@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef, useCallback, ChangeEvent } from "
 import { useNavigate, useLocation } from "react-router-dom";
 import { pdfApi, emailApi, manualUploadApi } from "../backendservice/api";
 import { emailTemplateApi } from "../backendservice/api/emailTemplateApi";
+import { useAuthContext } from "./auth/AuthProvider";
 import type {
   SavedFileListItem,
   SavedFileGroup,
@@ -80,6 +81,7 @@ export default function SavedFilesAgreements() {
   const [agreementsPerPage] = useState(20);
   const [query, setQuery] = useState("");
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'yet-to-start' | 'active' | 'inactive'>('all');
+  const [ownershipFilter, setOwnershipFilter] = useState<'all' | 'mine'>('all');
   const [loading, setLoading] = useState(false);
   const [emailTemplateLoading, setEmailTemplateLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +122,7 @@ export default function SavedFilesAgreements() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthContext();
   const isInAdminContext = location.pathname.includes("/admin-panel");
   const returnPath = isInAdminContext ? "/admin-panel/saved-pdfs" : "/saved-pdfs";
 
@@ -275,7 +278,18 @@ export default function SavedFilesAgreements() {
         return (a.agreementTitle || "").localeCompare(b.agreementTitle || "");
       });
 
-      const filteredAgreements = timelineFilter === 'all' ? sortedAgreements : sortedAgreements.filter(agreement => {
+      // Apply ownership filter
+      const ownershipFiltered = ownershipFilter === 'mine' && user?.username
+        ? sortedAgreements.filter(agreement => {
+            // Check if any file in the agreement was created by the current user
+            return agreement.files.some(file =>
+              file.createdBy === user.username ||
+              file.createdBy === user.fullName
+            );
+          })
+        : sortedAgreements;
+
+      const filteredAgreements = timelineFilter === 'all' ? ownershipFiltered : ownershipFiltered.filter(agreement => {
         if (!agreement.startDate || !agreement.contractMonths) {
           return false;
         }
@@ -367,14 +381,14 @@ export default function SavedFilesAgreements() {
       return;
     }
 
-    console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}" or timeline filter changed to: "${timelineFilter}"`);
+    console.log(`🔍 [SAVED-FILES-AGREEMENTS] Search query changed to: "${query}" or timeline filter changed to: "${timelineFilter}" or ownership filter changed to: "${ownershipFilter}"`);
 
     const timeoutId = setTimeout(() => {
       fetchAgreements(1, query);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [query, timelineFilter]);
+  }, [query, timelineFilter, ownershipFilter]);
 
   useEffect(() => {
     const loadEmailTemplate = async () => {
@@ -853,6 +867,29 @@ export default function SavedFilesAgreements() {
 
         <div style={{ marginLeft: '12px' }}>
           <select
+            value={ownershipFilter}
+            onChange={(e) => {
+              const newFilter = e.target.value as 'all' | 'mine';
+              setOwnershipFilter(newFilter);
+              console.log(`🔍 [OWNERSHIP-FILTER] Changed to: ${newFilter}`);
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              fontSize: '14px',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              minWidth: '160px'
+            }}
+          >
+            <option value="all">All Agreements</option>
+            <option value="mine">My Agreements</option>
+          </select>
+        </div>
+
+        <div style={{ marginLeft: '12px' }}>
+          <select
             value={timelineFilter}
             onChange={(e) => {
               const newFilter = e.target.value as 'all' | 'yet-to-start' | 'active' | 'inactive';
@@ -869,7 +906,7 @@ export default function SavedFilesAgreements() {
               minWidth: '160px'
             }}
           >
-            <option value="all">All Agreements</option>
+            <option value="all">All Status</option>
             <option value="yet-to-start">Yet to Start</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>

@@ -1,9 +1,10 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFolder, faFolderOpen, faChevronDown, faChevronRight,
   faPlus, faCheckSquare, faSquare, faCloudUploadAlt,
-  faTrash, faPencilAlt, faRedo, faFileAlt, faTasks
+  faTrash, faPencilAlt, faRedo, faFileAlt, faTasks,
+  faUserPlus, faEdit
 } from "@fortawesome/free-solid-svg-icons";
 import type { SavedFileGroup, SavedFileListItem } from "../../backendservice/api/pdfApi";
 import { FileRow } from "./FileRow";
@@ -51,6 +52,20 @@ const getStatusConfig = (status: string) => {
   return EXISTING_STATUSES.find(s => s.value === status) ||
          { value: status, label: status, color: '#6b7280', canManuallySelect: true };
 };
+
+// Get creator and last editor from agreement files
+function getCreatorAndEditor(agreement: SavedFileGroup) {
+  const mainFile = agreement.files.find(f => f.fileType === 'main_pdf');
+  const sortedByUpdate = [...agreement.files].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+  const latestEdit = sortedByUpdate[0];
+  return {
+    createdBy: mainFile?.createdBy || agreement.files[0]?.createdBy || null,
+    lastEditedBy: latestEdit?.updatedBy || latestEdit?.createdBy || null,
+    lastEditTime: latestEdit?.updatedAt || null,
+  };
+}
 
 interface AgreementRowProps {
   agreement: SavedFileGroup;
@@ -127,6 +142,9 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
   const handleZohoUpload = useCallback(() => onAgreementZohoUpload(agreement), [agreement, onAgreementZohoUpload]);
   const handleTaskCreate = useCallback(() => onAgreementTaskCreate(agreement), [agreement, onAgreementTaskCreate]);
   const handleDateChange = useCallback((newDate: string) => onDateChange(agreement.id, newDate), [agreement.id, onDateChange]);
+
+  // Get creator and last editor
+  const { createdBy, lastEditedBy } = useMemo(() => getCreatorAndEditor(agreement), [agreement]);
 
   return (
     <div
@@ -231,6 +249,47 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
                 <FontAwesomeIcon icon={faFileAlt} style={{ fontSize: '10px' }} />
                 {getStatusConfig('draft').label}
               </span>
+          )}
+        </div>
+        {/* Creator and Editor Info */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '6px',
+          flexWrap: 'wrap'
+        }}>
+          {createdBy && (
+            <span style={{
+              background: '#dcfce7',
+              color: '#16a34a',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <FontAwesomeIcon icon={faUserPlus} style={{ fontSize: '9px' }} />
+              Created: {createdBy}
+            </span>
+          )}
+          {lastEditedBy && lastEditedBy !== createdBy && (
+            <span style={{
+              background: '#dbeafe',
+              color: '#2563eb',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <FontAwesomeIcon icon={faEdit} style={{ fontSize: '9px' }} />
+              Edited: {lastEditedBy}
+            </span>
           )}
         </div>
         {isTrashView && agreementDeletionInfo && (
