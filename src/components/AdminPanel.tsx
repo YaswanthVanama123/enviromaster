@@ -29,13 +29,15 @@ import {
   faTrash,
   faFileContract,
   faUsers,
-  faHistory
+  faHistory,
+  faUserFriends
 } from "@fortawesome/free-solid-svg-icons";
 import "./AdminPanel.css";
 import { UserManagement } from "./admin/UserManagement";
 import { EditHistory } from "./admin/EditHistory";
+import { EmployeeAgreements } from "./admin/EmployeeAgreements";
 
-type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "user-management" | "edit-history" | "email-template" | "service-agreement-template" | "trash";
+type TabType = "dashboard" | "saved-pdfs" | "approval-documents" | "pricing-details" | "user-management" | "edit-history" | "employee-agreements" | "email-template" | "service-agreement-template" | "trash";
 
 type FileStatus = "draft" | "pending_approval" | "approved_salesman" | "approved_admin";
 
@@ -77,7 +79,7 @@ export default function AdminPanel() {
   const getActiveTabFromUrl = (): TabType => {
     if (!tab) return "dashboard";
 
-    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "user-management", "edit-history", "email-template", "service-agreement-template", "trash"];
+    const validTabs: TabType[] = ["dashboard", "saved-pdfs", "approval-documents", "pricing-details", "user-management", "edit-history", "employee-agreements", "email-template", "service-agreement-template", "trash"];
     return validTabs.includes(tab as TabType) ? (tab as TabType) : "dashboard";
   };
 
@@ -423,6 +425,8 @@ export default function AdminPanel() {
         return "User Management";
       case "edit-history":
         return "Edit History";
+      case "employee-agreements":
+        return "Employee Agreements";
       case "email-template":
         return "Email Template";
       case "service-agreement-template":
@@ -549,6 +553,13 @@ export default function AdminPanel() {
         >
           <FontAwesomeIcon icon={faHistory} size="lg" />
           Edit History
+        </button>
+        <button
+          className={`secondary-nav-item ${activeTab === "employee-agreements" ? "active" : ""}`}
+          onClick={() => handleTabChange("employee-agreements")}
+        >
+          <FontAwesomeIcon icon={faUserFriends} size="lg" />
+          Employee Files
         </button>
         <button
           className={`secondary-nav-item ${activeTab === "email-template" ? "active" : ""}`}
@@ -1029,6 +1040,12 @@ export default function AdminPanel() {
         {activeTab === "edit-history" && (
           <div className="tab-content-full">
             <EditHistory />
+          </div>
+        )}
+
+        {activeTab === "employee-agreements" && (
+          <div className="tab-content-full">
+            <EmployeeAgreements />
           </div>
         )}
       </main>
