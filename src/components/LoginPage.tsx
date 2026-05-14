@@ -13,7 +13,6 @@ export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
 
@@ -28,16 +27,6 @@ export const LoginPage: React.FC = () => {
       }, 0);
     }
   }, [isAuthenticated, hasNavigated, navigate, location.state]);
-
-  // Show session message from redirect
-  useEffect(() => {
-    const state = location.state as { message?: string; reason?: string } | undefined;
-    if (state?.message && state?.reason === "unauthorized") {
-      setSessionMessage(state.message);
-      const timer = setTimeout(() => setSessionMessage(null), 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [location.state]);
 
   // Clear error when switching tabs
   useEffect(() => {
@@ -142,10 +131,6 @@ export const LoginPage: React.FC = () => {
               </button>
             </div>
           </div>
-
-          {sessionMessage && (
-            <div style={styles.sessionWarning}>{sessionMessage}</div>
-          )}
 
           {loginError && <div style={styles.error}>{loginError}</div>}
 
@@ -340,14 +325,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "10px",
     fontSize: "14px",
     border: "1px solid #fecaca",
-  },
-  sessionWarning: {
-    padding: "12px",
-    backgroundColor: "#fef3c7",
-    color: "#b45309",
-    borderRadius: "10px",
-    fontSize: "14px",
-    border: "1px solid #fbbf24",
   },
   infoText: {
     marginTop: "24px",

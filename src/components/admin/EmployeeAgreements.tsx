@@ -143,35 +143,30 @@ export function EmployeeAgreements() {
         });
       });
 
-      // Assign agreements to creators
+      // Assign agreements to creators (only if creator exists in user management)
       agreements.forEach((agreement) => {
         const creatorUsername = agreement.files[0]?.createdBy;
         if (creatorUsername) {
           const employee = employeeMap.get(creatorUsername);
           if (employee) {
             employee.agreements.push(agreement);
-          } else {
-            // Create entry for unknown users (in case they were deleted)
-            employeeMap.set(creatorUsername, {
-              user: {
-                id: creatorUsername,
-                username: creatorUsername,
-                fullName: creatorUsername,
-                role: "employee",
-                isActive: false,
-              },
-              agreements: [agreement],
-              loading: false,
-              loaded: true,
-            });
           }
+          // Don't create fake entries for unknown users - only show real users from User Management
         }
       });
 
-      // Convert to array and sort by agreement count
+      // Convert to array and sort by agreement count (employees with agreements first, then by name)
       const employeeList = Array.from(employeeMap.values())
-        .filter((e) => e.agreements.length > 0)
-        .sort((a, b) => b.agreements.length - a.agreements.length);
+        .sort((a, b) => {
+          // First sort by agreement count descending
+          if (b.agreements.length !== a.agreements.length) {
+            return b.agreements.length - a.agreements.length;
+          }
+          // Then alphabetically by name
+          const nameA = a.user.fullName || a.user.username;
+          const nameB = b.user.fullName || b.user.username;
+          return nameA.localeCompare(nameB);
+        });
 
       setEmployees(employeeList);
     } catch (err) {
@@ -534,6 +529,13 @@ export function EmployeeAgreements() {
                       employee.agreements.map((agreement) => {
                         const isAgreementExpanded = expandedAgreements.has(agreement.id);
                         const statusCfg = getStatusConfig(agreement.agreementStatus);
+                        // Filter files to only those created by this employee
+                        const employeeFiles = agreement.files.filter(
+                          (file) =>
+                            file.createdBy === employee.user.username ||
+                            file.createdBy === employee.user.fullName
+                        );
+                        const employeeFileCount = employeeFiles.length;
                         return (
                           <div key={agreement.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                             {/* Agreement Header */}
@@ -571,7 +573,7 @@ export function EmployeeAgreements() {
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "3px" }}>
                                   <span style={{ fontSize: "11px", color: "#6b7280" }}>
-                                    {agreement.fileCount} file{agreement.fileCount !== 1 ? "s" : ""} · {timeAgo(agreement.latestUpdate)}
+                                    {employeeFileCount} file{employeeFileCount !== 1 ? "s" : ""} · {timeAgo(agreement.latestUpdate)}
                                   </span>
                                   <span
                                     style={{
@@ -590,7 +592,24 @@ export function EmployeeAgreements() {
                               {/* Agreement Actions */}
                               <div style={{ display: "flex", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
                                 <button
-                                  onClick={() => handleAgreementZohoUpload(agreement)}
+                                  onClick={() => {
+                                    // Only upload files created by this employee
+                                    const uploadableFiles = employeeFiles.filter(
+                                      (f) => f.hasPdf || f.fileType === "version_log" || f.fileType === "attached_pdf"
+                                    );
+                                    if (uploadableFiles.length === 0) {
+                                      setToastMessage({ message: "No uploadable files from this employee", type: "error" });
+                                      return;
+                                    }
+                                    if (uploadableFiles.length === 1) {
+                                      setCurrentZohoFile(uploadableFiles[0]);
+                                      setBulkZohoFiles([uploadableFiles[0]]);
+                                    } else {
+                                      setCurrentZohoFile(null);
+                                      setBulkZohoFiles(uploadableFiles);
+                                    }
+                                    setZohoUploadOpen(true);
+                                  }}
                                   title="Upload to Bigin"
                                   style={{
                                     width: "28px",
@@ -626,10 +645,10 @@ export function EmployeeAgreements() {
                               </div>
                             </div>
 
-                            {/* Files */}
+                            {/* Files - Only show files created by this employee */}
                             {isAgreementExpanded && (
                               <div style={{ background: "#fff" }}>
-                                {agreement.files.map((file) => {
+                                {employeeFiles.map((file) => {
                                   const fileTypeCfg = getFileTypeConfig(file.fileType);
                                   const fileStatusCfg = getStatusConfig(file.status);
                                   return (
