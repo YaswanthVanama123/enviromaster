@@ -414,11 +414,9 @@ export function EditHistory() {
   const fetchAgreements = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await pdfApi.getSavedFilesGrouped({
-        page: 1,
-        limit: 100,
-        status: "all",
-        search: "",
+      const result = await pdfApi.getSavedFilesGrouped(1, 100, {
+        includeDrafts: true,
+        includeLogs: true,
       });
       if (result?.groups) {
         setAgreements(result.groups);
