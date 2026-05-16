@@ -35,6 +35,12 @@ import { ServiceAgreement } from "./ServiceAgreement";
 import type { ServiceAgreementData } from "./ServiceAgreement/ServiceAgreement";
 import type { ServiceAgreementTemplate } from "../backendservice/api/serviceAgreementTemplateApi";
 import { REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID } from "./services/refreshPowerScrub/refreshPowerScrubDraftPayload";
+import type { QuotaLevel, AccountType, PricingLine, AgreementTerm } from "../backendservice/types/commission.types";
+import {
+  DEFAULT_COMMISSION_RULES,
+  QUOTA_LEVEL_OPTIONS,
+  ACCOUNT_TYPE_OPTIONS
+} from "../backendservice/types/commission.types";
 
 type HeaderRow = {
   labelLeft: string;
@@ -216,6 +222,79 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const [expiryDate, setExpiryDate] = useState<Date | null>(null);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [expiryStatus, setExpiryStatus] = useState<'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired'>('safe');
+
+  // Commission Calculator State - simplified (business type always "new" in form filling)
+  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above');
+  const [accountType, setAccountType] = useState<AccountType>('Anchor');
+  const [isInsideSales, setIsInsideSales] = useState<boolean>(false);
+  const [isCommissionExpanded, setIsCommissionExpanded] = useState<boolean>(true);
+
+  // Calculate commission based on form values
+  const calculateCommission = useMemo(() => {
+    const rules = DEFAULT_COMMISSION_RULES;
+
+    // Monthly value from contract total (auto from form)
+    const monthlyValue = globalContractMonths > 0
+      ? totalCurrentContract / globalContractMonths
+      : totalCurrentContract;
+
+    // Derive agreement term from contract months (auto from form)
+    const getAgreementTerm = (): AgreementTerm => {
+      if (globalContractMonths >= 36) return '3-year';
+      if (globalContractMonths >= 12) return '1-year';
+      return 'MTM-with-install';
+    };
+
+    // Pricing line from indicator (auto from form - green/red line)
+    const pricingLine: PricingLine = pricingIndicator === 'green' ? 'Greenline' : 'Redline';
+    const agreementTerm = getAgreementTerm();
+
+    // Base rate from quota level
+    const baseRate = rules.quotaRates[quotaLevel];
+
+    // Agreement multiplier
+    const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
+
+    // Account type adjustment
+    const accountTypeAdjustment = rules.accountTypeAdjustments[accountType];
+
+    // Greenline bonus (auto from form pricing)
+    const greenlineBonus = pricingLine === 'Greenline' ? rules.greenlineBonus : 0;
+
+    // No renewal bonus - form filling is always new business
+    const renewalBonus = 0;
+
+    // Inside sales deduction
+    const insideSalesDeduction = isInsideSales ? rules.insideSalesDeduction : 0;
+
+    // Effective base rate (before multiplier)
+    const effectiveBaseRate = baseRate + accountTypeAdjustment + greenlineBonus + renewalBonus + insideSalesDeduction;
+
+    // Final commission rate after multiplier
+    const finalCommissionRate = effectiveBaseRate * (agreementMultiplier / 100);
+
+    // Calculate dollar amounts
+    const monthlyCommission = monthlyValue * (finalCommissionRate / 100);
+    const annualCommission = monthlyCommission * 12;
+    const contractCommission = monthlyCommission * globalContractMonths;
+
+    return {
+      monthlyValue,
+      agreementTerm,
+      pricingLine,
+      baseRate,
+      agreementMultiplier,
+      accountTypeAdjustment,
+      greenlineBonus,
+      renewalBonus,
+      insideSalesDeduction,
+      effectiveBaseRate,
+      finalCommissionRate,
+      monthlyCommission,
+      annualCommission,
+      contractCommission
+    };
+  }, [totalCurrentContract, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
 
 
   const handleStartDateChange = (newDate: string) => {
@@ -871,6 +950,160 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
           </div>
           )}
         </div>
+      </div>
+
+      {/* Commission Calculator Section */}
+      <div className="contract-card commission-calculator-card">
+        <div
+          className="card-title-row"
+          onClick={() => setIsCommissionExpanded(!isCommissionExpanded)}
+          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <h3 className="card-title" style={{ margin: 0 }}>
+            <FontAwesomeIcon icon={faChartLine} style={{ marginRight: '8px' }} />
+            Sales Commission
+          </h3>
+          <svg
+            className={`dropdown-arrow ${isCommissionExpanded ? 'open' : ''}`}
+            width="12"
+            height="8"
+            viewBox="0 0 12 8"
+            fill="none"
+            style={{ transform: isCommissionExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+          >
+            <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        {isCommissionExpanded && (
+          <>
+            {/* Commission Inputs - only what's needed (form provides the rest) */}
+            <div className="commission-inputs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
+              {/* Quota Level */}
+              <div className="commission-input-group">
+                <label className="commission-label">Quota Level</label>
+                <select
+                  value={quotaLevel}
+                  onChange={(e) => setQuotaLevel(e.target.value as QuotaLevel)}
+                  className="commission-select"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}
+                >
+                  {QUOTA_LEVEL_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label} ({opt.rate}%)</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Account Type */}
+              <div className="commission-input-group">
+                <label className="commission-label">Account Type</label>
+                <select
+                  value={accountType}
+                  onChange={(e) => setAccountType(e.target.value as AccountType)}
+                  className="commission-select"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}
+                >
+                  {ACCOUNT_TYPE_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Inside Sales Toggle */}
+              <div className="commission-input-group" style={{ gridColumn: 'span 2' }}>
+                <label className="commission-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={isInsideSales}
+                    onChange={(e) => setIsInsideSales(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: '#c00000' }}
+                  />
+                  Inside Sales (-3%)
+                </label>
+              </div>
+            </div>
+
+            {/* Commission Breakdown */}
+            <div className="pricing-breakdown" style={{ marginTop: '16px' }}>
+              <div className="breakdown-row">
+                <span className="breakdown-label">Monthly Value (from contract)</span>
+                <span className="breakdown-value">${calculateCommission.monthlyValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+              <div className="breakdown-row">
+                <span className="breakdown-label">Agreement Term</span>
+                <span className="breakdown-value">{calculateCommission.agreementTerm} ({calculateCommission.agreementMultiplier}%)</span>
+              </div>
+              <div className="breakdown-row">
+                <span className="breakdown-label">Pricing Line</span>
+                <span className={`breakdown-value ${calculateCommission.pricingLine.toLowerCase()}`}>
+                  {calculateCommission.pricingLine}
+                  {calculateCommission.greenlineBonus > 0 && ` (+${calculateCommission.greenlineBonus}%)`}
+                </span>
+              </div>
+
+              <div className="breakdown-divider"></div>
+
+              <div className="breakdown-row">
+                <span className="breakdown-label">Base Rate ({quotaLevel} quota)</span>
+                <span className="breakdown-value">{calculateCommission.baseRate}%</span>
+              </div>
+              {calculateCommission.accountTypeAdjustment !== 0 && (
+                <div className="breakdown-row">
+                  <span className="breakdown-label">Account Adjustment ({accountType})</span>
+                  <span className="breakdown-value" style={{ color: calculateCommission.accountTypeAdjustment < 0 ? '#dc2626' : '#16a34a' }}>
+                    {calculateCommission.accountTypeAdjustment > 0 ? '+' : ''}{calculateCommission.accountTypeAdjustment}%
+                  </span>
+                </div>
+              )}
+              {calculateCommission.greenlineBonus > 0 && (
+                <div className="breakdown-row">
+                  <span className="breakdown-label">Greenline Bonus</span>
+                  <span className="breakdown-value" style={{ color: '#16a34a' }}>+{calculateCommission.greenlineBonus}%</span>
+                </div>
+              )}
+              {calculateCommission.insideSalesDeduction !== 0 && (
+                <div className="breakdown-row">
+                  <span className="breakdown-label">Inside Sales Deduction</span>
+                  <span className="breakdown-value" style={{ color: '#dc2626' }}>{calculateCommission.insideSalesDeduction}%</span>
+                </div>
+              )}
+
+              <div className="breakdown-divider"></div>
+
+              <div className="breakdown-row">
+                <span className="breakdown-label">Effective Base Rate</span>
+                <span className="breakdown-value">{calculateCommission.effectiveBaseRate.toFixed(2)}%</span>
+              </div>
+              <div className="breakdown-row highlight">
+                <span className="breakdown-label">Final Commission Rate</span>
+                <span className="breakdown-value profit green">{calculateCommission.finalCommissionRate.toFixed(2)}%</span>
+              </div>
+
+              <div className="breakdown-divider"></div>
+
+              <div className="breakdown-row">
+                <span className="breakdown-label">Monthly Commission</span>
+                <span className="breakdown-value" style={{ color: '#16a34a', fontWeight: 600 }}>
+                  ${calculateCommission.monthlyCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+              </div>
+              <div className="breakdown-row">
+                <span className="breakdown-label">Annual Commission</span>
+                <span className="breakdown-value" style={{ color: '#16a34a', fontWeight: 600 }}>
+                  ${calculateCommission.annualCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+              </div>
+              {!allServicesOneTime && (
+                <div className="breakdown-row highlight" style={{ background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)', border: '2px solid #22c55e' }}>
+                  <span className="breakdown-label" style={{ color: '#166534', fontWeight: 700 }}>Contract Total Commission ({globalContractMonths} mo)</span>
+                  <span className="breakdown-value" style={{ color: '#166534', fontWeight: 700, fontSize: '16px' }}>
+                    ${calculateCommission.contractCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
