@@ -129,6 +129,8 @@ export interface SavedFileGroup {
   isDeleted?: boolean;
   deletedAt?: string | null;
   deletedBy?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
   startDate?: string | null;
   contractMonths?: number | null;
 }

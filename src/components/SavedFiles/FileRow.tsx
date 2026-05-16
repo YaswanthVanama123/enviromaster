@@ -91,6 +91,21 @@ export const FileRow = memo((props: FileRowProps) => {
 
   const fileDeletionInfo = isTrashView ? formatDeletionMeta(file.deletedBy, file.deletedAt) : null;
 
+  // Format last edit time for display
+  const formattedEditInfo = useMemo(() => {
+    if (!file.updatedAt || !file.updatedBy) return null;
+    const date = new Date(file.updatedAt);
+    if (isNaN(date.getTime())) return null;
+    const timeStr = date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    return { by: file.updatedBy, time: timeStr };
+  }, [file.updatedAt, file.updatedBy]);
+
   const handleToggle = useCallback(() => onToggleSelection(file.id), [file.id, onToggleSelection]);
   const handleView = useCallback(() => onView(file, watermarkEnabled), [file, watermarkEnabled, onView]);
   const handleDownload = useCallback(() => onDownload(file, watermarkEnabled), [file, watermarkEnabled, onDownload]);
@@ -223,6 +238,26 @@ export const FileRow = memo((props: FileRowProps) => {
           </span>
         )}
         </div>
+        {/* Last edited info for files */}
+        {!isTrashView && formattedEditInfo && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '2px'
+          }}>
+            <span style={{
+              fontSize: '11px',
+              color: '#6b7280',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <FontAwesomeIcon icon={faPencilAlt} style={{ fontSize: '9px' }} />
+              Edited by {formattedEditInfo.by} • {formattedEditInfo.time}
+            </span>
+          </div>
+        )}
         {isTrashView && fileDeletionInfo && (
           <div style={{
             fontSize: '11px',

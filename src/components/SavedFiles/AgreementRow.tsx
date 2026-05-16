@@ -53,17 +53,19 @@ const getStatusConfig = (status: string) => {
          { value: status, label: status, color: '#6b7280', canManuallySelect: true };
 };
 
-// Get creator and last editor from agreement files
+// Get creator and last editor from agreement files (with agreement-level fallback)
 function getCreatorAndEditor(agreement: SavedFileGroup) {
   const mainFile = agreement.files.find(f => f.fileType === 'main_pdf');
   const sortedByUpdate = [...agreement.files].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
   const latestEdit = sortedByUpdate[0];
+
+  // Use file-level data if available, otherwise fall back to agreement-level
   return {
-    createdBy: mainFile?.createdBy || agreement.files[0]?.createdBy || null,
-    lastEditedBy: latestEdit?.updatedBy || latestEdit?.createdBy || null,
-    lastEditTime: latestEdit?.updatedAt || null,
+    createdBy: mainFile?.createdBy || agreement.files[0]?.createdBy || agreement.createdBy || null,
+    lastEditedBy: latestEdit?.updatedBy || latestEdit?.createdBy || agreement.updatedBy || agreement.createdBy || null,
+    lastEditTime: latestEdit?.updatedAt || agreement.latestUpdate || null,
   };
 }
 
@@ -144,7 +146,21 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
   const handleDateChange = useCallback((newDate: string) => onDateChange(agreement.id, newDate), [agreement.id, onDateChange]);
 
   // Get creator and last editor
-  const { createdBy, lastEditedBy } = useMemo(() => getCreatorAndEditor(agreement), [agreement]);
+  const { createdBy, lastEditedBy, lastEditTime } = useMemo(() => getCreatorAndEditor(agreement), [agreement]);
+
+  // Format the last edit time for display
+  const formattedEditTime = useMemo(() => {
+    if (!lastEditTime) return null;
+    const date = new Date(lastEditTime);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }, [lastEditTime]);
 
   return (
     <div
@@ -288,7 +304,23 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
               gap: '4px'
             }}>
               <FontAwesomeIcon icon={faEdit} style={{ fontSize: '9px' }} />
-              Edited: {lastEditedBy}
+              Edited: {lastEditedBy}{formattedEditTime && ` • ${formattedEditTime}`}
+            </span>
+          )}
+          {lastEditedBy && lastEditedBy === createdBy && formattedEditTime && (
+            <span style={{
+              background: '#fef3c7',
+              color: '#92400e',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <FontAwesomeIcon icon={faEdit} style={{ fontSize: '9px' }} />
+              Last Edit: {formattedEditTime}
             </span>
           )}
         </div>
