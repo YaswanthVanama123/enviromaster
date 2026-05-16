@@ -9,6 +9,8 @@ import PDFViewer from "./components/PDFViewer";
 import AdminPanel from "./components/AdminPanel";
 import ApprovalDocuments from "./components/ApprovalDocuments";
 import PriceChanges from "./components/PriceChanges";
+import MyCommissions from "./components/MyCommissions";
+import AdminCommissions from "./components/AdminCommissions";
 import { AdminDashboard } from "./components/admin";
 import { LoginPage } from "./components/LoginPage";
 import { AuthProvider, AuthGuard } from "./components/auth";
@@ -40,10 +42,12 @@ function AppContent() {
             <Route path="/pdf-viewer" element={<PDFViewer />} />
             <Route path="/approval-documents" element={<ApprovalDocuments />} />
             <Route path="/price-changes" element={<PriceChanges />} />
+            <Route path="/my-commissions" element={<MyCommissions />} />
           </Route>
 
           {/* Admin-only routes */}
           <Route element={<AuthGuard requireAdmin />}>
+            <Route path="/admin-commissions" element={<AdminCommissions />} />
             <Route path="/admin-panel/:tab/services/:modalType?/:itemId?" element={<AdminPanel />} />
             <Route path="/admin-panel/:tab/products/:modalType?/:itemId?" element={<AdminPanel />} />
             <Route path="/admin-panel/:tab?/:subtab?/:familyKey?/:modalType?/:itemId?" element={<AdminPanel />} />

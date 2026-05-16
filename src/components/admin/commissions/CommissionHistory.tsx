@@ -66,7 +66,7 @@ export const CommissionHistory: React.FC = () => {
     <div className="commission-history">
       <div className="history-header">
         <h3 className="calculator-section-title">
-          <span>📋</span> Commission History
+          <span>H</span> Commission History
         </h3>
 
         <div className="history-filters">

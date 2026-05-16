@@ -1,0 +1,645 @@
+.admin-commissions {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.admin-commissions__loading,
+.admin-commissions__error,
+.admin-commissions__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.admin-commissions__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #b91c1c;
+  border-radius: 50%;
+  animation: admin-spin 1s linear infinite;
+}
+
+@keyframes admin-spin {
+  to { transform: rotate(360deg); }
+}
+
+.admin-commissions__error h2 {
+  color: #b91c1c;
+  margin: 0;
+}
+
+.admin-commissions__error p {
+  color: #64748b;
+}
+
+.admin-commissions__retry-btn,
+.admin-commissions__back-btn {
+  padding: 10px 20px;
+  background: #b91c1c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.admin-commissions__retry-btn:hover,
+.admin-commissions__back-btn:hover {
+  background: #991b1b;
+}
+
+.admin-commissions__header {
+  margin-bottom: 24px;
+}
+
+.admin-commissions__header .admin-commissions__back-btn {
+  margin-bottom: 16px;
+  background: #475569;
+}
+
+.admin-commissions__header .admin-commissions__back-btn:hover {
+  background: #334155;
+}
+
+.admin-commissions__title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-commissions__title-row h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-commissions__employee-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  color: white;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.admin-commissions__admin-badge {
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-commissions__subtitle {
+  margin: 8px 0 0 0;
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* Summary Grid */
+.admin-commissions__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-commissions__summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.admin-commissions__summary-card--primary {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  border: none;
+}
+
+.admin-commissions__summary-card--primary .admin-commissions__summary-icon {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.admin-commissions__summary-card--primary .admin-commissions__summary-label,
+.admin-commissions__summary-card--primary .admin-commissions__summary-value {
+  color: white;
+}
+
+.admin-commissions__summary-icon {
+  width: 48px;
+  height: 48px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-commissions__summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-commissions__summary-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.admin-commissions__summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Search Section */
+.admin-commissions__search-section {
+  margin-bottom: 24px;
+}
+
+.admin-commissions__search-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-commissions__search-input:focus {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
+}
+
+/* Employee List */
+.admin-commissions__employees-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.admin-commissions__employees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.admin-commissions__employee-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.admin-commissions__employee-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: #b91c1c;
+}
+
+.admin-commissions__employee-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-commissions__employee-avatar {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-commissions__employee-info {
+  flex: 1;
+}
+
+.admin-commissions__employee-name {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.admin-commissions__employee-agreements {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.admin-commissions__employee-arrow {
+  font-size: 20px;
+  color: #94a3b8;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.admin-commissions__employee-card:hover .admin-commissions__employee-arrow {
+  transform: translateX(4px);
+  color: #b91c1c;
+}
+
+.admin-commissions__employee-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-commissions__employee-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-commissions__stat-label {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.admin-commissions__stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.admin-commissions__stat-value--commission {
+  color: #16a34a;
+}
+
+.admin-commissions__employee-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-commissions__mini-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-commissions__mini-badge--draft {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.admin-commissions__mini-badge--saved {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.admin-commissions__mini-badge--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-commissions__mini-badge--approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.admin-commissions__mini-badge--active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* Status Breakdown */
+.admin-commissions__status-breakdown {
+  margin-bottom: 24px;
+}
+
+.admin-commissions__status-breakdown h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #475569;
+}
+
+.admin-commissions__status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-commissions__status-chip {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-commissions__status-chip:hover {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.admin-commissions__status-chip.active {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: white;
+}
+
+.admin-commissions__chip-amount {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* Agreements List */
+.admin-commissions__list {
+  margin-top: 24px;
+}
+
+.admin-commissions__list h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.admin-commissions__no-results {
+  background: white;
+  padding: 40px;
+  text-align: center;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.admin-commissions__agreements {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-commissions__agreement {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.admin-commissions__agreement:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.admin-commissions__agreement.expanded {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.admin-commissions__agreement-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  gap: 16px;
+}
+
+.admin-commissions__agreement-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-commissions__agreement-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-commissions__agreement-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.admin-commissions__status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-commissions__meta-sep {
+  color: #cbd5e1;
+}
+
+.admin-commissions__agreement-amounts {
+  display: flex;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.admin-commissions__amount-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.admin-commissions__amount-item--commission {
+  position: relative;
+}
+
+.admin-commissions__amount-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.admin-commissions__amount-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.admin-commissions__amount-item--commission .admin-commissions__amount-value {
+  color: #16a34a;
+}
+
+.admin-commissions__rate-badge {
+  position: absolute;
+  top: -4px;
+  right: -28px;
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.admin-commissions__expand-icon {
+  width: 28px;
+  height: 28px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.admin-commissions__agreement:hover .admin-commissions__expand-icon {
+  background: #e2e8f0;
+}
+
+/* Agreement Details */
+.admin-commissions__agreement-details {
+  background: #f8fafc;
+  padding: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.admin-commissions__breakdown h5 {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.admin-commissions__breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.admin-commissions__breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: white;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.admin-commissions__breakdown-item span:first-child {
+  color: #64748b;
+}
+
+.admin-commissions__breakdown-item span:last-child {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.admin-commissions__breakdown-item--bonus span:last-child {
+  color: #16a34a;
+}
+
+.admin-commissions__breakdown-item--deduction span:last-child {
+  color: #dc2626;
+}
+
+.admin-commissions__breakdown-item--total {
+  background: #fef2f2;
+}
+
+.admin-commissions__breakdown-item--total span:last-child {
+  color: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-commissions {
+    padding: 16px;
+  }
+
+  .admin-commissions__title-row h1 {
+    font-size: 22px;
+  }
+
+  .admin-commissions__summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-commissions__employees-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-commissions__agreement-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-commissions__agreement-amounts {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .admin-commissions__amount-item {
+    align-items: flex-start;
+  }
+
+  .admin-commissions__expand-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+
+  .admin-commissions__agreement-header {
+    position: relative;
+    padding-right: 50px;
+  }
+}

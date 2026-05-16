@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { CommissionCalculator } from "./CommissionCalculator";
 import { CommissionRulesManager } from "./CommissionRulesManager";
 import { CommissionHistory } from "./CommissionHistory";
@@ -8,6 +8,13 @@ type SubTab = "calculator" | "history" | "rules";
 
 export const CommissionsTab: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("calculator");
+  const [historyKey, setHistoryKey] = useState(0);
+
+  // Callback to refresh history when a record is saved
+  const handleRecordSaved = useCallback(() => {
+    // Increment key to force re-mount of CommissionHistory
+    setHistoryKey(prev => prev + 1);
+  }, []);
 
   return (
     <div className="commissions-tab-container">
@@ -23,28 +30,28 @@ export const CommissionsTab: React.FC = () => {
           className={`subtab-btn ${activeSubTab === "calculator" ? "active" : ""}`}
           onClick={() => setActiveSubTab("calculator")}
         >
-          <span className="subtab-icon">🧮</span>
+          <span className="subtab-icon">C</span>
           Calculator
         </button>
         <button
           className={`subtab-btn ${activeSubTab === "history" ? "active" : ""}`}
           onClick={() => setActiveSubTab("history")}
         >
-          <span className="subtab-icon">📋</span>
+          <span className="subtab-icon">H</span>
           History
         </button>
         <button
           className={`subtab-btn ${activeSubTab === "rules" ? "active" : ""}`}
           onClick={() => setActiveSubTab("rules")}
         >
-          <span className="subtab-icon">⚙️</span>
+          <span className="subtab-icon">R</span>
           Rules Config
         </button>
       </div>
 
       <div className="commissions-content">
-        {activeSubTab === "calculator" && <CommissionCalculator />}
-        {activeSubTab === "history" && <CommissionHistory />}
+        {activeSubTab === "calculator" && <CommissionCalculator onRecordSaved={handleRecordSaved} />}
+        {activeSubTab === "history" && <CommissionHistory key={historyKey} />}
         {activeSubTab === "rules" && <CommissionRulesManager />}
       </div>
     </div>

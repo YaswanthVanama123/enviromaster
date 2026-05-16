@@ -1101,4 +1101,22 @@ export const pdfApi = {
     }
     return res.blob();
   },
+
+  async getUserCommissions(): Promise<any> {
+    const res = await apiClient.get(`/api/pdf/user/commissions`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  async getAllEmployeesCommissions(): Promise<any> {
+    const res = await apiClient.get(`/api/pdf/admin/commissions/employees`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
+
+  async getEmployeeCommissions(username: string): Promise<any> {
+    const res = await apiClient.get(`/api/pdf/admin/commissions/employee/${encodeURIComponent(username)}`);
+    if (res.error) throw new Error(res.error);
+    return res.data!;
+  },
 };

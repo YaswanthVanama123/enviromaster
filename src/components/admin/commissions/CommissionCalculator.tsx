@@ -16,6 +16,10 @@ import type {
 } from "../../../backendservice/types/commission.types";
 import { CommissionResultDisplay } from "./CommissionResultDisplay";
 
+interface CommissionCalculatorProps {
+  onRecordSaved?: () => void;
+}
+
 const ACCOUNT_TYPES: typeof ACCOUNT_TYPE_OPTIONS = [
   { value: "Anchor", label: "Anchor", description: "$200+/visit, high-revenue location" },
   { value: "Bread5", label: "Bread5", description: "Within 5 minutes of Anchor" },
@@ -46,7 +50,7 @@ const BUSINESS_TYPES: typeof BUSINESS_TYPE_OPTIONS = [
   { value: "renewal", label: "Renewal" },
 ];
 
-export const CommissionCalculator: React.FC = () => {
+export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRecordSaved }) => {
   // Form state
   const [monthlyValue, setMonthlyValue] = useState<string>("");
   const [agreementTerm, setAgreementTerm] = useState<AgreementTerm>("1-year");
@@ -62,7 +66,9 @@ export const CommissionCalculator: React.FC = () => {
   // Result state
   const [result, setResult] = useState<CommissionCalculationResult | null>(null);
   const [calculating, setCalculating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleCalculate = async () => {
     if (!monthlyValue || parseFloat(monthlyValue) <= 0) {
@@ -115,12 +121,55 @@ export const CommissionCalculator: React.FC = () => {
     setCustomerName("");
     setResult(null);
     setError(null);
+    setSuccessMessage(null);
+  };
+
+  const handleSave = async () => {
+    if (!result) {
+      setError("Please calculate commission first before saving");
+      return;
+    }
+
+    if (!salesPersonName) {
+      setError("Sales Person Name is required to save the record");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const recordData = {
+        calculation: result,
+        salesPersonId: salesPersonName.toLowerCase().replace(/\s+/g, "_"),
+        salesPersonName: salesPersonName,
+        customerName: customerName || undefined,
+        status: "draft" as const,
+      };
+
+      const response = await commissionApi.saveRecord(recordData);
+
+      if (response.error) {
+        setError(response.error);
+      } else if (response.data) {
+        setSuccessMessage("Commission record saved successfully!");
+        // Notify parent to refresh history
+        if (onRecordSaved) {
+          onRecordSaved();
+        }
+      }
+    } catch (err) {
+      setError("Failed to save commission record. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="commission-calculator">
       <h3 className="calculator-section-title">
-        <span>📊</span> Deal Information
+        <span>$</span> Deal Information
       </h3>
 
       <div className="calculator-grid">
@@ -268,7 +317,7 @@ export const CommissionCalculator: React.FC = () => {
         </label>
       </div>
 
-      <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+      <div style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap" }}>
         <button
           className="calculate-btn"
           onClick={handleCalculate}
@@ -276,6 +325,17 @@ export const CommissionCalculator: React.FC = () => {
         >
           {calculating ? "Calculating..." : "Calculate Commission"}
         </button>
+
+        {result && (
+          <button
+            className="calculate-btn"
+            onClick={handleSave}
+            disabled={saving}
+            style={{ backgroundColor: "#16a34a" }}
+          >
+            {saving ? "Saving..." : "Save to History"}
+          </button>
+        )}
 
         {(result || monthlyValue) && (
           <button
@@ -289,6 +349,18 @@ export const CommissionCalculator: React.FC = () => {
       </div>
 
       {error && <div className="error-message">{error}</div>}
+      {successMessage && (
+        <div className="success-message" style={{
+          marginTop: "12px",
+          padding: "12px 16px",
+          backgroundColor: "#dcfce7",
+          color: "#166534",
+          borderRadius: "8px",
+          fontWeight: "500"
+        }}>
+          {successMessage}
+        </div>
+      )}
 
       {result && <CommissionResultDisplay result={result} />}
     </div>

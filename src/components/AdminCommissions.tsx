@@ -1,0 +1,622 @@
+import { useState, useEffect, useMemo } from 'react';
+import { pdfApi } from '../backendservice/api/pdfApi';
+import './AdminCommissions.css';
+
+interface StatusCounts {
+  draft: number;
+  saved: number;
+  pending_approval: number;
+  approved: number;
+  active: number;
+}
+
+interface EmployeeSummary {
+  username: string;
+  totalAgreements: number;
+  statusCounts: StatusCounts;
+  totalMonthlyCommission: number;
+  totalContractCommission: number;
+  totalContractValue: number;
+  averageCommissionRate: number;
+}
+
+interface GrandTotals {
+  totalEmployees: number;
+  totalAgreements: number;
+  totalMonthlyCommission: number;
+  totalContractCommission: number;
+  totalContractValue: number;
+}
+
+interface EmployeesResponse {
+  success: boolean;
+  grandTotals: GrandTotals;
+  employees: EmployeeSummary[];
+}
+
+interface CommissionBreakdown {
+  baseRate: number;
+  agreementTerm: string;
+  multiplier: number;
+  accountTypeAdjustment: number;
+  greenlineBonus: number;
+  insideSalesDeduction: number;
+}
+
+interface CommissionData {
+  rate: number;
+  monthly: number;
+  total: number;
+  breakdown: CommissionBreakdown;
+}
+
+interface AgreementCommission {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  startDate: string | null;
+  contractMonths: number;
+  monthlyValue: number;
+  contractValue: number;
+  commission: CommissionData;
+}
+
+interface CommissionTotals {
+  totalAgreements: number;
+  totalMonthlyCommission: number;
+  totalContractCommission: number;
+  totalContractValue: number;
+  averageCommissionRate: number;
+}
+
+interface StatusSummary {
+  count: number;
+  commission: number;
+}
+
+interface EmployeeCommissionsResponse {
+  success: boolean;
+  employee: string;
+  totals: CommissionTotals;
+  byStatus: {
+    draft: StatusSummary;
+    saved: StatusSummary;
+    pending: StatusSummary;
+    approved: StatusSummary;
+    active: StatusSummary;
+  };
+  commissions: AgreementCommission[];
+}
+
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  draft: { bg: '#f3f4f6', text: '#6b7280' },
+  saved: { bg: '#dbeafe', text: '#1d4ed8' },
+  pending_approval: { bg: '#fef3c7', text: '#92400e' },
+  approved_salesman: { bg: '#d1fae5', text: '#065f46' },
+  approved_admin: { bg: '#064e3b', text: '#ffffff' },
+  active: { bg: '#dcfce7', text: '#16a34a' },
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Draft',
+  saved: 'Saved',
+  pending_approval: 'Pending',
+  approved_salesman: 'Approved',
+  approved_admin: 'Admin Approved',
+  active: 'Active',
+};
+
+function formatMoney(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export default function AdminCommissions() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [employeesData, setEmployeesData] = useState<EmployeesResponse | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  const [employeeCommissions, setEmployeeCommissions] = useState<EmployeeCommissionsResponse | null>(null);
+  const [employeeLoading, setEmployeeLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  async function fetchEmployees() {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await pdfApi.getAllEmployeesCommissions();
+      setEmployeesData(response);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch employees commissions');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchEmployeeCommissions(username: string) {
+    try {
+      setEmployeeLoading(true);
+      setError(null);
+      setSelectedEmployee(username);
+      const response = await pdfApi.getEmployeeCommissions(username);
+      setEmployeeCommissions(response);
+      setStatusFilter('all');
+      setExpandedId(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch employee commissions');
+    } finally {
+      setEmployeeLoading(false);
+    }
+  }
+
+  function goBackToEmployees() {
+    setSelectedEmployee(null);
+    setEmployeeCommissions(null);
+    setStatusFilter('all');
+    setExpandedId(null);
+  }
+
+  const filteredEmployees = useMemo(() => {
+    if (!employeesData?.employees) return [];
+    if (!searchQuery.trim()) return employeesData.employees;
+    const q = searchQuery.toLowerCase();
+    return employeesData.employees.filter(e =>
+      e.username.toLowerCase().includes(q)
+    );
+  }, [employeesData?.employees, searchQuery]);
+
+  const filteredCommissions = useMemo(() => {
+    if (!employeeCommissions?.commissions) return [];
+    if (statusFilter === 'all') return employeeCommissions.commissions;
+    return employeeCommissions.commissions.filter(c => {
+      if (statusFilter === 'approved') {
+        return c.status === 'approved_salesman' || c.status === 'approved_admin';
+      }
+      return c.status === statusFilter;
+    });
+  }, [employeeCommissions?.commissions, statusFilter]);
+
+  if (loading) {
+    return (
+      <div className="admin-commissions">
+        <div className="admin-commissions__loading">
+          <div className="admin-commissions__spinner" />
+          <p>Loading employee commissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !selectedEmployee) {
+    return (
+      <div className="admin-commissions">
+        <div className="admin-commissions__error">
+          <h2>Error</h2>
+          <p>{error}</p>
+          <button onClick={fetchEmployees} className="admin-commissions__retry-btn">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Employee Detail View
+  if (selectedEmployee) {
+    if (employeeLoading) {
+      return (
+        <div className="admin-commissions">
+          <div className="admin-commissions__loading">
+            <div className="admin-commissions__spinner" />
+            <p>Loading commissions for {selectedEmployee}...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="admin-commissions">
+          <div className="admin-commissions__error">
+            <h2>Error</h2>
+            <p>{error}</p>
+            <button onClick={goBackToEmployees} className="admin-commissions__back-btn">
+              ← Back to Employees
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!employeeCommissions) {
+      return (
+        <div className="admin-commissions">
+          <div className="admin-commissions__empty">
+            <p>No commission data found for this employee.</p>
+            <button onClick={goBackToEmployees} className="admin-commissions__back-btn">
+              ← Back to Employees
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="admin-commissions">
+        <header className="admin-commissions__header">
+          <button onClick={goBackToEmployees} className="admin-commissions__back-btn">
+            ← Back to Employees
+          </button>
+          <div className="admin-commissions__title-row">
+            <h1>
+              <span className="admin-commissions__employee-icon">{selectedEmployee.charAt(0).toUpperCase()}</span>
+              {selectedEmployee}'s Commissions
+            </h1>
+          </div>
+        </header>
+
+        {/* Summary Cards */}
+        <div className="admin-commissions__summary-grid">
+          <div className="admin-commissions__summary-card admin-commissions__summary-card--primary">
+            <div className="admin-commissions__summary-icon">$</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Total Contract Commission</span>
+              <span className="admin-commissions__summary-value">
+                {formatMoney(employeeCommissions.totals.totalContractCommission)}
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-commissions__summary-card">
+            <div className="admin-commissions__summary-icon">M</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Monthly Commission</span>
+              <span className="admin-commissions__summary-value">
+                {formatMoney(employeeCommissions.totals.totalMonthlyCommission)}
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-commissions__summary-card">
+            <div className="admin-commissions__summary-icon">#</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Total Agreements</span>
+              <span className="admin-commissions__summary-value">
+                {employeeCommissions.totals.totalAgreements}
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-commissions__summary-card">
+            <div className="admin-commissions__summary-icon">%</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Avg Commission Rate</span>
+              <span className="admin-commissions__summary-value">
+                {employeeCommissions.totals.averageCommissionRate}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Filter */}
+        <div className="admin-commissions__status-breakdown">
+          <h3>Filter by Status</h3>
+          <div className="admin-commissions__status-chips">
+            <button
+              className={`admin-commissions__status-chip ${statusFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('all')}
+            >
+              All ({employeeCommissions.totals.totalAgreements})
+            </button>
+            {Object.entries(employeeCommissions.byStatus).map(([key, value]) => (
+              value.count > 0 && (
+                <button
+                  key={key}
+                  className={`admin-commissions__status-chip ${statusFilter === key ? 'active' : ''}`}
+                  onClick={() => setStatusFilter(key)}
+                >
+                  {key.charAt(0).toUpperCase() + key.slice(1)} ({value.count})
+                  <span className="admin-commissions__chip-amount">
+                    {formatMoney(value.commission)}
+                  </span>
+                </button>
+              )
+            ))}
+          </div>
+        </div>
+
+        {/* Agreements List */}
+        <div className="admin-commissions__list">
+          <h3>Agreements ({filteredCommissions.length})</h3>
+
+          {filteredCommissions.length === 0 ? (
+            <div className="admin-commissions__no-results">
+              <p>No agreements found for this filter.</p>
+            </div>
+          ) : (
+            <div className="admin-commissions__agreements">
+              {filteredCommissions.map((agreement) => {
+                const statusStyle = STATUS_COLORS[agreement.status] || STATUS_COLORS.draft;
+                const isExpanded = expandedId === agreement.id;
+
+                return (
+                  <div
+                    key={agreement.id}
+                    className={`admin-commissions__agreement ${isExpanded ? 'expanded' : ''}`}
+                  >
+                    <div
+                      className="admin-commissions__agreement-header"
+                      onClick={() => setExpandedId(isExpanded ? null : agreement.id)}
+                    >
+                      <div className="admin-commissions__agreement-info">
+                        <h4 className="admin-commissions__agreement-title">{agreement.title}</h4>
+                        <div className="admin-commissions__agreement-meta">
+                          <span
+                            className="admin-commissions__status-badge"
+                            style={{
+                              backgroundColor: statusStyle.bg,
+                              color: statusStyle.text
+                            }}
+                          >
+                            {STATUS_LABELS[agreement.status] || agreement.status}
+                          </span>
+                          <span className="admin-commissions__meta-sep">·</span>
+                          <span>{agreement.contractMonths} months</span>
+                          <span className="admin-commissions__meta-sep">·</span>
+                          <span>{formatDate(agreement.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="admin-commissions__agreement-amounts">
+                        <div className="admin-commissions__amount-item">
+                          <span className="admin-commissions__amount-label">Contract Value</span>
+                          <span className="admin-commissions__amount-value">
+                            {formatMoney(agreement.contractValue)}
+                          </span>
+                        </div>
+                        <div className="admin-commissions__amount-item admin-commissions__amount-item--commission">
+                          <span className="admin-commissions__amount-label">Commission</span>
+                          <span className="admin-commissions__amount-value">
+                            {formatMoney(agreement.commission.total)}
+                          </span>
+                          <span className="admin-commissions__rate-badge">
+                            {agreement.commission.rate}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="admin-commissions__expand-icon">
+                        {isExpanded ? '−' : '+'}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="admin-commissions__agreement-details">
+                        <div className="admin-commissions__breakdown">
+                          <h5>Commission Breakdown</h5>
+                          <div className="admin-commissions__breakdown-grid">
+                            <div className="admin-commissions__breakdown-item">
+                              <span>Monthly Value</span>
+                              <span>{formatMoney(agreement.monthlyValue)}</span>
+                            </div>
+                            <div className="admin-commissions__breakdown-item">
+                              <span>Base Rate ({agreement.commission.breakdown.agreementTerm})</span>
+                              <span>{agreement.commission.breakdown.baseRate}%</span>
+                            </div>
+                            <div className="admin-commissions__breakdown-item">
+                              <span>Agreement Multiplier</span>
+                              <span>{agreement.commission.breakdown.multiplier}%</span>
+                            </div>
+                            {agreement.commission.breakdown.accountTypeAdjustment !== 0 && (
+                              <div className="admin-commissions__breakdown-item">
+                                <span>Account Type Adjustment</span>
+                                <span>{agreement.commission.breakdown.accountTypeAdjustment > 0 ? '+' : ''}{agreement.commission.breakdown.accountTypeAdjustment}%</span>
+                              </div>
+                            )}
+                            {agreement.commission.breakdown.greenlineBonus > 0 && (
+                              <div className="admin-commissions__breakdown-item admin-commissions__breakdown-item--bonus">
+                                <span>Greenline Bonus</span>
+                                <span>+{agreement.commission.breakdown.greenlineBonus}%</span>
+                              </div>
+                            )}
+                            {agreement.commission.breakdown.insideSalesDeduction !== 0 && (
+                              <div className="admin-commissions__breakdown-item admin-commissions__breakdown-item--deduction">
+                                <span>Inside Sales Deduction</span>
+                                <span>{agreement.commission.breakdown.insideSalesDeduction}%</span>
+                              </div>
+                            )}
+                            <div className="admin-commissions__breakdown-item admin-commissions__breakdown-item--total">
+                              <span>Final Rate</span>
+                              <span>{agreement.commission.rate}%</span>
+                            </div>
+                            <div className="admin-commissions__breakdown-item admin-commissions__breakdown-item--total">
+                              <span>Monthly Commission</span>
+                              <span>{formatMoney(agreement.commission.monthly)}</span>
+                            </div>
+                            <div className="admin-commissions__breakdown-item admin-commissions__breakdown-item--total">
+                              <span>Total Contract Commission</span>
+                              <span>{formatMoney(agreement.commission.total)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Employee List View
+  return (
+    <div className="admin-commissions">
+      <header className="admin-commissions__header">
+        <div className="admin-commissions__title-row">
+          <h1>Employee Commissions</h1>
+          <span className="admin-commissions__admin-badge">Admin View</span>
+        </div>
+        <p className="admin-commissions__subtitle">
+          View commission earnings for all employees
+        </p>
+      </header>
+
+      {/* Grand Totals */}
+      {employeesData && (
+        <div className="admin-commissions__summary-grid">
+          <div className="admin-commissions__summary-card admin-commissions__summary-card--primary">
+            <div className="admin-commissions__summary-icon">$</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Total Commissions</span>
+              <span className="admin-commissions__summary-value">
+                {formatMoney(employeesData.grandTotals.totalContractCommission)}
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-commissions__summary-card">
+            <div className="admin-commissions__summary-icon">E</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Total Employees</span>
+              <span className="admin-commissions__summary-value">
+                {employeesData.grandTotals.totalEmployees}
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-commissions__summary-card">
+            <div className="admin-commissions__summary-icon">#</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Total Agreements</span>
+              <span className="admin-commissions__summary-value">
+                {employeesData.grandTotals.totalAgreements}
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-commissions__summary-card">
+            <div className="admin-commissions__summary-icon">V</div>
+            <div className="admin-commissions__summary-content">
+              <span className="admin-commissions__summary-label">Total Contract Value</span>
+              <span className="admin-commissions__summary-value">
+                {formatMoney(employeesData.grandTotals.totalContractValue)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="admin-commissions__search-section">
+        <input
+          type="text"
+          placeholder="Search employees..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="admin-commissions__search-input"
+        />
+      </div>
+
+      {/* Employee List */}
+      <div className="admin-commissions__employees-section">
+        <h3>Employees ({filteredEmployees.length})</h3>
+
+        {filteredEmployees.length === 0 ? (
+          <div className="admin-commissions__no-results">
+            <p>No employees found.</p>
+          </div>
+        ) : (
+          <div className="admin-commissions__employees-grid">
+            {filteredEmployees.map((employee) => (
+              <div
+                key={employee.username}
+                className="admin-commissions__employee-card"
+                onClick={() => fetchEmployeeCommissions(employee.username)}
+              >
+                <div className="admin-commissions__employee-header">
+                  <div className="admin-commissions__employee-avatar">
+                    {employee.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="admin-commissions__employee-info">
+                    <h4 className="admin-commissions__employee-name">{employee.username}</h4>
+                    <span className="admin-commissions__employee-agreements">
+                      {employee.totalAgreements} agreement{employee.totalAgreements !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="admin-commissions__employee-arrow">→</div>
+                </div>
+
+                <div className="admin-commissions__employee-stats">
+                  <div className="admin-commissions__employee-stat">
+                    <span className="admin-commissions__stat-label">Total Commission</span>
+                    <span className="admin-commissions__stat-value admin-commissions__stat-value--commission">
+                      {formatMoney(employee.totalContractCommission)}
+                    </span>
+                  </div>
+                  <div className="admin-commissions__employee-stat">
+                    <span className="admin-commissions__stat-label">Contract Value</span>
+                    <span className="admin-commissions__stat-value">
+                      {formatMoney(employee.totalContractValue)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="admin-commissions__employee-status-row">
+                  {employee.statusCounts.draft > 0 && (
+                    <span className="admin-commissions__mini-badge admin-commissions__mini-badge--draft">
+                      {employee.statusCounts.draft} Draft
+                    </span>
+                  )}
+                  {employee.statusCounts.saved > 0 && (
+                    <span className="admin-commissions__mini-badge admin-commissions__mini-badge--saved">
+                      {employee.statusCounts.saved} Saved
+                    </span>
+                  )}
+                  {employee.statusCounts.pending_approval > 0 && (
+                    <span className="admin-commissions__mini-badge admin-commissions__mini-badge--pending">
+                      {employee.statusCounts.pending_approval} Pending
+                    </span>
+                  )}
+                  {employee.statusCounts.approved > 0 && (
+                    <span className="admin-commissions__mini-badge admin-commissions__mini-badge--approved">
+                      {employee.statusCounts.approved} Approved
+                    </span>
+                  )}
+                  {employee.statusCounts.active > 0 && (
+                    <span className="admin-commissions__mini-badge admin-commissions__mini-badge--active">
+                      {employee.statusCounts.active} Active
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

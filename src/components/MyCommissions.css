@@ -1,0 +1,464 @@
+.my-commissions {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: calc(100vh - 80px);
+  background: #f9fafb;
+}
+
+.my-commissions__loading,
+.my-commissions__error,
+.my-commissions__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.my-commissions__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #c62828;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.my-commissions__error h2 {
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.my-commissions__header {
+  margin-bottom: 24px;
+}
+
+.my-commissions__title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.my-commissions__title-row h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.my-commissions__user-badge {
+  background: #c62828;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.my-commissions__subtitle {
+  color: #6b7280;
+  font-size: 15px;
+  margin: 0;
+}
+
+/* Summary Cards */
+.my-commissions__summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.my-commissions__summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.my-commissions__summary-card--primary {
+  background: linear-gradient(135deg, #c62828 0%, #e53935 100%);
+  border: none;
+}
+
+.my-commissions__summary-card--primary .my-commissions__summary-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.my-commissions__summary-card--primary .my-commissions__summary-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.my-commissions__summary-card--primary .my-commissions__summary-value {
+  color: white;
+}
+
+.my-commissions__summary-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #c62828;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.my-commissions__summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.my-commissions__summary-label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.my-commissions__summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Status Breakdown */
+.my-commissions__status-breakdown {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.my-commissions__status-breakdown h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 16px 0;
+}
+
+.my-commissions__status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.my-commissions__status-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-commissions__status-chip:hover {
+  background: #e5e7eb;
+}
+
+.my-commissions__status-chip.active {
+  background: #c62828;
+  color: white;
+  border-color: #c62828;
+}
+
+.my-commissions__chip-amount {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.my-commissions__status-chip.active .my-commissions__chip-amount {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Agreements List */
+.my-commissions__list {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.my-commissions__list h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 16px 0;
+}
+
+.my-commissions__no-results {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.my-commissions__agreements {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-commissions__agreement {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: all 0.2s;
+}
+
+.my-commissions__agreement:hover {
+  border-color: #d1d5db;
+}
+
+.my-commissions__agreement.expanded {
+  background: white;
+  border-color: #c62828;
+  box-shadow: 0 2px 8px rgba(198, 40, 40, 0.1);
+}
+
+.my-commissions__agreement-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  gap: 16px;
+}
+
+.my-commissions__agreement-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.my-commissions__agreement-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-commissions__agreement-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  flex-wrap: wrap;
+}
+
+.my-commissions__status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.my-commissions__meta-sep {
+  color: #d1d5db;
+}
+
+.my-commissions__agreement-amounts {
+  display: flex;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.my-commissions__amount-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.my-commissions__amount-item--commission {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.my-commissions__amount-label {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.my-commissions__amount-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.my-commissions__amount-item--commission .my-commissions__amount-value {
+  color: #16a34a;
+}
+
+.my-commissions__rate-badge {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.my-commissions__expand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.my-commissions__agreement.expanded .my-commissions__expand-icon {
+  background: #fef2f2;
+  color: #c62828;
+}
+
+/* Agreement Details */
+.my-commissions__agreement-details {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 8px;
+}
+
+.my-commissions__breakdown {
+  margin-top: 16px;
+}
+
+.my-commissions__breakdown h5 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.my-commissions__breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.my-commissions__breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.my-commissions__breakdown-item span:first-child {
+  color: #6b7280;
+}
+
+.my-commissions__breakdown-item span:last-child {
+  font-weight: 600;
+  color: #111827;
+}
+
+.my-commissions__breakdown-item--bonus span:last-child {
+  color: #16a34a;
+}
+
+.my-commissions__breakdown-item--deduction span:last-child {
+  color: #dc2626;
+}
+
+.my-commissions__breakdown-item--total {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.my-commissions__breakdown-item--total span:last-child {
+  color: #c62828;
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .my-commissions {
+    padding: 16px;
+  }
+
+  .my-commissions__title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .my-commissions__title-row h1 {
+    font-size: 24px;
+  }
+
+  .my-commissions__summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .my-commissions__agreement-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .my-commissions__agreement-amounts {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #e5e7eb;
+  }
+
+  .my-commissions__amount-item {
+    align-items: flex-start;
+  }
+
+  .my-commissions__expand-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+
+  .my-commissions__agreement-header {
+    position: relative;
+  }
+
+  .my-commissions__breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}
