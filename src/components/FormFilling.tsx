@@ -162,13 +162,46 @@ const CUSTOMER_FALLBACK_ID = "6918cecbf0b2846a9c562fd6";
 const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
 
 
-type ContractSummaryProps = {
-  productTotals?: ProductTotals;
-  initialStartDate?: string; 
-  onStartDateChange?: (startDate: string) => void; 
+type CommissionState = {
+  quotaLevel: QuotaLevel;
+  accountType: AccountType;
+  isInsideSales: boolean;
 };
 
-function ContractSummary({ productTotals, initialStartDate, onStartDateChange }: ContractSummaryProps) {
+type CommissionResult = {
+  monthlyValue: number;
+  agreementTerm: AgreementTerm;
+  pricingLine: PricingLine;
+  baseRate: number;
+  agreementMultiplier: number;
+  accountTypeAdjustment: number;
+  greenlineBonus: number;
+  renewalBonus: number;
+  insideSalesDeduction: number;
+  effectiveBaseRate: number;
+  finalCommissionRate: number;
+  monthlyCommission: number;
+  annualCommission: number;
+  contractCommission: number;
+};
+
+type ContractSummaryProps = {
+  productTotals?: ProductTotals;
+  initialStartDate?: string;
+  onStartDateChange?: (startDate: string) => void;
+  commissionState: CommissionState;
+  onCommissionStateChange: (state: CommissionState) => void;
+  onCommissionResultChange?: (result: CommissionResult) => void;
+};
+
+function ContractSummary({
+  productTotals,
+  initialStartDate,
+  onStartDateChange,
+  commissionState,
+  onCommissionStateChange,
+  onCommissionResultChange
+}: ContractSummaryProps) {
   const {
     servicesState,
     globalContractMonths,
@@ -223,10 +256,8 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [expiryStatus, setExpiryStatus] = useState<'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired'>('safe');
 
-  // Commission Calculator State - simplified (business type always "new" in form filling)
-  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above');
-  const [accountType, setAccountType] = useState<AccountType>('Anchor');
-  const [isInsideSales, setIsInsideSales] = useState<boolean>(false);
+  // Commission Calculator State - use props from parent
+  const { quotaLevel, accountType, isInsideSales } = commissionState;
   const [isCommissionExpanded, setIsCommissionExpanded] = useState<boolean>(true);
 
   // Calculate commission based on form values
@@ -295,6 +326,11 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
       contractCommission
     };
   }, [totalCurrentContract, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
+
+  // Notify parent of commission result changes
+  useEffect(() => {
+    onCommissionResultChange?.(calculateCommission);
+  }, [calculateCommission, onCommissionResultChange]);
 
 
   const handleStartDateChange = (newDate: string) => {
@@ -984,7 +1020,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 <label className="commission-label">Quota Level</label>
                 <select
                   value={quotaLevel}
-                  onChange={(e) => setQuotaLevel(e.target.value as QuotaLevel)}
+                  onChange={(e) => onCommissionStateChange({ ...commissionState, quotaLevel: e.target.value as QuotaLevel })}
                   className="commission-select"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}
                 >
@@ -999,7 +1035,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                 <label className="commission-label">Account Type</label>
                 <select
                   value={accountType}
-                  onChange={(e) => setAccountType(e.target.value as AccountType)}
+                  onChange={(e) => onCommissionStateChange({ ...commissionState, accountType: e.target.value as AccountType })}
                   className="commission-select"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}
                 >
@@ -1015,7 +1051,7 @@ function ContractSummary({ productTotals, initialStartDate, onStartDateChange }:
                   <input
                     type="checkbox"
                     checked={isInsideSales}
-                    onChange={(e) => setIsInsideSales(e.target.checked)}
+                    onChange={(e) => onCommissionStateChange({ ...commissionState, isInsideSales: e.target.checked })}
                     style={{ width: '18px', height: '18px', accentColor: '#c00000' }}
                   />
                   Inside Sales (-3%)
@@ -1164,6 +1200,14 @@ function FormFillingContent({
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
+
+  // Commission state - lifted from ContractSummary for saving
+  const [commissionState, setCommissionState] = useState<CommissionState>({
+    quotaLevel: 'above',
+    accountType: 'Anchor',
+    isInsideSales: false,
+  });
+  const [commissionResult, setCommissionResult] = useState<CommissionResult | null>(null);
 
 
   const {
@@ -1688,13 +1732,37 @@ function FormFillingContent({
         ...agreementBase,
         paymentOption,
         paymentNote,
-        startDate: agreementStartDate, 
+        startDate: agreementStartDate,
       },
-      serviceAgreement: agreementData, 
-      customerName, 
+      serviceAgreement: agreementData,
+      customerName,
       includeProductsTable,
-      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] }, 
+      customColumns: (productsData as any).customColumns || { products: [], dispensers: [] },
       summary,
+      // Include commission data for saving
+      commission: commissionResult ? {
+        input: {
+          monthlyValue: commissionResult.monthlyValue,
+          agreementTerm: commissionResult.agreementTerm,
+          accountType: commissionState.accountType,
+          pricingLine: commissionResult.pricingLine,
+          quotaLevel: commissionState.quotaLevel,
+          businessType: 'new' as const,
+          isInsideSales: commissionState.isInsideSales,
+        },
+        breakdown: {
+          baseRate: commissionResult.baseRate,
+          agreementMultiplier: commissionResult.agreementMultiplier,
+          accountTypeAdjustment: commissionResult.accountTypeAdjustment,
+          greenlineBonus: commissionResult.greenlineBonus,
+          renewalBonus: commissionResult.renewalBonus,
+          insideSalesDeduction: commissionResult.insideSalesDeduction,
+        },
+        finalCommissionRate: commissionResult.finalCommissionRate,
+        monthlyCommission: commissionResult.monthlyCommission,
+        annualCommission: commissionResult.annualCommission,
+        contractCommission: commissionResult.contractCommission,
+      } : null,
     };
   };
 
@@ -2723,6 +2791,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               productTotals={productTotals}
               initialStartDate={agreementStartDate}
               onStartDateChange={setAgreementStartDate}
+              commissionState={commissionState}
+              onCommissionStateChange={setCommissionState}
+              onCommissionResultChange={setCommissionResult}
             />
 
             <div className="formfilling__payment-options">
