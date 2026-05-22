@@ -10,11 +10,12 @@ import { CommissionsTab } from "./commissions";
 import { QuotaTab } from "./quota";
 import { RouteStarCustomersTab } from "./routestar/RouteStarCustomersTab";
 import { BiginAuditTab } from "./bigin/BiginAuditTab";
+import { BiginCompaniesTab } from "./bigin/BiginCompaniesTab";
 import { pdfApi } from "../../backendservice/api/pdfApi";
-import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory } from "react-icons/md";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness } from "react-icons/md";
 import "./AdminDashboard.css";
 
-type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit";
+type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -68,9 +69,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/audit') || path.includes('/audit/'))) {
         return "audit";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/bigin-companies') || path.includes('/bigin-companies/'))) {
+        return "bigin-companies";
+      }
 
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
@@ -98,9 +102,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/pricing-tables/audit')) {
       return "audit";
     }
+    if (path.includes('/pricing-tables/bigin-companies')) {
+      return "bigin-companies";
+    }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -259,6 +266,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <MdHistory size={20} style={{ marginRight: "8px" }} /> Audit History
           </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "bigin-companies" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("bigin-companies")}
+          >
+            <MdBusiness size={20} style={{ marginRight: "8px" }} /> Bigin Companies
+          </button>
         </div>
         <button
           style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
@@ -298,6 +315,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === "quota" && <QuotaTab />}
         {activeTab === "customers" && <RouteStarCustomersTab />}
         {activeTab === "audit" && <BiginAuditTab />}
+        {activeTab === "bigin-companies" && <BiginCompaniesTab />}
       </div>
     </div>
   );
