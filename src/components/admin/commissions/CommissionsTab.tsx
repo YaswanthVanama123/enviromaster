@@ -2,9 +2,10 @@ import React, { useState, useCallback } from "react";
 import { CommissionCalculator } from "./CommissionCalculator";
 import { CommissionRulesManager } from "./CommissionRulesManager";
 import { CommissionHistory } from "./CommissionHistory";
+import { AccountTypeDetector } from "./AccountTypeDetector";
 import "./CommissionsTab.css";
 
-type SubTab = "calculator" | "history" | "rules";
+type SubTab = "calculator" | "detector" | "history" | "rules";
 
 export const CommissionsTab: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("calculator");
@@ -34,6 +35,13 @@ export const CommissionsTab: React.FC = () => {
           Calculator
         </button>
         <button
+          className={`subtab-btn ${activeSubTab === "detector" ? "active" : ""}`}
+          onClick={() => setActiveSubTab("detector")}
+        >
+          <span className="subtab-icon">D</span>
+          Account Type Detector
+        </button>
+        <button
           className={`subtab-btn ${activeSubTab === "history" ? "active" : ""}`}
           onClick={() => setActiveSubTab("history")}
         >
@@ -51,6 +59,7 @@ export const CommissionsTab: React.FC = () => {
 
       <div className="commissions-content">
         {activeSubTab === "calculator" && <CommissionCalculator onRecordSaved={handleRecordSaved} />}
+        {activeSubTab === "detector" && <AccountTypeDetector />}
         {activeSubTab === "history" && <CommissionHistory key={historyKey} />}
         {activeSubTab === "rules" && <CommissionRulesManager />}
       </div>

@@ -7,11 +7,14 @@ import { ProductCatalogManager } from "./ProductCatalogManager";
 import { PricingBackupManager } from "./PricingBackupManager";
 import { ApprovalTaskSettings } from "./ApprovalTaskSettings";
 import { CommissionsTab } from "./commissions";
+import { QuotaTab } from "./quota";
+import { RouteStarCustomersTab } from "./routestar/RouteStarCustomersTab";
+import { BiginAuditTab } from "./bigin/BiginAuditTab";
 import { pdfApi } from "../../backendservice/api/pdfApi";
-import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate } from "react-icons/md";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory } from "react-icons/md";
 import "./AdminDashboard.css";
 
-type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions";
+type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -56,9 +59,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/commissions') || path.includes('/commissions/'))) {
         return "commissions";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/quota') || path.includes('/quota/'))) {
+        return "quota";
+      }
+      if (path.includes('/admin-panel/') && (path.includes('/customers') || path.includes('/customers/'))) {
+        return "customers";
+      }
+      if (path.includes('/admin-panel/') && (path.includes('/audit') || path.includes('/audit/'))) {
+        return "audit";
+      }
 
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
@@ -77,9 +89,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/pricing-tables/commissions')) {
       return "commissions";
     }
+    if (path.includes('/pricing-tables/quota')) {
+      return "quota";
+    }
+    if (path.includes('/pricing-tables/customers')) {
+      return "customers";
+    }
+    if (path.includes('/pricing-tables/audit')) {
+      return "audit";
+    }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -208,6 +229,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <MdCalculate size={20} style={{ marginRight: "8px" }} /> Commissions
           </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "quota" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("quota")}
+          >
+            <MdTrendingUp size={20} style={{ marginRight: "8px" }} /> Quota Tracking
+          </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "customers" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("customers")}
+          >
+            <MdPeople size={20} style={{ marginRight: "8px" }} /> Customers
+          </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "audit" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("audit")}
+          >
+            <MdHistory size={20} style={{ marginRight: "8px" }} /> Audit History
+          </button>
         </div>
         <button
           style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
@@ -244,6 +295,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
         {activeTab === "workflow" && <ApprovalTaskSettings />}
         {activeTab === "commissions" && <CommissionsTab />}
+        {activeTab === "quota" && <QuotaTab />}
+        {activeTab === "customers" && <RouteStarCustomersTab />}
+        {activeTab === "audit" && <BiginAuditTab />}
       </div>
     </div>
   );

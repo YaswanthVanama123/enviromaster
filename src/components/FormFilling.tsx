@@ -29,7 +29,9 @@ import { pdfApi } from "../backendservice/api";
 import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
 import { zohoApi } from "../backendservice/api/zohoApi";
+import { quotaApi } from "../backendservice/api/quotaApi";
 import { useAllServicePricing } from "../backendservice/hooks";
+import { useAuth } from "../backendservice/hooks/useAuth";
 import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
 import { ServiceAgreement } from "./ServiceAgreement";
 import type { ServiceAgreementData } from "./ServiceAgreement/ServiceAgreement";
@@ -192,6 +194,8 @@ type ContractSummaryProps = {
   commissionState: CommissionState;
   onCommissionStateChange: (state: CommissionState) => void;
   onCommissionResultChange?: (result: CommissionResult) => void;
+  quotaLoading?: boolean;
+  userName?: string;
 };
 
 function ContractSummary({
@@ -200,7 +204,9 @@ function ContractSummary({
   onStartDateChange,
   commissionState,
   onCommissionStateChange,
-  onCommissionResultChange
+  onCommissionResultChange,
+  quotaLoading = false,
+  userName
 }: ContractSummaryProps) {
   const {
     servicesState,
@@ -1015,19 +1021,26 @@ function ContractSummary({
           <>
             {/* Commission Inputs - only what's needed (form provides the rest) */}
             <div className="commission-inputs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
-              {/* Quota Level */}
+              {/* Quota Level - Read-only, determined by employee's actual sales performance */}
               <div className="commission-input-group">
-                <label className="commission-label">Quota Level</label>
-                <select
-                  value={quotaLevel}
-                  onChange={(e) => onCommissionStateChange({ ...commissionState, quotaLevel: e.target.value as QuotaLevel })}
-                  className="commission-select"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}
-                >
-                  {QUOTA_LEVEL_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label} ({opt.rate}%)</option>
-                  ))}
-                </select>
+                <label className="commission-label">Your Quota Status</label>
+                {quotaLoading ? (
+                  <div style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px', color: '#6b7280', background: '#f9fafb' }}>
+                    Loading...
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    background: quotaLevel === 'double' ? '#dcfce7' : quotaLevel === 'above' ? '#dbeafe' : '#fee2e2',
+                    color: quotaLevel === 'double' ? '#16a34a' : quotaLevel === 'above' ? '#2563eb' : '#dc2626',
+                    border: `1px solid ${quotaLevel === 'double' ? '#86efac' : quotaLevel === 'above' ? '#93c5fd' : '#fca5a5'}`
+                  }}>
+                    {quotaLevel === 'double' ? 'Double Quota (9%)' : quotaLevel === 'above' ? 'Above Quota (6%)' : 'Below Quota (3%)'}
+                  </div>
+                )}
               </div>
 
               {/* Account Type */}
@@ -1203,11 +1216,41 @@ function FormFillingContent({
 
   // Commission state - lifted from ContractSummary for saving
   const [commissionState, setCommissionState] = useState<CommissionState>({
-    quotaLevel: 'above',
+    quotaLevel: 'below',
     accountType: 'Anchor',
     isInsideSales: false,
   });
   const [commissionResult, setCommissionResult] = useState<CommissionResult | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+
+  // Get logged-in user to fetch their quota level
+  const { user } = useAuth();
+
+  // Auto-fetch quota level for logged-in employee
+  useEffect(() => {
+    const fetchQuotaLevel = async () => {
+      if (!user?.username) {
+        setQuotaLoading(false);
+        return;
+      }
+
+      try {
+        const quotaLevel = await quotaApi.getCurrentLevel(user.username);
+        if (quotaLevel) {
+          setCommissionState(prev => ({
+            ...prev,
+            quotaLevel: quotaLevel.quotaLevel,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch quota level:', error);
+      } finally {
+        setQuotaLoading(false);
+      }
+    };
+
+    fetchQuotaLevel();
+  }, [user?.username]);
 
 
   const {
@@ -2794,6 +2837,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               commissionState={commissionState}
               onCommissionStateChange={setCommissionState}
               onCommissionResultChange={setCommissionResult}
+              quotaLoading={quotaLoading}
+              userName={user?.username}
             />
 
             <div className="formfilling__payment-options">

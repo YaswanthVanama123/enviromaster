@@ -1,0 +1,254 @@
+/**
+ * Bigin Audit API
+ * API client for managing audit logs scraped from Zoho Bigin
+ */
+
+import { apiClient } from '../utils/apiClient';
+
+export interface BiginAuditLog {
+  _id: string;
+  biginId: string | null;
+  timestamp: string;
+  user: string;
+  userEmail: string | null;
+  action: string;
+  module: string | null;
+  recordName: string | null;
+  recordId: string | null;
+  details: string | null;
+  ipAddress: string | null;
+  rawData: Record<string, unknown>;
+  scrapeSessionId: string | null;
+  scrapedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScrapeStatus {
+  isRunning: boolean;
+  lastScrapeAt: string | null;
+  lastScrapeResult: 'success' | 'failed' | null;
+  progress: number;
+  message: string;
+  currentSessionId: string | null;
+  totalLogs: number;
+  latestLogTimestamp: string | null;
+  lastSession: {
+    sessionId: string;
+    status: string;
+    logsScraped: number;
+    completedAt: string | null;
+  } | null;
+}
+
+export interface AuditStats {
+  total: number;
+  uniqueUsers: number;
+  uniqueActions: number;
+  uniqueModules: number;
+  last24Hours: number;
+  last7Days: number;
+  users: string[];
+  actions: string[];
+  modules: string[];
+  actionBreakdown: Array<{ action: string; count: number }>;
+  userBreakdown: Array<{ user: string; count: number }>;
+}
+
+export interface ScrapeSession {
+  _id: string;
+  sessionId: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  progressMessage: string;
+  logsScraped: number;
+  logsStored: number;
+  startedAt: string | null;
+  completedAt: string | null;
+  error: string | null;
+  triggeredBy: string;
+  createdAt: string;
+}
+
+const BASE_PATH = '/api/bigin-audit';
+
+export const biginAuditApi = {
+  /**
+   * Get all audit logs with optional filters
+   */
+  async getAll(params?: {
+    search?: string;
+    user?: string;
+    action?: string;
+    module?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    skip?: number;
+  }): Promise<{
+    data: BiginAuditLog[];
+    pagination: { total: number; limit: number; skip: number; hasMore: boolean };
+  } | null> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.search) queryParams.set('search', params.search);
+      if (params?.user) queryParams.set('user', params.user);
+      if (params?.action) queryParams.set('action', params.action);
+      if (params?.module) queryParams.set('module', params.module);
+      if (params?.startDate) queryParams.set('startDate', params.startDate);
+      if (params?.endDate) queryParams.set('endDate', params.endDate);
+      if (params?.limit) queryParams.set('limit', String(params.limit));
+      if (params?.skip) queryParams.set('skip', String(params.skip));
+
+      const response = await apiClient.get<{
+        success: boolean;
+        data: BiginAuditLog[];
+        pagination: { total: number; limit: number; skip: number; hasMore: boolean };
+      }>(`${BASE_PATH}?${queryParams.toString()}`);
+
+      const result = response.data;
+      return result?.success ? { data: result.data, pagination: result.pagination } : null;
+    } catch (error) {
+      console.error('Error fetching audit logs:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get audit log by ID
+   */
+  async getById(id: string): Promise<BiginAuditLog | null> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: BiginAuditLog }>(
+        `${BASE_PATH}/${id}`
+      );
+      const result = response.data;
+      return result?.success ? result.data : null;
+    } catch (error) {
+      console.error('Error fetching audit log:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get scrape status
+   */
+  async getScrapeStatus(): Promise<ScrapeStatus | null> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: ScrapeStatus }>(
+        `${BASE_PATH}/scrape/status`
+      );
+      const result = response.data;
+      return result?.success ? result.data : null;
+    } catch (error) {
+      console.error('Error fetching scrape status:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Start scrape from Bigin
+   */
+  async startScrape(): Promise<{ success: boolean; message: string; sessionId?: string } | null> {
+    try {
+      const response = await apiClient.post<{ success: boolean; message: string; sessionId?: string }>(
+        `${BASE_PATH}/scrape/start`,
+        {}
+      );
+      const result = response.data;
+      return result?.success ? result : null;
+    } catch (error) {
+      console.error('Error starting scrape:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get audit statistics
+   */
+  async getStats(): Promise<AuditStats | null> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: AuditStats }>(
+        `${BASE_PATH}/stats`
+      );
+      const result = response.data;
+      return result?.success ? result.data : null;
+    } catch (error) {
+      console.error('Error fetching audit stats:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get scrape history
+   */
+  async getScrapeHistory(params?: {
+    limit?: number;
+    skip?: number;
+  }): Promise<{
+    data: ScrapeSession[];
+    pagination: { total: number; limit: number; skip: number; hasMore: boolean };
+  } | null> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.set('limit', String(params.limit));
+      if (params?.skip) queryParams.set('skip', String(params.skip));
+
+      const response = await apiClient.get<{
+        success: boolean;
+        data: ScrapeSession[];
+        pagination: { total: number; limit: number; skip: number; hasMore: boolean };
+      }>(`${BASE_PATH}/scrape/history?${queryParams.toString()}`);
+
+      const result = response.data;
+      return result?.success ? { data: result.data, pagination: result.pagination } : null;
+    } catch (error) {
+      console.error('Error fetching scrape history:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Upload CSV file with audit logs
+   */
+  async uploadCsv(file: File): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      totalRows: number;
+      saved: number;
+      skipped: number;
+      errors: number;
+      sessionId: string;
+    };
+  } | null> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await apiClient.post<{
+        success: boolean;
+        message: string;
+        data: {
+          totalRows: number;
+          saved: number;
+          skipped: number;
+          errors: number;
+          sessionId: string;
+        };
+      }>(`${BASE_PATH}/upload-csv`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const result = response.data;
+      return result?.success ? result : null;
+    } catch (error) {
+      console.error('Error uploading CSV:', error);
+      return null;
+    }
+  },
+};
+
+export default biginAuditApi;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { commissionApi } from "../../../backendservice/api/commissionApi";
 import type {
   CommissionCalculationInput,
@@ -14,6 +14,10 @@ import type {
   QUOTA_LEVEL_OPTIONS,
   BUSINESS_TYPE_OPTIONS,
 } from "../../../backendservice/types/commission.types";
+import {
+  detectAccountTypeClient,
+  type AccountTypeDetectionResult,
+} from "../../../backendservice/types/accountType.types";
 import { CommissionResultDisplay } from "./CommissionResultDisplay";
 
 interface CommissionCalculatorProps {
@@ -63,12 +67,41 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
   const [salesPersonName, setSalesPersonName] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
 
+  // Auto-detect state
+  const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
+  const [perVisitRevenue, setPerVisitRevenue] = useState<string>("");
+  const [distanceToAnchor, setDistanceToAnchor] = useState<string>("");
+  const [detectionResult, setDetectionResult] = useState<AccountTypeDetectionResult | null>(null);
+
   // Result state
   const [result, setResult] = useState<CommissionCalculationResult | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Handle auto-detection when inputs change
+  const handleAutoDetect = useCallback(() => {
+    if (!autoDetectEnabled || !perVisitRevenue) {
+      setDetectionResult(null);
+      return;
+    }
+
+    const revenue = parseFloat(perVisitRevenue);
+    const distance = distanceToAnchor ? parseFloat(distanceToAnchor) : null;
+    const isGreenline = pricingLine === "Greenline";
+
+    if (!isNaN(revenue) && revenue > 0) {
+      const result = detectAccountTypeClient(revenue, distance, isGreenline);
+      setDetectionResult(result);
+      setAccountType(result.accountType);
+    }
+  }, [autoDetectEnabled, perVisitRevenue, distanceToAnchor, pricingLine]);
+
+  // Trigger auto-detect when relevant inputs change
+  React.useEffect(() => {
+    handleAutoDetect();
+  }, [handleAutoDetect]);
 
   const handleCalculate = async () => {
     if (!monthlyValue || parseFloat(monthlyValue) <= 0) {
@@ -122,6 +155,11 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     setResult(null);
     setError(null);
     setSuccessMessage(null);
+    // Clear auto-detect state
+    setAutoDetectEnabled(false);
+    setPerVisitRevenue("");
+    setDistanceToAnchor("");
+    setDetectionResult(null);
   };
 
   const handleSave = async () => {
@@ -199,17 +237,71 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
 
         {/* Account Type */}
         <div className="form-group">
-          <label>Account Type</label>
-          <select
-            value={accountType}
-            onChange={(e) => setAccountType(e.target.value as AccountType)}
-          >
-            {ACCOUNT_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
+          <label>
+            Account Type
+            <label style={{ marginLeft: "16px", fontWeight: "normal", fontSize: "12px" }}>
+              <input
+                type="checkbox"
+                checked={autoDetectEnabled}
+                onChange={(e) => setAutoDetectEnabled(e.target.checked)}
+                style={{ marginRight: "4px" }}
+              />
+              Auto-detect
+            </label>
+          </label>
+
+          {autoDetectEnabled ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="number"
+                  value={perVisitRevenue}
+                  onChange={(e) => setPerVisitRevenue(e.target.value)}
+                  placeholder="Per-visit revenue ($)"
+                  min="0"
+                  step="0.01"
+                  style={{ flex: 1 }}
+                />
+                <input
+                  type="number"
+                  value={distanceToAnchor}
+                  onChange={(e) => setDistanceToAnchor(e.target.value)}
+                  placeholder="Distance to anchor (mi)"
+                  min="0"
+                  step="0.01"
+                  style={{ flex: 1 }}
+                />
+              </div>
+              {detectionResult && (
+                <div style={{
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  backgroundColor: detectionResult.accountType === "Anchor" ? "#dcfce7" :
+                                   detectionResult.accountType === "Bread5" ? "#dbeafe" :
+                                   detectionResult.accountType === "Bread15" ? "#ede9fe" : "#fee2e2",
+                  color: detectionResult.accountType === "Anchor" ? "#166534" :
+                         detectionResult.accountType === "Bread5" ? "#1e40af" :
+                         detectionResult.accountType === "Bread15" ? "#5b21b6" : "#dc2626",
+                  fontSize: "12px"
+                }}>
+                  <strong>Detected: {detectionResult.accountType}</strong>
+                  <span style={{ marginLeft: "8px", opacity: 0.8 }}>({detectionResult.confidence} confidence)</span>
+                  <div style={{ marginTop: "4px", opacity: 0.7 }}>{detectionResult.reason}</div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <select
+              value={accountType}
+              onChange={(e) => setAccountType(e.target.value as AccountType)}
+            >
+              {ACCOUNT_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          )}
           <small>
             {ACCOUNT_TYPES.find((t) => t.value === accountType)?.description}
           </small>
