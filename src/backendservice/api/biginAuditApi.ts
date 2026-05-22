@@ -51,6 +51,7 @@ export interface AuditStats {
   users: string[];
   actions: string[];
   modules: string[];
+  pipelines: string[];
   actionBreakdown: Array<{ action: string; count: number }>;
   userBreakdown: Array<{ user: string; count: number }>;
 }
@@ -81,6 +82,7 @@ export const biginAuditApi = {
     user?: string;
     action?: string;
     module?: string;
+    pipeline?: string;
     startDate?: string;
     endDate?: string;
     limit?: number;
@@ -95,6 +97,7 @@ export const biginAuditApi = {
       if (params?.user) queryParams.set('user', params.user);
       if (params?.action) queryParams.set('action', params.action);
       if (params?.module) queryParams.set('module', params.module);
+      if (params?.pipeline) queryParams.set('pipeline', params.pipeline);
       if (params?.startDate) queryParams.set('startDate', params.startDate);
       if (params?.endDate) queryParams.set('endDate', params.endDate);
       if (params?.limit) queryParams.set('limit', String(params.limit));
@@ -226,7 +229,7 @@ export const biginAuditApi = {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await apiClient.post<{
+      const response = await apiClient.postFormData<{
         success: boolean;
         message: string;
         data: {
@@ -236,11 +239,7 @@ export const biginAuditApi = {
           errors: number;
           sessionId: string;
         };
-      }>(`${BASE_PATH}/upload-csv`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      }>(`${BASE_PATH}/upload-csv`, formData);
 
       const result = response.data;
       return result?.success ? result : null;

@@ -222,6 +222,43 @@ class ApiClient {
     }
   }
 
+  async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    try {
+      const headers: HeadersInit = {};
+      if (this.token) {
+        headers["Authorization"] = `Bearer ${this.token}`;
+      }
+      // Don't set Content-Type - browser will set it automatically with boundary
+
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        this.handleUnauthorizedResponse(response.status, endpoint);
+
+        return {
+          error: data.message || "Request failed",
+          status: response.status,
+        };
+      }
+
+      return {
+        data,
+        status: response.status,
+      };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : "Network error",
+        status: 0,
+      };
+    }
+  }
+
   async downloadBlob(endpoint: string): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "GET",

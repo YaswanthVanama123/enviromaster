@@ -16,6 +16,7 @@ export const BiginAuditTab: React.FC = () => {
   const [userFilter, setUserFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [moduleFilter, setModuleFilter] = useState('');
+  const [pipelineFilter, setPipelineFilter] = useState('');
   const [pagination, setPagination] = useState({ total: 0, skip: 0, limit: 50 });
   const [selectedLog, setSelectedLog] = useState<BiginAuditLog | null>(null);
 
@@ -39,6 +40,7 @@ export const BiginAuditTab: React.FC = () => {
       user: userFilter || undefined,
       action: actionFilter || undefined,
       module: moduleFilter || undefined,
+      pipeline: pipelineFilter || undefined,
       limit: pagination.limit,
       skip: pagination.skip,
     });
@@ -48,7 +50,7 @@ export const BiginAuditTab: React.FC = () => {
       setPagination(prev => ({ ...prev, total: result.pagination.total }));
     }
     setLoading(false);
-  }, [searchTerm, userFilter, actionFilter, moduleFilter, pagination.limit, pagination.skip]);
+  }, [searchTerm, userFilter, actionFilter, moduleFilter, pipelineFilter, pagination.limit, pagination.skip]);
 
   // Load stats
   const loadStats = useCallback(async () => {
@@ -311,6 +313,20 @@ export const BiginAuditTab: React.FC = () => {
           <option value="">All Modules</option>
           {stats?.modules.map(module => (
             <option key={module} value={module}>{module}</option>
+          ))}
+        </select>
+
+        <select
+          value={pipelineFilter}
+          onChange={(e) => {
+            setPipelineFilter(e.target.value);
+            setPagination(prev => ({ ...prev, skip: 0 }));
+          }}
+          className="ba-filter-select"
+        >
+          <option value="">All Pipelines</option>
+          {stats?.pipelines?.map(pipeline => (
+            <option key={pipeline} value={pipeline}>{pipeline}</option>
           ))}
         </select>
 
