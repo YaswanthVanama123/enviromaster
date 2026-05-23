@@ -196,6 +196,7 @@ type ContractSummaryProps = {
   onCommissionResultChange?: (result: CommissionResult) => void;
   quotaLoading?: boolean;
   userName?: string;
+  isConnectedToBigin?: boolean;
 };
 
 function ContractSummary({
@@ -206,7 +207,8 @@ function ContractSummary({
   onCommissionStateChange,
   onCommissionResultChange,
   quotaLoading = false,
-  userName
+  userName,
+  isConnectedToBigin = false
 }: ContractSummaryProps) {
   const {
     servicesState,
@@ -1019,6 +1021,31 @@ function ContractSummary({
 
         {isCommissionExpanded && (
           <>
+            {/* Show message if not connected to Bigin */}
+            {!isConnectedToBigin ? (
+              <div style={{
+                marginTop: '16px',
+                padding: '24px',
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                borderRadius: '8px',
+                border: '1px solid #f59e0b',
+                textAlign: 'center'
+              }}>
+                <FontAwesomeIcon
+                  icon={faExclamationTriangle}
+                  style={{ fontSize: '32px', color: '#d97706', marginBottom: '12px' }}
+                />
+                <h4 style={{ margin: '0 0 8px 0', color: '#92400e', fontSize: '16px', fontWeight: '600' }}>
+                  Commission Details Unavailable
+                </h4>
+                <p style={{ margin: 0, color: '#78350f', fontSize: '14px', lineHeight: '1.5' }}>
+                  Please upload this agreement to Bigin to get commission details.
+                  <br />
+                  Commission calculations require the agreement to be connected to a Bigin company.
+                </p>
+              </div>
+            ) : (
+            <>
             {/* Commission Inputs - only what's needed (form provides the rest) */}
             <div className="commission-inputs" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px' }}>
               {/* Quota Level - Read-only, determined by employee's actual sales performance */}
@@ -1152,6 +1179,8 @@ function ContractSummary({
               )}
             </div>
           </>
+          )}
+          </>
         )}
       </div>
     </div>
@@ -1203,6 +1232,7 @@ function FormFillingContent({
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
+  const [isConnectedToBigin, setIsConnectedToBigin] = useState(false);
   const [productTotals, setProductTotals] = useState<ProductTotals>({
     monthlyTotal: 0,
     contractTotal: 0,
@@ -1637,6 +1667,11 @@ function FormFillingContent({
         };
 
         setPayload(cleanPayload);
+
+        // Set Bigin connection status from backend response
+        if ((json as any).isConnectedToBigin !== undefined) {
+          setIsConnectedToBigin((json as any).isConnectedToBigin);
+        }
       } catch (err) {
         console.error("Error fetching headers:", err);
       } finally {
@@ -2839,6 +2874,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               onCommissionResultChange={setCommissionResult}
               quotaLoading={quotaLoading}
               userName={user?.username}
+              isConnectedToBigin={isConnectedToBigin}
             />
 
             <div className="formfilling__payment-options">

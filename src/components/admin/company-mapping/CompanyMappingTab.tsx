@@ -29,6 +29,7 @@ export const CompanyMappingTab: React.FC = () => {
   const [pagination, setPagination] = useState({ total: 0, skip: 0, limit: 50 });
   const [pendingChanges, setPendingChanges] = useState<Map<string, PendingChange>>(new Map());
   const [saving, setSaving] = useState(false);
+  const [savingRow, setSavingRow] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(false);
 
   // Dropdown states
@@ -141,22 +142,85 @@ export const CompanyMappingTab: React.FC = () => {
 
   // Handle save all
   const handleSaveAll = async () => {
-    if (pendingChanges.size === 0) return;
+    if (pendingChanges.size === 0) {
+      console.log('[MAPPING] No pending changes to save');
+      return;
+    }
 
+    console.log('[MAPPING] Saving all pending changes:', pendingChanges.size);
     setSaving(true);
+
     const mappingsToSave = Array.from(pendingChanges.values()).map(change => ({
       biginId: change.biginId,
       routeStarId: change.routeStarId,
     }));
 
-    const result = await companyMappingApi.bulkSave(mappingsToSave);
+    console.log('[MAPPING] Mappings to save:', mappingsToSave);
 
-    if (result) {
-      setPendingChanges(new Map());
-      loadMappings();
-      loadStats();
+    try {
+      const result = await companyMappingApi.bulkSave(mappingsToSave);
+      console.log('[MAPPING] Bulk save result:', result);
+
+      if (result) {
+        console.log('[MAPPING] Saved successfully:', result.saved, 'of', result.total);
+        if (result.errors > 0) {
+          console.error('[MAPPING] Errors:', result.errorDetails);
+        }
+        setPendingChanges(new Map());
+        loadMappings();
+        loadStats();
+      } else {
+        console.error('[MAPPING] Bulk save returned null');
+      }
+    } catch (error) {
+      console.error('[MAPPING] Error in bulk save:', error);
     }
+
     setSaving(false);
+  };
+
+  // Handle save single row
+  const handleSaveRow = async (biginId: string) => {
+    const pending = pendingChanges.get(biginId);
+    if (!pending) {
+      console.log('[MAPPING] No pending change for biginId:', biginId);
+      return;
+    }
+
+    console.log('[MAPPING] Saving single row:', pending);
+    setSavingRow(biginId);
+
+    try {
+      const result = await companyMappingApi.saveMapping(pending.biginId, pending.routeStarId);
+      console.log('[MAPPING] Single save result:', result);
+
+      if (result) {
+        console.log('[MAPPING] Row saved successfully');
+        // Remove from pending changes
+        const newPendingChanges = new Map(pendingChanges);
+        newPendingChanges.delete(biginId);
+        setPendingChanges(newPendingChanges);
+
+        // Update local mapping state
+        setMappings(prev => prev.map(m =>
+          m.biginId === biginId
+            ? {
+                ...m,
+                routeStarId: pending.routeStarId,
+                routeStarCustomerName: pending.routeStarCustomerName,
+                mappingStatus: pending.routeStarId ? 'mapped' : 'unmapped'
+              }
+            : m
+        ));
+        loadStats();
+      } else {
+        console.error('[MAPPING] Save returned null');
+      }
+    } catch (error) {
+      console.error('[MAPPING] Error saving row:', error);
+    }
+
+    setSavingRow(null);
   };
 
   // Handle initialize
@@ -309,6 +373,7 @@ export const CompanyMappingTab: React.FC = () => {
                 <th>City</th>
                 <th>Status</th>
                 <th>RouteStar Mapping</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -382,6 +447,17 @@ export const CompanyMappingTab: React.FC = () => {
                         </div>
                       )}
                     </div>
+                  </td>
+                  <td className="cm-action">
+                    {hasPendingChange(mapping) && (
+                      <button
+                        className="cm-row-save-btn"
+                        onClick={() => handleSaveRow(mapping.biginId)}
+                        disabled={savingRow === mapping.biginId}
+                      >
+                        {savingRow === mapping.biginId ? 'Saving...' : 'Save'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

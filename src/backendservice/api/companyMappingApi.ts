@@ -145,11 +145,14 @@ export const companyMappingApi = {
     mappedBy?: string
   ): Promise<CompanyMapping | null> {
     try {
+      console.log('[API] saveMapping called:', { biginId, routeStarId, mappedBy });
       const response = await apiClient.post<{ success: boolean; data: CompanyMapping }>(
         BASE_PATH,
         { biginId, routeStarId, mappedBy: mappedBy || 'admin' }
       );
+      console.log('[API] saveMapping response:', response);
       const result = response.data;
+      console.log('[API] saveMapping result:', result);
       return result?.success ? result.data : null;
     } catch (error) {
       console.error('Error saving mapping:', error);
@@ -207,6 +210,7 @@ export const companyMappingApi = {
     errorDetails: Array<{ biginId: string; error: string }>;
   } | null> {
     try {
+      console.log('[API] bulkSave called:', { mappings, mappedBy });
       const response = await apiClient.post<{
         success: boolean;
         data: {
@@ -216,7 +220,9 @@ export const companyMappingApi = {
           errorDetails: Array<{ biginId: string; error: string }>;
         };
       }>(`${BASE_PATH}/bulk`, { mappings, mappedBy: mappedBy || 'admin' });
+      console.log('[API] bulkSave response:', response);
       const result = response.data;
+      console.log('[API] bulkSave result:', result);
       return result?.success ? result.data : null;
     } catch (error) {
       console.error('Error bulk saving mappings:', error);
