@@ -30,6 +30,8 @@ import { versionApi } from "../backendservice/api/versionApi";
 import type { VersionStatus } from "../backendservice/api/versionApi";
 import { zohoApi } from "../backendservice/api/zohoApi";
 import { quotaApi } from "../backendservice/api/quotaApi";
+import { mapDistanceApi } from "../backendservice/api/mapDistanceApi";
+import type { AccountTypeDetectionResult } from "../backendservice/api/mapDistanceApi";
 import { useAllServicePricing } from "../backendservice/hooks";
 import { useAuth } from "../backendservice/hooks/useAuth";
 import { createVersionLogFile, hasPriceChanges, getPriceChangeCount, clearPriceChanges, debugFileLogger, getAllVersionLogsForTesting } from "../utils/fileLogger";
@@ -197,6 +199,7 @@ type ContractSummaryProps = {
   quotaLoading?: boolean;
   userName?: string;
   isConnectedToBigin?: boolean;
+  accountTypeDetection?: AccountTypeDetectionResult | null;
 };
 
 function ContractSummary({
@@ -208,7 +211,8 @@ function ContractSummary({
   onCommissionResultChange,
   quotaLoading = false,
   userName,
-  isConnectedToBigin = false
+  isConnectedToBigin = false,
+  accountTypeDetection = null
 }: ContractSummaryProps) {
   const {
     servicesState,
@@ -1070,19 +1074,39 @@ function ContractSummary({
                 )}
               </div>
 
-              {/* Account Type */}
+              {/* Account Type - Auto-detected based on distance data */}
               <div className="commission-input-group">
                 <label className="commission-label">Account Type</label>
-                <select
-                  value={accountType}
-                  onChange={(e) => onCommissionStateChange({ ...commissionState, accountType: e.target.value as AccountType })}
-                  className="commission-select"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' }}
-                >
-                  {ACCOUNT_TYPE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                <div style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px',
+                  backgroundColor: accountTypeDetection?.success ? '#f0fdf4' : '#f9fafb',
+                  color: '#111827',
+                  fontWeight: 500
+                }}>
+                  {accountType}
+                </div>
+                {accountTypeDetection && accountTypeDetection.success && (
+                  <div style={{
+                    marginTop: '6px',
+                    fontSize: '11px',
+                    color: accountTypeDetection.confidence === 'high' ? '#059669' : '#9ca3af',
+                    backgroundColor: accountTypeDetection.confidence === 'high' ? '#ecfdf5' : '#f9fafb',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
+                    borderLeft: `3px solid ${accountTypeDetection.confidence === 'high' ? '#10b981' : '#d1d5db'}`
+                  }}>
+                    <span style={{ color: '#6b7280' }}>{accountTypeDetection.reason}</span>
+                    {accountTypeDetection.nearestAnchor && (
+                      <span style={{ display: 'block', color: '#9ca3af', marginTop: '2px' }}>
+                        Nearest: {accountTypeDetection.nearestAnchor}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Inside Sales Toggle */}
@@ -1233,6 +1257,8 @@ function FormFillingContent({
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
   const [isConnectedToBigin, setIsConnectedToBigin] = useState(false);
+  const [biginCompanyId, setBiginCompanyId] = useState<string | null>(null);
+  const [accountTypeDetection, setAccountTypeDetection] = useState<AccountTypeDetectionResult | null>(null);
   const [productTotals, setProductTotals] = useState<ProductTotals>({
     monthlyTotal: 0,
     contractTotal: 0,
@@ -1281,6 +1307,41 @@ function FormFillingContent({
 
     fetchQuotaLevel();
   }, [user?.username]);
+
+  // Auto-detect account type when biginCompanyId is available
+  useEffect(() => {
+    const detectAccountType = async () => {
+      if (!biginCompanyId) return;
+
+      console.log('🎯 [ACCOUNT TYPE] Auto-detecting account type for biginCompanyId:', biginCompanyId);
+
+      try {
+        // Determine if this is a Greenline customer (based on payment option)
+        const isGreenline = paymentOption === 'online';
+
+        const result = await mapDistanceApi.detectAccountType({
+          biginCompanyId,
+          isGreenline,
+        });
+
+        console.log('🎯 [ACCOUNT TYPE] Detection result:', result);
+        setAccountTypeDetection(result);
+
+        if (result.success && result.accountType) {
+          // Auto-select the detected account type
+          setCommissionState(prev => ({
+            ...prev,
+            accountType: result.accountType,
+          }));
+          console.log('✅ [ACCOUNT TYPE] Auto-selected:', result.accountType, '-', result.reason);
+        }
+      } catch (error) {
+        console.error('Failed to detect account type:', error);
+      }
+    };
+
+    detectAccountType();
+  }, [biginCompanyId, paymentOption]);
 
 
   const {
@@ -1671,6 +1732,10 @@ function FormFillingContent({
         // Set Bigin connection status from backend response
         if ((json as any).isConnectedToBigin !== undefined) {
           setIsConnectedToBigin((json as any).isConnectedToBigin);
+        }
+        // Set Bigin company ID from backend response (for account type auto-detection)
+        if ((json as any).biginCompanyId) {
+          setBiginCompanyId((json as any).biginCompanyId);
         }
       } catch (err) {
         console.error("Error fetching headers:", err);
@@ -2875,6 +2940,7 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               quotaLoading={quotaLoading}
               userName={user?.username}
               isConnectedToBigin={isConnectedToBigin}
+              accountTypeDetection={accountTypeDetection}
             />
 
             <div className="formfilling__payment-options">

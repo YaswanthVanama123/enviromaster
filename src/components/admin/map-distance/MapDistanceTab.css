@@ -10,7 +10,14 @@
 
 /* Header */
 .md-header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
+}
+
+.md-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
 }
 
 .md-header h2 {
@@ -24,6 +31,365 @@
   font-size: 14px;
   color: #64748b;
   margin: 0;
+}
+
+.md-header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Sync Button */
+.md-sync-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.md-sync-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1px);
+}
+
+.md-cancel-sync-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.md-cancel-sync-btn:hover {
+  background: #dc2626;
+}
+
+/* Stats Bar */
+.md-stats-bar {
+  display: flex;
+  gap: 24px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.md-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.md-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.md-stat-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Sync Progress */
+.md-sync-progress {
+  padding: 16px 20px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.md-sync-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.md-sync-progress-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.md-sync-progress-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.md-progress-bar {
+  height: 8px;
+  background: #d1fae5;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.md-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.md-sync-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.md-sync-stat {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.md-sync-stat.success {
+  color: #059669;
+}
+
+.md-sync-stat.failed {
+  color: #dc2626;
+}
+
+.md-sync-stat.records {
+  color: #6366f1;
+}
+
+/* Interrupted Sync */
+.md-sync-interrupted {
+  padding: 16px 20px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.md-sync-interrupted .md-sync-progress-title {
+  color: #92400e;
+}
+
+.md-sync-interrupted .md-sync-progress-count {
+  color: #92400e;
+}
+
+.md-progress-fill.interrupted {
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.md-sync-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Paused Sync */
+.md-sync-paused {
+  padding: 16px 20px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.md-sync-paused .md-sync-progress-title {
+  color: #4338ca;
+}
+
+.md-sync-paused .md-sync-progress-count {
+  color: #4338ca;
+}
+
+.md-progress-fill.paused {
+  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+}
+
+/* Pause Button */
+.md-pause-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.md-pause-btn:hover {
+  background: #d97706;
+}
+
+.md-spin {
+  animation: md-spin 1s linear infinite;
+}
+
+/* View Tabs */
+.md-view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.md-view-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.md-view-tab:hover {
+  color: #1e293b;
+  background: #e2e8f0;
+}
+
+.md-view-tab.active {
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Status Badge */
+.md-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.md-status-badge.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.md-status-badge.running {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.md-status-badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.md-status-badge.cancelled {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.md-status-badge.pending {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.md-status-badge.paused {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Job Type Badge */
+.md-job-type {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.md-job-type.single_fetch {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.md-job-type.full_sync {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.md-job-type.update_sync {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Reset Button */
+.md-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.md-reset-btn:hover {
+  background: #dc2626;
+}
+
+/* Resume Button */
+.md-resume-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.md-resume-btn:hover:not(:disabled) {
+  background: #047857;
+}
+
+.md-resume-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Search Section */

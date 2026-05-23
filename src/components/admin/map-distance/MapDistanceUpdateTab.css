@@ -1,0 +1,830 @@
+/**
+ * Map Distance Update Tab Styles
+ */
+
+.md-update-tab {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.mdu-header {
+  margin-bottom: 24px;
+}
+
+.mdu-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.mdu-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.mdu-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.mdu-header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Update Button */
+.mdu-update-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-update-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  transform: translateY(-1px);
+}
+
+.mdu-update-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Cancel Button */
+.mdu-cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-cancel-btn:hover {
+  background: #dc2626;
+}
+
+/* Stats Bar */
+.mdu-stats-bar {
+  display: flex;
+  gap: 24px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.mdu-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mdu-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.mdu-stat-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Error */
+.mdu-error {
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Sync Progress */
+.mdu-sync-progress {
+  padding: 16px 20px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.mdu-sync-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mdu-sync-progress-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3730a3;
+}
+
+.mdu-sync-progress-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3730a3;
+}
+
+.mdu-progress-bar {
+  height: 8px;
+  background: #c7d2fe;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.mdu-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.mdu-sync-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.mdu-sync-stat {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mdu-sync-stat.success {
+  color: #059669;
+}
+
+.mdu-sync-stat.failed {
+  color: #dc2626;
+}
+
+.mdu-sync-stat.records {
+  color: #6366f1;
+}
+
+/* Interrupted Sync */
+.mdu-sync-interrupted {
+  padding: 16px 20px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.mdu-sync-interrupted .mdu-sync-progress-title {
+  color: #92400e;
+}
+
+.mdu-sync-interrupted .mdu-sync-progress-count {
+  color: #92400e;
+}
+
+.mdu-progress-fill.interrupted {
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.mdu-sync-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Paused Sync */
+.mdu-sync-paused {
+  padding: 16px 20px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.mdu-sync-paused .mdu-sync-progress-title {
+  color: #4338ca;
+}
+
+.mdu-sync-paused .mdu-sync-progress-count {
+  color: #4338ca;
+}
+
+.mdu-progress-fill.paused {
+  background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+}
+
+/* Pause Button */
+.mdu-pause-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-pause-btn:hover {
+  background: #d97706;
+}
+
+.mdu-spin {
+  animation: mdu-spin 1s linear infinite;
+}
+
+@keyframes mdu-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* View Tabs */
+.mdu-view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.mdu-view-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-view-tab:hover {
+  color: #1e293b;
+  background: #e2e8f0;
+}
+
+.mdu-view-tab.active {
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Records Section */
+.mdu-records-section {
+  margin-top: 16px;
+}
+
+.mdu-records-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Pagination */
+.mdu-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mdu-pagination button {
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-pagination button:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.mdu-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mdu-pagination span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Table */
+.mdu-table-container {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.mdu-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mdu-table thead {
+  background: #f8fafc;
+}
+
+.mdu-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mdu-table th svg {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.mdu-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #475569;
+}
+
+.mdu-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mdu-table tr:hover {
+  background: #fafafa;
+}
+
+.mdu-customer-cell {
+  min-width: 200px;
+}
+
+.mdu-customer-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.mdu-customer-city {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.mdu-distance {
+  font-weight: 600;
+  color: #059669;
+}
+
+/* Status Badge */
+.mdu-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.mdu-status-badge.completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.mdu-status-badge.running {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.mdu-status-badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.mdu-status-badge.cancelled {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.mdu-status-badge.pending {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.mdu-status-badge.paused {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Job Type Badge */
+.mdu-job-type {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mdu-job-type.single_fetch {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.mdu-job-type.full_sync {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.mdu-job-type.update_sync {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Reset Button */
+.mdu-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-reset-btn:hover {
+  background: #dc2626;
+}
+
+/* Resume Button */
+.mdu-resume-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-resume-btn:hover:not(:disabled) {
+  background: #047857;
+}
+
+.mdu-resume-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Empty State */
+.mdu-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #e2e8f0;
+}
+
+.mdu-empty-icon {
+  margin-bottom: 16px;
+  color: #94a3b8;
+}
+
+.mdu-empty h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.mdu-empty p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Customer Filter Section */
+.mdu-filter-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.mdu-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.mdu-filter-dropdown {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.mdu-filter-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-filter-trigger:hover {
+  border-color: #cbd5e1;
+}
+
+.mdu-filter-trigger:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.mdu-filter-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mdu-rotate {
+  transform: rotate(180deg);
+  transition: transform 0.2s;
+}
+
+.mdu-filter-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.mdu-filter-search {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.mdu-filter-search:focus {
+  outline: none;
+}
+
+.mdu-filter-options {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.mdu-filter-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mdu-filter-option:hover {
+  background: #f1f5f9;
+}
+
+.mdu-filter-option.selected {
+  background: #eef2ff;
+}
+
+.mdu-option-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.mdu-option-details {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.mdu-filter-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.mdu-filter-clear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-filter-clear:hover {
+  background: #fecaca;
+}
+
+/* Delete Button */
+.mdu-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-delete-btn:hover:not(:disabled) {
+  background: #fecaca;
+  border-color: #f87171;
+}
+
+.mdu-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Delete Confirmation Modal */
+.mdu-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.mdu-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.mdu-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mdu-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.mdu-modal-text {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.mdu-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.mdu-modal-cancel {
+  padding: 10px 20px;
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-modal-cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.mdu-modal-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mdu-modal-delete {
+  padding: 10px 20px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mdu-modal-delete:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.mdu-modal-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

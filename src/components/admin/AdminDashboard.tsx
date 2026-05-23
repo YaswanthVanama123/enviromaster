@@ -13,11 +13,12 @@ import { BiginAuditTab } from "./bigin/BiginAuditTab";
 import { BiginCompaniesTab } from "./bigin/BiginCompaniesTab";
 import { CompanyMappingTab } from "./company-mapping/CompanyMappingTab";
 import { MapDistanceTab } from "./map-distance/MapDistanceTab";
+import { MapDistanceUpdateTab } from "./map-distance/MapDistanceUpdateTab";
 import { pdfApi } from "../../backendservice/api/pdfApi";
-import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness, MdLink, MdMap } from "react-icons/md";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness, MdLink, MdMap, MdRefresh } from "react-icons/md";
 import "./AdminDashboard.css";
 
-type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies" | "company-mapping" | "map-distance";
+type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies" | "company-mapping" | "map-distance" | "map-distance-update";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -77,12 +78,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/company-mapping') || path.includes('/company-mapping/'))) {
         return "company-mapping";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/map-distance-update') || path.includes('/map-distance-update/'))) {
+        return "map-distance-update";
+      }
       if (path.includes('/admin-panel/') && (path.includes('/map-distance') || path.includes('/map-distance/'))) {
         return "map-distance";
       }
 
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
@@ -116,12 +120,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/pricing-tables/company-mapping')) {
       return "company-mapping";
     }
+    if (path.includes('/pricing-tables/map-distance-update')) {
+      return "map-distance-update";
+    }
     if (path.includes('/pricing-tables/map-distance')) {
       return "map-distance";
     }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -310,6 +317,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <MdMap size={20} style={{ marginRight: "8px" }} /> Map Distance
           </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "map-distance-update" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("map-distance-update")}
+          >
+            <MdRefresh size={20} style={{ marginRight: "8px" }} /> Update Distance
+          </button>
         </div>
         <button
           style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
@@ -352,6 +369,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === "bigin-companies" && <BiginCompaniesTab />}
         {activeTab === "company-mapping" && <CompanyMappingTab />}
         {activeTab === "map-distance" && <MapDistanceTab />}
+        {activeTab === "map-distance-update" && <MapDistanceUpdateTab />}
       </div>
     </div>
   );
