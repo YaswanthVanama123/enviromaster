@@ -497,7 +497,7 @@ export default function ApprovalDocuments() {
 
   return (
     <div style={{ display: 'flex', gap: '24px' }}>
-      <section className="ad" style={{ flex: 1 }}>
+      <section className="ad" style={{ flex: 1, minWidth: 0 }}>
 
       <div className="ad__toolbar">
         <input
@@ -527,18 +527,18 @@ export default function ApprovalDocuments() {
         <table className="ad__table">
           <thead>
             <tr>
-              <th className="w-40" style={{ background: '#f5f6f8' }}>
+              <th>
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th style={{ background: '#f5f6f8' }}>Agreement / File Name</th>
-              <th style={{ background: '#f5f6f8' }}>Type</th>
-              <th style={{ background: '#f5f6f8' }}>Updated</th>
-              <th style={{ background: '#f5f6f8' }}>Status</th>
-              <th style={{ background: '#f5f6f8' }}>Actions</th>
+              <th>Agreement / File Name</th>
+              <th>Type</th>
+              <th>Updated</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -588,7 +588,7 @@ export default function ApprovalDocuments() {
             {!loading && !error && paginatedAgreements.map((agreement) => (
               <React.Fragment key={agreement.id}>
                 <tr className="agreement-header">
-                  <td>
+                  <td style={{ width: '50px', textAlign: 'center' }}>
                     <input
                       type="checkbox"
                       checked={agreement.files.every(f => selected[f.id])}
@@ -611,9 +611,12 @@ export default function ApprovalDocuments() {
                         icon={expandedAgreements.has(agreement.id) ? faChevronDown : faChevronRight}
                         style={{ fontSize: '12px', color: '#6b7280' }}
                       />
-                      <strong>{agreement.agreementTitle}</strong>
+                      <strong style={{ color: '#374151' }}>{agreement.agreementTitle}</strong>
                       <span style={{ color: '#6b7280', fontSize: '14px' }}>
                         ({agreement.fileCount} file{agreement.fileCount !== 1 ? 's' : ''})
+                      </span>
+                      <span style={{ color: '#9ca3af', fontSize: '13px', marginLeft: '8px' }}>
+                        {timeAgo(agreement.latestUpdate)}
                       </span>
                       {agreement.startDate && agreement.contractMonths && (
                         <AgreementTimelineBadge
@@ -626,8 +629,8 @@ export default function ApprovalDocuments() {
                       )}
                     </div>
                   </td>
-                  <td>Agreement</td>
-                  <td style={{ fontSize: "13px" }}>{timeAgo(agreement.latestUpdate)}</td>
+                  <td></td>
+                  <td></td>
                   <td></td>
                   <td></td>
                 </tr>

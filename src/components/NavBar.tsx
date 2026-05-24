@@ -28,6 +28,7 @@ export default function NavBar() {
     { path: "/saved-pdfs", label: "Saved PDFs" },
     { path: "/my-commissions", label: "My Commissions" },
     { path: "/my-quota", label: "My Quota" },
+    { path: "/my-inside-sales", label: "Inside Sales" },
     { path: "/trash", label: "Trash" },
     // Only show Admin links for admin users
     ...(isAdmin ? [

@@ -43,6 +43,7 @@ export interface ScrapeStatus {
 
 export interface AuditStats {
   total: number;
+  storageSize: number;
   uniqueUsers: number;
   uniqueActions: number;
   uniqueModules: number;
@@ -245,6 +246,91 @@ export const biginAuditApi = {
       return result?.success ? result : null;
     } catch (error) {
       console.error('Error uploading CSV:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Delete all audit logs
+   */
+  async deleteAll(): Promise<{
+    success: boolean;
+    message: string;
+    data?: { deletedCount: number; previousCount: number };
+  } | null> {
+    try {
+      const response = await apiClient.delete<{
+        success: boolean;
+        message: string;
+        data: { deletedCount: number; previousCount: number };
+      }>(`${BASE_PATH}/delete-all`);
+      const result = response.data;
+      return result?.success ? result : null;
+    } catch (error) {
+      console.error('Error deleting all audit logs:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Delete unnecessary audit logs (keeps Lisa Rothwell's records)
+   */
+  async deleteUnnecessary(): Promise<{
+    success: boolean;
+    message: string;
+    data?: { deletedCount: number; keptCount: number; previousTotal: number };
+  } | null> {
+    try {
+      const response = await apiClient.delete<{
+        success: boolean;
+        message: string;
+        data: { deletedCount: number; keptCount: number; previousTotal: number };
+      }>(`${BASE_PATH}/delete-unnecessary`);
+      const result = response.data;
+      return result?.success ? result : null;
+    } catch (error) {
+      console.error('Error deleting unnecessary audit logs:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Check if a salesperson's records exist in Lisa Rothwell's audit history within 1 year
+   * Used to determine if "Inside Sales" checkbox should be checked
+   */
+  async checkInsideSalesEligibility(salespersonName: string): Promise<{
+    success: boolean;
+    data?: {
+      salespersonName: string;
+      isInsideSales: boolean;
+      matchCount: number;
+      matchDetails: Array<{
+        recordName: string;
+        action: string;
+        timestamp: string;
+        module: string;
+      }>;
+    };
+  } | null> {
+    try {
+      const response = await apiClient.get<{
+        success: boolean;
+        data: {
+          salespersonName: string;
+          isInsideSales: boolean;
+          matchCount: number;
+          matchDetails: Array<{
+            recordName: string;
+            action: string;
+            timestamp: string;
+            module: string;
+          }>;
+        };
+      }>(`${BASE_PATH}/check-inside-sales?salespersonName=${encodeURIComponent(salespersonName)}`);
+      const result = response.data;
+      return result?.success ? result : null;
+    } catch (error) {
+      console.error('Error checking inside sales eligibility:', error);
       return null;
     }
   },

@@ -14,11 +14,12 @@ import { BiginCompaniesTab } from "./bigin/BiginCompaniesTab";
 import { CompanyMappingTab } from "./company-mapping/CompanyMappingTab";
 import { MapDistanceTab } from "./map-distance/MapDistanceTab";
 import { MapDistanceUpdateTab } from "./map-distance/MapDistanceUpdateTab";
+import { InsideSalesCheckTab } from "./inside-sales/InsideSalesCheckTab";
 import { pdfApi } from "../../backendservice/api/pdfApi";
-import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness, MdLink, MdMap, MdRefresh } from "react-icons/md";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness, MdLink, MdMap, MdRefresh, MdVerifiedUser } from "react-icons/md";
 import "./AdminDashboard.css";
 
-type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies" | "company-mapping" | "map-distance" | "map-distance-update";
+type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies" | "company-mapping" | "map-distance" | "map-distance-update" | "inside-sales";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -84,9 +85,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/map-distance') || path.includes('/map-distance/'))) {
         return "map-distance";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/inside-sales') || path.includes('/inside-sales/'))) {
+        return "inside-sales";
+      }
 
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update", "inside-sales"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
@@ -126,9 +130,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/pricing-tables/map-distance')) {
       return "map-distance";
     }
+    if (path.includes('/pricing-tables/inside-sales')) {
+      return "inside-sales";
+    }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update", "inside-sales"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -327,6 +334,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <MdRefresh size={20} style={{ marginRight: "8px" }} /> Update Distance
           </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "inside-sales" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("inside-sales")}
+          >
+            <MdVerifiedUser size={20} style={{ marginRight: "8px" }} /> Inside Sales
+          </button>
         </div>
         <button
           style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
@@ -370,6 +387,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === "company-mapping" && <CompanyMappingTab />}
         {activeTab === "map-distance" && <MapDistanceTab />}
         {activeTab === "map-distance-update" && <MapDistanceUpdateTab />}
+        {activeTab === "inside-sales" && <InsideSalesCheckTab />}
       </div>
     </div>
   );

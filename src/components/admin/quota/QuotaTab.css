@@ -176,8 +176,8 @@
 }
 
 .quota-actual {
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
   color: #1e293b;
 }
 
@@ -292,8 +292,8 @@
 }
 
 .stat-value {
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
   color: #1e293b;
   line-height: 1;
 }

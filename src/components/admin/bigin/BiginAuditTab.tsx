@@ -32,6 +32,15 @@ export const BiginAuditTab: React.FC = () => {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Delete state
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [showDeleteUnnecessaryModal, setShowDeleteUnnecessaryModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+
   // Load audit logs
   const loadAuditLogs = useCallback(async () => {
     setLoading(true);
@@ -156,11 +165,67 @@ export const BiginAuditTab: React.FC = () => {
     setUploadResult(null);
   };
 
+  // Handle delete all
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    setDeleteResult(null);
+    try {
+      const result = await biginAuditApi.deleteAll();
+      if (result) {
+        setDeleteResult({ success: true, message: result.message });
+        loadAuditLogs();
+        loadStats();
+      } else {
+        setDeleteResult({ success: false, message: 'Failed to delete audit logs' });
+      }
+    } catch (error) {
+      setDeleteResult({ success: false, message: 'Error deleting audit logs' });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Handle delete unnecessary
+  const handleDeleteUnnecessary = async () => {
+    setDeleting(true);
+    setDeleteResult(null);
+    try {
+      const result = await biginAuditApi.deleteUnnecessary();
+      if (result) {
+        setDeleteResult({ success: true, message: result.message });
+        loadAuditLogs();
+        loadStats();
+      } else {
+        setDeleteResult({ success: false, message: 'Failed to delete unnecessary audit logs' });
+      }
+    } catch (error) {
+      setDeleteResult({ success: false, message: 'Error deleting unnecessary audit logs' });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Close delete modals
+  const closeDeleteModal = () => {
+    setShowDeleteAllModal(false);
+    setShowDeleteUnnecessaryModal(false);
+    setDeleteResult(null);
+  };
+
   // Format date
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleString();
+  };
+
+  // Format bytes to human-readable size
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   // Get action color
@@ -212,6 +277,24 @@ export const BiginAuditTab: React.FC = () => {
               </>
             )}
           </button>
+          <button
+            className="ba-delete-unnecessary-btn"
+            onClick={() => setShowDeleteUnnecessaryModal(true)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+            Delete Unnecessary
+          </button>
+          <button
+            className="ba-delete-all-btn"
+            onClick={() => setShowDeleteAllModal(true)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+            </svg>
+            Delete All
+          </button>
         </div>
       </div>
 
@@ -220,6 +303,10 @@ export const BiginAuditTab: React.FC = () => {
         <div className="ba-stat-card">
           <div className="ba-stat-value">{stats?.total || 0}</div>
           <div className="ba-stat-label">Total Logs</div>
+        </div>
+        <div className="ba-stat-card">
+          <div className="ba-stat-value ba-stat-storage">{formatBytes(stats?.storageSize || 0)}</div>
+          <div className="ba-stat-label">Storage Size</div>
         </div>
         <div className="ba-stat-card">
           <div className="ba-stat-value ba-stat-24h">{stats?.last24Hours || 0}</div>
@@ -566,6 +653,111 @@ export const BiginAuditTab: React.FC = () => {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {showDeleteAllModal && (
+        <div className="ba-modal-overlay" onClick={closeDeleteModal}>
+          <div className="ba-modal ba-delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ba-modal-header ba-modal-header-danger">
+              <h3>Delete All Audit Logs</h3>
+              <button className="ba-close-btn" onClick={closeDeleteModal}>x</button>
+            </div>
+            <div className="ba-modal-body">
+              {!deleteResult ? (
+                <div className="ba-delete-warning">
+                  <div className="ba-warning-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                  </div>
+                  <h4>Are you sure?</h4>
+                  <p>This action will permanently delete <strong>ALL {stats?.total || 0} audit logs</strong> from the database. This action cannot be undone.</p>
+                  <div className="ba-delete-actions">
+                    <button className="ba-cancel-btn" onClick={closeDeleteModal} disabled={deleting}>
+                      Cancel
+                    </button>
+                    <button className="ba-confirm-delete-btn" onClick={handleDeleteAll} disabled={deleting}>
+                      {deleting ? (
+                        <>
+                          <span className="scrape-spinner"></span>
+                          Deleting...
+                        </>
+                      ) : (
+                        'Yes, Delete All'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={`ba-delete-result ${deleteResult.success ? 'success' : 'error'}`}>
+                  <div className="ba-result-icon">
+                    {deleteResult.success ? '✓' : '✗'}
+                  </div>
+                  <div className="ba-result-content">
+                    <strong>{deleteResult.success ? 'Deletion Successful' : 'Deletion Failed'}</strong>
+                    <p>{deleteResult.message}</p>
+                  </div>
+                  <button className="ba-close-result-btn" onClick={closeDeleteModal}>Close</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Unnecessary Confirmation Modal */}
+      {showDeleteUnnecessaryModal && (
+        <div className="ba-modal-overlay" onClick={closeDeleteModal}>
+          <div className="ba-modal ba-delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ba-modal-header ba-modal-header-warning">
+              <h3>Delete Unnecessary Data</h3>
+              <button className="ba-close-btn" onClick={closeDeleteModal}>x</button>
+            </div>
+            <div className="ba-modal-body">
+              {!deleteResult ? (
+                <div className="ba-delete-warning">
+                  <div className="ba-warning-icon ba-warning-icon-orange">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </div>
+                  <h4>Delete Unnecessary Records?</h4>
+                  <p>This will delete all audit logs <strong>except</strong> records created by <strong>Lisa Rothwell</strong>.</p>
+                  <p className="ba-keep-note">Lisa Rothwell's records will be preserved.</p>
+                  <div className="ba-delete-actions">
+                    <button className="ba-cancel-btn" onClick={closeDeleteModal} disabled={deleting}>
+                      Cancel
+                    </button>
+                    <button className="ba-confirm-delete-unnecessary-btn" onClick={handleDeleteUnnecessary} disabled={deleting}>
+                      {deleting ? (
+                        <>
+                          <span className="scrape-spinner"></span>
+                          Deleting...
+                        </>
+                      ) : (
+                        'Yes, Delete Unnecessary'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={`ba-delete-result ${deleteResult.success ? 'success' : 'error'}`}>
+                  <div className="ba-result-icon">
+                    {deleteResult.success ? '✓' : '✗'}
+                  </div>
+                  <div className="ba-result-content">
+                    <strong>{deleteResult.success ? 'Deletion Successful' : 'Deletion Failed'}</strong>
+                    <p>{deleteResult.message}</p>
+                  </div>
+                  <button className="ba-close-result-btn" onClick={closeDeleteModal}>Close</button>
                 </div>
               )}
             </div>

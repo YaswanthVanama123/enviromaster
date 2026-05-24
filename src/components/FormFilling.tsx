@@ -31,6 +31,7 @@ import type { VersionStatus } from "../backendservice/api/versionApi";
 import { zohoApi } from "../backendservice/api/zohoApi";
 import { quotaApi } from "../backendservice/api/quotaApi";
 import { mapDistanceApi } from "../backendservice/api/mapDistanceApi";
+import { biginAuditApi } from "../backendservice/api/biginAuditApi";
 import type { AccountTypeDetectionResult } from "../backendservice/api/mapDistanceApi";
 import { useAllServicePricing } from "../backendservice/hooks";
 import { useAuth } from "../backendservice/hooks/useAuth";
@@ -1438,6 +1439,44 @@ function FormFillingContent({
 
     detectAccountType();
   }, [biginCompanyId, paymentOption]);
+
+  // Auto-check Inside Sales based on Lisa Rothwell's audit history
+  // Check if any of the salesperson's agreements (Bigin IDs) appear in Lisa Rothwell's audit within 1 year
+  useEffect(() => {
+    const checkInsideSales = async () => {
+      // Use the logged-in user's name
+      const salespersonName = user?.name || user?.username;
+
+      if (!salespersonName) {
+        return;
+      }
+
+      try {
+        console.log('🔍 [INSIDE SALES] Checking eligibility for salesperson:', salespersonName);
+        const result = await biginAuditApi.checkInsideSalesEligibility(salespersonName);
+
+        if (result?.success && result.data) {
+          const shouldBeInsideSales = result.data.isInsideSales;
+          console.log(`✅ [INSIDE SALES] Result for ${salespersonName}:`, {
+            isInsideSales: shouldBeInsideSales,
+            totalAgreements: result.data.totalAgreementsByUser,
+            agreementsWithBiginIds: result.data.agreementCount,
+            matchCount: result.data.matchCount,
+            biginIds: result.data.allBiginIds?.slice(0, 3),
+          });
+
+          setCommissionState(prev => ({
+            ...prev,
+            isInsideSales: shouldBeInsideSales,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to check inside sales eligibility:', error);
+      }
+    };
+
+    checkInsideSales();
+  }, [user?.name, user?.username]);
 
 
   const {
