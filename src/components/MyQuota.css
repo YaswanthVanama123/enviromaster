@@ -1,0 +1,447 @@
+.my-quota {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Loading State */
+.my-quota__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  color: #6b7280;
+}
+
+.my-quota__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #c00000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.my-quota__error {
+  text-align: center;
+  padding: 48px 24px;
+  color: #dc2626;
+}
+
+.my-quota__error h2 {
+  margin-bottom: 8px;
+}
+
+/* Empty State */
+.my-quota__empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: #6b7280;
+}
+
+/* Header */
+.my-quota__header {
+  margin-bottom: 24px;
+}
+
+.my-quota__title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.my-quota__title-row h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.my-quota__user-badge {
+  padding: 4px 12px;
+  background: #c00000;
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.my-quota__subtitle {
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Period Toggle */
+.my-quota__period-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.my-quota__period-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-quota__period-btn:hover {
+  color: #1f2937;
+}
+
+.my-quota__period-btn.active {
+  background: white;
+  color: #c00000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Current Period Card */
+.my-quota__current-period {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.my-quota__period-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.my-quota__period-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.my-quota__level-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Progress Bar */
+.my-quota__progress-container {
+  margin-bottom: 24px;
+}
+
+.my-quota__progress-bar {
+  position: relative;
+  height: 24px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  overflow: visible;
+}
+
+.my-quota__progress-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+.my-quota__progress-markers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+
+.my-quota__marker {
+  position: absolute;
+  top: -4px;
+  transform: translateX(-50%);
+  height: calc(100% + 8px);
+  width: 2px;
+  background: #9ca3af;
+}
+
+.my-quota__marker span {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.my-quota__progress-label {
+  text-align: center;
+  margin-top: 28px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Stats Grid */
+.my-quota__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .my-quota__stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.my-quota__stat-card {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.my-quota__stat-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.my-quota__stat-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Next Tier Section */
+.my-quota__next-tier {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.my-quota__next-tier h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.my-quota__tier-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.my-quota__tier-card {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px;
+  background: #fef3c7;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.my-quota__tier-card--achieved {
+  background: #dcfce7;
+}
+
+.my-quota__tier-label {
+  font-size: 13px;
+  color: #92400e;
+}
+
+.my-quota__tier-card--achieved .my-quota__tier-label {
+  color: #166534;
+}
+
+.my-quota__tier-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.my-quota__tier-card--achieved .my-quota__tier-value {
+  color: #166534;
+}
+
+/* Agreement Stats */
+.my-quota__agreement-stats {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.my-quota__agreement-stats h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.my-quota__agreement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .my-quota__agreement-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.my-quota__agreement-stat {
+  text-align: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.my-quota__agreement-value {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #c00000;
+}
+
+.my-quota__agreement-label {
+  display: block;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Recent Agreements */
+.my-quota__recent {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.my-quota__recent h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.my-quota__recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-quota__recent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.my-quota__recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.my-quota__recent-customer {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.my-quota__recent-date {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.my-quota__recent-value {
+  font-weight: 600;
+  color: #c00000;
+}
+
+/* Quota History */
+.my-quota__history {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.my-quota__history h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+}
+
+.my-quota__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-quota__history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.my-quota__history-period {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.my-quota__history-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.my-quota__history-badge {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.my-quota__history-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 13px;
+  color: #6b7280;
+}

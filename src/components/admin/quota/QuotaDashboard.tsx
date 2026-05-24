@@ -207,11 +207,11 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
                 <tbody>
                   {quotaStatus.recentAgreements.map((agreement) => (
                     <tr key={agreement._id}>
-                      <td>{agreement.customer.name}</td>
+                      <td>{agreement.customer?.name || 'Unknown'}</td>
                       <td>{formatCurrency(agreement.monthlyValue)}</td>
                       <td>
-                        <span className={`account-type-badge ${agreement.accountType.toLowerCase()}`}>
-                          {agreement.accountType}
+                        <span className={`account-type-badge ${(agreement.accountType || 'anchor').toLowerCase()}`}>
+                          {agreement.accountType || 'N/A'}
                         </span>
                       </td>
                       <td>

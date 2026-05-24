@@ -27,6 +27,7 @@ export default function NavBar() {
     { path: "/form-filling", label: "Form Filling" },
     { path: "/saved-pdfs", label: "Saved PDFs" },
     { path: "/my-commissions", label: "My Commissions" },
+    { path: "/my-quota", label: "My Quota" },
     { path: "/trash", label: "Trash" },
     // Only show Admin links for admin users
     ...(isAdmin ? [

@@ -39,9 +39,14 @@ import { ServiceAgreement } from "./ServiceAgreement";
 import type { ServiceAgreementData } from "./ServiceAgreement/ServiceAgreement";
 import type { ServiceAgreementTemplate } from "../backendservice/api/serviceAgreementTemplateApi";
 import { REFRESH_POWER_SCRUB_DRAFT_CUSTOM_FIELD_ID } from "./services/refreshPowerScrub/refreshPowerScrubDraftPayload";
-import type { QuotaLevel, AccountType, PricingLine, AgreementTerm } from "../backendservice/types/commission.types";
+import type { QuotaLevel, AccountType, PricingLine, AgreementTerm, ServiceFrequency } from "../backendservice/types/commission.types";
 import {
-  DEFAULT_COMMISSION_RULES,
+  COMMISSION_RULES_V2,
+  PRICING_TIERS,
+  ACCOUNT_TYPE_REVENUE_RULES,
+  FREQUENCY_VISITS_PER_YEAR,
+  getPricingTier,
+  calculateCommissionableRevenue,
   QUOTA_LEVEL_OPTIONS,
   ACCOUNT_TYPE_OPTIONS
 } from "../backendservice/types/commission.types";
@@ -172,18 +177,36 @@ type CommissionState = {
   isInsideSales: boolean;
 };
 
+// V2 Commission Result with proper revenue deductions and pricing tiers
 type CommissionResult = {
+  // Input values
+  perVisitRevenue: number;
+  redlinePrice: number;
   monthlyValue: number;
   agreementTerm: AgreementTerm;
   pricingLine: PricingLine;
+
+  // V2 Breakdown
+  priceRatio: number;
+  pricingTier: string;
+  pricingMultiplier: number;
+  requiresApproval: boolean;
+  revenueDeduction: number;
+  anchorBonus: number;
+  commissionableRevenue: number;
+
+  // Commission rates
   baseRate: number;
   agreementMultiplier: number;
-  accountTypeAdjustment: number;
+  accountTypeAdjustment: number; // Legacy - now uses revenue deduction
   greenlineBonus: number;
   renewalBonus: number;
   insideSalesDeduction: number;
   effectiveBaseRate: number;
   finalCommissionRate: number;
+
+  // Commission amounts
+  perVisitCommission: number;
   monthlyCommission: number;
   annualCommission: number;
   contractCommission: number;
@@ -272,16 +295,31 @@ function ContractSummary({
   const { quotaLevel, accountType, isInsideSales } = commissionState;
   const [isCommissionExpanded, setIsCommissionExpanded] = useState<boolean>(true);
 
-  // Calculate commission based on form values
-  const calculateCommission = useMemo(() => {
-    const rules = DEFAULT_COMMISSION_RULES;
+  // Calculate commission using V2 rules (Solange Commission Draft June 2026)
+  const calculateCommission = useMemo((): CommissionResult => {
+    const rules = COMMISSION_RULES_V2;
 
-    // Monthly value from contract total (auto from form)
+    // Get per-visit revenue from form
+    const perVisitRevenue = totalPerVisit || 0;
+
+    // Calculate price ratio from CONTRACT TOTALS (not per-visit averages)
+    // This avoids the issue where one-time costs (installation) skew the per-visit average
+    // Redline = totalOriginalContract, Greenline = totalOriginalContract * 1.30
+    // Price ratio = current / redline = how far above/below redline we are
+    const priceRatio = totalOriginalContract > 0
+      ? totalCurrentContract / totalOriginalContract
+      : 1;
+
+    // For display purposes, calculate what the per-visit redline would be
+    // Use the same ratio applied to the actual per-visit
+    const redlinePrice = priceRatio > 0 ? perVisitRevenue / priceRatio : perVisitRevenue;
+
+    // Monthly value from contract total
     const monthlyValue = globalContractMonths > 0
       ? totalCurrentContract / globalContractMonths
       : totalCurrentContract;
 
-    // Derive agreement term from contract months (auto from form)
+    // Derive agreement term from contract months
     const getAgreementTerm = (): AgreementTerm => {
       if (globalContractMonths >= 36) return '3-year';
       if (globalContractMonths >= 12) return '1-year';
@@ -292,39 +330,63 @@ function ContractSummary({
     const pricingLine: PricingLine = pricingIndicator === 'green' ? 'Greenline' : 'Redline';
     const agreementTerm = getAgreementTerm();
 
-    // Base rate from quota level
+    // Step 1: Get pricing tier based on price ratio (using contract-level ratio)
+    // We pass perVisitRevenue and redlinePrice but the ratio is already calculated from contracts
+    const pricingTier = getPricingTier(perVisitRevenue, redlinePrice);
+    const pricingMultiplier = pricingTier.quotaMultiplier;
+
+    // Step 2: Calculate commissionable revenue with account type adjustments
+    // - Pit: First $100 = no commission
+    // - Bread5: Subtract first $50
+    // - Bread15: Subtract first $75
+    // - Anchor: No deduction, 150% on revenue above $200
+    const { commissionableRevenue, revenueDeduction, anchorBonus } =
+      calculateCommissionableRevenue(perVisitRevenue, accountType);
+
+    // Step 3: Get commission rate based on quota level
     const baseRate = rules.quotaRates[quotaLevel];
-
-    // Agreement multiplier
-    const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
-
-    // Account type adjustment
-    const accountTypeAdjustment = rules.accountTypeAdjustments[accountType];
-
-    // Greenline bonus (auto from form pricing)
-    const greenlineBonus = pricingLine === 'Greenline' ? rules.greenlineBonus : 0;
-
-    // No renewal bonus - form filling is always new business
-    const renewalBonus = 0;
-
-    // Inside sales deduction
     const insideSalesDeduction = isInsideSales ? rules.insideSalesDeduction : 0;
+    const effectiveRate = baseRate + insideSalesDeduction;
 
-    // Effective base rate (before multiplier)
-    const effectiveBaseRate = baseRate + accountTypeAdjustment + greenlineBonus + renewalBonus + insideSalesDeduction;
+    // Step 4: Apply agreement multiplier
+    const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
+    const finalCommissionRate = effectiveRate * (agreementMultiplier / 100);
 
-    // Final commission rate after multiplier
-    const finalCommissionRate = effectiveBaseRate * (agreementMultiplier / 100);
+    // Step 5: Calculate commission amounts
+    // Per-visit commission is based on commissionable revenue
+    const perVisitCommission = commissionableRevenue * (finalCommissionRate / 100);
 
-    // Calculate dollar amounts
-    const monthlyCommission = monthlyValue * (finalCommissionRate / 100);
-    const annualCommission = monthlyCommission * 12;
-    const contractCommission = monthlyCommission * globalContractMonths;
+    // For annual calculation, we need visits per year
+    // Default to monthly (12 visits) if we can't determine frequency
+    const visitsPerYear = 12; // Default monthly
+    const annualCommission = perVisitCommission * visitsPerYear;
+    const monthlyCommission = annualCommission / 12;
+    const contractCommission = annualCommission * (globalContractMonths / 12);
+
+    // Legacy fields for backwards compatibility
+    const greenlineBonus = pricingTier.quotaMultiplier > 1 ? (pricingTier.quotaMultiplier - 1) * 100 : 0;
+    const accountTypeAdjustment = -revenueDeduction; // Convert deduction to negative adjustment for display
+    const renewalBonus = 0; // Form filling is always new business
+
+    // Effective base rate calculation (for display compatibility)
+    const effectiveBaseRate = effectiveRate;
 
     return {
+      // V2 fields
+      perVisitRevenue,
+      redlinePrice,
       monthlyValue,
       agreementTerm,
       pricingLine,
+      priceRatio,
+      pricingTier: pricingTier.label,
+      pricingMultiplier,
+      requiresApproval: pricingTier.requiresApproval,
+      revenueDeduction,
+      anchorBonus,
+      commissionableRevenue,
+
+      // Commission rates
       baseRate,
       agreementMultiplier,
       accountTypeAdjustment,
@@ -333,11 +395,14 @@ function ContractSummary({
       insideSalesDeduction,
       effectiveBaseRate,
       finalCommissionRate,
+
+      // Commission amounts
+      perVisitCommission,
       monthlyCommission,
       annualCommission,
       contractCommission
     };
-  }, [totalCurrentContract, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
+  }, [totalCurrentContract, totalOriginalContract, totalPerVisit, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
 
   // Notify parent of commission result changes
   useEffect(() => {
@@ -1123,55 +1188,76 @@ function ContractSummary({
               </div>
             </div>
 
-            {/* Commission Breakdown */}
+            {/* Commission Breakdown - V2 (Solange Commission Draft June 2026) */}
             <div className="pricing-breakdown" style={{ marginTop: '16px' }}>
+              {/* Revenue Info */}
               <div className="breakdown-row">
-                <span className="breakdown-label">Monthly Value (from contract)</span>
-                <span className="breakdown-value">${calculateCommission.monthlyValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                <span className="breakdown-label">Per-Visit Revenue</span>
+                <span className="breakdown-value">${calculateCommission.perVisitRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className="breakdown-row">
-                <span className="breakdown-label">Agreement Term</span>
-                <span className="breakdown-value">{calculateCommission.agreementTerm} ({calculateCommission.agreementMultiplier}%)</span>
+                <span className="breakdown-label">Pricing Tier</span>
+                <span className={`breakdown-value ${calculateCommission.pricingTier.includes('Greenline') ? 'greenline' : calculateCommission.pricingTier.includes('Below') ? 'redline' : ''}`}>
+                  {calculateCommission.pricingTier}
+                  {calculateCommission.pricingMultiplier !== 1 && ` (${calculateCommission.pricingMultiplier}x quota)`}
+                </span>
               </div>
+              {calculateCommission.requiresApproval && (
+                <div className="breakdown-row" style={{ background: '#fef3c7', borderRadius: '4px', padding: '4px 8px', marginTop: '4px' }}>
+                  <span className="breakdown-label" style={{ color: '#92400e' }}>⚠️ Requires Approval</span>
+                  <span className="breakdown-value" style={{ color: '#92400e' }}>Below Redline pricing</span>
+                </div>
+              )}
+
+              <div className="breakdown-divider"></div>
+
+              {/* Account Type Revenue Adjustments */}
               <div className="breakdown-row">
-                <span className="breakdown-label">Pricing Line</span>
-                <span className={`breakdown-value ${calculateCommission.pricingLine.toLowerCase()}`}>
-                  {calculateCommission.pricingLine}
-                  {calculateCommission.greenlineBonus > 0 && ` (+${calculateCommission.greenlineBonus}%)`}
+                <span className="breakdown-label">Account Type</span>
+                <span className="breakdown-value">{accountType}</span>
+              </div>
+              {calculateCommission.revenueDeduction > 0 && (
+                <div className="breakdown-row">
+                  <span className="breakdown-label">Revenue Deduction ({accountType})</span>
+                  <span className="breakdown-value" style={{ color: '#dc2626' }}>
+                    −${calculateCommission.revenueDeduction.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                  </span>
+                </div>
+              )}
+              {calculateCommission.anchorBonus > 0 && (
+                <div className="breakdown-row">
+                  <span className="breakdown-label">Anchor Bonus (150% on revenue &gt;$200)</span>
+                  <span className="breakdown-value" style={{ color: '#16a34a' }}>
+                    +${calculateCommission.anchorBonus.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                  </span>
+                </div>
+              )}
+              <div className="breakdown-row highlight" style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
+                <span className="breakdown-label" style={{ fontWeight: 600 }}>Commissionable Revenue</span>
+                <span className="breakdown-value" style={{ fontWeight: 600, color: '#0369a1' }}>
+                  ${calculateCommission.commissionableRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </span>
               </div>
 
               <div className="breakdown-divider"></div>
 
+              {/* Commission Rate Calculation */}
+              <div className="breakdown-row">
+                <span className="breakdown-label">Agreement Term</span>
+                <span className="breakdown-value">{calculateCommission.agreementTerm} ({calculateCommission.agreementMultiplier}%)</span>
+              </div>
               <div className="breakdown-row">
                 <span className="breakdown-label">Base Rate ({quotaLevel} quota)</span>
                 <span className="breakdown-value">{calculateCommission.baseRate}%</span>
               </div>
-              {calculateCommission.accountTypeAdjustment !== 0 && (
-                <div className="breakdown-row">
-                  <span className="breakdown-label">Account Adjustment ({accountType})</span>
-                  <span className="breakdown-value" style={{ color: calculateCommission.accountTypeAdjustment < 0 ? '#dc2626' : '#16a34a' }}>
-                    {calculateCommission.accountTypeAdjustment > 0 ? '+' : ''}{calculateCommission.accountTypeAdjustment}%
-                  </span>
-                </div>
-              )}
-              {calculateCommission.greenlineBonus > 0 && (
-                <div className="breakdown-row">
-                  <span className="breakdown-label">Greenline Bonus</span>
-                  <span className="breakdown-value" style={{ color: '#16a34a' }}>+{calculateCommission.greenlineBonus}%</span>
-                </div>
-              )}
               {calculateCommission.insideSalesDeduction !== 0 && (
                 <div className="breakdown-row">
                   <span className="breakdown-label">Inside Sales Deduction</span>
                   <span className="breakdown-value" style={{ color: '#dc2626' }}>{calculateCommission.insideSalesDeduction}%</span>
                 </div>
               )}
-
-              <div className="breakdown-divider"></div>
-
               <div className="breakdown-row">
-                <span className="breakdown-label">Effective Base Rate</span>
+                <span className="breakdown-label">Effective Rate (before multiplier)</span>
                 <span className="breakdown-value">{calculateCommission.effectiveBaseRate.toFixed(2)}%</span>
               </div>
               <div className="breakdown-row highlight">
@@ -1181,6 +1267,13 @@ function ContractSummary({
 
               <div className="breakdown-divider"></div>
 
+              {/* Commission Amounts */}
+              <div className="breakdown-row">
+                <span className="breakdown-label">Per-Visit Commission</span>
+                <span className="breakdown-value" style={{ color: '#16a34a', fontWeight: 600 }}>
+                  ${calculateCommission.perVisitCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </span>
+              </div>
               <div className="breakdown-row">
                 <span className="breakdown-label">Monthly Commission</span>
                 <span className="breakdown-value" style={{ color: '#16a34a', fontWeight: 600 }}>

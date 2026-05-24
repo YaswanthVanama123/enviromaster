@@ -176,7 +176,7 @@
 }
 
 .quota-actual {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 800;
   color: #1e293b;
 }
@@ -184,12 +184,12 @@
 .quota-divider {
   color: #94a3b8;
   font-weight: 400;
-  font-size: 24px;
+  font-size: 18px;
 }
 
 .quota-target {
   color: #64748b;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -292,7 +292,7 @@
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   color: #1e293b;
   line-height: 1;

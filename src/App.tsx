@@ -10,6 +10,7 @@ import AdminPanel from "./components/AdminPanel";
 import ApprovalDocuments from "./components/ApprovalDocuments";
 import PriceChanges from "./components/PriceChanges";
 import MyCommissions from "./components/MyCommissions";
+import MyQuota from "./components/MyQuota";
 import AdminCommissions from "./components/AdminCommissions";
 import { AdminDashboard } from "./components/admin";
 import { LoginPage } from "./components/LoginPage";
@@ -43,6 +44,7 @@ function AppContent() {
             <Route path="/approval-documents" element={<ApprovalDocuments />} />
             <Route path="/price-changes" element={<PriceChanges />} />
             <Route path="/my-commissions" element={<MyCommissions />} />
+            <Route path="/my-quota" element={<MyQuota />} />
           </Route>
 
           {/* Admin-only routes */}
