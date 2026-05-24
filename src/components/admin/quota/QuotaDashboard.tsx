@@ -14,7 +14,7 @@ import {
 } from "../../../backendservice/types/quota.types";
 
 interface QuotaDashboardProps {
-  onViewAgreements: (salesPersonId: string) => void;
+  onViewAgreements?: (salesPersonId: string) => void;
 }
 
 export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements }) => {
@@ -185,12 +185,14 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
           <div className="dashboard-card recent-agreements">
             <div className="card-header">
               <h3>Recent Agreements</h3>
-              <button
-                className="view-all-btn"
-                onClick={() => onViewAgreements(selectedPerson || "")}
-              >
-                View All
-              </button>
+              {onViewAgreements && (
+                <button
+                  className="view-all-btn"
+                  onClick={() => onViewAgreements(selectedPerson || "")}
+                >
+                  View All
+                </button>
+              )}
             </div>
             {quotaStatus.recentAgreements.length === 0 ? (
               <div className="empty-state">No agreements this period</div>

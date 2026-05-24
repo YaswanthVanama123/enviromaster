@@ -6,6 +6,13 @@
   margin-bottom: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
+  z-index: 1;
+}
+
+/* When date picker popup is open, elevate the entire card above other cards */
+.sf .agreement-card:has(.timeline-date-picker-popup),
+.trash-view-page .agreement-card:has(.timeline-date-picker-popup) {
+  z-index: 9999;
 }
 
 .sf .agreement-header,

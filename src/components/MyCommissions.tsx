@@ -85,6 +85,10 @@ function formatMoney(amount: number): string {
   }).format(amount);
 }
 
+function formatPercent(value: number): string {
+  return value.toFixed(2);
+}
+
 function formatDate(dateStr: string): string {
   if (!dateStr) return '—';
   const date = new Date(dateStr);
@@ -214,7 +218,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Avg Commission Rate</span>
             <span className="my-commissions__summary-value">
-              {data.totals.averageCommissionRate}%
+              {formatPercent(data.totals.averageCommissionRate)}%
             </span>
           </div>
         </div>
@@ -302,7 +306,7 @@ export default function MyCommissions() {
                           {formatMoney(agreement.commission.total)}
                         </span>
                         <span className="my-commissions__rate-badge">
-                          {agreement.commission.rate}%
+                          {formatPercent(agreement.commission.rate)}%
                         </span>
                       </div>
                     </div>
@@ -323,33 +327,33 @@ export default function MyCommissions() {
                           </div>
                           <div className="my-commissions__breakdown-item">
                             <span>Base Rate ({agreement.commission.breakdown.agreementTerm})</span>
-                            <span>{agreement.commission.breakdown.baseRate}%</span>
+                            <span>{formatPercent(agreement.commission.breakdown.baseRate)}%</span>
                           </div>
                           <div className="my-commissions__breakdown-item">
                             <span>Agreement Multiplier</span>
-                            <span>{agreement.commission.breakdown.multiplier}%</span>
+                            <span>{formatPercent(agreement.commission.breakdown.multiplier)}%</span>
                           </div>
                           {agreement.commission.breakdown.accountTypeAdjustment !== 0 && (
                             <div className="my-commissions__breakdown-item">
                               <span>Account Type Adjustment</span>
-                              <span>{agreement.commission.breakdown.accountTypeAdjustment > 0 ? '+' : ''}{agreement.commission.breakdown.accountTypeAdjustment}%</span>
+                              <span>{agreement.commission.breakdown.accountTypeAdjustment > 0 ? '+' : ''}{formatPercent(agreement.commission.breakdown.accountTypeAdjustment)}%</span>
                             </div>
                           )}
                           {agreement.commission.breakdown.greenlineBonus > 0 && (
                             <div className="my-commissions__breakdown-item my-commissions__breakdown-item--bonus">
                               <span>Greenline Bonus</span>
-                              <span>+{agreement.commission.breakdown.greenlineBonus}%</span>
+                              <span>+{formatPercent(agreement.commission.breakdown.greenlineBonus)}%</span>
                             </div>
                           )}
                           {agreement.commission.breakdown.insideSalesDeduction !== 0 && (
                             <div className="my-commissions__breakdown-item my-commissions__breakdown-item--deduction">
                               <span>Inside Sales Deduction</span>
-                              <span>{agreement.commission.breakdown.insideSalesDeduction}%</span>
+                              <span>{formatPercent(agreement.commission.breakdown.insideSalesDeduction)}%</span>
                             </div>
                           )}
                           <div className="my-commissions__breakdown-item my-commissions__breakdown-item--total">
                             <span>Final Rate</span>
-                            <span>{agreement.commission.rate}%</span>
+                            <span>{formatPercent(agreement.commission.rate)}%</span>
                           </div>
                           <div className="my-commissions__breakdown-item my-commissions__breakdown-item--total">
                             <span>Monthly Commission</span>
