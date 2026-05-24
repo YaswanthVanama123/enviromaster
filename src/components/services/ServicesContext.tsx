@@ -34,10 +34,11 @@ interface ServicesContextValue {
   sanicleanPaperCreditPerWeek: number; 
 
 
-  globalContractMonths: number; 
+  globalContractMonths: number;
   setGlobalContractMonths: (months: number) => void;
   getTotalAgreementAmount: () => number;
   getTotalPerVisitAmount: () => number;
+  getTotalMonthlyRecurringRevenue: () => number;
   allServicesOneTime: boolean;
 
 
@@ -289,6 +290,68 @@ export const ServicesProvider: React.FC<{
     return totalPerVisit;
   }, [servicesState]);
 
+  // Get total monthly recurring revenue (accounts for service frequencies)
+  // Weekly services: perVisit × 4.33, Monthly services: perVisit × 1, etc.
+  const getTotalMonthlyRecurringRevenue = useCallback((): number => {
+    let totalMonthlyRecurring = 0;
+
+    Object.keys(servicesState).forEach((serviceName) => {
+      const serviceData = servicesState[serviceName as keyof ServicesState];
+
+      if (serviceData?.isActive && !isOneTimeService(serviceData)) {
+        // First try to get the pre-calculated monthly recurring value
+        const monthlyRecurring =
+          serviceData.totals?.monthlyRecurring?.amount ??
+          serviceData.monthlyRecurring ??
+          serviceData.calc?.monthlyRecurring ??
+          serviceData.calc?.monthlyBillRated;
+
+        if (typeof monthlyRecurring === 'number' && monthlyRecurring > 0) {
+          totalMonthlyRecurring += monthlyRecurring;
+          console.log(`📊 [MONTHLY RECURRING] ${serviceName}: $${monthlyRecurring.toFixed(2)} (from pre-calculated)`);
+        } else {
+          // Fall back to calculating from per-visit and frequency
+          const perVisit =
+            (typeof serviceData.perVisit === 'number' && serviceData.perVisit > 0
+              ? serviceData.perVisit
+              : typeof serviceData.totals?.perVisit?.amount === 'number' && serviceData.totals.perVisit.amount > 0
+                ? serviceData.totals.perVisit.amount
+                : 0);
+
+          if (perVisit > 0) {
+            // Get frequency multiplier (visits per month)
+            const frequencyKey = normalizeFrequencyKey(
+              serviceData.frequency ??
+              serviceData.frequencyKey ??
+              serviceData.frequencyDisplay?.value
+            );
+
+            // Map frequency to visits per month
+            const frequencyMultipliers: Record<string, number> = {
+              'weekly': 4.33,
+              'biweekly': 2.17,
+              'twicepermonth': 2,
+              'monthly': 1,
+              'everyfourweeks': 1,
+              'bimonthly': 0.5,
+              'quarterly': 0.33,
+              'biannual': 0.17,
+              'annual': 0.08,
+            };
+
+            const visitsPerMonth = frequencyMultipliers[frequencyKey || 'monthly'] ?? 1;
+            const calculatedMonthly = perVisit * visitsPerMonth;
+            totalMonthlyRecurring += calculatedMonthly;
+            console.log(`📊 [MONTHLY RECURRING] ${serviceName}: $${calculatedMonthly.toFixed(2)} (perVisit: $${perVisit} × ${visitsPerMonth} visits/month)`);
+          }
+        }
+      }
+    });
+
+    console.log(`📊 [MONTHLY RECURRING] Total: $${totalMonthlyRecurring.toFixed(2)}`);
+    return totalMonthlyRecurring;
+  }, [servicesState]);
+
 
   const getTotalOriginalContractTotal = useCallback((): number => {
     let totalOriginal = 0;
@@ -366,6 +429,7 @@ export const ServicesProvider: React.FC<{
       setGlobalContractMonths,
       getTotalAgreementAmount,
       getTotalPerVisitAmount,
+      getTotalMonthlyRecurringRevenue,
       allServicesOneTime,
 
       getTotalOriginalContractTotal,
@@ -380,7 +444,7 @@ export const ServicesProvider: React.FC<{
       globalParkingChargeFrequency,
       setGlobalParkingChargeFrequency,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); 
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); 
 
   return (
     <ServicesContext.Provider value={value}>

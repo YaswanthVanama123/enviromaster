@@ -244,6 +244,7 @@ function ContractSummary({
     getTotalAgreementAmount,
     getTotalOriginalContractTotal,
     getTotalPerVisitAmount,
+    getTotalMonthlyRecurringRevenue,
     allServicesOneTime,
     globalTripCharge,
     setGlobalTripCharge,
@@ -265,6 +266,7 @@ function ContractSummary({
   const totalCurrentContract = getTotalAgreementAmount();
   const totalOriginalContract = getTotalOriginalContractTotal();
   const totalPerVisit = getTotalPerVisitAmount();
+  const totalMonthlyRecurring = getTotalMonthlyRecurringRevenue();
   const CROSS_SERVICE_MIN_PER_VISIT = 50;
   const effectiveTotalAmount = totalAmount > 0 ? Math.max(totalAmount, CROSS_SERVICE_MIN_PER_VISIT) : 0;
   const perVisitMeetsMinimum = totalPerVisit >= CROSS_SERVICE_MIN_PER_VISIT;
@@ -299,8 +301,9 @@ function ContractSummary({
   const calculateCommission = useMemo((): CommissionResult => {
     const rules = COMMISSION_RULES_V2;
 
-    // Get per-visit revenue from form
-    const perVisitRevenue = totalPerVisit || 0;
+    // Use monthly recurring revenue (accounts for different service frequencies)
+    // This properly calculates: Weekly services × 4.33, Monthly × 1, etc.
+    const perVisitRevenue = totalMonthlyRecurring || 0;
 
     // Calculate price ratio from CONTRACT TOTALS (not per-visit averages)
     // This avoids the issue where one-time costs (installation) skew the per-visit average
@@ -402,7 +405,7 @@ function ContractSummary({
       annualCommission,
       contractCommission
     };
-  }, [totalCurrentContract, totalOriginalContract, totalPerVisit, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
+  }, [totalCurrentContract, totalOriginalContract, totalMonthlyRecurring, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
 
   // Notify parent of commission result changes
   useEffect(() => {
@@ -1192,7 +1195,7 @@ function ContractSummary({
             <div className="pricing-breakdown" style={{ marginTop: '16px' }}>
               {/* Revenue Info */}
               <div className="breakdown-row">
-                <span className="breakdown-label">Per-Visit Revenue</span>
+                <span className="breakdown-label">Monthly Revenue</span>
                 <span className="breakdown-value">${calculateCommission.perVisitRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className="breakdown-row">
@@ -1441,6 +1444,7 @@ function FormFillingContent({
     servicesState,
     getTotalAgreementAmount,
     getTotalPerVisitAmount,
+    getTotalMonthlyRecurringRevenue,
     getTotalOriginalContractTotal,
     globalContractMonths,
     globalTripCharge,
