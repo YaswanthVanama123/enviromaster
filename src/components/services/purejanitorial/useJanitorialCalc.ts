@@ -169,7 +169,9 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
         ...(availableTypes.length > 0 && !availableTypes.includes(prev.placeType)
           ? { placeType: availableTypes[0] }
           : {}),
-        // Apply admin defaults to new (non-edit) forms
+        // Apply admin defaults ONLY for new forms (not editing)
+        // When editing, keep the salesperson's saved values
+        // Greenline/Redline comparison uses adminRates separately
         ...(!initialData ? {
           costPerHour:    rates.costPerHour,
           laborTaxPct:    rates.laborTaxPct,

@@ -899,7 +899,11 @@ export const PricingTablesView: React.FC = () => {
                     {selectedServiceData.isActive ? "● Active" : "● Inactive"}
                   </span>
                 </h3>
-                <p style={styles.tableSubtitle} className="pricing-table-subtitle">{selectedServiceData.description}</p>
+                <div
+                  style={styles.tableSubtitle}
+                  className="pricing-table-subtitle"
+                  dangerouslySetInnerHTML={{ __html: selectedServiceData.description || '' }}
+                />
               </div>
               <button
                 style={styles.viewAllFieldsBtn}
