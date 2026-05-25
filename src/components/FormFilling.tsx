@@ -297,6 +297,7 @@ function ContractSummary({
   // Commission Calculator State - use props from parent
   const { quotaLevel, accountType, isInsideSales } = commissionState;
   const [isCommissionExpanded, setIsCommissionExpanded] = useState<boolean>(true);
+  const [isExplanationExpanded, setIsExplanationExpanded] = useState<boolean>(false);
 
   // Calculate commission using V2 rules (Solange Commission Draft June 2026)
   const calculateCommission = useMemo((): CommissionResult => {
@@ -1326,6 +1327,155 @@ function ContractSummary({
                   </span>
                 </div>
               )}
+
+              {/* Expandable Explanation Section */}
+              <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '12px' }}>
+                <div
+                  onClick={() => setIsExplanationExpanded(!isExplanationExpanded)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    padding: '10px 12px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>💡</span>
+                    <span style={{ fontWeight: 600, color: '#334155', fontSize: '14px' }}>
+                      How is my commission calculated?
+                    </span>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#64748b"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transform: isExplanationExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease'
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+
+                {isExplanationExpanded && (
+                  <div style={{
+                    marginTop: '12px',
+                    padding: '16px',
+                    backgroundColor: '#f0f9ff',
+                    borderRadius: '8px',
+                    border: '1px solid #bae6fd',
+                    fontSize: '13px',
+                    lineHeight: '1.7',
+                    color: '#0c4a6e'
+                  }}>
+                    <p style={{ margin: '0 0 12px 0', fontWeight: 600, fontSize: '14px', color: '#0369a1' }}>
+                      Here's how your commission was calculated:
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {/* Step 1: Revenue */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <span style={{ backgroundColor: '#0ea5e9', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>1</span>
+                        <span>
+                          <strong>Monthly Revenue:</strong> Your agreement generates <strong>${calculateCommission.perVisitRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> in monthly revenue.
+                        </span>
+                      </div>
+
+                      {/* Step 2: Account Type Adjustments */}
+                      {(calculateCommission.revenueDeduction > 0 || calculateCommission.anchorBonus > 0) && (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                          <span style={{ backgroundColor: '#0ea5e9', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>2</span>
+                          <span>
+                            <strong>Account Type ({accountType}):</strong>{' '}
+                            {calculateCommission.revenueDeduction > 0 && (
+                              <>A deduction of <strong style={{ color: '#dc2626' }}>-${calculateCommission.revenueDeduction.toFixed(2)}</strong> is applied because {accountType} accounts have a base amount not eligible for commission. </>
+                            )}
+                            {calculateCommission.anchorBonus > 0 && (
+                              <>As an Anchor account, you receive a <strong style={{ color: '#16a34a' }}>150% bonus</strong> on revenue above $200, adding <strong style={{ color: '#16a34a' }}>+${calculateCommission.anchorBonus.toFixed(2)}</strong>. </>
+                            )}
+                            This makes your <strong>commissionable revenue ${calculateCommission.commissionableRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>.
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Step 3: Base Rate */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <span style={{ backgroundColor: '#0ea5e9', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>{calculateCommission.revenueDeduction > 0 || calculateCommission.anchorBonus > 0 ? '3' : '2'}</span>
+                        <span>
+                          <strong>Base Rate:</strong> Your quota status is <strong>{quotaLevel === 'double' ? 'Double Quota' : quotaLevel === 'above' ? 'Above Quota' : 'Below Quota'}</strong>, which gives you a base commission rate of <strong>{calculateCommission.baseRate}%</strong>.
+                          {isInsideSales && (
+                            <> Since this is an inside sales deal, <strong style={{ color: '#dc2626' }}>-3%</strong> is deducted, bringing your effective rate to <strong>{calculateCommission.effectiveBaseRate.toFixed(2)}%</strong>.</>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Step 4: Agreement Multiplier */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <span style={{ backgroundColor: '#0ea5e9', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>{calculateCommission.revenueDeduction > 0 || calculateCommission.anchorBonus > 0 ? '4' : '3'}</span>
+                        <span>
+                          <strong>Agreement Term:</strong> This is a <strong>{calculateCommission.agreementTerm}</strong> agreement with a <strong>{calculateCommission.agreementMultiplier}%</strong> multiplier.
+                          {calculateCommission.agreementMultiplier > 100 && (
+                            <> Longer agreements reward you with higher commission multipliers!</>
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Final Calculation */}
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '12px',
+                        backgroundColor: '#dcfce7',
+                        borderRadius: '6px',
+                        border: '1px solid #86efac'
+                      }}>
+                        <strong style={{ color: '#166534' }}>Final Calculation:</strong>
+                        <div style={{ marginTop: '6px', color: '#15803d' }}>
+                          ${calculateCommission.commissionableRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})} × {calculateCommission.finalCommissionRate.toFixed(2)}% = <strong>${calculateCommission.perVisitCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> per month
+                        </div>
+                        <div style={{ marginTop: '4px', color: '#15803d' }}>
+                          ${calculateCommission.perVisitCommission.toLocaleString('en-US', {minimumFractionDigits: 2})} × 12 months = <strong>${calculateCommission.annualCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> annually
+                        </div>
+                        {!allServicesOneTime && globalContractMonths > 12 && (
+                          <div style={{ marginTop: '4px', color: '#15803d' }}>
+                            ${calculateCommission.monthlyCommission.toLocaleString('en-US', {minimumFractionDigits: 2})} × {globalContractMonths} months = <strong>${calculateCommission.contractCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> total contract commission
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tips */}
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '10px 12px',
+                        backgroundColor: '#fef3c7',
+                        borderRadius: '6px',
+                        border: '1px solid #fcd34d',
+                        fontSize: '12px',
+                        color: '#92400e'
+                      }}>
+                        <strong>💡 Tips to earn more commission:</strong>
+                        <ul style={{ margin: '6px 0 0 0', paddingLeft: '16px' }}>
+                          {quotaLevel === 'below' && <li>Reach your sales quota to increase your base rate to 6% or 9%</li>}
+                          {calculateCommission.agreementMultiplier < 135 && <li>Sell longer term agreements (3-year = 135% multiplier)</li>}
+                          {isInsideSales && <li>Outside sales deals don't have the 3% inside sales deduction</li>}
+                          <li>Anchor accounts give 150% bonus on revenue above $200</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </>
           )}
