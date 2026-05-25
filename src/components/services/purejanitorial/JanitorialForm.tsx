@@ -58,6 +58,20 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           contractTotal: calc.contractTotal,
           originalContractTotal: calc.originalContractTotal,
           perVisit: calc.perVisit,
+          // Store form input values for restoration when editing
+          // Using _restoreData to avoid conflict with resolveServiceData() in pdfService
+          _restoreData: {
+            frequency: form.frequency,
+            visitsPerWeek: form.visitsPerWeek,
+            placeType: form.placeType,
+            sqFt: form.sqFt,
+            costPerHour: form.costPerHour,
+            laborTaxPct: form.laborTaxPct,
+            grossProfitPct: form.grossProfitPct,
+            supplies: form.supplies,
+            contractMonths: form.contractMonths,
+            notes: form.notes,
+          },
           frequency: {
             isDisplay: true,
             orderNo: 1,
@@ -66,14 +80,51 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
             value: janitorialFrequencyLabels[form.frequency] ?? form.frequency,
             frequencyKey: form.frequency,
           },
+          visitsPerWeek: {
+            isDisplay: true,
+            orderNo: 2,
+            label: "Visits per Week",
+            type: "text" as const,
+            value: String(form.visitsPerWeek),
+          },
+          placeType: {
+            isDisplay: true,
+            orderNo: 3,
+            label: "Place Type",
+            type: "text" as const,
+            value: placeTypeLabel(form.placeType),
+            placeTypeKey: form.placeType,
+          },
+          sqFt: {
+            isDisplay: true,
+            orderNo: 4,
+            label: "Square Feet",
+            type: "text" as const,
+            value: String(form.sqFt),
+          },
+          hoursPerVisit: {
+            isDisplay: true,
+            orderNo: 5,
+            label: "Hours Per Visit",
+            type: "text" as const,
+            value: `${calc.hoursPerVisit.toFixed(2)} hrs`,
+          },
+          costPerHour: {
+            isDisplay: true,
+            orderNo: 6,
+            label: "Cost Per Hour",
+            type: "dollar" as const,
+            amount: form.costPerHour,
+          },
           totals: {
             annualBaseLabor: {
               isDisplay: true, orderNo: 30, label: "Annual Base Labor",
               type: "dollar" as const, amount: calc.annualBaseLabor,
             },
             annualLaborTax: {
-              isDisplay: true, orderNo: 31, label: `Annual Labor Tax (${form.laborTaxPct}%)`,
+              isDisplay: true, orderNo: 31, label: `Labor Tax (${form.laborTaxPct}%)`,
               type: "dollar" as const, amount: calc.annualLaborTax,
+              laborTaxPct: form.laborTaxPct,
             },
             annualSupplies: {
               isDisplay: true, orderNo: 32, label: "Annual Supplies",
@@ -87,6 +138,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
               isDisplay: true, orderNo: 34,
               label: `Gross Profit (${form.grossProfitPct}%)`,
               type: "dollar" as const, amount: calc.grossProfit,
+              grossProfitPct: form.grossProfitPct,
             },
             annualContractValue: {
               isDisplay: true, orderNo: 35, label: "Annual Contract Value",
@@ -111,6 +163,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
               amount: calc.contractTotal,
             },
           },
+          supplies: form.supplies,
           notes: form.notes ?? "",
         }
       : null;
@@ -312,132 +365,134 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       ))}
 
-      {/* Pricing Summary */}
-      <div className="svc-h-row svc-h-row-sub">
-        <div className="svc-h-sub">Pricing Summary</div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Annual Base Labor</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.annualBaseLabor)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Annual Labor Tax ({form.laborTaxPct}%)</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.annualLaborTax)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Total Annual Labor</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.annualBaseLabor + calc.annualLaborTax)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Annual Supplies</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.totalAnnualSupplies)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Total Annual Cost</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.totalAnnualCost)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Gross Profit ({form.grossProfitPct}%)</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.grossProfit)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      <div className="svc-row svc-row-charge">
-        <label>Annual Contract Value</label>
-        <div className="svc-row-right">
-          <span className="svc-small">$</span>
-          <input className="svc-in" type="text" readOnly value={fmt(calc.annualContractValue)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-        </div>
-      </div>
-
-      {/* Show Monthly Recurring for month-based frequencies */}
-      {form.frequency !== "oneTime" && !VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
-        <div className="svc-row svc-row-charge">
-          <label>Monthly Recurring</label>
-          <div className="svc-row-right">
-            <span className="svc-small">$</span>
-            <input className="svc-in" type="text" readOnly value={fmt(calc.monthlyRecurring)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-          </div>
-        </div>
-      )}
-
-      {/* Show Recurring Visit Total for visit-based frequencies */}
-      {VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
-        <div className="svc-row svc-row-charge">
-          <label>Recurring Visit Total</label>
-          <div className="svc-row-right">
-            <span className="svc-small">$</span>
-            <input className="svc-in" type="text" readOnly value={fmt(calc.perVisit)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
-          </div>
-        </div>
-      )}
-
-      {/* Greenline / Redline indicator */}
+      {/* Pricing Summary - only show when sqFt > 0 */}
       {form.sqFt > 0 && (
-        <div className="svc-row" style={{ marginTop: "-10px", paddingTop: "5px" }}>
-          <label></label>
-          <div className="svc-row-right">
-            {calc.contractTotal > calc.originalContractTotal * 1.30 ? (
-              <span style={{ color: "#388e3c", fontSize: "13px", fontWeight: 600, padding: "4px 8px", backgroundColor: "#e8f5e9", borderRadius: "4px", display: "inline-block" }}>
-                🟢 Greenline Pricing
-              </span>
-            ) : (
-              <span style={{ color: "#d32f2f", fontSize: "13px", fontWeight: 600, padding: "4px 8px", backgroundColor: "#ffebee", borderRadius: "4px", display: "inline-block" }}>
-                🔴 Redline Pricing
-              </span>
-            )}
+        <>
+          <div className="svc-h-row svc-h-row-sub">
+            <div className="svc-h-sub">Pricing Summary</div>
           </div>
-        </div>
-      )}
 
-      {/* Contract Total */}
-      <div className="svc-row svc-row-charge">
-        <label>{form.frequency === "oneTime" ? "Total Price" : `Contract Total (${form.contractMonths} mo)`}</label>
-        <div className="svc-row-right">
-          <span style={{ fontSize: "18px", fontWeight: "bold", marginLeft: "10px" }}>$</span>
-          <input
-            type="text"
-            readOnly
-            className="svc-in"
-            value={fmt(calc.contractTotal)}
-            style={{
-              borderBottom: "2px solid #ff0000",
-              borderTop: "none",
-              borderLeft: "none",
-              borderRight: "none",
-              backgroundColor: "transparent",
-              fontSize: "16px",
-              fontWeight: "bold",
-              padding: "4px",
-              width: "140px",
-              marginLeft: "5px",
-            }}
-          />
-        </div>
-      </div>
+          <div className="svc-row svc-row-charge">
+            <label>Annual Base Labor</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.annualBaseLabor)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          <div className="svc-row svc-row-charge">
+            <label>Annual Labor Tax ({form.laborTaxPct}%)</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.annualLaborTax)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          <div className="svc-row svc-row-charge">
+            <label>Total Annual Labor</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.annualBaseLabor + calc.annualLaborTax)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          <div className="svc-row svc-row-charge">
+            <label>Annual Supplies</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.totalAnnualSupplies)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          <div className="svc-row svc-row-charge">
+            <label>Total Annual Cost</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.totalAnnualCost)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          <div className="svc-row svc-row-charge">
+            <label>Gross Profit ({form.grossProfitPct}%)</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.grossProfit)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          <div className="svc-row svc-row-charge">
+            <label>Annual Contract Value</label>
+            <div className="svc-row-right">
+              <span className="svc-small">$</span>
+              <input className="svc-in" type="text" readOnly value={fmt(calc.annualContractValue)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+            </div>
+          </div>
+
+          {/* Show Monthly Recurring for month-based frequencies */}
+          {form.frequency !== "oneTime" && !VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
+            <div className="svc-row svc-row-charge">
+              <label>Monthly Recurring</label>
+              <div className="svc-row-right">
+                <span className="svc-small">$</span>
+                <input className="svc-in" type="text" readOnly value={fmt(calc.monthlyRecurring)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+              </div>
+            </div>
+          )}
+
+          {/* Show Recurring Visit Total for visit-based frequencies */}
+          {VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
+            <div className="svc-row svc-row-charge">
+              <label>Recurring Visit Total</label>
+              <div className="svc-row-right">
+                <span className="svc-small">$</span>
+                <input className="svc-in" type="text" readOnly value={fmt(calc.perVisit)} style={{ backgroundColor: "white", border: "none", width: "100px" }} />
+              </div>
+            </div>
+          )}
+
+          {/* Greenline / Redline indicator */}
+          <div className="svc-row" style={{ marginTop: "-10px", paddingTop: "5px" }}>
+            <label></label>
+            <div className="svc-row-right">
+              {calc.contractTotal > calc.originalContractTotal * 1.30 ? (
+                <span style={{ color: "#388e3c", fontSize: "13px", fontWeight: 600, padding: "4px 8px", backgroundColor: "#e8f5e9", borderRadius: "4px", display: "inline-block" }}>
+                  🟢 Greenline Pricing
+                </span>
+              ) : (
+                <span style={{ color: "#d32f2f", fontSize: "13px", fontWeight: 600, padding: "4px 8px", backgroundColor: "#ffebee", borderRadius: "4px", display: "inline-block" }}>
+                  🔴 Redline Pricing
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Contract Total */}
+          <div className="svc-row svc-row-charge">
+            <label>{form.frequency === "oneTime" ? "Total Price" : `Contract Total (${form.contractMonths} mo)`}</label>
+            <div className="svc-row-right">
+              <span style={{ fontSize: "18px", fontWeight: "bold", marginLeft: "10px" }}>$</span>
+              <input
+                type="text"
+                readOnly
+                className="svc-in"
+                value={fmt(calc.contractTotal)}
+                style={{
+                  borderBottom: "2px solid #ff0000",
+                  borderTop: "none",
+                  borderLeft: "none",
+                  borderRight: "none",
+                  backgroundColor: "transparent",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  padding: "4px",
+                  width: "140px",
+                  marginLeft: "5px",
+                }}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Notes */}
       <div className="svc-row">

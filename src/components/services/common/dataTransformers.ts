@@ -1277,6 +1277,151 @@ export function transformJanitorialData(structuredData: any): any {
   return formState;
 }
 
+/**
+ * Transform pureJanitorial service data back to form state for editing.
+ * This handles the pureJanitorial form structure which is different from
+ * the legacy janitorial form.
+ */
+export function transformPureJanitorialData(structuredData: any): any {
+  if (!structuredData || !structuredData.isActive) return undefined;
+
+  console.log('🔄 Transforming pureJanitorial data:', structuredData);
+
+  // If _restoreData is present (saved with new format), use it directly
+  // Note: Using _restoreData instead of formData to avoid conflict with resolveServiceData()
+  if (structuredData._restoreData) {
+    console.log('✅ Using _restoreData for pureJanitorial restoration:', structuredData._restoreData);
+    return {
+      frequency: structuredData._restoreData.frequency || 'weekly',
+      visitsPerWeek: structuredData._restoreData.visitsPerWeek || 1,
+      placeType: structuredData._restoreData.placeType || 'office',
+      sqFt: structuredData._restoreData.sqFt || 0,
+      costPerHour: structuredData._restoreData.costPerHour || 25,
+      laborTaxPct: structuredData._restoreData.laborTaxPct || 0,
+      grossProfitPct: structuredData._restoreData.grossProfitPct || 30,
+      supplies: structuredData._restoreData.supplies || [],
+      contractMonths: structuredData._restoreData.contractMonths || 12,
+      notes: structuredData._restoreData.notes || '',
+    };
+  }
+
+  // Also check for formData (backward compatibility)
+  if (structuredData.formData) {
+    console.log('✅ Using formData for pureJanitorial restoration:', structuredData.formData);
+    return {
+      frequency: structuredData.formData.frequency || 'weekly',
+      visitsPerWeek: structuredData.formData.visitsPerWeek || 1,
+      placeType: structuredData.formData.placeType || 'office',
+      sqFt: structuredData.formData.sqFt || 0,
+      costPerHour: structuredData.formData.costPerHour || 25,
+      laborTaxPct: structuredData.formData.laborTaxPct || 0,
+      grossProfitPct: structuredData.formData.grossProfitPct || 30,
+      supplies: structuredData.formData.supplies || [],
+      contractMonths: structuredData.formData.contractMonths || 12,
+      notes: structuredData.formData.notes || '',
+    };
+  }
+
+  // Fallback: try to extract from structured display fields (legacy format)
+  const formState: any = {
+    notes: structuredData.notes || "",
+  };
+
+  // Extract frequency
+  if (structuredData.frequency) {
+    const frequencyKey = structuredData.frequency.frequencyKey;
+    if (frequencyKey) {
+      formState.frequency = frequencyKey;
+    } else {
+      // Try to parse from display value
+      const freq = structuredData.frequency.value?.toLowerCase();
+      const frequencyMap: Record<string, string> = {
+        'weekly': 'weekly',
+        'monthly': 'monthly',
+        'one-time': 'oneTime',
+        'one time': 'oneTime',
+        'every 4 weeks': 'everyFourWeeks',
+        'bimonthly': 'bimonthly',
+        'quarterly': 'quarterly',
+        'biannual': 'biannual',
+        'annual': 'annual',
+      };
+      formState.frequency = frequencyMap[freq] || 'weekly';
+    }
+  }
+
+  // Extract visitsPerWeek
+  if (structuredData.visitsPerWeek) {
+    const value = structuredData.visitsPerWeek.value;
+    formState.visitsPerWeek = parseInt(value) || 1;
+  }
+
+  // Extract placeType
+  if (structuredData.placeType) {
+    const placeTypeKey = structuredData.placeType.placeTypeKey;
+    if (placeTypeKey) {
+      formState.placeType = placeTypeKey;
+    } else {
+      // Try to parse from display value
+      const placeType = structuredData.placeType.value?.toLowerCase();
+      const placeTypeMap: Record<string, string> = {
+        'office': 'office',
+        'home': 'home',
+        'restaurant': 'restaurant',
+        'business place': 'businessPlace',
+      };
+      formState.placeType = placeTypeMap[placeType] || 'office';
+    }
+  }
+
+  // Extract sqFt
+  if (structuredData.sqFt) {
+    const value = structuredData.sqFt.value;
+    formState.sqFt = parseInt(value) || 0;
+  }
+
+  // Extract costPerHour
+  if (structuredData.costPerHour) {
+    formState.costPerHour = structuredData.costPerHour.amount || 25;
+  }
+
+  // Extract laborTaxPct from totals
+  if (structuredData.totals?.annualLaborTax?.laborTaxPct !== undefined) {
+    formState.laborTaxPct = structuredData.totals.annualLaborTax.laborTaxPct;
+  } else if (structuredData.totals?.annualLaborTax?.label) {
+    // Try to parse from label like "Annual Labor Tax (15%)"
+    const match = structuredData.totals.annualLaborTax.label.match(/\((\d+(?:\.\d+)?)%\)/);
+    if (match) {
+      formState.laborTaxPct = parseFloat(match[1]);
+    }
+  }
+
+  // Extract grossProfitPct from totals
+  if (structuredData.totals?.grossProfit?.grossProfitPct !== undefined) {
+    formState.grossProfitPct = structuredData.totals.grossProfit.grossProfitPct;
+  } else if (structuredData.totals?.grossProfit?.label) {
+    // Try to parse from label like "Gross Profit (30%)"
+    const match = structuredData.totals.grossProfit.label.match(/\((\d+(?:\.\d+)?)%\)/);
+    if (match) {
+      formState.grossProfitPct = parseFloat(match[1]);
+    }
+  }
+
+  // Extract supplies
+  if (structuredData.supplies && Array.isArray(structuredData.supplies)) {
+    formState.supplies = structuredData.supplies;
+  }
+
+  // Extract contractMonths from totals
+  if (structuredData.totals?.contract?.months) {
+    formState.contractMonths = structuredData.totals.contract.months;
+  }
+
+  console.log('✅ Final mapped pureJanitorial form state:', formState);
+
+  return formState;
+}
+
 export function transformSaniscrubData(structuredData: any): any {
   if (!structuredData || !structuredData.isActive) return undefined;
 
@@ -2338,8 +2483,13 @@ export function transformServiceData(serviceId: string, structuredData: any): an
     case "stripWax":
       return transformStripWaxData(structuredData);
     case "janitorial":
-    case "pureJanitorial":
+      // Check if this is actually pureJanitorial data (web app saves pureJanitorial under 'janitorial' key)
+      if (structuredData?.serviceId === 'pureJanitorial') {
+        return transformPureJanitorialData(structuredData);
+      }
       return transformJanitorialData(structuredData);
+    case "pureJanitorial":
+      return transformPureJanitorialData(structuredData);
     case "saniscrub":
       return transformSaniscrubData(structuredData);
     case "microfiberMopping":
