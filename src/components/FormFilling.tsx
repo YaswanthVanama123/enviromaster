@@ -1178,17 +1178,45 @@ function ContractSummary({
                 )}
               </div>
 
-              {/* Inside Sales Toggle */}
+              {/* Inside Sales - Auto-detected (read-only) */}
               <div className="commission-input-group" style={{ gridColumn: 'span 2' }}>
-                <label className="commission-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: isInsideSales ? '#fef3c7' : '#f0fdf4',
+                  border: `1px solid ${isInsideSales ? '#fcd34d' : '#86efac'}`,
+                }}>
                   <input
                     type="checkbox"
                     checked={isInsideSales}
-                    onChange={(e) => onCommissionStateChange({ ...commissionState, isInsideSales: e.target.checked })}
-                    style={{ width: '18px', height: '18px', accentColor: '#c00000' }}
+                    disabled
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      accentColor: isInsideSales ? '#d97706' : '#059669',
+                      cursor: 'not-allowed'
+                    }}
                   />
-                  Inside Sales (-3%)
-                </label>
+                  <span style={{
+                    fontWeight: 600,
+                    color: isInsideSales ? '#92400e' : '#166534'
+                  }}>
+                    {isInsideSales ? 'Inside Sales (-3%)' : 'No Inside Sales Deduction'}
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    color: isInsideSales ? '#b45309' : '#15803d',
+                    background: isInsideSales ? '#fde68a' : '#bbf7d0',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontWeight: 500
+                  }}>
+                    Auto-detected
+                  </span>
+                </div>
               </div>
             </div>
 
