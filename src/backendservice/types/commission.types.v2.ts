@@ -304,9 +304,9 @@ export interface CommissionCalculationResultV2 {
 
   // Final Amounts
   perVisitCommission: number;       // Commission per visit
-  monthlyCommission: number;        // Monthly estimate
+  weeklyCommission: number;         // Weekly estimate
   annualCommission: number;         // Annual commission
-  contractCommission: number;       // Total contract commission
+  contractCommission: number;       // Total contract commission (12 months)
   renewalBonus: number;             // One-time renewal bonus
   totalCommission: number;          // contractCommission + renewalBonus
 

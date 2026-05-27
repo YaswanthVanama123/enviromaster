@@ -93,7 +93,7 @@ export interface CommissionSnapshot {
   quotaLevelAtTime: 'below' | 'above' | 'double';
   effectiveBaseRate: number;
   finalCommissionRate: number;
-  monthlyCommission: number;
+  weeklyCommission: number;
   annualCommission: number;
   totalCommission: number;
   breakdown: {

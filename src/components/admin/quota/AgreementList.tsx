@@ -329,9 +329,9 @@ export const AgreementList: React.FC<AgreementListProps> = ({
                   </span>
                 </div>
                 <div className="detail-item">
-                  <span className="label">Monthly Commission</span>
+                  <span className="label">Weekly Commission</span>
                   <span className="value">
-                    {formatCurrency(selectedAgreement.commission.monthlyCommission)}
+                    {formatCurrency(selectedAgreement.commission.weeklyCommission)}
                   </span>
                 </div>
                 <div className="detail-item">

@@ -181,7 +181,7 @@ type CommissionState = {
 // V2 Commission Result with proper revenue deductions and pricing tiers
 type CommissionResult = {
   // Input values
-  perVisitRevenue: number;
+  weeklyRevenue: number;
   redlinePrice: number;
   monthlyValue: number;
   agreementTerm: AgreementTerm;
@@ -208,7 +208,7 @@ type CommissionResult = {
 
   // Commission amounts
   perVisitCommission: number;
-  monthlyCommission: number;
+  weeklyCommission: number;
   annualCommission: number;
   contractCommission: number;
 };
@@ -303,9 +303,11 @@ function ContractSummary({
   const calculateCommission = useMemo((): CommissionResult => {
     const rules = COMMISSION_RULES_V2;
 
-    // Use monthly recurring revenue (accounts for different service frequencies)
-    // This properly calculates: Weekly services × 4.33, Monthly × 1, etc.
-    const perVisitRevenue = totalMonthlyRecurring || 0;
+    // Monthly recurring revenue (used for deduction calculations)
+    const monthlyRecurring = totalMonthlyRecurring || 0;
+
+    // Convert to weekly revenue for display (divide by ~4.33 weeks per month)
+    const weeklyRevenue = monthlyRecurring / 4.33;
 
     // Calculate price ratio from CONTRACT TOTALS (not per-visit averages)
     // This avoids the issue where one-time costs (installation) skew the per-visit average
@@ -315,9 +317,9 @@ function ContractSummary({
       ? totalCurrentContract / totalOriginalContract
       : 1;
 
-    // For display purposes, calculate what the per-visit redline would be
-    // Use the same ratio applied to the actual per-visit
-    const redlinePrice = priceRatio > 0 ? perVisitRevenue / priceRatio : perVisitRevenue;
+    // For display purposes, calculate what the weekly redline would be
+    // Use the same ratio applied to the actual weekly revenue
+    const redlinePrice = priceRatio > 0 ? weeklyRevenue / priceRatio : weeklyRevenue;
 
     // Monthly value from contract total
     const monthlyValue = globalContractMonths > 0
@@ -336,17 +338,21 @@ function ContractSummary({
     const agreementTerm = getAgreementTerm();
 
     // Step 1: Get pricing tier based on price ratio (using contract-level ratio)
-    // We pass perVisitRevenue and redlinePrice but the ratio is already calculated from contracts
-    const pricingTier = getPricingTier(perVisitRevenue, redlinePrice);
+    const pricingTier = getPricingTier(weeklyRevenue, redlinePrice);
     const pricingMultiplier = pricingTier.quotaMultiplier;
 
     // Step 2: Calculate commissionable revenue with account type adjustments
-    // - Pit: First $100 = no commission
-    // - Bread5: Subtract first $50
-    // - Bread15: Subtract first $75
-    // - Anchor: No deduction, 150% on revenue above $200
-    const { commissionableRevenue, revenueDeduction, anchorBonus } =
-      calculateCommissionableRevenue(perVisitRevenue, accountType);
+    // IMPORTANT: Apply deductions to MONTHLY revenue first (deduction rules are monthly-based)
+    // - Pit: First $100/month = no commission
+    // - Bread5: Subtract first $50/month
+    // - Bread15: Subtract first $75/month
+    // - Anchor: No deduction, 150% on revenue above $200/month
+    const monthlyCommissionable = calculateCommissionableRevenue(monthlyRecurring, accountType);
+
+    // Convert monthly values to weekly for display
+    const commissionableRevenue = monthlyCommissionable.commissionableRevenue / 4.33;
+    const revenueDeduction = monthlyCommissionable.revenueDeduction / 4.33;
+    const anchorBonus = monthlyCommissionable.anchorBonus / 4.33;
 
     // Step 3: Get commission rate based on quota level
     const baseRate = rules.quotaRates[quotaLevel];
@@ -357,16 +363,19 @@ function ContractSummary({
     const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
     const finalCommissionRate = effectiveRate * (agreementMultiplier / 100);
 
-    // Step 5: Calculate commission amounts
+    // Step 5: Calculate commission amounts (weekly basis)
     // Per-visit commission is based on commissionable revenue
     const perVisitCommission = commissionableRevenue * (finalCommissionRate / 100);
 
-    // For annual calculation, we need visits per year
-    // Default to monthly (12 visits) if we can't determine frequency
-    const visitsPerYear = 12; // Default monthly
-    const annualCommission = perVisitCommission * visitsPerYear;
-    const monthlyCommission = annualCommission / 12;
-    const contractCommission = annualCommission * (globalContractMonths / 12);
+    // For annual calculation, we use 52 weeks per year
+    const weeksPerYear = 52;
+    const annualCommission = perVisitCommission * weeksPerYear;
+    const weeklyCommission = perVisitCommission; // Per visit = weekly
+
+    // Commission is always paid for 12 months only (1 year)
+    // The agreement term multiplier (e.g., 135% for 3-year) is the bonus for longer agreements
+    // but commission is only paid for the first year
+    const contractCommission = annualCommission;
 
     // Legacy fields for backwards compatibility
     const greenlineBonus = pricingTier.quotaMultiplier > 1 ? (pricingTier.quotaMultiplier - 1) * 100 : 0;
@@ -378,7 +387,7 @@ function ContractSummary({
 
     return {
       // V2 fields
-      perVisitRevenue,
+      weeklyRevenue,
       redlinePrice,
       monthlyValue,
       agreementTerm,
@@ -403,7 +412,7 @@ function ContractSummary({
 
       // Commission amounts
       perVisitCommission,
-      monthlyCommission,
+      weeklyCommission,
       annualCommission,
       contractCommission
     };
@@ -1225,8 +1234,8 @@ function ContractSummary({
             <div className="pricing-breakdown" style={{ marginTop: '16px' }}>
               {/* Revenue Info */}
               <div className="breakdown-row">
-                <span className="breakdown-label">Monthly Revenue</span>
-                <span className="breakdown-value">${calculateCommission.perVisitRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                <span className="breakdown-label">Weekly Revenue</span>
+                <span className="breakdown-value">${calculateCommission.weeklyRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
               </div>
               <div className="breakdown-row">
                 <span className="breakdown-label">Pricing Tier</span>
@@ -1253,7 +1262,7 @@ function ContractSummary({
                 <div className="breakdown-row">
                   <span className="breakdown-label">Revenue Deduction ({accountType})</span>
                   <span className="breakdown-value" style={{ color: '#dc2626' }}>
-                    −${calculateCommission.revenueDeduction.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                    −${calculateCommission.revenueDeduction.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </span>
                 </div>
               )}
@@ -1308,9 +1317,9 @@ function ContractSummary({
                 </span>
               </div>
               <div className="breakdown-row">
-                <span className="breakdown-label">Monthly Commission</span>
+                <span className="breakdown-label">Weekly Commission</span>
                 <span className="breakdown-value" style={{ color: '#16a34a', fontWeight: 600 }}>
-                  ${calculateCommission.monthlyCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  ${calculateCommission.weeklyCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </span>
               </div>
               <div className="breakdown-row">
@@ -1321,7 +1330,7 @@ function ContractSummary({
               </div>
               {!allServicesOneTime && (
                 <div className="breakdown-row highlight" style={{ background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)', border: '2px solid #22c55e' }}>
-                  <span className="breakdown-label" style={{ color: '#166534', fontWeight: 700 }}>Contract Total Commission ({globalContractMonths} mo)</span>
+                  <span className="breakdown-label" style={{ color: '#166534', fontWeight: 700 }}>Total Commission (12 mo)</span>
                   <span className="breakdown-value" style={{ color: '#166534', fontWeight: 700, fontSize: '16px' }}>
                     ${calculateCommission.contractCommission.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </span>
@@ -1389,7 +1398,7 @@ function ContractSummary({
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                         <span style={{ backgroundColor: '#0ea5e9', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>1</span>
                         <span>
-                          <strong>Monthly Revenue:</strong> Your agreement generates <strong>${calculateCommission.perVisitRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> in monthly revenue.
+                          <strong>Weekly Revenue:</strong> Your agreement generates <strong>${calculateCommission.weeklyRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> in weekly revenue.
                         </span>
                       </div>
 
@@ -1442,16 +1451,14 @@ function ContractSummary({
                       }}>
                         <strong style={{ color: '#166534' }}>Final Calculation:</strong>
                         <div style={{ marginTop: '6px', color: '#15803d' }}>
-                          ${calculateCommission.commissionableRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})} × {calculateCommission.finalCommissionRate.toFixed(2)}% = <strong>${calculateCommission.perVisitCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> per month
+                          ${calculateCommission.commissionableRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})} × {calculateCommission.finalCommissionRate.toFixed(2)}% = <strong>${calculateCommission.perVisitCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> per week
                         </div>
                         <div style={{ marginTop: '4px', color: '#15803d' }}>
-                          ${calculateCommission.perVisitCommission.toLocaleString('en-US', {minimumFractionDigits: 2})} × 12 months = <strong>${calculateCommission.annualCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> annually
+                          ${calculateCommission.weeklyCommission.toLocaleString('en-US', {minimumFractionDigits: 2})} × 52 weeks = <strong>${calculateCommission.annualCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> annually
                         </div>
-                        {!allServicesOneTime && globalContractMonths > 12 && (
-                          <div style={{ marginTop: '4px', color: '#15803d' }}>
-                            ${calculateCommission.monthlyCommission.toLocaleString('en-US', {minimumFractionDigits: 2})} × {globalContractMonths} months = <strong>${calculateCommission.contractCommission.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong> total contract commission
-                          </div>
-                        )}
+                        <div style={{ marginTop: '4px', color: '#15803d', fontStyle: 'italic', fontSize: '12px' }}>
+                          Note: Commission is paid for 12 months only. The {calculateCommission.agreementTerm} agreement gives you a {calculateCommission.agreementMultiplier}% rate multiplier as a bonus.
+                        </div>
                       </div>
 
                       {/* Tips */}
@@ -2216,7 +2223,7 @@ function FormFillingContent({
           insideSalesDeduction: commissionResult.insideSalesDeduction,
         },
         finalCommissionRate: commissionResult.finalCommissionRate,
-        monthlyCommission: commissionResult.monthlyCommission,
+        weeklyCommission: commissionResult.weeklyCommission,
         annualCommission: commissionResult.annualCommission,
         contractCommission: commissionResult.contractCommission,
       } : null,

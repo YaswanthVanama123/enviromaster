@@ -331,8 +331,9 @@ export function calculateCommissionV2(
   // ========================================
   const perVisitCommission = commissionableRevenue * (finalCommissionRate / 100);
   const annualCommission = perVisitCommission * visitsPerYear;
-  const monthlyCommission = annualCommission / 12;
-  const contractCommission = annualCommission * (input.contractMonths / 12);
+  const weeklyCommission = annualCommission / 52;
+  // Commission is always paid for 12 months only
+  const contractCommission = annualCommission;
 
   // ========================================
   // STEP 9: Renewal Bonus
@@ -393,7 +394,7 @@ export function calculateCommissionV2(
     breakdown,
 
     perVisitCommission,
-    monthlyCommission,
+    weeklyCommission,
     annualCommission,
     contractCommission,
     renewalBonus: renewalBonusAmount,

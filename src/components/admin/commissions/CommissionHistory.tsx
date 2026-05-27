@@ -102,7 +102,7 @@ export const CommissionHistory: React.FC = () => {
                 <th>Sales Person</th>
                 <th>Monthly Value</th>
                 <th>Commission Rate</th>
-                <th>Monthly Commission</th>
+                <th>Weekly Commission</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -117,7 +117,7 @@ export const CommissionHistory: React.FC = () => {
                   </td>
                   <td>{record.calculation.finalCommissionRate.toFixed(2)}%</td>
                   <td>
-                    {formatCurrency(record.calculation.monthlyCommission)}
+                    {formatCurrency(record.calculation.weeklyCommission)}
                   </td>
                   <td>
                     <span className={getStatusBadgeClass(record.status)}>

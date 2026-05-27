@@ -73,7 +73,7 @@ export interface UseCommissionCalcV2Return {
 
   // Key values for easy access
   perVisitCommission: number;
-  monthlyCommission: number;
+  weeklyCommission: number;
   annualCommission: number;
   contractCommission: number;
   totalCommission: number;
@@ -96,7 +96,7 @@ export interface UseCommissionCalcV2Return {
   // Formatted strings
   formatted: {
     perVisitCommission: string;
-    monthlyCommission: string;
+    weeklyCommission: string;
     annualCommission: string;
     contractCommission: string;
     totalCommission: string;
@@ -161,7 +161,7 @@ export function useCommissionCalcV2(input: UseCommissionCalcV2Input): UseCommiss
 
   // Extract key values
   const perVisitCommission = result?.perVisitCommission ?? 0;
-  const monthlyCommission = result?.monthlyCommission ?? 0;
+  const weeklyCommission = result?.weeklyCommission ?? 0;
   const annualCommission = result?.annualCommission ?? 0;
   const contractCommission = result?.contractCommission ?? 0;
   const totalCommission = result?.totalCommission ?? 0;
@@ -182,7 +182,7 @@ export function useCommissionCalcV2(input: UseCommissionCalcV2Input): UseCommiss
   // Formatted strings
   const formatted = useMemo(() => ({
     perVisitCommission: formatCurrency(perVisitCommission),
-    monthlyCommission: formatCurrency(monthlyCommission),
+    weeklyCommission: formatCurrency(weeklyCommission),
     annualCommission: formatCurrency(annualCommission),
     contractCommission: formatCurrency(contractCommission),
     totalCommission: formatCurrency(totalCommission),
@@ -193,7 +193,7 @@ export function useCommissionCalcV2(input: UseCommissionCalcV2Input): UseCommiss
     quotaCredit: formatCurrency(result?.breakdown.annualQuotaCredit ?? 0),
   }), [
     perVisitCommission,
-    monthlyCommission,
+    weeklyCommission,
     annualCommission,
     contractCommission,
     totalCommission,
@@ -220,7 +220,7 @@ export function useCommissionCalcV2(input: UseCommissionCalcV2Input): UseCommiss
   return {
     result,
     perVisitCommission,
-    monthlyCommission,
+    weeklyCommission,
     annualCommission,
     contractCommission,
     totalCommission,
@@ -281,7 +281,7 @@ export interface UseFormFillingCommissionReturn {
 
   // Amounts
   perVisitCommission: number;
-  monthlyCommission: number;
+  weeklyCommission: number;
   annualCommission: number;
   contractCommission: number;
 
@@ -289,7 +289,7 @@ export interface UseFormFillingCommissionReturn {
   formatted: {
     monthlyValue: string;
     perVisitCommission: string;
-    monthlyCommission: string;
+    weeklyCommission: string;
     annualCommission: string;
     contractCommission: string;
     finalCommissionRate: string;
@@ -364,7 +364,7 @@ export function useFormFillingCommission(
     const perVisitCommission = effectiveCommissionableRevenue * (finalCommissionRate / 100);
 
     const visitsPerYear = FREQUENCY_VISITS_PER_YEAR[frequency];
-    const monthlyCommission = (perVisitCommission * visitsPerYear) / 12;
+    const weeklyCommission = (perVisitCommission * visitsPerYear) / 12;
     const annualCommission = perVisitCommission * visitsPerYear;
     const contractCommission = annualCommission * (contractMonths / 12);
 
@@ -380,13 +380,13 @@ export function useFormFillingCommission(
       effectiveBaseRate,
       finalCommissionRate,
       perVisitCommission,
-      monthlyCommission,
+      weeklyCommission,
       annualCommission,
       contractCommission,
       formatted: {
         monthlyValue: formatCurrency(monthlyValue),
         perVisitCommission: formatCurrency(perVisitCommission),
-        monthlyCommission: formatCurrency(monthlyCommission),
+        weeklyCommission: formatCurrency(weeklyCommission),
         annualCommission: formatCurrency(annualCommission),
         contractCommission: formatCurrency(contractCommission),
         finalCommissionRate: formatPercentage(finalCommissionRate),
