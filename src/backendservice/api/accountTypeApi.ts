@@ -13,6 +13,9 @@ import type {
   AccountType,
 } from '../types/accountType.types';
 
+// Re-export AccountType for convenience
+export type { AccountType } from '../types/accountType.types';
+
 const BASE_PATH = '/api/account-type';
 const MAP_DISTANCE_PATH = '/api/map-distance';
 
@@ -36,6 +39,32 @@ export interface MapboxDetectionResult {
   shortestDrivingTime?: number | null;
   nearestDestination?: string | null;
   reason?: string;
+  error?: string;
+  thresholds?: {
+    bread5MaxMinutes: number;
+    bread15MaxMinutes: number;
+  };
+}
+
+// Batch detection types for form filling
+export interface FrequencyDetectionResult {
+  accountType: AccountType;
+  confidence: 'high' | 'low';
+  reason: string;
+  drivingTimeMinutes: number | null;
+  nearestDestination: string | null;
+  destinations?: DestinationResult[];
+  usedFallback?: boolean;
+  fallbackReason?: string;
+  error?: string;
+}
+
+export interface BatchFrequencyDetectionResult {
+  success: boolean;
+  biginCompany?: string;
+  routeStarCustomer?: string;
+  fromAddress?: string;
+  results?: Record<number, FrequencyDetectionResult>;
   error?: string;
   thresholds?: {
     bread5MaxMinutes: number;
@@ -89,6 +118,31 @@ export const accountTypeApi = {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to detect account type'
+      };
+    }
+  },
+
+  /**
+   * Detect account types for multiple frequencies in a batch call
+   * Optimized for form filling where multiple services have different frequencies
+   * @param biginCompanyId - The Bigin company ID
+   * @param frequencies - Array of frequency numbers (1=Weekly, 2=Bi-Weekly, etc.)
+   */
+  async detectWithMapboxBatch(
+    biginCompanyId: string,
+    frequencies: number[]
+  ): Promise<BatchFrequencyDetectionResult> {
+    try {
+      const response = await apiClient.post<BatchFrequencyDetectionResult>(
+        `${MAP_DISTANCE_PATH}/detect-account-type-batch`,
+        { biginCompanyId, frequencies }
+      );
+      return response.data || { success: false, error: 'No response data' };
+    } catch (error) {
+      console.error('Error detecting batch account types with Mapbox:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to detect account types'
       };
     }
   },

@@ -21,6 +21,8 @@ import { ServicesSection } from "./services/ServicesSection";
 import ServicesDataCollector from "./services/ServicesDataCollector";
 import type{ ServicesDataHandle } from "./services/ServicesDataCollector";
 import { ServicesProvider, useServicesContext } from "./services/ServicesContext";
+import type { AccountTypeCache } from "./services/ServicesContext";
+import { GlobalCommissionSummary } from "./services/components/GlobalCommissionSummary";
 import ConfirmationModal from "./ConfirmationModal";
 import { VersionDialog } from "./VersionDialog";
 import { Toast } from "./admin/Toast";
@@ -1540,6 +1542,7 @@ function FormFillingContent({
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
   const [isConnectedToBigin, setIsConnectedToBigin] = useState(false);
   const [biginCompanyId, setBiginCompanyId] = useState<string | null>(null);
+  const [savedAccountTypeCache, setSavedAccountTypeCache] = useState<AccountTypeCache | null>(null);
   const [accountTypeDetection, setAccountTypeDetection] = useState<AccountTypeDetectionResult | null>(null);
   const [productTotals, setProductTotals] = useState<ProductTotals>({
     monthlyTotal: 0,
@@ -1680,6 +1683,9 @@ function FormFillingContent({
     setGlobalTripChargeFrequency,
     setGlobalParkingCharge,
     setGlobalParkingChargeFrequency,
+    setBiginCompanyId: setContextBiginCompanyId,
+    initializeAccountTypeCache,
+    accountTypeCache,
   } = useServicesContext();
 
   const totalCurrentContract = getTotalAgreementAmount();
@@ -1697,6 +1703,19 @@ function FormFillingContent({
       setAgreementStartDate(payload.agreement.startDate);
     }
   }, [payload]);
+
+  // Sync local biginCompanyId with ServicesContext for account type detection
+  useEffect(() => {
+    setContextBiginCompanyId(biginCompanyId);
+  }, [biginCompanyId, setContextBiginCompanyId]);
+
+  // Initialize account type cache from saved data (avoid re-detecting saved frequencies)
+  useEffect(() => {
+    if (savedAccountTypeCache && Object.keys(savedAccountTypeCache).length > 0) {
+      console.log('[ACCOUNT-TYPE] Initializing cache from saved backend data');
+      initializeAccountTypeCache(savedAccountTypeCache);
+    }
+  }, [savedAccountTypeCache, initializeAccountTypeCache]);
 
   const currentPaymentLabel = PAYMENT_OPTION_DETAILS.find((entry) => entry.value === paymentOption)?.label ?? "Payment Option";
 
@@ -2058,6 +2077,11 @@ function FormFillingContent({
         if ((json as any).biginCompanyId) {
           setBiginCompanyId((json as any).biginCompanyId);
         }
+        // Load saved account type cache from backend
+        if ((json as any).accountTypeCache) {
+          console.log('[ACCOUNT-TYPE] Loaded saved cache from backend:', (json as any).accountTypeCache);
+          setSavedAccountTypeCache((json as any).accountTypeCache);
+        }
       } catch (err) {
         console.error("Error fetching headers:", err);
       } finally {
@@ -2227,6 +2251,8 @@ function FormFillingContent({
         annualCommission: commissionResult.annualCommission,
         contractCommission: commissionResult.contractCommission,
       } : null,
+      // Save account type cache for commission calculations (avoid re-detecting on reload)
+      accountTypeCache: Object.keys(accountTypeCache).length > 0 ? accountTypeCache : null,
     };
   };
 
@@ -3249,6 +3275,9 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               }}
             />
             <ServicesDataCollector ref={servicesRef} />
+
+            {/* Commission Summary - shows total commission across all services */}
+            <GlobalCommissionSummary commissionRate={6} showDetectButton={true} />
 
             {}
             <ContractSummary

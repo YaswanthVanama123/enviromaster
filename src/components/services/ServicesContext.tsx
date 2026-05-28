@@ -1,7 +1,25 @@
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
 import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
+import type { AccountType } from "../../backendservice/api/accountTypeApi";
+
+// Account type cache entry for frequency-based detection
+export interface AccountTypeCacheEntry {
+  accountType: AccountType;
+  confidence: 'high' | 'low';
+  reason: string;
+  drivingTimeMinutes: number | null;
+  nearestDestination: string | null;
+  cachedAt: number;
+  usedFallback?: boolean;
+  fallbackReason?: string;
+}
+
+// Cache keyed by frequency number (1=Weekly, 2=Bi-Weekly, etc.)
+export interface AccountTypeCache {
+  [frequencyKey: number]: AccountTypeCacheEntry;
+}
 
 
 export interface ServicesState {
@@ -31,7 +49,7 @@ interface ServicesContextValue {
 
 
   isSanicleanAllInclusive: boolean;
-  sanicleanPaperCreditPerWeek: number; 
+  sanicleanPaperCreditPerWeek: number;
 
 
   globalContractMonths: number;
@@ -45,16 +63,29 @@ interface ServicesContextValue {
   getTotalOriginalContractTotal: () => number;
 
 
-  globalTripCharge: number; 
+  globalTripCharge: number;
   setGlobalTripCharge: (charge: number) => void;
-  globalParkingCharge: number; 
+  globalParkingCharge: number;
   setGlobalParkingCharge: (charge: number) => void;
 
 
-  globalTripChargeFrequency: number; 
+  globalTripChargeFrequency: number;
   setGlobalTripChargeFrequency: (frequency: number) => void;
-  globalParkingChargeFrequency: number; 
+  globalParkingChargeFrequency: number;
   setGlobalParkingChargeFrequency: (frequency: number) => void;
+
+  // Account type detection for commission calculation
+  biginCompanyId: string | null;
+  setBiginCompanyId: (id: string | null) => void;
+  accountTypeCache: AccountTypeCache;
+  setAccountTypeForFrequency: (frequencyKey: number, entry: AccountTypeCacheEntry) => void;
+  getAccountTypeForFrequency: (frequencyKey: number) => AccountTypeCacheEntry | null;
+  initializeAccountTypeCache: (cache: AccountTypeCache) => void;
+  clearAccountTypeCache: () => void;
+  isDetectingAccountTypes: boolean;
+  setIsDetectingAccountTypes: (detecting: boolean) => void;
+  accountTypeDetectionError: string | null;
+  setAccountTypeDetectionError: (error: string | null) => void;
 }
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(
@@ -63,10 +94,14 @@ const ServicesContext = createContext<ServicesContextValue | undefined>(
 
 export const ServicesProvider: React.FC<{
   children: React.ReactNode;
-  backendPricingData?: ServiceConfig[]
+  backendPricingData?: ServiceConfig[];
+  biginCompanyId?: string | null;
+  initialAccountTypeCache?: AccountTypeCache | null;
 }> = ({
   children,
   backendPricingData = [],
+  biginCompanyId: initialBiginCompanyId = null,
+  initialAccountTypeCache = null,
 }) => {
   const [servicesState, setServicesState] = useState<ServicesState>({});
 
@@ -80,6 +115,47 @@ export const ServicesProvider: React.FC<{
 
   const [globalTripChargeFrequency, setGlobalTripChargeFrequency] = useState<number>(4);
   const [globalParkingChargeFrequency, setGlobalParkingChargeFrequency] = useState<number>(4);
+
+  // Account type detection state
+  const [biginCompanyId, setBiginCompanyId] = useState<string | null>(initialBiginCompanyId);
+  const [accountTypeCache, setAccountTypeCache] = useState<AccountTypeCache>({});
+  const [isDetectingAccountTypes, setIsDetectingAccountTypes] = useState(false);
+  const [accountTypeDetectionError, setAccountTypeDetectionError] = useState<string | null>(null);
+
+  // Helper to set account type for a specific frequency
+  const setAccountTypeForFrequency = useCallback((frequencyKey: number, entry: AccountTypeCacheEntry) => {
+    setAccountTypeCache(prev => ({
+      ...prev,
+      [frequencyKey]: entry
+    }));
+  }, []);
+
+  // Helper to get account type for a specific frequency
+  const getAccountTypeForFrequency = useCallback((frequencyKey: number): AccountTypeCacheEntry | null => {
+    return accountTypeCache[frequencyKey] || null;
+  }, [accountTypeCache]);
+
+  // Clear the entire cache (useful when switching companies)
+  const clearAccountTypeCache = useCallback(() => {
+    setAccountTypeCache({});
+    setAccountTypeDetectionError(null);
+  }, []);
+
+  // Initialize cache with saved data (from backend)
+  const initializeAccountTypeCache = useCallback((cache: AccountTypeCache) => {
+    if (cache && Object.keys(cache).length > 0) {
+      console.log('[ACCOUNT-TYPE] Initializing cache from saved data:', Object.keys(cache));
+      setAccountTypeCache(cache);
+    }
+  }, []);
+
+  // Initialize cache from prop on mount
+  useEffect(() => {
+    if (initialAccountTypeCache && Object.keys(initialAccountTypeCache).length > 0) {
+      console.log('[ACCOUNT-TYPE] Loading saved account type cache on mount:', initialAccountTypeCache);
+      setAccountTypeCache(initialAccountTypeCache);
+    }
+  }, []); // Only run on mount
 
   const updateSaniclean = useCallback(
     (update: Partial<ServicesState["saniclean"]>) => {
@@ -443,8 +519,21 @@ export const ServicesProvider: React.FC<{
       setGlobalTripChargeFrequency,
       globalParkingChargeFrequency,
       setGlobalParkingChargeFrequency,
+
+      // Account type detection
+      biginCompanyId,
+      setBiginCompanyId,
+      accountTypeCache,
+      setAccountTypeForFrequency,
+      getAccountTypeForFrequency,
+      initializeAccountTypeCache,
+      clearAccountTypeCache,
+      isDetectingAccountTypes,
+      setIsDetectingAccountTypes,
+      accountTypeDetectionError,
+      setAccountTypeDetectionError,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]); 
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency, biginCompanyId, accountTypeCache, setAccountTypeForFrequency, getAccountTypeForFrequency, initializeAccountTypeCache, clearAccountTypeCache, isDetectingAccountTypes, accountTypeDetectionError]);
 
   return (
     <ServicesContext.Provider value={value}>

@@ -175,9 +175,11 @@ export default function AdminCommissions() {
 
   const filteredEmployees = useMemo(() => {
     if (!employeesData?.employees) return [];
-    if (!searchQuery.trim()) return employeesData.employees;
+    // Filter out employees with null/empty userId
+    const validEmployees = employeesData.employees.filter(e => e.userId && e.userId.trim() !== '');
+    if (!searchQuery.trim()) return validEmployees;
     const q = searchQuery.toLowerCase();
-    return employeesData.employees.filter(e =>
+    return validEmployees.filter(e =>
       (e.userId || '').toLowerCase().includes(q)
     );
   }, [employeesData?.employees, searchQuery]);
@@ -558,7 +560,11 @@ export default function AdminCommissions() {
               <div
                 key={employee.userId || `employee-${index}`}
                 className="admin-commissions__employee-card"
-                onClick={() => fetchEmployeeCommissions(employee.userId || '')}
+                onClick={() => {
+                  if (employee.userId && employee.userId.trim() !== '') {
+                    fetchEmployeeCommissions(employee.userId);
+                  }
+                }}
               >
                 <div className="admin-commissions__employee-header">
                   <div className="admin-commissions__employee-avatar">
