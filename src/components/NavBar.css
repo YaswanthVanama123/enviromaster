@@ -27,9 +27,9 @@
   text-decoration:none;
   background:none;
   border:none;
-  padding:8px 16px;
+  padding:6px 12px;
   border-radius:8px;
-  font-size:15px;
+  font-size:13px;
   font-weight:600;
   color:#333;
   transition: all 0.2s ease;
@@ -126,12 +126,12 @@
   }
 
   .topnav__item {
-    padding: 7px 14px;
-    font-size: 14px;
+    padding: 5px 10px;
+    font-size: 12px;
   }
 
   .topnav__menu {
-    gap: 8px;
+    gap: 6px;
   }
 }
 

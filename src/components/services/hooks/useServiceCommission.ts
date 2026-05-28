@@ -6,8 +6,9 @@ import {
   formatCurrency,
   getVisitsPerYear,
 } from '../../../backendservice/utils/commissionCalculatorV2';
+import { DEFAULT_COMMISSION_RULES_V2 } from '../../../backendservice/types/commission.types.v2';
 import type { AccountType } from '../../../backendservice/api/accountTypeApi';
-import type { ServiceFrequency } from '../../../backendservice/types/commission.types.v2';
+import type { ServiceFrequency, AgreementTerm } from '../../../backendservice/types/commission.types.v2';
 
 // Revenue deductions by account type
 export const ACCOUNT_TYPE_DEDUCTIONS: Record<AccountType, number> = {
@@ -16,6 +17,20 @@ export const ACCOUNT_TYPE_DEDUCTIONS: Record<AccountType, number> = {
   Bread15: 75,
   Pit: 100,
 };
+
+// Helper to map contract months to agreement term
+function getAgreementTerm(contractMonths: number): AgreementTerm {
+  if (contractMonths >= 36) return '3-year';
+  if (contractMonths >= 12) return '1-year';
+  // MTM - assume with install for now
+  return 'MTM-with-install';
+}
+
+// Get agreement multiplier from contract months
+function getAgreementMultiplier(contractMonths: number): number {
+  const term = getAgreementTerm(contractMonths);
+  return DEFAULT_COMMISSION_RULES_V2.agreementMultipliers[term];
+}
 
 // Extended frequency type for internal mapping
 type ExtendedFrequency = ServiceFrequency | 'bi-weekly' | 'semi-annual' | 'annual' | 'twice-per-month' | 'bi-monthly';
@@ -298,6 +313,10 @@ export interface GlobalCommissionResult {
   totalPerVisitRevenue: number;
   totalCommissionableRevenue: number;
 
+  // Agreement multiplier info
+  agreementMultiplier: number;
+  effectiveCommissionRate: number;
+
   // Service breakdown (extended)
   services: ServiceCommissionDetail[];
 
@@ -316,7 +335,7 @@ export interface GlobalCommissionResult {
 }
 
 export function useGlobalCommission(commissionRate: number = 6): GlobalCommissionResult {
-  const { servicesState, accountTypeCache } = useServicesContext();
+  const { servicesState, accountTypeCache, globalContractMonths } = useServicesContext();
 
   return useMemo(() => {
     let totalPerVisitCommission = 0;
@@ -324,6 +343,11 @@ export function useGlobalCommission(commissionRate: number = 6): GlobalCommissio
     let totalAnnualCommission = 0;
     let totalPerVisitRevenue = 0;
     let totalCommissionableRevenue = 0;
+
+    // Get agreement multiplier based on contract months (e.g., 135% for 36 months)
+    const agreementMultiplier = getAgreementMultiplier(globalContractMonths);
+    // Effective commission rate = base rate × (agreement multiplier / 100)
+    const effectiveCommissionRate = commissionRate * (agreementMultiplier / 100);
 
     const services: ServiceCommissionDetail[] = [];
 
@@ -362,7 +386,8 @@ export function useGlobalCommission(commissionRate: number = 6): GlobalCommissio
       const frequencyLabel = BACKEND_TO_FREQUENCY[freqNum] || 'Unknown';
       const visitsPerYear = getVisitsPerYearExtended(serviceFrequency);
 
-      const perVisitCommission = commissionableRevenue * (commissionRate / 100);
+      // Use effective commission rate (includes agreement multiplier)
+      const perVisitCommission = commissionableRevenue * (effectiveCommissionRate / 100);
       const annualCommission = perVisitCommission * visitsPerYear;
       const weeklyCommission = annualCommission / 52;
 
@@ -405,6 +430,9 @@ export function useGlobalCommission(commissionRate: number = 6): GlobalCommissio
       totalPerVisitRevenue,
       totalCommissionableRevenue,
 
+      agreementMultiplier,
+      effectiveCommissionRate,
+
       services,
 
       formatted: {
@@ -418,7 +446,7 @@ export function useGlobalCommission(commissionRate: number = 6): GlobalCommissio
       hasDetectedServices: services.some(s => s.accountType !== null),
       serviceCount: services.length,
     };
-  }, [servicesState, accountTypeCache, commissionRate]);
+  }, [servicesState, accountTypeCache, commissionRate, globalContractMonths]);
 }
 
 export default useServiceCommission;
