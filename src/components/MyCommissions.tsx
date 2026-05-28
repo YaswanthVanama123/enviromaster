@@ -167,6 +167,23 @@ export default function MyCommissions() {
     );
   }
 
+  // Provide default values for totals and byStatus if missing
+  const totals: CommissionTotals = data.totals || {
+    totalAgreements: 0,
+    totalMonthlyCommission: 0,
+    totalContractCommission: 0,
+    totalContractValue: 0,
+    averageCommissionRate: 0,
+  };
+
+  const byStatus = data.byStatus || {
+    draft: { count: 0, commission: 0 },
+    saved: { count: 0, commission: 0 },
+    pending: { count: 0, commission: 0 },
+    approved: { count: 0, commission: 0 },
+    active: { count: 0, commission: 0 },
+  };
+
   return (
     <div className="my-commissions">
       <header className="my-commissions__header">
@@ -188,7 +205,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Total Contract Commission</span>
             <span className="my-commissions__summary-value">
-              {formatMoney(data.totals.totalContractCommission)}
+              {formatMoney(totals.totalContractCommission)}
             </span>
           </div>
         </div>
@@ -198,7 +215,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Monthly Commission</span>
             <span className="my-commissions__summary-value">
-              {formatMoney(data.totals.totalMonthlyCommission)}
+              {formatMoney(totals.totalMonthlyCommission)}
             </span>
           </div>
         </div>
@@ -208,7 +225,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Total Agreements</span>
             <span className="my-commissions__summary-value">
-              {data.totals.totalAgreements}
+              {totals.totalAgreements}
             </span>
           </div>
         </div>
@@ -218,7 +235,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Avg Commission Rate</span>
             <span className="my-commissions__summary-value">
-              {formatPercent(data.totals.averageCommissionRate)}%
+              {formatPercent(totals.averageCommissionRate)}%
             </span>
           </div>
         </div>
@@ -232,9 +249,9 @@ export default function MyCommissions() {
             className={`my-commissions__status-chip ${statusFilter === 'all' ? 'active' : ''}`}
             onClick={() => setStatusFilter('all')}
           >
-            All ({data.totals.totalAgreements})
+            All ({totals.totalAgreements})
           </button>
-          {Object.entries(data.byStatus).map(([key, value]) => (
+          {Object.entries(byStatus).map(([key, value]) => (
             value.count > 0 && (
               <button
                 key={key}

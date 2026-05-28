@@ -10,27 +10,23 @@ interface StatusCounts {
   active: number;
 }
 
+// Actual API response structure for employees list
 interface EmployeeSummary {
-  username: string;
+  userId: string | null;
   totalAgreements: number;
-  statusCounts: StatusCounts;
-  totalMonthlyCommission: number;
-  totalContractCommission: number;
-  totalContractValue: number;
-  averageCommissionRate: number;
+  totalRevenue: number;
+  // Optional fields that may not be in API response
+  statusCounts?: StatusCounts;
+  totalMonthlyCommission?: number;
+  totalContractCommission?: number;
+  totalContractValue?: number;
+  averageCommissionRate?: number;
 }
 
-interface GrandTotals {
-  totalEmployees: number;
-  totalAgreements: number;
-  totalMonthlyCommission: number;
-  totalContractCommission: number;
-  totalContractValue: number;
-}
-
+// Actual API response structure
 interface EmployeesResponse {
   success: boolean;
-  grandTotals: GrandTotals;
+  totalEmployees: number;
   employees: EmployeeSummary[];
 }
 
@@ -182,7 +178,7 @@ export default function AdminCommissions() {
     if (!searchQuery.trim()) return employeesData.employees;
     const q = searchQuery.toLowerCase();
     return employeesData.employees.filter(e =>
-      e.username.toLowerCase().includes(q)
+      (e.userId || '').toLowerCase().includes(q)
     );
   }, [employeesData?.employees, searchQuery]);
 
@@ -262,6 +258,23 @@ export default function AdminCommissions() {
       );
     }
 
+    // Provide default values for totals and byStatus if missing
+    const totals: CommissionTotals = employeeCommissions.totals || {
+      totalAgreements: 0,
+      totalMonthlyCommission: 0,
+      totalContractCommission: 0,
+      totalContractValue: 0,
+      averageCommissionRate: 0,
+    };
+
+    const byStatus = employeeCommissions.byStatus || {
+      draft: { count: 0, commission: 0 },
+      saved: { count: 0, commission: 0 },
+      pending: { count: 0, commission: 0 },
+      approved: { count: 0, commission: 0 },
+      active: { count: 0, commission: 0 },
+    };
+
     return (
       <div className="admin-commissions">
         <header className="admin-commissions__header">
@@ -283,7 +296,7 @@ export default function AdminCommissions() {
             <div className="admin-commissions__summary-content">
               <span className="admin-commissions__summary-label">Total Contract Commission</span>
               <span className="admin-commissions__summary-value">
-                {formatMoney(employeeCommissions.totals.totalContractCommission)}
+                {formatMoney(totals.totalContractCommission)}
               </span>
             </div>
           </div>
@@ -293,7 +306,7 @@ export default function AdminCommissions() {
             <div className="admin-commissions__summary-content">
               <span className="admin-commissions__summary-label">Monthly Commission</span>
               <span className="admin-commissions__summary-value">
-                {formatMoney(employeeCommissions.totals.totalMonthlyCommission)}
+                {formatMoney(totals.totalMonthlyCommission)}
               </span>
             </div>
           </div>
@@ -303,7 +316,7 @@ export default function AdminCommissions() {
             <div className="admin-commissions__summary-content">
               <span className="admin-commissions__summary-label">Total Agreements</span>
               <span className="admin-commissions__summary-value">
-                {employeeCommissions.totals.totalAgreements}
+                {totals.totalAgreements}
               </span>
             </div>
           </div>
@@ -313,7 +326,7 @@ export default function AdminCommissions() {
             <div className="admin-commissions__summary-content">
               <span className="admin-commissions__summary-label">Avg Commission Rate</span>
               <span className="admin-commissions__summary-value">
-                {employeeCommissions.totals.averageCommissionRate}%
+                {totals.averageCommissionRate}%
               </span>
             </div>
           </div>
@@ -327,9 +340,9 @@ export default function AdminCommissions() {
               className={`admin-commissions__status-chip ${statusFilter === 'all' ? 'active' : ''}`}
               onClick={() => setStatusFilter('all')}
             >
-              All ({employeeCommissions.totals.totalAgreements})
+              All ({totals.totalAgreements})
             </button>
-            {Object.entries(employeeCommissions.byStatus).map(([key, value]) => (
+            {Object.entries(byStatus).map(([key, value]) => (
               value.count > 0 && (
                 <button
                   key={key}
@@ -485,15 +498,15 @@ export default function AdminCommissions() {
         </p>
       </header>
 
-      {/* Grand Totals */}
+      {/* Summary Totals */}
       {employeesData && (
         <div className="admin-commissions__summary-grid">
           <div className="admin-commissions__summary-card admin-commissions__summary-card--primary">
             <div className="admin-commissions__summary-icon">$</div>
             <div className="admin-commissions__summary-content">
-              <span className="admin-commissions__summary-label">Total Commissions</span>
+              <span className="admin-commissions__summary-label">Total Revenue</span>
               <span className="admin-commissions__summary-value">
-                {formatMoney(employeesData.grandTotals.totalContractCommission)}
+                {formatMoney(employeesData.employees?.reduce((sum, e) => sum + (e.totalRevenue || 0), 0) || 0)}
               </span>
             </div>
           </div>
@@ -503,7 +516,7 @@ export default function AdminCommissions() {
             <div className="admin-commissions__summary-content">
               <span className="admin-commissions__summary-label">Total Employees</span>
               <span className="admin-commissions__summary-value">
-                {employeesData.grandTotals.totalEmployees}
+                {employeesData.totalEmployees || employeesData.employees?.length || 0}
               </span>
             </div>
           </div>
@@ -513,17 +526,7 @@ export default function AdminCommissions() {
             <div className="admin-commissions__summary-content">
               <span className="admin-commissions__summary-label">Total Agreements</span>
               <span className="admin-commissions__summary-value">
-                {employeesData.grandTotals.totalAgreements}
-              </span>
-            </div>
-          </div>
-
-          <div className="admin-commissions__summary-card">
-            <div className="admin-commissions__summary-icon">V</div>
-            <div className="admin-commissions__summary-content">
-              <span className="admin-commissions__summary-label">Total Contract Value</span>
-              <span className="admin-commissions__summary-value">
-                {formatMoney(employeesData.grandTotals.totalContractValue)}
+                {employeesData.employees?.reduce((sum, e) => sum + (e.totalAgreements || 0), 0) || 0}
               </span>
             </div>
           </div>
@@ -551,20 +554,20 @@ export default function AdminCommissions() {
           </div>
         ) : (
           <div className="admin-commissions__employees-grid">
-            {filteredEmployees.map((employee) => (
+            {filteredEmployees.map((employee, index) => (
               <div
-                key={employee.username}
+                key={employee.userId || `employee-${index}`}
                 className="admin-commissions__employee-card"
-                onClick={() => fetchEmployeeCommissions(employee.username)}
+                onClick={() => fetchEmployeeCommissions(employee.userId || '')}
               >
                 <div className="admin-commissions__employee-header">
                   <div className="admin-commissions__employee-avatar">
-                    {employee.username.charAt(0).toUpperCase()}
+                    {(employee.userId || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div className="admin-commissions__employee-info">
-                    <h4 className="admin-commissions__employee-name">{employee.username}</h4>
+                    <h4 className="admin-commissions__employee-name">{employee.userId || 'Unknown'}</h4>
                     <span className="admin-commissions__employee-agreements">
-                      {employee.totalAgreements} agreement{employee.totalAgreements !== 1 ? 's' : ''}
+                      {employee.totalAgreements || 0} agreement{(employee.totalAgreements || 0) !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="admin-commissions__employee-arrow">→</div>
@@ -572,41 +575,35 @@ export default function AdminCommissions() {
 
                 <div className="admin-commissions__employee-stats">
                   <div className="admin-commissions__employee-stat">
-                    <span className="admin-commissions__stat-label">Total Commission</span>
+                    <span className="admin-commissions__stat-label">Total Revenue</span>
                     <span className="admin-commissions__stat-value admin-commissions__stat-value--commission">
-                      {formatMoney(employee.totalContractCommission)}
-                    </span>
-                  </div>
-                  <div className="admin-commissions__employee-stat">
-                    <span className="admin-commissions__stat-label">Contract Value</span>
-                    <span className="admin-commissions__stat-value">
-                      {formatMoney(employee.totalContractValue)}
+                      {formatMoney(employee.totalRevenue || 0)}
                     </span>
                   </div>
                 </div>
 
                 <div className="admin-commissions__employee-status-row">
-                  {employee.statusCounts.draft > 0 && (
+                  {employee.statusCounts?.draft > 0 && (
                     <span className="admin-commissions__mini-badge admin-commissions__mini-badge--draft">
                       {employee.statusCounts.draft} Draft
                     </span>
                   )}
-                  {employee.statusCounts.saved > 0 && (
+                  {employee.statusCounts?.saved > 0 && (
                     <span className="admin-commissions__mini-badge admin-commissions__mini-badge--saved">
                       {employee.statusCounts.saved} Saved
                     </span>
                   )}
-                  {employee.statusCounts.pending_approval > 0 && (
+                  {employee.statusCounts?.pending_approval > 0 && (
                     <span className="admin-commissions__mini-badge admin-commissions__mini-badge--pending">
                       {employee.statusCounts.pending_approval} Pending
                     </span>
                   )}
-                  {employee.statusCounts.approved > 0 && (
+                  {employee.statusCounts?.approved > 0 && (
                     <span className="admin-commissions__mini-badge admin-commissions__mini-badge--approved">
                       {employee.statusCounts.approved} Approved
                     </span>
                   )}
-                  {employee.statusCounts.active > 0 && (
+                  {employee.statusCounts?.active > 0 && (
                     <span className="admin-commissions__mini-badge admin-commissions__mini-badge--active">
                       {employee.statusCounts.active} Active
                     </span>

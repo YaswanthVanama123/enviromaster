@@ -8,7 +8,7 @@ interface CommissionResultDisplayProps {
 export const CommissionResultDisplay: React.FC<CommissionResultDisplayProps> = ({
   result,
 }) => {
-  const { breakdown, effectiveBaseRate, finalCommissionRate, monthlyCommission, annualCommission, input } = result;
+  const { breakdown, effectiveBaseRate, finalCommissionRate, weeklyCommission, annualCommission, input } = result;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -43,9 +43,9 @@ export const CommissionResultDisplay: React.FC<CommissionResultDisplayProps> = (
         </div>
 
         <div className="result-card">
-          <div className="result-card-label">Monthly Commission</div>
+          <div className="result-card-label">Weekly Commission</div>
           <div className="result-card-value">
-            {formatCurrency(monthlyCommission)}
+            {formatCurrency(weeklyCommission)}
           </div>
         </div>
 
@@ -145,8 +145,8 @@ export const CommissionResultDisplay: React.FC<CommissionResultDisplayProps> = (
           Agreement Multiplier ({breakdown.agreementMultiplier}%) ={" "}
           <strong>{formatPercent(finalCommissionRate)}</strong>
           <br />
-          <strong>Monthly:</strong> {formatCurrency(input.monthlyValue)} ×{" "}
-          {formatPercent(finalCommissionRate)} = <strong>{formatCurrency(monthlyCommission)}</strong>
+          <strong>Weekly:</strong> {formatCurrency(annualCommission)} / 52 ={" "}
+          <strong>{formatCurrency(weeklyCommission)}</strong>
         </div>
       </div>
     </div>

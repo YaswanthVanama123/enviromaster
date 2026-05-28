@@ -6,8 +6,7 @@ import type {
   BackupStatistics,
   BackupSnapshot,
   CreateBackupPayload,
-  RestoreBackupPayload,
-  BackupListResponse
+  RestoreBackupPayload
 } from '../types/pricingBackup.types';
 
 export interface UsePricingBackupsResult {
@@ -61,15 +60,65 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
 
     try {
       const response = await pricingBackupApi.getBackups(limit);
+      console.log('[BACKUP-HOOK] Raw API response:', response);
 
       if (response.error) {
         setError(response.error);
-      } else if (response.data?.success && response.data.data) {
-        setBackups(response.data.data.backups);
-      } else {
-        setError('Failed to fetch backups');
+        return;
       }
+
+      // Get the response data
+      const responseData = response.data;
+      if (!responseData?.success) {
+        setError(responseData?.message || 'Failed to fetch backups');
+        return;
+      }
+
+      // The service returns data as an array directly
+      const rawBackups = responseData.data || [];
+      console.log('[BACKUP-HOOK] Raw backups:', rawBackups);
+
+      if (!Array.isArray(rawBackups)) {
+        console.error('[BACKUP-HOOK] Expected array but got:', typeof rawBackups);
+        setError('Invalid response format');
+        return;
+      }
+
+      // Map the backups - the service already returns properly formatted data
+      const mappedBackups: PricingBackup[] = rawBackups.map((b: any) => ({
+        // Use existing values directly from service
+        changeDayId: b.changeDayId,
+        changeDay: b.changeDay,
+        firstChangeTimestamp: b.firstChangeTimestamp,
+        backupTrigger: b.backupTrigger,
+        changedBy: b.changedBy,
+        changeContext: b.changeContext || {
+          changedAreas: [],
+          changeDescription: '',
+          changeCount: 0
+        },
+        snapshotMetadata: b.snapshotMetadata || {
+          includedDataTypes: { priceFix: false, productCatalog: false, serviceConfigs: false },
+          documentCounts: { priceFixCount: 0, productCatalogCount: 0, serviceConfigCount: 0 },
+          originalSize: 0,
+          compressedSize: 0,
+          compressionRatio: 0
+        },
+        restorationInfo: b.restorationInfo || {
+          hasBeenRestored: false
+        },
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
+        // Additional fields for UI compatibility
+        id: b.changeDayId,
+        _id: b.changeDayId
+      }));
+
+      console.log('[BACKUP-HOOK] Mapped backups:', mappedBackups);
+      setBackups(mappedBackups);
+
     } catch (err) {
+      console.error('[BACKUP-HOOK] Error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
@@ -85,8 +134,23 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
 
       if (response.error) {
         setHealthError(response.error);
-      } else if (response.data?.success && response.data.data) {
-        setHealth(response.data.data);
+      } else if (response.data?.success) {
+        // Health endpoint returns { success, health, metrics }
+        const healthData = response.data.data || response.data.health;
+        if (healthData) {
+          setHealth({
+            status: healthData.status || 'healthy',
+            checks: {
+              backupModelAccessible: true,
+              totalBackups: response.data.metrics?.totalBackups || 0,
+              uniqueChangeDays: response.data.metrics?.completeBackups || 0,
+              retentionPolicyCompliant: true,
+              hasBackupToday: !!response.data.metrics?.latestBackup,
+              mostRecentBackup: response.data.metrics?.latestBackup
+            },
+            warnings: healthData.issues || []
+          });
+        }
       } else {
         setHealthError('Failed to fetch health status');
       }
@@ -124,19 +188,23 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
 
       if (response.error) {
         return { success: false, error: response.error };
-      } else if (response.data?.success) {
-        await fetchBackups();
-        return { success: true, data: response.data.data };
-      } else if (response.status === 409 && response.data?.requiresConfirmation) {
+      }
+
+      if (response.status === 409 || response.data?.requiresConfirmation) {
         return {
           success: false,
           requiresConfirmation: true,
-          existingBackup: response.data.existingBackup,
-          error: response.data.message || 'Manual backup already exists for today'
+          existingBackup: response.data?.existingBackup,
+          error: response.data?.message || 'Manual backup already exists for today'
         };
-      } else {
-        return { success: false, error: 'Failed to create backup' };
       }
+
+      if (response.data?.success) {
+        await fetchBackups();
+        return { success: true, data: response.data.data };
+      }
+
+      return { success: false, error: response.data?.message || 'Failed to create backup' };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error occurred' };
     }
@@ -152,7 +220,7 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
         await fetchBackups();
         return { success: true, data: response.data.data };
       } else {
-        return { success: false, error: 'Failed to restore backup' };
+        return { success: false, error: response.data?.message || 'Failed to restore backup' };
       }
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error occurred' };
@@ -169,7 +237,7 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
         await fetchBackups();
         return { success: true, data: response.data.data };
       } else {
-        return { success: false, error: 'Failed to delete backups' };
+        return { success: false, error: response.data?.message || 'Failed to delete backups' };
       }
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error occurred' };
@@ -184,9 +252,9 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
         return { success: false, error: response.error };
       } else if (response.data?.success) {
         await fetchBackups();
-        return { success: true, data: response.data.data };
+        return { success: true, data: response.data.data || response.data.result };
       } else {
-        return { success: false, error: 'Failed to enforce retention policy' };
+        return { success: false, error: response.data?.message || 'Failed to enforce retention policy' };
       }
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Unknown error occurred' };
@@ -225,32 +293,23 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
 
   useEffect(() => {
     const performAutoFetch = async () => {
-      console.log(`🔄 [PRICING-BACKUPS] Auto-fetch mode: ${autoFetch}`);
+      console.log(`[PRICING-BACKUPS] Auto-fetch mode: ${autoFetch}`);
 
       switch (autoFetch) {
         case 'list':
-          console.log('📋 [PRICING-BACKUPS] Auto-fetching backups list only');
           await fetchBackups();
           break;
-
         case 'health':
-          console.log('🏥 [PRICING-BACKUPS] Auto-fetching health only');
           await fetchHealth();
           break;
-
         case 'statistics':
-          console.log('📊 [PRICING-BACKUPS] Auto-fetching statistics only');
           await fetchStatistics();
           break;
-
         case 'all':
-          console.log('🔄 [PRICING-BACKUPS] Auto-fetching all APIs (legacy mode)');
           await refreshAll();
           break;
-
         case 'none':
         default:
-          console.log('⏭️ [PRICING-BACKUPS] Auto-fetch disabled - manual control');
           break;
       }
     };

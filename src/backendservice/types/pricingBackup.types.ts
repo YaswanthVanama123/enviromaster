@@ -1,19 +1,25 @@
 export interface PricingBackup {
-  _id?: string;
+  // Primary identifier
   changeDayId: string;
   changeDay: string;
   firstChangeTimestamp: string;
+
+  // Backup trigger info
   backupTrigger: 'pricefix_update' | 'product_catalog_update' | 'service_config_update' | 'manual' | 'scheduled';
   changedBy?: {
     _id: string;
     username: string;
     email: string;
   };
+
+  // Change context
   changeContext: {
     changedAreas: string[];
     changeDescription: string;
     changeCount: number;
   };
+
+  // Snapshot metadata
   snapshotMetadata: {
     includedDataTypes: {
       priceFix: boolean;
@@ -29,6 +35,8 @@ export interface PricingBackup {
     compressedSize: number;
     compressionRatio: number;
   };
+
+  // Restoration info
   restorationInfo: {
     hasBeenRestored: boolean;
     lastRestoredAt?: string;
@@ -39,8 +47,14 @@ export interface PricingBackup {
     };
     restorationNotes?: string;
   };
+
+  // Timestamps
   createdAt?: string;
   updatedAt?: string;
+
+  // UI compatibility fields
+  id?: string;
+  _id?: string;
 }
 
 export interface BackupSystemHealth {
@@ -54,7 +68,7 @@ export interface BackupSystemHealth {
     mostRecentBackup?: {
       changeDay: string;
       createdAt: string;
-      trigger: string;
+      trigger?: string;
     };
   };
   warnings: string[];
@@ -136,7 +150,7 @@ export interface BackupApiResponse<T = any> {
   message: string;
   data?: T;
   error?: string;
-  timestamp: string;
+  timestamp?: string;
 }
 
 export interface BackupComparisonData {

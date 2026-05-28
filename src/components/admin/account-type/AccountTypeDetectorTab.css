@@ -1,0 +1,385 @@
+/**
+ * Account Type Detector Tab Styles
+ */
+
+.account-type-detector-tab {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.detector-header {
+  margin-bottom: 24px;
+}
+
+.detector-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111;
+  margin: 0 0 8px 0;
+}
+
+.detector-description {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+.detector-controls {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.company-selector {
+  flex: 1;
+  min-width: 300px;
+}
+
+.company-selector label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 18px;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.search-input-wrapper input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.company-selector select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.company-selector select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.company-selector select option {
+  padding: 8px;
+}
+
+.loading-text {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  display: block;
+}
+
+.frequency-selector {
+  min-width: 200px;
+}
+
+.frequency-selector label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.frequency-selector .label-icon {
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.frequency-dropdown {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.frequency-dropdown:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.detect-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.detect-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.detect-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.detection-result {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.info-row .info-icon {
+  color: #6b7280;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.info-row .label {
+  font-size: 13px;
+  color: #6b7280;
+  min-width: 100px;
+}
+
+.info-row .value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111;
+}
+
+.address-row {
+  flex-wrap: wrap;
+}
+
+.address-row .value {
+  font-weight: 400;
+  color: #666;
+}
+
+.destinations-section {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.destinations-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.destinations-table {
+  background: #f9fafb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 40px 1fr 100px 100px 120px;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #e5e7eb;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 100px 100px 120px;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row.nearest {
+  background: #dbeafe;
+}
+
+.table-row .row-num {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.table-row .dest-name {
+  font-weight: 500;
+  color: #111;
+}
+
+.table-row .driving-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.table-row .time-icon {
+  font-size: 16px;
+}
+
+.account-type-result {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.result-label {
+  font-size: 14px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.account-type-badge {
+  font-size: 28px;
+  font-weight: 700;
+  padding: 16px 32px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.result-reason {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  max-width: 400px;
+}
+
+.thresholds-info {
+  padding: 12px 20px;
+  background: #f3f4f6;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.no-result {
+  background: #f3f4f6;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  color: #666;
+}
+
+.no-result p {
+  margin: 4px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .detector-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .company-selector {
+    min-width: 100%;
+  }
+
+  .detect-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 30px 1fr 80px 80px 100px;
+    gap: 8px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}

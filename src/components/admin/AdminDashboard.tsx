@@ -15,11 +15,12 @@ import { CompanyMappingTab } from "./company-mapping/CompanyMappingTab";
 import { MapDistanceTab } from "./map-distance/MapDistanceTab";
 import { MapDistanceUpdateTab } from "./map-distance/MapDistanceUpdateTab";
 import { InsideSalesCheckTab } from "./inside-sales/InsideSalesCheckTab";
+import { AccountTypeDetectorTab } from "./account-type/AccountTypeDetectorTab";
 import { pdfApi } from "../../backendservice/api/pdfApi";
-import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness, MdLink, MdMap, MdRefresh, MdVerifiedUser } from "react-icons/md";
+import { MdAttachMoney, MdSettings, MdInventory, MdBackup, MdWorkspaces, MdCalculate, MdTrendingUp, MdPeople, MdHistory, MdBusiness, MdLink, MdMap, MdRefresh, MdVerifiedUser, MdCategory } from "react-icons/md";
 import "./AdminDashboard.css";
 
-type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies" | "company-mapping" | "map-distance" | "map-distance-update" | "inside-sales";
+type TabType = "pricing" | "services" | "products" | "backup" | "workflow" | "commissions" | "quota" | "customers" | "audit" | "bigin-companies" | "company-mapping" | "map-distance" | "map-distance-update" | "inside-sales" | "account-type-detector";
 
 interface AdminDashboardProps {
   isEmbedded?: boolean;
@@ -88,9 +89,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (path.includes('/admin-panel/') && (path.includes('/inside-sales') || path.includes('/inside-sales/'))) {
         return "inside-sales";
       }
+      if (path.includes('/admin-panel/') && (path.includes('/account-type-detector') || path.includes('/account-type-detector/'))) {
+        return "account-type-detector";
+      }
 
       if (!currentSubtab) return "pricing";
-      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update", "inside-sales"];
+      const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update", "inside-sales", "account-type-detector"];
       return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
     }
 
@@ -133,9 +137,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/pricing-tables/inside-sales')) {
       return "inside-sales";
     }
+    if (path.includes('/pricing-tables/account-type-detector')) {
+      return "account-type-detector";
+    }
 
     if (!currentSubtab) return "pricing";
-    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update", "inside-sales"];
+    const validTabs: TabType[] = ["pricing", "services", "products", "backup", "workflow", "commissions", "quota", "customers", "audit", "bigin-companies", "company-mapping", "map-distance", "map-distance-update", "inside-sales", "account-type-detector"];
     return validTabs.includes(currentSubtab as TabType) ? (currentSubtab as TabType) : "pricing";
   };
 
@@ -344,6 +351,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <MdVerifiedUser size={20} style={{ marginRight: "8px" }} /> Inside Sales
           </button>
+          <button
+            className="admin-dashboard-nav-button"
+            style={{
+              ...styles.navButton,
+              ...(activeTab === "account-type-detector" ? styles.navButtonActive : {}),
+            }}
+            onClick={() => handleTabChange("account-type-detector")}
+          >
+            <MdCategory size={20} style={{ marginRight: "8px" }} /> Account Type
+          </button>
         </div>
         <button
           style={{ ...styles.exportPdfButton, opacity: exportingPdf ? 0.7 : 1 }}
@@ -388,6 +405,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === "map-distance" && <MapDistanceTab />}
         {activeTab === "map-distance-update" && <MapDistanceUpdateTab />}
         {activeTab === "inside-sales" && <InsideSalesCheckTab />}
+        {activeTab === "account-type-detector" && <AccountTypeDetectorTab />}
       </div>
     </div>
   );

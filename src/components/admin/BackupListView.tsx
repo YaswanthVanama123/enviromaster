@@ -40,7 +40,7 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
   const [detailsBackup, setDetailsBackup] = useState<PricingBackup | null>(null);
 
   const processedBackups = useMemo(() => {
-    let filtered = [...backups];
+    let filtered = [...(backups || [])];
 
     if (filterTrigger !== 'all') {
       filtered = filtered.filter(backup => backup.backupTrigger === filterTrigger);
@@ -113,7 +113,7 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
   };
 
   const uniqueTriggers = useMemo(() => {
-    const triggers = [...new Set(backups.map(backup => backup.backupTrigger))];
+    const triggers = [...new Set((backups || []).map(backup => backup.backupTrigger))];
     return triggers.sort();
   }, [backups]);
 
@@ -349,14 +349,14 @@ export const BackupListView: React.FC<BackupListViewProps> = ({
         <div className="blv-filter-group" style={styles.filterGroup}>
           <label className="blv-filter-label" style={styles.filterLabel}>Results</label>
           <div style={{ fontSize: '14px', color: '#374151', padding: '8px 0' }}>
-            {processedBackups.length} of {backups.length} backups
+            {processedBackups.length} of {(backups || []).length} backups
           </div>
         </div>
       </div>
 
       {processedBackups.length === 0 ? (
         <div className="blv-empty-state" style={styles.emptyState}>
-          {backups.length === 0
+          {(backups || []).length === 0
             ? "No backups available. Create your first backup to get started."
             : "No backups match the current filters."
           }
