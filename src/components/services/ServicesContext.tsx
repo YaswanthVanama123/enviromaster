@@ -517,15 +517,51 @@ export const ServicesProvider: React.FC<{
 
   // Helper to get frequency number from service data
   const getFrequencyNum = (serviceData: any): number | null => {
-    const freq = serviceData.frequency ?? serviceData.frequencyKey ?? serviceData.frequencyDisplay?.value;
-    if (typeof freq === 'number') return freq;
-    if (typeof freq === 'string') {
-      const freqMap: Record<string, number> = {
-        'weekly': 1, 'biweekly': 2, 'bi-weekly': 2, 'monthly': 3, 'quarterly': 4,
-        'semi-annual': 5, 'annual': 6, 'twice-per-month': 13, 'bi-monthly': 14, 'one-time': 0
-      };
-      return freqMap[freq.toLowerCase()] ?? null;
+    // Check multiple possible locations for frequency
+    const freqCandidates = [
+      // Direct frequency key or number
+      serviceData.frequencyKey,
+      serviceData.frequencyNum,
+      // Nested frequency object (most common case: frequency.frequencyKey)
+      serviceData.frequency?.frequencyKey,
+      serviceData.frequency?.value,
+      serviceData.frequency?.label,
+      // Direct frequency (if it's a string/number)
+      typeof serviceData.frequency === 'string' || typeof serviceData.frequency === 'number'
+        ? serviceData.frequency
+        : null,
+      // Frequency display variants
+      serviceData.frequencyDisplay?.frequencyKey,
+      serviceData.frequencyDisplay?.value,
+    ];
+
+    const freqMap: Record<string, number> = {
+      'weekly': 1, 'biweekly': 2, 'bi-weekly': 2, 'monthly': 3, 'quarterly': 4,
+      'semi-annual': 5, 'annual': 6, 'twice-per-month': 13, 'bi-monthly': 14,
+      'bimonthly': 14, 'one-time': 0, 'onetime': 0
+    };
+
+    for (const candidate of freqCandidates) {
+      if (candidate === null || candidate === undefined) continue;
+
+      // If it's already a number, return it
+      if (typeof candidate === 'number') return candidate;
+
+      // If it's a string, try to map it
+      if (typeof candidate === 'string') {
+        const normalized = candidate.toLowerCase().trim();
+        if (freqMap[normalized] !== undefined) {
+          console.log(`[COMMISSION-CALC] getFrequencyNum: Found frequency "${normalized}" -> ${freqMap[normalized]}`);
+          return freqMap[normalized];
+        }
+      }
     }
+
+    console.log(`[COMMISSION-CALC] getFrequencyNum: Could not find frequency in serviceData:`, {
+      frequency: serviceData.frequency,
+      frequencyKey: serviceData.frequencyKey,
+      frequencyDisplay: serviceData.frequencyDisplay,
+    });
     return null;
   };
 
@@ -551,6 +587,12 @@ export const ServicesProvider: React.FC<{
 
   // Calculate commission data for saving to backend
   const getCommissionDataForSave = useCallback((baseCommissionRate: number = 6): CommissionDataForSave | null => {
+    console.log('[COMMISSION-CALC] Starting calculation with:', {
+      servicesCount: Object.keys(servicesState).length,
+      accountTypeCacheKeys: Object.keys(accountTypeCache),
+      globalContractMonths,
+    });
+
     // Get agreement multiplier based on contract months
     const term = getAgreementTerm(globalContractMonths);
     const agreementMultiplier = DEFAULT_COMMISSION_RULES_V2.agreementMultipliers[term];
@@ -561,10 +603,16 @@ export const ServicesProvider: React.FC<{
     const serviceBreakdown: CommissionDataForSave['serviceBreakdown'] = [];
 
     Object.entries(servicesState).forEach(([serviceName, serviceData]: [string, any]) => {
-      if (!serviceData?.isActive) return;
+      if (!serviceData?.isActive) {
+        console.log(`[COMMISSION-CALC] Skipping ${serviceName}: not active`);
+        return;
+      }
 
       const freqNum = getFrequencyNum(serviceData);
-      if (freqNum === null || freqNum === 0) return; // Skip one-time services
+      if (freqNum === null || freqNum === 0) {
+        console.log(`[COMMISSION-CALC] Skipping ${serviceName}: one-time or no frequency`);
+        return; // Skip one-time services
+      }
 
       const perVisitRevenue =
         serviceData.perVisit ??
@@ -573,7 +621,17 @@ export const ServicesProvider: React.FC<{
         serviceData.calc?.perVisit ??
         0;
 
-      if (perVisitRevenue <= 0) return;
+      console.log(`[COMMISSION-CALC] ${serviceName}: perVisitRevenue=${perVisitRevenue}`, {
+        perVisit: serviceData.perVisit,
+        totalsPerVisit: serviceData.totals?.perVisit?.amount,
+        perVisitCharge: serviceData.perVisitCharge,
+        calcPerVisit: serviceData.calc?.perVisit,
+      });
+
+      if (perVisitRevenue <= 0) {
+        console.log(`[COMMISSION-CALC] Skipping ${serviceName}: no perVisitRevenue`);
+        return;
+      }
 
       // Get account type from cache
       const cacheEntry = accountTypeCache[freqNum];
@@ -606,6 +664,7 @@ export const ServicesProvider: React.FC<{
 
     // If no services have commission, return null
     if (serviceBreakdown.length === 0) {
+      console.log('[COMMISSION-CALC] No services with commission data, returning null');
       return null;
     }
 
@@ -613,7 +672,7 @@ export const ServicesProvider: React.FC<{
     const years = globalContractMonths / 12;
     const contractCommission = totalAnnualCommission * years;
 
-    return {
+    const result = {
       weeklyCommission: totalWeeklyCommission,
       annualCommission: totalAnnualCommission,
       contractCommission,
@@ -622,6 +681,9 @@ export const ServicesProvider: React.FC<{
       baseRate: baseCommissionRate,
       serviceBreakdown,
     };
+
+    console.log('[COMMISSION-CALC] Final result:', result);
+    return result;
   }, [servicesState, accountTypeCache, globalContractMonths]);
 
   const value = useMemo<ServicesContextValue>(() => {

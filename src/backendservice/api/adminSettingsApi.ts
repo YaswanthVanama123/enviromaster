@@ -1,8 +1,15 @@
 import { apiClient } from "../utils/apiClient";
 
+export interface PayrollSettings {
+  startDate: string | null;
+  cycleType: 'weekly' | 'biweekly' | 'monthly';
+  cycleDayOfWeek: number;
+}
+
 export interface AdminSettings {
   defaultApprovalTaskOwner: { id: string | null; name: string | null };
   approvalTaskSubject: string;
+  payrollSettings?: PayrollSettings;
 }
 
 export interface AdminSettingsResponse {

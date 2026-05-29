@@ -14,7 +14,9 @@ interface CommissionBreakdown {
 
 interface CommissionData {
   rate: number;
+  weekly: number;
   monthly: number;
+  annual: number;
   total: number;
   breakdown: CommissionBreakdown;
 }
@@ -33,7 +35,9 @@ interface AgreementCommission {
 
 interface CommissionTotals {
   totalAgreements: number;
+  totalWeeklyCommission: number;
   totalMonthlyCommission: number;
+  totalAnnualCommission: number;
   totalContractCommission: number;
   totalContractValue: number;
   averageCommissionRate: number;
@@ -99,12 +103,88 @@ function formatDate(dateStr: string): string {
   });
 }
 
+// Time period filter options
+type TimePeriod = 'all' | 'weekly' | '14days' | 'monthly' | 'quarterly' | 'annually' | 'custom';
+
+const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
+  all: 'All Time',
+  weekly: 'This Week',
+  '14days': 'Last 14 Days',
+  monthly: 'This Month',
+  quarterly: 'This Quarter',
+  annually: 'This Year',
+  custom: 'Date Range',
+};
+
+// Helper to check if a date falls within the time period
+function isWithinTimePeriod(
+  dateStr: string | null,
+  period: TimePeriod,
+  customStartDate?: string | null,
+  customEndDate?: string | null
+): boolean {
+  if (period === 'all') return true;
+  if (!dateStr) return false;
+
+  const date = new Date(dateStr);
+  const now = new Date();
+
+  // Reset time components for accurate date comparison
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (period) {
+    case 'weekly': {
+      // Start of current week (Sunday)
+      const startOfWeek = new Date(startOfToday);
+      startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
+      return date >= startOfWeek;
+    }
+    case '14days': {
+      const fourteenDaysAgo = new Date(startOfToday);
+      fourteenDaysAgo.setDate(startOfToday.getDate() - 14);
+      return date >= fourteenDaysAgo;
+    }
+    case 'monthly': {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return date >= startOfMonth;
+    }
+    case 'quarterly': {
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      const startOfQuarter = new Date(now.getFullYear(), currentQuarter * 3, 1);
+      return date >= startOfQuarter;
+    }
+    case 'annually': {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      return date >= startOfYear;
+    }
+    case 'custom': {
+      if (!customStartDate && !customEndDate) return true;
+      const startDate = customStartDate ? new Date(customStartDate) : null;
+      const endDate = customEndDate ? new Date(customEndDate + 'T23:59:59') : null;
+
+      if (startDate && endDate) {
+        return date >= startDate && date <= endDate;
+      } else if (startDate) {
+        return date >= startDate;
+      } else if (endDate) {
+        return date <= endDate;
+      }
+      return true;
+    }
+    default:
+      return true;
+  }
+}
+
 export default function MyCommissions() {
   const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<CommissionsResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -125,14 +205,95 @@ export default function MyCommissions() {
 
   const filteredCommissions = useMemo(() => {
     if (!data?.commissions) return [];
-    if (statusFilter === 'all') return data.commissions;
+
     return data.commissions.filter(c => {
-      if (statusFilter === 'approved') {
-        return c.status === 'approved_salesman' || c.status === 'approved_admin';
+      // Filter by status
+      let statusMatch = true;
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'approved') {
+          statusMatch = c.status === 'approved_salesman' || c.status === 'approved_admin';
+        } else {
+          statusMatch = c.status === statusFilter;
+        }
       }
-      return c.status === statusFilter;
+
+      // Filter by time period (using startDate or createdAt as fallback)
+      const dateToCheck = c.startDate || c.createdAt;
+      const timeMatch = isWithinTimePeriod(dateToCheck, timePeriod, customStartDate, customEndDate);
+
+      return statusMatch && timeMatch;
     });
-  }, [data?.commissions, statusFilter]);
+  }, [data?.commissions, statusFilter, timePeriod, customStartDate, customEndDate]);
+
+  // Calculate time-filtered commissions (without status filter) for status counts
+  const timeFilteredCommissions = useMemo(() => {
+    if (!data?.commissions) return [];
+
+    return data.commissions.filter(c => {
+      const dateToCheck = c.startDate || c.createdAt;
+      return isWithinTimePeriod(dateToCheck, timePeriod, customStartDate, customEndDate);
+    });
+  }, [data?.commissions, timePeriod, customStartDate, customEndDate]);
+
+  // Calculate status counts from time-filtered commissions
+  const filteredByStatus = useMemo(() => {
+    const counts: Record<string, { count: number; commission: number }> = {
+      draft: { count: 0, commission: 0 },
+      saved: { count: 0, commission: 0 },
+      pending: { count: 0, commission: 0 },
+      approved: { count: 0, commission: 0 },
+      active: { count: 0, commission: 0 },
+    };
+
+    timeFilteredCommissions.forEach((agreement) => {
+      const commission = agreement.commission || {};
+      const annualCommission = commission.annual ?? (commission.monthly ? commission.monthly * 12 : 0);
+
+      let statusKey = 'draft';
+      if (agreement.status === 'saved') statusKey = 'saved';
+      else if (agreement.status === 'pending_approval') statusKey = 'pending';
+      else if (agreement.status === 'approved_salesman' || agreement.status === 'approved_admin') statusKey = 'approved';
+      else if (agreement.status === 'active' || agreement.status === 'finalized') statusKey = 'active';
+
+      counts[statusKey].count += 1;
+      counts[statusKey].commission += annualCommission;
+    });
+
+    return counts;
+  }, [timeFilteredCommissions]);
+
+  // Calculate filtered totals based on filtered commissions
+  const filteredTotals = useMemo(() => {
+    let totalAnnualCommission = 0;
+    let totalMonthlyCommission = 0;
+    let totalContractValue = 0;
+    let totalRateSum = 0;
+    let agreementsWithRate = 0;
+
+    filteredCommissions.forEach((agreement) => {
+      const commission = agreement.commission || {};
+      const annualCommission = commission.annual ?? (commission.monthly ? commission.monthly * 12 : 0);
+      const monthlyCommission = commission.monthly ?? 0;
+      const rate = commission.rate ?? 0;
+
+      totalAnnualCommission += annualCommission;
+      totalMonthlyCommission += monthlyCommission;
+      totalContractValue += agreement.contractValue || 0;
+
+      if (rate > 0) {
+        totalRateSum += rate;
+        agreementsWithRate++;
+      }
+    });
+
+    return {
+      totalAgreements: filteredCommissions.length,
+      totalAnnualCommission,
+      totalMonthlyCommission,
+      totalContractValue,
+      averageCommissionRate: agreementsWithRate > 0 ? totalRateSum / agreementsWithRate : 0,
+    };
+  }, [filteredCommissions]);
 
   if (loading) {
     return (
@@ -170,7 +331,9 @@ export default function MyCommissions() {
   // Provide default values for totals and byStatus if missing
   const totals: CommissionTotals = data.totals || {
     totalAgreements: 0,
+    totalWeeklyCommission: 0,
     totalMonthlyCommission: 0,
+    totalAnnualCommission: 0,
     totalContractCommission: 0,
     totalContractValue: 0,
     averageCommissionRate: 0,
@@ -198,14 +361,65 @@ export default function MyCommissions() {
         </p>
       </header>
 
+      {/* Time Period Filter Tabs */}
+      <div className="my-commissions__time-filter">
+        <div className="my-commissions__time-tabs">
+          {(Object.keys(TIME_PERIOD_LABELS) as TimePeriod[]).map((period) => (
+            <button
+              key={period}
+              className={`my-commissions__time-tab ${timePeriod === period ? 'active' : ''}`}
+              onClick={() => setTimePeriod(period)}
+            >
+              {TIME_PERIOD_LABELS[period]}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom Date Range Inputs */}
+        {timePeriod === 'custom' && (
+          <div className="my-commissions__date-range">
+            <div className="my-commissions__date-input-group">
+              <label>From</label>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="my-commissions__date-input"
+              />
+            </div>
+            <span className="my-commissions__date-separator">to</span>
+            <div className="my-commissions__date-input-group">
+              <label>To</label>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="my-commissions__date-input"
+              />
+            </div>
+            {(customStartDate || customEndDate) && (
+              <button
+                className="my-commissions__date-clear"
+                onClick={() => {
+                  setCustomStartDate('');
+                  setCustomEndDate('');
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Summary Cards */}
       <div className="my-commissions__summary-grid">
         <div className="my-commissions__summary-card my-commissions__summary-card--primary">
           <div className="my-commissions__summary-icon">$</div>
           <div className="my-commissions__summary-content">
-            <span className="my-commissions__summary-label">Total Contract Commission</span>
+            <span className="my-commissions__summary-label">Annual Commission</span>
             <span className="my-commissions__summary-value">
-              {formatMoney(totals.totalContractCommission)}
+              {formatMoney(filteredTotals.totalAnnualCommission)}
             </span>
           </div>
         </div>
@@ -215,7 +429,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Monthly Commission</span>
             <span className="my-commissions__summary-value">
-              {formatMoney(totals.totalMonthlyCommission)}
+              {formatMoney(filteredTotals.totalMonthlyCommission)}
             </span>
           </div>
         </div>
@@ -225,7 +439,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Total Agreements</span>
             <span className="my-commissions__summary-value">
-              {totals.totalAgreements}
+              {filteredTotals.totalAgreements}
             </span>
           </div>
         </div>
@@ -235,7 +449,7 @@ export default function MyCommissions() {
           <div className="my-commissions__summary-content">
             <span className="my-commissions__summary-label">Avg Commission Rate</span>
             <span className="my-commissions__summary-value">
-              {formatPercent(totals.averageCommissionRate)}%
+              {formatPercent(filteredTotals.averageCommissionRate)}%
             </span>
           </div>
         </div>
@@ -249,9 +463,9 @@ export default function MyCommissions() {
             className={`my-commissions__status-chip ${statusFilter === 'all' ? 'active' : ''}`}
             onClick={() => setStatusFilter('all')}
           >
-            All ({totals.totalAgreements})
+            All ({timeFilteredCommissions.length})
           </button>
-          {Object.entries(byStatus).map(([key, value]) => (
+          {Object.entries(filteredByStatus).map(([key, value]) => (
             value.count > 0 && (
               <button
                 key={key}
@@ -281,6 +495,13 @@ export default function MyCommissions() {
             {filteredCommissions.map((agreement) => {
               const statusStyle = STATUS_COLORS[agreement.status] || STATUS_COLORS.draft;
               const isExpanded = expandedId === agreement.id;
+
+              // Safe access to commission data with defaults
+              const commission = agreement.commission || {};
+              const breakdown = commission.breakdown || {};
+              const annualCommission = commission.annual ?? (commission.monthly ? commission.monthly * 12 : 0);
+              const rate = commission.rate ?? 0;
+              const monthly = commission.monthly ?? 0;
 
               return (
                 <div
@@ -318,12 +539,12 @@ export default function MyCommissions() {
                         </span>
                       </div>
                       <div className="my-commissions__amount-item my-commissions__amount-item--commission">
-                        <span className="my-commissions__amount-label">Commission</span>
+                        <span className="my-commissions__amount-label">Annual Commission</span>
                         <span className="my-commissions__amount-value">
-                          {formatMoney(agreement.commission.total)}
+                          {formatMoney(annualCommission)}
                         </span>
                         <span className="my-commissions__rate-badge">
-                          {formatPercent(agreement.commission.rate)}%
+                          {formatPercent(rate)}%
                         </span>
                       </div>
                     </div>
@@ -343,42 +564,42 @@ export default function MyCommissions() {
                             <span>{formatMoney(agreement.monthlyValue)}</span>
                           </div>
                           <div className="my-commissions__breakdown-item">
-                            <span>Base Rate ({agreement.commission.breakdown.agreementTerm})</span>
-                            <span>{formatPercent(agreement.commission.breakdown.baseRate)}%</span>
+                            <span>Base Rate ({breakdown.agreementTerm || `${agreement.contractMonths} months`})</span>
+                            <span>{formatPercent(breakdown.baseRate ?? rate)}%</span>
                           </div>
                           <div className="my-commissions__breakdown-item">
                             <span>Agreement Multiplier</span>
-                            <span>{formatPercent(agreement.commission.breakdown.multiplier)}%</span>
+                            <span>{formatPercent(breakdown.multiplier ?? 100)}%</span>
                           </div>
-                          {agreement.commission.breakdown.accountTypeAdjustment !== 0 && (
+                          {(breakdown.accountTypeAdjustment ?? 0) !== 0 && (
                             <div className="my-commissions__breakdown-item">
                               <span>Account Type Adjustment</span>
-                              <span>{agreement.commission.breakdown.accountTypeAdjustment > 0 ? '+' : ''}{formatPercent(agreement.commission.breakdown.accountTypeAdjustment)}%</span>
+                              <span>{(breakdown.accountTypeAdjustment ?? 0) > 0 ? '+' : ''}{formatPercent(breakdown.accountTypeAdjustment ?? 0)}%</span>
                             </div>
                           )}
-                          {agreement.commission.breakdown.greenlineBonus > 0 && (
+                          {(breakdown.greenlineBonus ?? 0) > 0 && (
                             <div className="my-commissions__breakdown-item my-commissions__breakdown-item--bonus">
                               <span>Greenline Bonus</span>
-                              <span>+{formatPercent(agreement.commission.breakdown.greenlineBonus)}%</span>
+                              <span>+{formatPercent(breakdown.greenlineBonus ?? 0)}%</span>
                             </div>
                           )}
-                          {agreement.commission.breakdown.insideSalesDeduction !== 0 && (
+                          {(breakdown.insideSalesDeduction ?? 0) !== 0 && (
                             <div className="my-commissions__breakdown-item my-commissions__breakdown-item--deduction">
                               <span>Inside Sales Deduction</span>
-                              <span>{formatPercent(agreement.commission.breakdown.insideSalesDeduction)}%</span>
+                              <span>{formatPercent(breakdown.insideSalesDeduction ?? 0)}%</span>
                             </div>
                           )}
                           <div className="my-commissions__breakdown-item my-commissions__breakdown-item--total">
                             <span>Final Rate</span>
-                            <span>{formatPercent(agreement.commission.rate)}%</span>
+                            <span>{formatPercent(rate)}%</span>
                           </div>
                           <div className="my-commissions__breakdown-item my-commissions__breakdown-item--total">
                             <span>Monthly Commission</span>
-                            <span>{formatMoney(agreement.commission.monthly)}</span>
+                            <span>{formatMoney(monthly)}</span>
                           </div>
                           <div className="my-commissions__breakdown-item my-commissions__breakdown-item--total">
-                            <span>Total Contract Commission</span>
-                            <span>{formatMoney(agreement.commission.total)}</span>
+                            <span>Annual Commission</span>
+                            <span>{formatMoney(annualCommission)}</span>
                           </div>
                         </div>
                       </div>

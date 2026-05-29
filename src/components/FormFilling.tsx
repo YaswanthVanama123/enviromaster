@@ -2071,8 +2071,14 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       const payloadToSend = {
         ...currentFormData,
         services: stripRefreshPowerScrubDraftMetadata(currentFormData.services),
-        status: documentStatus, 
+        status: documentStatus,
       };
+
+      // Debug: Log commission data being sent
+      console.log(`💰 [COMMISSION-DEBUG] Commission data being saved:`, {
+        hasCommission: !!payloadToSend.commission,
+        commission: payloadToSend.commission,
+      });
 
       console.log(`📤 [UPDATE-PAYLOAD] Sending to backend:`, {
         status: payloadToSend.status,

@@ -1116,14 +1116,22 @@ export const pdfApi = {
     return res.data!;
   },
 
-  async getAllEmployeesCommissions(): Promise<any> {
-    const res = await apiClient.get(`/api/pdf/admin/commissions/employees`);
+  async getAllEmployeesCommissions(options?: { startDate?: string; endDate?: string }): Promise<any> {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.append('startDate', options.startDate);
+    if (options?.endDate) params.append('endDate', options.endDate);
+    const queryString = params.toString();
+    const res = await apiClient.get(`/api/pdf/admin/commissions/employees${queryString ? '?' + queryString : ''}`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },
 
-  async getEmployeeCommissions(username: string): Promise<any> {
-    const res = await apiClient.get(`/api/pdf/admin/commissions/employee/${encodeURIComponent(username)}`);
+  async getEmployeeCommissions(username: string, options?: { startDate?: string; endDate?: string }): Promise<any> {
+    const params = new URLSearchParams();
+    if (options?.startDate) params.append('startDate', options.startDate);
+    if (options?.endDate) params.append('endDate', options.endDate);
+    const queryString = params.toString();
+    const res = await apiClient.get(`/api/pdf/admin/commissions/employee/${encodeURIComponent(username)}${queryString ? '?' + queryString : ''}`);
     if (res.error) throw new Error(res.error);
     return res.data!;
   },

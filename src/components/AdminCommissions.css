@@ -202,6 +202,96 @@
   box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
 }
 
+/* Time Filter Tabs */
+.admin-commissions__time-filters {
+  margin-bottom: 24px;
+}
+
+.admin-commissions__time-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.admin-commissions__time-filter-tab {
+  padding: 10px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.admin-commissions__time-filter-tab:hover {
+  border-color: #b91c1c;
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.admin-commissions__time-filter-tab.active {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  border-color: #b91c1c;
+  color: white;
+}
+
+.admin-commissions__date-picker {
+  margin-top: 16px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.admin-commissions__date-inputs {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-commissions__date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-commissions__date-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.admin-commissions__date-input {
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-commissions__date-input:focus {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
+}
+
+.admin-commissions__date-range-label {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #64748b;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
 /* Employee List */
 .admin-commissions__employees-section h3 {
   margin: 0 0 16px 0;
@@ -641,5 +731,29 @@
   .admin-commissions__agreement-header {
     position: relative;
     padding-right: 50px;
+  }
+
+  .admin-commissions__time-filter-tabs {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .admin-commissions__time-filter-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .admin-commissions__date-inputs {
+    flex-direction: column;
+  }
+
+  .admin-commissions__date-field {
+    width: 100%;
+  }
+
+  .admin-commissions__date-input {
+    width: 100%;
   }
 }

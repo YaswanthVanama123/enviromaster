@@ -69,6 +69,112 @@
   margin: 0;
 }
 
+/* Time Period Filter */
+.my-commissions__time-filter {
+  margin-bottom: 20px;
+}
+
+.my-commissions__time-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.my-commissions__time-tab {
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.my-commissions__time-tab:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.my-commissions__time-tab.active {
+  background: #c62828;
+  color: white;
+  font-weight: 600;
+}
+
+/* Custom Date Range */
+.my-commissions__date-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.my-commissions__date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.my-commissions__date-input-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.my-commissions__date-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+}
+
+.my-commissions__date-input:focus {
+  outline: none;
+  border-color: #c62828;
+  box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1);
+}
+
+.my-commissions__date-separator {
+  font-size: 14px;
+  color: #6b7280;
+  padding-top: 18px;
+}
+
+.my-commissions__date-clear {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  margin-left: auto;
+  margin-top: 14px;
+  transition: all 0.2s;
+}
+
+.my-commissions__date-clear:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
 /* Summary Cards */
 .my-commissions__summary-grid {
   display: grid;
@@ -425,6 +531,36 @@
 
   .my-commissions__title-row h1 {
     font-size: 24px;
+  }
+
+  .my-commissions__time-tabs {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .my-commissions__time-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .my-commissions__date-range {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .my-commissions__date-input-group {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .my-commissions__date-separator {
+    display: none;
+  }
+
+  .my-commissions__date-clear {
+    width: 100%;
+    margin-top: 8px;
+    margin-left: 0;
   }
 
   .my-commissions__summary-grid {

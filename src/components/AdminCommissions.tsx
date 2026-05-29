@@ -15,6 +15,7 @@ interface EmployeeSummary {
   userId: string | null;
   totalAgreements: number;
   totalRevenue: number;
+  totalCommission: number;
   // Optional fields that may not be in API response
   statusCounts?: StatusCounts;
   totalMonthlyCommission?: number;
@@ -103,6 +104,84 @@ const STATUS_LABELS: Record<string, string> = {
   active: 'Active',
 };
 
+type TimeFilterType = 'all' | 'thisWeek' | 'last14Days' | 'thisMonth' | 'thisQuarter' | 'thisYear' | 'dateRange';
+
+const TIME_FILTER_LABELS: Record<TimeFilterType, string> = {
+  all: 'All Time',
+  thisWeek: 'This Week',
+  last14Days: 'Last 14 Days',
+  thisMonth: 'This Month',
+  thisQuarter: 'This Quarter',
+  thisYear: 'This Year',
+  dateRange: 'Date Range',
+};
+
+function getDateRange(filter: TimeFilterType, customStart?: string, customEnd?: string): { startDate?: string; endDate?: string } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (filter) {
+    case 'all':
+      return {};
+
+    case 'thisWeek': {
+      const dayOfWeek = today.getDay();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - dayOfWeek);
+      return {
+        startDate: startOfWeek.toISOString(),
+        endDate: now.toISOString(),
+      };
+    }
+
+    case 'last14Days': {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 14);
+      return {
+        startDate: start.toISOString(),
+        endDate: now.toISOString(),
+      };
+    }
+
+    case 'thisMonth': {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      return {
+        startDate: startOfMonth.toISOString(),
+        endDate: now.toISOString(),
+      };
+    }
+
+    case 'thisQuarter': {
+      const quarter = Math.floor(today.getMonth() / 3);
+      const startOfQuarter = new Date(today.getFullYear(), quarter * 3, 1);
+      return {
+        startDate: startOfQuarter.toISOString(),
+        endDate: now.toISOString(),
+      };
+    }
+
+    case 'thisYear': {
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+      return {
+        startDate: startOfYear.toISOString(),
+        endDate: now.toISOString(),
+      };
+    }
+
+    case 'dateRange':
+      if (customStart && customEnd) {
+        return {
+          startDate: new Date(customStart).toISOString(),
+          endDate: new Date(customEnd + 'T23:59:59').toISOString(),
+        };
+      }
+      return {};
+
+    default:
+      return {};
+  }
+}
+
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -132,16 +211,21 @@ export default function AdminCommissions() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [timeFilter, setTimeFilter] = useState<TimeFilterType>('all');
+  const [customDateStart, setCustomDateStart] = useState<string>('');
+  const [customDateEnd, setCustomDateEnd] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [timeFilter, customDateStart, customDateEnd]);
 
   async function fetchEmployees() {
     try {
       setLoading(true);
       setError(null);
-      const response = await pdfApi.getAllEmployeesCommissions();
+      const dateRange = getDateRange(timeFilter, customDateStart, customDateEnd);
+      const response = await pdfApi.getAllEmployeesCommissions(dateRange);
       setEmployeesData(response);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch employees commissions');
@@ -155,7 +239,8 @@ export default function AdminCommissions() {
       setEmployeeLoading(true);
       setError(null);
       setSelectedEmployee(username);
-      const response = await pdfApi.getEmployeeCommissions(username);
+      const dateRange = getDateRange(timeFilter, customDateStart, customDateEnd);
+      const response = await pdfApi.getEmployeeCommissions(username, dateRange);
       setEmployeeCommissions(response);
       setStatusFilter('all');
       setExpandedId(null);
@@ -500,15 +585,68 @@ export default function AdminCommissions() {
         </p>
       </header>
 
+      {/* Time Filter Tabs */}
+      <div className="admin-commissions__time-filters">
+        <div className="admin-commissions__time-filter-tabs">
+          {(Object.keys(TIME_FILTER_LABELS) as TimeFilterType[]).map((filter) => (
+            <button
+              key={filter}
+              className={`admin-commissions__time-filter-tab ${timeFilter === filter ? 'active' : ''}`}
+              onClick={() => {
+                if (filter === 'dateRange') {
+                  setShowDatePicker(true);
+                  setTimeFilter(filter);
+                } else {
+                  setShowDatePicker(false);
+                  setTimeFilter(filter);
+                }
+              }}
+            >
+              {TIME_FILTER_LABELS[filter]}
+            </button>
+          ))}
+        </div>
+
+        {showDatePicker && timeFilter === 'dateRange' && (
+          <div className="admin-commissions__date-picker">
+            <div className="admin-commissions__date-inputs">
+              <div className="admin-commissions__date-field">
+                <label>Start Date</label>
+                <input
+                  type="date"
+                  value={customDateStart}
+                  onChange={(e) => setCustomDateStart(e.target.value)}
+                  className="admin-commissions__date-input"
+                />
+              </div>
+              <div className="admin-commissions__date-field">
+                <label>End Date</label>
+                <input
+                  type="date"
+                  value={customDateEnd}
+                  onChange={(e) => setCustomDateEnd(e.target.value)}
+                  className="admin-commissions__date-input"
+                />
+              </div>
+            </div>
+            {customDateStart && customDateEnd && (
+              <div className="admin-commissions__date-range-label">
+                Showing data from {formatDate(customDateStart)} to {formatDate(customDateEnd)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Summary Totals */}
       {employeesData && (
         <div className="admin-commissions__summary-grid">
           <div className="admin-commissions__summary-card admin-commissions__summary-card--primary">
             <div className="admin-commissions__summary-icon">$</div>
             <div className="admin-commissions__summary-content">
-              <span className="admin-commissions__summary-label">Total Revenue</span>
+              <span className="admin-commissions__summary-label">Total Commission</span>
               <span className="admin-commissions__summary-value">
-                {formatMoney(employeesData.employees?.reduce((sum, e) => sum + (e.totalRevenue || 0), 0) || 0)}
+                {formatMoney(employeesData.employees?.reduce((sum, e) => sum + (e.totalCommission || 0), 0) || 0)}
               </span>
             </div>
           </div>
@@ -581,9 +719,9 @@ export default function AdminCommissions() {
 
                 <div className="admin-commissions__employee-stats">
                   <div className="admin-commissions__employee-stat">
-                    <span className="admin-commissions__stat-label">Total Revenue</span>
+                    <span className="admin-commissions__stat-label">Commission</span>
                     <span className="admin-commissions__stat-value admin-commissions__stat-value--commission">
-                      {formatMoney(employee.totalRevenue || 0)}
+                      {formatMoney(employee.totalCommission || 0)}
                     </span>
                   </div>
                 </div>

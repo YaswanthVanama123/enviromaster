@@ -31,6 +31,7 @@ export const ApprovalTaskSettings: React.FC = () => {
         selectedOwner.id !== settings.defaultApprovalTaskOwner.id ||
         selectedOwner.name !== settings.defaultApprovalTaskOwner.name;
       const subjectChanged = subjectTemplate !== settings.approvalTaskSubject;
+
       setHasChanges(ownerChanged || subjectChanged);
     }
   }, [selectedOwner, subjectTemplate, settings]);
@@ -67,7 +68,7 @@ export const ApprovalTaskSettings: React.FC = () => {
       });
       setSettings(updated);
       setHasChanges(false);
-      setToastMessage({ message: 'Workflow settings saved successfully!', type: 'success' });
+      setToastMessage({ message: 'Settings saved successfully!', type: 'success' });
     } catch (error) {
       console.error('Error saving settings:', error);
       setToastMessage({ message: 'Failed to save settings', type: 'error' });
@@ -230,7 +231,7 @@ export const ApprovalTaskSettings: React.FC = () => {
           disabled={saving || !hasChanges}
         >
           <FontAwesomeIcon icon={faSave} className="ats-save-icon" />
-          {saving ? 'Saving…' : 'Save Workflow Settings'}
+          {saving ? 'Saving…' : 'Save Settings'}
         </button>
         {!hasChanges && !saving && settings && (
           <span className="ats-no-changes">No unsaved changes</span>
