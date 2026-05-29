@@ -1,7 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthContext } from './auth';
 import { pdfApi } from '../backendservice/api/pdfApi';
+import { quotaApi } from '../backendservice/api/quotaApi';
 import './MyCommissions.css';
+
+// Quota level types and helpers
+type QuotaLevel = 'below' | 'above' | 'double';
+
+const QUOTA_LEVEL_CONFIG: Record<QuotaLevel, { label: string; rate: number; color: string; bgColor: string }> = {
+  below: { label: 'Below Quota', rate: 3, color: '#dc2626', bgColor: '#fee2e2' },
+  above: { label: 'Above Quota', rate: 6, color: '#059669', bgColor: '#d1fae5' },
+  double: { label: 'Double Quota', rate: 9, color: '#7c3aed', bgColor: '#ede9fe' },
+};
+
+// Helper to format quota level for display
+const formatQuotaLevel = (quotaLevel: string | null | undefined): string => {
+  if (!quotaLevel) return '';
+  const level = quotaLevel.toLowerCase() as QuotaLevel;
+  const config = QUOTA_LEVEL_CONFIG[level];
+  if (config) {
+    return `${config.label} (${config.rate}%)`;
+  }
+  // Fallback: capitalize first letter
+  return quotaLevel.charAt(0).toUpperCase() + quotaLevel.slice(1);
+};
 
 interface CommissionBreakdown {
   baseRate: number;
@@ -10,6 +32,7 @@ interface CommissionBreakdown {
   accountTypeAdjustment: number;
   greenlineBonus: number;
   insideSalesDeduction: number;
+  quotaLevel?: string | null;
 }
 
 interface CommissionData {
@@ -187,6 +210,39 @@ export default function MyCommissions() {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Current quota level state
+  const [currentQuotaLevel, setCurrentQuotaLevel] = useState<QuotaLevel>('above');
+  const [quotaPercentage, setQuotaPercentage] = useState<number | null>(null);
+  const [quotaTarget, setQuotaTarget] = useState<number | null>(null);
+  const [actualSales, setActualSales] = useState<number | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+
+  // Fetch quota level
+  useEffect(() => {
+    async function fetchQuotaLevel() {
+      if (!user?.username) {
+        setQuotaLoading(false);
+        return;
+      }
+      try {
+        console.log('[MyCommissions] Fetching quota for:', user.username);
+        const result = await quotaApi.getCurrentLevel(user.username);
+        console.log('[MyCommissions] Quota result:', result);
+        if (result) {
+          setCurrentQuotaLevel((result.quotaLevel as QuotaLevel) || 'above');
+          setQuotaPercentage(result.quotaPercentage || 0);
+          setQuotaTarget(result.quotaTarget || null);
+          setActualSales(result.actualSales || null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch quota level:', err);
+      } finally {
+        setQuotaLoading(false);
+      }
+    }
+    fetchQuotaLevel();
+  }, [user?.username]);
+
   useEffect(() => {
     async function fetchCommissions() {
       try {
@@ -355,9 +411,33 @@ export default function MyCommissions() {
           <span className="my-commissions__user-badge">
             {user?.fullName || user?.username}
           </span>
+          {/* Current Quota Level Badge */}
+          {!quotaLoading && (
+            <span
+              className="my-commissions__quota-badge"
+              style={{
+                backgroundColor: QUOTA_LEVEL_CONFIG[currentQuotaLevel].bgColor,
+                color: QUOTA_LEVEL_CONFIG[currentQuotaLevel].color,
+              }}
+              title={`Your current quota status. Sales: ${actualSales !== null ? formatMoney(actualSales) : '—'} / Target: ${quotaTarget !== null ? formatMoney(quotaTarget) : '—'}. New agreements will use ${QUOTA_LEVEL_CONFIG[currentQuotaLevel].rate}% base rate.`}
+            >
+              {QUOTA_LEVEL_CONFIG[currentQuotaLevel].label} ({QUOTA_LEVEL_CONFIG[currentQuotaLevel].rate}%)
+              {quotaPercentage !== null && (
+                <span className="my-commissions__quota-pct">
+                  · {quotaPercentage.toFixed(0)}%
+                </span>
+              )}
+            </span>
+          )}
         </div>
         <p className="my-commissions__subtitle">
           Track your commission earnings across all agreements
+        </p>
+        <p className="my-commissions__rate-note">
+          Note: Each agreement's rate is locked when saved. Your current rate ({QUOTA_LEVEL_CONFIG[currentQuotaLevel].rate}%) applies to new agreements.
+          {actualSales !== null && quotaTarget !== null && (
+            <> This month: {formatMoney(actualSales)} of {formatMoney(quotaTarget)} target.</>
+          )}
         </p>
       </header>
 
@@ -567,6 +647,12 @@ export default function MyCommissions() {
                             <span>Base Rate ({breakdown.agreementTerm || `${agreement.contractMonths} months`})</span>
                             <span>{formatPercent(breakdown.baseRate ?? rate)}%</span>
                           </div>
+                          {breakdown.quotaLevel && (
+                            <div className={`my-commissions__breakdown-item my-commissions__breakdown-item--quota my-commissions__breakdown-item--quota-${breakdown.quotaLevel.toLowerCase().replace(/\s+/g, '-')}`}>
+                              <span>Quota Level</span>
+                              <span>{formatQuotaLevel(breakdown.quotaLevel)}</span>
+                            </div>
+                          )}
                           <div className="my-commissions__breakdown-item">
                             <span>Agreement Multiplier</span>
                             <span>{formatPercent(breakdown.multiplier ?? 100)}%</span>

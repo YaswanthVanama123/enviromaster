@@ -1150,6 +1150,9 @@ function FormFillingContent({
   // Commission result state removed - now using getCommissionDataForSave from context
   const [quotaLoading, setQuotaLoading] = useState(true);
 
+  // Get quota setters from ServicesContext for commission calculation
+  const { setQuotaLevel, setQuotaLevelData } = useServicesContext();
+
   // Get logged-in user to fetch their quota level
   const { user } = useAuth();
 
@@ -1162,22 +1165,40 @@ function FormFillingContent({
       }
 
       try {
-        const quotaLevel = await quotaApi.getCurrentLevel(user.username);
-        if (quotaLevel) {
+        const result = await quotaApi.getCurrentLevel(user.username);
+        if (result) {
+          const level = (result.quotaLevel as 'below' | 'above' | 'double') || 'above';
+
+          // Update local commission state
           setCommissionState(prev => ({
             ...prev,
-            quotaLevel: quotaLevel.quotaLevel,
+            quotaLevel: level,
           }));
+
+          // Also update ServicesContext for GlobalCommissionSummary
+          setQuotaLevel(level);
+          setQuotaLevelData({
+            quotaLevel: level,
+            quotaPercentage: result.quotaPercentage || 0,
+            quotaTarget: result.quotaTarget || 0,
+            actualSales: result.actualSales || 0,
+            commissionRate: level === 'below' ? 3 : level === 'double' ? 9 : 6,
+            salesPersonId: result.salesPersonId || user.username,
+            salesPersonName: result.salesPersonName || user.fullName || user.username,
+          });
+
+          console.log('[QUOTA] Quota level fetched:', level, 'Commission rate:', level === 'below' ? 3 : level === 'double' ? 9 : 6, '%');
         }
       } catch (error) {
-        console.error('Failed to fetch quota level:', error);
+        console.error('[QUOTA] Failed to fetch quota level:', error);
+        // Keep default "above" level on error
       } finally {
         setQuotaLoading(false);
       }
     };
 
     fetchQuotaLevel();
-  }, [user?.username]);
+  }, [user?.username, user?.fullName, setQuotaLevel, setQuotaLevelData]);
 
   // Auto-detect account type when biginCompanyId is available
   useEffect(() => {
@@ -1274,6 +1295,9 @@ function FormFillingContent({
     initializeAccountTypeCache,
     accountTypeCache,
     getCommissionDataForSave,
+    baseCommissionRate,
+    quotaLevel,
+    // Note: setQuotaLevel and setQuotaLevelData are destructured earlier in the component
   } = useServicesContext();
 
   const totalCurrentContract = getTotalAgreementAmount();
@@ -1816,9 +1840,9 @@ function FormFillingContent({
       includeProductsTable,
       customColumns: (productsData as any).customColumns || { products: [], dispensers: [] },
       summary,
-      // Include commission data for saving - use new context function
+      // Include commission data for saving - use actual quota-based rate from context
       commission: (() => {
-        const commissionData = getCommissionDataForSave(6); // 6% base rate
+        const commissionData = getCommissionDataForSave(baseCommissionRate);
         if (!commissionData) return null;
         return {
           weeklyCommission: commissionData.weeklyCommission,
@@ -1828,6 +1852,11 @@ function FormFillingContent({
           breakdown: {
             baseRate: commissionData.baseRate,
             agreementMultiplier: commissionData.agreementMultiplier,
+            quotaLevel: quotaLevel, // Save the quota level at time of save
+          },
+          input: {
+            baseRate: baseCommissionRate,
+            quotaLevel: quotaLevel,
           },
           serviceBreakdown: commissionData.serviceBreakdown,
         };
@@ -2864,7 +2893,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             <ServicesDataCollector ref={servicesRef} />
 
             {/* Commission Summary - shows total commission across all services */}
-            <GlobalCommissionSummary commissionRate={6} showDetectButton={true} />
+            {/* Note: commissionRate is now determined by user's quota level from ServicesContext */}
+            <GlobalCommissionSummary showDetectButton={true} />
 
             {}
             <ContractSummary

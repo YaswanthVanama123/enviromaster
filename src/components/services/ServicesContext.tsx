@@ -10,6 +10,26 @@ import {
 import { DEFAULT_COMMISSION_RULES_V2 } from "../../backendservice/types/commission.types.v2";
 import type { AgreementTerm } from "../../backendservice/types/commission.types.v2";
 
+// Quota level types
+export type QuotaLevel = 'below' | 'above' | 'double';
+
+// Map quota level to commission rate
+export const QUOTA_COMMISSION_RATES: Record<QuotaLevel, number> = {
+  below: 3,
+  above: 6,
+  double: 9,
+};
+
+export interface QuotaLevelData {
+  quotaLevel: QuotaLevel;
+  quotaPercentage: number;
+  quotaTarget: number;
+  actualSales: number;
+  commissionRate: number;
+  salesPersonId: string;
+  salesPersonName: string;
+}
+
 // Account type cache entry for frequency-based detection
 export interface AccountTypeCacheEntry {
   accountType: AccountType;
@@ -119,6 +139,13 @@ interface ServicesContextValue {
 
   // Commission calculation for saving
   getCommissionDataForSave: (baseCommissionRate?: number) => CommissionDataForSave | null;
+
+  // Quota level for commission rate calculation
+  quotaLevel: QuotaLevel;
+  quotaLevelData: QuotaLevelData | null;
+  baseCommissionRate: number;
+  setQuotaLevel: (level: QuotaLevel) => void;
+  setQuotaLevelData: (data: QuotaLevelData | null) => void;
 }
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(
@@ -159,6 +186,11 @@ export const ServicesProvider: React.FC<{
   const [accountTypeCacheLoadedFromSaved, setAccountTypeCacheLoadedFromSaved] = useState(false);
   // Ref for synchronous check (state updates are async, ref is immediate)
   const accountTypeCacheLoadedFromSavedRef = useRef(false);
+
+  // Quota level state for commission calculation
+  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above'); // Default to "above" (6%)
+  const [quotaLevelData, setQuotaLevelData] = useState<QuotaLevelData | null>(null);
+  const baseCommissionRate = QUOTA_COMMISSION_RATES[quotaLevel];
 
   // Helper to set account type for a specific frequency
   const setAccountTypeForFrequency = useCallback((frequencyKey: number, entry: AccountTypeCacheEntry) => {
@@ -755,8 +787,15 @@ export const ServicesProvider: React.FC<{
 
       // Commission calculation
       getCommissionDataForSave,
+
+      // Quota level for commission rate
+      quotaLevel,
+      quotaLevelData,
+      baseCommissionRate,
+      setQuotaLevel,
+      setQuotaLevelData,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency, biginCompanyId, agreementId, accountTypeCache, setAccountTypeForFrequency, getAccountTypeForFrequency, initializeAccountTypeCache, clearAccountTypeCache, isDetectingAccountTypes, accountTypeDetectionError, accountTypeCacheLoadedFromSaved, accountTypeCacheLoadedFromSavedRef, getCommissionDataForSave]);
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency, biginCompanyId, agreementId, accountTypeCache, setAccountTypeForFrequency, getAccountTypeForFrequency, initializeAccountTypeCache, clearAccountTypeCache, isDetectingAccountTypes, accountTypeDetectionError, accountTypeCacheLoadedFromSaved, accountTypeCacheLoadedFromSavedRef, getCommissionDataForSave, quotaLevel, quotaLevelData, baseCommissionRate]);
 
   return (
     <ServicesContext.Provider value={value}>

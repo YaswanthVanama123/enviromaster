@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGlobalCommission } from '../hooks/useServiceCommission';
 import { useAccountTypeDetection } from '../hooks/useAccountTypeDetection';
+import { useServicesContext, QuotaLevel, QUOTA_COMMISSION_RATES } from '../ServicesContext';
 import type { AccountType } from '../../../backendservice/api/accountTypeApi';
 import './GlobalCommissionSummary.css';
 
@@ -12,19 +13,32 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, { bg: string; text: string }> = {
   Pit: { bg: '#fee2e2', text: '#991b1b' },
 };
 
+// Quota level labels and colors
+const QUOTA_LEVEL_DISPLAY: Record<QuotaLevel, { label: string; color: string; bgColor: string }> = {
+  below: { label: 'Below Quota', color: '#dc2626', bgColor: '#fee2e2' },
+  above: { label: 'Above Quota', color: '#059669', bgColor: '#d1fae5' },
+  double: { label: 'Double Quota', color: '#7c3aed', bgColor: '#ede9fe' },
+};
+
 interface GlobalCommissionSummaryProps {
-  commissionRate?: number;
   showDetectButton?: boolean;
 }
 
 export function GlobalCommissionSummary({
-  commissionRate = 6,
   showDetectButton = true,
 }: GlobalCommissionSummaryProps) {
   const [expanded, setExpanded] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Record<number, boolean>>({});
+
+  // Get quota level from context (determines base commission rate)
+  const { quotaLevel, quotaLevelData, baseCommissionRate } = useServicesContext();
+  const commissionRate = baseCommissionRate;
+
   const global = useGlobalCommission(commissionRate);
   const { detectAccountTypes, isDetecting, error, isCompanyMapped } = useAccountTypeDetection();
+
+  // Get quota display info
+  const quotaDisplay = QUOTA_LEVEL_DISPLAY[quotaLevel];
 
   const toggleServiceExpand = (index: number) => {
     setExpandedServices(prev => ({ ...prev, [index]: !prev[index] }));
@@ -43,6 +57,13 @@ export function GlobalCommissionSummary({
           <span>Commission Summary</span>
           <span className="commission-summary__service-count">
             ({global.serviceCount} service{global.serviceCount !== 1 ? 's' : ''})
+          </span>
+          {/* Quota Level Badge */}
+          <span
+            className="commission-summary__quota-badge"
+            style={{ backgroundColor: quotaDisplay.bgColor, color: quotaDisplay.color }}
+          >
+            {quotaDisplay.label} ({commissionRate}%)
           </span>
           {isDetecting && (
             <span className="commission-summary__detecting">
@@ -204,8 +225,15 @@ export function GlobalCommissionSummary({
                       </div>
                       <div className="service-details__list">
                         <div className="service-details__row">
-                          <span className="service-details__label">Base Commission Rate:</span>
-                          <span className="service-details__value">{commissionRate}%</span>
+                          <span className="service-details__label">
+                            Base Commission Rate ({quotaDisplay.label}):
+                          </span>
+                          <span
+                            className="service-details__value"
+                            style={{ color: quotaDisplay.color, fontWeight: 600 }}
+                          >
+                            {commissionRate}%
+                          </span>
                         </div>
 
                         <div className="service-details__row">
