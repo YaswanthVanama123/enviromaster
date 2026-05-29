@@ -13,9 +13,9 @@ const PERIOD_LABELS: Record<PeriodType, string> = {
 };
 
 const QUOTA_LEVEL_CONFIG = {
-  below: { label: 'Below Quota', color: '#dc2626', bgColor: '#fee2e2', rate: '0.5x' },
-  above: { label: 'Above Quota', color: '#2563eb', bgColor: '#dbeafe', rate: '1x' },
-  double: { label: 'Double Quota', color: '#16a34a', bgColor: '#dcfce7', rate: '1.5x' },
+  below: { label: 'Below Quota', color: '#dc2626', bgColor: '#fee2e2', rate: '3%', rateValue: 3 },
+  above: { label: 'Above Quota', color: '#2563eb', bgColor: '#dbeafe', rate: '6%', rateValue: 6 },
+  double: { label: 'Double Quota', color: '#16a34a', bgColor: '#dcfce7', rate: '9%', rateValue: 9 },
 };
 
 function formatMoney(amount: number): string {
@@ -200,20 +200,20 @@ export default function MyQuota() {
         <div className="my-quota__tier-grid">
           {quotaStatus.quota.level === 'below' && (
             <div className="my-quota__tier-card">
-              <span className="my-quota__tier-label">To reach quota (1x rate):</span>
+              <span className="my-quota__tier-label">To reach quota (6% rate):</span>
               <span className="my-quota__tier-value">{formatMoney(quotaStatus.progress.toReachQuota)}</span>
             </div>
           )}
           {quotaStatus.quota.level !== 'double' && (
             <div className="my-quota__tier-card">
-              <span className="my-quota__tier-label">To reach double (1.5x rate):</span>
+              <span className="my-quota__tier-label">To reach double (9% rate):</span>
               <span className="my-quota__tier-value">{formatMoney(quotaStatus.progress.toReachDouble)}</span>
             </div>
           )}
           {quotaStatus.quota.level === 'double' && (
             <div className="my-quota__tier-card my-quota__tier-card--achieved">
               <span className="my-quota__tier-label">You've reached the highest tier!</span>
-              <span className="my-quota__tier-value">1.5x Commission</span>
+              <span className="my-quota__tier-value">9% Commission</span>
             </div>
           )}
         </div>
