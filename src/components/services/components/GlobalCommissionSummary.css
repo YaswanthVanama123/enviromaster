@@ -1,0 +1,436 @@
+.commission-summary {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.commission-summary__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.commission-summary__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.commission-summary__service-count {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.commission-summary__detecting {
+  font-size: 11px;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.commission-summary__redetect-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.commission-summary__error {
+  padding: 8px;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #991b1b;
+}
+
+.commission-summary__warning {
+  padding: 8px;
+  background-color: #fef3c7;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #92400e;
+}
+
+.commission-summary__totals {
+  display: flex;
+  gap: 32px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.commission-summary__total-item {
+  min-width: 80px;
+}
+
+.commission-summary__total-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.commission-summary__total-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.commission-summary__toggle-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.commission-summary__expanded {
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.commission-summary__breakdown-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.commission-summary__rate-footer {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Service Row */
+.service-row {
+  background-color: #f9fafb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.service-row__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.service-row__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.service-row__expand-icon {
+  font-size: 10px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.service-row__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.service-row__badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.service-row__frequency {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.service-row__commissions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.service-row__commission-item {
+  text-align: right;
+}
+
+.service-row__commission-label {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.service-row__commission-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+}
+
+/* Service Details (Expanded) */
+.service-details {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  font-size: 12px;
+}
+
+.service-details__section {
+  margin-bottom: 12px;
+}
+
+.service-details__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.service-details__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 2px solid #e5e7eb;
+}
+
+.service-details__list--green {
+  border-left-color: #059669;
+}
+
+.service-details__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.service-details__label {
+  color: #6b7280;
+  flex: 1;
+  min-width: 150px;
+}
+
+.service-details__value {
+  font-weight: 500;
+  text-align: right;
+}
+
+.service-details__value--red {
+  color: #dc2626;
+}
+
+.service-details__value--green {
+  color: #059669;
+}
+
+.service-details__value--blue {
+  color: #2563eb;
+}
+
+.service-details__total-row {
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 4px;
+}
+
+.service-details__total-label {
+  color: #374151;
+  font-weight: 500;
+}
+
+.service-details__total-value {
+  font-weight: 600;
+}
+
+.service-details__account-info {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.service-details__account-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.service-details__account-reason {
+  opacity: 0.8;
+}
+
+.service-details__account-explanation {
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .commission-summary {
+    padding: 12px;
+    margin-top: 12px;
+  }
+
+  .commission-summary__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .commission-summary__redetect-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .commission-summary__totals {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .commission-summary__total-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .commission-summary__total-label {
+    margin-bottom: 0;
+  }
+
+  .commission-summary__total-value {
+    font-size: 18px;
+  }
+
+  .commission-summary__toggle-btn {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 12px;
+  }
+
+  .service-row__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .service-row__info {
+    width: 100%;
+  }
+
+  .service-row__commissions {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px dashed #e5e7eb;
+  }
+
+  .service-row__commission-item {
+    text-align: left;
+  }
+
+  .service-details {
+    padding: 12px;
+  }
+
+  .service-details__row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .service-details__label {
+    min-width: unset;
+    font-size: 11px;
+  }
+
+  .service-details__value {
+    text-align: left;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .commission-summary {
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .commission-summary__title {
+    font-size: 13px;
+  }
+
+  .commission-summary__total-value {
+    font-size: 16px;
+  }
+
+  .service-row__name {
+    font-size: 12px;
+  }
+
+  .service-row__badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .service-row__commission-value {
+    font-size: 12px;
+  }
+
+  .service-details__section-title {
+    font-size: 10px;
+  }
+
+  .service-details__label {
+    font-size: 10px;
+  }
+
+  .service-details__value {
+    font-size: 12px;
+  }
+
+  .service-details__account-info {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+}

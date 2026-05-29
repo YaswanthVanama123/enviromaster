@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGlobalCommission } from '../hooks/useServiceCommission';
 import { useAccountTypeDetection } from '../hooks/useAccountTypeDetection';
 import type { AccountType } from '../../../backendservice/api/accountTypeApi';
+import './GlobalCommissionSummary.css';
 
 // Color scheme for account types
 const ACCOUNT_TYPE_COLORS: Record<AccountType, { bg: string; text: string }> = {
@@ -35,40 +36,16 @@ export function GlobalCommissionSummary({
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        padding: '16px',
-        marginTop: '16px',
-      }}
-    >
+    <div className="commission-summary">
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '12px',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            color: '#374151',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
+      <div className="commission-summary__header">
+        <div className="commission-summary__title">
           <span>Commission Summary</span>
-          <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: 400 }}>
+          <span className="commission-summary__service-count">
             ({global.serviceCount} service{global.serviceCount !== 1 ? 's' : ''})
           </span>
           {isDetecting && (
-            <span style={{ fontSize: '11px', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span className="commission-summary__detecting">
               <span className="animate-spin">⏳</span>
               Detecting...
             </span>
@@ -77,18 +54,7 @@ export function GlobalCommissionSummary({
 
         {showDetectButton && isCompanyMapped && !isDetecting && (
           <button
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              backgroundColor: '#3b82f6',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className="commission-summary__redetect-btn"
             onClick={() => detectAccountTypes()}
           >
             <span>🔄</span>
@@ -99,87 +65,37 @@ export function GlobalCommissionSummary({
 
       {/* Error message */}
       {error && (
-        <div
-          style={{
-            padding: '8px',
-            backgroundColor: '#fee2e2',
-            borderRadius: '4px',
-            marginBottom: '12px',
-            fontSize: '12px',
-            color: '#991b1b',
-          }}
-        >
+        <div className="commission-summary__error">
           {error}
         </div>
       )}
 
       {/* Not connected message */}
       {!isCompanyMapped && (
-        <div
-          style={{
-            padding: '8px',
-            backgroundColor: '#fef3c7',
-            borderRadius: '4px',
-            marginBottom: '12px',
-            fontSize: '12px',
-            color: '#92400e',
-          }}
-        >
+        <div className="commission-summary__warning">
           Connect to Bigin to detect account types automatically
         </div>
       )}
 
       {/* Totals */}
-      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-end' }}>
-        <div>
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#6b7280',
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.05em',
-              marginBottom: '4px',
-            }}
-          >
-            Weekly
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#059669' }}>
+      <div className="commission-summary__totals">
+        <div className="commission-summary__total-item">
+          <div className="commission-summary__total-label">Weekly</div>
+          <div className="commission-summary__total-value">
             {global.formatted.totalWeeklyCommission}
           </div>
         </div>
-        <div>
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#6b7280',
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.05em',
-              marginBottom: '4px',
-            }}
-          >
-            Annual
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#059669' }}>
+        <div className="commission-summary__total-item">
+          <div className="commission-summary__total-label">Annual</div>
+          <div className="commission-summary__total-value">
             {global.formatted.totalAnnualCommission}
           </div>
         </div>
 
         {/* Expand/Collapse button */}
         <button
+          className="commission-summary__toggle-btn"
           onClick={() => setExpanded(!expanded)}
-          style={{
-            marginLeft: 'auto',
-            padding: '6px 12px',
-            fontSize: '12px',
-            backgroundColor: '#f3f4f6',
-            color: '#374151',
-            border: '1px solid #e5e7eb',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
         >
           {expanded ? 'Hide Details' : 'Show Details'}
           <span style={{ fontSize: '10px' }}>{expanded ? '▲' : '▼'}</span>
@@ -188,9 +104,9 @@ export function GlobalCommissionSummary({
 
       {/* Expanded Details */}
       {expanded && (
-        <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+        <div className="commission-summary__expanded">
           {/* Per-service breakdown */}
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '12px' }}>
+          <div className="commission-summary__breakdown-title">
             Service Breakdown
           </div>
 
@@ -199,61 +115,41 @@ export function GlobalCommissionSummary({
             const isServiceExpanded = expandedServices[index] || false;
 
             return (
-              <div
-                key={index}
-                style={{
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '6px',
-                  marginBottom: '8px',
-                  overflow: 'hidden',
-                }}
-              >
+              <div key={index} className="service-row">
                 {/* Service header row */}
                 <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px 12px',
-                    cursor: 'pointer',
-                  }}
+                  className="service-row__header"
                   onClick={() => toggleServiceExpand(index)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '10px', color: '#6b7280' }}>
+                  <div className="service-row__info">
+                    <span className="service-row__expand-icon">
                       {isServiceExpanded ? '▼' : '▶'}
                     </span>
-                    <span style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>
+                    <span className="service-row__name">
                       {service.serviceName}
                     </span>
                     {service.accountType && (
                       <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 500,
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          backgroundColor: colors.bg,
-                          color: colors.text,
-                        }}
+                        className="service-row__badge"
+                        style={{ backgroundColor: colors.bg, color: colors.text }}
                       >
                         {service.accountType}
                       </span>
                     )}
-                    <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                    <span className="service-row__frequency">
                       {service.frequencyLabel}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '10px', color: '#6b7280' }}>Weekly</div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#059669' }}>
+                  <div className="service-row__commissions">
+                    <div className="service-row__commission-item">
+                      <div className="service-row__commission-label">Weekly</div>
+                      <div className="service-row__commission-value">
                         {service.formatted.weeklyCommission}
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '10px', color: '#6b7280' }}>Annual</div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#059669' }}>
+                    <div className="service-row__commission-item">
+                      <div className="service-row__commission-label">Annual</div>
+                      <div className="service-row__commission-value">
                         {service.formatted.annualCommission}
                       </div>
                     </div>
@@ -262,141 +158,145 @@ export function GlobalCommissionSummary({
 
                 {/* Expanded details */}
                 {isServiceExpanded && (
-                  <div
-                    style={{
-                      padding: '12px 16px',
-                      borderTop: '1px solid #e5e7eb',
-                      backgroundColor: '#ffffff',
-                      fontSize: '12px',
-                    }}
-                  >
+                  <div className="service-details">
                     {/* Revenue Calculation Section */}
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#374151', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div className="service-details__section">
+                      <div className="service-details__section-title">
                         Revenue Calculation
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>Per-Visit Revenue:</span>
-                          <span style={{ fontWeight: 500 }}>{service.formatted.perVisitRevenue}</span>
+                      <div className="service-details__list">
+                        <div className="service-details__row">
+                          <span className="service-details__label">Per-Visit Revenue:</span>
+                          <span className="service-details__value">{service.formatted.perVisitRevenue}</span>
                         </div>
 
                         {service.revenueDeduction > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#6b7280' }}>
+                          <div className="service-details__row">
+                            <span className="service-details__label">
                               Account Type Deduction ({service.accountType}):
                             </span>
-                            <span style={{ fontWeight: 500, color: '#dc2626' }}>-{service.formatted.revenueDeduction}</span>
+                            <span className="service-details__value service-details__value--red">
+                              -{service.formatted.revenueDeduction}
+                            </span>
                           </div>
                         )}
 
                         {service.anchorBonus > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#6b7280' }}>Anchor Bonus (150% on excess over $200):</span>
-                            <span style={{ fontWeight: 500, color: '#059669' }}>+${service.anchorBonus.toFixed(2)}</span>
+                          <div className="service-details__row">
+                            <span className="service-details__label">Anchor Bonus (150% on excess over $200):</span>
+                            <span className="service-details__value service-details__value--green">
+                              +${service.anchorBonus.toFixed(2)}
+                            </span>
                           </div>
                         )}
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #e5e7eb', paddingTop: '4px' }}>
-                          <span style={{ color: '#374151', fontWeight: 500 }}>Commissionable Revenue:</span>
-                          <span style={{ fontWeight: 600 }}>{service.formatted.commissionableRevenue}</span>
+                        <div className="service-details__row service-details__total-row">
+                          <span className="service-details__total-label">Commissionable Revenue:</span>
+                          <span className="service-details__total-value">{service.formatted.commissionableRevenue}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Commission Rate Section */}
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#374151', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div className="service-details__section">
+                      <div className="service-details__section-title">
                         Commission Rate Calculation
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid #e5e7eb' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>Base Commission Rate:</span>
-                          <span style={{ fontWeight: 500 }}>{commissionRate}%</span>
+                      <div className="service-details__list">
+                        <div className="service-details__row">
+                          <span className="service-details__label">Base Commission Rate:</span>
+                          <span className="service-details__value">{commissionRate}%</span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>Agreement Multiplier (36 months):</span>
-                          <span style={{ fontWeight: 500 }}>{global.agreementMultiplier}%</span>
+                        <div className="service-details__row">
+                          <span className="service-details__label">Agreement Multiplier (36 months):</span>
+                          <span className="service-details__value">{global.agreementMultiplier}%</span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #e5e7eb', paddingTop: '4px' }}>
-                          <span style={{ color: '#374151', fontWeight: 500 }}>
+                        <div className="service-details__row service-details__total-row">
+                          <span className="service-details__total-label">
                             Effective Rate ({commissionRate}% × {global.agreementMultiplier}%):
                           </span>
-                          <span style={{ fontWeight: 600, color: '#2563eb' }}>{global.effectiveCommissionRate.toFixed(2)}%</span>
+                          <span className="service-details__total-value service-details__value--blue">
+                            {global.effectiveCommissionRate.toFixed(2)}%
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Commission Calculation Section */}
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#374151', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div className="service-details__section">
+                      <div className="service-details__section-title">
                         Commission Calculation
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '8px', borderLeft: '2px solid #059669' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>
+                      <div className="service-details__list service-details__list--green">
+                        <div className="service-details__row">
+                          <span className="service-details__label">
                             Per-Visit Commission ({service.formatted.commissionableRevenue} × {global.effectiveCommissionRate.toFixed(2)}%):
                           </span>
-                          <span style={{ fontWeight: 500, color: '#059669' }}>{service.formatted.perVisitCommission}</span>
+                          <span className="service-details__value service-details__value--green">
+                            {service.formatted.perVisitCommission}
+                          </span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>Frequency:</span>
-                          <span style={{ fontWeight: 500 }}>{service.frequencyLabel} ({service.visitsPerYear} visits/year)</span>
+                        <div className="service-details__row">
+                          <span className="service-details__label">Frequency:</span>
+                          <span className="service-details__value">
+                            {service.frequencyLabel} ({service.visitsPerYear} visits/year)
+                          </span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>
+                        <div className="service-details__row">
+                          <span className="service-details__label">
                             Annual Commission ({service.formatted.perVisitCommission} × {service.visitsPerYear} visits):
                           </span>
-                          <span style={{ fontWeight: 600, color: '#059669' }}>{service.formatted.annualCommission}</span>
+                          <span className="service-details__total-value service-details__value--green">
+                            {service.formatted.annualCommission}
+                          </span>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#6b7280' }}>
+                        <div className="service-details__row">
+                          <span className="service-details__label">
                             Weekly Commission ({service.formatted.annualCommission} ÷ 52 weeks):
                           </span>
-                          <span style={{ fontWeight: 600, color: '#059669' }}>{service.formatted.weeklyCommission}</span>
+                          <span className="service-details__total-value service-details__value--green">
+                            {service.formatted.weeklyCommission}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Account Type Info */}
                     {service.accountType && (
-                      <div style={{
-                        marginTop: '12px',
-                        padding: '8px 12px',
-                        backgroundColor: colors.bg,
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                      }}>
-                        <div style={{ fontWeight: 600, color: colors.text, marginBottom: '4px' }}>
+                      <div
+                        className="service-details__account-info"
+                        style={{ backgroundColor: colors.bg, color: colors.text }}
+                      >
+                        <div className="service-details__account-title">
                           Account Type: {service.accountType}
                         </div>
                         {service.reason && (
-                          <div style={{ color: colors.text, opacity: 0.8 }}>
+                          <div className="service-details__account-reason">
                             {service.reason}
                           </div>
                         )}
                         {service.accountType === 'Anchor' && (
-                          <div style={{ color: colors.text, opacity: 0.8, marginTop: '4px' }}>
+                          <div className="service-details__account-explanation">
                             High-value account ($200+/visit). No deduction + 150% bonus on excess revenue.
                           </div>
                         )}
                         {service.accountType === 'Bread5' && (
-                          <div style={{ color: colors.text, opacity: 0.8, marginTop: '4px' }}>
+                          <div className="service-details__account-explanation">
                             Within 5 min drive to anchor. $50 revenue deduction applied.
                           </div>
                         )}
                         {service.accountType === 'Bread15' && (
-                          <div style={{ color: colors.text, opacity: 0.8, marginTop: '4px' }}>
+                          <div className="service-details__account-explanation">
                             5-15 min drive to anchor. $75 revenue deduction applied.
                           </div>
                         )}
                         {service.accountType === 'Pit' && (
-                          <div style={{ color: colors.text, opacity: 0.8, marginTop: '4px' }}>
+                          <div className="service-details__account-explanation">
                             Over 15 min drive to anchor. $100 revenue deduction applied.
                           </div>
                         )}
@@ -409,7 +309,7 @@ export function GlobalCommissionSummary({
           })}
 
           {/* Commission rate info */}
-          <div style={{ marginTop: '12px', fontSize: '11px', color: '#9ca3af' }}>
+          <div className="commission-summary__rate-footer">
             Rate: {commissionRate}% × {global.agreementMultiplier}% = {global.effectiveCommissionRate.toFixed(2)}%
           </div>
         </div>
@@ -417,7 +317,7 @@ export function GlobalCommissionSummary({
 
       {/* Commission rate footer (when collapsed) */}
       {!expanded && (
-        <div style={{ marginTop: '12px', fontSize: '11px', color: '#9ca3af' }}>
+        <div className="commission-summary__rate-footer">
           Rate: {commissionRate}% × {global.agreementMultiplier}% = {global.effectiveCommissionRate.toFixed(2)}%
         </div>
       )}
