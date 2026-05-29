@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useServicesContext } from '../ServicesContext';
 import { accountTypeApi } from '../../../backendservice/api/accountTypeApi';
+import { pdfApi } from '../../../backendservice/api';
 import type { AccountType, FrequencyDetectionResult } from '../../../backendservice/api/accountTypeApi';
 import type { AccountTypeCacheEntry } from '../ServicesContext';
 
@@ -110,6 +111,7 @@ export function useAccountTypeDetection(
   const {
     servicesState,
     biginCompanyId,
+    agreementId,
     accountTypeCache,
     setAccountTypeForFrequency,
     isDetectingAccountTypes,
@@ -117,6 +119,8 @@ export function useAccountTypeDetection(
     accountTypeDetectionError,
     setAccountTypeDetectionError,
     clearAccountTypeCache,
+    accountTypeCacheLoadedFromSaved,
+    accountTypeCacheLoadedFromSavedRef,
   } = useServicesContext();
 
   // Track previous biginCompanyId to clear cache on change
@@ -160,7 +164,7 @@ export function useAccountTypeDetection(
     return allFrequencies.filter(freq => !accountTypeCache[freq]);
   }, [getUniqueFrequencies, accountTypeCache]);
 
-  // Detect account types for all active services
+  // Detect account types for all active services and save to backend
   const detectAccountTypes = useCallback(async () => {
     if (!biginCompanyId) {
       console.log('[ACCOUNT-TYPE] No biginCompanyId, skipping detection');
@@ -188,6 +192,9 @@ export function useAccountTypeDetection(
         return;
       }
 
+      // Build updated cache with new results
+      const updatedCache: Record<number, AccountTypeCacheEntry> = { ...accountTypeCache };
+
       // Process results and update cache
       if (result.results) {
         Object.entries(result.results).forEach(([freqKey, detection]) => {
@@ -204,11 +211,24 @@ export function useAccountTypeDetection(
           };
 
           setAccountTypeForFrequency(freqNum, entry);
+          updatedCache[freqNum] = entry;
           console.log(`[ACCOUNT-TYPE] Cached freq ${freqNum}: ${detection.accountType}`);
         });
       }
 
       console.log('[ACCOUNT-TYPE] Detection complete, thresholds:', result.thresholds);
+
+      // Auto-save to backend if we have an agreementId
+      if (agreementId && Object.keys(updatedCache).length > 0) {
+        try {
+          console.log('[ACCOUNT-TYPE] Auto-saving cache to backend for agreement:', agreementId);
+          await pdfApi.saveAccountTypeCache(agreementId, updatedCache);
+          console.log('[ACCOUNT-TYPE] Cache saved to backend successfully');
+        } catch (saveErr) {
+          console.error('[ACCOUNT-TYPE] Failed to save cache to backend:', saveErr);
+          // Don't fail the detection if save fails - cache is still in memory
+        }
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error during detection';
       setAccountTypeDetectionError(errorMsg);
@@ -216,7 +236,14 @@ export function useAccountTypeDetection(
     } finally {
       setIsDetectingAccountTypes(false);
     }
-  }, [biginCompanyId, getMissingFrequencies, setIsDetectingAccountTypes, setAccountTypeDetectionError, setAccountTypeForFrequency]);
+  }, [biginCompanyId, agreementId, accountTypeCache, getMissingFrequencies, setIsDetectingAccountTypes, setAccountTypeDetectionError, setAccountTypeForFrequency]);
+
+  // Track if cache was loaded from saved data (to abort pending detection)
+  // We use both the ref from context (for synchronous check) and update our local ref
+  const cacheLoadedFromSavedRef = useRef(accountTypeCacheLoadedFromSavedRef.current);
+  useEffect(() => {
+    cacheLoadedFromSavedRef.current = accountTypeCacheLoadedFromSavedRef.current || accountTypeCacheLoadedFromSaved;
+  }, [accountTypeCacheLoadedFromSaved, accountTypeCacheLoadedFromSavedRef]);
 
   // Auto-detect on load and when frequencies change
   useEffect(() => {
@@ -230,32 +257,69 @@ export function useAccountTypeDetection(
 
     // Check if we have new frequencies that need detection
     const hasNewFrequencies = missingFrequencies.length > 0;
-    const frequenciesChanged = prevFrequenciesRef.current !== currentFreqKey;
+    const isInitialLoad = prevFrequenciesRef.current === '';
+    const frequenciesChanged = !isInitialLoad && prevFrequenciesRef.current !== currentFreqKey;
 
-    // Run detection if:
-    // 1. Initial load with missing frequencies
-    // 2. New frequencies added (frequency changed or new service)
-    if (hasNewFrequencies && (frequenciesChanged || !initialDetectionDoneRef.current)) {
-      // Debounce to avoid rapid-fire API calls
+    // Check if cache was loaded from saved data (synchronous ref check)
+    const cacheWasLoadedFromSaved = accountTypeCacheLoadedFromSavedRef.current || accountTypeCacheLoadedFromSaved;
+
+    // CASE 1: Initial load with saved cache → skip detection, use saved data
+    if (isInitialLoad && cacheWasLoadedFromSaved) {
+      console.log('[ACCOUNT-TYPE] Initial load with saved cache, skipping detection');
+      initialDetectionDoneRef.current = true;
+      prevFrequenciesRef.current = currentFreqKey;
+      return;
+    }
+
+    // CASE 2: Initial load WITHOUT saved cache → auto-detect for first time setup
+    if (isInitialLoad && !cacheWasLoadedFromSaved && hasNewFrequencies) {
+      console.log('[ACCOUNT-TYPE] First time setup - auto-detecting for frequencies:', missingFrequencies);
+
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        console.log('[ACCOUNT-TYPE] Auto-detecting - missing:', missingFrequencies);
+        // Re-check if cache was loaded during debounce (e.g., slow network)
+        if (accountTypeCacheLoadedFromSavedRef.current) {
+          console.log('[ACCOUNT-TYPE] Cache was loaded during debounce, skipping first-time detection');
+          return;
+        }
+        console.log('[ACCOUNT-TYPE] Executing first-time detection for:', missingFrequencies);
         detectAccountTypes();
-        initialDetectionDoneRef.current = true;
-      }, 500); // 500ms debounce
+      }, 500);
+
+      prevFrequenciesRef.current = currentFreqKey;
+      initialDetectionDoneRef.current = true;
+      return;
     }
 
-    prevFrequenciesRef.current = currentFreqKey;
+    // CASE 3: Frequency changed (service added or frequency modified) → detect missing only
+    if (frequenciesChanged && hasNewFrequencies) {
+      console.log('[ACCOUNT-TYPE] Frequency change detected - new frequencies:', missingFrequencies);
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        console.log('[ACCOUNT-TYPE] Executing detection for changed frequencies:', missingFrequencies);
+        detectAccountTypes();
+      }, 500);
+    }
+
+    // Update previous frequencies ref
+    if (prevFrequenciesRef.current !== currentFreqKey) {
+      prevFrequenciesRef.current = currentFreqKey;
+    }
+    initialDetectionDoneRef.current = true;
 
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [autoDetect, biginCompanyId, getUniqueFrequencies, getMissingFrequencies, detectAccountTypes, isDetectingAccountTypes]);
+  }, [autoDetect, biginCompanyId, getUniqueFrequencies, getMissingFrequencies, detectAccountTypes, isDetectingAccountTypes, accountTypeCacheLoadedFromSaved, accountTypeCacheLoadedFromSavedRef]);
 
   // Get account type for a specific service
   const getAccountTypeForService = useCallback((serviceData: any): AccountType | null => {

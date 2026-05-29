@@ -20,7 +20,6 @@ import { ServicesSection } from "./services/ServicesSection";
 import ServicesDataCollector from "./services/ServicesDataCollector";
 import type{ ServicesDataHandle } from "./services/ServicesDataCollector";
 import { ServicesProvider, useServicesContext } from "./services/ServicesContext";
-import type { AccountTypeCache } from "./services/ServicesContext";
 import { GlobalCommissionSummary } from "./services/components/GlobalCommissionSummary";
 import ConfirmationModal from "./ConfirmationModal";
 import { VersionDialog } from "./VersionDialog";
@@ -1130,7 +1129,6 @@ function FormFillingContent({
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
   const [isConnectedToBigin, setIsConnectedToBigin] = useState(false);
   const [biginCompanyId, setBiginCompanyId] = useState<string | null>(null);
-  const [savedAccountTypeCache, setSavedAccountTypeCache] = useState<AccountTypeCache | null>(null);
   const [accountTypeDetection, setAccountTypeDetection] = useState<AccountTypeDetectionResult | null>(null);
   const [productTotals, setProductTotals] = useState<ProductTotals>({
     monthlyTotal: 0,
@@ -1149,7 +1147,7 @@ function FormFillingContent({
     accountType: 'Anchor',
     isInsideSales: false,
   });
-  const [commissionResult, setCommissionResult] = useState<CommissionResult | null>(null);
+  // Commission result state removed - now using getCommissionDataForSave from context
   const [quotaLoading, setQuotaLoading] = useState(true);
 
   // Get logged-in user to fetch their quota level
@@ -1272,8 +1270,10 @@ function FormFillingContent({
     setGlobalParkingCharge,
     setGlobalParkingChargeFrequency,
     setBiginCompanyId: setContextBiginCompanyId,
+    setAgreementId: setContextAgreementId,
     initializeAccountTypeCache,
     accountTypeCache,
+    getCommissionDataForSave,
   } = useServicesContext();
 
   const totalCurrentContract = getTotalAgreementAmount();
@@ -1297,13 +1297,10 @@ function FormFillingContent({
     setContextBiginCompanyId(biginCompanyId);
   }, [biginCompanyId, setContextBiginCompanyId]);
 
-  // Initialize account type cache from saved data (avoid re-detecting saved frequencies)
+  // Sync documentId with ServicesContext for auto-saving account type cache
   useEffect(() => {
-    if (savedAccountTypeCache && Object.keys(savedAccountTypeCache).length > 0) {
-      console.log('[ACCOUNT-TYPE] Initializing cache from saved backend data');
-      initializeAccountTypeCache(savedAccountTypeCache);
-    }
-  }, [savedAccountTypeCache, initializeAccountTypeCache]);
+    setContextAgreementId(documentId);
+  }, [documentId, setContextAgreementId]);
 
   const currentPaymentLabel = PAYMENT_OPTION_DETAILS.find((entry) => entry.value === paymentOption)?.label ?? "Payment Option";
 
@@ -1661,14 +1658,18 @@ function FormFillingContent({
         if ((json as any).isConnectedToBigin !== undefined) {
           setIsConnectedToBigin((json as any).isConnectedToBigin);
         }
+        // IMPORTANT: Load saved account type cache BEFORE setting biginCompanyId
+        // Call initializeAccountTypeCache directly (not via state) to set ref synchronously
+        // This prevents auto-detection from triggering when cache is already available
+        const backendCache = (json as any).accountTypeCache;
+        if (backendCache && Object.keys(backendCache).length > 0) {
+          console.log('[ACCOUNT-TYPE] Loading cache from backend:', Object.keys(backendCache));
+          initializeAccountTypeCache(backendCache);
+        }
         // Set Bigin company ID from backend response (for account type auto-detection)
+        // This must come AFTER initializing the cache to avoid unnecessary detection
         if ((json as any).biginCompanyId) {
           setBiginCompanyId((json as any).biginCompanyId);
-        }
-        // Load saved account type cache from backend
-        if ((json as any).accountTypeCache) {
-          console.log('[ACCOUNT-TYPE] Loaded saved cache from backend:', (json as any).accountTypeCache);
-          setSavedAccountTypeCache((json as any).accountTypeCache);
         }
       } catch (err) {
         console.error("Error fetching headers:", err);
@@ -1815,30 +1816,22 @@ function FormFillingContent({
       includeProductsTable,
       customColumns: (productsData as any).customColumns || { products: [], dispensers: [] },
       summary,
-      // Include commission data for saving
-      commission: commissionResult ? {
-        input: {
-          monthlyValue: commissionResult.monthlyValue,
-          agreementTerm: commissionResult.agreementTerm,
-          accountType: commissionState.accountType,
-          pricingLine: commissionResult.pricingLine,
-          quotaLevel: commissionState.quotaLevel,
-          businessType: 'new' as const,
-          isInsideSales: commissionState.isInsideSales,
-        },
-        breakdown: {
-          baseRate: commissionResult.baseRate,
-          agreementMultiplier: commissionResult.agreementMultiplier,
-          accountTypeAdjustment: commissionResult.accountTypeAdjustment,
-          greenlineBonus: commissionResult.greenlineBonus,
-          renewalBonus: commissionResult.renewalBonus,
-          insideSalesDeduction: commissionResult.insideSalesDeduction,
-        },
-        finalCommissionRate: commissionResult.finalCommissionRate,
-        weeklyCommission: commissionResult.weeklyCommission,
-        annualCommission: commissionResult.annualCommission,
-        contractCommission: commissionResult.contractCommission,
-      } : null,
+      // Include commission data for saving - use new context function
+      commission: (() => {
+        const commissionData = getCommissionDataForSave(6); // 6% base rate
+        if (!commissionData) return null;
+        return {
+          weeklyCommission: commissionData.weeklyCommission,
+          annualCommission: commissionData.annualCommission,
+          contractCommission: commissionData.contractCommission,
+          finalCommissionRate: commissionData.finalCommissionRate,
+          breakdown: {
+            baseRate: commissionData.baseRate,
+            agreementMultiplier: commissionData.agreementMultiplier,
+          },
+          serviceBreakdown: commissionData.serviceBreakdown,
+        };
+      })(),
       // Save account type cache for commission calculations (avoid re-detecting on reload)
       accountTypeCache: Object.keys(accountTypeCache).length > 0 ? accountTypeCache : null,
     };
@@ -2874,7 +2867,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
               onStartDateChange={setAgreementStartDate}
               commissionState={commissionState}
               onCommissionStateChange={setCommissionState}
-              onCommissionResultChange={setCommissionResult}
               quotaLoading={quotaLoading}
               userName={user?.username}
               isConnectedToBigin={isConnectedToBigin}

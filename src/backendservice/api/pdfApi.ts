@@ -592,6 +592,14 @@ export const pdfApi = {
     if (res.error) throw new Error(res.error);
   },
 
+  async saveAccountTypeCache(id: string, accountTypeCache: Record<number, any>): Promise<void> {
+    const res = await apiClient.patch(
+      `/api/pdf/customer-headers/${id}/account-type-cache`,
+      { accountTypeCache }
+    );
+    if (res.error) throw new Error(res.error);
+  },
+
   async getAllVersionPdfs(params?: {
     page?: number;
     limit?: number;

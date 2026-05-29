@@ -1,8 +1,14 @@
 
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { SanicleanFormState } from "./saniclean/sanicleanTypes";
 import type { ServiceConfig } from "../../backendservice/types/serviceConfig.types";
 import type { AccountType } from "../../backendservice/api/accountTypeApi";
+import {
+  calculateCommissionableRevenue,
+  formatCurrency,
+} from "../../backendservice/utils/commissionCalculatorV2";
+import { DEFAULT_COMMISSION_RULES_V2 } from "../../backendservice/types/commission.types.v2";
+import type { AgreementTerm } from "../../backendservice/types/commission.types.v2";
 
 // Account type cache entry for frequency-based detection
 export interface AccountTypeCacheEntry {
@@ -19,6 +25,24 @@ export interface AccountTypeCacheEntry {
 // Cache keyed by frequency number (1=Weekly, 2=Bi-Weekly, etc.)
 export interface AccountTypeCache {
   [frequencyKey: number]: AccountTypeCacheEntry;
+}
+
+// Commission data structure for saving to backend
+export interface CommissionDataForSave {
+  weeklyCommission: number;
+  annualCommission: number;
+  contractCommission: number;
+  finalCommissionRate: number;
+  agreementMultiplier: number;
+  baseRate: number;
+  serviceBreakdown: Array<{
+    serviceName: string;
+    accountType: AccountType | null;
+    perVisitRevenue: number;
+    commissionableRevenue: number;
+    weeklyCommission: number;
+    annualCommission: number;
+  }>;
 }
 
 
@@ -77,6 +101,8 @@ interface ServicesContextValue {
   // Account type detection for commission calculation
   biginCompanyId: string | null;
   setBiginCompanyId: (id: string | null) => void;
+  agreementId: string | null;
+  setAgreementId: (id: string | null) => void;
   accountTypeCache: AccountTypeCache;
   setAccountTypeForFrequency: (frequencyKey: number, entry: AccountTypeCacheEntry) => void;
   getAccountTypeForFrequency: (frequencyKey: number) => AccountTypeCacheEntry | null;
@@ -86,6 +112,13 @@ interface ServicesContextValue {
   setIsDetectingAccountTypes: (detecting: boolean) => void;
   accountTypeDetectionError: string | null;
   setAccountTypeDetectionError: (error: string | null) => void;
+  // Flag to indicate cache was loaded from saved data (prevents auto-detection on load)
+  accountTypeCacheLoadedFromSaved: boolean;
+  // Ref for synchronous check (use this in effects that run before state updates)
+  accountTypeCacheLoadedFromSavedRef: React.MutableRefObject<boolean>;
+
+  // Commission calculation for saving
+  getCommissionDataForSave: (baseCommissionRate?: number) => CommissionDataForSave | null;
 }
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(
@@ -118,9 +151,14 @@ export const ServicesProvider: React.FC<{
 
   // Account type detection state
   const [biginCompanyId, setBiginCompanyId] = useState<string | null>(initialBiginCompanyId);
+  const [agreementId, setAgreementId] = useState<string | null>(null);
   const [accountTypeCache, setAccountTypeCache] = useState<AccountTypeCache>({});
   const [isDetectingAccountTypes, setIsDetectingAccountTypes] = useState(false);
   const [accountTypeDetectionError, setAccountTypeDetectionError] = useState<string | null>(null);
+  // Flag to track if cache was loaded from saved data (prevents auto-detection on load)
+  const [accountTypeCacheLoadedFromSaved, setAccountTypeCacheLoadedFromSaved] = useState(false);
+  // Ref for synchronous check (state updates are async, ref is immediate)
+  const accountTypeCacheLoadedFromSavedRef = useRef(false);
 
   // Helper to set account type for a specific frequency
   const setAccountTypeForFrequency = useCallback((frequencyKey: number, entry: AccountTypeCacheEntry) => {
@@ -139,13 +177,18 @@ export const ServicesProvider: React.FC<{
   const clearAccountTypeCache = useCallback(() => {
     setAccountTypeCache({});
     setAccountTypeDetectionError(null);
+    setAccountTypeCacheLoadedFromSaved(false);
+    accountTypeCacheLoadedFromSavedRef.current = false; // Reset ref synchronously
   }, []);
 
   // Initialize cache with saved data (from backend)
   const initializeAccountTypeCache = useCallback((cache: AccountTypeCache) => {
     if (cache && Object.keys(cache).length > 0) {
       console.log('[ACCOUNT-TYPE] Initializing cache from saved data:', Object.keys(cache));
+      // Set ref FIRST (synchronous) so detection hook can check it immediately
+      accountTypeCacheLoadedFromSavedRef.current = true;
       setAccountTypeCache(cache);
+      setAccountTypeCacheLoadedFromSaved(true);
     }
   }, []);
 
@@ -153,7 +196,9 @@ export const ServicesProvider: React.FC<{
   useEffect(() => {
     if (initialAccountTypeCache && Object.keys(initialAccountTypeCache).length > 0) {
       console.log('[ACCOUNT-TYPE] Loading saved account type cache on mount:', initialAccountTypeCache);
+      accountTypeCacheLoadedFromSavedRef.current = true; // Set ref synchronously
       setAccountTypeCache(initialAccountTypeCache);
+      setAccountTypeCacheLoadedFromSaved(true);
     }
   }, []); // Only run on mount
 
@@ -470,6 +515,115 @@ export const ServicesProvider: React.FC<{
     return totalOriginal;
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
+  // Helper to get frequency number from service data
+  const getFrequencyNum = (serviceData: any): number | null => {
+    const freq = serviceData.frequency ?? serviceData.frequencyKey ?? serviceData.frequencyDisplay?.value;
+    if (typeof freq === 'number') return freq;
+    if (typeof freq === 'string') {
+      const freqMap: Record<string, number> = {
+        'weekly': 1, 'biweekly': 2, 'bi-weekly': 2, 'monthly': 3, 'quarterly': 4,
+        'semi-annual': 5, 'annual': 6, 'twice-per-month': 13, 'bi-monthly': 14, 'one-time': 0
+      };
+      return freqMap[freq.toLowerCase()] ?? null;
+    }
+    return null;
+  };
+
+  // Helper to get agreement term from contract months
+  const getAgreementTerm = (months: number): AgreementTerm => {
+    if (months >= 36) return '3-year';
+    if (months >= 12) return '1-year';
+    return 'MTM-with-install';
+  };
+
+  // Extended frequency visits per year
+  const frequencyVisitsPerYear: Record<number, number> = {
+    1: 52,  // weekly
+    2: 26,  // bi-weekly
+    3: 12,  // monthly
+    4: 4,   // quarterly
+    5: 2,   // semi-annual
+    6: 1,   // annual
+    13: 24, // twice-per-month
+    14: 6,  // bi-monthly
+    0: 1,   // one-time
+  };
+
+  // Calculate commission data for saving to backend
+  const getCommissionDataForSave = useCallback((baseCommissionRate: number = 6): CommissionDataForSave | null => {
+    // Get agreement multiplier based on contract months
+    const term = getAgreementTerm(globalContractMonths);
+    const agreementMultiplier = DEFAULT_COMMISSION_RULES_V2.agreementMultipliers[term];
+    const effectiveRate = baseCommissionRate * (agreementMultiplier / 100);
+
+    let totalWeeklyCommission = 0;
+    let totalAnnualCommission = 0;
+    const serviceBreakdown: CommissionDataForSave['serviceBreakdown'] = [];
+
+    Object.entries(servicesState).forEach(([serviceName, serviceData]: [string, any]) => {
+      if (!serviceData?.isActive) return;
+
+      const freqNum = getFrequencyNum(serviceData);
+      if (freqNum === null || freqNum === 0) return; // Skip one-time services
+
+      const perVisitRevenue =
+        serviceData.perVisit ??
+        serviceData.totals?.perVisit?.amount ??
+        serviceData.perVisitCharge ??
+        serviceData.calc?.perVisit ??
+        0;
+
+      if (perVisitRevenue <= 0) return;
+
+      // Get account type from cache
+      const cacheEntry = accountTypeCache[freqNum];
+      const accountType = cacheEntry?.accountType || null;
+
+      // Calculate commissionable revenue
+      let commissionableRevenue = perVisitRevenue;
+      if (accountType) {
+        const result = calculateCommissionableRevenue(perVisitRevenue, accountType);
+        commissionableRevenue = result.commissionableRevenue;
+      }
+
+      const visitsPerYear = frequencyVisitsPerYear[freqNum] || 12;
+      const perVisitCommission = commissionableRevenue * (effectiveRate / 100);
+      const annualCommission = perVisitCommission * visitsPerYear;
+      const weeklyCommission = annualCommission / 52;
+
+      totalWeeklyCommission += weeklyCommission;
+      totalAnnualCommission += annualCommission;
+
+      serviceBreakdown.push({
+        serviceName,
+        accountType,
+        perVisitRevenue,
+        commissionableRevenue,
+        weeklyCommission,
+        annualCommission,
+      });
+    });
+
+    // If no services have commission, return null
+    if (serviceBreakdown.length === 0) {
+      return null;
+    }
+
+    // Calculate contract commission (annual × years)
+    const years = globalContractMonths / 12;
+    const contractCommission = totalAnnualCommission * years;
+
+    return {
+      weeklyCommission: totalWeeklyCommission,
+      annualCommission: totalAnnualCommission,
+      contractCommission,
+      finalCommissionRate: effectiveRate,
+      agreementMultiplier,
+      baseRate: baseCommissionRate,
+      serviceBreakdown,
+    };
+  }, [servicesState, accountTypeCache, globalContractMonths]);
+
   const value = useMemo<ServicesContextValue>(() => {
 
 
@@ -523,6 +677,8 @@ export const ServicesProvider: React.FC<{
       // Account type detection
       biginCompanyId,
       setBiginCompanyId,
+      agreementId,
+      setAgreementId,
       accountTypeCache,
       setAccountTypeForFrequency,
       getAccountTypeForFrequency,
@@ -532,8 +688,13 @@ export const ServicesProvider: React.FC<{
       setIsDetectingAccountTypes,
       accountTypeDetectionError,
       setAccountTypeDetectionError,
+      accountTypeCacheLoadedFromSaved,
+      accountTypeCacheLoadedFromSavedRef,
+
+      // Commission calculation
+      getCommissionDataForSave,
     };
-  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency, biginCompanyId, accountTypeCache, setAccountTypeForFrequency, getAccountTypeForFrequency, initializeAccountTypeCache, clearAccountTypeCache, isDetectingAccountTypes, accountTypeDetectionError]);
+  }, [servicesState, updateSaniclean, updateService, backendPricingData, getBackendPricingForService, globalContractMonths, getTotalAgreementAmount, getTotalPerVisitAmount, getTotalMonthlyRecurringRevenue, getTotalOriginalContractTotal, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency, biginCompanyId, agreementId, accountTypeCache, setAccountTypeForFrequency, getAccountTypeForFrequency, initializeAccountTypeCache, clearAccountTypeCache, isDetectingAccountTypes, accountTypeDetectionError, accountTypeCacheLoadedFromSaved, accountTypeCacheLoadedFromSavedRef, getCommissionDataForSave]);
 
   return (
     <ServicesContext.Provider value={value}>
