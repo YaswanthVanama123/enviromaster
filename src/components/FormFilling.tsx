@@ -211,6 +211,14 @@ type CommissionResult = {
   weeklyCommission: number;
   annualCommission: number;
   contractCommission: number;
+
+  // Quota credit — uses 12-month contract-equivalent values, scaled by the
+  // pricing-tier multiplier per the Solange Commission Draft (June 2026):
+  //   "Redline $1 per $1, Greenline $2 per dollar. Below Redline is half value."
+  // Multi-year contracts are normalized to a single year first, so quota is
+  // never multiplied by contract length.
+  annualContractTotal: number;          // (totalCurrentContract / globalContractMonths) × 12
+  annualQuotaCredit: number;            // annualContractTotal × pricingMultiplier
 };
 
 type ContractSummaryProps = {
@@ -301,28 +309,41 @@ function ContractSummary({
   const calculateCommission = useMemo((): CommissionResult => {
     const rules = COMMISSION_RULES_V2;
 
-    // Monthly recurring revenue (used for deduction calculations)
+    // Monthly recurring revenue (used for $ commission deductions; one-time excluded)
     const monthlyRecurring = totalMonthlyRecurring || 0;
 
     // Convert to weekly revenue for display (divide by ~4.33 weeks per month)
     const weeklyRevenue = monthlyRecurring / 4.33;
 
-    // Calculate price ratio from CONTRACT TOTALS (not per-visit averages)
-    // This avoids the issue where one-time costs (installation) skew the per-visit average
-    // Redline = totalOriginalContract, Greenline = totalOriginalContract * 1.30
-    // Price ratio = current / redline = how far above/below redline we are
-    const priceRatio = totalOriginalContract > 0
-      ? totalCurrentContract / totalOriginalContract
+    // 12-MONTH-EQUIVALENT CONTRACT TOTALS
+    // All commission and quota math is anchored on a single year, regardless of
+    // whether globalContractMonths is 12, 24, or 36. For multi-year deals we
+    // take exactly one year's slice of totalCurrentContract / totalOriginalContract,
+    // so:
+    //   - The pricing ratio is length-agnostic (numerator and denominator are
+    //     both 12-month figures).
+    //   - Quota credit is never multiplied by contract length — only one year
+    //     of recurring revenue (plus prorated one-time) ever counts.
+    //   - Dollar commission was already 12-month-only by design.
+    const monthlyValue = globalContractMonths > 0
+      ? totalCurrentContract / globalContractMonths
+      : totalCurrentContract;
+    const monthlyOriginalValue = globalContractMonths > 0
+      ? totalOriginalContract / globalContractMonths
+      : totalOriginalContract;
+    const currentContract12Months = monthlyValue * 12;
+    const originalContract12Months = monthlyOriginalValue * 12;
+
+    // Price ratio uses 12-month-normalized totals (mathematically identical to
+    // dividing the raw multi-year totals — the months cancel — but explicit and
+    // length-agnostic).
+    const priceRatio = originalContract12Months > 0
+      ? currentContract12Months / originalContract12Months
       : 1;
 
     // For display purposes, calculate what the weekly redline would be
     // Use the same ratio applied to the actual weekly revenue
     const redlinePrice = priceRatio > 0 ? weeklyRevenue / priceRatio : weeklyRevenue;
-
-    // Monthly value from contract total
-    const monthlyValue = globalContractMonths > 0
-      ? totalCurrentContract / globalContractMonths
-      : totalCurrentContract;
 
     // Derive agreement term from contract months
     const getAgreementTerm = (): AgreementTerm => {
@@ -375,6 +396,16 @@ function ContractSummary({
     // but commission is only paid for the first year
     const contractCommission = annualCommission;
 
+    // Step 6: Quota credit — 12-month contract total × pricing multiplier.
+    // Per Solange Commission Draft (June 2026): "Redline $1 per $1, Greenline
+    // $2 per dollar. Below Redline is half value." So the pricing-tier
+    // multiplier (0.5 / 1.0 / 1.25 / 1.5 / 2.0) scales the 12-month contract
+    // value before it lands in QuotaPeriod.actualSales. Anchor bonus and
+    // Pit/Bread deductions stay out of quota — they belong to the dollar
+    // commission path only.
+    const annualContractTotal = currentContract12Months;
+    const annualQuotaCredit = annualContractTotal * pricingMultiplier;
+
     // Legacy fields for backwards compatibility
     const greenlineBonus = pricingTier.quotaMultiplier > 1 ? (pricingTier.quotaMultiplier - 1) * 100 : 0;
     const accountTypeAdjustment = -revenueDeduction; // Convert deduction to negative adjustment for display
@@ -412,7 +443,11 @@ function ContractSummary({
       perVisitCommission,
       weeklyCommission,
       annualCommission,
-      contractCommission
+      contractCommission,
+
+      // Quota credit (raw 12-month contract total)
+      annualContractTotal,
+      annualQuotaCredit
     };
   }, [totalCurrentContract, totalOriginalContract, totalMonthlyRecurring, globalContractMonths, pricingIndicator, quotaLevel, accountType, isInsideSales]);
 
