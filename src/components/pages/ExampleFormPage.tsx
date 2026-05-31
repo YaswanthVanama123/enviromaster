@@ -5,7 +5,6 @@ import { PricingProvider } from "../../pricing/pricingStore";
 import PriceAwareField from "../forms/PriceAwareField";                 
 import type { Frequency } from "../../pricing/pricingTypes";            
 
-
 export default function ExampleFormPage() {
   const [serviceKey, setServiceKey] = useState("saniclean");
   const [frequency, setFrequency] = useState<Frequency>("Weekly");

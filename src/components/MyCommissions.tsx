@@ -4,7 +4,6 @@ import { pdfApi } from '../backendservice/api/pdfApi';
 import { quotaApi } from '../backendservice/api/quotaApi';
 import './MyCommissions.css';
 
-// Quota level types and helpers
 type QuotaLevel = 'below' | 'above' | 'double';
 
 const QUOTA_LEVEL_CONFIG: Record<QuotaLevel, { label: string; rate: number; color: string; bgColor: string }> = {
@@ -13,7 +12,6 @@ const QUOTA_LEVEL_CONFIG: Record<QuotaLevel, { label: string; rate: number; colo
   double: { label: 'Double Quota', rate: 9, color: '#7c3aed', bgColor: '#ede9fe' },
 };
 
-// Helper to format quota level for display
 const formatQuotaLevel = (quotaLevel: string | null | undefined): string => {
   if (!quotaLevel) return '';
   const level = quotaLevel.toLowerCase() as QuotaLevel;
@@ -21,7 +19,7 @@ const formatQuotaLevel = (quotaLevel: string | null | undefined): string => {
   if (config) {
     return `${config.label} (${config.rate}%)`;
   }
-  // Fallback: capitalize first letter
+  
   return quotaLevel.charAt(0).toUpperCase() + quotaLevel.slice(1);
 };
 
@@ -126,7 +124,6 @@ function formatDate(dateStr: string): string {
   });
 }
 
-// Time period filter options
 type TimePeriod = 'all' | 'weekly' | '14days' | 'monthly' | 'quarterly' | 'annually' | 'custom';
 
 const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
@@ -139,7 +136,6 @@ const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
   custom: 'Date Range',
 };
 
-// Helper to check if a date falls within the time period
 function isWithinTimePeriod(
   dateStr: string | null,
   period: TimePeriod,
@@ -152,12 +148,11 @@ function isWithinTimePeriod(
   const date = new Date(dateStr);
   const now = new Date();
 
-  // Reset time components for accurate date comparison
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   switch (period) {
     case 'weekly': {
-      // Start of current week (Sunday)
+      
       const startOfWeek = new Date(startOfToday);
       startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
       return date >= startOfWeek;
@@ -210,14 +205,12 @@ export default function MyCommissions() {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Current quota level state
   const [currentQuotaLevel, setCurrentQuotaLevel] = useState<QuotaLevel>('above');
   const [quotaPercentage, setQuotaPercentage] = useState<number | null>(null);
   const [quotaTarget, setQuotaTarget] = useState<number | null>(null);
   const [actualSales, setActualSales] = useState<number | null>(null);
   const [quotaLoading, setQuotaLoading] = useState(true);
 
-  // Fetch quota level
   useEffect(() => {
     async function fetchQuotaLevel() {
       if (!user?.username) {
@@ -263,7 +256,7 @@ export default function MyCommissions() {
     if (!data?.commissions) return [];
 
     return data.commissions.filter(c => {
-      // Filter by status
+      
       let statusMatch = true;
       if (statusFilter !== 'all') {
         if (statusFilter === 'approved') {
@@ -273,7 +266,6 @@ export default function MyCommissions() {
         }
       }
 
-      // Filter by time period (using startDate or createdAt as fallback)
       const dateToCheck = c.startDate || c.createdAt;
       const timeMatch = isWithinTimePeriod(dateToCheck, timePeriod, customStartDate, customEndDate);
 
@@ -281,7 +273,6 @@ export default function MyCommissions() {
     });
   }, [data?.commissions, statusFilter, timePeriod, customStartDate, customEndDate]);
 
-  // Calculate time-filtered commissions (without status filter) for status counts
   const timeFilteredCommissions = useMemo(() => {
     if (!data?.commissions) return [];
 
@@ -291,7 +282,6 @@ export default function MyCommissions() {
     });
   }, [data?.commissions, timePeriod, customStartDate, customEndDate]);
 
-  // Calculate status counts from time-filtered commissions
   const filteredByStatus = useMemo(() => {
     const counts: Record<string, { count: number; commission: number }> = {
       draft: { count: 0, commission: 0 },
@@ -318,7 +308,6 @@ export default function MyCommissions() {
     return counts;
   }, [timeFilteredCommissions]);
 
-  // Calculate filtered totals based on filtered commissions
   const filteredTotals = useMemo(() => {
     let totalAnnualCommission = 0;
     let totalMonthlyCommission = 0;
@@ -384,7 +373,6 @@ export default function MyCommissions() {
     );
   }
 
-  // Provide default values for totals and byStatus if missing
   const totals: CommissionTotals = data.totals || {
     totalAgreements: 0,
     totalWeeklyCommission: 0,
@@ -411,7 +399,7 @@ export default function MyCommissions() {
           <span className="my-commissions__user-badge">
             {user?.fullName || user?.username}
           </span>
-          {/* Current Quota Level Badge */}
+          {}
           {!quotaLoading && (
             <span
               className="my-commissions__quota-badge"

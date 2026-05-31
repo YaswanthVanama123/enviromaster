@@ -1,4 +1,4 @@
-/* RouteStarCustomersTab - Clean Professional Styles */
+
 
 .routestar-customers-tab {
   padding: 24px;
@@ -7,7 +7,6 @@
   min-height: 600px;
 }
 
-/* Header */
 .rs-header {
   display: flex;
   justify-content: space-between;
@@ -79,7 +78,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* Stats Grid */
 .rs-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -142,7 +140,6 @@
   letter-spacing: 0.5px;
 }
 
-/* Sync Status */
 .rs-sync-status {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -233,7 +230,6 @@
   font-weight: 500;
 }
 
-/* Filters */
 .rs-filters {
   display: flex;
   gap: 12px;
@@ -313,7 +309,6 @@
   border: 1px solid #e2e8f0;
 }
 
-/* Table */
 .rs-table-container {
   background: white;
   border: 1px solid #e2e8f0;
@@ -445,7 +440,6 @@
   color: #1e293b;
 }
 
-/* Pagination */
 .rs-pagination {
   display: flex;
   justify-content: center;
@@ -483,7 +477,6 @@
   font-weight: 500;
 }
 
-/* Loading & Empty States */
 .rs-loading {
   display: flex;
   flex-direction: column;
@@ -540,7 +533,6 @@
   margin: 0;
 }
 
-/* Modal */
 .rs-modal-overlay {
   position: fixed;
   top: 0;
@@ -682,7 +674,6 @@
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .rs-stats-grid {
     grid-template-columns: repeat(2, 1fr);

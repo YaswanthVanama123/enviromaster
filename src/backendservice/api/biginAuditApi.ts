@@ -1,7 +1,4 @@
-/**
- * Bigin Audit API
- * API client for managing audit logs scraped from Zoho Bigin
- */
+
 
 import { apiClient } from '../utils/apiClient';
 
@@ -75,9 +72,7 @@ export interface ScrapeSession {
 const BASE_PATH = '/api/bigin-audit';
 
 export const biginAuditApi = {
-  /**
-   * Get all audit logs with optional filters
-   */
+  
   async getAll(params?: {
     search?: string;
     user?: string;
@@ -118,9 +113,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Get audit log by ID
-   */
   async getById(id: string): Promise<BiginAuditLog | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: BiginAuditLog }>(
@@ -134,9 +126,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Get scrape status
-   */
   async getScrapeStatus(): Promise<ScrapeStatus | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: ScrapeStatus }>(
@@ -150,9 +139,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Start scrape from Bigin
-   */
   async startScrape(): Promise<{ success: boolean; message: string; sessionId?: string } | null> {
     try {
       const response = await apiClient.post<{ success: boolean; message: string; sessionId?: string }>(
@@ -167,9 +153,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Get audit statistics
-   */
   async getStats(): Promise<AuditStats | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: AuditStats }>(
@@ -183,9 +166,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Get scrape history
-   */
   async getScrapeHistory(params?: {
     limit?: number;
     skip?: number;
@@ -212,9 +192,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Upload CSV file with audit logs
-   */
   async uploadCsv(file: File): Promise<{
     success: boolean;
     message: string;
@@ -250,9 +227,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Delete all audit logs
-   */
   async deleteAll(): Promise<{
     success: boolean;
     message: string;
@@ -272,9 +246,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Delete unnecessary audit logs (keeps Lisa Rothwell's records)
-   */
   async deleteUnnecessary(): Promise<{
     success: boolean;
     message: string;
@@ -294,10 +265,6 @@ export const biginAuditApi = {
     }
   },
 
-  /**
-   * Check if a salesperson's records exist in Lisa Rothwell's audit history within 1 year
-   * Used to determine if "Inside Sales" checkbox should be checked
-   */
   async checkInsideSalesEligibility(salespersonName: string): Promise<{
     success: boolean;
     data?: {

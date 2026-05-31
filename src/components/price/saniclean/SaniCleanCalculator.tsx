@@ -8,7 +8,6 @@ import { SC_DEFAULTS, SC_UI as UI } from "./constants";
 export default function SaniCleanCalculator() {
   const [master, setMaster] = useState(SC_DEFAULTS);
 
-
   const [region, setRegion] = useState("inside");        
   const [fixtures, setFixtures] = useState(10);
   const [agreementMonths, setAgreementMonths] = useState(12);

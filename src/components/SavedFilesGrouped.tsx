@@ -48,7 +48,6 @@ function formatDeletionMeta(deletedBy?: string | null, deletedAt?: string | null
   return parts.length > 0 ? parts.join(" ") : null;
 }
 
-
 const STATUS_LABEL: Record<FileStatus, string> = {
   saved: "Saved",
   draft: "Draft",

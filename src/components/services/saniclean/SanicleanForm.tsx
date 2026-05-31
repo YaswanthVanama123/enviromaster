@@ -11,7 +11,6 @@ import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 const formatMoney = (n: number): string => `$${(isNaN(n) ? 0 : n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 const safeNumber = (n: any): number => (typeof n === "number" && !isNaN(n)) ? n : 0;
 
-
 const sanicleanFrequencyLabels: Record<string, string> = {
   oneTime: "One Time",
   weekly: "Weekly",
@@ -82,7 +81,6 @@ function getSanicleanMonthlyMultiplier(frequency: string, backendConfig?: any): 
   }
   return FREQUENCY_MULTIPLIER_FALLBACK[frequency] ?? FREQUENCY_MULTIPLIER_FALLBACK.weekly;
 }
-
 
 function IncludedItemsEditor({
   items,
@@ -224,7 +222,6 @@ export const SanicleanForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const {
     form,
     quote,
@@ -245,7 +242,6 @@ export const SanicleanForm: React.FC<
 
   const servicesContext = useServicesContextOptional();
 
-
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       updateForm({ contractMonths: servicesContext.globalContractMonths });
@@ -253,7 +249,6 @@ export const SanicleanForm: React.FC<
   }, [servicesContext?.globalContractMonths]);
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
-
 
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
@@ -273,7 +268,6 @@ export const SanicleanForm: React.FC<
     return Boolean((pricingOverrides as Record<string, boolean> | undefined)?.[fieldName]);
   };
 
-
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
@@ -286,7 +280,6 @@ export const SanicleanForm: React.FC<
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -294,13 +287,10 @@ export const SanicleanForm: React.FC<
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -311,13 +301,10 @@ export const SanicleanForm: React.FC<
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -325,16 +312,13 @@ export const SanicleanForm: React.FC<
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -343,11 +327,9 @@ export const SanicleanForm: React.FC<
         return;
       }
 
-
       updateForm({ [name]: numValue });
     }
   };
-
 
   const fixtures = form.sinks + form.urinals + form.maleToilets + form.femaleToilets;
   const soapDispensers = form.sinks; 
@@ -360,7 +342,6 @@ export const SanicleanForm: React.FC<
   const fixtureRateOverride = hasPricingOverride(fixtureRateFieldName);
   const excessSoapRateFieldName = form.soapType === "luxury" ? "excessLuxurySoapRate" : "excessStandardSoapRate";
   const excessSoapRateOverride = hasPricingOverride(excessSoapRateFieldName);
-
 
   console.log('🔍 [SaniClean Debug]', {
     pricingMode: form.pricingMode,
@@ -379,13 +360,11 @@ export const SanicleanForm: React.FC<
 
   const extraSoapWeekly = Math.max(0, form.excessSoapGallonsPerWeek) * extraSoapRatePerGallon;
 
-
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
     let processedValue: any = value;
-
 
     if (
       name === "customBaseService" ||
@@ -426,7 +405,6 @@ export const SanicleanForm: React.FC<
     form.mainServiceFrequency === "oneTime"
       ? (quote.oneTimeTotal ?? sumBreakdown)
       : undefined;
-
 
   useEffect(() => {
     if (servicesContext) {
@@ -534,7 +512,6 @@ export const SanicleanForm: React.FC<
       addAtChargeExtra("Warranty", form.warrantyDispensers, form.warrantyFeePerDispenserPerWeek, warrantyTotal, EXTRA_ORDER.warranty);
       addAtChargeExtra("Microfiber Mopping", form.microfiberBathrooms, form.microfiberMoppingPerBathroom, microfiberTotal, EXTRA_ORDER.microfiber);
 
-
       if (form.pricingMode === "all_inclusive" && form.excessSoapGallonsPerWeek > 0 && extraSoapWeekly > 0) {
         addAtChargeExtra(
           "Excess Soap",
@@ -544,7 +521,6 @@ export const SanicleanForm: React.FC<
           EXTRA_ORDER.excessSoap
         );
       }
-
 
       if (form.pricingMode === "all_inclusive" && paperOveragePerWeek > 0) {
         addLineExtra(
@@ -563,7 +539,6 @@ export const SanicleanForm: React.FC<
             addLineExtra("Facility Components Frequency", facilityFrequencyLabel, "line", EXTRA_ORDER.facilityFrequency, "wide");
           }
           addLineExtra("Base Service Monthly Total", quote.baseServiceMonthly, "bold", EXTRA_ORDER.baseServiceMonthly, "wide");
-
 
           if (hasFacilityComponents) {
             addLineExtra("Facility Components Monthly Total", quote.facilityComponentsMonthly, "bold", EXTRA_ORDER.facilityComponentsMonthly, "wide");
@@ -601,7 +576,6 @@ export const SanicleanForm: React.FC<
         displayName: "SaniClean",
         isActive: true,
 
-
         pricingMode: form.pricingMode,
         location: form.location,
         rateTier: form.rateTier,
@@ -619,7 +593,6 @@ export const SanicleanForm: React.FC<
           type: "text" as const,
           value: frequencyLabel,
         },
-
 
         allInclusiveWeeklyRatePerFixture: form.allInclusiveWeeklyRatePerFixture,
         luxuryUpgradePerDispenser: form.luxuryUpgradePerDispenser,
@@ -655,7 +628,6 @@ export const SanicleanForm: React.FC<
         redRateMultiplier: form.redRateMultiplier,
         greenRateMultiplier: form.greenRateMultiplier,
 
-
         customBaseService: form.customBaseService,
         customTripCharge: form.customTripCharge,
         customFacilityComponents: form.customFacilityComponents,
@@ -669,7 +641,6 @@ export const SanicleanForm: React.FC<
         customContractTotal: form.customContractTotal,
         applyMinimum: form.applyMinimum !== false,
 
-
         addUrinalComponents: form.addUrinalComponents,
         urinalScreensQty: form.addUrinalComponents ? form.urinalScreensQty : 0,
         urinalMatsQty: form.addUrinalComponents ? form.urinalMatsQty : 0,
@@ -681,7 +652,6 @@ export const SanicleanForm: React.FC<
         warrantyDispensers: form.warrantyDispensers,
         addMicrofiberMopping: form.addMicrofiberMopping,
         microfiberBathrooms: form.addMicrofiberMopping ? form.microfiberBathrooms : 0,
-
 
         perVisitBase: quote.breakdown.baseService,  
         perVisit: quote.weeklyTotal,  
@@ -765,7 +735,6 @@ export const SanicleanForm: React.FC<
     form.contractMonths && form.contractMonths >= 2 && form.contractMonths <= 36
       ? form.contractMonths
       : 12;
-
 
   const contractTotal = quote.contractTotal;
 
@@ -861,7 +830,6 @@ export const SanicleanForm: React.FC<
           </select>
         </div>
       </div>
-
 
       {}
       <div className="svc-row">
@@ -1488,7 +1456,6 @@ export const SanicleanForm: React.FC<
         </>
       )}
 
-
       {}
       {!isAllInclusive && form.sinks > 0 && (
         <div className="svc-row">
@@ -1655,7 +1622,6 @@ export const SanicleanForm: React.FC<
 
       {}
       {}
-
 
       {}
       {}

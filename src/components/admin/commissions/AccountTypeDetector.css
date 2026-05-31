@@ -1,6 +1,4 @@
-/**
- * Account Type Detector Styles
- */
+
 
 .account-type-detector {
   background: #fff;
@@ -155,7 +153,6 @@
   font-size: 13px;
 }
 
-/* Detection Result */
 .detection-result {
   margin-top: 20px;
   padding: 16px;
@@ -222,7 +219,6 @@
   color: #111827;
 }
 
-/* Account Type Reference */
 .account-type-reference {
   margin-top: 24px;
   padding-top: 20px;
@@ -275,7 +271,6 @@
   color: #dc2626;
 }
 
-/* Compact mode */
 .account-type-detector.compact .detector-row {
   display: flex;
   align-items: flex-end;
@@ -313,7 +308,6 @@
   white-space: nowrap;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .detector-grid {
     grid-template-columns: 1fr;

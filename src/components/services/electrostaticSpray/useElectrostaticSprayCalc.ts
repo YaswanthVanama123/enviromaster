@@ -12,7 +12,6 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-
 interface BackendElectrostaticSprayConfig {
   pricingMethodOptions: string[]; 
   combinedServiceOptions: string[]; 
@@ -46,7 +45,6 @@ interface BackendElectrostaticSprayConfig {
   maxContractMonths: number; 
 }
 
-
 function transformBackendFrequencyMeta(backendMeta: BackendElectrostaticSprayConfig['frequencyMetadata'] | undefined) {
   if (!backendMeta) {
     console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
@@ -55,9 +53,7 @@ function transformBackendFrequencyMeta(backendMeta: BackendElectrostaticSprayCon
 
   console.log('🔧 [Electrostatic Spray] Transforming backend frequencyMetadata:', backendMeta);
 
-
   const transformedBilling: any = { ...cfg.billingConversions }; 
-
 
   if (backendMeta.weekly) {
     transformedBilling.weekly = {
@@ -72,7 +68,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendElectrostaticSprayCon
       annualMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier * 12,
     };
   }
-
 
   const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
 
@@ -94,9 +89,7 @@ function transformBackendFrequencyMeta(backendMeta: BackendElectrostaticSprayCon
   return transformedBilling;
 }
 
-
 function updateFormWithConfig(config: BackendElectrostaticSprayConfig, setForm: any, initialData?: any, forceUpdate: boolean = false) {
-
 
   if (initialData && !forceUpdate) {
     console.log('📋 [ELECTROSTATIC-SPRAY] Edit mode: Skipping form update to preserve loaded values');
@@ -137,13 +130,10 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   const isEditMode = useRef(!!initialData); 
   const isInitialMount = useRef(true); 
 
-
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-
   const servicesContext = useServicesContextOptional();
-
 
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -159,7 +149,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     console.log(`💰 [ELECTROSTATIC-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -182,7 +171,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       ...initialData,
     };
 
-
     const isInitiallyActive = (initialData?.roomCount || 0) > 0 || (initialData?.squareFeet || 0) > 0;
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
@@ -199,7 +187,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
   const [backendConfig, setBackendConfig] = useState<BackendElectrostaticSprayConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
@@ -211,7 +198,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
           const config = backendData.config as BackendElectrostaticSprayConfig;
           setBackendConfig(config);
           updateFormWithConfig(config, setForm, initialData, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
@@ -241,7 +227,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     } catch (error) {
       console.error('❌ Failed to fetch ElectrostaticSpray config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("electrostaticSpray");
         if (fallbackConfig?.config) {
@@ -249,7 +234,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
           const config = fallbackConfig.config as BackendElectrostaticSprayConfig;
           setBackendConfig(config);
           updateFormWithConfig(config, setForm, initialData, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [ELECTROSTATIC-SPRAY] Manual refresh: Clearing all custom overrides');
@@ -276,7 +260,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     }
   };
 
-
   useEffect(() => {
 
     console.log('📋 [ELECTROSTATIC-SPRAY-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
@@ -285,14 +268,11 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
   useEffect(() => {
     if (!backendConfig) return;
 
-
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
-
 
       baselineValues.current = {
         ratePerRoom: initialData?.ratePerRoom ?? backendConfig.standardSprayPricing?.sprayRatePerRoom ?? cfg.ratePerRoom,
@@ -307,10 +287,8 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-
       if (initialData) {
         console.log('🔍 [ELECTROSTATIC-SPRAY-PRICING] Detecting price overrides for yellow highlighting...');
-
 
         const hasRatePerRoomOverride = initialData.ratePerRoom !== undefined &&
                                        initialData.ratePerRoom !== backendConfig.standardSprayPricing?.sprayRatePerRoom;
@@ -340,14 +318,12 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     }
   }, [backendConfig, initialData]);
 
-
   useEffect(() => {
 
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
-
 
   useEffect(() => {
     const isServiceActive = (form.roomCount || 0) > 0 || (form.squareFeet || 0) > 0;
@@ -373,7 +349,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.roomCount, form.squareFeet, servicesContext]);
 
-
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -398,7 +373,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
   }, [form.roomCount, form.squareFeet, form.frequency]);
-
 
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
@@ -448,7 +422,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         next[name as keyof ElectrostaticSprayFormState] = target.value;
       }
 
-
       const baseEditableFields = [
         'ratePerRoom', 'ratePerThousandSqFt', 'tripChargePerVisit'
       ];
@@ -464,9 +437,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       if (allPricingFields.includes(name)) {
         const newValue = next[name as keyof ElectrostaticSprayFormState] as number | undefined;
 
-
         let baselineValue = baselineValues.current[name];
-
 
         if (baselineValue === undefined && name.startsWith('custom')) {
           const baseFieldMap: Record<string, string> = {
@@ -483,7 +454,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
           }
         }
 
-
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
@@ -497,7 +467,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
         }
       }
 
-
       const allFormFields = [
 
         'rooms', 'squareFeet', 'contractMonths', 'frequency',
@@ -506,7 +475,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
         'includesTripCharge'
       ];
-
 
       if (allFormFields.includes(name)) {
         logServiceFieldChanges(
@@ -523,7 +491,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       return next;
     });
   };
-
 
   const activeConfig = useMemo(() => {
     return {
@@ -544,7 +511,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
 
   const calc: ElectrostaticSprayCalcResult = useMemo(() => {
 
-
     if (!backendConfig) {
       console.warn('⚠️ [ElectrostaticSpray] Using fallback config - backend not loaded yet');
     } else {
@@ -554,11 +520,9 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       });
     }
 
-
     let calculatedServiceCharge = 0;
     let effectiveRate = 0;
     let pricingMethodUsed = form.pricingMethod;
-
 
     const effectiveRatePerRoom = form.customRatePerRoom ?? form.ratePerRoom;
     const effectiveRatePerThousandSqFt = form.customRatePerThousandSqFt ?? form.ratePerThousandSqFt;
@@ -571,7 +535,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       let calculateForSqFt = form.squareFeet;
 
       if (!form.useExactCalculation) {
-
 
         const minTier = activeConfig.standardSprayPricing.sqFtUnit; 
         if (calculateForSqFt <= minTier) {
@@ -587,7 +550,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       effectiveRate = effectiveRatePerThousandSqFt;
     }
 
-
     const hasService = (form.pricingMethod === "byRoom" && form.roomCount > 0) ||
                       (form.pricingMethod === "bySqFt" && form.squareFeet > 0);
 
@@ -597,21 +559,16 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       calculatedServiceCharge = 0;
     }
 
-
     const serviceCharge = form.customServiceCharge ?? calculatedServiceCharge;
-
 
     const effectiveTripChargePerVisit = form.customTripChargePerVisit ?? form.tripChargePerVisit;
     const tripCharge = form.isCombinedWithSaniClean ? 0 : effectiveTripChargePerVisit;
 
-
     const perVisit = form.customPerVisitPrice ?? (serviceCharge + tripCharge);
-
 
     const freqConfig = activeConfig.billingConversions[form.frequency];
     const monthlyMultiplier = freqConfig?.monthlyMultiplier ?? 0;
     const annualMultiplier = freqConfig?.annualMultiplier ?? 0;
-
 
     const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
       form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" ||
@@ -622,9 +579,7 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       form.frequency === "biannual" ? 6 :
       form.frequency === "annual" ? 12 : 1;
 
-
     const monthlyRecurring = form.customMonthlyRecurring ?? (perVisit * monthlyMultiplier);
-
 
     let contractTotal: number;
     if (form.frequency === "oneTime") {
@@ -640,7 +595,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       contractTotal = form.customContractTotal ?? (monthlyRecurring * form.contractMonths);
     }
 
-
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
 
@@ -651,7 +605,6 @@ export function useElectrostaticSprayCalc(initialData?: Partial<ElectrostaticSpr
       totalCustomFields: customFieldsTotal.toFixed(2),
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
-
 
     let originalContractTotal = 0;
     if (hasService) {

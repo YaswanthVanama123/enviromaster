@@ -27,7 +27,6 @@ export interface BaseServiceFormState {
   notes?: string;
 }
 
-
 export interface ServiceQuoteResult {
   serviceId: ServiceId;
   displayName: string;
@@ -36,13 +35,11 @@ export interface ServiceQuoteResult {
   detailsBreakdown: string[];
 }
 
-
 export interface ServiceMeta {
   id: ServiceId;
   label: string;
   description?: string;
 }
-
 
 export interface ServiceInitialData<T> {
   initialData?: Partial<T> & { customFields?: CustomField[] };

@@ -14,7 +14,6 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-
 function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['frequencyMetadata'] | undefined) {
   if (!backendMeta) {
     console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
@@ -23,9 +22,7 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
 
   console.log('🔧 [Foaming Drain] Transforming backend frequencyMetadata:', backendMeta);
 
-
   const transformedBilling: any = {};
-
 
   if (backendMeta.weekly) {
     transformedBilling.weekly = {
@@ -40,7 +37,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
       firstMonthExtraMultiplier: backendMeta.biweekly.firstMonthExtraMultiplier,
     };
   }
-
 
   const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
 
@@ -57,7 +53,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
     }
   }
 
-
   const finalBilling = {
     ...cfg.billingConversions, 
     ...transformedBilling,     
@@ -66,7 +61,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendFoamingDrainConfig['f
   console.log('✅ [Foaming Drain] Transformed frequencyMetadata to billingConversions:', finalBilling);
   return finalBilling;
 }
-
 
 interface BackendFoamingDrainConfig {
   standardPricing: {
@@ -146,7 +140,6 @@ const DEFAULT_FOAMING_DRAIN_FORM_STATE: FoamingDrainFormState = {
   contractMonths: cfg.contract.defaultMonths,
   notes: "",
 
-
   standardDrainRate: cfg.standardDrainRate,
   altBaseCharge: cfg.altBaseCharge,
   altExtraPerDrain: cfg.altExtraPerDrain,
@@ -174,7 +167,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
   const servicesContext = useServicesContextOptional();
 
-
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -189,7 +181,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     console.log(`💰 [FOAMING-DRAIN-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -227,7 +218,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       hasInitialValue: !!initialData?.contractMonths
     });
 
-
     const frequencyValue = typeof initialData?.frequency === 'object' && initialData.frequency !== null && 'frequencyKey' in initialData.frequency
       ? (initialData.frequency as any).frequencyKey
       : initialData?.frequency;
@@ -247,18 +237,14 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     };
   });
 
-
   const [backendConfig, setBackendConfig] = useState<BackendFoamingDrainConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
 
   const isEditMode = useRef(!!initialData);
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-
   const updateStateWithConfig = (config: BackendFoamingDrainConfig, forceUpdate: boolean = false) => {
-
 
     if (initialData && !forceUpdate) {
       console.log('📋 [FOAMING-DRAIN] Edit mode: Skipping form update to preserve loaded values');
@@ -283,7 +269,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }));
   };
 
-
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
@@ -295,7 +280,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           const config = backendData.config as BackendFoamingDrainConfig;
           setBackendConfig(config);
           updateStateWithConfig(config, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
@@ -342,7 +326,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     } catch (error) {
       console.error('❌ Failed to fetch Foaming Drain config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("foamingDrain");
         if (fallbackConfig?.config) {
@@ -350,7 +333,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           const config = fallbackConfig.config as BackendFoamingDrainConfig;
           setBackendConfig(config);
           updateStateWithConfig(config, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [FOAMING-DRAIN] Manual refresh: Clearing all custom overrides');
@@ -387,7 +369,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }
   };
 
-
   useEffect(() => {
 
     console.log('📋 [FOAMING-DRAIN-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
@@ -395,14 +376,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
   useEffect(() => {
     if (!backendConfig) return;
 
-
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
-
 
       baselineValues.current = {
         standardDrainRate: initialData?.standardDrainRate ?? backendConfig.standardPricing?.standardDrainRate ?? state.standardDrainRate,
@@ -433,10 +411,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         note: initialData ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-
       if (initialData) {
         console.log('🔍 [FOAMING-DRAIN-PRICING] Detecting price overrides for yellow highlighting...');
-
 
         const overrides = {
           customRatePerDrain: (initialData.standardDrainRate !== undefined &&
@@ -484,7 +460,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
                                    ? initialData.filthyMultiplier : undefined,
         };
 
-
         const hasAnyOverrides = Object.values(overrides).some(v => v !== undefined);
 
         if (hasAnyOverrides) {
@@ -505,14 +480,12 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     }
   }, [backendConfig, initialData]);
 
-
   useEffect(() => {
 
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
-
 
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef(() => {
@@ -547,19 +520,16 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       }
     }
 
-
     wasActiveRef.current = () => isServiceActive;
   }, [servicesContext?.globalContractMonths, state.contractMonths,
       state.standardDrainCount, state.installDrainCount, state.filthyDrainCount,
       state.greaseTrapCount, state.greenDrainCount, state.plumbingDrainCount, servicesContext]);
-
 
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setState(prev => ({ ...prev, contractMonths: months }));
     console.log(`📅 [FOAMING-DRAIN-CONTRACT] User override: ${months} months`);
   }, []);
-
 
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -587,7 +557,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
   }, [state.standardDrainCount, state.frequency]);
 
   const quote = useMemo<FoamingDrainQuoteResult>(() => {
-
 
     const activeConfig = {
       standardDrainRate: backendConfig?.standardPricing?.standardDrainRate ?? cfg.standardDrainRate,
@@ -630,7 +599,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       });
     }
 
-
     const standardDrains = Math.max(0, Number(state.standardDrainCount) || 0);
     const installRequested = Math.max(
       0,
@@ -658,16 +626,13 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     const canUseInstallProgram =
       isVolume && !state.useBigAccountTenWeekly && !state.isAllInclusive;
 
-
     const installDrains = canUseInstallProgram
       ? Math.min(installRequested, standardDrains)
       : 0;
 
     const normalStandardDrains = Math.max(standardDrains - installDrains, 0);
 
-
     const standardDrainsActive = state.isAllInclusive ? 0 : normalStandardDrains;
-
 
     let filthyDrains = 0;
     if (condition === "filthy" && standardDrainsActive > 0) {
@@ -678,7 +643,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         filthyDrains = standardDrainsActive;
       }
     }
-
 
     const effectiveStandardDrainRate = state.customRatePerDrain ?? state.standardDrainRate;
     const effectiveAltBaseCharge = state.customAltBaseCharge ?? state.altBaseCharge;
@@ -705,7 +669,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       effectivePlumbingAddonRate,
       effectiveFilthyMultiplier,
     });
-
 
     const tenTotal = standardDrainsActive * effectiveStandardDrainRate;  
     const altTotal =
@@ -743,13 +706,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       ? altTotal
       : tenTotal;
 
-
     let weeklyInstallDrains = 0;
     let volumePricingApplied = false;
 
     if (installDrains > 0 && canUseInstallProgram) {
       volumePricingApplied = true;
-
 
       const perDrainRate =
         state.installFrequency === "bimonthly"
@@ -759,18 +720,15 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyInstallDrains = perDrainRate * installDrains;
     }
 
-
     const weeklyPlumbing =
       state.needsPlumbing && plumbingDrains > 0
         ? plumbingDrains * effectivePlumbingAddonRate  
         : 0;
 
-
     const weeklyGreaseTraps =
       greaseTraps > 0 ? greaseTraps * effectiveGreaseWeeklyRate : 0;  
     const weeklyGreenDrains =
       greenDrains > 0 ? greenDrains * effectiveGreenWeeklyRate : 0;  
-
 
     const weeklyServiceRaw =
       weeklyStandardDrains +
@@ -779,13 +737,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       weeklyGreaseTraps +
       weeklyGreenDrains;
 
-
     const minimumChargePerVisit = backendConfig?.minimumChargePerVisit ?? 50; 
     const weeklyServiceBeforeMin = round2(weeklyServiceRaw);
     const weeklyService = weeklyServiceRaw > 0 ? (state.applyMinimum !== false ? Math.max(weeklyServiceBeforeMin, minimumChargePerVisit) : weeklyServiceBeforeMin) : 0;
     const tripCharge = 0; 
     const weeklyTotal = weeklyService; 
-
 
     let filthyInstallOneTime = 0;
 
@@ -811,12 +767,10 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         weeklyFilthyCost * effectiveFilthyMultiplier; 
     }
 
-
     const greaseInstallOneTime =
       state.chargeGreaseTrapInstall && greaseTraps > 0
         ? effectiveGreaseInstallRate * greaseTraps  
         : 0;
-
 
     const greenInstallOneTime =
       greenDrains > 0 ? effectiveGreenInstallRate * greenDrains : 0;  
@@ -825,34 +779,27 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       filthyInstallOneTime + greaseInstallOneTime + greenInstallOneTime;
     const installation = round2(installationRaw);
 
-
     const effectiveInstallation = state.customInstallationTotal ?? installation;
 
-
     let firstVisitServiceRaw = weeklyInstallDrains + weeklyPlumbing;
-
 
     if (condition === "normal") {
       firstVisitServiceRaw += weeklyStandardDrains;
     }
 
-
     if (!state.chargeGreaseTrapInstall) {
       firstVisitServiceRaw += weeklyGreaseTraps;
     }
 
-
     const firstVisitService = round2(firstVisitServiceRaw);
     let firstVisitPrice = effectiveInstallation + firstVisitService;
     firstVisitPrice = round2(firstVisitPrice);
-
 
     const contractMonths = clamp(
       Number(state.contractMonths) || activeConfig.contract.defaultMonths,  
       activeConfig.contract.minMonths,  
       activeConfig.contract.maxMonths   
     );
-
 
     const getFrequencyMultiplier = (freq: string) => {
       const normalized = freq.toLowerCase().replace(/\s+/g, '');
@@ -885,7 +832,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     const frequencyMultiplier = getFrequencyMultiplier(frequency);
 
-
     const customOrCalculated = state.customWeeklyService ?? weeklyService;
     const effectiveWeeklyService = weeklyServiceRaw > 0
       ? (state.applyMinimum !== false ? Math.max(customOrCalculated, minimumChargePerVisit) : customOrCalculated)
@@ -893,7 +839,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     let normalMonth = effectiveWeeklyService * frequencyMultiplier;
     let firstMonthPrice = 0;
-
 
     if (effectiveInstallation > 0) {
       firstMonthPrice = firstVisitPrice + effectiveWeeklyService * Math.max(0, frequencyMultiplier - 1);
@@ -904,15 +849,13 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
     normalMonth = round2(normalMonth);
     firstMonthPrice = round2(firstMonthPrice);
 
-
     let contractTotalRaw = 0;
     const freqLower = frequency.toLowerCase();
 
     if (freqLower === "onetime" || freqLower === "one time") {
-      // One-time service: installation + full per-visit service (including all drain types)
+      
       contractTotalRaw = effectiveInstallation + effectiveWeeklyService;
     } else if (freqLower === "bimonthly") {
-
 
       const totalVisitsIn12Months = 6; 
       const contractVisitsForTerm = Math.round((contractMonths / 12) * totalVisitsIn12Months);
@@ -977,7 +920,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
     const contractTotal = round2(contractTotalRaw);
 
-
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
 
@@ -989,10 +931,8 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
-
     const calculatedMonthlyRecurring = normalMonth;
     const calculatedContractTotal = contractTotalWithCustomFields;  
-
 
     const breakdown: FoamingDrainBreakdown = {
       usedSmallAlt,
@@ -1012,7 +952,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       tripCharge, 
     };
 
-
     const quote: FoamingDrainQuoteResult = {
       serviceId: "foamingDrain",
 
@@ -1024,7 +963,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
       useBigAccountTenWeekly: state.useBigAccountTenWeekly,
       isAllInclusive: state.isAllInclusive,
       chargeGreaseTrapInstall: state.chargeGreaseTrapInstall,
-
 
       weeklyService: effectiveWeeklyService,
       weeklyTotal: effectiveWeeklyService,
@@ -1041,13 +979,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
       breakdown,
 
-
       minimumChargePerVisit,
-
 
       originalContractTotal: (() => {
         if (!weeklyServiceRaw) return 0;
-        // Use same alt pricing logic as the main calculation (lines 710-744)
+        
         const bTenTotal = standardDrainsActive * activeConfig.standardDrainRate;
         const bAltTotal = standardDrainsActive > 0
           ? activeConfig.altBaseCharge + activeConfig.altExtraPerDrain * standardDrainsActive
@@ -1077,7 +1013,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         const baselineNormalMonth = round2(baselineWeekly * frequencyMultiplier);
         const freqLowerOct = frequency.toLowerCase();
 
-        // Baseline installation charges (using admin config rates + same alt pricing logic)
         let baselineInstallation = 0;
         if (condition === "filthy" && standardDrainsActive > 0 && !state.useBigAccountTenWeekly) {
           const filthyDrainCount = filthyDrains > 0 && filthyDrains <= standardDrainsActive
@@ -1104,7 +1039,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         }
         baselineInstallation = round2(baselineInstallation);
 
-        // Baseline first visit service (subset of weekly during install visit)
         let baselineFirstVisitService = 0;
         if (baselineInstallation > 0) {
           baselineFirstVisitService = baselineInstallDrains + baselinePlumbing;
@@ -1116,7 +1050,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
 
         let baselineContractRaw = 0;
         if (freqLowerOct === "onetime" || freqLowerOct === "one time") {
-          // One-time service: installation + full per-visit service (including all drain types)
+          
           baselineContractRaw = baselineInstallation + baselineWeekly;
         } else if (freqLowerOct === "bimonthly") {
           const contractVisitsForTerm = Math.round(contractMonths / 2);
@@ -1159,7 +1093,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             baselineContractRaw = baselineWeekly * totalVisits;
           }
         } else {
-          // Standard frequencies (weekly, biweekly, twicePerMonth, monthly)
+          
           if (baselineInstallation > 0) {
             const baselineFirstMonth = round2(baselineFirstVisitPrice + baselineWeekly * Math.max(0, frequencyMultiplier - 1));
             baselineContractRaw = baselineFirstMonth + (contractMonths - 1) * baselineNormalMonth;
@@ -1167,7 +1101,7 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
             baselineContractRaw = baselineNormalMonth + (contractMonths - 1) * baselineNormalMonth;
           }
         }
-        // Include custom fields in baseline (same extra charges apply regardless of rates)
+        
         return round2(baselineContractRaw) + customFieldsTotal;
       })(),
     };
@@ -1243,7 +1177,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         [key]: value,
       };
 
-
       if (
         key === 'standardDrainCount' ||
         key === 'installDrainCount' ||
@@ -1275,7 +1208,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customContractTotal = undefined;
       }
 
-
       if (
         key === 'standardDrainRate' ||
         key === 'altBaseCharge' ||
@@ -1304,13 +1236,11 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         next.customContractTotal = undefined;
       }
 
-
       const baseEditableFields = [
         'standardDrainRate', 'altBaseCharge', 'altExtraPerDrain',
         'volumeWeeklyRate', 'volumeBimonthlyRate', 'greaseWeeklyRate', 'greaseInstallRate',
         'greenWeeklyRate', 'greenInstallRate', 'plumbingAddonRate', 'filthyMultiplier'
       ];
-
 
       const customRateOverrideFields = [
         'customRatePerDrain', 'customAltBaseCharge', 'customAltExtraPerDrain',
@@ -1320,14 +1250,12 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         'customPlumbingAddonRate', 'customFilthyMultiplier'
       ];
 
-
       const customTotalOverrideFields = [
         'customWeeklyService', 'customInstallationTotal', 'customMonthlyRecurring',
         'customFirstMonthPrice', 'customContractTotal'
       ];
 
       const allPricingFields = [...baseEditableFields, ...customRateOverrideFields, ...customTotalOverrideFields];
-
 
       const customToBaseFieldMap: Record<string, string> = {
         'customRatePerDrain': 'standardDrainRate',
@@ -1352,7 +1280,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         const newValue = value as number | undefined;
         const keyStr = key as string;
 
-
         const baseFieldForLookup = customToBaseFieldMap[keyStr] || keyStr;
         const baselineValue = baselineValues.current[baseFieldForLookup];
 
@@ -1362,7 +1289,6 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
           baselineValue,
           isCustomField: keyStr.startsWith('custom'),
         });
-
 
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
@@ -1387,14 +1313,12 @@ export function useFoamingDrainCalc(initialData?: Partial<FoamingDrainFormState>
         }
       }
 
-
       const allFormFields = [
 
         'drainsPerWeek', 'contractMonths',
 
         'frequency', 'location', 'condition', 'rateTier'
       ];
-
 
       if (allFormFields.includes(key as string)) {
         logServiceFieldChanges(

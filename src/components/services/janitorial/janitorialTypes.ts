@@ -1,11 +1,9 @@
 
 import type { BaseServiceFormState, ServiceQuoteResult } from "../common/serviceTypes";
 
-
 export type JanitorialFrequency = "daily" | "weekly" | "biweekly" | "monthly" | "oneTime";
 export type JanitorialServiceType = "recurringService" | "oneTimeService";
 export type JanitorialLocation = "insideBeltway" | "outsideBeltway" | "paidParking";
-
 
 export interface JanitorialPricingConfig {
   baseRates: {
@@ -35,33 +33,26 @@ export interface JanitorialPricingConfig {
   };
 }
 
-
 export interface JanitorialFormState extends BaseServiceFormState {
   serviceId: "janitorial";
-
 
   serviceType: JanitorialServiceType;
   frequency: JanitorialFrequency;
   location: JanitorialLocation;
   contractMonths: number;
 
-
   baseHours: number;
-
 
   vacuumingHours: number;
   dustingHours: number;
 
-
   needsParking: boolean;
   parkingCost: number;
-
 
   recurringServiceRate: number;
   oneTimeServiceRate: number;
   vacuumingRatePerHour: number;
   dustingRatePerHour: number;
-
 
   dailyMultiplier: number;
   weeklyMultiplier: number;
@@ -69,15 +60,12 @@ export interface JanitorialFormState extends BaseServiceFormState {
   monthlyMultiplier: number;
   oneTimeMultiplier: number;
 
-
   perVisitMinimum: number;
   recurringContractMinimum: number;
-
 
   standardTripCharge: number;
   beltwayTripCharge: number;
   paidParkingTripCharge: number;
-
 
   customRecurringServiceRate?: number;
   customOneTimeServiceRate?: number;
@@ -94,13 +82,11 @@ export interface JanitorialFormState extends BaseServiceFormState {
   customBeltwayTripCharge?: number;
   customPaidParkingTripCharge?: number;
 
-
   customPerVisitTotal?: number;
   customMonthlyTotal?: number;
   customAnnualTotal?: number;
   customContractTotal?: number;
 }
-
 
 export interface JanitorialQuoteResult extends ServiceQuoteResult {
   perVisitPrice: number;
@@ -109,7 +95,6 @@ export interface JanitorialQuoteResult extends ServiceQuoteResult {
   contractTotal: number;
   detailsBreakdown: string[];
 }
-
 
 export interface JanitorialCalcDetails {
   baseServiceCost: number;

@@ -47,35 +47,28 @@ const formatCurrency = (n: number) =>
 const formatPercent = (n: number, digits = 2) => `${n.toFixed(digits)}%`;
 
 export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRecordSaved }) => {
-  // ── Inputs (mirroring FormFilling.tsx's CommissionState) ─────────────────
+  
   const [customerName, setCustomerName] = useState<string>("");
   const [salesPersonName, setSalesPersonName] = useState<string>("");
 
-  // Contract values (matches FormFilling totalCurrentContract / totalOriginalContract)
   const [currentContract, setCurrentContract] = useState<string>("");
   const [originalContract, setOriginalContract] = useState<string>("");
   const [contractMonths, setContractMonths] = useState<string>("36");
 
-  // Frequency drives visits-per-year for the account-type penalty annualization
   const [frequency, setFrequency] = useState<ServiceFrequency>("weekly");
 
-  // Account type (no auto-detect for the standalone calculator)
   const [accountType, setAccountType] = useState<AccountType>("Anchor");
 
-  // True if this is a new location (drives Pit zone / Bread/Pit penalty)
   const [isNewLocation, setIsNewLocation] = useState<boolean>(true);
 
-  // Rep's quota state
   const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>("below");
   const [repActualSalesBefore, setRepActualSalesBefore] = useState<string>("0");
   const [isInsideSales, setIsInsideSales] = useState<boolean>(false);
 
-  // Renewal context (for the 4% renewal bonus)
   const [businessType, setBusinessType] = useState<BusinessType>("new");
   const [yearsAsCustomer, setYearsAsCustomer] = useState<string>("0");
   const [totalRenewalValue, setTotalRenewalValue] = useState<string>("0");
 
-  // ── Active rules (admin-editable, MongoDB-backed) ────────────────────────
   const [activeRules, setActiveRules] = useState<ResolvedCommissionRules>(() =>
     resolveCommissionRules(null),
   );
@@ -96,7 +89,6 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     };
   }, []);
 
-  // ── Calculation (mirrors FormFilling.tsx → calculateCommission) ──────────
   const result = useMemo(() => {
     const rules = activeRules;
     const current = parseFloat(currentContract) || 0;
@@ -108,13 +100,11 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
 
     if (current <= 0) return null;
 
-    // Step 0 — 12-month-equivalent contract totals
     const monthlyValue = current / months;
     const monthlyOriginalValue = original / months;
     const currentContract12Months = monthlyValue * 12;
     const originalContract12Months = monthlyOriginalValue * 12;
 
-    // Step 1 — Pricing tier from agreement-level ratio
     const priceRatio =
       originalContract12Months > 0 ? currentContract12Months / originalContract12Months : 1;
     const pricingTier = getPricingTierFromList(
@@ -125,12 +115,10 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     const pricingMultiplier = pricingTier.quotaMultiplier;
     const isGreenline = pricingTier.label === "Greenline (130%+)";
 
-    // Step 2 — Agreement term + multiplier
     const agreementTerm: AgreementTerm =
       months >= 36 ? "3-year" : months >= 12 ? "1-year" : "MTM-with-install";
     const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
 
-    // Step 3 — Visits per year + annualized account-type thresholds
     const visitsPerYear = rules.frequencyVisitsPerYear[frequency];
     const pitZoneAnnual = rules.pitPerVisitThreshold * visitsPerYear;
     const anchorZoneAnnual =
@@ -139,11 +127,9 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     const bread15Annual = rules.perVisitPenalties.Bread15 * visitsPerYear;
     const pitAnnual = rules.perVisitPenalties.Pit * visitsPerYear;
 
-    // Adjusted annual = current × pricing multiplier (agreement multiplier
-    // stays in the rate as effectiveCommissionRate for display consistency)
+    
     const adjustedAnnual = currentContract12Months * pricingMultiplier;
 
-    // Step 4 — Account-type adjustment at annual level
     let revenueDeduction = 0;
     let anchorBonus = 0;
     let commissionableAnnual = adjustedAnnual;
@@ -172,17 +158,15 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
       revenueDeduction = isNewLocation ? bread15Annual : 0;
       commissionableAnnual = Math.max(0, adjustedAnnual - revenueDeduction);
     } else {
-      // Pit
+      
       const isExistingAlreadyOver = !isNewLocation && adjustedAnnual > pitAnnual;
       revenueDeduction = isExistingAlreadyOver ? 0 : pitAnnual;
       commissionableAnnual = Math.max(0, adjustedAnnual - revenueDeduction);
     }
 
-    // Step 5 — Quota credit
     const annualContractTotal = currentContract12Months;
     const annualQuotaCredit = annualContractTotal * pricingMultiplier;
 
-    // Step 6 — Tiered commission rate (3% / 6% / 9% piecewise)
     const cutoffs = rules.quotaTierCutoffs;
     const positionAfter = positionBefore + annualQuotaCredit;
     const belowQuotaPortion = Math.max(
@@ -212,13 +196,11 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     const aboveQuotaCommission = aboveShare * Math.max(0, aboveRate);
     const doubleQuotaCommission = doubleShare * Math.max(0, doubleRate);
 
-    // Apply agreement multiplier to the base rate (matches FormFilling display)
     const agreementMult = agreementMultiplier / 100;
     const annualCommission =
       (belowQuotaCommission + aboveQuotaCommission + doubleQuotaCommission) * agreementMult;
     const weeklyCommission = annualCommission / rules.weeksPerAnnualCommission;
 
-    // Renewal bonus (4% of total renewed value, after 2+ years)
     let renewalBonusRate = 0;
     let renewalBonusAmount = 0;
     if (businessType === "renewal" && yearsCust >= rules.renewalMinYears) {
@@ -231,7 +213,7 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     const finalCommissionRate = effectiveRate * agreementMult;
 
     return {
-      // Inputs (for save)
+      
       input: {
         currentContract: current,
         originalContract: original,
@@ -248,36 +230,36 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
         customerName,
         salesPersonName,
       },
-      // Step 0
+      
       monthlyValue,
       currentContract12Months,
       originalContract12Months,
-      // Step 1
+      
       priceRatio,
       pricingTier: pricingTier.label,
       pricingMultiplier,
       requiresApproval: pricingTier.requiresApproval,
-      // Step 2
+      
       agreementTerm,
       agreementMultiplier,
-      // Step 3
+      
       visitsPerYear,
       adjustedAnnual,
-      // Step 4
+      
       revenueDeduction,
       anchorBonus,
       commissionableAnnual,
-      // Step 5
+      
       annualContractTotal,
       annualQuotaCredit,
-      // Step 6
+      
       belowQuotaPortion,
       aboveQuotaPortion,
       doubleQuotaPortion,
       belowQuotaCommission: belowQuotaCommission * agreementMult,
       aboveQuotaCommission: aboveQuotaCommission * agreementMult,
       doubleQuotaCommission: doubleQuotaCommission * agreementMult,
-      // Final
+      
       baseRate,
       insideSalesDeduction,
       effectiveRate,
@@ -307,7 +289,6 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     salesPersonName,
   ]);
 
-  // ── Save / Clear ─────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -364,7 +345,6 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
     }
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="commission-calculator">
       <h3 className="calculator-section-title">
@@ -587,8 +567,6 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
   );
 };
 
-// ── Result breakdown ───────────────────────────────────────────────────────
-
 const sectionStyle: React.CSSProperties = {
   marginTop: 24,
   padding: 16,
@@ -786,5 +764,4 @@ function CalculatorResult({ r }: { r: NonNullable<ReturnType<CommissionCalculato
   );
 }
 
-// Helper type alias used by CalculatorResult
 type CommissionCalculatorMemo = () => any;

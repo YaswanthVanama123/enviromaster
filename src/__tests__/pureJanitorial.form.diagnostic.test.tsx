@@ -1,13 +1,9 @@
-/**
- * Diagnostic test to check form testing setup
- */
+
 
 import { describe, test, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-// Mocks MUST be before any imports that use them
-// And they cannot contain JSX directly - use React.createElement instead
 vi.mock('../components/services/ServicesContext', () => ({
   useServicesContextOptional: () => ({
     updateService: vi.fn(),
@@ -36,10 +32,8 @@ vi.mock('@fortawesome/free-solid-svg-icons', () => ({
   faTrash: 'trash-icon',
 }));
 
-// Now import the component AFTER mocks are set up
 import { JanitorialForm } from '../components/services/purejanitorial/JanitorialForm';
 
-// Test 1: Basic vitest works
 describe('Diagnostic Tests', () => {
   test('vitest is working', () => {
     expect(1 + 1).toBe(2);
@@ -60,7 +54,6 @@ describe('Diagnostic Tests', () => {
   });
 });
 
-// Test 2: Check if mocking works
 describe('Mock Tests', () => {
   test('vi.mock is available', () => {
     expect(vi.mock).toBeDefined();
@@ -73,7 +66,6 @@ describe('Mock Tests', () => {
   });
 });
 
-// Test 3: JanitorialForm component
 describe('JanitorialForm Component', () => {
   test('JanitorialForm is defined', () => {
     expect(JanitorialForm).toBeDefined();

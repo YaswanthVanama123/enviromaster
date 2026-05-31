@@ -1,7 +1,4 @@
-/**
- * Company Mapping API
- * API client for mapping Bigin Companies to RouteStar Customers
- */
+
 
 import { apiClient } from '../utils/apiClient';
 
@@ -69,9 +66,7 @@ export interface MappingQueryParams {
 const BASE_PATH = '/api/company-mappings';
 
 export const companyMappingApi = {
-  /**
-   * Get all mappings with filters and pagination
-   */
+  
   async getAll(params?: MappingQueryParams): Promise<MappingsListResponse | null> {
     try {
       const queryParams = new URLSearchParams();
@@ -94,9 +89,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Get mapping statistics
-   */
   async getStats(): Promise<MappingStats | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: MappingStats }>(
@@ -110,9 +102,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Get available RouteStar customers (for dropdown)
-   */
   async getAvailableRouteStarCustomers(
     search?: string,
     includeAll?: boolean
@@ -136,9 +125,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Save a single mapping
-   */
   async saveMapping(
     biginId: string,
     routeStarId: string | null,
@@ -160,9 +146,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Update a mapping by ID
-   */
   async updateMapping(
     id: string,
     routeStarId: string | null,
@@ -181,9 +164,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Delete/clear a mapping
-   */
   async deleteMapping(id: string): Promise<boolean> {
     try {
       const response = await apiClient.delete<{ success: boolean }>(
@@ -197,9 +177,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Bulk save mappings
-   */
   async bulkSave(
     mappings: Array<{ biginId: string; routeStarId: string | null }>,
     mappedBy?: string
@@ -230,9 +207,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Initialize mapping records from Bigin companies
-   */
   async initialize(): Promise<{ total: number; created: number; skipped: number } | null> {
     try {
       const response = await apiClient.post<{
@@ -247,9 +221,6 @@ export const companyMappingApi = {
     }
   },
 
-  /**
-   * Sync mapping info from Bigin companies
-   */
   async syncMappings(): Promise<{ updated: number } | null> {
     try {
       const response = await apiClient.post<{

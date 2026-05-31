@@ -29,19 +29,16 @@ export const AgreementList: React.FC<AgreementListProps> = ({
   const [loading, setLoading] = useState(true);
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
 
-  // Filters
   const [filterSalesPersonId, setFilterSalesPersonId] = useState(initialSalesPersonId || "");
   const [filterStatus, setFilterStatus] = useState<AgreementStatus | "">("");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
 
-  // Pagination
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  // Load sales persons for filter
   useEffect(() => {
     const load = async () => {
       const result = await salesPersonApi.getAll({ active: true });
@@ -52,14 +49,12 @@ export const AgreementList: React.FC<AgreementListProps> = ({
     load();
   }, []);
 
-  // Update filter when initial prop changes
   useEffect(() => {
     if (initialSalesPersonId) {
       setFilterSalesPersonId(initialSalesPersonId);
     }
   }, [initialSalesPersonId]);
 
-  // Load agreements
   const loadAgreements = useCallback(async (resetPagination = false) => {
     setLoading(true);
     const currentSkip = resetPagination ? 0 : skip;
@@ -122,7 +117,7 @@ export const AgreementList: React.FC<AgreementListProps> = ({
 
   return (
     <div className="agreement-list-container">
-      {/* Filters */}
+      {}
       <div className="filters-bar">
         <div className="filter-group">
           <label>Sales Person</label>
@@ -171,7 +166,7 @@ export const AgreementList: React.FC<AgreementListProps> = ({
         </button>
       </div>
 
-      {/* Results count */}
+      {}
       <div className="results-info">
         Showing {agreements.length} of {total} agreements
       </div>
@@ -244,7 +239,7 @@ export const AgreementList: React.FC<AgreementListProps> = ({
         </>
       )}
 
-      {/* Detail Panel */}
+      {}
       {selectedAgreement && (
         <div className="detail-panel">
           <div className="detail-panel-header">

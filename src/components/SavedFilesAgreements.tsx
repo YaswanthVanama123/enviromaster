@@ -278,10 +278,9 @@ export default function SavedFilesAgreements() {
         return (a.agreementTitle || "").localeCompare(b.agreementTitle || "");
       });
 
-      // Apply ownership filter
       const ownershipFiltered = ownershipFilter === 'mine' && user?.username
         ? sortedAgreements.filter(agreement => {
-            // Check if any file in the agreement was created by the current user
+            
             return agreement.files.some(file =>
               file.createdBy === user.username ||
               file.createdBy === user.fullName

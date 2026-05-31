@@ -16,7 +16,6 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-
 interface BackendSanicleanConfig {
   includedItems: {
     electrostaticSprayIncluded: boolean;
@@ -105,13 +104,10 @@ const resolveLuxuryUpgradeQty = (form: SanicleanFormState): number => {
 
 };
 
-
 const DEFAULT_FORM: SanicleanFormState = {
   serviceId: "saniclean",
 
-
   pricingMode: "per_item_charge", 
-
 
   sinks: 0,
   urinals: 0,
@@ -119,27 +115,20 @@ const DEFAULT_FORM: SanicleanFormState = {
   femaleToilets: 0,
   fixtureCount: 0, 
 
-
   location: "insideBeltway",
   needsParking: false,
-
 
   soapType: "standard",
   excessSoapGallonsPerWeek: 0,
 
-
   addMicrofiberMopping: false,
   microfiberBathrooms: 0,
 
-
   estimatedPaperSpendPerWeek: 0,
-
 
   warrantyDispensers: 0,
 
-
   addTripCharge: false, 
-
 
   addUrinalComponents: false,
   urinalScreensQty: 0,
@@ -150,23 +139,17 @@ const DEFAULT_FORM: SanicleanFormState = {
   addFemaleToiletComponents: false,
   sanipodsQty: 0,
 
-
   contractMonths: 12,
 
-
   rateTier: "redRate",
-
 
   mainServiceFrequency: "weekly" as SanicleanFrequency,          
   facilityComponentsFrequency: "weekly" as SanicleanFrequency,   
 
-
   frequency: "weekly", 
   facilityComponentFrequency: "weekly", 
 
-
   notes: "",
-
 
   allInclusiveWeeklyRatePerFixture: SANICLEAN_CONFIG.allInclusivePackage.weeklyRatePerFixture,
   luxuryUpgradePerDispenser: SANICLEAN_CONFIG.allInclusivePackage.soapUpgrade.luxuryUpgradePerDispenser,
@@ -175,7 +158,6 @@ const DEFAULT_FORM: SanicleanFormState = {
   paperCreditPerFixture: SANICLEAN_CONFIG.allInclusivePackage.paperCredit.creditPerFixturePerWeek,
   microfiberMoppingPerBathroom: SANICLEAN_CONFIG.allInclusivePackage.microfiberMopping.pricePerBathroom,
 
-
   insideBeltwayRatePerFixture: SANICLEAN_CONFIG.perItemCharge.insideBeltway.ratePerFixture,
   insideBeltwayMinimum: SANICLEAN_CONFIG.perItemCharge.insideBeltway.weeklyMinimum,
   insideBeltwayTripCharge: SANICLEAN_CONFIG.perItemCharge.insideBeltway.tripCharge,
@@ -183,10 +165,8 @@ const DEFAULT_FORM: SanicleanFormState = {
   outsideBeltwayRatePerFixture: SANICLEAN_CONFIG.perItemCharge.outsideBeltway.ratePerFixture,
   outsideBeltwayTripCharge: SANICLEAN_CONFIG.perItemCharge.outsideBeltway.tripCharge,
 
-
   smallFacilityThreshold: SANICLEAN_CONFIG.perItemCharge.smallFacility.fixtureThreshold,
   smallFacilityMinimum: SANICLEAN_CONFIG.perItemCharge.smallFacility.minimumWeekly,
-
 
   urinalScreenMonthly: SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalScreen,
   urinalMatMonthly: SANICLEAN_CONFIG.perItemCharge.facilityComponents.urinals.components.urinalMat,
@@ -194,13 +174,10 @@ const DEFAULT_FORM: SanicleanFormState = {
   seatCoverDispenserMonthly: SANICLEAN_CONFIG.perItemCharge.facilityComponents.maleToilets.components.seatCoverDispenser,
   sanipodServiceMonthly: SANICLEAN_CONFIG.perItemCharge.facilityComponents.femaleToilets.components.sanipodService,
 
-
   warrantyFeePerDispenserPerWeek: SANICLEAN_CONFIG.perItemCharge.warrantyFees.perDispenserPerWeek,
-
 
   weeklyToMonthlyMultiplier: SANICLEAN_CONFIG.billingConversions.weekly.monthlyMultiplier,
   weeklyToAnnualMultiplier: SANICLEAN_CONFIG.billingConversions.weekly.annualMultiplier,
-
 
   redRateMultiplier: SANICLEAN_CONFIG.rateTiers.redRate.multiplier,
   greenRateMultiplier: SANICLEAN_CONFIG.rateTiers.greenRate.multiplier,
@@ -208,17 +185,14 @@ const DEFAULT_FORM: SanicleanFormState = {
   applyMinimum: true,
 };
 
-
 const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number => {
 
   if (backendConfig?.frequencyMetadata?.[frequency]) {
     const metadata = backendConfig.frequencyMetadata[frequency];
 
-
     if (typeof metadata.monthlyRecurringMultiplier === 'number') {
       return metadata.monthlyRecurringMultiplier;
     }
-
 
     if (typeof metadata.cycleMonths === 'number') {
       if (metadata.cycleMonths === 0) {
@@ -228,7 +202,6 @@ const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number 
     }
   }
 
-
   if (frequency === 'oneTime') {
     return 0; 
   }
@@ -236,7 +209,6 @@ const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number 
   if (frequency === 'twicePerMonth') {
     return 2.0; 
   }
-
 
   const fallbackMultipliers: Record<string, number> = {
     weekly: 4.33,
@@ -253,7 +225,6 @@ const getFrequencyMultiplier = (frequency: string, backendConfig?: any): number 
   return fallbackMultipliers[frequency] || 4.33; 
 };
 
-
 const getDualFrequencyMultiplier = (
   frequency: SanicleanFrequency,
   mode: SanicleanCalculationMode,
@@ -264,10 +235,8 @@ const getDualFrequencyMultiplier = (
     return getFrequencyMultiplier(frequency, backendConfig);
   }
 
-
   return 1.0; 
 };
-
 
 const calculateVisitsInContract = (
   frequency: SanicleanFrequency,
@@ -275,7 +244,6 @@ const calculateVisitsInContract = (
   backendConfig?: any
 ): number => {
 
-  // One-time is always 1 visit
   if (frequency === "oneTime") {
     return 1;
   }
@@ -285,7 +253,6 @@ const calculateVisitsInContract = (
   if (backendConfig?.frequencyMetadata?.[frequency]?.visitsPerYear) {
     visitsPerYear = backendConfig.frequencyMetadata[frequency].visitsPerYear;
   } else if (backendConfig?.frequencyMetadata?.[frequency]?.cycleMonths) {
-
 
     const cycleMonths = backendConfig.frequencyMetadata[frequency].cycleMonths;
     visitsPerYear = cycleMonths > 0 ? 12 / cycleMonths : 12;
@@ -309,7 +276,6 @@ const calculateVisitsInContract = (
   return Math.round((visitsPerYear * contractMonths) / 12);
 };
 
-
 const calculateDualFrequency = (
   mainServiceFrequency: SanicleanFrequency,
   facilityComponentsFrequency: SanicleanFrequency,
@@ -329,8 +295,7 @@ const calculateDualFrequency = (
     facilityComponentsBasePrice,
   });
 
-
-  // For oneTime, facility components should not be multiplied — just use base price
+  
   const facilityMultiplier = mainServiceFrequency === "oneTime"
     ? 1
     : getFrequencyMultiplier(facilityComponentsFrequency, backendConfig);
@@ -406,13 +371,11 @@ function recomputeFixtureCount(state: SanicleanFormState): SanicleanFormState {
   return { ...state, fixtureCount: total };
 }
 
-
 function calculateAllInclusive(
   form: SanicleanFormState,
   config: BackendSanicleanConfig | SanicleanPricingConfig
 ): SanicleanQuoteResult {
   const fixtureCount = form.fixtureCount;
-
 
   if (fixtureCount === 0) {
     console.log('📊 [SaniClean] Service is inactive (0 fixtures), returning $0 totals');
@@ -456,29 +419,23 @@ function calculateAllInclusive(
 
   const rateTierMultiplier = form.rateTier === "greenRate" ? form.greenRateMultiplier : form.redRateMultiplier;
 
-
   const baseServiceCalc = fixtureCount * form.allInclusiveWeeklyRatePerFixture * rateTierMultiplier;
   const baseService = form.customBaseService ?? baseServiceCalc;
   const luxuryUpgradeQty = resolveLuxuryUpgradeQty(form);
 
-
   const soapUpgradeCalc = form.soapType === "luxury" ? luxuryUpgradeQty * form.luxuryUpgradePerDispenser : 0;
   const soapUpgrade = form.customSoapUpgrade ?? soapUpgradeCalc;
-
 
   const excessSoapCalc = form.excessSoapGallonsPerWeek > 0 ?
     form.excessSoapGallonsPerWeek * (form.soapType === "luxury" ? form.excessLuxurySoapRate : form.excessStandardSoapRate) : 0;
   const excessSoap = form.customExcessSoap ?? excessSoapCalc;
 
-
   const microfiberMoppingCalc = 0; 
   const microfiberMopping = form.customMicrofiberMopping ?? microfiberMoppingCalc;
-
 
   const paperCredit = fixtureCount * form.paperCreditPerFixture;
   const paperOverageCalc = Math.max(0, form.estimatedPaperSpendPerWeek - paperCredit);
   const paperOverage = form.customPaperOverage ?? paperOverageCalc;
-
 
   const tripChargeCalc = 0;
   const tripCharge = form.customTripCharge ?? tripChargeCalc;
@@ -489,12 +446,9 @@ function calculateAllInclusive(
   const facilityComponentsCalc = 0;
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
-
   const mainServiceTotal = baseService + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage + tripCharge;
 
-
   const facilityComponentsTotal = facilityComponents;
-
 
   const dualFreqResult = calculateDualFrequency(
     form.mainServiceFrequency,
@@ -505,9 +459,7 @@ function calculateAllInclusive(
     config
   );
 
-
   const calculationMode = getCalculationMode(form.mainServiceFrequency);
-
 
   const weeklyTotal = calculationMode === "monthly"
     ? mainServiceTotal  
@@ -525,18 +477,15 @@ function calculateAllInclusive(
     dualFreqResult
   });
 
-
   const soapDispensers = form.sinks; 
   const airFresheners = Math.ceil(form.sinks / 2); 
   const totalDispensers = soapDispensers + airFresheners;
-
 
   const urinalScreens = form.urinals;
   const urinalMats = form.urinals;
   const toiletClips = form.maleToilets;
   const seatCoverDispensers = form.maleToilets;
   const sanipods = form.femaleToilets;
-
 
   const minimumChargePerWeek = 0;
 
@@ -600,13 +549,11 @@ function calculateAllInclusive(
   };
 }
 
-
 function calculatePerItemCharge(
   form: SanicleanFormState,
   config: BackendSanicleanConfig | SanicleanPricingConfig
 ): SanicleanQuoteResult {
   const fixtureCount = form.fixtureCount;
-
 
   if (fixtureCount === 0) {
     console.log('📊 [SaniClean] Service is inactive (0 fixtures), returning $0 totals');
@@ -650,14 +597,11 @@ function calculatePerItemCharge(
 
   const rateTierMultiplier = form.rateTier === "greenRate" ? form.greenRateMultiplier : form.redRateMultiplier;
 
-
   const isInsideBeltway = form.location === "insideBeltway";
   const fixtureRate = isInsideBeltway ? form.insideBeltwayRatePerFixture : form.outsideBeltwayRatePerFixture;
   const regionMinimum = isInsideBeltway ? form.insideBeltwayMinimum : 0;
 
-
   let baseServiceCalc = fixtureCount * fixtureRate * rateTierMultiplier;
-
 
   const isSmallFacility = fixtureCount <= form.smallFacilityThreshold;
   let tripChargeCalc = 0;
@@ -669,10 +613,8 @@ function calculatePerItemCharge(
 
     baseServiceCalc = Math.max(baseServiceCalc, regionMinimum);
 
-
     if (form.addTripCharge) {
       tripChargeCalc = isInsideBeltway ? form.insideBeltwayTripCharge : form.outsideBeltwayTripCharge;
-
 
       if (isInsideBeltway && form.needsParking) {
         tripChargeCalc += form.insideBeltwayParkingFee;
@@ -682,16 +624,12 @@ function calculatePerItemCharge(
     }
   }
 
-
   const baseService = form.customBaseService ?? baseServiceCalc;
   const tripCharge = form.customTripCharge ?? tripChargeCalc;
 
-
   let facilityComponentsCalc = 0;
 
-
   const facilityFrequency = form.facilityComponentFrequency || 'weekly'; 
-
 
   if (form.addUrinalComponents) {
     const urinalComponentsBase = form.urinalScreensQty * form.urinalScreenMonthly + form.urinalMatsQty * form.urinalMatMonthly;
@@ -708,24 +646,19 @@ function calculatePerItemCharge(
     facilityComponentsCalc += femaleToiletComponentsBase;
   }
 
-
   const facilityComponents = form.customFacilityComponents ?? facilityComponentsCalc;
 
   const luxuryUpgradeQty = resolveLuxuryUpgradeQty(form);
 
-
   const soapUpgradeCalc = form.soapType === "luxury" ? luxuryUpgradeQty * form.luxuryUpgradePerDispenser : 0;
   const soapUpgrade = form.customSoapUpgrade ?? soapUpgradeCalc;
-
 
   const excessSoapCalc = 0;
   const excessSoap = form.customExcessSoap ?? excessSoapCalc;
 
-
   const microfiberMoppingCalc = form.addMicrofiberMopping ?
     form.microfiberBathrooms * form.microfiberMoppingPerBathroom : 0;
   const microfiberMopping = form.customMicrofiberMopping ?? microfiberMoppingCalc;
-
 
   const soapDispensers = form.sinks;
   const airFresheners = Math.ceil(form.sinks / 2);
@@ -734,16 +667,12 @@ function calculatePerItemCharge(
     form.warrantyDispensers * form.warrantyFeePerDispenserPerWeek : 0;
   const warrantyFees = form.customWarrantyFees ?? warrantyFeesCalc;
 
-
   const paperOverageCalc = 0;
   const paperOverage = form.customPaperOverage ?? paperOverageCalc;
 
-
   const mainServiceTotal = baseService + tripCharge + soapUpgrade + excessSoap + microfiberMopping + warrantyFees + paperOverage;
 
-
   const facilityComponentsTotal = facilityComponents;
-
 
   const dualFreqResult = calculateDualFrequency(
     form.mainServiceFrequency,
@@ -754,9 +683,7 @@ function calculatePerItemCharge(
     config
   );
 
-
   const calculationMode = getCalculationMode(form.mainServiceFrequency);
-
 
   const weeklyTotal = calculationMode === "monthly"
     ? mainServiceTotal  
@@ -774,13 +701,11 @@ function calculatePerItemCharge(
     dualFreqResult
   });
 
-
   const urinalScreens = form.urinals;
   const urinalMats = form.urinals;
   const toiletClips = form.maleToilets;
   const seatCoverDispensers = form.maleToilets;
   const sanipods = form.femaleToilets;
-
 
   const minimumChargePerWeek = isSmallFacility
     ? form.smallFacilityMinimum
@@ -852,7 +777,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
 
@@ -867,7 +791,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     console.log(`💰 [SANICLEAN-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -889,7 +812,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     const initialFixtureCount = (initial?.sinks || 0) + (initial?.urinals || 0) +
                                  (initial?.maleToilets || 0) + (initial?.femaleToilets || 0);
     const isInitiallyActive = initialFixtureCount > 0;
-
 
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
@@ -915,7 +837,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   const [backendConfig, setBackendConfig] = useState<BackendSanicleanConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
@@ -927,7 +848,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
           const config = backendData.config as BackendSanicleanConfig;
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [SANICLEAN] Manual refresh: Clearing all custom overrides');
@@ -963,7 +883,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     } catch (error) {
       console.error('❌ Failed to fetch SaniClean config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("saniclean");
         if (fallbackConfig?.config) {
@@ -971,7 +890,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
           const config = fallbackConfig.config as BackendSanicleanConfig;
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [SANICLEAN] Manual refresh: Clearing all custom overrides');
@@ -1001,7 +919,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     }
   };
 
-
   const updateFormWithConfig = (config: BackendSanicleanConfig, forceUpdate: boolean = false) => {
     if (isEditMode.current && !forceUpdate) {
       console.log('ÐY"< [SANICLEAN] Edit mode: skipping auto-overwrite from backend');
@@ -1009,7 +926,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     }
     setForm((prev) => ({
       ...prev,
-
 
       allInclusiveWeeklyRatePerFixture: config.allInclusivePricing?.pricePerFixture ?? prev.allInclusiveWeeklyRatePerFixture,
 
@@ -1023,7 +939,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
 
       microfiberMoppingPerBathroom: config.microfiberMoppingIncludedWithSaniClean?.pricePerBathroom ?? prev.microfiberMoppingPerBathroom,
 
-
       insideBeltwayRatePerFixture: config.standardALaCartePricing?.insideBeltway?.pricePerFixture ?? prev.insideBeltwayRatePerFixture,
 
       insideBeltwayMinimum: config.standardALaCartePricing?.insideBeltway?.minimumPrice ?? prev.insideBeltwayMinimum,
@@ -1036,11 +951,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
 
       outsideBeltwayTripCharge: config.standardALaCartePricing?.outsideBeltway?.tripCharge ?? prev.outsideBeltwayTripCharge,
 
-
       smallFacilityThreshold: config.smallBathroomMinimums?.minimumFixturesThreshold ?? prev.smallFacilityThreshold,
 
       smallFacilityMinimum: config.smallBathroomMinimums?.minimumPriceUnderThreshold ?? prev.smallFacilityMinimum,
-
 
       urinalScreenMonthly: typeof config.monthlyAddOnSupplyPricing?.urinalScreenMonthlyPrice === 'number' ?
                            config.monthlyAddOnSupplyPricing.urinalScreenMonthlyPrice :
@@ -1052,7 +965,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
 
       toiletClipsMonthly: config.monthlyAddOnSupplyPricing?.toiletClipMonthlyPrice ?? prev.toiletClipsMonthly,
 
-
       seatCoverDispenserMonthly: typeof config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'number' ?
                                  config.monthlyAddOnSupplyPricing.toiletSeatCoverDispenserMonthlyPrice :
                                  (config.monthlyAddOnSupplyPricing?.toiletSeatCoverDispenserMonthlyPrice === 'included' ?
@@ -1061,27 +973,22 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
 
       sanipodServiceMonthly: config.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod ?? prev.sanipodServiceMonthly,
 
-
       warrantyFeePerDispenserPerWeek: (config.warrantyFees?.soapDispenserWarrantyFeePerWeek ??
                                        config.warrantyFees?.airFreshenerDispenserWarrantyFeePerWeek ??
                                        prev.warrantyFeePerDispenserPerWeek),
 
-
       weeklyToMonthlyMultiplier: config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier ?? prev.weeklyToMonthlyMultiplier,
-
 
       redRateMultiplier: prev.redRateMultiplier,
       greenRateMultiplier: prev.greenRateMultiplier,
     }));
   };
 
-
   useEffect(() => {
     console.log('�Y"< [SANICLEAN-PRICING] Fetching backend prices for baseline/override detection');
     fetchPricing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
 
   useEffect(() => {
     if (servicesContext?.backendPricingData && !backendConfig) {
@@ -1114,7 +1021,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
         (baselineValues.current as any)[field] = value;
       }
     };
-
 
     setBaseline('allInclusiveWeeklyRatePerFixture', (initial?.allInclusiveWeeklyRatePerFixture ?? backendConfig.allInclusivePricing?.pricePerFixture));
     setBaseline('luxuryUpgradePerDispenser', (initial?.luxuryUpgradePerDispenser ?? backendConfig.soapUpgrades?.standardToLuxuryPerDispenserPerWeek));
@@ -1215,7 +1121,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     form.weeklyToMonthlyMultiplier,
   ]);
 
-
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -1243,14 +1148,12 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     });
   }, [form.fixtureCount, form.mainServiceFrequency]);
 
-
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef(form.fixtureCount > 0); 
 
   useEffect(() => {
     const isServiceActive = form.fixtureCount > 0;
     const wasActive = wasActiveRef.current;
-
 
     const justBecameActive = isServiceActive && !wasActive;
 
@@ -1277,10 +1180,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       }
     }
 
-
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.fixtureCount, servicesContext]);
-
 
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
@@ -1291,10 +1192,8 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     console.log(`📅 [SANICLEAN-CONTRACT] User override: ${months} months`);
   }, []);
 
-
   const quote: SanicleanQuoteResult = useMemo(() => {
     const config = backendConfig || SANICLEAN_CONFIG;
-
 
     const mappedForm = {
       ...form,
@@ -1311,11 +1210,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       baseQuote = calculatePerItemCharge(mappedForm, config);
     }
 
-
     const effectiveWeeklyTotal = mappedForm.customWeeklyTotal ?? baseQuote.weeklyTotal;
     const effectiveMonthlyTotal = mappedForm.customMonthlyTotal ?? baseQuote.monthlyTotal;
     const contractTotalBeforeCustomFields = mappedForm.customContractTotal ?? baseQuote.contractTotal;
-
 
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const effectiveContractTotal = contractTotalBeforeCustomFields + customFieldsTotal;
@@ -1342,13 +1239,12 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       }
     });
 
-    // Compute originalContractTotal using admin baseline rates (not user-modified rates)
     const baselineFixtureRateInside = config.standardALaCartePricing?.insideBeltway?.pricePerFixture ?? SANICLEAN_CONFIG.perItemCharge.insideBeltway.ratePerFixture;
     const baselineFixtureRateOutside = config.standardALaCartePricing?.outsideBeltway?.pricePerFixture ?? SANICLEAN_CONFIG.perItemCharge.outsideBeltway.ratePerFixture;
     const baselineAllInclusiveRate = config.allInclusivePricing?.pricePerFixture ?? SANICLEAN_CONFIG.allInclusivePackage.weeklyRatePerFixture;
     const baselineForm = {
       ...mappedForm,
-      // Reset ALL rate fields to admin baseline values
+      
       insideBeltwayRatePerFixture: baselineFixtureRateInside,
       outsideBeltwayRatePerFixture: baselineFixtureRateOutside,
       allInclusiveWeeklyRatePerFixture: baselineAllInclusiveRate,
@@ -1379,14 +1275,13 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       sanipodServiceMonthly: config.monthlyAddOnSupplyPricing?.sanipodMonthlyPricePerPod ?? SANICLEAN_CONFIG.perItemCharge.facilityComponents.femaleToilets.components.sanipodService,
       redRateMultiplier: SANICLEAN_CONFIG.rateTiers.redRate.multiplier,
       greenRateMultiplier: SANICLEAN_CONFIG.rateTiers.greenRate.multiplier,
-      // Clear only total-level overrides and formula-reconstructable fields
+      
       customBaseService: undefined,
       customTripCharge: undefined,
       customWeeklyTotal: undefined,
       customMonthlyTotal: undefined,
       customContractTotal: undefined,
-      // Keep component-level customs (facility, soap, microfiber, warranty, excess soap, paper)
-      // because their formulas depend on toggles/conditions that may not reflect actual state
+
     } as SanicleanFormState;
 
     let baselineQuote: SanicleanQuoteResult;
@@ -1395,7 +1290,7 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     } else {
       baselineQuote = calculatePerItemCharge(baselineForm, config);
     }
-    // Include custom fields in baseline (same extra charges apply regardless of rates)
+    
     const originalContractTotal = baselineQuote.contractTotal + customFieldsTotal;
 
     return {
@@ -1407,7 +1302,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     };
   }, [form, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 
-
   const updateForm = (updates: Partial<SanicleanFormState>) => {
     setForm((prev) => {
 
@@ -1417,7 +1311,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       });
 
       const next = { ...prev, ...updates };
-
 
       const baseInputFields = [
         'sinks', 'urinals', 'maleToilets', 'femaleToilets',
@@ -1449,11 +1342,9 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
         next.customContractTotal = undefined;
       }
 
-
       const normalizedNext = recomputeFixtureCount(next);
       const logQuantity = normalizedNext.fixtureCount || 1;
       const logFrequency = normalizedNext.mainServiceFrequency || 'weekly';
-
 
       const pricingFields = [
 
@@ -1471,7 +1362,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
         'customBaseService', 'customTripCharge', 'customFacilityComponents', 'customSoapUpgrade', 'customExcessSoap',
         'customMicrofiberMopping', 'customWarrantyFees', 'customPaperOverage', 'customWeeklyTotal', 'customMonthlyTotal', 'customContractTotal'
       ];
-
 
       Object.keys(updates).forEach(fieldName => {
         if (pricingFields.includes(fieldName)) {
@@ -1491,12 +1381,10 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
     });
   };
 
-
   const hasInitialized = useRef(false);
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
-
 
     const updates: Partial<SanicleanFormState> = {};
 
@@ -1522,12 +1410,10 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
       updates.microfiberBathrooms = 0;
     }
 
-
     if (Object.keys(updates).length > 0) {
       setForm(prev => ({ ...prev, ...updates }));
     }
   }, []); 
-
 
   useEffect(() => {
     if (!hasInitialized.current) return; 
@@ -1602,7 +1488,6 @@ export function useSanicleanCalc(initial?: Partial<SanicleanFormState>, customFi
   const setNotes = (notes: string) => {
     updateForm({ notes });
   };
-
 
   const setMainServiceFrequency = (frequency: SanicleanFrequency) => {
     updateForm({

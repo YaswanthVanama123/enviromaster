@@ -1,7 +1,6 @@
 
 import type { JanitorialPricingConfig, JanitorialFrequencyKey } from "./janitorialTypes";
 
-
 export const janitorialFrequencyList: JanitorialFrequencyKey[] = [
   "oneTime",
   "weekly",
@@ -28,7 +27,6 @@ export const janitorialFrequencyLabels: Record<JanitorialFrequencyKey, string> =
   annual: "Annual",
 };
 
-
 export const janitorialPricingConfig: JanitorialPricingConfig = {
   baseHourlyRate: 30,
   shortJobHourlyRate: 50,
@@ -47,7 +45,6 @@ export const janitorialPricingConfig: JanitorialPricingConfig = {
   dustingPlacesPerHour: 30,
   dustingPricePerPlace: 1,
   vacuumingDefaultHours: 1,
-
 
   billingConversions: {
     oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },

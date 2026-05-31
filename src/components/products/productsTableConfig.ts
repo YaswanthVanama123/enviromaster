@@ -6,9 +6,7 @@ export interface ProductRowConfig {
 
   productKey?: string;
 
-
   overrideLabel?: string;
-
 
   displayByAdmin?: boolean;
 }
@@ -17,7 +15,6 @@ export type ProductTableLayout = Record<
   ProductTableSectionKey,
   ProductRowConfig[]
 >;
-
 
 export const productsTableLayout: ProductTableLayout = {
 
@@ -53,12 +50,10 @@ export const productsTableLayout: ProductTableLayout = {
     },
     {
 
-
       overrideLabel: "Grit Soap",
       displayByAdmin: false,
     },
   ],
-
 
   dispensers: [
     {
@@ -86,7 +81,6 @@ export const productsTableLayout: ProductTableLayout = {
       overrideLabel: "Enviro-Master Air Freshener (Battery)",
     },
 
-
     {
       productKey: "disp-seat-cover",
       overrideLabel: "Seat Cover Dispenser",
@@ -105,7 +99,6 @@ export const productsTableLayout: ProductTableLayout = {
       overrideLabel: "SaniPod Receptacle",
     },
   ],
-
 
   bigProducts: [
     {

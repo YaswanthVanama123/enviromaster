@@ -5,16 +5,12 @@ export type SanicleanSoapType = "standard" | "luxury";
 export type SanicleanPricingMode = "all_inclusive" | "per_item_charge";
 export type SanicleanRateTier = "redRate" | "greenRate";
 
-
 export type SanicleanFrequency = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
-
 
 export type SanicleanCalculationMode = "monthly" | "perVisit";
 
-
 export const MONTHLY_AND_BELOW: SanicleanFrequency[] = ["weekly", "biweekly", "twicePerMonth", "monthly", "everyFourWeeks"];
 export const ABOVE_MONTHLY: SanicleanFrequency[] = ["bimonthly", "quarterly", "biannual", "annual"];
-
 
 export type LocationKey = SanicleanLocation;
 export type SoapType = SanicleanSoapType;
@@ -62,7 +58,6 @@ export interface SanicleanPricingConfig {
     };
   };
 
-
   perItemCharge: {
 
     insideBeltway: {
@@ -77,13 +72,11 @@ export interface SanicleanPricingConfig {
       tripCharge: number; 
     };
 
-
     smallFacility: {
       fixtureThreshold: number; 
       minimumWeekly: number; 
       includesTripCharge: boolean; 
     };
-
 
     facilityComponents: {
 
@@ -93,7 +86,6 @@ export interface SanicleanPricingConfig {
         monthlySupplyCostPer6Dispensers: number; 
         totalCostPer4Sinks: number; 
       };
-
 
       urinals: {
         screenRatio: number; 
@@ -105,7 +97,6 @@ export interface SanicleanPricingConfig {
         };
       };
 
-
       maleToilets: {
         clipRatio: number; 
         seatCoverRatio: number; 
@@ -116,7 +107,6 @@ export interface SanicleanPricingConfig {
         };
       };
 
-
       femaleToilets: {
         sanipodRatio: number; 
         monthlyCostPerToilet: number; 
@@ -126,13 +116,11 @@ export interface SanicleanPricingConfig {
       };
     };
 
-
     basicIncludes: {
       electrostaticSpray: boolean; 
       airFreshenerService: boolean; 
       soapService: boolean; 
     };
-
 
     warrantyFees: {
       perDispenserPerWeek: number; 
@@ -141,14 +129,12 @@ export interface SanicleanPricingConfig {
     };
   };
 
-
   billingConversions: {
     weekly: {
       monthlyMultiplier: number; 
       annualMultiplier: number; 
     };
   };
-
 
   rateTiers: Record<
     SanicleanRateTier,
@@ -158,16 +144,13 @@ export interface SanicleanPricingConfig {
     }
   >;
 
-
   valueProposition: string[];
 }
 
 export interface SanicleanFormState {
   serviceId: "saniclean";
 
-
   pricingMode: SanicleanPricingMode; 
-
 
   sinks: number;
   urinals: number;
@@ -175,28 +158,21 @@ export interface SanicleanFormState {
   femaleToilets: number;
   fixtureCount: number; 
 
-
   location: SanicleanLocation; 
   needsParking: boolean; 
-
 
   soapType: SanicleanSoapType; 
   luxuryUpgradeQty?: number;
   excessSoapGallonsPerWeek: number; 
 
-
   addMicrofiberMopping: boolean;
   microfiberBathrooms: number;
 
-
   estimatedPaperSpendPerWeek: number; 
-
 
   warrantyDispensers: number; 
 
-
   addTripCharge: boolean; 
-
 
   addUrinalComponents: boolean; 
   urinalScreensQty: number; 
@@ -207,25 +183,18 @@ export interface SanicleanFormState {
   addFemaleToiletComponents: boolean; 
   sanipodsQty: number; 
 
-
   contractMonths: number; 
 
-
   rateTier: SanicleanRateTier; 
-
 
   mainServiceFrequency: SanicleanFrequency; 
   facilityComponentsFrequency: SanicleanFrequency; 
 
-
   calculationMode?: SanicleanCalculationMode; 
-
 
   notes: string;
 
-
   includedItems?: string[] | null;
-
 
   allInclusiveWeeklyRatePerFixture: number; 
   luxuryUpgradePerDispenser: number; 
@@ -234,7 +203,6 @@ export interface SanicleanFormState {
   paperCreditPerFixture: number; 
   microfiberMoppingPerBathroom: number; 
 
-
   insideBeltwayRatePerFixture: number; 
   insideBeltwayMinimum: number; 
   insideBeltwayTripCharge: number; 
@@ -242,10 +210,8 @@ export interface SanicleanFormState {
   outsideBeltwayRatePerFixture: number; 
   outsideBeltwayTripCharge: number; 
 
-
   smallFacilityThreshold: number; 
   smallFacilityMinimum: number; 
-
 
   urinalScreenMonthly: number;
   urinalMatMonthly: number;
@@ -253,17 +219,13 @@ export interface SanicleanFormState {
   seatCoverDispenserMonthly: number;
   sanipodServiceMonthly: number;
 
-
   warrantyFeePerDispenserPerWeek: number; 
-
 
   weeklyToMonthlyMultiplier: number; 
   weeklyToAnnualMultiplier: number; 
 
-
   redRateMultiplier: number; 
   greenRateMultiplier: number; 
-
 
   customBaseService?: number;
   customTripCharge?: number;
@@ -274,7 +236,6 @@ export interface SanicleanFormState {
   customWarrantyFees?: number;
   customPaperOverage?: number;
 
-
   customWeeklyTotal?: number;
   customMonthlyTotal?: number;
   customContractTotal?: number;
@@ -283,12 +244,10 @@ export interface SanicleanFormState {
   applyMinimum?: boolean;
 }
 
-
 export interface SanicleanQuoteResult {
   serviceId: "saniclean";
   displayName: string;
   pricingMode: SanicleanPricingMode;
-
 
   weeklyTotal: number;
   monthlyTotal: number;
@@ -296,10 +255,8 @@ export interface SanicleanQuoteResult {
   originalContractTotal?: number;
   oneTimeTotal?: number;
 
-
   baseServiceMonthly: number; 
   facilityComponentsMonthly: number; 
-
 
   breakdown: {
     baseService: number; 
@@ -312,13 +269,11 @@ export interface SanicleanQuoteResult {
     paperOverage: number; 
   };
 
-
   dispenserCounts: {
     soapDispensers: number; 
     airFresheners: number; 
     totalDispensers: number; 
   };
-
 
   componentCounts: {
     urinalScreens: number;
@@ -328,17 +283,13 @@ export interface SanicleanQuoteResult {
     sanipods: number;
   };
 
-
   included: string[];
   excluded: string[];
 
-
   appliedRules: string[];
-
 
   minimumChargePerWeek: number;
 }
-
 
 export interface SanicleanEnhancedFrequencyMetadata {
   [key: string]: {
@@ -350,22 +301,18 @@ export interface SanicleanEnhancedFrequencyMetadata {
   };
 }
 
-
 export interface SanicleanDualFrequencyResult {
   calculationMode: SanicleanCalculationMode;
   mainServiceTotal: number;
   facilityComponentsTotal: number;
   combinedTotal: number;
 
-
   monthlyTotal?: number;         
   perVisitTotal?: number;        
-
 
   contractTotal: number;
   visitsInContract?: number;     
 }
-
 
 export function getCalculationMode(frequency: SanicleanFrequency): SanicleanCalculationMode {
   return MONTHLY_AND_BELOW.includes(frequency) ? "monthly" : "perVisit";

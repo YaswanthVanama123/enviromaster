@@ -1,11 +1,4 @@
-/**
- * useQuotaLevel - Hook to fetch and manage user's quota level for commission calculation
- *
- * Quota levels determine the base commission rate:
- * - Below Quota: 3%
- * - Above Quota: 6%
- * - Double Quota: 9%
- */
+
 
 import { useState, useEffect, useCallback } from 'react';
 import { quotaApi } from '../../../backendservice/api/quotaApi';
@@ -24,22 +17,18 @@ export interface QuotaLevelData {
 }
 
 export interface UseQuotaLevelReturn {
-  // Current quota level
+  
   quotaLevel: QuotaLevel;
   quotaData: QuotaLevelData | null;
 
-  // Commission rate based on quota level
   commissionRate: number;
 
-  // Loading and error states
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   refreshQuotaLevel: () => Promise<void>;
 }
 
-// Map quota level to commission rate
 const QUOTA_COMMISSION_RATES: Record<QuotaLevel, number> = {
   below: 3,
   above: 6,
@@ -49,14 +38,14 @@ const QUOTA_COMMISSION_RATES: Record<QuotaLevel, number> = {
 export function useQuotaLevel(): UseQuotaLevelReturn {
   const { user, isAuthenticated } = useAuthContext();
 
-  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above'); // Default to "above" (6%)
+  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above'); 
   const [quotaData, setQuotaData] = useState<QuotaLevelData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchQuotaLevel = useCallback(async () => {
     if (!user?.username) {
-      // Not authenticated, use default
+      
       return;
     }
 
@@ -82,13 +71,12 @@ export function useQuotaLevel(): UseQuotaLevelReturn {
     } catch (err) {
       console.error('[QUOTA-LEVEL] Failed to fetch quota level:', err);
       setError('Failed to fetch quota level');
-      // Keep default "above" level on error
+      
     } finally {
       setIsLoading(false);
     }
   }, [user?.username, user?.fullName]);
 
-  // Fetch quota level on mount and when user changes
   useEffect(() => {
     if (isAuthenticated && user?.username) {
       fetchQuotaLevel();

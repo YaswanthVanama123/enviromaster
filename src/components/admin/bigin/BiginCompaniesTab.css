@@ -1,4 +1,4 @@
-/* BiginCompaniesTab - Clean Professional Styles */
+
 
 .bigin-companies-tab {
   padding: 24px;
@@ -7,7 +7,6 @@
   min-height: 600px;
 }
 
-/* Header */
 .bc-header {
   display: flex;
   justify-content: space-between;
@@ -81,7 +80,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* Stats Grid */
 .bc-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -144,7 +142,6 @@
   letter-spacing: 0.5px;
 }
 
-/* Fetch Status */
 .bc-fetch-status {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -235,7 +232,6 @@
   font-weight: 500;
 }
 
-/* Filters */
 .bc-filters {
   display: flex;
   gap: 12px;
@@ -315,7 +311,6 @@
   border: 1px solid #e2e8f0;
 }
 
-/* Table */
 .bc-table-container {
   background: white;
   border: 1px solid #e2e8f0;
@@ -424,7 +419,6 @@
   background: #dbeafe;
 }
 
-/* Pagination */
 .bc-pagination {
   display: flex;
   justify-content: center;
@@ -462,7 +456,6 @@
   font-weight: 500;
 }
 
-/* Loading & Empty States */
 .bc-loading {
   display: flex;
   flex-direction: column;
@@ -519,7 +512,6 @@
   margin: 0;
 }
 
-/* Modal */
 .bc-modal-overlay {
   position: fixed;
   top: 0;
@@ -672,7 +664,6 @@
   margin: 0;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .bc-stats-grid {
     grid-template-columns: repeat(2, 1fr);

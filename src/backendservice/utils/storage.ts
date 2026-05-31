@@ -4,21 +4,21 @@ const STORAGE_KEYS = {
   AUTH_TOKEN: "auth_token",
   AUTH_USER: "auth_user",
   USER_ROLE: "user_role",
-  // Legacy keys for backward compatibility
+  
   ADMIN_TOKEN: "admin_token",
   ADMIN_USER: "admin_user",
 } as const;
 
 export const storage = {
   getToken(): string | null {
-    // Check new key first, then legacy
+    
     return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
            localStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
   },
 
   setToken(token: string): void {
     localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-    // Also set legacy key for backward compatibility
+    
     localStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
   },
 
@@ -32,7 +32,7 @@ export const storage = {
     if (user) {
       return JSON.parse(user);
     }
-    // Check legacy admin user
+    
     const adminUser = localStorage.getItem(STORAGE_KEYS.ADMIN_USER);
     if (adminUser) {
       const parsed = JSON.parse(adminUser);
@@ -43,7 +43,7 @@ export const storage = {
 
   setUser(user: AuthUser): void {
     localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
-    // Also set legacy admin user for backward compatibility
+    
     if (user.role === 'admin') {
       localStorage.setItem(STORAGE_KEYS.ADMIN_USER, JSON.stringify(user));
     }
@@ -57,7 +57,7 @@ export const storage = {
   getRole(): UserRole | null {
     const role = localStorage.getItem(STORAGE_KEYS.USER_ROLE) as UserRole | null;
     if (role) return role;
-    // Check from user object
+    
     const user = this.getUser();
     return user?.role || null;
   },
@@ -70,7 +70,6 @@ export const storage = {
     localStorage.removeItem(STORAGE_KEYS.USER_ROLE);
   },
 
-  // Legacy methods for backward compatibility
   getAdminUser(): AuthUser | null {
     return this.getUser();
   },

@@ -1,6 +1,4 @@
-/**
- * Map Distance Tab Styles
- */
+
 
 .map-distance-tab {
   padding: 24px;
@@ -8,7 +6,6 @@
   margin: 0 auto;
 }
 
-/* Header */
 .md-header {
   margin-bottom: 24px;
 }
@@ -38,7 +35,6 @@
   gap: 12px;
 }
 
-/* Sync Button */
 .md-sync-btn {
   display: flex;
   align-items: center;
@@ -78,7 +74,6 @@
   background: #dc2626;
 }
 
-/* Stats Bar */
 .md-stats-bar {
   display: flex;
   gap: 24px;
@@ -106,7 +101,6 @@
   color: #64748b;
 }
 
-/* Sync Progress */
 .md-sync-progress {
   padding: 16px 20px;
   background: #ecfdf5;
@@ -174,7 +168,6 @@
   color: #6366f1;
 }
 
-/* Interrupted Sync */
 .md-sync-interrupted {
   padding: 16px 20px;
   background: #fef3c7;
@@ -201,7 +194,6 @@
   margin-top: 12px;
 }
 
-/* Paused Sync */
 .md-sync-paused {
   padding: 16px 20px;
   background: #eef2ff;
@@ -222,7 +214,6 @@
   background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
 }
 
-/* Pause Button */
 .md-pause-btn {
   display: flex;
   align-items: center;
@@ -246,7 +237,6 @@
   animation: md-spin 1s linear infinite;
 }
 
-/* View Tabs */
 .md-view-tabs {
   display: flex;
   gap: 8px;
@@ -283,7 +273,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Status Badge */
 .md-status-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -323,7 +312,6 @@
   color: #92400e;
 }
 
-/* Job Type Badge */
 .md-job-type {
   display: inline-block;
   padding: 4px 10px;
@@ -347,7 +335,6 @@
   color: #92400e;
 }
 
-/* Reset Button */
 .md-reset-btn {
   display: flex;
   align-items: center;
@@ -367,7 +354,6 @@
   background: #dc2626;
 }
 
-/* Resume Button */
 .md-resume-btn {
   display: flex;
   align-items: center;
@@ -392,7 +378,6 @@
   cursor: not-allowed;
 }
 
-/* Search Section */
 .md-search-section {
   display: flex;
   gap: 16px;
@@ -524,7 +509,6 @@
   color: #94a3b8;
 }
 
-/* Get Distance Button */
 .md-fetch-btn {
   display: flex;
   align-items: center;
@@ -549,7 +533,6 @@
   cursor: not-allowed;
 }
 
-/* Loading State */
 .md-loading {
   display: flex;
   flex-direction: column;
@@ -584,7 +567,6 @@
   color: #94a3b8;
 }
 
-/* Results */
 .md-results {
   margin-top: 24px;
 }
@@ -608,7 +590,6 @@
   color: #64748b;
 }
 
-/* Table */
 .md-table-container {
   background: white;
   border-radius: 12px;
@@ -665,7 +646,6 @@
   color: #6366f1;
 }
 
-/* Empty State */
 .md-empty {
   display: flex;
   flex-direction: column;
@@ -696,7 +676,6 @@
   margin: 0;
 }
 
-/* Error State */
 .md-error {
   padding: 16px;
   background: #fef2f2;

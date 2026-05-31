@@ -20,13 +20,8 @@ const ENDPOINTS = {
   },
 };
 
-/**
- * Unified authentication API for both admin and employee users
- */
 export const authApi = {
-  /**
-   * Login user (admin or employee)
-   */
+  
   async login(credentials: LoginPayload, userType: UserRole): Promise<AuthUser> {
     const endpoint = userType === 'admin'
       ? ENDPOINTS.admin.login
@@ -34,18 +29,16 @@ export const authApi = {
 
     const response = await apiClient.post<LoginResponse>(endpoint, credentials);
 
-    // Check for error response
     if (response.error || !response.data) {
       throw new Error(response.error || 'Login failed');
     }
 
     const responseData = response.data;
 
-    // Handle response based on user type
     let user: AuthUser;
 
     if (userType === 'admin') {
-      // Admin login returns { token, admin } format
+      
       const adminData = responseData.admin || responseData.user;
       if (!adminData) {
         throw new Error('Invalid response from server');
@@ -53,13 +46,13 @@ export const authApi = {
       user = {
         id: adminData.id,
         username: adminData.username,
-        fullName: adminData.username, // Admin doesn't have fullName
+        fullName: adminData.username, 
         isActive: adminData.isActive ?? true,
         lastLoginAt: adminData.lastLoginAt,
         role: 'admin',
       };
     } else {
-      // Employee login returns { token, user, role } format
+      
       if (!responseData.user) {
         throw new Error('Invalid response from server');
       }
@@ -74,20 +67,15 @@ export const authApi = {
       };
     }
 
-    // Store auth data
     storage.setToken(responseData.token);
     storage.setUser(user);
     storage.setRole(user.role);
 
-    // Set token in API client
     apiClient.setToken(responseData.token);
 
     return user;
   },
 
-  /**
-   * Get current user profile
-   */
   async getProfile(): Promise<AuthUser | null> {
     const role = storage.getRole();
     if (!role) return null;
@@ -129,9 +117,6 @@ export const authApi = {
     }
   },
 
-  /**
-   * Change password for current user
-   */
   async changePassword(oldPassword: string, newPassword: string): Promise<boolean> {
     const role = storage.getRole();
     if (!role) throw new Error('Not authenticated');
@@ -147,45 +132,27 @@ export const authApi = {
     return true;
   },
 
-  /**
-   * Logout current user
-   */
   logout(): void {
     storage.clearAuth();
     apiClient.setToken(null);
   },
 
-  /**
-   * Check if user is authenticated
-   */
   isAuthenticated(): boolean {
     return storage.isAuthenticated();
   },
 
-  /**
-   * Get stored user
-   */
   getStoredUser(): AuthUser | null {
     return storage.getUser();
   },
 
-  /**
-   * Get stored role
-   */
   getStoredRole(): UserRole | null {
     return storage.getRole();
   },
 
-  /**
-   * Check if current user is admin
-   */
   isAdmin(): boolean {
     return storage.getRole() === 'admin';
   },
 
-  /**
-   * Initialize auth from storage (call on app load)
-   */
   initializeAuth(): { user: AuthUser | null; isAuthenticated: boolean } {
     const token = storage.getToken();
     const user = storage.getUser();

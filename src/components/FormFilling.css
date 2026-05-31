@@ -3,7 +3,6 @@
   font-display: swap;
 }
 
-
 html, body, #root {
   min-height: 100vh;
   margin: 0;
@@ -15,7 +14,6 @@ html, body, #root {
   scrollbar-width: none; 
   -ms-overflow-style: none; 
 }
-
 
 input,
 input[type="text"],
@@ -33,13 +31,11 @@ select {
   color: #000000;
 }
 
-
 input[type="checkbox"],
 input[type="radio"] {
   color-scheme: light;
   accent-color: #c00000;
 }
-
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
@@ -53,11 +49,9 @@ body::-webkit-scrollbar,
   margin: 30px;
   background-color: #ffffff !important;
 
-
   content-visibility: auto;
   contain-intrinsic-size: auto 3000px;
 }
-
 
 .edit-mode-header {
   position: fixed;
@@ -100,7 +94,6 @@ body::-webkit-scrollbar,
 .edit-back-button svg {
   font-size: 16px;
 }
-
 
 .edit-mode-container {
   padding-top: 60px;
@@ -215,7 +208,6 @@ body::-webkit-scrollbar,
   justify-content: center;
 }
 
-
 .formfilling__saving-overlay .formfilling__spinner {
   width: 48px;
   height: 48px;
@@ -250,12 +242,10 @@ body::-webkit-scrollbar,
   }
 }
 
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
 
 .formfilling__skeleton {
 
@@ -277,7 +267,6 @@ body::-webkit-scrollbar,
   }
 }
 
-
 .formfilling__skeleton > div {
   animation: shimmer 1.5s infinite linear;
   background: linear-gradient(
@@ -298,7 +287,6 @@ body::-webkit-scrollbar,
     background-position: 200% 0;
   }
 }
-
 
 .contract-summary-section {
   max-width: 1000px;
@@ -329,7 +317,6 @@ body::-webkit-scrollbar,
   font-size: 24px;
   color: #ff4500;
 }
-
 
 .pricing-status-banner {
   padding: 20px 24px;
@@ -457,14 +444,12 @@ body::-webkit-scrollbar,
   opacity: 0.5;
 }
 
-
 .contract-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin-bottom: 24px;
 }
-
 
 .contract-card {
   background: #ffffff;
@@ -656,7 +641,6 @@ body::-webkit-scrollbar,
   font-style: italic;
 }
 
-
 .pricing-breakdown {
   display: flex;
   flex-direction: column;
@@ -743,7 +727,6 @@ body::-webkit-scrollbar,
   color: #d97706;
 }
 
-/* Cross-service $50 per visit minimum banner */
 .cross-service-minimum-banner {
   border-radius: 10px;
   border: 1.5px solid;
@@ -842,7 +825,6 @@ body::-webkit-scrollbar,
   color: #991b1b;
 }
 
-/* Commission Calculator Styles */
 .commission-calculator-card {
   background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
   border: 2px solid #fde047;
@@ -884,7 +866,6 @@ body::-webkit-scrollbar,
 .breakdown-value.greenline {
   color: #16a34a;
 }
-
 
 .contract-total-section {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
@@ -929,7 +910,6 @@ body::-webkit-scrollbar,
   font-weight: 600;
 }
 
-
 .contract-input {
   padding: 12px 16px;
   font-size: 16px;
@@ -950,7 +930,6 @@ body::-webkit-scrollbar,
 .contract-input:hover:not(:focus) {
   border-color: #d1d5db;
 }
-
 
 .contract-input-with-prefix {
   position: relative;
@@ -973,7 +952,6 @@ body::-webkit-scrollbar,
   width: 100%;
 }
 
-
 .charge-input-row {
   display: flex;
   gap: 8px;
@@ -983,7 +961,6 @@ body::-webkit-scrollbar,
 .charge-input-row .contract-input-with-prefix {
   flex: 1;
 }
-
 
 .frequency-dropdown-wrapper {
   position: relative;
@@ -1042,7 +1019,6 @@ body::-webkit-scrollbar,
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
-
 
   scrollbar-width: thin;
   scrollbar-color: #ff4500 #f5f5f5;
@@ -1112,12 +1088,10 @@ body::-webkit-scrollbar,
   opacity: 0.9;
 }
 
-
 .custom-dropdown {
   position: relative;
   width: 100%;
 }
-
 
 .custom-dropdown-trigger {
   width: 100%;
@@ -1152,7 +1126,6 @@ body::-webkit-scrollbar,
   font-weight: 600;
 }
 
-
 .dropdown-arrow {
   width: 12px;
   height: 8px;
@@ -1163,7 +1136,6 @@ body::-webkit-scrollbar,
 .dropdown-arrow.open {
   transform: rotate(180deg);
 }
-
 
 .custom-dropdown-menu {
   position: absolute;
@@ -1189,13 +1161,11 @@ body::-webkit-scrollbar,
   }
 }
 
-
 .dropdown-options {
   max-height: 320px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
-
 
   scrollbar-width: thin;
   scrollbar-color: #ff4500 #f5f5f5;
@@ -1218,7 +1188,6 @@ body::-webkit-scrollbar,
 .dropdown-options::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #cc3700 0%, #cc5529 100%);
 }
-
 
 .dropdown-option {
   width: 100%;
@@ -1256,7 +1225,6 @@ body::-webkit-scrollbar,
   background: linear-gradient(135deg, #ff6b35 0%, #ff4500 100%);
 }
 
-
 .recommended-badge {
   font-size: 13px;
   font-weight: 600;
@@ -1268,7 +1236,6 @@ body::-webkit-scrollbar,
 .dropdown-option.selected .recommended-badge {
   color: #ffffff;
 }
-
 
 @media (max-width: 768px) {
   .contract-summary-section {
@@ -1283,7 +1250,6 @@ body::-webkit-scrollbar,
     padding: 20px;
   }
 
-
   .formfilling__saving-overlay {
     bottom: 60px;
     padding: 12px 24px;
@@ -1294,7 +1260,6 @@ body::-webkit-scrollbar,
     height: 40px;
     border-width: 4px;
   }
-
 
   .status-banner-content {
     flex-direction: column;
@@ -1322,7 +1287,6 @@ body::-webkit-scrollbar,
     font-size: 18px;
   }
 
-
   .total-amount {
     font-size: 36px;
   }
@@ -1336,7 +1300,6 @@ body::-webkit-scrollbar,
     margin-left: 0;
     margin-top: 8px;
   }
-
 
   .charge-input-row {
     flex-direction: column;
@@ -1354,7 +1317,6 @@ body::-webkit-scrollbar,
   }
 }
 
-
 .agreement-timeline-section {
   margin-top: 12px;
   padding: 14px;
@@ -1366,7 +1328,6 @@ body::-webkit-scrollbar,
 .timeline-header {
   margin-bottom: 12px;
 }
-
 
 .expiry-status-badge {
   display: flex;
@@ -1402,7 +1363,6 @@ body::-webkit-scrollbar,
   background: linear-gradient(135deg, #f8d7da 0%, #e6a1a6 100%);
   border: 2px solid #dc3545;
 }
-
 
 @keyframes pulse-critical {
   0%, 100% {
@@ -1441,7 +1401,6 @@ body::-webkit-scrollbar,
   color: #495057;
   font-weight: 500;
 }
-
 
 .timeline-bar-container {
   margin-bottom: 12px;
@@ -1494,7 +1453,6 @@ body::-webkit-scrollbar,
   font-weight: 500;
 }
 
-
 .timeline-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1544,7 +1502,6 @@ body::-webkit-scrollbar,
   text-decoration: line-through;
 }
 
-
 input[type="date"].contract-input {
   font-family: inherit;
   cursor: pointer;
@@ -1554,7 +1511,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
   font-size: 16px;
 }
-
 
 @media (max-width: 768px) {
   .timeline-stats {
@@ -1582,7 +1538,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 12px;
   }
 }
-
 
 @media (min-width: 769px) and (max-width: 1024px) {
   .center-align {
@@ -1618,7 +1573,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     padding: 36px;
     font-size: 17px;
   }
-
 
   .contract-summary-section {
     margin: 20px;
@@ -1659,7 +1613,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 13px;
   }
 
-
   .formfilling__payment-options {
     padding: 20px;
   }
@@ -1680,7 +1633,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 13px;
   }
 }
-
 
 @media (max-width: 480px) {
   .center-align {
@@ -1724,7 +1676,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 16px;
   }
 
-
   .formfilling__spinner {
     width: 72px;
     height: 72px;
@@ -1741,7 +1692,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     height: 36px;
     border-width: 3px;
   }
-
 
   .contract-summary-section {
     margin: 12px;
@@ -1800,7 +1750,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 11px;
   }
 
-
   .pricing-status-banner {
     padding: 14px 16px;
   }
@@ -1827,7 +1776,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 15px;
   }
 
-
   .contract-total-section {
     padding: 18px;
   }
@@ -1848,7 +1796,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
     font-size: 10px;
   }
 
-
   .breakdown-label {
     font-size: 12px;
   }
@@ -1856,7 +1803,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   .breakdown-value {
     font-size: 13px;
   }
-
 
   .frequency-dropdown-trigger {
     padding: 8px 10px;
@@ -1874,7 +1820,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   .freq-description {
     font-size: 11px;
   }
-
 
   .timeline-header label {
     font-size: 12px;
@@ -1908,7 +1853,6 @@ input[type="date"].contract-input::-webkit-calendar-picker-indicator {
   .stat-values {
     font-size: 12px;
   }
-
 
   .formfilling__payment-options {
     padding: 16px;

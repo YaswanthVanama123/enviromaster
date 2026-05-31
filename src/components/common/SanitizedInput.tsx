@@ -10,7 +10,6 @@ interface SanitizedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEl
   label?: string;
 }
 
-
 export const SanitizedInput: React.FC<SanitizedInputProps> = ({
   value,
   onChange,
@@ -41,7 +40,6 @@ export const SanitizedInput: React.FC<SanitizedInputProps> = ({
 
       onChange(detection.cleaned);
     }
-
 
     if (props.onBlur) {
       props.onBlur(e);
@@ -86,7 +84,6 @@ interface SanitizedTextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLT
   showWarning?: boolean;
   label?: string;
 }
-
 
 export const SanitizedTextarea: React.FC<SanitizedTextareaProps> = ({
   value,

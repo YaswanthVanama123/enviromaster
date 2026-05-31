@@ -10,7 +10,6 @@ import type {
   BusinessType,
 } from "../../../backendservice/types/commission.types";
 
-// Default commission rules (mirroring backend defaults)
 const DEFAULT_RULES: CommissionRules = {
   quotaRates: {
     below: 3,
@@ -36,7 +35,6 @@ const DEFAULT_RULES: CommissionRules = {
   anchorMinMonthlyValue: 200,
 };
 
-// Commission calculation function (mirroring backend logic for testing)
 function calculateCommission(
   input: CommissionCalculationInput,
   rules: CommissionRules = DEFAULT_RULES
@@ -76,7 +74,6 @@ function calculateCommission(
   };
 }
 
-// Helper to create input with defaults
 function createInput(overrides: Partial<CommissionCalculationInput> = {}): CommissionCalculationInput {
   return {
     monthlyValue: 500,
@@ -89,10 +86,6 @@ function createInput(overrides: Partial<CommissionCalculationInput> = {}): Commi
     ...overrides,
   };
 }
-
-// =============================================================================
-// BASIC TESTS
-// =============================================================================
 
 describe("Commission Calculator", () => {
   describe("Quota Levels", () => {
@@ -234,10 +227,6 @@ describe("Commission Calculator", () => {
   });
 });
 
-// =============================================================================
-// FULL MATRIX TESTING - ALL COMBINATIONS
-// =============================================================================
-
 describe("Full Matrix Testing - All Combinations", () => {
   const quotaLevels: QuotaLevel[] = ["below", "above", "double"];
   const agreementTerms: AgreementTerm[] = ["3-year", "1-year", "MTM-with-install", "MTM-no-install"];
@@ -316,10 +305,6 @@ describe("Full Matrix Testing - All Combinations", () => {
   });
 });
 
-// =============================================================================
-// BOUNDARY VALUE TESTING
-// =============================================================================
-
 describe("Boundary Value Testing", () => {
   describe("Monthly Value Boundaries", () => {
     const boundaryValues = [0, 0.01, 0.99, 1, 99.99, 100, 199.99, 200, 200.01, 499.99, 500, 999.99, 1000, 9999.99, 10000, 99999.99, 100000];
@@ -361,16 +346,11 @@ describe("Boundary Value Testing", () => {
         const input = createInput({ monthlyValue, accountType: "Anchor" });
         const result = calculateCommission(input);
 
-        // Commission should still calculate regardless of anchor minimum
         expect(result.monthlyCommission).toBeCloseTo(monthlyValue * 0.06, 4);
       });
     });
   });
 });
-
-// =============================================================================
-// PRECISION AND ROUNDING TESTS
-// =============================================================================
 
 describe("Precision and Rounding Tests", () => {
   describe("Decimal Precision", () => {
@@ -402,7 +382,6 @@ describe("Precision and Rounding Tests", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% * 135% = 8.1%
       expect(result.finalCommissionRate).toBeCloseTo(8.1, 10);
       expect(result.monthlyCommission).toBeCloseTo(81, 10);
     });
@@ -415,7 +394,6 @@ describe("Precision and Rounding Tests", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% * 50% = 3%
       expect(result.finalCommissionRate).toBe(3);
       expect(result.monthlyCommission).toBe(30);
     });
@@ -435,19 +413,14 @@ describe("Precision and Rounding Tests", () => {
       });
       const result = calculateCommission(input);
 
-      // 9% - 0.5% + 1% + 4% - 3% = 10.5% effective
-      // 10.5% * 135% = 14.175% final
-      // $1234.56 * 14.175% = $175.0009
+      
+      
       expect(result.effectiveBaseRate).toBe(10.5);
       expect(result.finalCommissionRate).toBeCloseTo(14.175, 4);
       expect(result.monthlyCommission).toBeCloseTo(175.0009, 2);
     });
   });
 });
-
-// =============================================================================
-// REAL-WORLD SALES SCENARIOS
-// =============================================================================
 
 describe("Real-World Sales Scenarios", () => {
   describe("New Sales Rep Scenarios", () => {
@@ -480,7 +453,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% + 1% = 7% * 135% = 9.45%
       expect(result.finalCommissionRate).toBeCloseTo(9.45, 2);
       expect(result.monthlyCommission).toBeCloseTo(47.25, 2);
     });
@@ -497,7 +469,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 9% + 1% = 10% * 135% = 13.5%
       expect(result.finalCommissionRate).toBeCloseTo(13.5, 2);
       expect(result.monthlyCommission).toBeCloseTo(270, 2);
       expect(result.annualCommission).toBeCloseTo(3240, 2);
@@ -518,7 +489,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% + 4% = 10% * 135% = 13.5%
       expect(result.finalCommissionRate).toBeCloseTo(13.5, 2);
       expect(result.monthlyCommission).toBeCloseTo(108, 2);
     });
@@ -536,7 +506,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% + 1% + 4% = 11%
       expect(result.finalCommissionRate).toBe(11);
       expect(result.monthlyCommission).toBe(66);
     });
@@ -554,7 +523,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% - 1% + 4% = 9% * 135% = 12.15%
       expect(result.finalCommissionRate).toBeCloseTo(12.15, 2);
       expect(result.monthlyCommission).toBeCloseTo(54.675, 2);
     });
@@ -573,7 +541,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 3% - 3% = 0%
       expect(result.finalCommissionRate).toBe(0);
       expect(result.monthlyCommission).toBe(0);
     });
@@ -590,7 +557,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 9% + 1% - 3% = 7% * 135% = 9.45%
       expect(result.finalCommissionRate).toBeCloseTo(9.45, 2);
       expect(result.monthlyCommission).toBeCloseTo(47.25, 2);
     });
@@ -608,7 +574,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 6% - 0.5% + 4% - 3% = 6.5%
       expect(result.finalCommissionRate).toBe(6.5);
       expect(result.monthlyCommission).toBeCloseTo(22.75, 2);
     });
@@ -628,7 +593,6 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 9% + 1% + 4% = 14% * 135% = 18.9%
       expect(result.finalCommissionRate).toBeCloseTo(18.9, 2);
       expect(result.monthlyCommission).toBeCloseTo(1890, 2);
       expect(result.annualCommission).toBeCloseTo(22680, 2);
@@ -646,16 +610,11 @@ describe("Real-World Sales Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 9% + 1% = 10% * 135% = 13.5%
       expect(result.finalCommissionRate).toBeCloseTo(13.5, 2);
       expect(result.monthlyCommission).toBeCloseTo(675, 2);
     });
   });
 });
-
-// =============================================================================
-// NEGATIVE AND EDGE CASE SCENARIOS
-// =============================================================================
 
 describe("Negative and Edge Case Scenarios", () => {
   describe("Negative Commission Scenarios", () => {
@@ -671,7 +630,6 @@ describe("Negative and Edge Case Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 3% - 1% - 3% = -1% * 50% = -0.5%
       expect(result.effectiveBaseRate).toBe(-1);
       expect(result.finalCommissionRate).toBe(-0.5);
       expect(result.monthlyCommission).toBe(-0.5);
@@ -689,7 +647,6 @@ describe("Negative and Edge Case Scenarios", () => {
       });
       const result = calculateCommission(input);
 
-      // 3% - 3% = 0% * 50% = 0%
       expect(result.effectiveBaseRate).toBe(0);
       expect(result.finalCommissionRate).toBe(0);
       expect(result.monthlyCommission).toBe(0);
@@ -726,16 +683,11 @@ describe("Negative and Edge Case Scenarios", () => {
       const input = createInput({ monthlyValue: 1000000, quotaLevel: "double", agreementTerm: "3-year" });
       const result = calculateCommission(input);
 
-      // 9% * 135% = 12.15%
       expect(result.monthlyCommission).toBeCloseTo(121500, 2);
       expect(result.annualCommission).toBeCloseTo(1458000, 2);
     });
   });
 });
-
-// =============================================================================
-// COMPARISON TESTS
-// =============================================================================
 
 describe("Comparison Tests", () => {
   describe("Account Type Comparison", () => {
@@ -747,18 +699,14 @@ describe("Comparison Tests", () => {
       const bread15Result = calculateCommission(createInput({ ...baseInput, accountType: "Bread15" }));
       const pitResult = calculateCommission(createInput({ ...baseInput, accountType: "Pit" }));
 
-      // Anchor and Pit should be equal
       expect(anchorResult.monthlyCommission).toBe(pitResult.monthlyCommission);
 
-      // Bread5 should be lowest
       expect(bread5Result.monthlyCommission).toBeLessThan(bread15Result.monthlyCommission);
       expect(bread5Result.monthlyCommission).toBeLessThan(anchorResult.monthlyCommission);
 
-      // Bread15 should be between Bread5 and Anchor
       expect(bread15Result.monthlyCommission).toBeLessThan(anchorResult.monthlyCommission);
       expect(bread15Result.monthlyCommission).toBeGreaterThan(bread5Result.monthlyCommission);
 
-      // Specific values
       expect(anchorResult.monthlyCommission).toBe(60);
       expect(bread5Result.monthlyCommission).toBe(50);
       expect(bread15Result.monthlyCommission).toBe(55);
@@ -775,18 +723,14 @@ describe("Comparison Tests", () => {
       const mtmInstall = calculateCommission(createInput({ ...baseInput, agreementTerm: "MTM-with-install" }));
       const mtmNoInstall = calculateCommission(createInput({ ...baseInput, agreementTerm: "MTM-no-install" }));
 
-      // 3-year should be highest
       expect(threeYear.monthlyCommission).toBeGreaterThan(oneYear.monthlyCommission);
       expect(threeYear.monthlyCommission).toBeGreaterThan(mtmInstall.monthlyCommission);
       expect(threeYear.monthlyCommission).toBeGreaterThan(mtmNoInstall.monthlyCommission);
 
-      // 1-year and MTM with install should be equal
       expect(oneYear.monthlyCommission).toBe(mtmInstall.monthlyCommission);
 
-      // MTM no install should be lowest
       expect(mtmNoInstall.monthlyCommission).toBeLessThan(oneYear.monthlyCommission);
 
-      // Specific values
       expect(threeYear.monthlyCommission).toBeCloseTo(81, 2);
       expect(oneYear.monthlyCommission).toBe(60);
       expect(mtmInstall.monthlyCommission).toBe(60);
@@ -802,15 +746,12 @@ describe("Comparison Tests", () => {
       const above = calculateCommission(createInput({ ...baseInput, quotaLevel: "above" }));
       const double = calculateCommission(createInput({ ...baseInput, quotaLevel: "double" }));
 
-      // Double should be highest
       expect(double.monthlyCommission).toBeGreaterThan(above.monthlyCommission);
       expect(above.monthlyCommission).toBeGreaterThan(below.monthlyCommission);
 
-      // Each level should be 3% higher than previous
       expect(above.breakdown.baseRate - below.breakdown.baseRate).toBe(3);
       expect(double.breakdown.baseRate - above.breakdown.baseRate).toBe(3);
 
-      // Specific values
       expect(below.monthlyCommission).toBe(30);
       expect(above.monthlyCommission).toBe(60);
       expect(double.monthlyCommission).toBe(90);
@@ -826,16 +767,13 @@ describe("Comparison Tests", () => {
       const renewal2Years = calculateCommission(createInput({ ...baseInput, businessType: "renewal", yearsAsCustomer: 2 }));
       const renewal5Years = calculateCommission(createInput({ ...baseInput, businessType: "renewal", yearsAsCustomer: 5 }));
 
-      // New and renewal < 2 years should be equal
       expect(newBusiness.monthlyCommission).toBe(renewal1Year.monthlyCommission);
 
-      // Renewal 2+ years should have bonus
       expect(renewal2Years.monthlyCommission).toBeGreaterThan(newBusiness.monthlyCommission);
       expect(renewal2Years.monthlyCommission).toBe(renewal5Years.monthlyCommission);
 
-      // Specific values
       expect(newBusiness.monthlyCommission).toBe(60);
-      expect(renewal2Years.monthlyCommission).toBe(100); // +4% bonus
+      expect(renewal2Years.monthlyCommission).toBe(100); 
     });
   });
 
@@ -846,18 +784,12 @@ describe("Comparison Tests", () => {
       const fieldSales = calculateCommission(createInput({ ...baseInput, isInsideSales: false }));
       const insideSales = calculateCommission(createInput({ ...baseInput, isInsideSales: true }));
 
-      // Field sales should earn more
       expect(fieldSales.monthlyCommission).toBeGreaterThan(insideSales.monthlyCommission);
 
-      // Difference should be 3% of monthly value
       expect(fieldSales.monthlyCommission - insideSales.monthlyCommission).toBe(30);
     });
   });
 });
-
-// =============================================================================
-// MULTI-YEAR PROJECTION TESTS
-// =============================================================================
 
 describe("Multi-Year Projection Tests", () => {
   describe("3-Year Contract Projections", () => {
@@ -878,7 +810,7 @@ describe("Multi-Year Projection Tests", () => {
   describe("Commission Growth Scenarios", () => {
     it("projects commission with annual price increases", () => {
       const baseMonthlyValue = 500;
-      const annualIncrease = 0.05; // 5% annual increase
+      const annualIncrease = 0.05; 
 
       const year1 = calculateCommission(createInput({ monthlyValue: baseMonthlyValue }));
       const year2 = calculateCommission(createInput({ monthlyValue: baseMonthlyValue * (1 + annualIncrease) }));
@@ -890,17 +822,12 @@ describe("Multi-Year Projection Tests", () => {
   });
 });
 
-// =============================================================================
-// BUSINESS RULE VALIDATION
-// =============================================================================
-
 describe("Business Rule Validation", () => {
   describe("Anchor Account Rules", () => {
     it("anchor accounts should have highest base commission", () => {
       const input = createInput({ quotaLevel: "above", accountType: "Anchor" });
       const result = calculateCommission(input);
 
-      // Anchor should have 0 adjustment
       expect(result.breakdown.accountTypeAdjustment).toBe(0);
     });
   });
@@ -948,10 +875,6 @@ describe("Business Rule Validation", () => {
     });
   });
 });
-
-// =============================================================================
-// CUSTOM RULES TESTING
-// =============================================================================
 
 describe("Custom Rules Configuration", () => {
   describe("Modified Quota Rates", () => {
@@ -1050,10 +973,6 @@ describe("Custom Rules Configuration", () => {
   });
 });
 
-// =============================================================================
-// DATA INTEGRITY TESTS
-// =============================================================================
-
 describe("Data Integrity Tests", () => {
   describe("Input Preservation", () => {
     it("preserves all input values in result", () => {
@@ -1145,10 +1064,6 @@ describe("Data Integrity Tests", () => {
   });
 });
 
-// =============================================================================
-// STRESS TESTS
-// =============================================================================
-
 describe("Stress Tests", () => {
   describe("Bulk Calculations", () => {
     it("handles 1000 calculations correctly", () => {
@@ -1183,10 +1098,6 @@ describe("Stress Tests", () => {
   });
 });
 
-// =============================================================================
-// SPECIFIC DOLLAR AMOUNT TESTS
-// =============================================================================
-
 describe("Specific Dollar Amount Tests", () => {
   describe("Common Monthly Values", () => {
     const commonValues = [
@@ -1219,24 +1130,20 @@ describe("Specific Dollar Amount Tests", () => {
 
   describe("Commission Thresholds", () => {
     it("calculates monthly value needed for $100 monthly commission at 6%", () => {
-      // $100 commission at 6% requires $1666.67 monthly value
+      
       const input = createInput({ monthlyValue: 1666.67, quotaLevel: "above" });
       const result = calculateCommission(input);
       expect(result.monthlyCommission).toBeCloseTo(100, 0);
     });
 
     it("calculates monthly value needed for $500 monthly commission at 9%", () => {
-      // $500 commission at 9% requires $5555.56 monthly value
+      
       const input = createInput({ monthlyValue: 5555.56, quotaLevel: "double" });
       const result = calculateCommission(input);
       expect(result.monthlyCommission).toBeCloseTo(500, 0);
     });
   });
 });
-
-// =============================================================================
-// REGRESSION TESTS
-// =============================================================================
 
 describe("Regression Tests", () => {
   describe("Known Good Values", () => {

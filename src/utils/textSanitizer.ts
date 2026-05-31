@@ -15,7 +15,6 @@ const SMART_QUOTE_MAP: Record<string, string> = {
   '\u00BB': '"', 
 };
 
-
 const DASH_MAP: Record<string, string> = {
   '\u2013': '-', 
   '\u2014': '-', 
@@ -25,7 +24,6 @@ const DASH_MAP: Record<string, string> = {
   '\uFE63': '-', 
   '\uFF0D': '-', 
 };
-
 
 const SPACE_MAP: Record<string, string> = {
   '\u00A0': ' ', 
@@ -43,7 +41,6 @@ const SPACE_MAP: Record<string, string> = {
   '\u200D': '',  
   '\uFEFF': '',  
 };
-
 
 const SPECIAL_CHAR_MAP: Record<string, string> = {
   '\u2022': '*', 
@@ -64,32 +61,26 @@ const SPECIAL_CHAR_MAP: Record<string, string> = {
   '\u00BE': '3/4', 
 };
 
-
 export function sanitizeText(input: string | null | undefined): string {
   if (!input) return '';
 
   let text = String(input);
 
-
   Object.entries(SMART_QUOTE_MAP).forEach(([bad, good]) => {
     text = text.replace(new RegExp(bad, 'g'), good);
   });
-
 
   Object.entries(DASH_MAP).forEach(([bad, good]) => {
     text = text.replace(new RegExp(bad, 'g'), good);
   });
 
-
   Object.entries(SPACE_MAP).forEach(([bad, good]) => {
     text = text.replace(new RegExp(bad, 'g'), good);
   });
 
-
   Object.entries(SPECIAL_CHAR_MAP).forEach(([bad, good]) => {
     text = text.replace(new RegExp(bad, 'g'), good);
   });
-
 
   text = text.replace(/[\u{1F600}-\u{1F64F}]/gu, ''); 
   text = text.replace(/[\u{1F300}-\u{1F5FF}]/gu, ''); 
@@ -103,30 +94,22 @@ export function sanitizeText(input: string | null | undefined): string {
   text = text.replace(/[\u{2600}-\u{26FF}]/gu, '');   
   text = text.replace(/[\u{2700}-\u{27BF}]/gu, '');   
 
-
   text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-
 
   text = text.replace(/[\x7F-\xFF]/g, '');
 
-
   text = text.replace(/\uFFFD/g, '');
-
 
   text = text.replace(/[^\x20-\x7E\n\r\t]/g, '');
 
-
   text = text.normalize('NFC');
 
-
   text = text.replace(/  +/g, ' ');
-
 
   text = text.trim();
 
   return text;
 }
-
 
 export function detectProblematicCharacters(input: string): {
   hasProblems: boolean;
@@ -137,31 +120,25 @@ export function detectProblematicCharacters(input: string): {
 
   const problems: string[] = [];
 
-
   if (/[""''‚‛„‟‹›«»]/.test(input)) {
     problems.push('Smart quotes detected (will be converted to regular quotes)');
   }
-
 
   if (/[–—―−﹘﹣－]/.test(input)) {
     problems.push('Special dashes detected (will be converted to regular hyphens)');
   }
 
-
   if (/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu.test(input)) {
     problems.push('Emojis detected (will be removed)');
   }
-
 
   if (/[\x00-\x1F\x7F-\xFF]/.test(input)) {
     problems.push('Control/binary characters detected (will be removed)');
   }
 
-
   if (/[\u200B\u200C\u200D\uFEFF]/.test(input)) {
     problems.push('Zero-width characters detected (will be removed)');
   }
-
 
   if (/\uFFFD/.test(input)) {
     problems.push('Invalid UTF-8 characters detected (corrupted data - will be removed)');
@@ -176,20 +153,16 @@ export function detectProblematicCharacters(input: string): {
   };
 }
 
-
 export function sanitizeObject<T>(obj: T): T {
   if (obj === null || obj === undefined) return obj;
-
 
   if (typeof obj !== 'object') {
     return typeof obj === 'string' ? (sanitizeText(obj) as unknown as T) : obj;
   }
 
-
   if (Array.isArray(obj)) {
     return obj.map(item => sanitizeObject(item)) as unknown as T;
   }
-
 
   const sanitized: any = {};
   Object.entries(obj as any).forEach(([key, value]) => {
@@ -198,7 +171,6 @@ export function sanitizeObject<T>(obj: T): T {
 
   return sanitized as T;
 }
-
 
 export function useSanitizedInput(
   value: string,
@@ -228,7 +200,6 @@ export function useSanitizedInput(
   return { handleBlur };
 }
 
-
 export function validateTextForLatex(input: string): string | null {
   const detection = detectProblematicCharacters(input);
 
@@ -239,7 +210,6 @@ export function validateTextForLatex(input: string): string | null {
   return null; 
 }
 
-
 export function getReplacementSummary(original: string, cleaned: string): string[] {
   const changes: string[] = [];
 
@@ -247,7 +217,6 @@ export function getReplacementSummary(original: string, cleaned: string): string
     if (original.length !== cleaned.length) {
       changes.push(`Removed ${original.length - cleaned.length} invalid character(s)`);
     }
-
 
     if (/[""'']/.test(original)) {
       changes.push('Replaced smart quotes with regular quotes');

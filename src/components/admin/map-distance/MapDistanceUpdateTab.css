@@ -1,6 +1,4 @@
-/**
- * Map Distance Update Tab Styles
- */
+
 
 .md-update-tab {
   padding: 24px;
@@ -8,7 +6,6 @@
   margin: 0 auto;
 }
 
-/* Header */
 .mdu-header {
   margin-bottom: 24px;
 }
@@ -38,7 +35,6 @@
   gap: 12px;
 }
 
-/* Update Button */
 .mdu-update-btn {
   display: flex;
   align-items: center;
@@ -65,7 +61,6 @@
   transform: none;
 }
 
-/* Cancel Button */
 .mdu-cancel-btn {
   display: flex;
   align-items: center;
@@ -85,7 +80,6 @@
   background: #dc2626;
 }
 
-/* Stats Bar */
 .mdu-stats-bar {
   display: flex;
   gap: 24px;
@@ -113,7 +107,6 @@
   color: #64748b;
 }
 
-/* Error */
 .mdu-error {
   padding: 16px;
   background: #fef2f2;
@@ -124,7 +117,6 @@
   margin-bottom: 16px;
 }
 
-/* Sync Progress */
 .mdu-sync-progress {
   padding: 16px 20px;
   background: #eef2ff;
@@ -192,7 +184,6 @@
   color: #6366f1;
 }
 
-/* Interrupted Sync */
 .mdu-sync-interrupted {
   padding: 16px 20px;
   background: #fef3c7;
@@ -219,7 +210,6 @@
   margin-top: 12px;
 }
 
-/* Paused Sync */
 .mdu-sync-paused {
   padding: 16px 20px;
   background: #eef2ff;
@@ -240,7 +230,6 @@
   background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
 }
 
-/* Pause Button */
 .mdu-pause-btn {
   display: flex;
   align-items: center;
@@ -268,7 +257,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* View Tabs */
 .mdu-view-tabs {
   display: flex;
   gap: 8px;
@@ -305,7 +293,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Records Section */
 .mdu-records-section {
   margin-top: 16px;
 }
@@ -319,7 +306,6 @@
   color: #64748b;
 }
 
-/* Pagination */
 .mdu-pagination {
   display: flex;
   align-items: center;
@@ -352,7 +338,6 @@
   color: #64748b;
 }
 
-/* Table */
 .mdu-table-container {
   background: white;
   border-radius: 12px;
@@ -420,7 +405,6 @@
   color: #059669;
 }
 
-/* Status Badge */
 .mdu-status-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -460,7 +444,6 @@
   color: #92400e;
 }
 
-/* Job Type Badge */
 .mdu-job-type {
   display: inline-block;
   padding: 4px 10px;
@@ -484,7 +467,6 @@
   color: #92400e;
 }
 
-/* Reset Button */
 .mdu-reset-btn {
   display: flex;
   align-items: center;
@@ -504,7 +486,6 @@
   background: #dc2626;
 }
 
-/* Resume Button */
 .mdu-resume-btn {
   display: flex;
   align-items: center;
@@ -529,7 +510,6 @@
   cursor: not-allowed;
 }
 
-/* Empty State */
 .mdu-empty {
   display: flex;
   flex-direction: column;
@@ -560,7 +540,6 @@
   margin: 0;
 }
 
-/* Customer Filter Section */
 .mdu-filter-section {
   display: flex;
   align-items: center;
@@ -711,7 +690,6 @@
   background: #fecaca;
 }
 
-/* Delete Button */
 .mdu-delete-btn {
   display: flex;
   align-items: center;
@@ -737,7 +715,6 @@
   cursor: not-allowed;
 }
 
-/* Delete Confirmation Modal */
 .mdu-modal-overlay {
   position: fixed;
   top: 0;

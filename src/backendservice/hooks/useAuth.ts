@@ -86,7 +86,7 @@ export function useAuth(): UseAuthReturn {
           role: user.role,
         }));
       } else {
-        // Profile fetch failed, clear auth
+        
         authApi.logout();
         setState({
           user: null,
@@ -98,7 +98,7 @@ export function useAuth(): UseAuthReturn {
       }
     } catch (err: any) {
       console.error('Failed to fetch profile:', err);
-      // On profile fetch error, clear auth
+      
       authApi.logout();
       setState({
         user: null,
@@ -114,7 +114,6 @@ export function useAuth(): UseAuthReturn {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Verify auth on mount
   useEffect(() => {
     if (state.isAuthenticated && !state.user) {
       fetchProfile();

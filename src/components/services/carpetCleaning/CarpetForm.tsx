@@ -13,7 +13,6 @@ import {
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-
 export const CarpetForm: React.FC<
   ServiceInitialData<CarpetFormState>
 > = ({ initialData, onQuoteChange, onRemove }) => {
@@ -22,10 +21,8 @@ export const CarpetForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig } = useCarpetCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
@@ -35,11 +32,9 @@ export const CarpetForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -53,7 +48,6 @@ export const CarpetForm: React.FC<
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -61,13 +55,10 @@ export const CarpetForm: React.FC<
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -78,13 +69,10 @@ export const CarpetForm: React.FC<
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -92,16 +80,13 @@ export const CarpetForm: React.FC<
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -110,11 +95,9 @@ export const CarpetForm: React.FC<
         return;
       }
 
-
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
-
 
   const prevDataRef = useRef<string>("");
 
@@ -249,7 +232,6 @@ export const CarpetForm: React.FC<
       displayName: "Carpet Cleaning",
       isActive: true,
 
-
       firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate,
       additionalUnitRate: form.customAdditionalUnitRate ?? form.additionalUnitRate,
       perVisitMinimum: form.customPerVisitMinimum ?? form.perVisitMinimum,
@@ -259,7 +241,6 @@ export const CarpetForm: React.FC<
       useExactSqft: form.useExactSqft,
       applyMinimum: form.applyMinimum !== false,
 
-
       areaSqFt: form.areaSqFt,
       frequency: form.frequency,
       contractMonths: form.contractMonths,
@@ -267,10 +248,8 @@ export const CarpetForm: React.FC<
       isDirtyInstall: form.isDirtyInstall,
       location: form.location,
 
-
       contractTotal: calc.contractTotal,
       originalContractTotal: calc.originalContractTotal,
-
 
         perVisitBase: calc.perVisitBase,  
         perVisitCharge: calc.perVisitCharge,  
@@ -302,7 +281,6 @@ export const CarpetForm: React.FC<
           total: calc.perVisitCharge,
           unit: "sq ft",
         },
-
 
         ...(form.includeInstall ? {
           installation: {
@@ -351,7 +329,6 @@ export const CarpetForm: React.FC<
     if (onQuoteChange) onQuoteChange(quote);
   }, [onQuoteChange, quote]);
 
-
   useEffect(() => {
     setForm((prev: any) => ({
       ...prev,
@@ -369,7 +346,6 @@ export const CarpetForm: React.FC<
     form.contractMonths,     
     form.includeInstall,     
     form.isDirtyInstall,     
-
 
     setForm,
   ]);
@@ -612,7 +588,6 @@ export const CarpetForm: React.FC<
           </small>
         </div>
       </div>
-
 
       {}
       {}

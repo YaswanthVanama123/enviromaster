@@ -35,7 +35,6 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Form state
   const [selectedSalesPersonId, setSelectedSalesPersonId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
@@ -53,12 +52,10 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
   const [insideSalesPersonId, setInsideSalesPersonId] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Auto-detect fields
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
   const [perVisitRevenue, setPerVisitRevenue] = useState("");
   const [distanceToAnchor, setDistanceToAnchor] = useState("");
 
-  // Load sales persons
   useEffect(() => {
     const load = async () => {
       const result = await salesPersonApi.getAll({ active: true });
@@ -72,7 +69,6 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
     load();
   }, []);
 
-  // Load quota level when sales person changes
   useEffect(() => {
     const loadQuotaLevel = async () => {
       if (!selectedSalesPersonId) return;
@@ -82,7 +78,6 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
     loadQuotaLevel();
   }, [selectedSalesPersonId]);
 
-  // Auto-detect account type
   useEffect(() => {
     if (!autoDetectEnabled || !perVisitRevenue) return;
 
@@ -128,7 +123,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
       distanceToAnchor: distanceToAnchor
         ? {
             miles: parseFloat(distanceToAnchor),
-            drivingTimeMinutes: parseFloat(distanceToAnchor) / 0.5, // Estimate based on 0.5 mi/min
+            drivingTimeMinutes: parseFloat(distanceToAnchor) / 0.5, 
           }
         : undefined,
       startDate,
@@ -148,7 +143,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
       setSuccess(
         `Agreement created! Quota: ${result.quotaPeriod.quotaPercentage.toFixed(1)}% (${result.quotaPeriod.quotaLevel})`
       );
-      // Reset form
+      
       setCustomerName("");
       setCustomerAddress("");
       setCustomerCity("");
@@ -159,10 +154,10 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
       setDistanceToAnchor("");
       setNotes("");
       setAutoDetectEnabled(false);
-      // Refresh quota level
+      
       const newQuota = await quotaApi.getCurrentLevel(selectedSalesPersonId);
       setQuotaLevel(newQuota);
-      // Notify parent
+      
       setTimeout(() => {
         onAgreementCreated();
       }, 1500);
@@ -186,7 +181,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
       <div className="form-card">
         <h3>Create New Agreement</h3>
 
-        {/* Quota Status Banner */}
+        {}
         {quotaLevel && (
           <div
             className="quota-status-banner"
@@ -209,7 +204,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Sales Person Selection */}
+          {}
           <div className="form-section">
             <h4>Sales Information</h4>
             <div className="form-grid">
@@ -257,7 +252,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
             </div>
           </div>
 
-          {/* Customer Information */}
+          {}
           <div className="form-section">
             <h4>Customer Information</h4>
             <div className="form-grid">
@@ -310,7 +305,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
             </div>
           </div>
 
-          {/* Agreement Details */}
+          {}
           <div className="form-section">
             <h4>Agreement Details</h4>
             <div className="form-grid">
@@ -380,7 +375,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
             </div>
           </div>
 
-          {/* Account Type with Auto-Detect */}
+          {}
           <div className="form-section">
             <h4>
               Account Type
@@ -452,7 +447,7 @@ export const AgreementForm: React.FC<AgreementFormProps> = ({ onAgreementCreated
             )}
           </div>
 
-          {/* Notes */}
+          {}
           <div className="form-section">
             <div className="form-group full-width">
               <label>Notes</label>

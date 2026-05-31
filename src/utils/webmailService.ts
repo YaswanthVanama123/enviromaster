@@ -12,7 +12,6 @@ export interface PdfAttachment {
   blob?: Blob;
 }
 
-
 function generateMailtoUrl(emailData: EmailData): string {
   const { subject, body, to = '' } = emailData;
   const encodedTo = encodeURIComponent(to);
@@ -21,7 +20,6 @@ function generateMailtoUrl(emailData: EmailData): string {
 
   return `mailto:${encodedTo}?subject=${encodedSubject}&body=${encodedBody}`;
 }
-
 
 async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
   try {
@@ -39,17 +37,14 @@ async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
       blob = await response.blob();
     }
 
-
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = attachment.fileName.endsWith('.pdf') ? attachment.fileName : `${attachment.fileName}.pdf`;
 
-
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-
 
     window.URL.revokeObjectURL(url);
 
@@ -60,15 +55,12 @@ async function downloadPdfAttachment(attachment: PdfAttachment): Promise<void> {
   }
 }
 
-
 export function shareViaPdf(emailData: EmailData, attachment?: PdfAttachment): void {
   try {
 
     const mailtoUrl = generateMailtoUrl(emailData);
 
-
     window.location.href = mailtoUrl;
-
 
     if (attachment) {
 
@@ -86,7 +78,6 @@ export function shareViaPdf(emailData: EmailData, attachment?: PdfAttachment): v
     throw new Error(`Failed to open email: ${error}`);
   }
 }
-
 
 export function createPdfEmailData(options: {
   fileName?: string;

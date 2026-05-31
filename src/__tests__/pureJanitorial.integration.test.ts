@@ -1,13 +1,4 @@
-/**
- * Pure Janitorial Service - Integration & Validation Tests
- *
- * Tests for:
- * - Form state initialization
- * - Admin rates application
- * - Data sync to services context
- * - PDF data structure validation
- * - Business rule validations
- */
+
 
 import { describe, test, expect } from 'vitest';
 
@@ -20,10 +11,6 @@ import type {
 
 import { computeJanitorialCalc, DEFAULT_SUPPLIES } from '../components/services/purejanitorial/useJanitorialCalc';
 import { janitorialFrequencyList, janitorialFrequencyLabels, janitorialPricingConfig } from '../components/services/purejanitorial/janitorialConfig';
-
-// ============================================================================
-// TEST FIXTURES
-// ============================================================================
 
 const createFormState = (overrides: Partial<JanitorialFormState> = {}): JanitorialFormState => ({
   frequency: 'weekly',
@@ -53,10 +40,6 @@ const createAdminRates = (overrides: Partial<JanitorialAdminRates> = {}): Janito
 });
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
-
-// ============================================================================
-// CONFIGURATION VALIDATION TESTS
-// ============================================================================
 
 describe('Configuration Validation', () => {
   test('all frequencies have billing conversions defined', () => {
@@ -94,10 +77,6 @@ describe('Configuration Validation', () => {
   });
 });
 
-// ============================================================================
-// SERVICE CONTEXT DATA STRUCTURE TESTS
-// ============================================================================
-
 describe('Service Context Data Structure', () => {
   test('generates correct totals structure for PDF', () => {
     const form = createFormState({
@@ -111,7 +90,6 @@ describe('Service Context Data Structure', () => {
     const adminRates = createAdminRates();
     const calc = computeJanitorialCalc(form, adminRates);
 
-    // Simulate the data structure sent to services context
     const serviceData = {
       serviceId: 'pureJanitorial',
       displayName: 'Janitorial',
@@ -171,7 +149,6 @@ describe('Service Context Data Structure', () => {
       },
     };
 
-    // Verify structure
     expect(serviceData.isActive).toBe(true);
     expect(serviceData.totals.annualBaseLabor.amount).toBe(calc.annualBaseLabor);
     expect(serviceData.totals.annualLaborTax.amount).toBe(calc.annualLaborTax);
@@ -209,15 +186,11 @@ describe('Service Context Data Structure', () => {
   });
 });
 
-// ============================================================================
-// ADMIN RATES APPLICATION TESTS
-// ============================================================================
-
 describe('Admin Rates Application', () => {
   test('applies admin production rates correctly', () => {
     const adminRates = createAdminRates({
       productionRates: {
-        office: 1200, // Different from default 1000
+        office: 1200, 
       },
     });
     const form = createFormState({
@@ -226,7 +199,6 @@ describe('Admin Rates Application', () => {
     });
     const result = computeJanitorialCalc(form, adminRates);
 
-    // 1200 sqft / 1200 sqft per hour = 1 hour
     expect(result.hoursPerVisit).toBe(1);
   });
 
@@ -239,7 +211,6 @@ describe('Admin Rates Application', () => {
       defaultSupplies: adminSupplies,
     });
 
-    // User has different supplies
     const form = createFormState({
       sqFt: 1000,
       placeType: 'office',
@@ -251,11 +222,9 @@ describe('Admin Rates Application', () => {
 
     const result = computeJanitorialCalc(form, adminRates);
 
-    // Current uses user supplies ($2000)
     expect(result.totalAnnualSupplies).toBe(2000);
 
-    // Original should use admin supplies ($1000)
-    // This affects originalContractTotal
+    
     expect(result.originalContractTotal).not.toBe(result.contractTotal);
   });
 
@@ -266,20 +235,15 @@ describe('Admin Rates Application', () => {
     const form = createFormState({
       sqFt: 1000,
       placeType: 'office',
-      costPerHour: 35, // User override
+      costPerHour: 35, 
     });
 
     const result = computeJanitorialCalc(form, adminRates);
 
-    // Contract uses $35, original uses $25
-    // So contract should be higher
+    
     expect(result.contractTotal).toBeGreaterThan(result.originalContractTotal);
   });
 });
-
-// ============================================================================
-// GREENLINE/REDLINE THRESHOLD TESTS
-// ============================================================================
 
 describe('Greenline/Redline Threshold', () => {
   test('marks as redline when contract equals original', () => {
@@ -307,9 +271,9 @@ describe('Greenline/Redline Threshold', () => {
     const form = createFormState({
       sqFt: 1000,
       placeType: 'office',
-      costPerHour: 50, // Much higher
+      costPerHour: 50, 
       laborTaxPct: 15,
-      grossProfitPct: 50, // Higher margin
+      grossProfitPct: 50, 
       supplies: adminRates.defaultSupplies,
     });
     const result = computeJanitorialCalc(form, adminRates);
@@ -325,10 +289,8 @@ describe('Greenline/Redline Threshold', () => {
       placeType: 'office',
     });
 
-    // First get the baseline
     const baseResult = computeJanitorialCalc(form, adminRates);
 
-    // Now create a form that results in exactly 30% higher
     const targetContract = baseResult.originalContractTotal * 1.30;
     const formWith130Percent = createFormState({
       sqFt: 1000,
@@ -337,15 +299,10 @@ describe('Greenline/Redline Threshold', () => {
     });
     const result = computeJanitorialCalc(formWith130Percent, adminRates);
 
-    // Exactly 30% is NOT greater than 30%, so it's redline
     const isGreenline = result.contractTotal > result.originalContractTotal * 1.30;
     expect(isGreenline).toBe(false);
   });
 });
-
-// ============================================================================
-// VISIT-BASED FREQUENCY TESTS
-// ============================================================================
 
 describe('Visit-Based Frequency Handling', () => {
   const visitBasedFrequencies: JanitorialFrequencyKey[] = [
@@ -376,10 +333,6 @@ describe('Visit-Based Frequency Handling', () => {
     });
   });
 });
-
-// ============================================================================
-// CALCULATION CONSISTENCY TESTS
-// ============================================================================
 
 describe('Calculation Consistency', () => {
   test('total annual cost = labor + tax + supplies', () => {
@@ -445,15 +398,10 @@ describe('Calculation Consistency', () => {
     const adminRates = createAdminRates();
     const result = computeJanitorialCalc(form, adminRates);
 
-    // hours × rate × visits = weekly labor
     const expectedWeeklyLabor = result.hoursPerVisit * form.costPerHour * form.visitsPerWeek;
     expect(result.weeklyLabor).toBe(expectedWeeklyLabor);
   });
 });
-
-// ============================================================================
-// NUMERIC PRECISION TESTS
-// ============================================================================
 
 describe('Numeric Precision', () => {
   test('handles decimal square footage', () => {
@@ -477,7 +425,6 @@ describe('Numeric Precision', () => {
     const adminRates = createAdminRates();
     const result = computeJanitorialCalc(form, adminRates);
 
-    // 1 hour × $22.50 × 1 visit × 52 weeks = $1170
     expect(result.annualBaseLabor).toBe(1170);
   });
 
@@ -491,7 +438,6 @@ describe('Numeric Precision', () => {
     const adminRates = createAdminRates();
     const result = computeJanitorialCalc(form, adminRates);
 
-    // $1040 × 15.5% = $161.20
     expect(result.annualLaborTax).toBe(161.2);
   });
 
@@ -506,29 +452,22 @@ describe('Numeric Precision', () => {
     const adminRates = createAdminRates();
     const result = computeJanitorialCalc(form, adminRates);
 
-    // cost / (1 - 0.3333) = cost / 0.6667
     const expectedValue = result.totalAnnualCost / (1 - 0.3333);
     expect(round2(result.annualContractValue)).toBe(round2(expectedValue));
   });
 });
 
-// ============================================================================
-// INPUT VALIDATION / SANITIZATION TESTS
-// ============================================================================
-
 describe('Input Validation', () => {
   test('negative sqFt treated as 0', () => {
-    // In real app, negative values should be prevented at input level
-    // But calculation should handle gracefully
+
     const form = createFormState({
-      sqFt: -1000, // Invalid
+      sqFt: -1000, 
       placeType: 'office',
     });
     const adminRates = createAdminRates();
     const result = computeJanitorialCalc(form, adminRates);
 
-    // Negative sqFt results in negative hours, which flows through
-    // The UI should prevent this, but calc doesn't crash
+    
     expect(typeof result.hoursPerVisit).toBe('number');
   });
 
@@ -540,7 +479,6 @@ describe('Input Validation', () => {
     const adminRates = createAdminRates();
     const result = computeJanitorialCalc(form, adminRates);
 
-    // No production rate for empty string, so 0 hours
     expect(result.hoursPerVisit).toBe(0);
   });
 
@@ -550,17 +488,13 @@ describe('Input Validation', () => {
       placeType: 'nonexistentType',
     });
     const adminRates = createAdminRates({
-      productionRates: { office: 1000 }, // No 'nonexistentType'
+      productionRates: { office: 1000 }, 
     });
     const result = computeJanitorialCalc(form, adminRates);
 
     expect(result.hoursPerVisit).toBe(0);
   });
 });
-
-// ============================================================================
-// CONTRACT MONTHS BOUNDARY TESTS
-// ============================================================================
 
 describe('Contract Months Boundaries', () => {
   test('minimum contract months (2)', () => {
@@ -605,21 +539,17 @@ describe('Contract Months Boundaries', () => {
   });
 });
 
-// ============================================================================
-// FORMULA VERIFICATION TESTS
-// ============================================================================
-
 describe('Formula Verification', () => {
   test('verifies complete calculation flow', () => {
-    // Given inputs
+    
     const sqFt = 2000;
-    const productionRate = 1000; // sqft per hour
+    const productionRate = 1000; 
     const visitsPerWeek = 2;
     const costPerHour = 25;
     const laborTaxPct = 15;
     const grossProfitPct = 33;
     const contractMonths = 12;
-    const suppliesTotal = 1100; // Default supplies
+    const suppliesTotal = 1100; 
 
     const form = createFormState({
       sqFt,
@@ -636,38 +566,29 @@ describe('Formula Verification', () => {
     });
     const result = computeJanitorialCalc(form, adminRates);
 
-    // Step 1: Hours per visit
-    const expectedHours = sqFt / productionRate; // 2000/1000 = 2
+    const expectedHours = sqFt / productionRate; 
     expect(result.hoursPerVisit).toBe(expectedHours);
 
-    // Step 2: Weekly labor
-    const expectedWeeklyLabor = expectedHours * costPerHour * visitsPerWeek; // 2 × 25 × 2 = 100
+    const expectedWeeklyLabor = expectedHours * costPerHour * visitsPerWeek; 
     expect(result.weeklyLabor).toBe(expectedWeeklyLabor);
 
-    // Step 3: Annual labor (weekly × 52)
-    const expectedAnnualLabor = expectedWeeklyLabor * 52; // 100 × 52 = 5200
+    const expectedAnnualLabor = expectedWeeklyLabor * 52; 
     expect(result.annualBaseLabor).toBe(expectedAnnualLabor);
 
-    // Step 4: Labor tax
-    const expectedTax = expectedAnnualLabor * (laborTaxPct / 100); // 5200 × 0.15 = 780
+    const expectedTax = expectedAnnualLabor * (laborTaxPct / 100); 
     expect(result.annualLaborTax).toBe(expectedTax);
 
-    // Step 5: Total annual cost
-    const expectedCost = expectedAnnualLabor + expectedTax + suppliesTotal; // 5200 + 780 + 1100 = 7080
+    const expectedCost = expectedAnnualLabor + expectedTax + suppliesTotal; 
     expect(result.totalAnnualCost).toBe(expectedCost);
 
-    // Step 6: Annual contract value
-    const expectedValue = expectedCost / (1 - grossProfitPct / 100); // 7080 / 0.67 = 10567.16
+    const expectedValue = expectedCost / (1 - grossProfitPct / 100); 
     expect(round2(result.annualContractValue)).toBe(round2(expectedValue));
 
-    // Step 7: Contract total (12 months = annual)
     expect(round2(result.contractTotal)).toBe(round2(expectedValue));
 
-    // Step 8: Monthly recurring
     const expectedMonthly = result.contractTotal / contractMonths;
     expect(round2(result.monthlyRecurring)).toBe(round2(expectedMonthly));
 
-    // Step 9: Gross profit
     const expectedProfit = result.annualContractValue - result.totalAnnualCost;
     expect(round2(result.grossProfit)).toBe(round2(expectedProfit));
   });

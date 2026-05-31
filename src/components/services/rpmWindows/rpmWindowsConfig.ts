@@ -1,7 +1,6 @@
 
 import type { RpmWindowPricingConfig } from "./rpmWindowsTypes";
 
-
 export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
   smallWindowRate: 1.5,
   mediumWindowRate: 3.0,
@@ -25,7 +24,6 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     quarterlyFirstTime: 3.0,
   },
 
-
   annualFrequencies: {
     oneTime: 1,
     weekly: 52,
@@ -38,7 +36,6 @@ export const rpmWindowPricingConfig: RpmWindowPricingConfig = {
     biannual: 2,
     annual: 1,
   },
-
 
   monthlyConversions: {
     weekly: 4.33,          

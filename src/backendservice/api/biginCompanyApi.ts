@@ -1,7 +1,4 @@
-/**
- * Bigin Company API
- * API client for managing company data from Zoho Bigin
- */
+
 
 import { apiClient } from '../utils/apiClient';
 
@@ -60,9 +57,7 @@ export interface CompanyStats {
 const BASE_PATH = '/api/bigin-companies';
 
 export const biginCompanyApi = {
-  /**
-   * Get all companies with optional filters
-   */
+  
   async getAll(params?: {
     search?: string;
     city?: string;
@@ -99,9 +94,6 @@ export const biginCompanyApi = {
     }
   },
 
-  /**
-   * Get company by ID
-   */
   async getById(id: string): Promise<BiginCompany | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: BiginCompany }>(
@@ -115,9 +107,6 @@ export const biginCompanyApi = {
     }
   },
 
-  /**
-   * Get fetch status
-   */
   async getFetchStatus(): Promise<FetchStatus | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: FetchStatus }>(
@@ -131,9 +120,6 @@ export const biginCompanyApi = {
     }
   },
 
-  /**
-   * Start fetch from Bigin
-   */
   async startFetch(options?: { fetchDetails?: boolean }): Promise<{ success: boolean; message: string; sessionId?: string } | null> {
     try {
       const response = await apiClient.post<{ success: boolean; message: string; sessionId?: string }>(
@@ -148,9 +134,6 @@ export const biginCompanyApi = {
     }
   },
 
-  /**
-   * Get company statistics
-   */
   async getStats(): Promise<CompanyStats | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: CompanyStats }>(
@@ -164,9 +147,6 @@ export const biginCompanyApi = {
     }
   },
 
-  /**
-   * Update a company
-   */
   async update(id: string, updates: Partial<BiginCompany>): Promise<BiginCompany | null> {
     try {
       const response = await apiClient.put<{ success: boolean; data: BiginCompany }>(
@@ -181,9 +161,6 @@ export const biginCompanyApi = {
     }
   },
 
-  /**
-   * Delete a company
-   */
   async delete(id: string): Promise<boolean> {
     try {
       const response = await apiClient.delete<{ success: boolean }>(

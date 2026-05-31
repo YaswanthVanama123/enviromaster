@@ -59,9 +59,6 @@ describe('Commission Types - Default Rules', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Account Type Options
-// ============================================================
 describe('Commission Types - Account Type Options', () => {
   test('Should have 4 account types', () => {
     expect(ACCOUNT_TYPE_OPTIONS).toHaveLength(4);
@@ -89,9 +86,6 @@ describe('Commission Types - Account Type Options', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Agreement Term Options
-// ============================================================
 describe('Commission Types - Agreement Term Options', () => {
   test('Should have 4 agreement terms', () => {
     expect(AGREEMENT_TERM_OPTIONS).toHaveLength(4);
@@ -118,9 +112,6 @@ describe('Commission Types - Agreement Term Options', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Pricing Line Options
-// ============================================================
 describe('Commission Types - Pricing Line Options', () => {
   test('Should have 2 pricing lines', () => {
     expect(PRICING_LINE_OPTIONS).toHaveLength(2);
@@ -146,9 +137,6 @@ describe('Commission Types - Pricing Line Options', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Quota Level Options
-// ============================================================
 describe('Commission Types - Quota Level Options', () => {
   test('Should have 3 quota levels', () => {
     expect(QUOTA_LEVEL_OPTIONS).toHaveLength(3);
@@ -173,9 +161,6 @@ describe('Commission Types - Quota Level Options', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Business Type Options
-// ============================================================
 describe('Commission Types - Business Type Options', () => {
   test('Should have 2 business types', () => {
     expect(BUSINESS_TYPE_OPTIONS).toHaveLength(2);
@@ -195,9 +180,6 @@ describe('Commission Types - Business Type Options', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Type Definitions
-// ============================================================
 describe('Commission Types - Type Safety', () => {
   test('AccountType union should include all valid types', () => {
     const validTypes: AccountType[] = ['Anchor', 'Bread5', 'Bread15', 'Pit'];

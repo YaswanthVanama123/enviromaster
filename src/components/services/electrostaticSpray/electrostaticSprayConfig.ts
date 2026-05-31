@@ -6,17 +6,14 @@ export const electrostaticSprayPricingConfig: ElectrostaticSprayPricingConfig = 
 
   ratePerRoom: 20, 
 
-
   ratePerThousandSqFt: 50, 
   sqFtUnit: 1000,
-
 
   tripCharges: {
     insideBeltway: 10,
     outsideBeltway: 0,
     standard: 0,
   },
-
 
   billingConversions: {
     oneTime: { monthlyMultiplier: 0, annualMultiplier: 1 },
@@ -32,10 +29,8 @@ export const electrostaticSprayPricingConfig: ElectrostaticSprayPricingConfig = 
     actualWeeksPerMonth: 4.33,
   },
 
-
   minContractMonths: 2,
   maxContractMonths: 36,
-
 
   valueProposition: {
     bacteriaReduction: "99.4%",

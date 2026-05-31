@@ -18,7 +18,6 @@ export type FoamingDrainCondition = "normal" | "filthy";
 export interface FoamingDrainFormState {
   serviceId: "foamingDrain";
 
-
   standardDrainCount: number;   
   installDrainCount: number;    
   filthyDrainCount: number;     
@@ -26,9 +25,7 @@ export interface FoamingDrainFormState {
   greenDrainCount: number;      
   plumbingDrainCount: number;   
 
-
   needsPlumbing: boolean;
-
 
   frequency: FoamingDrainFrequency;
 
@@ -36,25 +33,19 @@ export interface FoamingDrainFormState {
   facilityCondition: FoamingDrainCondition;
   location: FoamingDrainLocation;
 
-
   useSmallAltPricingWeekly: boolean; 
   useBigAccountTenWeekly: boolean;   
   isAllInclusive: boolean;           
 
-
   installServiceMode: "none" | "weekly" | "bimonth";
-
 
   chargeGreaseTrapInstall: boolean;
 
-
   tripChargeOverride?: number;
-
 
   contractMonths: number;
 
   notes: string;
-
 
   standardDrainRate: number;           
   altBaseCharge: number;               
@@ -67,7 +58,6 @@ export interface FoamingDrainFormState {
   greenInstallRate: number;            
   plumbingAddonRate: number;           
   filthyMultiplier: number;            
-
 
   customStandardDrainTotal?: number;
   customGreaseTrapTotal?: number;
@@ -82,7 +72,6 @@ export interface FoamingDrainFormState {
   customFirstMonthPrice?: number;
   customContractTotal?: number;
 
-
   customRatePerDrain?: number;
   customAltBaseCharge?: number;
   customAltExtraPerDrain?: number;
@@ -95,7 +84,6 @@ export interface FoamingDrainFormState {
   customPlumbingAddonRate?: number;
   customFilthyMultiplier?: number;
 
-
   customFields?: any[];
 
   applyMinimum?: boolean;
@@ -107,18 +95,15 @@ export interface FoamingDrainBreakdown {
   usedBigAccountAlt: boolean; 
   volumePricingApplied: boolean; 
 
-
   weeklyStandardDrains: number;
   weeklyInstallDrains: number;
   weeklyGreaseTraps: number;
   weeklyGreenDrains: number;
   weeklyPlumbing: number;
 
-
   filthyInstallOneTime: number;
   greaseInstallOneTime: number;
   greenInstallOneTime: number;
-
 
   tripCharge: number;
 }
@@ -130,12 +115,10 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   location: FoamingDrainLocation;
   facilityCondition: FoamingDrainCondition;
 
-
   useSmallAltPricingWeekly: boolean;
   useBigAccountTenWeekly: boolean;
   isAllInclusive: boolean;
   chargeGreaseTrapInstall: boolean;
-
 
   weeklyService: number;      
   weeklyTotal: number;        
@@ -143,7 +126,6 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
   annualRecurring: number;    
   installation: number;       
   tripCharge: number;         
-
 
   firstVisitPrice: number;    
   firstMonthPrice: number;    
@@ -153,9 +135,7 @@ export interface FoamingDrainQuoteResult extends ServiceQuoteResult {
 
   breakdown: FoamingDrainBreakdown;
 
-
   minimumChargePerVisit: number;
-
 
   originalContractTotal: number;
 }

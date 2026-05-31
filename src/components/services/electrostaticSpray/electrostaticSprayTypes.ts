@@ -6,17 +6,14 @@ export interface ElectrostaticSprayPricingConfig {
 
   ratePerRoom: number; 
 
-
   ratePerThousandSqFt: number; 
   sqFtUnit: number; 
-
 
   tripCharges: {
     insideBeltway: number;
     outsideBeltway: number;
     standard: number;
   };
-
 
   billingConversions: {
     oneTime: { monthlyMultiplier: number; annualMultiplier: number };
@@ -32,10 +29,8 @@ export interface ElectrostaticSprayPricingConfig {
     actualWeeksPerMonth: number;
   };
 
-
   minContractMonths: number;
   maxContractMonths: number;
-
 
   valueProposition: {
     bacteriaReduction: string; 
@@ -50,43 +45,31 @@ export interface ElectrostaticSprayPricingConfig {
 export interface ElectrostaticSprayFormState {
   serviceId: "electrostaticSpray";
 
-
   pricingMethod: "byRoom" | "bySqFt";
-
 
   roomCount: number;
 
-
   squareFeet: number;
-
 
   useExactCalculation: boolean;
 
-
   frequency: ElectrostaticSprayFrequency;
-
 
   location: "insideBeltway" | "outsideBeltway" | "standard";
 
-
   isCombinedWithSaniClean: boolean;
-
 
   contractMonths: number;
 
-
   notes: string;
-
 
   ratePerRoom: number;
   ratePerThousandSqFt: number;
   tripChargePerVisit: number;
 
-
   customRatePerRoom?: number;
   customRatePerThousandSqFt?: number;
   customTripChargePerVisit?: number;
-
 
   customServiceCharge?: number;
   customPerVisitPrice?: number;
@@ -103,19 +86,15 @@ export interface ElectrostaticSprayCalcResult {
   tripCharge: number; 
   perVisit: number; 
 
-
   monthlyRecurring: number; 
   contractTotal: number; 
   originalContractTotal: number; 
 
-
   effectiveRate: number; 
   pricingMethodUsed: "byRoom" | "bySqFt";
 
-
   isVisitBasedFrequency: boolean; 
   monthsPerVisit: number; 
-
 
   minimumChargePerVisit: number;
 }

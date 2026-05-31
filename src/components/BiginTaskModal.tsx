@@ -40,24 +40,20 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
   const [linkedDeal, setLinkedDeal] = useState<{ id: string; name: string } | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<ZohoCompany | null>(null);
 
-  // Company search
   const [allCompanies, setAllCompanies] = useState<ZohoCompany[]>([]);
   const [companySearch, setCompanySearch] = useState("");
   const [loadingCompanies, setLoadingCompanies] = useState(false);
 
-  // Users
   const [users, setUsers] = useState<ZohoUser[]>([]);
   const [selectedOwner, setSelectedOwner] = useState<ZohoUser | null>(null);
   const [ownerSearch, setOwnerSearch] = useState("");
   const [ownerDropOpen, setOwnerDropOpen] = useState(false);
   const ownerRef = useRef<HTMLDivElement>(null);
 
-  // Related To module
   const [seModule, setSeModule] = useState("Pipelines");
   const [moduleDropOpen, setModuleDropOpen] = useState(false);
   const moduleRef = useRef<HTMLDivElement>(null);
 
-  // Task fields
   const [taskName, setTaskName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [repeat, setRepeat] = useState(false);
@@ -72,7 +68,6 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
 
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ownerRef.current && !ownerRef.current.contains(e.target as Node)) setOwnerDropOpen(false);
@@ -82,7 +77,6 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // On open: check Bigin link + fetch users
   useEffect(() => {
     setStep("loading");
     setErrorMsg("");
@@ -126,7 +120,6 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     });
   }, [agreementId]);
 
-  // Load companies for selector
   useEffect(() => {
     if (step !== "select-company") return;
     setLoadingCompanies(true);
@@ -148,7 +141,6 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     const company = linkedCompany ?? (selectedCompany ? { id: selectedCompany.id, name: selectedCompany.name } : null);
     if (!company) { setErrorMsg("Please select a company."); return; }
 
-    // ── Validations matching Bigin ─────────────────────────────────────────────
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
     if (dueDate) {
@@ -173,7 +165,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
         setErrorMsg("A Due Date is required when using a day-based reminder.");
         return;
       }
-      // Calculate reminder datetime and check it's in the future
+      
       const base = dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000);
       if (reminderWhen === "A day before due date") base.setDate(base.getDate() - 1);
       else if (reminderWhen === "2 days before due date") base.setDate(base.getDate() - 2);
@@ -184,7 +176,6 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
         return;
       }
     }
-    // ──────────────────────────────────────────────────────────────────────────
 
     setErrorMsg("");
     setStep("submitting");
@@ -218,7 +209,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     }
   }, [taskName, dueDate, description, highPriority, markCompleted, selectedOwner, seModule, reminder, reminderWhen, reminderTime, repeat, repeatFrequency, repeatUntil, linkedCompany, selectedCompany, agreementId, onSuccess]);
   const effectiveCompany = linkedCompany ?? (selectedCompany ? { id: selectedCompany.id, name: selectedCompany.name } : null);
-  // For "Related To" display: linked agreements show the deal (pipeline), unlinked show the selected company
+  
   const relatedToName = linkedDeal ? linkedDeal.name : effectiveCompany?.name;
   const filteredUsers = users.filter(u =>
     !ownerSearch || u.name.toLowerCase().includes(ownerSearch.toLowerCase()) || u.email.toLowerCase().includes(ownerSearch.toLowerCase())
@@ -229,7 +220,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     <div style={overlay}>
       <div style={backdrop} onClick={step === "loading" || step === "submitting" ? undefined : onClose} />
       <div style={modal}>
-        {/* Header */}
+        {}
         <div style={header}>
           <div style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>Create Task</div>
           {step !== "loading" && step !== "submitting" && (
@@ -237,7 +228,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
           )}
         </div>
 
-        {/* Loading / Submitting */}
+        {}
         {(step === "loading" || step === "submitting") && (
           <div style={centerBox}>
             <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: 28, color: "#ea580c" }} />
@@ -247,7 +238,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
           </div>
         )}
 
-        {/* Success */}
+        {}
         {step === "success" && (
           <div style={centerBox}>
             <FontAwesomeIcon icon={faCheckCircle} style={{ fontSize: 44, color: "#16a34a" }} />
@@ -259,7 +250,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
           </div>
         )}
 
-        {/* Error */}
+        {}
         {step === "error" && (
           <div style={centerBox}>
             <FontAwesomeIcon icon={faExclamationTriangle} style={{ fontSize: 36, color: "#ef4444" }} />
@@ -269,7 +260,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
           </div>
         )}
 
-        {/* Company selector */}
+        {}
         {step === "select-company" && (
           <div style={body}>
             <div style={sectionRow}>
@@ -294,15 +285,15 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
           </div>
         )}
 
-        {/* Task form */}
+        {}
         {step === "form" && (
           <div style={body}>
-            {/* Section header with Owner */}
+            {}
             <div style={sectionRow}>
               <span style={sectionTitle}>Task Information</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 13, color: "#6b7280" }}>Owner</span>
-                {/* Owner dropdown */}
+                {}
                 <div ref={ownerRef} style={{ position: "relative" }}>
                   <button style={ownerBtn} onClick={() => setOwnerDropOpen(v => !v)}>
                     <span style={ownerAvatar}>
@@ -338,20 +329,20 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
               </div>
             </div>
 
-            {/* Task Name */}
+            {}
             <div style={formRow}>
               <label style={fieldLabel}>Task Name <span style={{ color: "#ef4444" }}>*</span></label>
               <input style={textInput} placeholder="Enter task name…" value={taskName}
                 onChange={e => setTaskName(e.target.value)} autoFocus />
             </div>
 
-            {/* Due Date */}
+            {}
             <div style={formRow}>
               <label style={fieldLabel}>Due Date</label>
               <input style={textInput} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
 
-            {/* Repeat */}
+            {}
             <div style={checkRow} onClick={() => setRepeat(v => !v)}>
               <div style={checkbox(repeat)} />
               <span style={{ fontSize: 14, color: "#374151" }}>Repeat</span>
@@ -375,7 +366,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
               </div>
             )}
 
-            {/* Reminder */}
+            {}
             <div style={checkRow} onClick={() => setReminder(v => !v)}>
               <div style={checkbox(reminder)} />
               <span style={{ fontSize: 14, color: "#374151" }}>Reminder</span>
@@ -402,11 +393,11 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
               </div>
             )}
 
-            {/* Related To */}
+            {}
             <div style={formRow}>
               <label style={fieldLabel}>Related To</label>
               <div style={relatedToRow}>
-                {/* Module type dropdown — locked to Pipelines when linked to a deal */}
+                {}
                 <div ref={moduleRef} style={{ position: "relative" }}>
                   <button
                     style={{ ...moduleBtn, ...(linkedDeal ? { background: "#f9fafb", cursor: "default", color: "#6b7280" } : {}) }}
@@ -426,7 +417,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
                     </div>
                   )}
                 </div>
-                {/* Record name box */}
+                {}
                 <div style={relatedToValue}>
                   <FontAwesomeIcon icon={faBuilding} style={{ color: "#6b7280", fontSize: 12 }} />
                   <div style={{ flex: 1, overflow: "hidden" }}>
@@ -446,20 +437,20 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
               </div>
             </div>
 
-            {/* Description */}
+            {}
             <div style={formRow}>
               <label style={fieldLabel}>Description</label>
               <textarea style={textArea} placeholder="A few words about this task…" value={description}
                 onChange={e => setDescription(e.target.value)} rows={3} />
             </div>
 
-            {/* Mark as High Priority */}
+            {}
             <div style={checkRow} onClick={() => setHighPriority(v => !v)}>
               <div style={checkbox(highPriority)} />
               <span style={{ fontSize: 14, color: "#374151" }}>Mark as High Priority</span>
             </div>
 
-            {/* Mark as completed */}
+            {}
             <div style={checkRow} onClick={() => setMarkCompleted(v => !v)}>
               <div style={checkbox(markCompleted)} />
               <span style={{ fontSize: 14, color: "#374151" }}>Mark as completed</span>
@@ -472,7 +463,7 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
               </div>
             )}
 
-            {/* Footer */}
+            {}
             <div style={footerRow}>
               <button style={cancelBtn} onClick={onClose}>Cancel</button>
               <button style={greenBtn} onClick={handleSubmit}>Save</button>
@@ -483,8 +474,6 @@ export const BiginTaskModal: React.FC<BiginTaskModalProps> = ({
     </div>
   );
 };
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const overlay: React.CSSProperties = { position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" };
 const backdrop: React.CSSProperties = { position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)" };

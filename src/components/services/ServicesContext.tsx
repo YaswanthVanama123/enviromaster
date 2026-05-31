@@ -10,10 +10,8 @@ import {
 import { DEFAULT_COMMISSION_RULES_V2 } from "../../backendservice/types/commission.types.v2";
 import type { AgreementTerm } from "../../backendservice/types/commission.types.v2";
 
-// Quota level types
 export type QuotaLevel = 'below' | 'above' | 'double';
 
-// Map quota level to commission rate
 export const QUOTA_COMMISSION_RATES: Record<QuotaLevel, number> = {
   below: 3,
   above: 6,
@@ -30,7 +28,6 @@ export interface QuotaLevelData {
   salesPersonName: string;
 }
 
-// Account type cache entry for frequency-based detection
 export interface AccountTypeCacheEntry {
   accountType: AccountType;
   confidence: 'high' | 'low';
@@ -42,12 +39,10 @@ export interface AccountTypeCacheEntry {
   fallbackReason?: string;
 }
 
-// Cache keyed by frequency number (1=Weekly, 2=Bi-Weekly, etc.)
 export interface AccountTypeCache {
   [frequencyKey: number]: AccountTypeCacheEntry;
 }
 
-// Commission data structure for saving to backend
 export interface CommissionDataForSave {
   weeklyCommission: number;
   annualCommission: number;
@@ -64,7 +59,6 @@ export interface CommissionDataForSave {
     annualCommission: number;
   }>;
 }
-
 
 export interface ServicesState {
   saniclean?: any;
@@ -87,14 +81,11 @@ interface ServicesContextValue {
   updateSaniclean: (update: Partial<ServicesState["saniclean"]>) => void;
   updateService: (serviceName: keyof ServicesState, data: any) => void;
 
-
   backendPricingData: ServiceConfig[];
   getBackendPricingForService: (serviceId: string) => ServiceConfig | null;
 
-
   isSanicleanAllInclusive: boolean;
   sanicleanPaperCreditPerWeek: number;
-
 
   globalContractMonths: number;
   setGlobalContractMonths: (months: number) => void;
@@ -103,22 +94,18 @@ interface ServicesContextValue {
   getTotalMonthlyRecurringRevenue: () => number;
   allServicesOneTime: boolean;
 
-
   getTotalOriginalContractTotal: () => number;
-
 
   globalTripCharge: number;
   setGlobalTripCharge: (charge: number) => void;
   globalParkingCharge: number;
   setGlobalParkingCharge: (charge: number) => void;
 
-
   globalTripChargeFrequency: number;
   setGlobalTripChargeFrequency: (frequency: number) => void;
   globalParkingChargeFrequency: number;
   setGlobalParkingChargeFrequency: (frequency: number) => void;
 
-  // Account type detection for commission calculation
   biginCompanyId: string | null;
   setBiginCompanyId: (id: string | null) => void;
   agreementId: string | null;
@@ -132,15 +119,13 @@ interface ServicesContextValue {
   setIsDetectingAccountTypes: (detecting: boolean) => void;
   accountTypeDetectionError: string | null;
   setAccountTypeDetectionError: (error: string | null) => void;
-  // Flag to indicate cache was loaded from saved data (prevents auto-detection on load)
+  
   accountTypeCacheLoadedFromSaved: boolean;
-  // Ref for synchronous check (use this in effects that run before state updates)
+  
   accountTypeCacheLoadedFromSavedRef: React.MutableRefObject<boolean>;
 
-  // Commission calculation for saving
   getCommissionDataForSave: (baseCommissionRate?: number) => CommissionDataForSave | null;
 
-  // Quota level for commission rate calculation
   quotaLevel: QuotaLevel;
   quotaLevelData: QuotaLevelData | null;
   baseCommissionRate: number;
@@ -165,34 +150,28 @@ export const ServicesProvider: React.FC<{
 }) => {
   const [servicesState, setServicesState] = useState<ServicesState>({});
 
-
   const [globalContractMonths, setGlobalContractMonths] = useState<number>(36);
-
 
   const [globalTripCharge, setGlobalTripCharge] = useState<number>(0);
   const [globalParkingCharge, setGlobalParkingCharge] = useState<number>(0);
 
-
   const [globalTripChargeFrequency, setGlobalTripChargeFrequency] = useState<number>(4);
   const [globalParkingChargeFrequency, setGlobalParkingChargeFrequency] = useState<number>(4);
 
-  // Account type detection state
   const [biginCompanyId, setBiginCompanyId] = useState<string | null>(initialBiginCompanyId);
   const [agreementId, setAgreementId] = useState<string | null>(null);
   const [accountTypeCache, setAccountTypeCache] = useState<AccountTypeCache>({});
   const [isDetectingAccountTypes, setIsDetectingAccountTypes] = useState(false);
   const [accountTypeDetectionError, setAccountTypeDetectionError] = useState<string | null>(null);
-  // Flag to track if cache was loaded from saved data (prevents auto-detection on load)
+  
   const [accountTypeCacheLoadedFromSaved, setAccountTypeCacheLoadedFromSaved] = useState(false);
-  // Ref for synchronous check (state updates are async, ref is immediate)
+  
   const accountTypeCacheLoadedFromSavedRef = useRef(false);
 
-  // Quota level state for commission calculation
-  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above'); // Default to "above" (6%)
+  const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>('above'); 
   const [quotaLevelData, setQuotaLevelData] = useState<QuotaLevelData | null>(null);
   const baseCommissionRate = QUOTA_COMMISSION_RATES[quotaLevel];
 
-  // Helper to set account type for a specific frequency
   const setAccountTypeForFrequency = useCallback((frequencyKey: number, entry: AccountTypeCacheEntry) => {
     setAccountTypeCache(prev => ({
       ...prev,
@@ -200,39 +179,35 @@ export const ServicesProvider: React.FC<{
     }));
   }, []);
 
-  // Helper to get account type for a specific frequency
   const getAccountTypeForFrequency = useCallback((frequencyKey: number): AccountTypeCacheEntry | null => {
     return accountTypeCache[frequencyKey] || null;
   }, [accountTypeCache]);
 
-  // Clear the entire cache (useful when switching companies)
   const clearAccountTypeCache = useCallback(() => {
     setAccountTypeCache({});
     setAccountTypeDetectionError(null);
     setAccountTypeCacheLoadedFromSaved(false);
-    accountTypeCacheLoadedFromSavedRef.current = false; // Reset ref synchronously
+    accountTypeCacheLoadedFromSavedRef.current = false; 
   }, []);
 
-  // Initialize cache with saved data (from backend)
   const initializeAccountTypeCache = useCallback((cache: AccountTypeCache) => {
     if (cache && Object.keys(cache).length > 0) {
       console.log('[ACCOUNT-TYPE] Initializing cache from saved data:', Object.keys(cache));
-      // Set ref FIRST (synchronous) so detection hook can check it immediately
+      
       accountTypeCacheLoadedFromSavedRef.current = true;
       setAccountTypeCache(cache);
       setAccountTypeCacheLoadedFromSaved(true);
     }
   }, []);
 
-  // Initialize cache from prop on mount
   useEffect(() => {
     if (initialAccountTypeCache && Object.keys(initialAccountTypeCache).length > 0) {
       console.log('[ACCOUNT-TYPE] Loading saved account type cache on mount:', initialAccountTypeCache);
-      accountTypeCacheLoadedFromSavedRef.current = true; // Set ref synchronously
+      accountTypeCacheLoadedFromSavedRef.current = true; 
       setAccountTypeCache(initialAccountTypeCache);
       setAccountTypeCacheLoadedFromSaved(true);
     }
-  }, []); // Only run on mount
+  }, []); 
 
   const updateSaniclean = useCallback(
     (update: Partial<ServicesState["saniclean"]>) => {
@@ -247,7 +222,6 @@ export const ServicesProvider: React.FC<{
     []
   );
 
-
   const updateService = useCallback(
     (serviceName: keyof ServicesState, data: any) => {
       setServicesState((prev) => ({
@@ -258,11 +232,9 @@ export const ServicesProvider: React.FC<{
     []
   );
 
-
   const getBackendPricingForService = useCallback((serviceId: string): ServiceConfig | null => {
     return backendPricingData.find(config => config.serviceId === serviceId) || null;
   }, [backendPricingData]);
-
 
   const normalizeFrequencyKey = (value: any): string | null => {
     if (value === undefined || value === null) return null;
@@ -311,15 +283,12 @@ export const ServicesProvider: React.FC<{
   const getTotalAgreementAmount = useCallback((): number => {
     let totalAmount = 0;
 
-
     Object.keys(servicesState).forEach((serviceName) => {
       const serviceData = servicesState[serviceName as keyof ServicesState];
-
 
       if (serviceData?.isActive) {
 
         let contractTotal = 0;
-
 
         if (typeof serviceData.contractTotal === 'number') {
           contractTotal = serviceData.contractTotal;
@@ -380,7 +349,6 @@ export const ServicesProvider: React.FC<{
       }
     });
 
-
     const tripChargeContractTotal = globalTripChargeFrequency === 0
       ? globalTripCharge 
       : globalTripCharge * globalTripChargeFrequency * globalContractMonths;
@@ -423,7 +391,6 @@ export const ServicesProvider: React.FC<{
     return totalAmount;
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
-
   const getTotalPerVisitAmount = useCallback((): number => {
     let totalPerVisit = 0;
     Object.keys(servicesState).forEach((serviceName) => {
@@ -443,8 +410,7 @@ export const ServicesProvider: React.FC<{
     return totalPerVisit;
   }, [servicesState]);
 
-  // Get total monthly recurring revenue (accounts for service frequencies)
-  // Weekly services: perVisit × 4.33, Monthly services: perVisit × 1, etc.
+  
   const getTotalMonthlyRecurringRevenue = useCallback((): number => {
     let totalMonthlyRecurring = 0;
 
@@ -452,7 +418,7 @@ export const ServicesProvider: React.FC<{
       const serviceData = servicesState[serviceName as keyof ServicesState];
 
       if (serviceData?.isActive && !isOneTimeService(serviceData)) {
-        // First try to get the pre-calculated monthly recurring value
+        
         const monthlyRecurring =
           serviceData.totals?.monthlyRecurring?.amount ??
           serviceData.monthlyRecurring ??
@@ -463,7 +429,7 @@ export const ServicesProvider: React.FC<{
           totalMonthlyRecurring += monthlyRecurring;
           console.log(`📊 [MONTHLY RECURRING] ${serviceName}: $${monthlyRecurring.toFixed(2)} (from pre-calculated)`);
         } else {
-          // Fall back to calculating from per-visit and frequency
+          
           const perVisit =
             (typeof serviceData.perVisit === 'number' && serviceData.perVisit > 0
               ? serviceData.perVisit
@@ -472,14 +438,13 @@ export const ServicesProvider: React.FC<{
                 : 0);
 
           if (perVisit > 0) {
-            // Get frequency multiplier (visits per month)
+            
             const frequencyKey = normalizeFrequencyKey(
               serviceData.frequency ??
               serviceData.frequencyKey ??
               serviceData.frequencyDisplay?.value
             );
 
-            // Map frequency to visits per month
             const frequencyMultipliers: Record<string, number> = {
               'weekly': 4.33,
               'biweekly': 2.17,
@@ -505,7 +470,6 @@ export const ServicesProvider: React.FC<{
     return totalMonthlyRecurring;
   }, [servicesState]);
 
-
   const getTotalOriginalContractTotal = useCallback((): number => {
     let totalOriginal = 0;
 
@@ -514,7 +478,6 @@ export const ServicesProvider: React.FC<{
 
       if (serviceData?.isActive) {
         let originalTotal = 0;
-
 
         if (typeof serviceData.originalContractTotal === 'number' && serviceData.originalContractTotal > 0) {
           originalTotal = serviceData.originalContractTotal;
@@ -532,7 +495,6 @@ export const ServicesProvider: React.FC<{
       }
     });
 
-
     const tripChargeContractTotal = globalTripChargeFrequency === 0
       ? globalTripCharge
       : globalTripCharge * globalTripChargeFrequency * globalContractMonths;
@@ -547,22 +509,21 @@ export const ServicesProvider: React.FC<{
     return totalOriginal;
   }, [servicesState, globalContractMonths, globalTripCharge, globalParkingCharge, globalTripChargeFrequency, globalParkingChargeFrequency]);
 
-  // Helper to get frequency number from service data
   const getFrequencyNum = (serviceData: any): number | null => {
-    // Check multiple possible locations for frequency
+    
     const freqCandidates = [
-      // Direct frequency key or number
+      
       serviceData.frequencyKey,
       serviceData.frequencyNum,
-      // Nested frequency object (most common case: frequency.frequencyKey)
+      
       serviceData.frequency?.frequencyKey,
       serviceData.frequency?.value,
       serviceData.frequency?.label,
-      // Direct frequency (if it's a string/number)
+      
       typeof serviceData.frequency === 'string' || typeof serviceData.frequency === 'number'
         ? serviceData.frequency
         : null,
-      // Frequency display variants
+      
       serviceData.frequencyDisplay?.frequencyKey,
       serviceData.frequencyDisplay?.value,
     ];
@@ -576,10 +537,8 @@ export const ServicesProvider: React.FC<{
     for (const candidate of freqCandidates) {
       if (candidate === null || candidate === undefined) continue;
 
-      // If it's already a number, return it
       if (typeof candidate === 'number') return candidate;
 
-      // If it's a string, try to map it
       if (typeof candidate === 'string') {
         const normalized = candidate.toLowerCase().trim();
         if (freqMap[normalized] !== undefined) {
@@ -597,27 +556,24 @@ export const ServicesProvider: React.FC<{
     return null;
   };
 
-  // Helper to get agreement term from contract months
   const getAgreementTerm = (months: number): AgreementTerm => {
     if (months >= 36) return '3-year';
     if (months >= 12) return '1-year';
     return 'MTM-with-install';
   };
 
-  // Extended frequency visits per year
   const frequencyVisitsPerYear: Record<number, number> = {
-    1: 52,  // weekly
-    2: 26,  // bi-weekly
-    3: 12,  // monthly
-    4: 4,   // quarterly
-    5: 2,   // semi-annual
-    6: 1,   // annual
-    13: 24, // twice-per-month
-    14: 6,  // bi-monthly
-    0: 1,   // one-time
+    1: 52,  
+    2: 26,  
+    3: 12,  
+    4: 4,   
+    5: 2,   
+    6: 1,   
+    13: 24, 
+    14: 6,  
+    0: 1,   
   };
 
-  // Calculate commission data for saving to backend
   const getCommissionDataForSave = useCallback((baseCommissionRate: number = 6): CommissionDataForSave | null => {
     console.log('[COMMISSION-CALC] Starting calculation with:', {
       servicesCount: Object.keys(servicesState).length,
@@ -625,7 +581,6 @@ export const ServicesProvider: React.FC<{
       globalContractMonths,
     });
 
-    // Get agreement multiplier based on contract months
     const term = getAgreementTerm(globalContractMonths);
     const agreementMultiplier = DEFAULT_COMMISSION_RULES_V2.agreementMultipliers[term];
     const effectiveRate = baseCommissionRate * (agreementMultiplier / 100);
@@ -643,7 +598,7 @@ export const ServicesProvider: React.FC<{
       const freqNum = getFrequencyNum(serviceData);
       if (freqNum === null || freqNum === 0) {
         console.log(`[COMMISSION-CALC] Skipping ${serviceName}: one-time or no frequency`);
-        return; // Skip one-time services
+        return; 
       }
 
       const perVisitRevenue =
@@ -665,11 +620,9 @@ export const ServicesProvider: React.FC<{
         return;
       }
 
-      // Get account type from cache
       const cacheEntry = accountTypeCache[freqNum];
       const accountType = cacheEntry?.accountType || null;
 
-      // Calculate commissionable revenue
       let commissionableRevenue = perVisitRevenue;
       if (accountType) {
         const result = calculateCommissionableRevenue(perVisitRevenue, accountType);
@@ -694,13 +647,11 @@ export const ServicesProvider: React.FC<{
       });
     });
 
-    // If no services have commission, return null
     if (serviceBreakdown.length === 0) {
       console.log('[COMMISSION-CALC] No services with commission data, returning null');
       return null;
     }
 
-    // Calculate contract commission (annual × years)
     const years = globalContractMonths / 12;
     const contractCommission = totalAnnualCommission * years;
 
@@ -720,7 +671,6 @@ export const ServicesProvider: React.FC<{
 
   const value = useMemo<ServicesContextValue>(() => {
 
-
     const sanicleanData = servicesState.saniclean;
     const isSanicleanAllInclusive = Boolean(
       sanicleanData?.isActive &&
@@ -728,12 +678,10 @@ export const ServicesProvider: React.FC<{
        sanicleanData?.pricingMode === "all_inclusive")
     );
 
-
     const fixtureCount = sanicleanData?.fixtureBreakdown?.reduce((sum: number, item: any) => sum + (item.qty || 0), 0) || 0;
     const sanicleanPaperCreditPerWeek = isSanicleanAllInclusive
       ? fixtureCount * 5 
       : 0;
-
 
     const activeServices = Object.values(servicesState).filter((sd: any) => sd?.isActive);
     const allServicesOneTime =
@@ -768,7 +716,6 @@ export const ServicesProvider: React.FC<{
       globalParkingChargeFrequency,
       setGlobalParkingChargeFrequency,
 
-      // Account type detection
       biginCompanyId,
       setBiginCompanyId,
       agreementId,
@@ -785,10 +732,8 @@ export const ServicesProvider: React.FC<{
       accountTypeCacheLoadedFromSaved,
       accountTypeCacheLoadedFromSavedRef,
 
-      // Commission calculation
       getCommissionDataForSave,
 
-      // Quota level for commission rate
       quotaLevel,
       quotaLevelData,
       baseCommissionRate,
@@ -813,7 +758,6 @@ export const useServicesContext = (): ServicesContextValue => {
   }
   return context;
 };
-
 
 export const useServicesContextOptional = ():
   | ServicesContextValue

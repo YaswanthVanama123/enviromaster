@@ -79,7 +79,6 @@ export interface RpmWindowPricingConfig {
   };
 }
 
-
 export interface RpmExtraChargeLine {
   id: string;
   calcText: string;
@@ -89,44 +88,34 @@ export interface RpmExtraChargeLine {
   isDisplay?: boolean;
 }
 
-
 export interface RpmWindowsFormState extends BaseServiceFormState {
 
   smallQty: number;
   mediumQty: number;
   largeQty: number;
 
-
   smallWindowRate: number;
   mediumWindowRate: number;
   largeWindowRate: number;
-
 
   customSmallTotal?: number;
   customMediumTotal?: number;
   customLargeTotal?: number;
 
-
   tripCharge: number;
-
 
   isFirstTimeInstall: boolean;           
   selectedRateCategory: RpmRateCategory; 
   includeMirrors: boolean;               
 
-
   installMultiplierFirstTime: number;    
   installMultiplierClean: number;        
 
-
   customInstallationFee?: number;        
-
 
   extraCharges: RpmExtraChargeLine[];
 
-
   contractMonths: number;
-
 
   customPerVisitPrice?: number;         
   customFirstMonthPrice?: number;       

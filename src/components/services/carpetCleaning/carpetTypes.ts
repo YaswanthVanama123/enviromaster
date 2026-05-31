@@ -19,19 +19,16 @@ export interface CarpetFrequencyMeta {
   monthlyMultiplier: number;
 }
 
-
 export interface CarpetPricingConfig {
   unitSqFt: number; 
   firstUnitRate: number; 
   additionalUnitRate: number; 
   perVisitMinimum: number; 
 
-
   installMultipliers: {
     dirty: number;  
     clean: number;  
   };
-
 
   billingConversions: {
     [key in CarpetFrequency]: {
@@ -46,30 +43,22 @@ export interface CarpetPricingConfig {
   frequencyMeta: Record<CarpetFrequency, CarpetFrequencyMeta>;
 }
 
-
 export interface CarpetFormState extends BaseServiceFormState {
   serviceId: "carpetCleaning";
 
-
   areaSqFt: number;
-
 
   useExactSqft: boolean;  
 
-
   frequency: CarpetFrequency;
-
 
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
 
-
   contractMonths: number;
-
 
   includeInstall: boolean;
   isDirtyInstall: boolean;  
-
 
   unitSqFt: number;                
   firstUnitRate: number;           
@@ -77,7 +66,6 @@ export interface CarpetFormState extends BaseServiceFormState {
   perVisitMinimum: number;         
   installMultiplierDirty: number;  
   installMultiplierClean: number;  
-
 
   customFirstUnitRate?: number;        
   customAdditionalUnitRate?: number;   

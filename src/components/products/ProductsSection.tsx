@@ -8,7 +8,6 @@ import type { ColumnKey, EnvProduct, ProductRow } from "./productsTypes";
 import { useServicesContextOptional } from "../services/ServicesContext";
 import { addPriceChange, getFieldDisplayName, getProductTypeFromFamily, getFieldType } from "../../utils/fileLogger";
 
-
 export interface ProductsSectionHandle {
   getData: () => {
     products: ProductRow[];
@@ -49,7 +48,6 @@ const getFrequencyMultiplier = (frequency?: string): number => {
   return FREQUENCY_MONTHLY_MULTIPLIERS[key] ?? 1;
 };
 
-
 export interface InitialProductData {
   name: string;
   qty?: number;
@@ -61,7 +59,6 @@ export interface InitialProductData {
   frequency?: string;  
   costType?: 'productCost' | 'warranty';
 }
-
 
 interface ProductsSectionProps {
   initialSmallProducts?: string[] | InitialProductData[];
@@ -75,7 +72,6 @@ interface ProductsSectionProps {
   onTabChange?: (tab: string) => void; 
   onTotalsChange?: (totals: { monthlyTotal: number; contractTotal: number }) => void;
 }
-
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -93,7 +89,6 @@ function useIsDesktop() {
 
   return isDesktop;
 }
-
 
 function useProductCatalog() {
   const { catalog, loading } = useActiveProductCatalog();
@@ -124,11 +119,9 @@ function useProductCatalog() {
   }, [catalog, loading]);
 }
 
-
 const COLUMN_FAMILY_FILTER: Record<ColumnKey, (p: EnvProduct) => boolean> = {
 
   products: (p) => p.familyKey !== "dispensers",
-
 
   dispensers: (p) => p.familyKey === "dispensers",
 };
@@ -158,7 +151,6 @@ function findProductByKey(key: string | null, allProducts: EnvProduct[]): EnvPro
   return allProducts.find((p) => p.key === key);
 }
 
-
 function getAvailableProductsForColumn(
   column: ColumnKey,
   usedKeys: Set<string>,
@@ -172,7 +164,6 @@ function getAvailableProductsForColumn(
   );
 }
 
-
 type DollarCellProps = {
   value: number | "" | null | undefined;
   onChange?: (value: number | "") => void;
@@ -185,14 +176,12 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
-
   const cleanValue = (val: number | "" | null | undefined): string => {
     if (val === null || val === undefined || val === "" || (typeof val === 'number' && isNaN(val))) {
       return "";
     }
     return String(val);
   };
-
 
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
@@ -201,11 +190,9 @@ const DollarCell = React.memo(function DollarCell({ value, onChange, readOnly, b
     }
   }, []);
 
-
   useEffect(() => {
     if (value !== lastValueRef.current) {
       const isFocused = inputRef.current === document.activeElement;
-
 
       if (inputRef.current && !isEditingRef.current && !isFocused) {
         inputRef.current.value = cleanValue(value);
@@ -287,14 +274,12 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
   const isEditingRef = useRef(false);
   const lastValueRef = useRef(value);
 
-
   const cleanValue = (val: number | "" | undefined): string => {
     if (val === undefined || val === "" || (typeof val === 'number' && isNaN(val))) {
       return "";
     }
     return String(val);
   };
-
 
   useEffect(() => {
     if (inputRef.current && inputRef.current.value === "") {
@@ -303,11 +288,9 @@ const QtyCell = React.memo(function QtyCell({ value, onChange }: QtyCellProps) {
     }
   }, []);
 
-
   useEffect(() => {
     if (value !== lastValueRef.current) {
       const isFocused = inputRef.current === document.activeElement;
-
 
       if (inputRef.current && !isEditingRef.current && !isFocused) {
         inputRef.current.value = cleanValue(value);
@@ -403,13 +386,11 @@ const FrequencyCell = React.memo(function FrequencyCell({ value, onChange }: Fre
   return prevProps.value === nextProps.value;
 });
 
-
 type NameCellProps = {
   product: EnvProduct | undefined;
   options: EnvProduct[]; 
   onChangeProduct: (productKey: string) => void;
   onRemove?: () => void;
-
 
   isCustom?: boolean;
   customName?: string;
@@ -431,7 +412,6 @@ const NameCell = React.memo(function NameCell({
   const [query, setQuery] = useState("");
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-
   const filteredOptions = useMemo(
     () =>
       options.filter((opt) =>
@@ -439,7 +419,6 @@ const NameCell = React.memo(function NameCell({
       ),
     [options, query]
   );
-
 
   useEffect(() => {
     if (!open) return;
@@ -455,7 +434,6 @@ const NameCell = React.memo(function NameCell({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
-
 
   if (isCustom) {
     return (
@@ -558,7 +536,6 @@ const NameCell = React.memo(function NameCell({
   );
 });
 
-
 function isProductIncludedInSaniClean(productKey: string | null): boolean {
   if (!productKey) return false;
 
@@ -578,7 +555,6 @@ function isProductIncludedInSaniClean(productKey: string | null): boolean {
   return includedProducts.includes(productKey);
 }
 
-
 function convertInitialToRows(
   bucket: ColumnKey,
   productData: string[] | InitialProductData[],
@@ -589,7 +565,6 @@ function convertInitialToRows(
   allProducts.forEach((p) => {
     nameToProductMap.set(p.name.toLowerCase(), p);
   });
-
 
   const safeNumber = (value: number | undefined | null): number | undefined => {
     if (value === null || value === undefined || isNaN(value) || value === 0) {
@@ -620,29 +595,24 @@ function convertInitialToRows(
           isCustom: false,
         };
 
-
         if (typeof item !== 'string') {
           const qty = safeNumber(item.qty);
           if (qty !== undefined) {
             row.qty = qty;
           }
 
-
           if (item.frequency) {
             row.frequency = item.frequency;
           }
-
 
           if (item.costType) {
             row.costType = item.costType;
           }
 
-
           if (item.customFields) {
             row.customFields = item.customFields;
             console.log(`📦 [convertInitialToRows] Preserved custom fields for "${name}":`, item.customFields);
           }
-
 
           if (bucket === 'products') {
             const unitPrice = safeNumber(item.unitPrice);
@@ -654,7 +624,6 @@ function convertInitialToRows(
               row.totalOverride = total;
             }
           }
-
 
           if (bucket === 'dispensers') {
             const warrantyRate = safeNumber(item.warrantyRate);
@@ -670,7 +639,6 @@ function convertInitialToRows(
               row.totalOverride = total;
             }
           }
-
 
           if (bucket === 'products') {
             const amount = safeNumber(item.amount);
@@ -694,23 +662,19 @@ function convertInitialToRows(
           customName: name,
         };
 
-
         if (typeof item !== 'string') {
           const qty = safeNumber(item.qty);
           if (qty !== undefined) {
             row.qty = qty;
           }
 
-
           if (item.frequency) {
             row.frequency = item.frequency;
           }
 
-
           if (item.costType) {
             row.costType = item.costType;
           }
-
 
           if (item.customFields) {
             row.customFields = item.customFields;
@@ -736,11 +700,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     servicesContext?.isSanicleanAllInclusive ?? false;
   const globalContractMonths = servicesContext?.globalContractMonths ?? 0;
 
-
   const [currentTab, setCurrentTab] = useState<string>(() => {
     return activeTab || 'form'; 
   });
-
 
   useEffect(() => {
     if (activeTab && activeTab !== currentTab) {
@@ -748,15 +710,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     }
   }, [activeTab, currentTab]);
 
-
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
     onTabChange?.(tab);
   };
 
-
   const validTabs = ['products', 'dispensers'];
-
 
   const { products: allProducts, loading } = useProductCatalog();
 
@@ -768,10 +727,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     dispensers: [],
   }));
 
-
   useEffect(() => {
     if (!loading && allProducts.length > 0) {
-
 
       const hasInitialData = initialSmallProducts || initialDispensers || initialBigProducts;
 
@@ -782,12 +739,10 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           initialBigProducts
         });
 
-
         const mergedProducts = [
           ...(initialSmallProducts ? convertInitialToRows("products", initialSmallProducts, allProducts) : []),
           ...(initialBigProducts ? convertInitialToRows("products", initialBigProducts, allProducts) : [])
         ];
-
 
         if (!initialSmallProducts && !initialBigProducts) {
           const smallProductDefaults = getProductsForColumn("products", allProducts)
@@ -863,7 +818,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     [productMap]
   );
 
-
   const updateRowField = useCallback(
     (bucket: ColumnKey, rowId: string, patch: Partial<ProductRow>) => {
       setData((prev) => {
@@ -874,11 +828,9 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           r.id === rowId ? { ...r, ...patch } : r
         );
 
-
         if (JSON.stringify(newBucket) === JSON.stringify(prev[bucket])) {
           return prev;
         }
-
 
         const product = getProduct(currentRow);
         if (product && currentRow.productKey) {
@@ -889,7 +841,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
             if (patch[field as keyof ProductRow] !== undefined) {
               const newValue = patch[field as keyof ProductRow] as number;
               const oldValue = currentRow[field as keyof ProductRow] as number;
-
 
               if (newValue !== oldValue && newValue !== undefined) {
 
@@ -920,7 +871,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
                     }
                     break;
                 }
-
 
                 if (originalValue !== newValue) {
 
@@ -968,7 +918,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     [updateRowField]
   );
 
-
   const addRowAll = useCallback(() => {
     setData((prev) => ({
       products: [
@@ -1002,7 +951,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       })),
     []
   );
-
 
   const mkCol = (label = "Custom") => ({
     id: `c_${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -1047,7 +995,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     []
   );
 
-
   const rowsCount = useMemo(
     () =>
       Math.max(
@@ -1056,7 +1003,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       ),
     [data]
   );
-
 
   const getRowOptions = useCallback((bucket: ColumnKey, rowId: string): EnvProduct[] => {
     const usedKeys = new Set(
@@ -1077,7 +1023,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
     return base;
   }, [data, allProducts]);
-
 
   const getSmallUnitPrice = (row: ProductRow, product?: EnvProduct) =>
     row.unitPriceOverride ?? product?.basePrice?.amount ?? 0;
@@ -1103,7 +1048,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       return basePrice * qty;
     }
 
-
     const product = getProduct(row);
     const dispCostType = row.costType ?? 'productCost';
     if (dispCostType === 'warranty') {
@@ -1126,7 +1070,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       return sum + getRowTotal(row, bucket) * multiplier;
     }, 0);
   }, [data.products, data.dispensers, getProduct]);
-
 
   const productOnceTotal = useMemo(() => {
     const allRows = [
@@ -1154,14 +1097,11 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     });
   }, [onTotalsChange, productMonthlyTotal, productContractTotal]);
 
-
   useImperativeHandle(ref, () => ({
     getData: () => {
 
-
       const allProducts = data.products.map((row) => {
         const product = getProduct(row);
-
 
         const isSmallProduct = product?.familyKey === "paper";
 
@@ -1202,7 +1142,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         }
       });
 
-
       const enrichedSmallProducts = allProducts.filter(p => p.productType === 'small');
       const enrichedBigProducts = allProducts.filter(p => p.productType === 'big');
 
@@ -1239,7 +1178,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
         customColumnsDispensers: extraCols.dispensers.length
       });
 
-
       const productsWithCustomFields = allProducts.filter(p => p.customFields && Object.keys(p.customFields).length > 0);
       const dispensersWithCustomFields = enrichedDispensers.filter(d => d.customFields && Object.keys(d.customFields).length > 0);
 
@@ -1251,7 +1189,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
           dispensers: extraCols.dispensers
         }
       });
-
 
       if (productsWithCustomFields.length > 0) {
         console.log("📊 [ProductsSection] Sample product with custom fields:", productsWithCustomFields[0]);
@@ -1283,7 +1220,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     }),
   }), [data, getProduct, productMonthlyTotal, productContractTotal]);
 
-
   const getProductDescription = (product: EnvProduct): string => {
     if (product.description?.trim()) {
       return product.description;
@@ -1298,7 +1234,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'napkins_premium': 'High-quality napkins for dining areas and customer-facing spaces',
       'napkins_standard': 'Standard napkins for break rooms and staff areas',
 
-
       'all_purpose_cleaner': 'Multi-surface cleaner for general cleaning tasks',
       'glass_cleaner': 'Streak-free glass and mirror cleaner',
       'disinfectant_spray': 'EPA-approved disinfectant for sanitizing surfaces',
@@ -1306,13 +1241,11 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'degreaser': 'Heavy-duty degreaser for kitchen and industrial cleaning',
       'bathroom_cleaner': 'Specialized cleaner for bathroom fixtures and surfaces',
 
-
       'paper_towel_dispenser': 'Wall-mounted dispenser for paper towels',
       'toilet_paper_dispenser': 'Commercial toilet paper dispenser',
       'soap_dispenser': 'Automatic or manual soap dispenser',
       'sanitizer_dispenser': 'Touch-free hand sanitizer dispenser',
       'napkin_dispenser': 'Counter-top or wall-mounted napkin dispenser',
-
 
       'paper': 'Paper product for cleaning and hygiene',
       'chemicals': 'Cleaning chemical for maintenance and sanitation',
@@ -1321,25 +1254,20 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'supplies': 'General cleaning supplies and accessories'
     };
 
-
     if (descriptions[product.key]) {
       return descriptions[product.key];
     }
-
 
     if (descriptions[product.familyKey]) {
       return descriptions[product.familyKey];
     }
 
-
     if (product.kind) {
       return `${product.kind} - Professional cleaning product`;
     }
 
-
     return 'Professional cleaning product for commercial use';
   };
-
 
   const productsForReference = useMemo(() =>
     getProductsForColumn("products", allProducts),
@@ -1350,7 +1278,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     getProductsForColumn("dispensers", allProducts),
     [allProducts]
   );
-
 
   const ProductsReferenceTable = useMemo(() => {
     return (
@@ -1442,7 +1369,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     );
   }, [productsForReference]); 
 
-
   const getDispenserDescription = (dispenser: EnvProduct): string => {
     if (dispenser.description?.trim()) {
       return dispenser.description;
@@ -1461,7 +1387,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'napkin_dispenser_counter': 'Counter-top napkin dispenser for dining areas',
       'napkin_dispenser_wall': 'Wall-mounted napkin dispenser for break rooms',
 
-
       'paper_towel_dispenser': 'Reliable paper towel dispenser for commercial restrooms and kitchens',
       'toilet_paper_dispenser': 'Durable toilet paper dispenser designed for heavy commercial use',
       'soap_dispenser': 'Professional soap dispenser for maintaining proper hand hygiene',
@@ -1471,15 +1396,12 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       'cup_dispenser': 'Paper cup dispenser for water stations and break rooms',
       'glove_dispenser': 'Disposable glove dispenser for food service and cleaning',
 
-
       'dispensers': 'Commercial dispenser for maintaining supplies and hygiene standards'
     };
-
 
     if (descriptions[dispenser.key]) {
       return descriptions[dispenser.key];
     }
-
 
     const keyLower = dispenser.key.toLowerCase();
     if (keyLower.includes('paper_towel')) return descriptions['paper_towel_dispenser'];
@@ -1491,7 +1413,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     if (keyLower.includes('cup')) return descriptions['cup_dispenser'];
     if (keyLower.includes('glove')) return descriptions['glove_dispenser'];
 
-
     const nameLower = dispenser.name.toLowerCase();
     if (nameLower.includes('paper towel')) return descriptions['paper_towel_dispenser'];
     if (nameLower.includes('toilet paper')) return descriptions['toilet_paper_dispenser'];
@@ -1499,10 +1420,8 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     if (nameLower.includes('sanitizer')) return descriptions['sanitizer_dispenser'];
     if (nameLower.includes('napkin')) return descriptions['napkin_dispenser'];
 
-
     return descriptions['dispensers'];
   };
-
 
   const DispensersReferenceTable = useMemo(() => {
     return (
@@ -1604,7 +1523,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
     );
   }, [dispensersForReference]); 
 
-
   const TabNavigation = () => (
     <div className="product-tabs-container">
       <div className="product-tabs">
@@ -1632,7 +1550,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       </div>
     </div>
   );
-
 
   const DesktopTable = () => {
     return (
@@ -1719,7 +1636,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
 
                 const pProduct = getProduct(rowProduct);
                 const pDisp = getProduct(rowDisp);
-
 
                 const rowKey = `${rowProduct?.id ?? `p${i}`}_${rowDisp?.id ?? `d${i}`}`;
 
@@ -2043,7 +1959,6 @@ const ProductsSection = forwardRef<ProductsSectionHandle, ProductsSectionProps>(
       </>
     );
   };
-
 
   const GroupWrap = ({
     children,

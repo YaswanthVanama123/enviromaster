@@ -3,11 +3,9 @@ import type { BaseServiceFormState } from "../common/serviceTypes";
 
 export type MicrofiberFrequencyKey = "oneTime" | "weekly" | "biweekly" | "twicePerMonth" | "monthly" | "everyFourWeeks" | "bimonthly" | "quarterly" | "biannual" | "annual";
 
-
 export interface MicrofiberMoppingPricingConfig {
 
   includedBathroomRate: number; 
-
 
   hugeBathroomPricing: {
     enabled: boolean;
@@ -16,14 +14,12 @@ export interface MicrofiberMoppingPricingConfig {
     description: string;
   };
 
-
   extraAreaPricing: {
     singleLargeAreaRate: number; 
     extraAreaSqFtUnit: number; 
     extraAreaRatePerUnit: number; 
     useHigherRate: boolean; 
   };
-
 
   standalonePricing: {
     standaloneSqFtUnit: number; 
@@ -32,13 +28,11 @@ export interface MicrofiberMoppingPricingConfig {
     includeTripCharge: boolean; 
   };
 
-
   chemicalProducts: {
     dailyChemicalPerGallon: number; 
     customerSelfMopping: boolean;
     waterOnlyBetweenServices: boolean;
   };
-
 
   equipmentProvision: {
     mopHandlesOnInstall: boolean;
@@ -49,7 +43,6 @@ export interface MicrofiberMoppingPricingConfig {
     microfiberDensity: string;
   };
 
-
   tripCharges: {
     insideBeltway: number;
     outsideBeltway: number;
@@ -58,9 +51,7 @@ export interface MicrofiberMoppingPricingConfig {
     waiveForAllInclusive: boolean;
   };
 
-
   minimumChargePerVisit: number;
-
 
   allInclusiveIntegration: {
     includedInPackage: boolean;
@@ -68,14 +59,12 @@ export interface MicrofiberMoppingPricingConfig {
     standardBathroomCoverage: boolean;
   };
 
-
   serviceIntegration: {
     recommendCombineWithSaniScrub: boolean;
     installUpkeepNeeded: boolean;
     preventsBacteriaSpread: boolean;
     optimalPairing: string[];
   };
-
 
   billingConversions: {
     oneTime: {
@@ -122,7 +111,6 @@ export interface MicrofiberMoppingPricingConfig {
     actualWeeksPerMonth: number; 
   };
 
-
   pricingRules: {
     canBundleWithSani: boolean;
     canPriceAsIncluded: boolean;
@@ -133,7 +121,6 @@ export interface MicrofiberMoppingPricingConfig {
       authorizers: string[];
     };
   };
-
 
   rateCategories: {
     redRate: {
@@ -146,7 +133,6 @@ export interface MicrofiberMoppingPricingConfig {
     };
   };
 
-
   valueProposition: {
     bacterialReduction: boolean;
     costSavingsForCustomer: boolean;
@@ -154,7 +140,6 @@ export interface MicrofiberMoppingPricingConfig {
     waterOnlyCleaning: boolean;
     enhancedEfficiency: boolean;
   };
-
 
   serviceSpecs: {
     microfiberSize: string;
@@ -164,7 +149,6 @@ export interface MicrofiberMoppingPricingConfig {
     bacteriaPrevention: string;
   };
 
-
   defaultFrequency: MicrofiberFrequencyKey;
   allowedFrequencies: MicrofiberFrequencyKey[];
 
@@ -173,41 +157,30 @@ export interface MicrofiberMoppingPricingConfig {
   availablePricingMethods: string[];
 }
 
-
 export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   frequency: MicrofiberFrequencyKey;
 
-
   contractTermMonths: number;
-
 
   hasExistingSaniService: boolean;
 
-
   bathroomCount: number;
-
 
   isHugeBathroom: boolean;
   hugeBathroomSqFt: number;
 
-
   extraAreaSqFt: number;
   useExactExtraAreaSqft: boolean;  
-
 
   standaloneSqFt: number;
   useExactStandaloneSqft: boolean;  
 
-
   chemicalGallons: number;
-
 
   isAllInclusive: boolean;
 
-
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
-
 
   includedBathroomRate: number;         
   hugeBathroomRatePerSqFt: number;      
@@ -215,13 +188,11 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
   standaloneRatePerUnit: number;        
   dailyChemicalPerGallon: number;       
 
-
   customIncludedBathroomRate?: number;
   customHugeBathroomRatePerSqFt?: number;
   customExtraAreaRatePerUnit?: number;
   customStandaloneRatePerUnit?: number;
   customDailyChemicalPerGallon?: number;
-
 
   customStandardBathroomTotal?: number;
   customHugeBathroomTotal?: number;
@@ -235,7 +206,6 @@ export interface MicrofiberMoppingFormState extends BaseServiceFormState {
 
   applyMinimum?: boolean;
 }
-
 
 export interface MicrofiberMoppingCalcResult {
   standardBathroomPrice: number;
@@ -257,13 +227,11 @@ export interface MicrofiberMoppingCalcResult {
   annualPrice: number;
   monthlyRecurring: number;
 
-
   firstVisitPrice: number;
   firstMonthPrice: number;
   contractMonths: number;
   contractTotal: number;
   originalContractTotal: number;
-
 
   minimumChargePerVisit: number;
 }

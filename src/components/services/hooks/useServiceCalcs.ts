@@ -2,12 +2,10 @@ import { useEffect } from "react";
 import { q, setVal, toNum } from "../utils/dom";
 import { usePricing } from "./usePricing";
 
-
 const n = (v: any, fallback = 0): number => {
   const num = Number(v);
   return Number.isFinite(num) ? num : fallback;
 };
-
 
 export function useServiceCalcs(deps: any[]) {
   const PRICING = usePricing();
@@ -18,7 +16,6 @@ export function useServiceCalcs(deps: any[]) {
 
       let fixtures = toNum(q("saniTotalFixtures")?.value);
 
-
       if (!fixtures) {
         const bowls = toNum(q("saniBowls")?.value);
         const urinals = toNum(q("saniUrinals")?.value);
@@ -27,13 +24,11 @@ export function useServiceCalcs(deps: any[]) {
         if (fixtures) setVal("saniTotalFixtures", fixtures);
       }
 
-
       const region = PRICING?.sani?.useRegion === "outside" ? "outside" : "inside";
       const baseRate =
         region === "inside"
           ? n(PRICING?.sani?.insidePrice, 0)
           : n(PRICING?.sani?.outsidePrice, 0);
-
 
       const rateEl = q("saniRatePerFixture");
       let rate = toNum(rateEl?.value);
@@ -42,24 +37,20 @@ export function useServiceCalcs(deps: any[]) {
         rateEl.value = baseRate.toFixed(2);
       }
 
-
       const allInclEl = q("saniAllInclusiveRate");
       if (allInclEl && !allInclEl.value) {
         allInclEl.value = baseRate.toFixed(2);
       }
-
 
       const regMin =
         region === "inside"
           ? n(PRICING?.sani?.insideMin, 0)
           : n(PRICING?.sani?.outsideMin, 0);
 
-
       const minWeeklyEl = q("saniMinWeeklyCharge");
       if (minWeeklyEl && !toNum(minWeeklyEl.value) && regMin > 0) {
         minWeeklyEl.value = regMin.toFixed(2);
       }
-
 
       const tripEl = q("tripCharge");
       let trip = toNum(tripEl?.value);
@@ -69,10 +60,8 @@ export function useServiceCalcs(deps: any[]) {
         tripEl.value = trip.toFixed(2);
       }
 
-
       let weekly = fixtures * rate;
       weekly = Math.max(weekly, regMin || 0);
-
 
       const smallThreshold = n(PRICING?.sani?.smallThreshold, 0);
       const smallMin = n(PRICING?.sani?.smallMin, 0);
@@ -81,13 +70,11 @@ export function useServiceCalcs(deps: any[]) {
         weekly = Math.max(weekly, smallMin);
       }
 
-
       weekly += trip;
 
       if (weekly > 0) {
         setVal("saniWeeklyTotal", weekly.toFixed(2));
       }
-
 
       const freqRaw = (q("saniFrequency")?.value || "").toLowerCase();
       let visitsPerMonth = 0;
@@ -114,13 +101,11 @@ export function useServiceCalcs(deps: any[]) {
       }
     };
 
-
     const recalcRpm = () => {
 
       const smallQty = toNum(q("rpmSmallQty")?.value);
       const mediumQty = toNum(q("rpmMediumQty")?.value);
       const largeQty = toNum(q("rpmLargeQty")?.value);
-
 
       let smallRate = toNum(q("rpmSmallRate")?.value);
       let mediumRate = toNum(q("rpmMediumRate")?.value);
@@ -143,7 +128,6 @@ export function useServiceCalcs(deps: any[]) {
         setVal("rpmLargeRate", largeRate.toFixed(2));
       }
 
-
       const smallTotal = smallQty * smallRate;
       const mediumTotal = mediumQty * mediumRate;
       const largeTotal = largeQty * largeRate;
@@ -159,7 +143,6 @@ export function useServiceCalcs(deps: any[]) {
       }
 
       const windowsTotal = smallTotal + mediumTotal + largeTotal;
-
 
       let rpmTrip = toNum(q("rpmTripCharge")?.value);
       const defaultRpmTrip = n(PRICING?.trip?.standard, 0);
@@ -179,7 +162,6 @@ export function useServiceCalcs(deps: any[]) {
       if (perVisit > 0) {
         setVal("rpmPerVisitTotal", perVisit.toFixed(2));
       }
-
 
       const freqRaw = (q("rpmFrequency")?.value || "").toLowerCase();
       let visitsPerMonth = 0;
@@ -202,7 +184,6 @@ export function useServiceCalcs(deps: any[]) {
         setVal("rpmContractTotal", contractTotal.toFixed(2));
       }
     };
-
 
     const simpleTriples: [string, string, string][] = [
 
@@ -231,16 +212,13 @@ export function useServiceCalcs(deps: any[]) {
       });
     };
 
-
     const handler = () => {
       recalcSani();
       recalcRpm();
       recalcSimpleCalcs();
     };
 
-
     handler();
-
 
     const watchNames = [
 

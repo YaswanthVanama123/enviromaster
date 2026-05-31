@@ -27,7 +27,6 @@ const FIELD_ORDER = {
   },
 } as const;
 
-
 const formatNumber = (num: number): string => {
   return num % 1 === 0 ? num.toString() : num.toFixed(2);
 };
@@ -41,10 +40,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     initialData?.customFields || []
   );
 
-
   const { form, setForm, onChange, calc, isLoadingConfig, refreshConfig, activeConfig } = useElectrostaticSprayCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
@@ -54,11 +51,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -72,7 +67,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -80,13 +74,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -97,13 +88,10 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -111,16 +99,13 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -129,26 +114,20 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         return;
       }
 
-
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-
   const prevDataRef = useRef<string>("");
-
 
   const serviceRate = form.pricingMethod === "byRoom"
     ? form.ratePerRoom
     : form.ratePerThousandSqFt;
 
-
   const { isVisitBasedFrequency, monthsPerVisit } = calc;
-
 
   const generateContractMonths = () => {
     const months = [];
@@ -208,11 +187,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
         displayName: "Electrostatic Spray",
         isActive: true,
 
-
         ratePerRoom: form.customRatePerRoom ?? form.ratePerRoom,
         ratePerThousandSqFt: form.customRatePerThousandSqFt ?? form.ratePerThousandSqFt,
         tripChargePerVisit: form.customTripChargePerVisit ?? form.tripChargePerVisit,
-
 
         pricingMethod: form.pricingMethod,
         roomCount: form.roomCount,
@@ -224,11 +201,9 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
         applyMinimum: form.applyMinimum !== false,
 
-
         perVisitBase: calc.serviceCharge,  
         perVisit: calc.perVisit,  
         minimumChargePerVisit: calc.minimumChargePerVisit,  
-
 
         pricingMethodDisplay: {
           isDisplay: true,
@@ -254,7 +229,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           value: frequencyLabel,
           frequencyKey: form.frequency,
         },
-
 
         ...(form.isCombinedWithSaniClean ? {
           combinedService: {
@@ -310,7 +284,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
 
           if (visitBasedFrequency) {
 
-
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -320,7 +293,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
               gap: "normal",
             };
           } else {
-
 
             totals.monthlyRecurring = {
               isDisplay: true,
@@ -382,7 +354,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]); 
 
-
   useEffect(() => {
     const validMonths = generateContractMonths();
 
@@ -396,7 +367,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
       }));
     }
   }, [form.frequency]); 
-
 
   useEffect(() => {
     setForm((prev) => ({
@@ -559,7 +529,6 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           </div>
         </div>
 
-
         {}
         <div className="svc-summary">
           <div className="svc-row" style={{ marginBottom: '5px' }}>
@@ -721,10 +690,8 @@ export const ElectrostaticSprayForm: React.FC<ServiceInitialData<ElectrostaticSp
           )}
         </div>
 
-
         {}
         {}
-
 
         {}
         {}

@@ -1,25 +1,14 @@
-/**
- * Pure Janitorial Form Automation Tests
- *
- * Tests form interactions and verifies that:
- * - Input field changes correctly update form state
- * - Calculations update in real-time when inputs change
- * - Dropdown selections work correctly
- * - Supply items can be modified
- * - Form displays correct values based on state
- */
+
 
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
-// Import the form component and hooks
 import { JanitorialForm } from '../components/services/purejanitorial/JanitorialForm';
 import { computeJanitorialCalc, DEFAULT_SUPPLIES } from '../components/services/purejanitorial/useJanitorialCalc';
 import type { JanitorialFormState, JanitorialAdminRates } from '../components/services/purejanitorial/janitorialTypes';
 
-// Mock the ServicesContext
 vi.mock('../components/services/ServicesContext', () => ({
   useServicesContextOptional: () => ({
     updateService: vi.fn(),
@@ -43,7 +32,6 @@ vi.mock('../components/services/ServicesContext', () => ({
   }),
 }));
 
-// Mock FontAwesome icons
 vi.mock('@fortawesome/react-fontawesome', () => ({
   FontAwesomeIcon: ({ icon }: { icon: unknown }) => <span data-testid="icon">{String(icon)}</span>,
 }));
@@ -54,7 +42,6 @@ vi.mock('@fortawesome/free-solid-svg-icons', () => ({
   faTrash: 'trash-icon',
 }));
 
-// Helper to get input by label text (searches for label then finds sibling input)
 const getInputByLabel = (labelText: string): HTMLInputElement | HTMLSelectElement | null => {
   const label = screen.getByText(labelText);
   const row = label.closest('.svc-row');
@@ -62,12 +49,7 @@ const getInputByLabel = (labelText: string): HTMLInputElement | HTMLSelectElemen
   return row.querySelector('input, select');
 };
 
-// Helper to format currency for comparison
 const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-// ============================================================================
-// FORM RENDERING TESTS
-// ============================================================================
 
 describe('JanitorialForm Rendering', () => {
   test('renders form with header', () => {
@@ -115,7 +97,6 @@ describe('JanitorialForm Rendering', () => {
   test('does not show pricing summary when sqFt is 0', () => {
     render(<JanitorialForm />);
 
-    // Pricing Summary should NOT be visible when sqFt is 0
     expect(screen.queryByText('Pricing Summary')).not.toBeInTheDocument();
     expect(screen.queryByText('Annual Base Labor')).not.toBeInTheDocument();
   });
@@ -133,10 +114,6 @@ describe('JanitorialForm Rendering', () => {
     expect(options).toContain('One Time');
   });
 });
-
-// ============================================================================
-// SQUARE FEET INPUT TESTS
-// ============================================================================
 
 describe('JanitorialForm Square Feet Input', () => {
   test('sqFt input accepts numeric values', async () => {
@@ -171,14 +148,12 @@ describe('JanitorialForm Square Feet Input', () => {
 
     const sqFtInput = getInputByLabel('Square Feet') as HTMLInputElement;
 
-    // First add a value
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
     await waitFor(() => {
       expect(screen.getByText('Pricing Summary')).toBeInTheDocument();
     });
 
-    // Then clear it
     await user.clear(sqFtInput);
     await waitFor(() => {
       expect(screen.queryByText('Pricing Summary')).not.toBeInTheDocument();
@@ -193,17 +168,12 @@ describe('JanitorialForm Square Feet Input', () => {
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '2000');
 
-    // With office (1000 sqft/hr), 2000 sqft = 2 hours
     await waitFor(() => {
       const hoursInput = screen.getByDisplayValue('2.00 hrs');
       expect(hoursInput).toBeInTheDocument();
     });
   });
 });
-
-// ============================================================================
-// FREQUENCY DROPDOWN TESTS
-// ============================================================================
 
 describe('JanitorialForm Frequency Dropdown', () => {
   test('frequency dropdown changes value', async () => {
@@ -223,12 +193,10 @@ describe('JanitorialForm Frequency Dropdown', () => {
     const user = userEvent.setup();
     render(<JanitorialForm />);
 
-    // First set sqFt to show pricing
     const sqFtInput = getInputByLabel('Square Feet') as HTMLInputElement;
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // Change to one-time
     const frequencySelect = getInputByLabel('Frequency') as HTMLSelectElement;
     await user.selectOptions(frequencySelect, 'oneTime');
 
@@ -246,12 +214,10 @@ describe('JanitorialForm Frequency Dropdown', () => {
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // First verify Monthly Recurring shows for weekly
     await waitFor(() => {
       expect(screen.getByText('Monthly Recurring')).toBeInTheDocument();
     });
 
-    // Change to one-time
     const frequencySelect = getInputByLabel('Frequency') as HTMLSelectElement;
     await user.selectOptions(frequencySelect, 'oneTime');
 
@@ -261,10 +227,6 @@ describe('JanitorialForm Frequency Dropdown', () => {
   });
 });
 
-// ============================================================================
-// PLACE TYPE DROPDOWN TESTS
-// ============================================================================
-
 describe('JanitorialForm Place Type Dropdown', () => {
   test('place type dropdown changes value', async () => {
     const user = userEvent.setup();
@@ -273,7 +235,6 @@ describe('JanitorialForm Place Type Dropdown', () => {
     const placeTypeSelect = getInputByLabel('Place Type') as HTMLSelectElement;
     expect(placeTypeSelect).toBeInTheDocument();
 
-    // Change to home
     await user.selectOptions(placeTypeSelect, 'home');
     expect(placeTypeSelect.value).toBe('home');
   });
@@ -286,12 +247,10 @@ describe('JanitorialForm Place Type Dropdown', () => {
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // Office: 1000 sqft/hr → 1 hour
     await waitFor(() => {
       expect(screen.getByDisplayValue('1.00 hrs')).toBeInTheDocument();
     });
 
-    // Change to home (500 sqft/hr) → 2 hours
     const placeTypeSelect = getInputByLabel('Place Type') as HTMLSelectElement;
     await user.selectOptions(placeTypeSelect, 'home');
 
@@ -300,10 +259,6 @@ describe('JanitorialForm Place Type Dropdown', () => {
     });
   });
 });
-
-// ============================================================================
-// VISITS PER WEEK TESTS
-// ============================================================================
 
 describe('JanitorialForm Visits per Week', () => {
   test('visits per week dropdown changes value', async () => {
@@ -327,10 +282,6 @@ describe('JanitorialForm Visits per Week', () => {
   });
 });
 
-// ============================================================================
-// COST PER HOUR TESTS
-// ============================================================================
-
 describe('JanitorialForm Cost Per Hour', () => {
   test('cost per hour input accepts values', async () => {
     const user = userEvent.setup();
@@ -352,10 +303,6 @@ describe('JanitorialForm Cost Per Hour', () => {
   });
 });
 
-// ============================================================================
-// LABOR TAX TESTS
-// ============================================================================
-
 describe('JanitorialForm Labor Tax', () => {
   test('labor tax input accepts values', async () => {
     const user = userEvent.setup();
@@ -374,12 +321,10 @@ describe('JanitorialForm Labor Tax', () => {
     const user = userEvent.setup();
     render(<JanitorialForm />);
 
-    // Set sqFt first
     const sqFtInput = getInputByLabel('Square Feet') as HTMLInputElement;
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // Change labor tax
     const taxInput = getInputByLabel('Labor Tax %') as HTMLInputElement;
     await user.clear(taxInput);
     await user.type(taxInput, '25');
@@ -395,10 +340,6 @@ describe('JanitorialForm Labor Tax', () => {
     expect(screen.getByText(/admin default: 15%/i)).toBeInTheDocument();
   });
 });
-
-// ============================================================================
-// GROSS PROFIT TESTS
-// ============================================================================
 
 describe('JanitorialForm Gross Profit', () => {
   test('gross profit input accepts values', async () => {
@@ -418,12 +359,10 @@ describe('JanitorialForm Gross Profit', () => {
     const user = userEvent.setup();
     render(<JanitorialForm />);
 
-    // Set sqFt first
     const sqFtInput = getInputByLabel('Square Feet') as HTMLInputElement;
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // Change gross profit
     const gpInput = getInputByLabel('Gross Profit %') as HTMLInputElement;
     await user.clear(gpInput);
     await user.type(gpInput, '50');
@@ -440,10 +379,6 @@ describe('JanitorialForm Gross Profit', () => {
   });
 });
 
-// ============================================================================
-// SUPPLY LINE ITEMS TESTS
-// ============================================================================
-
 describe('JanitorialForm Supply Line Items', () => {
   test('supply inputs accept values', async () => {
     const user = userEvent.setup();
@@ -451,7 +386,7 @@ describe('JanitorialForm Supply Line Items', () => {
 
     const vacuumsInput = getInputByLabel('Vacuums') as HTMLInputElement;
     expect(vacuumsInput).toBeInTheDocument();
-    expect(vacuumsInput.value).toBe('100'); // default value
+    expect(vacuumsInput.value).toBe('100'); 
 
     await user.clear(vacuumsInput);
     await user.type(vacuumsInput, '500');
@@ -470,7 +405,6 @@ describe('JanitorialForm Supply Line Items', () => {
     const user = userEvent.setup();
     render(<JanitorialForm />);
 
-    // Set sqFt to show pricing
     const sqFtInput = getInputByLabel('Square Feet') as HTMLInputElement;
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
@@ -479,21 +413,15 @@ describe('JanitorialForm Supply Line Items', () => {
       expect(screen.getByText('Annual Supplies')).toBeInTheDocument();
     });
 
-    // Change vacuums from 100 to 1000 (adding 900)
     const vacuumsInput = getInputByLabel('Vacuums') as HTMLInputElement;
     await user.clear(vacuumsInput);
     await user.type(vacuumsInput, '1000');
 
-    // Verify pricing summary still shows
     await waitFor(() => {
       expect(screen.getByText('Annual Supplies')).toBeInTheDocument();
     });
   });
 });
-
-// ============================================================================
-// PRICING SUMMARY DISPLAY TESTS
-// ============================================================================
 
 describe('JanitorialForm Pricing Summary Display', () => {
   test('shows all pricing fields when sqFt > 0', async () => {
@@ -532,10 +460,6 @@ describe('JanitorialForm Pricing Summary Display', () => {
   });
 });
 
-// ============================================================================
-// NOTES FIELD TESTS
-// ============================================================================
-
 describe('JanitorialForm Notes Field', () => {
   test('notes field accepts text', async () => {
     const user = userEvent.setup();
@@ -548,10 +472,6 @@ describe('JanitorialForm Notes Field', () => {
     expect((notesInput as HTMLInputElement).value).toBe('Special requirements for this job');
   });
 });
-
-// ============================================================================
-// REMOVE BUTTON TESTS
-// ============================================================================
 
 describe('JanitorialForm Remove Button', () => {
   test('remove button calls onRemove when provided', async () => {
@@ -573,10 +493,6 @@ describe('JanitorialForm Remove Button', () => {
     expect(removeButton).not.toBeInTheDocument();
   });
 });
-
-// ============================================================================
-// INITIAL DATA TESTS
-// ============================================================================
 
 describe('JanitorialForm Initial Data', () => {
   test('form initializes with provided sqFt', () => {
@@ -603,10 +519,6 @@ describe('JanitorialForm Initial Data', () => {
   });
 });
 
-// ============================================================================
-// CALCULATION VERIFICATION TESTS
-// ============================================================================
-
 describe('JanitorialForm Calculation Verification', () => {
   test('hours per visit calculation matches expected value', async () => {
     const user = userEvent.setup();
@@ -616,7 +528,6 @@ describe('JanitorialForm Calculation Verification', () => {
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1500');
 
-    // office = 1000 sqft/hr, so 1500 sqft = 1.5 hours
     await waitFor(() => {
       expect(screen.getByDisplayValue('1.50 hrs')).toBeInTheDocument();
     });
@@ -626,31 +537,23 @@ describe('JanitorialForm Calculation Verification', () => {
     const user = userEvent.setup();
     render(<JanitorialForm />);
 
-    // Set sqFt
     const sqFtInput = getInputByLabel('Square Feet') as HTMLInputElement;
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // Change visits
     const visitsSelect = getInputByLabel('Visits per Week') as HTMLSelectElement;
     await user.selectOptions(visitsSelect, '3');
 
-    // Change cost
     const costInput = getInputByLabel('Cost Per Hour') as HTMLInputElement;
     await user.clear(costInput);
     await user.type(costInput, '25');
 
-    // Verify pricing summary updates
     await waitFor(() => {
       expect(screen.getByText('Pricing Summary')).toBeInTheDocument();
       expect(screen.getByText('Annual Base Labor')).toBeInTheDocument();
     });
   });
 });
-
-// ============================================================================
-// EDGE CASE TESTS
-// ============================================================================
 
 describe('JanitorialForm Edge Cases', () => {
   test('handles very large sqFt without crashing', async () => {
@@ -674,12 +577,10 @@ describe('JanitorialForm Edge Cases', () => {
     await user.clear(sqFtInput);
     await user.type(sqFtInput, '1000');
 
-    // Set cost per hour to 0
     const costInput = getInputByLabel('Cost Per Hour') as HTMLInputElement;
     await user.clear(costInput);
     await user.type(costInput, '0');
 
-    // Should not crash
     await waitFor(() => {
       expect(screen.getByText('Pricing Summary')).toBeInTheDocument();
     });
@@ -693,7 +594,7 @@ describe('JanitorialForm Edge Cases', () => {
     expect(refreshButton).toBeInTheDocument();
 
     await user.click(refreshButton);
-    // Should not crash
+    
     expect(refreshButton).toBeInTheDocument();
   });
 });

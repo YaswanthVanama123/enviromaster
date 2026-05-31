@@ -3,7 +3,6 @@ import type {
   CarpetFrequency,
 } from "./carpetTypes";
 
-
 export const carpetFrequencyList: CarpetFrequency[] = [
   "oneTime",
   "weekly",
@@ -30,7 +29,6 @@ export const carpetFrequencyLabels: Record<CarpetFrequency, string> = {
   annual: "Annual",
 };
 
-
 export const carpetPricingConfig: CarpetPricingConfig = {
 
   unitSqFt: 500,
@@ -38,12 +36,10 @@ export const carpetPricingConfig: CarpetPricingConfig = {
   additionalUnitRate: 125, 
   perVisitMinimum: 250, 
 
-
   installMultipliers: {
     dirty: 3,
     clean: 1,
   },
-
 
   billingConversions: {
     oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },
@@ -58,10 +54,8 @@ export const carpetPricingConfig: CarpetPricingConfig = {
     annual: { annualMultiplier: 1, monthlyMultiplier: 0.083 },
   },
 
-
   minContractMonths: 2,
   maxContractMonths: 36,
-
 
   frequencyMeta: {
     oneTime: { visitsPerYear: 1, monthlyMultiplier: 0 },
@@ -77,7 +71,6 @@ export const carpetPricingConfig: CarpetPricingConfig = {
   },
 };
 
-
 export function getContractOptions(frequency: CarpetFrequency): number[] {
   switch (frequency) {
     case "bimonthly":
@@ -88,7 +81,6 @@ export function getContractOptions(frequency: CarpetFrequency): number[] {
       return [1, 2, 3, 6, 12, 18, 24, 36]; 
   }
 }
-
 
 export function calculateCarpetBasePrice(sqft: number, option: "option1" | "option2" = "option1"): number {
   const config = carpetPricingConfig;
@@ -109,7 +101,6 @@ export function calculateCarpetBasePrice(sqft: number, option: "option1" | "opti
     return config.firstUnitRate + (excessSqft * remainderRate);
   }
 }
-
 
 export function calculateContractTotal(
   basePrice: number,

@@ -1,24 +1,17 @@
-/**
- * Account Type Detection Types
- * Types for auto-detecting account types based on revenue and distance
- */
 
-// Account type constants
+
 export type AccountType = 'Anchor' | 'Bread5' | 'Bread15' | 'Pit';
 
-// Detection confidence level
 export type DetectionConfidence = 'high' | 'medium' | 'low';
 
-// Thresholds used for detection
 export interface AccountTypeThresholds {
-  anchorMinRevenue: number;          // $200 standard
-  anchorMinRevenueGreenline: number; // $100 for Greenline
-  bread5MaxMinutes: number;          // 5 minutes
-  bread15MaxMinutes: number;         // 15 minutes
-  milesPerMinute: number;            // 0.5 (30mph)
+  anchorMinRevenue: number;          
+  anchorMinRevenueGreenline: number; 
+  bread5MaxMinutes: number;          
+  bread15MaxMinutes: number;         
+  milesPerMinute: number;            
 }
 
-// Input for account type detection
 export interface AccountTypeDetectionInput {
   perVisitRevenue: number;
   distanceToAnchorMiles?: number | null;
@@ -27,7 +20,6 @@ export interface AccountTypeDetectionInput {
   customerName?: string;
 }
 
-// Result of account type detection
 export interface AccountTypeDetectionResult {
   accountType: AccountType;
   confidence: DetectionConfidence;
@@ -36,7 +28,6 @@ export interface AccountTypeDetectionResult {
   distanceMiles: number | null;
 }
 
-// Full detection response
 export interface AccountTypeDetectionResponse {
   success: boolean;
   input: {
@@ -48,12 +39,10 @@ export interface AccountTypeDetectionResponse {
   thresholds: AccountTypeThresholds;
 }
 
-// Batch detection input
 export interface BatchDetectionInput {
   locations: AccountTypeDetectionInput[];
 }
 
-// Batch detection result item
 export interface BatchDetectionResultItem {
   index: number;
   customerId?: string;
@@ -67,7 +56,6 @@ export interface BatchDetectionResultItem {
   error?: string;
 }
 
-// Batch detection response
 export interface BatchDetectionResponse {
   success: boolean;
   total: number;
@@ -75,7 +63,6 @@ export interface BatchDetectionResponse {
   thresholds: AccountTypeThresholds;
 }
 
-// Account type info for display
 export interface AccountTypeInfo {
   type: AccountType;
   description: string;
@@ -83,29 +70,26 @@ export interface AccountTypeInfo {
   deduction: number;
 }
 
-// Thresholds response
 export interface ThresholdsResponse {
   success: boolean;
   thresholds: AccountTypeThresholds;
   accountTypes: AccountTypeInfo[];
 }
 
-// Customer with revenue data for detection
 export interface CustomerRevenueData {
   customerId: string;
   customerName: string;
   perVisitRevenue: number;
   isGreenline: boolean;
-  // Distance data from RouteSTAR
+  
   distanceToNearestAnchor?: number;
   nearestAnchorName?: string;
-  // Detected account type
+  
   detectedAccountType?: AccountType;
   detectionConfidence?: DetectionConfidence;
   detectionReason?: string;
 }
 
-// Default thresholds (should match backend)
 export const DEFAULT_THRESHOLDS: AccountTypeThresholds = {
   anchorMinRevenue: 200,
   anchorMinRevenueGreenline: 100,
@@ -114,7 +98,6 @@ export const DEFAULT_THRESHOLDS: AccountTypeThresholds = {
   milesPerMinute: 0.5,
 };
 
-// Account type display options
 export const ACCOUNT_TYPE_INFO: AccountTypeInfo[] = [
   {
     type: 'Anchor',
@@ -142,24 +125,14 @@ export const ACCOUNT_TYPE_INFO: AccountTypeInfo[] = [
   },
 ];
 
-/**
- * Helper function to estimate driving time from distance
- */
 export function estimateDrivingTime(distanceMiles: number, milesPerMinute = 0.5): number {
   return distanceMiles / milesPerMinute;
 }
 
-/**
- * Helper function to estimate distance from driving time
- */
 export function estimateDistance(drivingMinutes: number, milesPerMinute = 0.5): number {
   return drivingMinutes * milesPerMinute;
 }
 
-/**
- * Client-side account type detection (for immediate feedback)
- * Should match backend logic
- */
 export function detectAccountTypeClient(
   perVisitRevenue: number,
   distanceToAnchorMiles: number | null,
@@ -170,7 +143,6 @@ export function detectAccountTypeClient(
     ? thresholds.anchorMinRevenueGreenline
     : thresholds.anchorMinRevenue;
 
-  // Check if this location qualifies as Anchor
   if (perVisitRevenue >= anchorThreshold) {
     return {
       accountType: 'Anchor',
@@ -181,7 +153,6 @@ export function detectAccountTypeClient(
     };
   }
 
-  // For non-Anchor locations, use distance to nearest Anchor
   if (distanceToAnchorMiles === null || distanceToAnchorMiles === undefined) {
     return {
       accountType: 'Pit',
@@ -223,37 +194,31 @@ export function detectAccountTypeClient(
   };
 }
 
-/**
- * Get color for account type display
- */
 export function getAccountTypeColor(type: AccountType): string {
   switch (type) {
     case 'Anchor':
-      return '#16a34a'; // green
+      return '#16a34a'; 
     case 'Bread5':
-      return '#2563eb'; // blue
+      return '#2563eb'; 
     case 'Bread15':
-      return '#f59e0b'; // amber
+      return '#f59e0b'; 
     case 'Pit':
-      return '#6b7280'; // gray
+      return '#6b7280'; 
     default:
       return '#6b7280';
   }
 }
 
-/**
- * Get background color for account type badge
- */
 export function getAccountTypeBgColor(type: AccountType): string {
   switch (type) {
     case 'Anchor':
-      return '#dcfce7'; // light green
+      return '#dcfce7'; 
     case 'Bread5':
-      return '#dbeafe'; // light blue
+      return '#dbeafe'; 
     case 'Bread15':
-      return '#fef3c7'; // light amber
+      return '#fef3c7'; 
     case 'Pit':
-      return '#f3f4f6'; // light gray
+      return '#f3f4f6'; 
     default:
       return '#f3f4f6';
   }

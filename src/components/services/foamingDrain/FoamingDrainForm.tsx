@@ -42,7 +42,6 @@ interface FoamingDrainFormProps {
   onRemove?: () => void;
 }
 
-
 const formatAmount = (n: number): string =>
   n > 0 ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
 
@@ -62,11 +61,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     initialData?.customFields || []
   );
 
-
   const { state, quote, updateField, reset, refreshConfig, isLoadingConfig, backendConfig } =
     useFoamingDrainCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== state.contractMonths) {
@@ -76,11 +73,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -94,7 +89,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -102,13 +96,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -119,13 +110,10 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -133,16 +121,13 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -151,11 +136,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         return;
       }
 
-
       updateField(name as keyof FoamingDrainFormState, numValue as any);
     }
   };
-
 
   const prevDataRef = useRef<string>("");
 
@@ -215,7 +198,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         displayName: "Foaming Drain",
         isActive: true,
 
-
         standardDrainRate: state.customRatePerDrain ?? state.standardDrainRate,
         altBaseCharge: state.customAltBaseCharge ?? state.altBaseCharge,
         altExtraPerDrain: state.customAltExtraPerDrain ?? state.altExtraPerDrain,
@@ -227,7 +209,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         greenInstallRate: state.customGreenInstallRate ?? state.greenInstallRate,
         plumbingAddonRate: state.customPlumbingAddonRate ?? state.plumbingAddonRate,
         filthyMultiplier: state.customFilthyMultiplier ?? state.filthyMultiplier,
-
 
         standardDrainCount: state.standardDrainCount,
         installDrainCount: state.installDrainCount,
@@ -246,7 +227,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
         chargeGreaseTrapInstall: state.chargeGreaseTrapInstall,
         needsPlumbing: state.needsPlumbing,
         applyMinimum: state.applyMinimum !== false,
-
 
         perVisitBase: quote.weeklyService,  
         perVisit: quote.weeklyTotal,  
@@ -271,7 +251,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
           type: "text" as const,
           value: state.installFrequency.charAt(0).toUpperCase() + state.installFrequency.slice(1),
         },
-
 
         drainBreakdown: (() => {
           const rows: any[] = [];
@@ -424,7 +403,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
       const dataStr = JSON.stringify(data);
 
-
       if (dataStr !== prevDataRef.current) {
         prevDataRef.current = dataStr;
         console.log('🔧 [FoamingDrainForm] Sending data to context with pricing fields:', {
@@ -439,15 +417,12 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, quote, breakdown, customFields, backendConfig]);
 
-
   const dynamicMinimumDrains = backendConfig?.volumePricing?.minimumDrains ?? cfg.volumePricing.minimumDrains;
   const isWeekly = state.frequency === "weekly";
   const isVolume = state.standardDrainCount >= dynamicMinimumDrains; 
 
-
   const canUseSmallAlt =
     isWeekly && state.standardDrainCount > 0 && !isVolume;
-
 
   const canUseBigAlt = isVolume;
 
@@ -461,7 +436,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
       const num = raw === "" ? 0 : Number(raw);
       const safe = Number.isFinite(num) && num >= 0 ? num : 0;
 
-
       if (field === "standardDrainCount") {
         const newCount = safe;
         const newIsVolume =
@@ -473,11 +447,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
 
         updateField("standardDrainCount", newCount);
 
-
         if (!newCanSmallAlt && state.useSmallAltPricingWeekly) {
           updateField("useSmallAltPricingWeekly", false);
         }
-
 
         return;
       }
@@ -490,7 +462,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   ) => {
     const newFreq = e.target.value as FoamingDrainFrequency;
     updateField("frequency", newFreq);
-
 
     if (newFreq !== "weekly") {
 
@@ -508,7 +479,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     }
   };
 
-
   const handleInstallFrequencyChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -516,7 +486,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     console.log(`🔧 [Foaming Drain] Install frequency changed from ${state.installFrequency} to ${newInstallFreq}`);
     updateField("installFrequency", newInstallFreq);
   };
-
 
   const handleLocationChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -533,7 +502,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     );
   };
 
-
   const stdServiceQty = state.isAllInclusive
     ? 0
     : isInstallLevelUi
@@ -543,11 +511,9 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const stdQty = stdServiceQty;
   const stdTotal = breakdown.weeklyStandardDrains;
 
-
   const stdQtyForRateCalc = isInstallLevelUi
     ? Math.max(state.standardDrainCount - state.installDrainCount, 0)
     : state.standardDrainCount;
-
 
   const effectiveStandardRate = state.customRatePerDrain ?? state.standardDrainRate;
   let stdRate = effectiveStandardRate;
@@ -564,7 +530,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
   const greenRate = greenQty > 0 ? greenTotal / greenQty : 0;
 
   const effectivePlumbingRate = state.customPlumbingAddonRate ?? state.plumbingAddonRate;
-
 
   const pricingLabel = (() => {
     const minimumDrains = backendConfig?.volumePricing?.minimumDrains ?? 10;
@@ -585,7 +550,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
     }
     return `Standard ($${standardRate}/drain)`;
   })();
-
 
   const installQty = isInstallLevelUi ? state.installDrainCount : 0;
   const installTotal = breakdown.weeklyInstallDrains;
@@ -674,7 +638,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </select>
           </div>
         </div>
-
 
         {}
         {}
@@ -1244,7 +1207,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
-
           {}
           <div className="svc-row">
             <div className="svc-label">
@@ -1399,7 +1361,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
             </div>
           )}
 
-
           {}
           {state.frequency === "oneTime" && (
             <div className="svc-row">
@@ -1430,7 +1391,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </div>
             </div>
           )}
-
 
           {}
           {state.frequency !== "oneTime" &&
@@ -1503,7 +1463,6 @@ export const FoamingDrainForm: React.FC<FoamingDrainFormProps> = ({
               </div>
             </div>
           )}
-
 
           {}
           {state.frequency !== "oneTime" && (

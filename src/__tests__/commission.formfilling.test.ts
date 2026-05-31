@@ -8,14 +8,12 @@ import {
   type BusinessType,
 } from '../backendservice/types/commission.types';
 
-// Simulates CommissionState from FormFillingContent
 interface CommissionState {
   quotaLevel: QuotaLevel;
   accountType: AccountType;
   isInsideSales: boolean;
 }
 
-// Simulates CommissionResult from ContractSummary
 interface CommissionResult {
   monthlyValue: number;
   agreementTerm: AgreementTerm;
@@ -33,7 +31,6 @@ interface CommissionResult {
   contractCommission: number;
 }
 
-// Simulates the commission data structure in collectFormData
 interface CollectedCommissionData {
   input: {
     monthlyValue: number;
@@ -58,9 +55,6 @@ interface CollectedCommissionData {
   contractCommission: number;
 }
 
-/**
- * Simulates the collectFormData commission output
- */
 function collectFormDataCommission(
   commissionResult: CommissionResult | null,
   commissionState: CommissionState
@@ -92,7 +86,6 @@ function collectFormDataCommission(
   };
 }
 
-// Helper to create mock commission result
 function createMockCommissionResult(overrides: Partial<CommissionResult> = {}): CommissionResult {
   return {
     monthlyValue: 500,
@@ -113,9 +106,6 @@ function createMockCommissionResult(overrides: Partial<CommissionResult> = {}): 
   };
 }
 
-// ============================================================
-// TEST SUITE: Commission State Structure
-// ============================================================
 describe('FormFilling Commission - State Structure', () => {
   test('Default commission state should have correct values', () => {
     const defaultState: CommissionState = {
@@ -154,9 +144,6 @@ describe('FormFilling Commission - State Structure', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: collectFormData Commission Output
-// ============================================================
 describe('FormFilling Commission - collectFormData Output', () => {
   const mockState: CommissionState = {
     quotaLevel: 'above',
@@ -213,9 +200,6 @@ describe('FormFilling Commission - collectFormData Output', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Data Mapping from State and Result
-// ============================================================
 describe('FormFilling Commission - Data Mapping', () => {
   test('State values should be correctly mapped to input', () => {
     const state: CommissionState = {
@@ -276,9 +260,6 @@ describe('FormFilling Commission - Data Mapping', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Data Types Validation
-// ============================================================
 describe('FormFilling Commission - Data Types', () => {
   test('Numeric values should be numbers', () => {
     const commissionResult = createMockCommissionResult();
@@ -322,9 +303,6 @@ describe('FormFilling Commission - Data Types', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Agreement Term Enum Values
-// ============================================================
 describe('FormFilling Commission - Agreement Term Values', () => {
   const validTerms: AgreementTerm[] = ['3-year', '1-year', 'MTM-with-install', 'MTM-no-install'];
 
@@ -342,9 +320,6 @@ describe('FormFilling Commission - Agreement Term Values', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Pricing Line Enum Values
-// ============================================================
 describe('FormFilling Commission - Pricing Line Values', () => {
   const validLines: PricingLine[] = ['Redline', 'Greenline'];
 
@@ -362,9 +337,6 @@ describe('FormFilling Commission - Pricing Line Values', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Real-World Form Scenarios
-// ============================================================
 describe('FormFilling Commission - Real Form Scenarios', () => {
   test('New 36-month agreement with green line pricing', () => {
     const state: CommissionState = {
@@ -458,9 +430,6 @@ describe('FormFilling Commission - Real Form Scenarios', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Edge Cases
-// ============================================================
 describe('FormFilling Commission - Edge Cases', () => {
   test('Zero monthly value', () => {
     const commissionResult = createMockCommissionResult({
@@ -531,6 +500,5 @@ describe('FormFilling Commission - Edge Cases', () => {
   });
 });
 
-// Export for other tests
 export { collectFormDataCommission, createMockCommissionResult };
 export type { CommissionState, CommissionResult, CollectedCommissionData };

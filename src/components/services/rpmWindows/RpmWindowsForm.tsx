@@ -8,7 +8,6 @@ import type { ServiceInitialData } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 
-
 const formatNumber = (num: number | undefined): string => {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
@@ -48,7 +47,6 @@ export const RpmWindowsForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const {
     form,
     setForm,
@@ -67,7 +65,6 @@ export const RpmWindowsForm: React.FC<
   } = useRpmWindowsCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setForm({ ...form, contractMonths: servicesContext.globalContractMonths });
@@ -75,7 +72,6 @@ export const RpmWindowsForm: React.FC<
   }, [servicesContext?.globalContractMonths]);
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
-
 
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
@@ -108,7 +104,6 @@ export const RpmWindowsForm: React.FC<
     return false;
   };
 
-
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
     if (editingValues[fieldName] !== undefined) {
@@ -121,7 +116,6 @@ export const RpmWindowsForm: React.FC<
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -129,13 +123,10 @@ export const RpmWindowsForm: React.FC<
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -146,13 +137,10 @@ export const RpmWindowsForm: React.FC<
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -160,16 +148,13 @@ export const RpmWindowsForm: React.FC<
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -178,11 +163,9 @@ export const RpmWindowsForm: React.FC<
         return;
       }
 
-
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
-
 
   const prevDataRef = useRef<string>("");
 
@@ -244,12 +227,10 @@ export const RpmWindowsForm: React.FC<
         displayName: "RPM Window",
         isActive: true,
 
-
         perVisitBase: calc.subtotal,  
         perVisit: calc.perVisit,  
         minimumChargePerVisit: calc.minimumChargePerVisit,  
         originalContractTotal: calc.originalContractTotal,  
-
 
         smallWindowRate: form.smallWindowRate,
         mediumWindowRate: form.mediumWindowRate,
@@ -390,7 +371,6 @@ export const RpmWindowsForm: React.FC<
   const handleInstallTypeChange = (value: "first" | "clean") =>
     setForm((prev) => ({ ...prev, isFirstTimeInstall: value === "first" }));
 
-
   useEffect(() => {
     setForm((prev) => ({
       ...prev,
@@ -438,7 +418,6 @@ export const RpmWindowsForm: React.FC<
     form.frequency,
     form.contractMonths,
   ]);
-
 
   const installationFeeDisplay = form.isFirstTimeInstall
     ? calc.firstVisitTotalRated
@@ -741,7 +720,6 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-
       {}
       <div className="svc-row">
         <label>Install Multipliers</label>
@@ -775,10 +753,8 @@ export const RpmWindowsForm: React.FC<
         </div>
       </div>
 
-
       {}
       {}
-
 
             {}
       <div className="svc-row svc-row-charge">
@@ -809,7 +785,6 @@ export const RpmWindowsForm: React.FC<
 
       {}
       {}
-
 
       {}
       <div className="svc-row">
@@ -964,7 +939,6 @@ export const RpmWindowsForm: React.FC<
           </div>
         </div>
       )}
-
 
       {}
       {(form.frequency === "oneTime" || form.frequency === "quarterly" || form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" || form.frequency === "everyFourWeeks") && (

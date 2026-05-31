@@ -1,11 +1,9 @@
 
 import type { MicrofiberMoppingPricingConfig } from "./microfiberMoppingTypes";
 
-
 export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
 
   includedBathroomRate: 10,
-
 
   hugeBathroomPricing: {
     enabled: true,
@@ -15,14 +13,12 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
       "For huge bathrooms charge $10 per 300 sq ft instead of $10 per bathroom.",
   },
 
-
   extraAreaPricing: {
     singleLargeAreaRate: 100,
     extraAreaSqFtUnit: 400,
     extraAreaRatePerUnit: 10,
     useHigherRate: true,
   },
-
 
   standalonePricing: {
     standaloneSqFtUnit: 200,
@@ -31,13 +27,11 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     includeTripCharge: true, 
   },
 
-
   chemicalProducts: {
     dailyChemicalPerGallon: 27.34,
     customerSelfMopping: true,
     waterOnlyBetweenServices: true,
   },
-
 
   equipmentProvision: {
     mopHandlesOnInstall: true,
@@ -48,7 +42,6 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     microfiberDensity: "High-density commercial-grade microfiber",
   },
 
-
   tripCharges: {
     insideBeltway: 75,
     outsideBeltway: 100,
@@ -57,9 +50,7 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     waiveForAllInclusive: true,
   },
 
-
   minimumChargePerVisit: 50,
-
 
   allInclusiveIntegration: {
     includedInPackage: true,
@@ -67,14 +58,12 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     standardBathroomCoverage: true,
   },
 
-
   serviceIntegration: {
     recommendCombineWithSaniScrub: true,
     installUpkeepNeeded: true,
     preventsBacteriaSpread: true,
     optimalPairing: ["SaniScrub", "SaniClean", "RPM Windows"],
   },
-
 
   billingConversions: {
     oneTime: {
@@ -120,7 +109,6 @@ export const microfiberMoppingPricingConfig: MicrofiberMoppingPricingConfig = {
     actualWeeksPerYear: 52,
     actualWeeksPerMonth: 52 / 12, 
   },
-
 
   pricingRules: {
     canBundleWithSani: true,

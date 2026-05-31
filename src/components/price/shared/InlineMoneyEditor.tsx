@@ -15,7 +15,6 @@ export default function InlineMoneyEditor({ value, display, onCommit }) {
   const [cursorPosition, setCursorPosition] = useState(null);
   const inputRef = useRef(null);
 
-
   useEffect(() => {
     if (editing && inputRef.current && cursorPosition !== null) {
       inputRef.current.setSelectionRange(cursorPosition, cursorPosition);

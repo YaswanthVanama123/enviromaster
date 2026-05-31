@@ -1,11 +1,4 @@
-/**
- * Quota Tracking Types
- * Types for sales person management, agreements, and quota tracking
- */
 
-// ============================================================
-// SALES PERSON TYPES
-// ============================================================
 
 export type SalesRole = 'field_sales' | 'inside_sales' | 'account_manager' | 'sales_manager';
 
@@ -49,7 +42,7 @@ export interface UpdateSalesPersonInput {
   email?: string;
   phone?: string;
   role?: SalesRole;
-  salesRole?: SalesRole;  // Backend uses salesRole
+  salesRole?: SalesRole;  
   territory?: string;
   isActive?: boolean;
   managerId?: string;
@@ -60,10 +53,6 @@ export interface UpdateQuotaInput {
   periodType?: 'monthly' | 'quarterly' | 'annual';
   effectiveDate?: string;
 }
-
-// ============================================================
-// AGREEMENT TYPES
-// ============================================================
 
 export type AgreementStatus = 'draft' | 'pending_approval' | 'approved' | 'active' | 'completed' | 'cancelled';
 
@@ -156,10 +145,6 @@ export interface CreateAgreementInput {
   notes?: string;
 }
 
-// ============================================================
-// QUOTA PERIOD TYPES
-// ============================================================
-
 export interface QuotaPeriod {
   _id: string;
   salesPersonId: string;
@@ -180,10 +165,6 @@ export interface QuotaPeriod {
   createdAt: string;
   updatedAt: string;
 }
-
-// ============================================================
-// QUOTA STATUS TYPES
-// ============================================================
 
 export interface QuotaStatusResponse {
   salesPerson: {
@@ -245,29 +226,19 @@ export interface LeaderboardResponse {
   leaderboard: LeaderboardEntry[];
 }
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
-
-/**
- * Get color for quota level display
- */
 export function getQuotaLevelColor(level: 'below' | 'above' | 'double'): string {
   switch (level) {
     case 'double':
-      return '#16a34a'; // green
+      return '#16a34a'; 
     case 'above':
-      return '#2563eb'; // blue
+      return '#2563eb'; 
     case 'below':
-      return '#dc2626'; // red
+      return '#dc2626'; 
     default:
-      return '#6b7280'; // gray
+      return '#6b7280'; 
   }
 }
 
-/**
- * Get background color for quota level badge
- */
 export function getQuotaLevelBgColor(level: 'below' | 'above' | 'double'): string {
   switch (level) {
     case 'double':
@@ -281,9 +252,6 @@ export function getQuotaLevelBgColor(level: 'below' | 'above' | 'double'): strin
   }
 }
 
-/**
- * Get commission rate for quota level
- */
 export function getQuotaCommissionRate(level: 'below' | 'above' | 'double'): number {
   switch (level) {
     case 'double':
@@ -297,9 +265,6 @@ export function getQuotaCommissionRate(level: 'below' | 'above' | 'double'): num
   }
 }
 
-/**
- * Format currency
- */
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -309,16 +274,10 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
-/**
- * Format percentage
- */
 export function formatPercentage(value: number): string {
   return `${value.toFixed(1)}%`;
 }
 
-/**
- * Get agreement term label
- */
 export function getAgreementTermLabel(term: string): string {
   switch (term) {
     case '3-year':
@@ -334,9 +293,6 @@ export function getAgreementTermLabel(term: string): string {
   }
 }
 
-/**
- * Get agreement status color
- */
 export function getAgreementStatusColor(status: AgreementStatus): string {
   switch (status) {
     case 'active':
@@ -356,9 +312,6 @@ export function getAgreementStatusColor(status: AgreementStatus): string {
   }
 }
 
-/**
- * Get sales role label
- */
 export function getSalesRoleLabel(role: SalesRole): string {
   switch (role) {
     case 'field_sales':

@@ -39,10 +39,8 @@ export const MicrofiberMoppingForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, activeConfig } = useMicrofiberMoppingCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractTermMonths) {
@@ -52,11 +50,9 @@ export const MicrofiberMoppingForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -70,7 +66,6 @@ export const MicrofiberMoppingForm: React.FC<
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -78,13 +73,10 @@ export const MicrofiberMoppingForm: React.FC<
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -95,13 +87,10 @@ export const MicrofiberMoppingForm: React.FC<
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -109,16 +98,13 @@ export const MicrofiberMoppingForm: React.FC<
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -127,18 +113,14 @@ export const MicrofiberMoppingForm: React.FC<
         return;
       }
 
-
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-
   const prevDataRef = useRef<string>("");
-
 
   const bathroomRate = form.customIncludedBathroomRate ?? form.includedBathroomRate;
   const hugeBathroomRate = form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt;
@@ -167,13 +149,11 @@ export const MicrofiberMoppingForm: React.FC<
         displayName: "Microfiber Mopping",
         isActive: true,
 
-
         includedBathroomRate: form.customIncludedBathroomRate ?? form.includedBathroomRate,
         hugeBathroomRatePerSqFt: form.customHugeBathroomRatePerSqFt ?? form.hugeBathroomRatePerSqFt,
         extraAreaRatePerUnit: form.customExtraAreaRatePerUnit ?? form.extraAreaRatePerUnit,
         standaloneRatePerUnit: form.customStandaloneRatePerUnit ?? form.standaloneRatePerUnit,
         dailyChemicalPerGallon: form.customDailyChemicalPerGallon ?? form.dailyChemicalPerGallon,
-
 
         bathroomCount: form.bathroomCount,
         isHugeBathroom: form.isHugeBathroom,
@@ -191,7 +171,6 @@ export const MicrofiberMoppingForm: React.FC<
         needsParking: form.needsParking,
         applyMinimum: form.applyMinimum !== false,
 
-
         perVisitBase: calc.perVisitPrice,  
         perVisit: calc.perVisitPrice,  
         minimumChargePerVisit: calc.minimumChargePerVisit,  
@@ -204,7 +183,6 @@ export const MicrofiberMoppingForm: React.FC<
           value: frequencyLabel,
           frequencyKey: form.frequency,
         },
-
 
         serviceBreakdown: (() => {
           const breakdown = [];
@@ -350,7 +328,6 @@ export const MicrofiberMoppingForm: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
-
   const prevInputsRef = useRef({
     bathroomCount: form.bathroomCount,
     hugeBathroomSqFt: form.hugeBathroomSqFt,
@@ -370,7 +347,6 @@ export const MicrofiberMoppingForm: React.FC<
     frequency: form.frequency,
     contractTermMonths: form.contractTermMonths,
   });
-
 
   useEffect(() => {
     const prev = prevInputsRef.current;
@@ -876,7 +852,6 @@ export const MicrofiberMoppingForm: React.FC<
 
       {}
       {}
-
 
       {}
       <div className="svc-summary">

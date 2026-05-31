@@ -47,7 +47,6 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
     },
   },
 
-
   perItemCharge: {
 
     insideBeltway: {
@@ -62,13 +61,11 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
       tripCharge: 8, 
     },
 
-
     smallFacility: {
       fixtureThreshold: 5, 
       minimumWeekly: 50, 
       includesTripCharge: true, 
     },
-
 
     facilityComponents: {
 
@@ -78,7 +75,6 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
         monthlySupplyCostPer6Dispensers: 8, 
         totalCostPer4Sinks: 70, 
       },
-
 
       urinals: {
         screenRatio: 1, 
@@ -90,7 +86,6 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
         },
       },
 
-
       maleToilets: {
         clipRatio: 1, 
         seatCoverRatio: 1, 
@@ -101,7 +96,6 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
         },
       },
 
-
       femaleToilets: {
         sanipodRatio: 1, 
         monthlyCostPerToilet: 4, 
@@ -111,13 +105,11 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
       },
     },
 
-
     basicIncludes: {
       electrostaticSpray: true, 
       airFreshenerService: true, 
       soapService: true, 
     },
-
 
     warrantyFees: {
       perDispenserPerWeek: 1, 
@@ -126,14 +118,12 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
     },
   },
 
-
   billingConversions: {
     weekly: {
       monthlyMultiplier: 4.33, 
       annualMultiplier: 50, 
     },
   },
-
 
   rateTiers: {
     redRate: {
@@ -148,7 +138,6 @@ export const SANICLEAN_CONFIG: SanicleanPricingConfig = {
     SanicleanRateTier,
     { multiplier: number; commissionRate: number }
   >,
-
 
   valueProposition: [
     "Enviro-Master's core service since the Swisher days. This is what built the company.",

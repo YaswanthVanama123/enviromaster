@@ -11,7 +11,6 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName, updateRefreshPowerScrubFrequency } from "../../../utils/fileLogger";
 
-
 const FALLBACK_DEFAULT_HOURLY = 200;
 const FALLBACK_DEFAULT_MIN = 475;
 const FALLBACK_DEFAULT_TRIP = 75;
@@ -33,7 +32,6 @@ const AREA_LOG_NAMES: Record<RefreshAreaKey, string> = {
   boh: "Back of House",
   other: "Other",
 };
-
 
 interface BackendRefreshPowerScrubConfig {
   coreRates: {
@@ -115,7 +113,6 @@ const AREA_KEYS: RefreshAreaKey[] = [
   "other",
 ];
 
-
 function transformBackendFrequencyMeta(backendMeta: BackendRefreshPowerScrubConfig['frequencyMetadata'] | undefined) {
   if (!backendMeta) {
     console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
@@ -124,9 +121,7 @@ function transformBackendFrequencyMeta(backendMeta: BackendRefreshPowerScrubConf
 
   console.log('🔧 [Refresh Power Scrub] Transforming backend frequencyMetadata:', backendMeta);
 
-
   const transformedBilling: any = {};
-
 
   if (backendMeta.weekly) {
     transformedBilling.weekly = {
@@ -141,7 +136,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendRefreshPowerScrubConf
       annualMultiplier: backendMeta.biweekly.monthlyRecurringMultiplier * 12,
     };
   }
-
 
   const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
 
@@ -163,14 +157,12 @@ function transformBackendFrequencyMeta(backendMeta: BackendRefreshPowerScrubConf
   return transformedBilling;
 }
 
-
 function getBillingMultiplier(
   frequency: string,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
 
   let normalizedFrequency = frequency.toLowerCase().replace("-", "").replace(/\s+/g, "");
-
 
   if (normalizedFrequency.includes("2×") || normalizedFrequency.includes("2x") || normalizedFrequency === "2/month") {
     normalizedFrequency = "twicepermonth";
@@ -179,7 +171,6 @@ function getBillingMultiplier(
   if (normalizedFrequency === "every4weeks") {
     normalizedFrequency = "everyfourweeks";
   }
-
 
   const defaultMultipliers: Record<string, number> = {
     "onetime": 0,
@@ -193,7 +184,6 @@ function getBillingMultiplier(
     "biannual": 0.167,
     "annual": 0.083,
   };
-
 
   if (backendConfig?.billingConversions) {
     const conversions = backendConfig.billingConversions;
@@ -215,16 +205,13 @@ function getBillingMultiplier(
     }
   }
 
-
   const transformedMeta = transformBackendFrequencyMeta(backendConfig?.frequencyMetadata);
   if (transformedMeta && transformedMeta[normalizedFrequency]) {
     return transformedMeta[normalizedFrequency].monthlyMultiplier;
   }
 
-
   return defaultMultipliers[normalizedFrequency] ?? 1.0;
 }
-
 
 function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null): RefreshAreaCalcState {
   return {
@@ -265,7 +252,6 @@ function createDefaultArea(backendConfig?: BackendRefreshPowerScrubConfig | null
   };
 }
 
-
 function createDefaultForm(backendConfig?: BackendRefreshPowerScrubConfig | null): RefreshPowerScrubFormState {
   const defaultArea = createDefaultArea(backendConfig);
 
@@ -275,14 +261,11 @@ function createDefaultForm(backendConfig?: BackendRefreshPowerScrubConfig | null
     tripChargeIncluded: true,
     notes: "",
 
-
     tripCharge: backendConfig?.coreRates?.tripCharge ?? FALLBACK_DEFAULT_TRIP,
     hourlyRate: backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY,
     minimumVisit: backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN,
 
-
     contractMonths: 12,
-
 
     dumpster: { ...defaultArea },
     patio: { ...defaultArea },
@@ -364,7 +347,6 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   tripChargeIncluded: true,
   notes: "",
 
-
   tripCharge: FALLBACK_DEFAULT_TRIP,   
   hourlyRate: FALLBACK_DEFAULT_HOURLY, 
   minimumVisit: FALLBACK_DEFAULT_MIN,  
@@ -372,9 +354,7 @@ const DEFAULT_FORM: RefreshPowerScrubFormState = {
   minimumVisitIsCustom: false,
   applyMinimum: true,
 
-
   contractMonths: 12,
-
 
   dumpster: { ...DEFAULT_AREA },
   patio: { ...DEFAULT_AREA },
@@ -420,7 +400,6 @@ const priceFieldsForLogging: (keyof RefreshAreaCalcState)[] = [
   "patioAddonRate",
 ];
 
-
 function calcPerWorker(
   state: RefreshAreaCalcState,
   formGlobalRate: number,  
@@ -435,17 +414,14 @@ function calcPerWorker(
         ? formGlobalRate
         : (backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY));
 
-
   const minimumVisit = formMinimumVisit > 0
     ? formMinimumVisit
     : (backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN);
 
   const calculatedAmount = (state.workers || 0) * perWorkerRate;
 
-
   return state.workers > 0 ? (applyMinimum ? Math.max(calculatedAmount, minimumVisit) : calculatedAmount) : 0;
 }
-
 
 function calcPerHour(
   state: RefreshAreaCalcState,
@@ -461,17 +437,14 @@ function calcPerHour(
         ? formGlobalRate
         : (backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE));
 
-
   const minimumVisit = formMinimumVisit > 0
     ? formMinimumVisit
     : (backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN);
 
   const calculatedAmount = (state.hours || 0) * perHourRate;
 
-
   return state.hours > 0 ? (applyMinimum ? Math.max(calculatedAmount, minimumVisit) : calculatedAmount) : 0;
 }
-
 
 function calcSquareFootage(
   state: RefreshAreaCalcState,
@@ -479,7 +452,6 @@ function calcSquareFootage(
   backendConfig?: BackendRefreshPowerScrubConfig | null,
   applyMinimum: boolean = true
 ): number {
-
 
   const fixedFee = state.sqFtFixedFee !== undefined && state.sqFtFixedFee !== null
     ? state.sqFtFixedFee
@@ -493,7 +465,6 @@ function calcSquareFootage(
     ? state.outsideRate
     : (backendConfig?.squareFootagePricing?.outsideRate ?? FALLBACK_SQFT_OUTSIDE_RATE);
 
-
   const minimumVisit = formMinimumVisit > 0
     ? formMinimumVisit
     : (backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN);
@@ -502,18 +473,15 @@ function calcSquareFootage(
   const outsideCost = (state.outsideSqFt || 0) * outsideRate;
   const calculatedAmount = fixedFee + insideCost + outsideCost;
 
-
   const hasAnyValue = (state.insideSqFt || 0) > 0 || (state.outsideSqFt || 0) > 0 || fixedFee > 0;
   return hasAnyValue ? (applyMinimum ? Math.max(calculatedAmount, minimumVisit) : calculatedAmount) : 0;
 }
-
 
 function calcPresetPackage(
   area: RefreshAreaKey,
   state: RefreshAreaCalcState,
   backendConfig?: BackendRefreshPowerScrubConfig | null
 ): number {
-
 
   const defaultConfig = {
     coreRates: {
@@ -541,7 +509,6 @@ function calcPresetPackage(
     },
   };
 
-
   const config = {
     coreRates: {
       ...defaultConfig.coreRates,
@@ -563,7 +530,6 @@ function calcPresetPackage(
       ...(backendConfig?.squareFootagePricing || {}),
     },
   };
-
 
   let defaultRate: number;
 
@@ -602,14 +568,11 @@ function calcPresetPackage(
       break;
   }
 
-
   const quantity = (state.presetQuantity && state.presetQuantity > 0) ? state.presetQuantity : 1;
 
   const rate = state.presetRate === null ? 0 : (state.presetRate ?? defaultRate);
 
-
   let baseAmount = quantity * rate;
-
 
   if (area === "patio" && state.includePatioAddon) {
 
@@ -620,11 +583,6 @@ function calcPresetPackage(
   return baseAmount;
 }
 
-
-/**
- * Computes the baseline area cost using ADMIN default rates (never user-modified rates).
- * Used for originalContractTotal so Greenline doesn't move when user changes rates.
- */
 function calcBaselineAreaCost(
   area: RefreshAreaKey,
   form: RefreshPowerScrubFormState,
@@ -633,22 +591,19 @@ function calcBaselineAreaCost(
   const state = form[area];
   if (!state.enabled) return 0;
 
-  // Admin baseline rates from config/fallback — never user-modified
   const baselineHourlyRate = backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
   const baselinePerHourRate = backendConfig?.coreRates?.perHourRate ?? FALLBACK_PER_HOUR_RATE;
   const baselinePerWorkerRate = backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? FALLBACK_DEFAULT_HOURLY;
   const baselineMinimumVisit = backendConfig?.coreRates?.minimumVisit ?? FALLBACK_DEFAULT_MIN;
   const applyMinimum = form.applyMinimum !== false;
 
-  // If user set a custom amount override, use it (it's a quantity-like override, not a rate)
   if (state.customAmount && state.customAmount > 0) {
     return state.customAmount;
   }
 
   switch (state.pricingType) {
     case "preset":
-      // Preset uses config-defined package rates — calcPresetPackage already uses config defaults
-      // But user can override presetRate — for baseline, use the config default
+
       return calcBaselinePresetPackage(area, state, backendConfig);
 
     case "perWorker": {
@@ -680,9 +635,6 @@ function calcBaselineAreaCost(
   }
 }
 
-/**
- * Baseline preset package calculation — uses admin config rates, ignoring user overrides to presetRate/smallMediumRate/largeRate.
- */
 function calcBaselinePresetPackage(
   area: RefreshAreaKey,
   state: RefreshAreaCalcState,
@@ -718,7 +670,7 @@ function calcBaselinePresetPackage(
       defaultRate = config.areaSpecificPricing.frontOfHouse;
       break;
     case "boh": {
-      // Use quantities from form but ADMIN rates
+      
       const smallMediumQty = state.smallMediumQuantity || 0;
       const baseSmRate = config.areaSpecificPricing.kitchen.smallMedium;
       const smallMediumTotal = state.smallMediumCustomAmount > 0
@@ -740,18 +692,15 @@ function calcBaselinePresetPackage(
       break;
   }
 
-  // Use quantity from form but ADMIN default rate (ignore user's presetRate override)
   const quantity = (state.presetQuantity && state.presetQuantity > 0) ? state.presetQuantity : 1;
   let baseAmount = quantity * defaultRate;
 
-  // Patio addon uses admin upsell rate
   if (area === "patio" && state.includePatioAddon) {
     baseAmount += config.areaSpecificPricing.patio.upsell;
   }
 
   return baseAmount;
 }
-
 
 function calcAreaCost(
   area: RefreshAreaKey,
@@ -761,11 +710,9 @@ function calcAreaCost(
   const state = form[area];
   if (!state.enabled) return { cost: 0, isPackage: false };
 
-
   if (state.customAmount && state.customAmount > 0) {
     return { cost: state.customAmount, isPackage: true }; 
   }
-
 
   switch (state.pricingType) {
     case "preset":
@@ -774,16 +721,13 @@ function calcAreaCost(
 
     case "perWorker":
 
-
       return { cost: calcPerWorker(state, form.hourlyRate, form.minimumVisit, backendConfig, form.applyMinimum !== false), isPackage: false };
 
     case "perHour":
 
-
       return { cost: calcPerHour(state, form.hourlyRate, form.minimumVisit, backendConfig, form.applyMinimum !== false), isPackage: false };
 
     case "squareFeet":
-
 
       return { cost: calcSquareFootage(state, form.minimumVisit, backendConfig, form.applyMinimum !== false), isPackage: false };
 
@@ -805,9 +749,7 @@ export function useRefreshPowerScrubCalc(
   const wasActiveRef = useRef<boolean>(false);
   const initialAppliedRef = useRef(false);
 
-
   const servicesContext = useServicesContextOptional();
-
 
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -823,7 +765,6 @@ export function useRefreshPowerScrubCalc(
     console.log(`💰 [REFRESH-POWER-SCRUB-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -847,7 +788,6 @@ export function useRefreshPowerScrubCalc(
       ...initial,
     };
 
-
     AREA_KEYS.forEach((area) => {
       const incoming = (initial as any)?.[area] || {};
       (base as any)[area] = {
@@ -856,7 +796,6 @@ export function useRefreshPowerScrubCalc(
         ...incoming,
       } as RefreshAreaCalcState;
     });
-
 
     if (initial?.tripCharge != null) {
       base.tripCharge = initial.tripCharge;
@@ -868,7 +807,6 @@ export function useRefreshPowerScrubCalc(
       base.minimumVisit = initial.minimumVisit;
     }
 
-
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
       : servicesContext?.globalContractMonths
@@ -879,7 +817,6 @@ export function useRefreshPowerScrubCalc(
 
     return base;
   });
-
 
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -909,12 +846,9 @@ export function useRefreshPowerScrubCalc(
     });
   }, [form.frequency]);
 
-
   const [backendConfig, setBackendConfig] = useState<BackendRefreshPowerScrubConfig | null>(null);
 
-
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
 
   const updateFormWithConfig = (config: BackendRefreshPowerScrubConfig) => {
     console.log('🔧 [Refresh Power Scrub] Updating form with backend config:', config);
@@ -923,15 +857,12 @@ export function useRefreshPowerScrubCalc(
       const updatedDefaultArea = createDefaultArea(config);
       const backendForm = createDefaultForm(config);
 
-
       const updatedForm = {
         ...prev, 
-
 
         tripCharge: config.coreRates?.tripCharge ?? prev.tripCharge,
         hourlyRate: config.coreRates?.defaultHourlyRate ?? prev.hourlyRate,
         minimumVisit: config.coreRates?.minimumVisit ?? prev.minimumVisit,
-
 
         dumpster: {
           ...prev.dumpster, 
@@ -995,7 +926,6 @@ export function useRefreshPowerScrubCalc(
     });
   };
 
-
   const fetchPricing = useCallback(async (forceRefresh: boolean = false) => {
     if (initial && !forceRefresh) {
       console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Edit mode detected, skipping fetchPricing');
@@ -1011,7 +941,6 @@ export function useRefreshPowerScrubCalc(
           const config = backendData.config as BackendRefreshPowerScrubConfig;
           setBackendConfig(config);
           updateFormWithConfig(config);
-
 
           if (forceRefresh) {
             console.log('🔄 [REFRESH-POWER-SCRUB] Manual refresh: Clearing all custom overrides');
@@ -1032,7 +961,6 @@ export function useRefreshPowerScrubCalc(
     } catch (error) {
       console.error('❌ Failed to fetch RefreshPowerScrub config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("refreshPowerScrub");
         if (fallbackConfig?.config) {
@@ -1040,7 +968,6 @@ export function useRefreshPowerScrubCalc(
           const config = fallbackConfig.config as BackendRefreshPowerScrubConfig;
           setBackendConfig(config);
           updateFormWithConfig(config);
-
 
           if (forceRefresh) {
             console.log('🔄 [REFRESH-POWER-SCRUB] Manual refresh: Clearing all custom overrides');
@@ -1057,7 +984,6 @@ export function useRefreshPowerScrubCalc(
     }
   }, [servicesContext?.getBackendPricingForService, initial]);
 
-
   useEffect(() => {
     if (initial) {
       console.log('📋 [REFRESH-POWER-SCRUB-PRICING] Skipping price fetch - using saved historical prices from initial data');
@@ -1068,7 +994,6 @@ export function useRefreshPowerScrubCalc(
     fetchPricing();
   }, [initial, fetchPricing]); 
 
-
   useEffect(() => {
     if (initial) return;
 
@@ -1076,7 +1001,6 @@ export function useRefreshPowerScrubCalc(
       fetchPricing();
     }
   }, [initial, servicesContext?.backendPricingData, backendConfig, fetchPricing]);
-
 
   useEffect(() => {
     if (!initial || backendConfig) return;
@@ -1101,7 +1025,6 @@ export function useRefreshPowerScrubCalc(
     initialAppliedRef.current = true;
     console.log('📋 [REFRESH-POWER-SCRUB] Applied saved edit-mode data to form');
   }, [initial]);
-
 
   useEffect(() => {
     const isServiceActive = AREA_KEYS.some(area => form[area].enabled);
@@ -1151,11 +1074,9 @@ export function useRefreshPowerScrubCalc(
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.dumpster.enabled, form.patio.enabled, form.walkway.enabled, form.foh.enabled, form.boh.enabled, form.other.enabled, servicesContext]);
 
-
   const toggleAreaEnabled = (area: RefreshAreaKey, enabled: boolean) => {
     setForm((prev) => {
       const originalValue = prev[area].enabled;
-
 
       return {
         ...prev,
@@ -1221,7 +1142,6 @@ const getAreaFieldFallback = (
   }
 };
 
-
   const setAreaField = (
     area: RefreshAreaKey,
     field: keyof RefreshAreaCalcState,
@@ -1243,7 +1163,6 @@ const getAreaFieldFallback = (
           value = Number.isFinite(n) ? n : null;
         }
         originalValue = typeof originalValue === 'number' ? originalValue : 0;
-
 
         if (value !== undefined && value !== null && value !== originalValue && value > 0 &&
             priceFieldsForLogging.includes(field)) {
@@ -1267,7 +1186,6 @@ const getAreaFieldFallback = (
           );
         }
       }
-
 
       const updatedArea = {
         ...current,
@@ -1302,14 +1220,12 @@ const getAreaFieldFallback = (
         updatedArea.largeRateIsCustom = changedNumber;
       }
 
-
       if (field === 'kitchenSize') {
         updatedArea.customAmount = 0;
         updatedArea.presetQuantity = 1;  
         updatedArea.presetRate = undefined;  
         console.log(`🔧 [Refresh Power Scrub] Cleared custom values for ${area} when kitchen size changed from ${originalValue} to ${value}`);
       }
-
 
       if (field === 'pricingType') {
         updatedArea.customAmount = 0;
@@ -1345,7 +1261,6 @@ const getAreaFieldFallback = (
     });
   };
 
-
   const setHourlyRate = (raw: string) => {
     const n = parseFloat(raw);
     const newValue = Number.isFinite(n) ? n : 0;
@@ -1358,7 +1273,6 @@ const getAreaFieldFallback = (
       hourlyRate: newValue,
       hourlyRateIsCustom: hasOverride,
     }));
-
 
     if (newValue !== originalValue && newValue > 0) {
       addServiceFieldChange('global', 'hourlyRate', originalValue, newValue);
@@ -1377,7 +1291,6 @@ const getAreaFieldFallback = (
       minimumVisit: newValue,
       minimumVisitIsCustom: hasOverride,
     }));
-
 
     if (newValue !== originalValue && newValue > 0) {
       addServiceFieldChange('global', 'minimumVisit', originalValue, newValue);
@@ -1411,7 +1324,6 @@ const getAreaFieldFallback = (
 
   };
 
-
   const { areaTotals, hasPackagePrice, areaMonthlyTotals, areaContractTotals } = useMemo(() => {
     const totals: any = {};
     const monthlyTotals: any = {};
@@ -1422,19 +1334,15 @@ const getAreaFieldFallback = (
       const { cost, isPackage } = calcAreaCost(area, form, backendConfig);
       totals[area] = cost;
 
-
       let monthlyRecurring = 0;
       const areaFrequencyLabel = form[area].frequencyLabel?.toLowerCase();
 
-
       const effectiveFrequency = areaFrequencyLabel || form.frequency.toLowerCase();
-
 
       const multiplier = getBillingMultiplier(effectiveFrequency, backendConfig);
       monthlyRecurring = cost * multiplier;
 
       monthlyTotals[area] = monthlyRecurring;
-
 
       if (effectiveFrequency === "quarterly") {
         const quarterlyVisits = (form[area].contractMonths || 12) / 3;
@@ -1472,19 +1380,15 @@ const getAreaFieldFallback = (
       0
     );
 
-
     const calculatedPerVisit = areasSubtotal > 0 ? (form.applyMinimum !== false ? Math.max(areasSubtotal, form.minimumVisit) : areasSubtotal) : 0;
 
     const rounded = Math.round(calculatedPerVisit * 100) / 100;
 
-
     let monthlyRecurring = 0;
     let contractTotal = 0;
 
-
     const frequencyMultiplier = getBillingMultiplier(form.frequency, backendConfig);
     monthlyRecurring = rounded * frequencyMultiplier;
-
 
     if (form.frequency === "quarterly") {
       const quarterlyVisits = (form.contractMonths || 12) / 3;
@@ -1501,7 +1405,6 @@ const getAreaFieldFallback = (
     } else {
       contractTotal = monthlyRecurring * (form.contractMonths || 12);
     }
-
 
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
@@ -1548,7 +1451,6 @@ const getAreaFieldFallback = (
       );
     });
 
-
     return {
       serviceId: "refreshPowerScrub",
       displayName: "Refresh Power Scrub",
@@ -1560,7 +1462,6 @@ const getAreaFieldFallback = (
     };
   }, [areaTotals, hasPackagePrice, form.minimumVisit, form.applyMinimum, form.frequency, form.contractMonths, areaMonthlyTotals, areaContractTotals, backendConfig, calcFieldsTotal, dollarFieldsTotal]);
 
-  // Compute originalContractTotal using admin baseline rates (never changes with user rate edits)
   const { originalContractTotal, baselineAreaTotals, baselineAreaContractTotals } = useMemo(() => {
     const bAreaTotals: any = {};
     const bAreaContractTotals: any = {};
@@ -1569,7 +1470,6 @@ const getAreaFieldFallback = (
       const baselineCost = calcBaselineAreaCost(area, form, backendConfig);
       bAreaTotals[area] = baselineCost;
 
-      // Same contract calculation logic as the normal areaTotals/areaContractTotals
       const areaFrequencyLabel = form[area].frequencyLabel?.toLowerCase();
       const effectiveFrequency = areaFrequencyLabel || form.frequency.toLowerCase();
       const multiplier = getBillingMultiplier(effectiveFrequency, backendConfig);
@@ -1588,7 +1488,6 @@ const getAreaFieldFallback = (
       }
     }
 
-    // Mirror the totalServiceCost logic in the form: sum area values using one-time vs contract
     const isOneTimeLabel = (label?: string) => {
       if (!label) return false;
       const normalized = label.toLowerCase().replace(/-/g, " ").trim();
@@ -1602,7 +1501,6 @@ const getAreaFieldFallback = (
       baselineTotalServiceCost += isOneTime ? (bAreaTotals[area] || 0) : (bAreaContractTotals[area] || 0);
     }
 
-    // Add custom fields (same as regular — these aren't rate-based)
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const finalOriginalContractTotal = baselineTotalServiceCost + customFieldsTotal;
 

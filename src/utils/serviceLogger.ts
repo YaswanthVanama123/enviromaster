@@ -12,19 +12,15 @@ interface ServiceFieldChangeConfig {
   frequency?: string;
 }
 
-
 export const logServiceFieldChange = (config: ServiceFieldChangeConfig): void => {
   const { serviceKey, serviceName, fieldName, oldValue, newValue, quantity = 1, frequency = 'weekly' } = config;
 
-
   if (oldValue === newValue) return;
-
 
   if (oldValue === undefined || newValue === undefined) return;
 
   let numericOld: number;
   let numericNew: number;
-
 
   if (typeof oldValue === 'number' && typeof newValue === 'number') {
 
@@ -43,7 +39,6 @@ export const logServiceFieldChange = (config: ServiceFieldChangeConfig): void =>
     numericOld = String(oldValue).length;
     numericNew = String(newValue).length;
   }
-
 
   if (numericOld === numericNew && typeof oldValue !== 'number') return;
 
@@ -67,7 +62,6 @@ export const logServiceFieldChange = (config: ServiceFieldChangeConfig): void =>
     type: typeof oldValue
   });
 };
-
 
 export const logServiceFieldChanges = (
   serviceKey: string,
@@ -93,29 +87,22 @@ export const logServiceFieldChanges = (
   });
 };
 
-
 export const SERVICE_FORM_FIELDS = {
 
   quantities: ['quantity', 'qty', 'units', 'count', 'number', 'pods', 'bathrooms', 'rooms', 'fixtures', 'gallons'],
 
-
   locations: ['location', 'area', 'sqft', 'squareFeet', 'size'],
-
 
   timing: ['frequency', 'schedule', 'visits', 'contractMonths', 'term'],
 
-
   pricing: ['pricingMode', 'rateTier', 'tier', 'rateCategory'],
 
-
   toggles: ['add', 'include', 'enable', 'disable', 'need', 'require'],
-
 
   saniclean: ['sinks', 'urinals', 'maleToilets', 'femaleToilets', 'microfiberBathrooms', 'warrantyDispensers'],
   sanipod: ['podQuantity', 'extraBags', 'installationQuantity'],
   carpet: ['rooms', 'squareFootage', 'dirtLevel'],
   janitorial: ['hours', 'days', 'frequency'],
-
 
   getFormFields: (serviceType: string): string[] => {
     const common = [

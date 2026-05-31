@@ -11,7 +11,6 @@ import { serviceConfigApi } from "../../../backendservice/api";
 import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 
-
 interface BackendSanipodConfig {
   corePricingIncludedWithSaniClean: {
     weeklyPricePerUnit: number;        
@@ -60,7 +59,6 @@ interface BackendSanipodConfig {
     };
   };
 }
-
 
 function buildActiveConfig(backendConfig: BackendSanipodConfig | null) {
 
@@ -114,31 +112,24 @@ function buildActiveConfig(backendConfig: BackendSanipodConfig | null) {
 
   console.log('📊 [SaniPod] Building active config from backend:', backendConfig);
 
-
   const activeConfig = {
 
     weeklyRatePerUnit: backendConfig.corePricingIncludedWithSaniClean?.weeklyPricePerUnit ?? defaults.weeklyRatePerUnit,
     installChargePerUnit: backendConfig.corePricingIncludedWithSaniClean?.installPricePerUnit ?? defaults.installChargePerUnit,
 
-
     altWeeklyRatePerUnit: backendConfig.standalonePricingWithoutSaniClean?.pricePerUnitPerWeek ?? defaults.altWeeklyRatePerUnit,
     standaloneExtraWeeklyCharge: backendConfig.standalonePricingWithoutSaniClean?.weeklyMinimumPrice ?? defaults.standaloneExtraWeeklyCharge,
     useCheapestOption: backendConfig.standalonePricingWithoutSaniClean?.useCheapestOption ?? true,
 
-
     extraBagPrice: backendConfig.extraBagPricing?.pricePerBag ?? defaults.extraBagPrice,
-
 
     tripChargePerVisit: backendConfig.tripChargesStandaloneOnly?.standard ?? defaults.tripChargePerVisit,
     tripChargeBeltway: backendConfig.tripChargesStandaloneOnly?.beltway ?? defaults.tripChargePerVisit,
 
-
     minContractMonths: backendConfig.minContractMonths ?? defaults.minContractMonths,
     maxContractMonths: backendConfig.maxContractMonths ?? defaults.maxContractMonths,
 
-
     rateCategories: backendConfig.rateCategories ?? defaults.rateCategories,
-
 
     frequencyMultipliers: {
       oneTime: 0,
@@ -153,7 +144,6 @@ function buildActiveConfig(backendConfig: BackendSanipodConfig | null) {
       annual: 0,
     },
 
-
     annualFrequencies: {
       oneTime: 1,
       weekly: 52,
@@ -166,7 +156,6 @@ function buildActiveConfig(backendConfig: BackendSanipodConfig | null) {
       biannual: backendConfig.frequencyMetadata?.biannual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.biannual.cycleMonths : 2,
       annual: backendConfig.frequencyMetadata?.annual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.annual.cycleMonths : 1,
     },
-
 
     frequencyMetadata: backendConfig.frequencyMetadata,
   };
@@ -206,9 +195,7 @@ export interface SanipodFormState {
 
   extraBagsRecurring: boolean;
 
-
   frequency: SanipodFrequencyKey;
-
 
   weeklyRatePerUnit: number;        
   altWeeklyRatePerUnit: number;     
@@ -222,32 +209,23 @@ export interface SanipodFormState {
   installQuantity: number;
   installRatePerPod: number;
 
-
   customInstallationFee?: number;
-
 
   customPerVisitPrice?: number;
 
-
   customMonthlyPrice?: number;
-
 
   customAnnualPrice?: number;
 
-
   customWeeklyPodRate?: number;
 
-
   customPodServiceTotal?: number;
-
 
   customExtraBagsTotal?: number;
 
   rateCategory: SanipodRateCategory;
 
-
   contractMonths: number;
-
 
   isStandalone: boolean;
   notes?: string;
@@ -257,49 +235,34 @@ export interface SanipodCalcResult {
 
   perVisit: number;
 
-
   monthly: number;
-
 
   annual: number;
 
-
   installCost: number;
-
 
   chosenServiceRule: SanipodServiceRuleKey;
 
-
   weeklyPodServiceRed: number;
-
 
   firstVisit: number;
 
-
   ongoingMonthly: number;
-
 
   contractTotal: number;
   originalContractTotal: number;
 
-
   adjustedPerVisit: number;
-
 
   adjustedMonthly: number;
 
-
   adjustedAnnual: number;
-
 
   adjustedPodServiceTotal: number;
 
-
   adjustedBagsTotal: number;
 
-
   effectiveRatePerPod: number;
-
 
   minimumChargePerVisit: number;
 }
@@ -308,7 +271,6 @@ const DEFAULT_FORM_STATE: SanipodFormState = {
   podQuantity: 0,
   extraBagsPerWeek: 0,
   extraBagsRecurring: true,
-
 
   weeklyRatePerUnit: cfg.weeklyRatePerUnit,
   altWeeklyRatePerUnit: cfg.altWeeklyRatePerUnit,
@@ -335,9 +297,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
 
-
   const servicesContext = useServicesContextOptional();
-
 
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -353,7 +313,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     console.log(`💰 [SANIPOD-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -396,7 +355,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       ...initialData,
     };
 
-
     const defaultContractMonths = initialData?.contractMonths
       ? initialData.contractMonths
       : servicesContext?.globalContractMonths
@@ -409,10 +367,8 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     };
   });
 
-
   const [backendConfig, setBackendConfig] = useState<BackendSanipodConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
-
 
   const updateFormWithConfig = (activeConfig: any) => {
     setForm((prev) => {
@@ -452,7 +408,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     });
   };
 
-
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
@@ -463,12 +418,10 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
           console.log('✅ [SaniPod] Using cached pricing data from context');
           const config = backendData.config as BackendSanipodConfig;
 
-
           const activeConfig = buildActiveConfig(config);
 
           setBackendConfig(config);
           updateFormWithConfig(activeConfig);
-
 
           if (forceRefresh) {
             console.log('🔄 [SANIPOD] Manual refresh: Clearing all custom overrides');
@@ -497,19 +450,16 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     } catch (error: any) {
       console.error('❌ Failed to fetch SaniPod config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("sanipod");
         if (fallbackConfig?.config) {
           console.log('✅ [SaniPod] Using backend pricing data from context after error');
           const config = fallbackConfig.config as BackendSanipodConfig;
 
-
           const activeConfig = buildActiveConfig(config);
 
           setBackendConfig(config);
           updateFormWithConfig(activeConfig);
-
 
           if (forceRefresh) {
             console.log('🔄 [SANIPOD] Manual refresh: Clearing all custom overrides');
@@ -535,7 +485,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     }
   };
 
-
   useEffect(() => {
 
     if (initialData) {
@@ -547,7 +496,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
 
   useEffect(() => {
 
@@ -576,7 +524,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     }
   }, [servicesContext?.getBackendPricingForService, servicesContext?.backendPricingData]);
 
-
   useEffect(() => {
     const isServiceActive = (form.podQuantity || 0) > 0;
     const wasActive = wasActiveRef.current;
@@ -600,7 +547,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.podQuantity, servicesContext]);
-
 
   const addServiceFieldChange = useCallback((
     fieldName: string,
@@ -652,7 +598,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     });
   }, [form.podQuantity, form.frequency]);
 
-
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({
@@ -702,11 +647,9 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         (next as any)[name] = t.value;
       }
 
-
       if (name === "frequency") {
         next.frequency = t.value as SanipodFrequencyKey;
       }
-
 
       const pricingFields = [
         'weeklyRatePerUnit', 'altWeeklyRatePerUnit', 'extraBagPrice',
@@ -719,7 +662,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         const newValue = (next as any)[name] as number | undefined;
         addServiceFieldChange(name, originalValue as number | undefined, newValue);
       }
-
 
       return next;
     });
@@ -760,9 +702,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       };
     }
 
-
     const rateCfg = activeConfig.rateCategories[form.rateCategory] ?? activeConfig.rateCategories.redRate;
-
 
     const tripPerVisit = 0;
 
@@ -771,7 +711,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         ? form.installRatePerPod
         : activeConfig.installChargePerUnit;  
 
-
     const weeklyBagsRed = form.extraBagsRecurring
       ? bags * form.extraBagPrice
       : 0;
@@ -779,7 +718,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
     const oneTimeBagsCost = form.extraBagsRecurring
       ? 0
       : bags * form.extraBagPrice;
-
 
     const weeklyRatePerUnit = Number(form.weeklyRatePerUnit) || 0;
     const standaloneCharge = Number(form.standaloneExtraWeeklyCharge) || 0;
@@ -861,49 +799,40 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       minimumApplied: form.isStandalone && weeklyServiceBeforeMinimum < form.standaloneExtraWeeklyCharge
     });
 
-
     const perVisitService = weeklyService;
     const perVisit = perVisitService + tripPerVisit; 
 
-
     const installQty = form.isNewInstall ? installQtyRaw : 0;
     const calculatedInstallOnlyCost = installQty * installRate;
-
 
     const installOnlyCost = form.customInstallationFee !== undefined
       ? form.customInstallationFee
       : calculatedInstallOnlyCost;
 
-
     const servicePods = Math.max(0, pods - installQty);
 
     let firstVisitServiceCost = 0;
     if (servicePods > 0) {
-      // Use effective per-pod rate (accounts for standalone proportionally)
+      
       firstVisitServiceCost = servicePods * effectiveRatePerPod * rateCfg.multiplier;
     }
 
-
     const firstVisitBagsCost = bags > 0 ? (bags * form.extraBagPrice * rateCfg.multiplier) : 0;
-
 
     const firstVisit = installOnlyCost + firstVisitServiceCost + firstVisitBagsCost;
     const installCost = installOnlyCost;
 
-
     const selectedFrequency = form.frequency || "weekly";
     const monthlyVisits = activeConfig.frequencyMultipliers[selectedFrequency];
-
 
     const isVisitBasedFrequency = selectedFrequency === "oneTime" || selectedFrequency === "quarterly" ||
       selectedFrequency === "biannual" || selectedFrequency === "annual" || selectedFrequency === "bimonthly" ||
       selectedFrequency === "everyFourWeeks";
 
-
     let firstMonth;
 
     if (selectedFrequency === "oneTime") {
-      // One-time: match contractTotal logic
+      
       if (form.isNewInstall && installQty > 0) {
         firstMonth = firstVisit;
       } else {
@@ -917,13 +846,10 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       firstMonth = firstVisit;
     } else {
 
-
       firstMonth = firstVisit + Math.max(monthlyVisits - 1, 0) * perVisit;
     }
 
-
     const ongoingMonthly = monthlyVisits * perVisit;
-
 
     const minMonths = activeConfig.minContractMonths;
     const maxMonths = activeConfig.maxContractMonths;
@@ -933,11 +859,9 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       maxMonths
     );
 
-
     let contractTotal: number;
     if (selectedFrequency === "oneTime") {
-      // One-time: use firstVisit when installing (handles install + partial service pods),
-      // otherwise use perVisit (respects standalone minimum) + one-time bags
+
       if (form.isNewInstall && installQty > 0) {
         contractTotal = firstVisit;
       } else {
@@ -947,7 +871,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
 
       const visitsPerYear = activeConfig.annualFrequencies[selectedFrequency];
       const totalVisits = (contractMonths / 12) * visitsPerYear;
-
 
       if (form.isNewInstall && installQty > 0) {
 
@@ -966,24 +889,19 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       }
     }
 
-
     const bagLineAmount = bags * form.extraBagPrice;
-
 
     const adjustedPodServiceTotal = form.customPodServiceTotal !== undefined
       ? form.customPodServiceTotal
       : (pods > 0 ? (form.customWeeklyPodRate !== undefined ? form.customWeeklyPodRate : effectiveRatePerPod) * pods : 0);
 
-
     const adjustedBagsTotal = form.customExtraBagsTotal !== undefined
       ? form.customExtraBagsTotal
       : bagLineAmount;
 
-
     const adjustedPerVisitBeforeMinimum = form.customPerVisitPrice !== undefined
       ? form.customPerVisitPrice
       : (adjustedPodServiceTotal + (form.extraBagsRecurring ? adjustedBagsTotal : 0)) * rateCfg.multiplier;
-
 
     const adjustedPerVisit = adjustedPerVisitBeforeMinimum;
 
@@ -995,7 +913,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       minimumApplied: form.isStandalone && adjustedPerVisitBeforeMinimum < form.standaloneExtraWeeklyCharge
     });
 
-
     let adjustedFirstVisitServiceCost = 0;
     if (servicePods > 0 && installQty > 0) {
 
@@ -1003,17 +920,14 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         ? form.customWeeklyPodRate
         : effectiveRatePerPod;
 
-      // Use effective per-pod rate for remaining service pods (same as base calc)
       adjustedFirstVisitServiceCost = servicePods * effectiveRateForServicePods * rateCfg.multiplier;
     }
-
 
     const weeksPerMonthCalc = monthlyVisits;  
     const oneTimeBagsCostCalc = form.extraBagsRecurring ? 0 : adjustedBagsTotal;
     const installCostCalc = form.customInstallationFee !== undefined
       ? form.customInstallationFee
       : installOnlyCost;
-
 
     let adjustedFirstVisitTotal;
     if (installQty > 0) {
@@ -1030,7 +944,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
       : selectedFrequency === "oneTime" || isVisitBasedFrequency || selectedFrequency === "monthly"
         ? adjustedFirstVisitTotal
         : adjustedFirstVisitTotal + Math.max(monthlyVisits - 1, 0) * adjustedPerVisit;
-
 
     const ongoingMonthlyCalc = weeksPerMonthCalc * adjustedPerVisit;
 
@@ -1061,7 +974,6 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         adjustedAnnualBeforeCustomFields = adjustedMonthly + Math.max(contractMonths - 1, 0) * ongoingMonthlyCalc;
       }
     }
-
 
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const adjustedAnnual = adjustedAnnualBeforeCustomFields + customFieldsTotal;
@@ -1110,12 +1022,12 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
         const basePerVisit = baseWeeklyService;
         const baseInstall = form.isNewInstall && installQty > 0 ? installQty * baseInstallRate : 0;
         const baseOneTimeBags = form.extraBagsRecurring ? 0 : bags * baseExtraBagPrice;
-        // Mirror actual first visit logic: deduct install pods from service pods (lines 879-898)
+        
         let baseFirstVisit: number;
         if (form.isNewInstall && installQty > 0) {
           const baseServicePods = Math.max(0, pods - installQty);
           let baseFirstVisitServiceCost = 0;
-        // Mirror actual first visit logic: use effective per-pod rate for service pods
+        
         const baseEffectiveRatePerPod = pods > 0 ? (Math.min(baseOptA, baseOptB) - baseWeeklyBags) / pods : 0;
           if (baseServicePods > 0) {
             baseFirstVisitServiceCost = baseServicePods * baseEffectiveRatePerPod;
@@ -1145,7 +1057,7 @@ export function useSanipodCalc(initialData?: Partial<SanipodFormState>, customFi
             : baseFirstVisit + Math.max(monthlyVisits - 1, 0) * basePerVisit;
           baseContractTotal = baseFirstMonth + Math.max(contractMonths - 1, 0) * baseOngoing;
         }
-        // Include custom fields in baseline (same extra charges apply regardless of rates)
+        
         return Math.round(baseContractTotal * 100) / 100 + customFieldsTotal;
       })(),
     };

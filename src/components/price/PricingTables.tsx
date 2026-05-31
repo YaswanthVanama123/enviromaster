@@ -11,7 +11,6 @@ export default function PricingTables() {
     { key: "SaniClean", component: <SaniCleanCalculator /> },
     { key: "RPM Windows", component: <RpmWindowsCalculator /> },
 
-
   ];
 
   return (

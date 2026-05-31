@@ -1,7 +1,4 @@
-/**
- * Bigin Audit Tab
- * Admin panel for viewing and syncing audit logs from Zoho Bigin
- */
+
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { biginAuditApi, type BiginAuditLog, type ScrapeStatus, type AuditStats } from '../../../backendservice/api/biginAuditApi';
@@ -20,7 +17,6 @@ export const BiginAuditTab: React.FC = () => {
   const [pagination, setPagination] = useState({ total: 0, skip: 0, limit: 50 });
   const [selectedLog, setSelectedLog] = useState<BiginAuditLog | null>(null);
 
-  // Upload state
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
@@ -32,7 +28,6 @@ export const BiginAuditTab: React.FC = () => {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Delete state
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showDeleteUnnecessaryModal, setShowDeleteUnnecessaryModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -41,7 +36,6 @@ export const BiginAuditTab: React.FC = () => {
     message: string;
   } | null>(null);
 
-  // Load audit logs
   const loadAuditLogs = useCallback(async () => {
     setLoading(true);
     const result = await biginAuditApi.getAll({
@@ -61,7 +55,6 @@ export const BiginAuditTab: React.FC = () => {
     setLoading(false);
   }, [searchTerm, userFilter, actionFilter, moduleFilter, pipelineFilter, pagination.limit, pagination.skip]);
 
-  // Load stats
   const loadStats = useCallback(async () => {
     const result = await biginAuditApi.getStats();
     if (result) {
@@ -69,7 +62,6 @@ export const BiginAuditTab: React.FC = () => {
     }
   }, []);
 
-  // Load scrape status
   const loadScrapeStatus = useCallback(async () => {
     const result = await biginAuditApi.getScrapeStatus();
     if (result) {
@@ -77,19 +69,16 @@ export const BiginAuditTab: React.FC = () => {
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadAuditLogs();
     loadStats();
     loadScrapeStatus();
   }, []);
 
-  // Reload when filters change
   useEffect(() => {
     loadAuditLogs();
   }, [loadAuditLogs]);
 
-  // Poll scrape status when scraping
   useEffect(() => {
     if (scrapeStatus?.isRunning) {
       const interval = setInterval(() => {
@@ -97,13 +86,12 @@ export const BiginAuditTab: React.FC = () => {
       }, 2000);
       return () => clearInterval(interval);
     } else if (scrapeStatus?.lastScrapeResult === 'success') {
-      // Reload data after successful scrape
+      
       loadAuditLogs();
       loadStats();
     }
   }, [scrapeStatus?.isRunning, scrapeStatus?.lastScrapeResult, loadScrapeStatus, loadAuditLogs, loadStats]);
 
-  // Handle scrape
   const handleScrape = async () => {
     const result = await biginAuditApi.startScrape();
     if (result) {
@@ -111,14 +99,12 @@ export const BiginAuditTab: React.FC = () => {
     }
   };
 
-  // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPagination(prev => ({ ...prev, skip: 0 }));
     loadAuditLogs();
   };
 
-  // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -136,7 +122,7 @@ export const BiginAuditTab: React.FC = () => {
           skipped: result.data?.skipped,
           errors: result.data?.errors,
         });
-        // Reload data after successful upload
+        
         loadAuditLogs();
         loadStats();
       } else {
@@ -152,20 +138,18 @@ export const BiginAuditTab: React.FC = () => {
       });
     } finally {
       setUploading(false);
-      // Reset file input
+      
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  // Close upload modal
   const closeUploadModal = () => {
     setShowUploadModal(false);
     setUploadResult(null);
   };
 
-  // Handle delete all
   const handleDeleteAll = async () => {
     setDeleting(true);
     setDeleteResult(null);
@@ -185,7 +169,6 @@ export const BiginAuditTab: React.FC = () => {
     }
   };
 
-  // Handle delete unnecessary
   const handleDeleteUnnecessary = async () => {
     setDeleting(true);
     setDeleteResult(null);
@@ -205,21 +188,18 @@ export const BiginAuditTab: React.FC = () => {
     }
   };
 
-  // Close delete modals
   const closeDeleteModal = () => {
     setShowDeleteAllModal(false);
     setShowDeleteUnnecessaryModal(false);
     setDeleteResult(null);
   };
 
-  // Format date
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleString();
   };
 
-  // Format bytes to human-readable size
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -228,7 +208,6 @@ export const BiginAuditTab: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Get action color
   const getActionColor = (action: string) => {
     const lowerAction = action.toLowerCase();
     if (lowerAction.includes('create') || lowerAction.includes('add')) return 'action-create';
@@ -240,7 +219,7 @@ export const BiginAuditTab: React.FC = () => {
 
   return (
     <div className="bigin-audit-tab">
-      {/* Header */}
+      {}
       <div className="ba-header">
         <div className="ba-header-content">
           <h2>Bigin Audit History</h2>
@@ -298,7 +277,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="ba-stats-grid">
         <div className="ba-stat-card">
           <div className="ba-stat-value">{stats?.total || 0}</div>
@@ -322,7 +301,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Scrape Status Banner */}
+      {}
       {scrapeStatus && (
         <div className={`ba-scrape-status ${scrapeStatus.lastScrapeResult || ''}`}>
           <div className="ba-scrape-info">
@@ -348,7 +327,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
+      {}
       <div className="ba-filters">
         <form onSubmit={handleSearch} className="ba-search-form">
           <input
@@ -422,7 +401,7 @@ export const BiginAuditTab: React.FC = () => {
         </span>
       </div>
 
-      {/* Audit Logs Table */}
+      {}
       {loading ? (
         <div className="ba-loading">
           <div className="ba-loading-spinner"></div>
@@ -489,7 +468,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
+      {}
       {pagination.total > pagination.limit && (
         <div className="ba-pagination">
           <button
@@ -512,7 +491,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       )}
 
-      {/* Log Detail Modal */}
+      {}
       {selectedLog && (
         <div className="ba-modal-overlay" onClick={() => setSelectedLog(null)}>
           <div className="ba-modal" onClick={(e) => e.stopPropagation()}>
@@ -582,7 +561,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       )}
 
-      {/* Upload Modal */}
+      {}
       {showUploadModal && (
         <div className="ba-modal-overlay" onClick={closeUploadModal}>
           <div className="ba-modal ba-upload-modal" onClick={(e) => e.stopPropagation()}>
@@ -660,7 +639,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       )}
 
-      {/* Delete All Confirmation Modal */}
+      {}
       {showDeleteAllModal && (
         <div className="ba-modal-overlay" onClick={closeDeleteModal}>
           <div className="ba-modal ba-delete-modal" onClick={(e) => e.stopPropagation()}>
@@ -713,7 +692,7 @@ export const BiginAuditTab: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Unnecessary Confirmation Modal */}
+      {}
       {showDeleteUnnecessaryModal && (
         <div className="ba-modal-overlay" onClick={closeDeleteModal}>
           <div className="ba-modal ba-delete-modal" onClick={(e) => e.stopPropagation()}>

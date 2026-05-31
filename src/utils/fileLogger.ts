@@ -33,7 +33,6 @@ interface LogData {
   changes: FieldChange[];
 }
 
-
 class FileLogger {
   private changes: Map<string, FieldChange> = new Map(); 
   private sessionId: string;
@@ -42,11 +41,9 @@ class FileLogger {
     console.log('📝 [FILE-LOGGER] Initialized with session:', this.sessionId);
   }
 
-
   addChange(change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>): void {
     const key = `${change.productKey}_${change.fieldType}`;
     const existingEntry = this.changes.get(key);
-
 
     if (change.changeType === 'text') {
 
@@ -119,7 +116,6 @@ class FileLogger {
     console.log(`📝 [FILE-LOGGER] Total unique fields changed: ${this.changes.size}`);
   }
 
-
   removeChange(productKey: string, fieldType: string): void {
     const key = `${productKey}_${fieldType}`;
     const removed = this.changes.delete(key);
@@ -131,27 +127,22 @@ class FileLogger {
     }
   }
 
-
   getChanges(): FieldChange[] {
     return Array.from(this.changes.values()); 
   }
 
-
   hasChanges(): boolean {
     return this.changes.size > 0;
   }
-
 
   clearChanges(): void {
     console.log(`🧹 [FILE-LOGGER] Clearing ${this.changes.size} changes`);
     this.changes = new Map();
   }
 
-
   getChangeCount(): number {
     return this.changes.size;
   }
-
 
   async createLogFile(logData: Omit<LogData, 'changes'>, options: {
     overwriteExisting?: boolean;
@@ -186,7 +177,6 @@ class FileLogger {
         if (previousLogs.success && previousLogs.logs.length > 0) {
           console.log(`📚 [FILE-LOGGER] Found ${previousLogs.logs.length} total log(s) for this agreement`);
 
-
           previousLogs.logs.forEach(log => {
             const isFromPreviousVersion = log.versionNumber < logData.versionNumber;
             const isFromSameVersionButEarlier = log.versionNumber === logData.versionNumber;
@@ -213,7 +203,6 @@ class FileLogger {
 
       }
 
-
       const structuredLogData = {
         ...logData,
         currentChanges, 
@@ -231,7 +220,6 @@ class FileLogger {
         totalChangesInHistory: currentChanges.length + previousChanges.length
       });
 
-
       const result = await pdfApi.createVersionLog(structuredLogData);
 
       console.log(`✅ [FILE-LOGGER] Log created successfully:`, {
@@ -243,7 +231,6 @@ class FileLogger {
         hasSignificantChanges: result.log?.hasSignificantChanges
       });
 
-
       this.clearChanges();
 
       return result;
@@ -253,7 +240,6 @@ class FileLogger {
       throw error;
     }
   }
-
 
   debug(): void {
     console.log('🔍 [FILE-LOGGER] Debug Info:', {
@@ -267,7 +253,6 @@ class FileLogger {
       }))
     });
   }
-
 
   updateServiceChangeFrequency(
     areaName: string,
@@ -287,17 +272,13 @@ class FileLogger {
   }
 }
 
-
 const fileLogger = new FileLogger();
 
-
 export { fileLogger };
-
 
 export const addPriceChange = (change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>) => {
   fileLogger.addChange(change);
 };
-
 
 export const addTextChange = (change: Omit<FieldChange, 'changeAmount' | 'changePercentage' | 'timestamp'>) => {
   fileLogger.addChange({
@@ -336,7 +317,6 @@ export const updateRefreshPowerScrubFrequency = (areaName: string, frequency: st
   fileLogger.updateServiceChangeFrequency(areaName, frequency);
 };
 
-
 export const getAllVersionLogsForTesting = async (params?: {
   page?: number;
   limit?: number;
@@ -372,14 +352,12 @@ export const getAllVersionLogsForTesting = async (params?: {
   }
 };
 
-
 export const getProductTypeFromFamily = (familyKey: string): 'product' | 'dispenser' | 'service' | 'agreement_text' => {
   if (familyKey === 'dispensers') return 'dispenser';
   if (familyKey.includes('service') || familyKey.includes('Service')) return 'service';
   if (familyKey === 'agreement_text' || familyKey.includes('agreement') || familyKey.includes('terms')) return 'agreement_text';
   return 'product';
 };
-
 
 export const getFieldType = (fieldName: string): string => {
   switch (fieldName) {
@@ -421,7 +399,6 @@ export const getFieldType = (fieldName: string): string => {
   }
 };
 
-
 export const getFieldDisplayName = (fieldType: string): string => {
   const displayNames: Record<string, string> = {
 
@@ -430,7 +407,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'warrantyPrice': 'Warranty Price',
     'replacementPrice': 'Replacement Price',
     'total': 'Total',
-
 
     'customBaseService': 'Base Service Cost',
     'customTripCharge': 'Trip Charge',
@@ -443,7 +419,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customWeeklyTotal': 'Weekly Total',
     'customMonthlyTotal': 'Monthly Total',
     'customContractTotal': 'Contract Total',
-
 
     'includedBathroomRate': 'Included Bathroom Rate',
     'hugeBathroomRatePerSqFt': 'Huge Bathroom Rate per Sq Ft',
@@ -463,7 +438,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'smallMediumRate': 'Small/Medium Rate',
     'largeRate': 'Large Rate',
 
-
     'customBathroomTotal': 'Bathroom Total',
     'customNonBathroomTotal': 'Non-Bathroom Total',
     'customInstallationTotal': 'Installation Total',
@@ -474,7 +448,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'bathroomRatePerFixture': 'Bathroom Rate per Fixture',
     'nonBathroomFirstUnitRate': 'Non-Bathroom First Unit Rate',
     'nonBathroomAdditionalRate': 'Non-Bathroom Additional Rate',
-
 
     'standardDrainRate': 'Standard Drain Rate',
     'altBaseCharge': 'Alt Base Charge',
@@ -488,7 +461,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'plumbingAddonRate': 'Plumbing Addon Rate',
     'filthyMultiplier': 'Filthy Multiplier',
     'customWeeklyService': 'Weekly Service',
-
 
     'global_hourlyRate': 'Global Hourly Rate',
     'global_minimumVisit': 'Global Minimum Visit',
@@ -519,7 +491,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'Other_hours': 'Other Hours',
     'Other_customAmount': 'Other Custom Amount',
 
-
     'floorAreaSqFt': 'Floor Area Sq Ft',
     'ratePerSqFt': 'Rate Per Sq Ft',
     'minCharge': 'Minimum Charge',
@@ -537,7 +508,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customOngoingMonthly': 'Custom Ongoing Monthly',
     'customContractTotal': 'Custom Contract Total',
 
-
     'ratePerRoom': 'Rate Per Room',
     'ratePerThousandSqFt': 'Rate Per Thousand Sq Ft',
     'tripChargePerVisit': 'Trip Charge Per Visit',
@@ -546,7 +516,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customMonthlyRecurring': 'Custom Monthly Recurring',
     'customFirstMonthTotal': 'Custom First Month Total',
 
-
     'firstUnitRate': 'First 500 sq ft Rate',
     'additionalUnitRate': 'Additional 500 sq ft Rate',
     'perVisitMinimum': 'Per Visit Minimum',
@@ -554,7 +523,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customAdditionalUnitRate': 'Custom Additional Unit Rate',
     'customPerVisitMinimum': 'Custom Per Visit Minimum',
     'customInstallationFee': 'Custom Installation Fee',
-
 
     'recurringServiceRate': 'Recurring Service Rate',
     'oneTimeServiceRate': 'One Time Service Rate',
@@ -569,7 +537,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'baseHours': 'Base Hours',
     'vacuumingHours': 'Vacuuming Hours',
     'dustingHours': 'Dusting Hours',
-
 
     'baseHourlyRate': 'Base Hourly Rate',
     'shortJobHourlyRate': 'Short Job Hourly Rate',
@@ -588,10 +555,8 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customOngoingMonthly': 'Custom Ongoing Monthly',
     'customContractTotal': 'Custom Contract Total',
 
-
     'perTrapRate': 'Per Trap Rate',
     'perGallonRate': 'Per Gallon Rate',
-
 
     'smallWindowRate': 'Small Window Rate',
     'mediumWindowRate': 'Medium Window Rate',
@@ -605,7 +570,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'customAnnualPrice': 'Custom Annual Price',
     'customInstallationFee': 'Custom Installation Fee',
 
-
     'agreementTerms': 'Agreement Terms',
     'serviceDescription': 'Service Description',
     'specialConditions': 'Special Conditions',
@@ -616,7 +580,6 @@ export const getFieldDisplayName = (fieldType: string): string => {
     'legalDisclaimer': 'Legal Disclaimer',
     'contractClause': 'Contract Clause',
     'serviceScope': 'Service Scope',
-
 
   };
 

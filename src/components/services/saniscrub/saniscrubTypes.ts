@@ -19,29 +19,23 @@ export interface SaniscrubFrequencyMeta {
   monthlyMultiplier: number;
 }
 
-
 export interface SaniscrubPricingConfig {
 
   fixtureRates: Record<SaniscrubFrequency, number>;
 
-
   minimums: Record<SaniscrubFrequency, number>;
-
 
   nonBathroomUnitSqFt: number; 
   nonBathroomFirstUnitRate: number; 
   nonBathroomAdditionalUnitRate: number; 
-
 
   installMultipliers: {
     clean: number; 
     dirty: number; 
   };
 
-
   tripChargeBase: number;
   parkingFee: number;
-
 
   billingConversions: {
     [key in SaniscrubFrequency]: {
@@ -50,47 +44,34 @@ export interface SaniscrubPricingConfig {
     };
   };
 
-
   minContractMonths: number;
   maxContractMonths: number;
 
-
   frequencyMeta: Record<SaniscrubFrequency, SaniscrubFrequencyMeta>;
-
 
   twoTimesPerMonthDiscountFlat: number;
 }
 
-
 export interface SaniscrubFormState extends BaseServiceFormState {
   serviceId: "saniscrub";
 
-
   fixtureCount: number;
-
 
   nonBathroomSqFt: number;
 
-
   useExactNonBathroomSqft: boolean; 
-
 
   frequency: SaniscrubFrequency;
 
-
   hasSaniClean: boolean;
-
 
   location: "insideBeltway" | "outsideBeltway";
   needsParking: boolean;
 
-
   includeInstall: boolean;
   isDirtyInstall: boolean;
 
-
   contractMonths: number;
-
 
   fixtureRateMonthly: number;        
   fixtureRateBimonthly: number;      
@@ -103,9 +84,7 @@ export interface SaniscrubFormState extends BaseServiceFormState {
   installMultiplierClean: number;    
   twoTimesPerMonthDiscount: number;  
 
-
   customInstallationFee?: number;
-
 
   customPerVisitPrice?: number;
   customMonthlyRecurring?: number;

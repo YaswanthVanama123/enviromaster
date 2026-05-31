@@ -75,7 +75,6 @@ export const PayrollTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Settings state
   const [settings, setSettings] = useState<PayrollSettings>({
     startDate: null,
     cycleType: "biweekly",
@@ -83,19 +82,15 @@ export const PayrollTab: React.FC = () => {
   });
   const [originalSettings, setOriginalSettings] = useState<PayrollSettings | null>(null);
 
-  // Period state
   const [currentPeriod, setCurrentPeriod] = useState<PayrollPeriod | null>(null);
   const [previousPeriod, setPreviousPeriod] = useState<PayrollPeriod | null>(null);
 
-  // Employees data
   const [employees, setEmployees] = useState<EmployeePayroll[]>([]);
   const [totals, setTotals] = useState<PayrollTotals | null>(null);
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
 
-  // History state
   const [history, setHistory] = useState<any[]>([]);
 
-  // Payroll slip modal state
   const [viewingPayrollSlip, setViewingPayrollSlip] = useState<EmployeePayroll | null>(null);
 
   const loadPayrollData = useCallback(async () => {
@@ -103,7 +98,6 @@ export const PayrollTab: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch periods and employees data
       const [periodsRes, employeesRes] = await Promise.all([
         apiClient.get<any>("/api/payroll/periods"),
         apiClient.get<any>("/api/payroll/employees"),
@@ -196,7 +190,6 @@ export const PayrollTab: React.FC = () => {
   const exportToCSV = () => {
     if (!employees.length || !currentPeriod) return;
 
-    // Build CSV content
     const headers = [
       "Salesperson",
       "Agreements",
@@ -221,7 +214,6 @@ export const PayrollTab: React.FC = () => {
       emp.statusCounts.active
     ]);
 
-    // Add totals row
     if (totals) {
       rows.push([
         "TOTAL",
@@ -236,7 +228,6 @@ export const PayrollTab: React.FC = () => {
       ]);
     }
 
-    // Add agreement details section
     const agreementHeaders = [
       "",
       "",
@@ -252,7 +243,6 @@ export const PayrollTab: React.FC = () => {
     csvContent += headers.join(",") + "\n";
     csvContent += rows.map(row => row.join(",")).join("\n");
 
-    // Add detailed agreements section
     csvContent += "\n\n--- Agreement Details ---\n";
     csvContent += agreementHeaders.join(",") + "\n";
 

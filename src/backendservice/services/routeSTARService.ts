@@ -1,11 +1,4 @@
-/**
- * RouteSTAR Integration Service
- * Handles communication with RouteSTAR for driving time calculations
- * and automatic account type detection.
- *
- * IMPORTANT: Credentials are stored in environment variables
- * and should NEVER be committed to code.
- */
+
 
 import {
   AccountType,
@@ -15,10 +8,6 @@ import {
   AccountTypeDetectionResult,
 } from '../types/commission.types.v2';
 import { detectAccountType } from '../utils/commissionCalculatorV2';
-
-// ============================================================
-// CONFIGURATION
-// ============================================================
 
 export interface RouteSTARConfig {
   baseUrl: string;
@@ -36,10 +25,6 @@ const DEFAULT_CONFIG: RouteSTARConfig = {
   timeout: 30000,
 };
 
-// ============================================================
-// ROUTESTAR SERVICE CLASS
-// ============================================================
-
 export class RouteSTARService {
   private config: RouteSTARConfig;
   private sessionToken: string | null = null;
@@ -51,14 +36,9 @@ export class RouteSTARService {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  // ========================================
-  // AUTHENTICATION
-  // ========================================
+  
 
-  /**
-   * Authenticate with RouteSTAR and get session token
-   * Credentials are read from environment variables
-   */
+  
   async authenticate(): Promise<boolean> {
     const username = process.env.ROUTESTAR_USERNAME;
     const password = process.env.ROUTESTAR_PASSWORD;
@@ -81,19 +61,18 @@ export class RouteSTARService {
       });
 
       if (response.ok) {
-        // Extract session token from cookies or response
+        
         const cookies = response.headers.get('set-cookie');
         if (cookies) {
           const sessionMatch = cookies.match(/session[_-]?id=([^;]+)/i);
           if (sessionMatch) {
             this.sessionToken = sessionMatch[1];
-            // Token expires in 1 hour
+            
             this.tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
             return true;
           }
         }
 
-        // Try to get token from response body
         const data = await response.json().catch(() => null);
         if (data?.token) {
           this.sessionToken = data.token;
@@ -110,9 +89,6 @@ export class RouteSTARService {
     }
   }
 
-  /**
-   * Check if current session is valid
-   */
   isAuthenticated(): boolean {
     if (!this.sessionToken || !this.tokenExpiry) {
       return false;
@@ -120,9 +96,6 @@ export class RouteSTARService {
     return new Date() < this.tokenExpiry;
   }
 
-  /**
-   * Ensure we have a valid session
-   */
   private async ensureAuthenticated(): Promise<boolean> {
     if (this.isAuthenticated()) {
       return true;
@@ -130,13 +103,9 @@ export class RouteSTARService {
     return this.authenticate();
   }
 
-  // ========================================
-  // CUSTOMER LOOKUP
-  // ========================================
+  
 
-  /**
-   * Search for a customer by name in RouteSTAR
-   */
+  
   async searchCustomer(customerName: string): Promise<RouteSTARCustomer | null> {
     if (!(await this.ensureAuthenticated())) {
       throw new Error('RouteSTAR authentication failed');
@@ -182,9 +151,6 @@ export class RouteSTARService {
     }
   }
 
-  /**
-   * Get customer by ID
-   */
   async getCustomer(customerId: string): Promise<RouteSTARCustomer | null> {
     if (!(await this.ensureAuthenticated())) {
       throw new Error('RouteSTAR authentication failed');
@@ -222,16 +188,11 @@ export class RouteSTARService {
     }
   }
 
-  // ========================================
-  // ANCHOR MANAGEMENT
-  // ========================================
+  
 
-  /**
-   * Get all Anchor locations from the system
-   * Results are cached for 15 minutes
-   */
+  
   async getAnchorLocations(): Promise<RouteSTARAnchor[]> {
-    // Check cache
+    
     if (this.anchorsCacheExpiry && new Date() < this.anchorsCacheExpiry && this.anchorsCache.length > 0) {
       return this.anchorsCache;
     }
@@ -241,8 +202,7 @@ export class RouteSTARService {
     }
 
     try {
-      // This would query your database for locations marked as Anchors
-      // For now, we'll return from a theoretical endpoint
+
       const response = await fetch(
         `${this.config.baseUrl}/api/locations/anchors`,
         {
@@ -255,7 +215,7 @@ export class RouteSTARService {
 
       if (!response.ok) {
         console.error('Failed to get anchors:', response.status);
-        return this.anchorsCache; // Return cached data if available
+        return this.anchorsCache; 
       }
 
       const data = await response.json();
@@ -267,7 +227,6 @@ export class RouteSTARService {
         isActive: a.is_active !== false,
       }));
 
-      // Cache for 15 minutes
       this.anchorsCacheExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
       return this.anchorsCache;
@@ -277,13 +236,9 @@ export class RouteSTARService {
     }
   }
 
-  // ========================================
-  // DRIVING TIME CALCULATION
-  // ========================================
+  
 
-  /**
-   * Calculate driving time between two locations using RouteSTAR's map distance feature
-   */
+  
   async calculateDrivingTime(
     fromCustomer: RouteSTARCustomer,
     toCustomer: RouteSTARCustomer
@@ -293,7 +248,7 @@ export class RouteSTARService {
     }
 
     try {
-      // Build the address strings
+      
       const fromAddress = `${fromCustomer.address}, ${fromCustomer.city}, ${fromCustomer.state} ${fromCustomer.zipCode}`;
       const toAddress = `${toCustomer.address}, ${toCustomer.city}, ${toCustomer.state} ${toCustomer.zipCode}`;
 
@@ -307,7 +262,7 @@ export class RouteSTARService {
         body: JSON.stringify({
           origin: fromAddress,
           destination: toAddress,
-          // Or use coordinates if available
+          
           origin_lat: fromCustomer.latitude,
           origin_lng: fromCustomer.longitude,
           destination_lat: toCustomer.latitude,
@@ -334,19 +289,15 @@ export class RouteSTARService {
     }
   }
 
-  /**
-   * Find the nearest Anchor to a given customer
-   */
   async findNearestAnchor(
     customerName: string
   ): Promise<{ anchor: RouteSTARAnchor | null; drivingTime: DrivingTimeResult | null }> {
-    // Get customer location
+    
     const customer = await this.searchCustomer(customerName);
     if (!customer) {
       return { anchor: null, drivingTime: null };
     }
 
-    // Get all anchors
     const anchors = await this.getAnchorLocations();
     if (anchors.length === 0) {
       return { anchor: null, drivingTime: null };
@@ -355,12 +306,11 @@ export class RouteSTARService {
     let nearestAnchor: RouteSTARAnchor | null = null;
     let shortestTime: DrivingTimeResult | null = null;
 
-    // Find the nearest anchor by driving time
     for (const anchor of anchors) {
       if (!anchor.isActive) continue;
 
       try {
-        // Get anchor customer details
+        
         const anchorCustomer = await this.getCustomer(anchor.customerId);
         if (!anchorCustomer) continue;
 
@@ -378,19 +328,15 @@ export class RouteSTARService {
     return { anchor: nearestAnchor, drivingTime: shortestTime };
   }
 
-  // ========================================
-  // ACCOUNT TYPE DETECTION
-  // ========================================
+  
 
-  /**
-   * Automatically detect account type based on driving time and revenue
-   */
+  
   async detectAccountType(
     customerName: string,
     perVisitRevenue: number,
     isGreenline: boolean = false
   ): Promise<AccountTypeDetectionResult> {
-    // First check if revenue qualifies as Anchor
+    
     const anchorThreshold = isGreenline ? 100 : 200;
 
     if (perVisitRevenue >= anchorThreshold) {
@@ -404,11 +350,10 @@ export class RouteSTARService {
       };
     }
 
-    // Find nearest anchor
     const { anchor, drivingTime } = await this.findNearestAnchor(customerName);
 
     if (!anchor || !drivingTime) {
-      // No anchors found - default to Pit
+      
       return {
         detectedAccountType: 'Pit',
         nearestAnchor: null,
@@ -419,7 +364,6 @@ export class RouteSTARService {
       };
     }
 
-    // Determine account type based on driving time
     const drivingTimeMinutes = drivingTime.drivingTimeMinutes;
     let accountType: AccountType;
     let reason: string;
@@ -446,10 +390,6 @@ export class RouteSTARService {
   }
 }
 
-// ============================================================
-// SINGLETON INSTANCE
-// ============================================================
-
 let routeSTARInstance: RouteSTARService | null = null;
 
 export function getRouteSTARService(): RouteSTARService {
@@ -459,13 +399,6 @@ export function getRouteSTARService(): RouteSTARService {
   return routeSTARInstance;
 }
 
-// ============================================================
-// API FUNCTIONS FOR FRONTEND
-// ============================================================
-
-/**
- * Detect account type for a customer (called from frontend via API)
- */
 export async function detectAccountTypeForCustomer(
   customerName: string,
   perVisitRevenue: number,
@@ -475,16 +408,12 @@ export async function detectAccountTypeForCustomer(
   return service.detectAccountType(customerName, perVisitRevenue, isGreenline);
 }
 
-/**
- * Get driving time between two addresses
- */
 export async function getDrivingTime(
   fromAddress: string,
   toAddress: string
 ): Promise<{ drivingTimeMinutes: number; distanceMiles: number } | null> {
   const service = getRouteSTARService();
 
-  // Create mock customer objects for the calculation
   const fromCustomer: RouteSTARCustomer = {
     id: 'from',
     name: 'Origin',

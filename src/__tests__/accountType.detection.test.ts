@@ -1,7 +1,4 @@
-/**
- * Account Type Detection Tests
- * Tests for automatic account type detection based on revenue and distance
- */
+
 
 import { describe, test, expect } from 'vitest';
 import {
@@ -12,9 +9,6 @@ import {
   type AccountTypeDetectionResult,
 } from '../backendservice/types/accountType.types';
 
-// ============================================================
-// TEST SUITE: Revenue-Based Detection (Anchor)
-// ============================================================
 describe('Account Type Detection - Revenue Based (Anchor)', () => {
   test('Standard revenue >= $200 should be Anchor', () => {
     const result = detectAccountTypeClient(200, null, false);
@@ -57,15 +51,12 @@ describe('Account Type Detection - Revenue Based (Anchor)', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Distance-Based Detection (Bread5, Bread15, Pit)
-// ============================================================
 describe('Account Type Detection - Distance Based', () => {
-  const LOW_REVENUE = 80; // Below Anchor threshold
+  const LOW_REVENUE = 80; 
 
   describe('Bread5 (< 5 minutes)', () => {
     test('1 minute from Anchor should be Bread5', () => {
-      const distance = 0.5; // 0.5 miles at 0.5 mi/min = 1 min
+      const distance = 0.5; 
       const result = detectAccountTypeClient(LOW_REVENUE, distance, false);
       expect(result.accountType).toBe('Bread5');
       expect(result.confidence).toBe('high');
@@ -125,9 +116,6 @@ describe('Account Type Detection - Distance Based', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: No Distance Data
-// ============================================================
 describe('Account Type Detection - No Distance Data', () => {
   test('null distance with low revenue should default to Pit (low confidence)', () => {
     const result = detectAccountTypeClient(80, null, false);
@@ -149,9 +137,6 @@ describe('Account Type Detection - No Distance Data', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Driving Time Estimation
-// ============================================================
 describe('Driving Time Estimation', () => {
   test('2.5 miles at default speed should be 5 minutes', () => {
     const time = estimateDrivingTime(2.5);
@@ -179,9 +164,6 @@ describe('Driving Time Estimation', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Edge Cases
-// ============================================================
 describe('Account Type Detection - Edge Cases', () => {
   test('Exactly $200 revenue should be Anchor', () => {
     const result = detectAccountTypeClient(200, 25, false);
@@ -205,19 +187,19 @@ describe('Account Type Detection - Edge Cases', () => {
   });
 
   test('Distance boundary: 4.99 min should be Bread5', () => {
-    const distance = 4.99 * 0.5; // 2.495 miles
+    const distance = 4.99 * 0.5; 
     const result = detectAccountTypeClient(80, distance, false);
     expect(result.accountType).toBe('Bread5');
   });
 
   test('Distance boundary: 5.01 min should be Bread15', () => {
-    const distance = 5.01 * 0.5; // 2.505 miles
+    const distance = 5.01 * 0.5; 
     const result = detectAccountTypeClient(80, distance, false);
     expect(result.accountType).toBe('Bread15');
   });
 
   test('Distance boundary: 15.01 min should be Pit', () => {
-    const distance = 15.01 * 0.5; // 7.505 miles
+    const distance = 15.01 * 0.5; 
     const result = detectAccountTypeClient(80, distance, false);
     expect(result.accountType).toBe('Pit');
   });
@@ -233,9 +215,6 @@ describe('Account Type Detection - Edge Cases', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Detection Result Structure
-// ============================================================
 describe('Account Type Detection - Result Structure', () => {
   test('Result should include all required fields', () => {
     const result = detectAccountTypeClient(250, 5, false);
@@ -257,7 +236,7 @@ describe('Account Type Detection - Result Structure', () => {
   test('Bread5 result should include driving time and distance', () => {
     const result = detectAccountTypeClient(80, 2, false);
     expect(result.accountType).toBe('Bread5');
-    expect(result.drivingTimeMinutes).toBe(4); // 2 miles / 0.5 mi/min
+    expect(result.drivingTimeMinutes).toBe(4); 
     expect(result.distanceMiles).toBe(2);
   });
 
@@ -272,9 +251,6 @@ describe('Account Type Detection - Result Structure', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Real-World Scenarios
-// ============================================================
 describe('Account Type Detection - Real World Scenarios', () => {
   test('High-value restaurant ($300/visit) should be Anchor', () => {
     const result = detectAccountTypeClient(300, 20, false);
@@ -283,18 +259,18 @@ describe('Account Type Detection - Real World Scenarios', () => {
   });
 
   test('Small cafe ($75/visit) 2 blocks away should be Bread5', () => {
-    const result = detectAccountTypeClient(75, 0.5, false); // 0.5 miles
+    const result = detectAccountTypeClient(75, 0.5, false); 
     expect(result.accountType).toBe('Bread5');
     expect(result.drivingTimeMinutes).toBe(1);
   });
 
   test('Medium diner ($120/visit) 10 min away should be Bread15', () => {
-    const result = detectAccountTypeClient(120, 5, false); // 5 miles = 10 min
+    const result = detectAccountTypeClient(120, 5, false); 
     expect(result.accountType).toBe('Bread15');
   });
 
   test('Rural location ($50/visit) 45 min away should be Pit', () => {
-    const result = detectAccountTypeClient(50, 22.5, false); // 22.5 miles = 45 min
+    const result = detectAccountTypeClient(50, 22.5, false); 
     expect(result.accountType).toBe('Pit');
     expect(result.confidence).toBe('high');
   });
@@ -313,16 +289,13 @@ describe('Account Type Detection - Real World Scenarios', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Custom Thresholds
-// ============================================================
 describe('Account Type Detection - Custom Thresholds', () => {
   const customThresholds = {
     anchorMinRevenue: 300,
     anchorMinRevenueGreenline: 150,
     bread5MaxMinutes: 10,
     bread15MaxMinutes: 30,
-    milesPerMinute: 0.4, // Slower driving speed
+    milesPerMinute: 0.4, 
   };
 
   test('Custom threshold: $250 should NOT be Anchor with $300 threshold', () => {
@@ -342,21 +315,18 @@ describe('Account Type Detection - Custom Thresholds', () => {
   });
 
   test('Custom Bread5 threshold (10 min): 4 miles should be Bread5', () => {
-    // 4 miles / 0.4 mi/min = 10 min
+    
     const result = detectAccountTypeClient(100, 3.9, false, customThresholds);
     expect(result.accountType).toBe('Bread5');
   });
 
   test('Custom Bread15 threshold (30 min): 8 miles should be Bread15', () => {
-    // 8 miles / 0.4 mi/min = 20 min (within 30 min threshold)
+    
     const result = detectAccountTypeClient(100, 8, false, customThresholds);
     expect(result.accountType).toBe('Bread15');
   });
 });
 
-// ============================================================
-// TEST SUITE: Integration with Commission Deductions
-// ============================================================
 describe('Account Type to Commission Deduction Mapping', () => {
   const ACCOUNT_TYPE_DEDUCTIONS: Record<AccountType, number> = {
     Anchor: 0,

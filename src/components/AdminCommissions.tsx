@@ -10,13 +10,12 @@ interface StatusCounts {
   active: number;
 }
 
-// Actual API response structure for employees list
 interface EmployeeSummary {
   userId: string | null;
   totalAgreements: number;
   totalRevenue: number;
   totalCommission: number;
-  // Optional fields that may not be in API response
+  
   statusCounts?: StatusCounts;
   totalMonthlyCommission?: number;
   totalContractCommission?: number;
@@ -24,7 +23,6 @@ interface EmployeeSummary {
   averageCommissionRate?: number;
 }
 
-// Actual API response structure
 interface EmployeesResponse {
   success: boolean;
   totalEmployees: number;
@@ -260,7 +258,7 @@ export default function AdminCommissions() {
 
   const filteredEmployees = useMemo(() => {
     if (!employeesData?.employees) return [];
-    // Filter out employees with null/empty userId
+    
     const validEmployees = employeesData.employees.filter(e => e.userId && e.userId.trim() !== '');
     if (!searchQuery.trim()) return validEmployees;
     const q = searchQuery.toLowerCase();
@@ -305,7 +303,6 @@ export default function AdminCommissions() {
     );
   }
 
-  // Employee Detail View
   if (selectedEmployee) {
     if (employeeLoading) {
       return (
@@ -345,7 +342,6 @@ export default function AdminCommissions() {
       );
     }
 
-    // Provide default values for totals and byStatus if missing
     const totals: CommissionTotals = employeeCommissions.totals || {
       totalAgreements: 0,
       totalMonthlyCommission: 0,

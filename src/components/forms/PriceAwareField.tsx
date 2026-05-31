@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { usePricing } from "../../pricing/pricingStore";
 import type { Frequency, RateColor } from "../../pricing/pricingTypes"; 
 
-
 type Props = {
   serviceKey: string;
   frequency: Frequency;

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useServiceCommission } from '../hooks/useServiceCommission';
 import type { AccountType } from '../../../backendservice/api/accountTypeApi';
 
-// Color scheme for account types
 const ACCOUNT_TYPE_COLORS: Record<AccountType, { bg: string; text: string; border: string }> = {
   Anchor: { bg: '#fef3c7', text: '#92400e', border: '#fbbf24' },
   Bread5: { bg: '#d1fae5', text: '#065f46', border: '#34d399' },
@@ -28,12 +27,10 @@ export function ServiceCommissionBadge({
     commissionRate,
   });
 
-  // Don't render for one-time or inactive services
   if (!serviceData?.isActive || commission.isOneTime) {
     return null;
   }
 
-  // Don't render if no account type detected yet
   if (!commission.accountType) {
     return (
       <div className="commission-badge commission-badge--pending">

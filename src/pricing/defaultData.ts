@@ -1,6 +1,5 @@
 import type { PriceRow } from "./pricingTypes";
 
-
 export const DEFAULT_ROWS: PriceRow[] = [
   {
     id: "saniclean",

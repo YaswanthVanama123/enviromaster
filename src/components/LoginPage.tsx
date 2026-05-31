@@ -16,19 +16,17 @@ export const LoginPage: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  // Redirect if already authenticated - only once
   useEffect(() => {
     if (isAuthenticated && !hasNavigated) {
       setHasNavigated(true);
       const from = (location.state as any)?.from?.pathname || "/home";
-      // Use setTimeout to ensure state updates complete before navigation
+      
       setTimeout(() => {
         navigate(from, { replace: true });
       }, 0);
     }
   }, [isAuthenticated, hasNavigated, navigate, location.state]);
 
-  // Clear error when switching tabs
   useEffect(() => {
     setLoginError(null);
     setUsername("");
@@ -42,7 +40,7 @@ export const LoginPage: React.FC = () => {
     setLoginError(null);
     try {
       await login({ username, password }, activeTab);
-      // Navigation is handled by the useEffect above when isAuthenticated becomes true
+      
     } catch (err: any) {
       setLoginError(err?.message || 'Login failed. Please check your credentials.');
     }
@@ -51,7 +49,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        {/* Logo/Header */}
+        {}
         <div style={styles.header}>
           <div style={styles.logoContainer}>
             <img src={logo} alt="EnviroMaster" style={styles.logo} />
@@ -60,7 +58,7 @@ export const LoginPage: React.FC = () => {
           <p style={styles.subtitle}>Sign in to your account</p>
         </div>
 
-        {/* Tabs */}
+        {}
         <div style={styles.tabContainer}>
           <button
             type="button"
@@ -84,7 +82,7 @@ export const LoginPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Login Form */}
+        {}
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.formGroup}>
             <label style={styles.label}>Username</label>
@@ -153,7 +151,7 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Info Text */}
+        {}
         <p style={styles.infoText}>
           {activeTab === "admin"
             ? "Admin accounts have full system access including user management."
@@ -335,7 +333,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// Add keyframe animation for spinner
 if (!document.getElementById("login-page-styles")) {
   const styleSheet = document.createElement("style");
   styleSheet.id = "login-page-styles";

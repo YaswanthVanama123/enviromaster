@@ -9,19 +9,16 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
   const { form, handleChange, quote } = useGreaseTrapCalc(initialData);
   const servicesContext = useServicesContextOptional();
 
-
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       handleChange({ target: { name: 'contractMonths', value: String(servicesContext.globalContractMonths) } } as any);
     }
   }, [servicesContext?.globalContractMonths]);
 
-
   const [customFields, setCustomFields] = useState<CustomField[]>(
     initialData?.customFields || []
   );
   const [showAddDropdown, setShowAddDropdown] = useState(false);
-
 
   const prevDataRef = useRef<string>("");
 
@@ -42,7 +39,6 @@ export const GreaseTrapForm: React.FC<{ initialData?: GreaseTrapFormState; onRem
         serviceId: "greaseTrap",
         displayName: "Grease Trap",
         isActive: true,
-
 
         perVisitBase: (form.numberOfTraps * form.perTrapRate) + (form.sizeOfTraps * form.perGallonRate),  
         perVisit: quote.perVisitTotal,  

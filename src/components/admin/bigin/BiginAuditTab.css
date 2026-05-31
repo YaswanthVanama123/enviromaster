@@ -1,4 +1,4 @@
-/* BiginAuditTab - Clean Professional Styles */
+
 
 .bigin-audit-tab {
   padding: 24px;
@@ -7,7 +7,6 @@
   min-height: 600px;
 }
 
-/* Header */
 .ba-header {
   display: flex;
   justify-content: space-between;
@@ -75,7 +74,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* Stats Grid */
 .ba-stats-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -144,7 +142,6 @@
   letter-spacing: 0.5px;
 }
 
-/* Scrape Status */
 .ba-scrape-status {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -235,7 +232,6 @@
   font-weight: 500;
 }
 
-/* Filters */
 .ba-filters {
   display: flex;
   gap: 12px;
@@ -315,7 +311,6 @@
   border: 1px solid #e2e8f0;
 }
 
-/* Table */
 .ba-table-container {
   background: white;
   border: 1px solid #e2e8f0;
@@ -457,7 +452,6 @@
   background: #ede9fe;
 }
 
-/* Pagination */
 .ba-pagination {
   display: flex;
   justify-content: center;
@@ -495,7 +489,6 @@
   font-weight: 500;
 }
 
-/* Loading & Empty States */
 .ba-loading {
   display: flex;
   flex-direction: column;
@@ -552,7 +545,6 @@
   margin: 0;
 }
 
-/* Modal */
 .ba-modal-overlay {
   position: fixed;
   top: 0;
@@ -696,7 +688,6 @@
   margin: 0;
 }
 
-/* Responsive */
 @media (max-width: 1200px) {
   .ba-stats-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -766,14 +757,12 @@
   }
 }
 
-/* Header Actions */
 .ba-header-actions {
   display: flex;
   gap: 12px;
   align-items: center;
 }
 
-/* Upload Button */
 .ba-upload-btn {
   display: flex;
   align-items: center;
@@ -795,7 +784,6 @@
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
 
-/* Upload Modal */
 .ba-upload-modal {
   max-width: 520px;
 }
@@ -869,7 +857,6 @@
   box-shadow: none;
 }
 
-/* Upload Result */
 .ba-upload-result {
   display: flex;
   align-items: flex-start;
@@ -956,7 +943,6 @@
   color: #b91c1c;
 }
 
-/* Responsive adjustments for upload */
 @media (max-width: 768px) {
   .ba-header-actions {
     flex-direction: column;
@@ -983,7 +969,6 @@
   }
 }
 
-/* Delete Buttons */
 .ba-delete-unnecessary-btn {
   display: flex;
   align-items: center;
@@ -1026,7 +1011,6 @@
   box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
 }
 
-/* Delete Modal */
 .ba-delete-modal {
   max-width: 480px;
 }
@@ -1230,7 +1214,6 @@
   background: #0f172a;
 }
 
-/* Responsive for delete buttons */
 @media (max-width: 768px) {
   .ba-delete-unnecessary-btn,
   .ba-delete-all-btn {

@@ -20,10 +20,8 @@ export interface ServicesDataHandle {
   };
 }
 
-
 const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
   const servicesContext = useServicesContextOptional();
-
 
   useImperativeHandle(ref, () => ({
     getData: () => {
@@ -47,9 +45,7 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
         };
       }
 
-
       const state = servicesContext.servicesState;
-
 
       const activeServices = Object.entries(state).filter(([key, data]) =>
         data && typeof data === 'object' && data.isActive
@@ -65,7 +61,6 @@ const ServicesDataCollector = forwardRef<ServicesDataHandle>((props, ref) => {
           ])
         )
       });
-
 
       const customServicesData = state.customServices;
 

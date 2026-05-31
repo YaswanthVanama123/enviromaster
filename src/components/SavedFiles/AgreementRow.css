@@ -9,7 +9,6 @@
   z-index: 1;
 }
 
-/* When date picker popup is open, elevate the entire card above other cards */
 .sf .agreement-card:has(.timeline-date-picker-popup),
 .trash-view-page .agreement-card:has(.timeline-date-picker-popup) {
   z-index: 9999;

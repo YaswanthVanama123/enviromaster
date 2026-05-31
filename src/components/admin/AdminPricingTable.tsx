@@ -3,7 +3,6 @@ import { usePricing } from "../../pricing/pricingStore";
 import type { PriceRow, Frequency, UnitType, Category } from "../../pricing/pricingTypes";
 import { toCsv, fromCsv } from "../../pricing/pricingCsv";
 
-
 const FREQS: Frequency[] = [
   "Weekly",
   "Biweekly",

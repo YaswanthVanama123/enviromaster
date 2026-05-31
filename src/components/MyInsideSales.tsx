@@ -1,8 +1,4 @@
-/**
- * My Inside Sales History
- * Employee screen to view their Inside Sales eligibility
- * based on Lisa Rothwell's audit history within 1 year
- */
+
 
 import React, { useState, useEffect } from 'react';
 import { biginAuditApi } from '../backendservice/api/biginAuditApi';
@@ -43,7 +39,6 @@ export const MyInsideSales: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
-  // Format date
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
@@ -55,7 +50,6 @@ export const MyInsideSales: React.FC = () => {
     });
   };
 
-  // Check inside sales eligibility on mount
   const checkEligibility = async () => {
     const salespersonName = user?.fullName || user?.username;
 
@@ -92,7 +86,7 @@ export const MyInsideSales: React.FC = () => {
 
   return (
     <div className="my-inside-sales">
-      {/* Header */}
+      {}
       <div className="mis-header">
         <div className="mis-header-content">
           <h1>My Inside Sales Status</h1>
@@ -196,7 +190,7 @@ export const MyInsideSales: React.FC = () => {
             </div>
           </div>
 
-          {/* Matching Audit Records */}
+          {}
           {result.matchCount > 0 && result.matchDetails.length > 0 && (
             <div className="mis-section-card">
               <h3>Matching Audit Records</h3>

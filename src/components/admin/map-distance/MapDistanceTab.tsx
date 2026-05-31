@@ -1,8 +1,4 @@
-/**
- * Map Distance Tab Component
- * Admin panel screen for fetching map distance from RouteStar
- * All operations run in background and persist across page refreshes
- */
+
 
 import React, { useState, useEffect, useRef } from 'react';
 import { mapDistanceApi, RouteStarCustomerOption, MapDistanceResult, MapDistanceSyncJob, MapDistanceStats } from '../../../backendservice/api/mapDistanceApi';
@@ -12,10 +8,9 @@ import './MapDistanceTab.css';
 type ViewMode = 'fetch' | 'stored' | 'history';
 
 export const MapDistanceTab: React.FC = () => {
-  // View mode
+  
   const [viewMode, setViewMode] = useState<ViewMode>('fetch');
 
-  // Fetch mode state
   const [customers, setCustomers] = useState<RouteStarCustomerOption[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<RouteStarCustomerOption | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -26,7 +21,6 @@ export const MapDistanceTab: React.FC = () => {
   const [lastFetchedCustomer, setLastFetchedCustomer] = useState<string | null>(null);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
 
-  // Sync/Job state
   const [syncStatus, setSyncStatus] = useState<{ isRunning: boolean; isInterrupted: boolean; isPaused: boolean; job: MapDistanceSyncJob | null }>({
     isRunning: false,
     isInterrupted: false,
@@ -39,14 +33,12 @@ export const MapDistanceTab: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load customers, stats, and check for running jobs on mount
   useEffect(() => {
     loadCustomers();
     loadStats();
     checkSyncStatus();
   }, []);
 
-  // Poll for sync status when running
   useEffect(() => {
     if (syncStatus.isRunning) {
       pollIntervalRef.current = setInterval(() => {
@@ -56,10 +48,8 @@ export const MapDistanceTab: React.FC = () => {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
 
-      // When job completes, update stats and check for results
       loadStats();
 
-      // If the completed job was a single fetch, show the results
       if (syncStatus.job?.jobType === 'single_fetch' && syncStatus.job?.status === 'completed') {
         if (syncStatus.job.fetchedData && syncStatus.job.fetchedData.length > 0) {
           setResults(syncStatus.job.fetchedData);
@@ -76,7 +66,6 @@ export const MapDistanceTab: React.FC = () => {
     };
   }, [syncStatus.isRunning, syncStatus.job?.status]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -112,7 +101,6 @@ export const MapDistanceTab: React.FC = () => {
       job: status.job
     });
 
-    // If job just completed, handle the results
     if (wasRunning && !isNowRunning && status.job) {
       if (status.job.jobType === 'single_fetch' && status.job.status === 'completed') {
         if (status.job.fetchedData && status.job.fetchedData.length > 0) {
@@ -149,7 +137,7 @@ export const MapDistanceTab: React.FC = () => {
     const response = await mapDistanceApi.fetchDistance(selectedCustomer.name);
 
     if (response.success) {
-      // Job started - start polling for status
+      
       checkSyncStatus();
     } else {
       setError(response.error || 'Failed to start fetch');
@@ -202,17 +190,15 @@ export const MapDistanceTab: React.FC = () => {
     }
   };
 
-  // Check if a job is resumable (paused or running without active process)
   const isJobResumable = (job: MapDistanceSyncJob) => {
     if (job.status === 'paused') return true;
-    // Check if job has customerIds and not all are processed
+    
     if (job.status === 'running' && job.customerIds && job.processedCustomerIds) {
       return job.processedCustomerIds.length < job.customerIds.length;
     }
     return false;
   };
 
-  // Filter customers based on search
   const filteredCustomers = customers.filter(customer => {
     if (!dropdownSearch) return true;
     const search = dropdownSearch.toLowerCase();
@@ -264,7 +250,7 @@ export const MapDistanceTab: React.FC = () => {
 
   return (
     <div className="map-distance-tab">
-      {/* Header */}
+      {}
       <div className="md-header">
         <div className="md-header-top">
           <div>
@@ -299,7 +285,7 @@ export const MapDistanceTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Bar */}
+        {}
         {stats && (
           <div className="md-stats-bar">
             <div className="md-stat">
@@ -325,7 +311,7 @@ export const MapDistanceTab: React.FC = () => {
           </div>
         )}
 
-        {/* Sync Progress (for bulk operations) */}
+        {}
         {isBulkSyncRunning && syncStatus.job && (
           <div className="md-sync-progress">
             <div className="md-sync-progress-header">
@@ -357,7 +343,7 @@ export const MapDistanceTab: React.FC = () => {
           </div>
         )}
 
-        {/* Interrupted Sync - Show Resume Option */}
+        {}
         {isBulkSyncInterrupted && syncStatus.job && (
           <div className="md-sync-interrupted">
             <div className="md-sync-progress-header">
@@ -399,7 +385,7 @@ export const MapDistanceTab: React.FC = () => {
           </div>
         )}
 
-        {/* Paused Sync - Show Resume Option */}
+        {}
         {isBulkSyncPaused && syncStatus.job && (
           <div className="md-sync-paused">
             <div className="md-sync-progress-header">
@@ -442,7 +428,7 @@ export const MapDistanceTab: React.FC = () => {
         )}
       </div>
 
-      {/* View Tabs */}
+      {}
       <div className="md-view-tabs">
         <button
           className={`md-view-tab ${viewMode === 'fetch' ? 'active' : ''}`}
@@ -467,10 +453,10 @@ export const MapDistanceTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Fetch Mode */}
+      {}
       {viewMode === 'fetch' && (
         <>
-          {/* Search Section */}
+          {}
           <div className="md-search-section">
             <div className="md-search-group">
               <label className="md-search-label">Select Customer</label>
@@ -540,14 +526,14 @@ export const MapDistanceTab: React.FC = () => {
             </button>
           </div>
 
-          {/* Error */}
+          {}
           {error && (
             <div className="md-error">
               <strong>Error:</strong> {error}
             </div>
           )}
 
-          {/* Loading State (for single fetch) */}
+          {}
           {isSingleFetchRunning && (
             <div className="md-loading">
               <div className="md-loading-spinner" />
@@ -558,7 +544,7 @@ export const MapDistanceTab: React.FC = () => {
             </div>
           )}
 
-          {/* Results */}
+          {}
           {!isSingleFetchRunning && results.length > 0 && (
             <div className="md-results">
               <div className="md-results-header">
@@ -601,7 +587,7 @@ export const MapDistanceTab: React.FC = () => {
             </div>
           )}
 
-          {/* Empty State (after fetch with no results) */}
+          {}
           {!isSingleFetchRunning && lastFetchedCustomer && results.length === 0 && !error && (
             <div className="md-empty">
               <div className="md-empty-icon">
@@ -612,7 +598,7 @@ export const MapDistanceTab: React.FC = () => {
             </div>
           )}
 
-          {/* Initial Empty State */}
+          {}
           {!isSingleFetchRunning && !lastFetchedCustomer && results.length === 0 && !error && (
             <div className="md-empty">
               <div className="md-empty-icon">
@@ -625,7 +611,7 @@ export const MapDistanceTab: React.FC = () => {
         </>
       )}
 
-      {/* Stored Data Mode */}
+      {}
       {viewMode === 'stored' && (
         <div className="md-stored-section">
           <div className="md-empty">
@@ -650,7 +636,7 @@ export const MapDistanceTab: React.FC = () => {
         </div>
       )}
 
-      {/* Fetch History Mode */}
+      {}
       {viewMode === 'history' && (
         <div className="md-history-section">
           {syncHistory.length === 0 ? (

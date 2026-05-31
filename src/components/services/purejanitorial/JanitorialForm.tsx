@@ -34,7 +34,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
   const servicesContext = useServicesContextOptional();
   const prevDataRef = useRef<string>("");
 
-  // Update a supply item amount
   const updateSupply = (index: number, rawValue: string) => {
     const amount = rawValue === "" ? 0 : parseFloat(rawValue);
     setForm(prev => ({
@@ -45,7 +44,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
     }));
   };
 
-  // Sync to services context
   useEffect(() => {
     if (!servicesContext) return;
     const isActive = form.sqFt > 0;
@@ -58,8 +56,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           contractTotal: calc.contractTotal,
           originalContractTotal: calc.originalContractTotal,
           perVisit: calc.perVisit,
-          // Store form input values for restoration when editing
-          // Using _restoreData to avoid conflict with resolveServiceData() in pdfService
+
           _restoreData: {
             frequency: form.frequency,
             visitsPerWeek: form.visitsPerWeek,
@@ -177,7 +174,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
 
   return (
     <div className="svc-card">
-      {/* Header */}
+      {}
       <div className="svc-h-row">
         <div className="svc-h">JANITORIAL</div>
         <div className="svc-h-actions">
@@ -203,7 +200,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Frequency */}
+      {}
       <div className="svc-row">
         <label>Frequency</label>
         <div className="svc-row-right">
@@ -217,7 +214,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Visits per Week */}
+      {}
       <div className="svc-row">
         <label>Visits per Week</label>
         <div className="svc-row-right">
@@ -233,7 +230,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Place Type */}
+      {}
       <div className="svc-row">
         <label>Place Type</label>
         <div className="svc-row-right">
@@ -249,7 +246,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Square Feet */}
+      {}
       <div className="svc-row">
         <label>Square Feet</label>
         <div className="svc-row-right">
@@ -267,7 +264,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Hours Per Visit (read-only) */}
+      {}
       <div className="svc-row">
         <label>Hours Per Visit</label>
         <div className="svc-row-right">
@@ -284,7 +281,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
 
       <hr style={{ margin: "8px 0", borderColor: "#e5e7eb" }} />
 
-      {/* Cost Per Hour */}
+      {}
       <div className="svc-row">
         <label>Cost Per Hour</label>
         <div className="svc-row-right">
@@ -304,7 +301,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Labor Tax % */}
+      {}
       <div className="svc-row">
         <label>Labor Tax %</label>
         <div className="svc-row-right">
@@ -321,7 +318,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       </div>
 
-      {/* Gross Profit % */}
+      {}
       <div className="svc-row">
         <label>Gross Profit %</label>
         <div className="svc-row-right">
@@ -341,7 +338,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
 
       <hr style={{ margin: "8px 0", borderColor: "#e5e7eb" }} />
 
-      {/* Supply Line Items */}
+      {}
       <div className="svc-h-row svc-h-row-sub">
         <div className="svc-h-sub">Supply Line Items (Annual)</div>
       </div>
@@ -365,7 +362,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </div>
       ))}
 
-      {/* Pricing Summary - only show when sqFt > 0 */}
+      {}
       {form.sqFt > 0 && (
         <>
           <div className="svc-h-row svc-h-row-sub">
@@ -428,7 +425,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
             </div>
           </div>
 
-          {/* Show Monthly Recurring for month-based frequencies */}
+          {}
           {form.frequency !== "oneTime" && !VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
             <div className="svc-row svc-row-charge">
               <label>Monthly Recurring</label>
@@ -439,7 +436,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
             </div>
           )}
 
-          {/* Show Recurring Visit Total for visit-based frequencies */}
+          {}
           {VISIT_BASED_FREQUENCIES.includes(form.frequency) && (
             <div className="svc-row svc-row-charge">
               <label>Recurring Visit Total</label>
@@ -450,7 +447,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
             </div>
           )}
 
-          {/* Greenline / Redline indicator */}
+          {}
           <div className="svc-row" style={{ marginTop: "-10px", paddingTop: "5px" }}>
             <label></label>
             <div className="svc-row-right">
@@ -466,7 +463,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
             </div>
           </div>
 
-          {/* Contract Total */}
+          {}
           <div className="svc-row svc-row-charge">
             <label>{form.frequency === "oneTime" ? "Total Price" : `Contract Total (${form.contractMonths} mo)`}</label>
             <div className="svc-row-right">
@@ -494,7 +491,7 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         </>
       )}
 
-      {/* Notes */}
+      {}
       <div className="svc-row">
         <label>Notes</label>
         <div className="svc-row-right">

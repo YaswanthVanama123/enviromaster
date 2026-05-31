@@ -1,6 +1,4 @@
-/**
- * Account Type Detector Tab Styles
- */
+
 
 .account-type-detector-tab {
   padding: 24px;
@@ -359,7 +357,6 @@
   margin: 4px 0;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .detector-controls {
     flex-direction: column;

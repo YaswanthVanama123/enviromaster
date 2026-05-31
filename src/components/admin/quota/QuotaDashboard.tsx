@@ -26,7 +26,6 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
   const [salesPersonsLoaded, setSalesPersonsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load sales persons
   useEffect(() => {
     const loadSalesPersons = async () => {
       const result = await salesPersonApi.getAll({ active: true });
@@ -41,7 +40,6 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
     loadSalesPersons();
   }, []);
 
-  // Load leaderboard
   useEffect(() => {
     const loadLeaderboard = async () => {
       const result = await quotaApi.getLeaderboard({ periodType: "monthly" });
@@ -52,11 +50,10 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
     loadLeaderboard();
   }, []);
 
-  // Load quota status for selected person
   useEffect(() => {
     const loadQuotaStatus = async () => {
       if (!selectedPerson) {
-        // If no person selected and sales persons are loaded, stop loading
+        
         if (salesPersonsLoaded) {
           setLoading(false);
         }
@@ -84,7 +81,7 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
 
   return (
     <div className="quota-dashboard">
-      {/* Sales Person Selector */}
+      {}
       <div className="dashboard-header">
         <div className="person-selector">
           <label>Sales Person:</label>
@@ -110,7 +107,7 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
         </div>
       ) : quotaStatus ? (
         <div className="dashboard-grid">
-          {/* Quota Progress Card */}
+          {}
           <div className="dashboard-card quota-progress-card">
             <h3>Quota Progress - {quotaStatus.period.label}</h3>
             <div className="quota-meter">
@@ -151,7 +148,7 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {}
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Agreements Closed</div>
@@ -181,7 +178,7 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
             </div>
           </div>
 
-          {/* Recent Agreements */}
+          {}
           <div className="dashboard-card recent-agreements">
             <div className="card-header">
               <h3>Recent Agreements</h3>
@@ -228,7 +225,7 @@ export const QuotaDashboard: React.FC<QuotaDashboardProps> = ({ onViewAgreements
             )}
           </div>
 
-          {/* Leaderboard */}
+          {}
           <div className="dashboard-card leaderboard">
             <h3>Monthly Leaderboard</h3>
             {leaderboard.length === 0 ? (

@@ -4,7 +4,6 @@ import { BILLING, TRIP } from "./pricingRules";
 import type { PriceRow, PricingState, PriceFormulaInput, ComputedPrice } from "./pricingTypes";
 import { computePrice } from "./compute";
 
-
 interface PricingContextValue extends PricingState {
   upsertRow: (row: PriceRow) => void;
   removeRow: (id: string) => void;

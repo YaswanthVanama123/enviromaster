@@ -8,7 +8,6 @@ import {
   type QuotaLevel,
 } from '../backendservice/types/commission.types';
 
-// Simulates the commission calculation from FormFilling/ContractSummary
 interface CalculationInput {
   totalCurrentContract: number;
   globalContractMonths: number;
@@ -35,53 +34,38 @@ interface CalculationResult {
   contractCommission: number;
 }
 
-/**
- * Calculate commission - mirrors the useMemo calculation in ContractSummary
- */
 function calculateCommission(input: CalculationInput): CalculationResult {
   const rules = DEFAULT_COMMISSION_RULES;
 
-  // Monthly value from contract total (auto from form)
   const monthlyValue = input.globalContractMonths > 0
     ? input.totalCurrentContract / input.globalContractMonths
     : input.totalCurrentContract;
 
-  // Derive agreement term from contract months (auto from form)
   const getAgreementTerm = (): AgreementTerm => {
     if (input.globalContractMonths >= 36) return '3-year';
     if (input.globalContractMonths >= 12) return '1-year';
     return 'MTM-with-install';
   };
 
-  // Pricing line from indicator (auto from form - green/red line)
   const pricingLine: PricingLine = input.pricingIndicator === 'green' ? 'Greenline' : 'Redline';
   const agreementTerm = getAgreementTerm();
 
-  // Base rate from quota level
   const baseRate = rules.quotaRates[input.quotaLevel];
 
-  // Agreement multiplier
   const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
 
-  // Account type adjustment
   const accountTypeAdjustment = rules.accountTypeAdjustments[input.accountType];
 
-  // Greenline bonus (auto from form pricing)
   const greenlineBonus = pricingLine === 'Greenline' ? rules.greenlineBonus : 0;
 
-  // No renewal bonus - form filling is always new business
   const renewalBonus = 0;
 
-  // Inside sales deduction
   const insideSalesDeduction = input.isInsideSales ? rules.insideSalesDeduction : 0;
 
-  // Effective base rate (before multiplier)
   const effectiveBaseRate = baseRate + accountTypeAdjustment + greenlineBonus + renewalBonus + insideSalesDeduction;
 
-  // Final commission rate after multiplier
   const finalCommissionRate = effectiveBaseRate * (agreementMultiplier / 100);
 
-  // Calculate dollar amounts
   const monthlyCommission = monthlyValue * (finalCommissionRate / 100);
   const annualCommission = monthlyCommission * 12;
   const contractCommission = monthlyCommission * input.globalContractMonths;
@@ -104,9 +88,6 @@ function calculateCommission(input: CalculationInput): CalculationResult {
   };
 }
 
-// ============================================================
-// TEST SUITE: Quota Level Commission Rates
-// ============================================================
 describe('Commission Calculation - Quota Levels', () => {
   const baseInput: CalculationInput = {
     totalCurrentContract: 6000,
@@ -121,33 +102,30 @@ describe('Commission Calculation - Quota Levels', () => {
     const result = calculateCommission({ ...baseInput, quotaLevel: 'below' });
     expect(result.baseRate).toBe(3);
     expect(result.finalCommissionRate).toBe(3);
-    expect(result.monthlyCommission).toBe(15); // $500 * 3%
+    expect(result.monthlyCommission).toBe(15); 
   });
 
   test('Above quota should use 6% base rate', () => {
     const result = calculateCommission({ ...baseInput, quotaLevel: 'above' });
     expect(result.baseRate).toBe(6);
     expect(result.finalCommissionRate).toBe(6);
-    expect(result.monthlyCommission).toBe(30); // $500 * 6%
+    expect(result.monthlyCommission).toBe(30); 
   });
 
   test('Double quota should use 9% base rate', () => {
     const result = calculateCommission({ ...baseInput, quotaLevel: 'double' });
     expect(result.baseRate).toBe(9);
     expect(result.finalCommissionRate).toBe(9);
-    expect(result.monthlyCommission).toBe(45); // $500 * 9%
+    expect(result.monthlyCommission).toBe(45); 
   });
 });
 
-// ============================================================
-// TEST SUITE: Agreement Term Multipliers
-// ============================================================
 describe('Commission Calculation - Agreement Terms', () => {
   const baseInput: CalculationInput = {
     totalCurrentContract: 12000,
     globalContractMonths: 12,
     pricingIndicator: 'red',
-    quotaLevel: 'above', // 6% base
+    quotaLevel: 'above', 
     accountType: 'Anchor',
     isInsideSales: false,
   };
@@ -161,8 +139,8 @@ describe('Commission Calculation - Agreement Terms', () => {
 
     expect(result.agreementTerm).toBe('3-year');
     expect(result.agreementMultiplier).toBe(135);
-    expect(result.finalCommissionRate).toBeCloseTo(8.1, 2); // 6% * 135%
-    expect(result.monthlyCommission).toBeCloseTo(81, 0); // $1000 * 8.1%
+    expect(result.finalCommissionRate).toBeCloseTo(8.1, 2); 
+    expect(result.monthlyCommission).toBeCloseTo(81, 0); 
   });
 
   test('12-35 months should derive 1-year (100% multiplier)', () => {
@@ -175,7 +153,7 @@ describe('Commission Calculation - Agreement Terms', () => {
     expect(result.agreementTerm).toBe('1-year');
     expect(result.agreementMultiplier).toBe(100);
     expect(result.finalCommissionRate).toBe(6);
-    expect(result.monthlyCommission).toBe(60); // $1000 * 6%
+    expect(result.monthlyCommission).toBe(60); 
   });
 
   test('24 months should derive 1-year (100% multiplier)', () => {
@@ -201,15 +179,12 @@ describe('Commission Calculation - Agreement Terms', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Account Type Adjustments
-// ============================================================
 describe('Commission Calculation - Account Types', () => {
   const baseInput: CalculationInput = {
     totalCurrentContract: 6000,
     globalContractMonths: 12,
     pricingIndicator: 'red',
-    quotaLevel: 'above', // 6% base
+    quotaLevel: 'above', 
     isInsideSales: false,
     accountType: 'Anchor',
   };
@@ -223,15 +198,15 @@ describe('Commission Calculation - Account Types', () => {
   test('Bread5 should have -1% adjustment', () => {
     const result = calculateCommission({ ...baseInput, accountType: 'Bread5' });
     expect(result.accountTypeAdjustment).toBe(-1);
-    expect(result.effectiveBaseRate).toBe(5); // 6% - 1%
-    expect(result.monthlyCommission).toBe(25); // $500 * 5%
+    expect(result.effectiveBaseRate).toBe(5); 
+    expect(result.monthlyCommission).toBe(25); 
   });
 
   test('Bread15 should have -0.5% adjustment', () => {
     const result = calculateCommission({ ...baseInput, accountType: 'Bread15' });
     expect(result.accountTypeAdjustment).toBe(-0.5);
-    expect(result.effectiveBaseRate).toBe(5.5); // 6% - 0.5%
-    expect(result.monthlyCommission).toBe(27.5); // $500 * 5.5%
+    expect(result.effectiveBaseRate).toBe(5.5); 
+    expect(result.monthlyCommission).toBe(27.5); 
   });
 
   test('Pit should have 0% adjustment', () => {
@@ -241,14 +216,11 @@ describe('Commission Calculation - Account Types', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Pricing Line (Greenline Bonus)
-// ============================================================
 describe('Commission Calculation - Pricing Lines', () => {
   const baseInput: CalculationInput = {
     totalCurrentContract: 12000,
     globalContractMonths: 12,
-    quotaLevel: 'above', // 6% base
+    quotaLevel: 'above', 
     accountType: 'Anchor',
     isInsideSales: false,
     pricingIndicator: 'red',
@@ -265,20 +237,17 @@ describe('Commission Calculation - Pricing Lines', () => {
     const result = calculateCommission({ ...baseInput, pricingIndicator: 'green' });
     expect(result.pricingLine).toBe('Greenline');
     expect(result.greenlineBonus).toBe(1);
-    expect(result.effectiveBaseRate).toBe(7); // 6% + 1%
-    expect(result.monthlyCommission).toBe(70); // $1000 * 7%
+    expect(result.effectiveBaseRate).toBe(7); 
+    expect(result.monthlyCommission).toBe(70); 
   });
 });
 
-// ============================================================
-// TEST SUITE: Inside Sales Deduction
-// ============================================================
 describe('Commission Calculation - Inside Sales', () => {
   const baseInput: CalculationInput = {
     totalCurrentContract: 12000,
     globalContractMonths: 12,
     pricingIndicator: 'red',
-    quotaLevel: 'above', // 6% base
+    quotaLevel: 'above', 
     accountType: 'Anchor',
     isInsideSales: false,
   };
@@ -292,14 +261,11 @@ describe('Commission Calculation - Inside Sales', () => {
   test('Inside sales should apply -3% deduction', () => {
     const result = calculateCommission({ ...baseInput, isInsideSales: true });
     expect(result.insideSalesDeduction).toBe(-3);
-    expect(result.effectiveBaseRate).toBe(3); // 6% - 3%
-    expect(result.monthlyCommission).toBe(30); // $1000 * 3%
+    expect(result.effectiveBaseRate).toBe(3); 
+    expect(result.monthlyCommission).toBe(30); 
   });
 });
 
-// ============================================================
-// TEST SUITE: Monthly Value Calculation
-// ============================================================
 describe('Commission Calculation - Monthly Value', () => {
   const baseInput: CalculationInput = {
     totalCurrentContract: 3600,
@@ -312,7 +278,7 @@ describe('Commission Calculation - Monthly Value', () => {
 
   test('Monthly value should be contract total / months', () => {
     const result = calculateCommission(baseInput);
-    expect(result.monthlyValue).toBe(100); // $3600 / 36
+    expect(result.monthlyValue).toBe(100); 
   });
 
   test('Different contract totals should calculate correctly', () => {
@@ -321,7 +287,7 @@ describe('Commission Calculation - Monthly Value', () => {
       totalCurrentContract: 18000,
       globalContractMonths: 36,
     });
-    expect(result.monthlyValue).toBe(500); // $18000 / 36
+    expect(result.monthlyValue).toBe(500); 
   });
 
   test('Zero months should use total as monthly value', () => {
@@ -334,22 +300,18 @@ describe('Commission Calculation - Monthly Value', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Contract Commission Calculation
-// ============================================================
 describe('Commission Calculation - Contract Commission', () => {
   test('Contract commission should be monthly * months', () => {
     const result = calculateCommission({
       totalCurrentContract: 36000,
       globalContractMonths: 36,
       pricingIndicator: 'red',
-      quotaLevel: 'above', // 6%
+      quotaLevel: 'above', 
       accountType: 'Anchor',
       isInsideSales: false,
     });
 
-    // Monthly: $1000 * 6% * 135% = $81
-    // Contract: $81 * 36 = $2916
+    
     expect(result.monthlyCommission).toBeCloseTo(81, 0);
     expect(result.contractCommission).toBeCloseTo(2916, 0);
   });
@@ -359,7 +321,7 @@ describe('Commission Calculation - Contract Commission', () => {
       totalCurrentContract: 12000,
       globalContractMonths: 12,
       pricingIndicator: 'red',
-      quotaLevel: 'above', // 6%
+      quotaLevel: 'above', 
       accountType: 'Anchor',
       isInsideSales: false,
     });
@@ -368,25 +330,21 @@ describe('Commission Calculation - Contract Commission', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Combined Scenarios
-// ============================================================
 describe('Commission Calculation - Combined Scenarios', () => {
   test('Best case: Double quota + 3-year + Greenline + Anchor', () => {
     const result = calculateCommission({
       totalCurrentContract: 36000,
       globalContractMonths: 36,
       pricingIndicator: 'green',
-      quotaLevel: 'double', // 9%
-      accountType: 'Anchor', // 0%
+      quotaLevel: 'double', 
+      accountType: 'Anchor', 
       isInsideSales: false,
     });
 
-    // Effective: 9% + 1% = 10%
-    // Final: 10% * 135% = 13.5%
+    
     expect(result.effectiveBaseRate).toBe(10);
     expect(result.finalCommissionRate).toBeCloseTo(13.5, 2);
-    // Monthly: $1000 * 13.5% = $135
+    
     expect(result.monthlyCommission).toBeCloseTo(135, 0);
   });
 
@@ -395,16 +353,15 @@ describe('Commission Calculation - Combined Scenarios', () => {
       totalCurrentContract: 3000,
       globalContractMonths: 6,
       pricingIndicator: 'red',
-      quotaLevel: 'below', // 3%
-      accountType: 'Bread5', // -1%
-      isInsideSales: true, // -3%
+      quotaLevel: 'below', 
+      accountType: 'Bread5', 
+      isInsideSales: true, 
     });
 
-    // Effective: 3% - 1% - 3% = -1%
     expect(result.effectiveBaseRate).toBe(-1);
     expect(result.finalCommissionRate).toBe(-1);
-    // Negative commission
-    expect(result.monthlyCommission).toBe(-5); // $500 * -1%
+    
+    expect(result.monthlyCommission).toBe(-5); 
   });
 
   test('Typical scenario: Above quota + 1-year + Redline + Anchor', () => {
@@ -412,22 +369,19 @@ describe('Commission Calculation - Combined Scenarios', () => {
       totalCurrentContract: 6000,
       globalContractMonths: 12,
       pricingIndicator: 'red',
-      quotaLevel: 'above', // 6%
-      accountType: 'Anchor', // 0%
+      quotaLevel: 'above', 
+      accountType: 'Anchor', 
       isInsideSales: false,
     });
 
     expect(result.effectiveBaseRate).toBe(6);
     expect(result.finalCommissionRate).toBe(6);
-    expect(result.monthlyCommission).toBe(30); // $500 * 6%
+    expect(result.monthlyCommission).toBe(30); 
     expect(result.annualCommission).toBe(360);
     expect(result.contractCommission).toBe(360);
   });
 });
 
-// ============================================================
-// TEST SUITE: Edge Cases
-// ============================================================
 describe('Commission Calculation - Edge Cases', () => {
   test('Zero contract should result in zero commission', () => {
     const result = calculateCommission({
@@ -486,9 +440,6 @@ describe('Commission Calculation - Edge Cases', () => {
   });
 });
 
-// ============================================================
-// TEST SUITE: Real-World Scenarios
-// ============================================================
 describe('Commission Calculation - Real World Scenarios', () => {
   test('New customer: $500/month, 36 months, above quota, green line', () => {
     const result = calculateCommission({
@@ -500,11 +451,10 @@ describe('Commission Calculation - Real World Scenarios', () => {
       isInsideSales: false,
     });
 
-    // 6% + 1% = 7% * 135% = 9.45%
     expect(result.finalCommissionRate).toBeCloseTo(9.45, 2);
-    // $500 * 9.45% = $47.25/month
+    
     expect(result.monthlyCommission).toBeCloseTo(47.25, 2);
-    // $47.25 * 36 = $1701 contract
+    
     expect(result.contractCommission).toBeCloseTo(1701, 0);
   });
 
@@ -518,10 +468,9 @@ describe('Commission Calculation - Real World Scenarios', () => {
       isInsideSales: true,
     });
 
-    // 3% - 1% - 3% = -1%
     expect(result.effectiveBaseRate).toBe(-1);
     expect(result.finalCommissionRate).toBe(-1);
-    // This indicates the deal parameters need adjustment
+    
   });
 
   test('High-value anchor location with double quota', () => {
@@ -534,15 +483,13 @@ describe('Commission Calculation - Real World Scenarios', () => {
       isInsideSales: false,
     });
 
-    // 9% + 1% = 10% * 135% = 13.5%
     expect(result.finalCommissionRate).toBeCloseTo(13.5, 2);
-    // $2000 * 13.5% = $270/month
+    
     expect(result.monthlyCommission).toBeCloseTo(270, 0);
-    // $270 * 36 = $9720 contract
+    
     expect(result.contractCommission).toBeCloseTo(9720, 0);
   });
 });
 
-// Export for other tests
 export { calculateCommission };
 export type { CalculationInput, CalculationResult };

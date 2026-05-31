@@ -4,7 +4,6 @@
 
 }
 
-
 .custom-field__add-dropdown {
   display: flex;
   align-items: center;
@@ -40,7 +39,6 @@
 .custom-field__type-select:focus {
   border-color: #c00000;
 }
-
 
 @media (max-width: 740px) {
   .custom-field__add-dropdown {

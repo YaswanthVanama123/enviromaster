@@ -27,13 +27,13 @@ function AppContent() {
       {!isEditMode && !isLoginPage && <NavBar />}
       <main className={`page-body ${isEditMode ? 'edit-mode-body' : ''}`}>
         <Routes>
-          {/* Public route - Login */}
+          {}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Legacy admin-login redirect to new login */}
+          {}
           <Route path="/admin-login" element={<LoginPage />} />
 
-          {/* Protected routes - Any authenticated user */}
+          {}
           <Route element={<AuthGuard />}>
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
@@ -49,7 +49,7 @@ function AppContent() {
             <Route path="/my-inside-sales" element={<MyInsideSales />} />
           </Route>
 
-          {/* Admin-only routes */}
+          {}
           <Route element={<AuthGuard requireAdmin />}>
             <Route path="/admin-commissions" element={<AdminCommissions />} />
             <Route path="/admin-panel/:tab/services/:modalType?/:itemId?" element={<AdminPanel />} />

@@ -1,7 +1,4 @@
-/**
- * Company Mapping Tab
- * Admin panel for mapping Bigin Companies to RouteStar Customers
- */
+
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -32,7 +29,6 @@ export const CompanyMappingTab: React.FC = () => {
   const [savingRow, setSavingRow] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(false);
 
-  // Dropdown states
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownSearch, setDropdownSearch] = useState('');
   const [routeStarOptions, setRouteStarOptions] = useState<RouteStarCustomerOption[]>([]);
@@ -40,7 +36,6 @@ export const CompanyMappingTab: React.FC = () => {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load mappings
   const loadMappings = useCallback(async () => {
     setLoading(true);
     const result = await companyMappingApi.getAll({
@@ -57,7 +52,6 @@ export const CompanyMappingTab: React.FC = () => {
     setLoading(false);
   }, [searchTerm, activeTab, pagination.limit, pagination.skip]);
 
-  // Load stats
   const loadStats = useCallback(async () => {
     const result = await companyMappingApi.getStats();
     if (result) {
@@ -65,7 +59,6 @@ export const CompanyMappingTab: React.FC = () => {
     }
   }, []);
 
-  // Load RouteStar options
   const loadRouteStarOptions = useCallback(async (search?: string) => {
     setLoadingOptions(true);
     const result = await companyMappingApi.getAvailableRouteStarCustomers(search, true);
@@ -75,18 +68,15 @@ export const CompanyMappingTab: React.FC = () => {
     setLoadingOptions(false);
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadMappings();
     loadStats();
   }, []);
 
-  // Reload when filters change
   useEffect(() => {
     loadMappings();
   }, [loadMappings]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -99,7 +89,6 @@ export const CompanyMappingTab: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle dropdown open
   const handleDropdownOpen = (biginId: string) => {
     if (openDropdown === biginId) {
       setOpenDropdown(null);
@@ -111,13 +100,11 @@ export const CompanyMappingTab: React.FC = () => {
     }
   };
 
-  // Handle dropdown search
   const handleDropdownSearch = (value: string) => {
     setDropdownSearch(value);
     loadRouteStarOptions(value);
   };
 
-  // Handle select RouteStar customer
   const handleSelectRouteStar = (mapping: CompanyMapping, customer: RouteStarCustomerOption | null) => {
     const newPendingChanges = new Map(pendingChanges);
 
@@ -140,7 +127,6 @@ export const CompanyMappingTab: React.FC = () => {
     setDropdownSearch('');
   };
 
-  // Handle save all
   const handleSaveAll = async () => {
     if (pendingChanges.size === 0) {
       console.log('[MAPPING] No pending changes to save');
@@ -179,7 +165,6 @@ export const CompanyMappingTab: React.FC = () => {
     setSaving(false);
   };
 
-  // Handle save single row
   const handleSaveRow = async (biginId: string) => {
     const pending = pendingChanges.get(biginId);
     if (!pending) {
@@ -196,12 +181,11 @@ export const CompanyMappingTab: React.FC = () => {
 
       if (result) {
         console.log('[MAPPING] Row saved successfully');
-        // Remove from pending changes
+        
         const newPendingChanges = new Map(pendingChanges);
         newPendingChanges.delete(biginId);
         setPendingChanges(newPendingChanges);
 
-        // Update local mapping state
         setMappings(prev => prev.map(m =>
           m.biginId === biginId
             ? {
@@ -223,7 +207,6 @@ export const CompanyMappingTab: React.FC = () => {
     setSavingRow(null);
   };
 
-  // Handle initialize
   const handleInitialize = async () => {
     setInitializing(true);
     const result = await companyMappingApi.initialize();
@@ -234,20 +217,17 @@ export const CompanyMappingTab: React.FC = () => {
     setInitializing(false);
   };
 
-  // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPagination(prev => ({ ...prev, skip: 0 }));
     loadMappings();
   };
 
-  // Handle tab change
   const handleTabChange = (tab: FilterTab) => {
     setActiveTab(tab);
     setPagination(prev => ({ ...prev, skip: 0 }));
   };
 
-  // Get display value for mapping
   const getDisplayValue = (mapping: CompanyMapping): string => {
     const pending = pendingChanges.get(mapping.biginId);
     if (pending) {
@@ -256,12 +236,10 @@ export const CompanyMappingTab: React.FC = () => {
     return mapping.routeStarCustomerName || 'Select customer...';
   };
 
-  // Check if mapping has pending change
   const hasPendingChange = (mapping: CompanyMapping): boolean => {
     return pendingChanges.has(mapping.biginId);
   };
 
-  // Get effective mapping status
   const getEffectiveStatus = (mapping: CompanyMapping): 'mapped' | 'unmapped' => {
     const pending = pendingChanges.get(mapping.biginId);
     if (pending) {
@@ -272,7 +250,7 @@ export const CompanyMappingTab: React.FC = () => {
 
   return (
     <div className="company-mapping-tab">
-      {/* Header */}
+      {}
       <div className="cm-header">
         <div className="cm-header-content">
           <h2>Company Mapping</h2>
@@ -305,7 +283,7 @@ export const CompanyMappingTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Tabs & Search */}
+      {}
       <div className="cm-toolbar">
         <div className="cm-tabs">
           <button
@@ -339,14 +317,14 @@ export const CompanyMappingTab: React.FC = () => {
         </form>
       </div>
 
-      {/* Stats Bar */}
+      {}
       <div className="cm-stats-bar">
         <span className="cm-stat">{stats?.total || 0} total</span>
         <span className="cm-stat cm-stat-mapped">{stats?.mapped || 0} mapped</span>
         <span className="cm-stat cm-stat-unmapped">{stats?.unmapped || 0} unmapped</span>
       </div>
 
-      {/* Mappings Table */}
+      {}
       {loading ? (
         <div className="cm-loading">
           <div className="cm-loading-spinner"></div>
@@ -466,7 +444,7 @@ export const CompanyMappingTab: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
+      {}
       {pagination.total > pagination.limit && (
         <div className="cm-pagination">
           <button

@@ -48,20 +48,15 @@ export interface EnvProduct {
   familyKey: EnvProductFamilyKey;
   kind: ProductKind;
 
-
   basePrice?: PriceSpec;
 
-
   warrantyPricePerUnit?: PriceSpec;
-
 
   effectivePerRollPriceInternal?: number;
   suggestedCustomerRollPrice?: number;
 
-
   quantityPerCase?: number;
   quantityPerCaseLabel?: string;
-
 
   displayByAdmin?: boolean;
 }
@@ -80,30 +75,24 @@ export interface EnvProductCatalog {
   families: EnvProductFamily[];
 }
 
-
 export type ProductBucket = "paper" | "dispensers" | "extras";
-
 
 export interface ProductRow {
   id: string;
 
-
   leftProductKey?: string;
   leftAmountPerUnit?: number;
-
 
   dispenserKey?: string;
   dispenserQty?: number;
   dispenserWarrantyRate?: number;
   dispenserReplacementRate?: number;
 
-
   rightProductKey?: string;
   rightQty?: number;
   rightAmount?: number;
   rightFrequency?: string;
 }
-
 
 export interface ExtraColumn {
   id: string;

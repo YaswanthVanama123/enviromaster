@@ -91,7 +91,6 @@ export const FileRow = memo((props: FileRowProps) => {
 
   const fileDeletionInfo = isTrashView ? formatDeletionMeta(file.deletedBy, file.deletedAt) : null;
 
-  // Format last edit time for display
   const formattedEditInfo = useMemo(() => {
     if (!file.updatedAt || !file.updatedBy) return null;
     const date = new Date(file.updatedAt);
@@ -238,7 +237,7 @@ export const FileRow = memo((props: FileRowProps) => {
           </span>
         )}
         </div>
-        {/* Last edited info for files */}
+        {}
         {!isTrashView && formattedEditInfo && (
           <div style={{
             display: 'flex',

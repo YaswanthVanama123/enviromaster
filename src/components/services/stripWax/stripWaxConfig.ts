@@ -11,7 +11,6 @@ export const stripWaxPricingConfig: StripWaxPricingConfig = {
   defaultFrequency: "weekly",
   defaultVariant: "standardFull",
 
-
   billingConversions: {
     oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },
     weekly: { annualMultiplier: 52, monthlyMultiplier: 4.33 },

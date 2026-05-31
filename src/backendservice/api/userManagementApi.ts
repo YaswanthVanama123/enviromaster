@@ -11,13 +11,8 @@ import type {
 
 const BASE_URL = '/api/users';
 
-/**
- * User Management API (Admin only)
- */
 export const userManagementApi = {
-  /**
-   * List all users (admins + employees)
-   */
+  
   async listUsers(params?: {
     role?: UserRole;
     search?: string;
@@ -40,9 +35,6 @@ export const userManagementApi = {
     return response.data;
   },
 
-  /**
-   * Create a new admin user
-   */
   async createAdmin(data: CreateAdminPayload): Promise<{ success: boolean; user: UserListItem }> {
     const response = await apiClient.post<{ success: boolean; user: UserListItem }>(`${BASE_URL}/admin`, data);
     if (response.error || !response.data) {
@@ -51,9 +43,6 @@ export const userManagementApi = {
     return response.data;
   },
 
-  /**
-   * Create a new employee user
-   */
   async createEmployee(data: CreateEmployeePayload): Promise<{ success: boolean; user: UserListItem }> {
     const response = await apiClient.post<{ success: boolean; user: UserListItem }>(`${BASE_URL}/employee`, data);
     if (response.error || !response.data) {
@@ -62,9 +51,6 @@ export const userManagementApi = {
     return response.data;
   },
 
-  /**
-   * Update a user
-   */
   async updateUser(
     type: UserRole,
     id: string,
@@ -77,9 +63,6 @@ export const userManagementApi = {
     return response.data;
   },
 
-  /**
-   * Toggle user active status
-   */
   async toggleUserStatus(
     type: UserRole,
     id: string,
@@ -95,9 +78,6 @@ export const userManagementApi = {
     return response.data;
   },
 
-  /**
-   * Reset user password
-   */
   async resetPassword(
     type: UserRole,
     id: string,
@@ -113,9 +93,6 @@ export const userManagementApi = {
     return response.data;
   },
 
-  /**
-   * Delete a user
-   */
   async deleteUser(
     type: UserRole,
     id: string

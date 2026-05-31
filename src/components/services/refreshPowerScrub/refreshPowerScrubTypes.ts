@@ -24,27 +24,22 @@ export type RefreshAreaKey =
   | "boh"
   | "other";
 
-
 export interface RefreshAreaCalcState {
 
   enabled: boolean;
 
-
   pricingType: RefreshPricingType;
-
 
   workers: number;
   hours: number;
   hourlyRate: number; 
   workerRate: number; 
 
-
   insideSqFt: number;
   outsideSqFt: number;
   insideRate: number; 
   outsideRate: number; 
   sqFtFixedFee: number; 
-
 
   customAmount: number;
   workerRateIsCustom?: boolean;
@@ -56,10 +51,8 @@ export interface RefreshAreaCalcState {
   smallMediumRateIsCustom?: boolean;
   largeRateIsCustom?: boolean;
 
-
   presetQuantity: number; 
   presetRate: number | undefined | null; 
-
 
   kitchenSize: RefreshKitchenSize; 
   smallMediumQuantity: number; 
@@ -69,23 +62,18 @@ export interface RefreshAreaCalcState {
   largeRate: number | undefined | null; 
   largeCustomAmount: number; 
 
-
   patioMode: RefreshPatioMode;
 
   includePatioAddon: boolean;
 
   patioAddonRate: number | undefined | null;
 
-
   frequencyLabel: string;
-
 
   contractMonths: number;
 }
 
-
 export interface RefreshPowerScrubFormState extends BaseServiceFormState {
-
 
   tripCharge: number;
   hourlyRate: number;
@@ -95,10 +83,8 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
 
   applyMinimum?: boolean;
 
-
   frequency: RefreshFrequency;
   contractMonths: number;
-
 
   dumpster: RefreshAreaCalcState;
   patio: RefreshAreaCalcState;
@@ -107,7 +93,6 @@ export interface RefreshPowerScrubFormState extends BaseServiceFormState {
   boh: RefreshAreaCalcState;
   other: RefreshAreaCalcState;
 }
-
 
 export interface RefreshAreaTotals {
   dumpster: number;

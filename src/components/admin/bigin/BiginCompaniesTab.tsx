@@ -1,7 +1,4 @@
-/**
- * Bigin Companies Tab
- * Admin panel for viewing and syncing companies from Zoho Bigin
- */
+
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { biginCompanyApi, type BiginCompany, type FetchStatus, type CompanyStats } from '../../../backendservice/api/biginCompanyApi';
@@ -19,7 +16,6 @@ export const BiginCompaniesTab: React.FC = () => {
   const [pagination, setPagination] = useState({ total: 0, skip: 0, limit: 50 });
   const [selectedCompany, setSelectedCompany] = useState<BiginCompany | null>(null);
 
-  // Load companies
   const loadCompanies = useCallback(async () => {
     setLoading(true);
     const result = await biginCompanyApi.getAll({
@@ -38,7 +34,6 @@ export const BiginCompaniesTab: React.FC = () => {
     setLoading(false);
   }, [searchTerm, cityFilter, stateFilter, ownerFilter, pagination.limit, pagination.skip]);
 
-  // Load stats
   const loadStats = useCallback(async () => {
     const result = await biginCompanyApi.getStats();
     if (result) {
@@ -46,7 +41,6 @@ export const BiginCompaniesTab: React.FC = () => {
     }
   }, []);
 
-  // Load fetch status
   const loadFetchStatus = useCallback(async () => {
     const result = await biginCompanyApi.getFetchStatus();
     if (result) {
@@ -54,19 +48,16 @@ export const BiginCompaniesTab: React.FC = () => {
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadCompanies();
     loadStats();
     loadFetchStatus();
   }, []);
 
-  // Reload when filters change
   useEffect(() => {
     loadCompanies();
   }, [loadCompanies]);
 
-  // Poll fetch status when fetching
   useEffect(() => {
     if (fetchStatus?.isRunning) {
       const interval = setInterval(() => {
@@ -74,13 +65,12 @@ export const BiginCompaniesTab: React.FC = () => {
       }, 2000);
       return () => clearInterval(interval);
     } else if (fetchStatus?.lastFetchResult === 'success') {
-      // Reload data after successful fetch
+      
       loadCompanies();
       loadStats();
     }
   }, [fetchStatus?.isRunning, fetchStatus?.lastFetchResult, loadFetchStatus, loadCompanies, loadStats]);
 
-  // Handle fetch
   const handleFetch = async () => {
     const result = await biginCompanyApi.startFetch();
     if (result) {
@@ -88,14 +78,12 @@ export const BiginCompaniesTab: React.FC = () => {
     }
   };
 
-  // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPagination(prev => ({ ...prev, skip: 0 }));
     loadCompanies();
   };
 
-  // Format date
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
@@ -104,7 +92,7 @@ export const BiginCompaniesTab: React.FC = () => {
 
   return (
     <div className="bigin-companies-tab">
-      {/* Header */}
+      {}
       <div className="bc-header">
         <div className="bc-header-content">
           <h2>Bigin Companies</h2>
@@ -133,7 +121,7 @@ export const BiginCompaniesTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="bc-stats-grid">
         <div className="bc-stat-card">
           <div className="bc-stat-value">{stats?.total || 0}</div>
@@ -153,7 +141,7 @@ export const BiginCompaniesTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Fetch Status Banner */}
+      {}
       {fetchStatus && (
         <div className={`bc-fetch-status ${fetchStatus.lastFetchResult || ''}`}>
           <div className="bc-fetch-info">
@@ -179,7 +167,7 @@ export const BiginCompaniesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
+      {}
       <div className="bc-filters">
         <form onSubmit={handleSearch} className="bc-search-form">
           <input
@@ -239,7 +227,7 @@ export const BiginCompaniesTab: React.FC = () => {
         </span>
       </div>
 
-      {/* Companies Table */}
+      {}
       {loading ? (
         <div className="bc-loading">
           <div className="bc-loading-spinner"></div>
@@ -299,7 +287,7 @@ export const BiginCompaniesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
+      {}
       {pagination.total > pagination.limit && (
         <div className="bc-pagination">
           <button
@@ -322,7 +310,7 @@ export const BiginCompaniesTab: React.FC = () => {
         </div>
       )}
 
-      {/* Company Detail Modal */}
+      {}
       {selectedCompany && (
         <div className="bc-modal-overlay" onClick={() => setSelectedCompany(null)}>
           <div className="bc-modal" onClick={(e) => e.stopPropagation()}>

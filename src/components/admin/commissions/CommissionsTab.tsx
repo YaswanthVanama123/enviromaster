@@ -8,8 +8,7 @@ type SubTab = "calculator" | "rules";
 export const CommissionsTab: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>("rules");
 
-  // Kept for back-compat with CommissionCalculator's onRecordSaved prop
-  // even though the History tab has been removed.
+  
   const handleRecordSaved = useCallback(() => {}, []);
 
   return (

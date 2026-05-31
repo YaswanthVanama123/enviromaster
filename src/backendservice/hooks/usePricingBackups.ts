@@ -67,14 +67,12 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
         return;
       }
 
-      // Get the response data
       const responseData = response.data;
       if (!responseData?.success) {
         setError(responseData?.message || 'Failed to fetch backups');
         return;
       }
 
-      // The service returns data as an array directly
       const rawBackups = responseData.data || [];
       console.log('[BACKUP-HOOK] Raw backups:', rawBackups);
 
@@ -84,9 +82,8 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
         return;
       }
 
-      // Map the backups - the service already returns properly formatted data
       const mappedBackups: PricingBackup[] = rawBackups.map((b: any) => ({
-        // Use existing values directly from service
+        
         changeDayId: b.changeDayId,
         changeDay: b.changeDay,
         firstChangeTimestamp: b.firstChangeTimestamp,
@@ -109,7 +106,7 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
         },
         createdAt: b.createdAt,
         updatedAt: b.updatedAt,
-        // Additional fields for UI compatibility
+        
         id: b.changeDayId,
         _id: b.changeDayId
       }));
@@ -135,7 +132,7 @@ export function usePricingBackups(autoFetch: 'none' | 'list' | 'health' | 'stati
       if (response.error) {
         setHealthError(response.error);
       } else if (response.data?.success) {
-        // Health endpoint returns { success, health, metrics }
+        
         const healthData = response.data.data || response.data.health;
         if (healthData) {
           setHealth({

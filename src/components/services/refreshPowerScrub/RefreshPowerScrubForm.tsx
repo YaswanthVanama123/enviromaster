@@ -10,7 +10,6 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { CustomFieldManager, type CustomField } from "../CustomFieldManager";
 import { buildRefreshPowerScrubDraftPayload } from "./refreshPowerScrubDraftPayload";
 
-
 const formatNumber = (num: number | undefined): string => {
   if (num === undefined || num === null || isNaN(num)) {
     return "0";
@@ -72,7 +71,6 @@ export const RefreshPowerScrubForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const {
     form,
     setHourlyRate,
@@ -94,18 +92,15 @@ export const RefreshPowerScrubForm: React.FC<
   } = useRefreshPowerScrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
 
-
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
       setContractMonths(servicesContext.globalContractMonths);
     }
   }, [servicesContext?.globalContractMonths]);
 
-
   const prevDataRef = useRef<string>("");
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
-
 
   const getWorkerRate = (): number => {
     return backendConfig?.coreRates?.perWorkerRate ?? backendConfig?.coreRates?.defaultHourlyRate ?? 200; 
@@ -126,7 +121,6 @@ export const RefreshPowerScrubForm: React.FC<
   const getFixedFee = (): number => {
     return backendConfig?.squareFootagePricing?.fixedFee ?? 200;
   };
-
 
   const getPatioStandalone = (): number => {
     return backendConfig?.areaSpecificPricing?.patio?.standalone ?? 800;
@@ -172,7 +166,6 @@ const getKitchenLarge = (): number => {
         return area?.enabled && areaTotal > 0;
       });
 
-
       const totalPerVisitCost = activeAreaKeys.reduce(
         (sum, key) => sum + (areaTotals[key] || 0),
         0
@@ -191,13 +184,11 @@ const getKitchenLarge = (): number => {
         displayName: "Refresh Power Scrub",
         isActive: true,
 
-
         perVisitBase: isActive ? totalPerVisitCost : 0,  
         perVisit: isActive
           ? Math.max(totalPerVisitCost, form.minimumVisit || 0)
           : 0,  
         minimumVisit: form.minimumVisit,  
-
 
         serviceInfo: {
           isDisplay: true,
@@ -208,11 +199,9 @@ const getKitchenLarge = (): number => {
         hourlyRateIsCustom: form.hourlyRateIsCustom,
         minimumVisitIsCustom: form.minimumVisitIsCustom,
 
-
         services: activeAreaKeys.reduce((acc, key) => {
             const area = form[key];
             const areaName = key === 'foh' ? 'frontHouse' : key === 'boh' ? 'backHouse' : key;
-
 
             const pricingMethodNames = {
               'perHour': 'Per Hour',
@@ -221,7 +210,6 @@ const getKitchenLarge = (): number => {
               'preset': 'Preset Package',
               'custom': 'Custom Amount'
             };
-
 
             const getFrequencyMultiplier = (freq: string) => {
               switch (freq?.toLowerCase()) {
@@ -246,7 +234,6 @@ const getKitchenLarge = (): number => {
               freqLower === "one time" ? 1 : (baseMultiplier <= 0 ? 1 : baseMultiplier);
             const monthlyAmount = areaTotals[key] * visitsPerMonth;
 
-
             let contractAmount: number;
 
             if (freqLower === "quarterly") {
@@ -266,7 +253,6 @@ const getKitchenLarge = (): number => {
               contractAmount = monthlyAmount * (area.contractMonths || 12);
             }
 
-
             const serviceData: any = {
               enabled: true,
               pricingMethod: {
@@ -275,7 +261,6 @@ const getKitchenLarge = (): number => {
                 type: "text"
               }
             };
-
 
             if (area.pricingType === 'perHour') {
               serviceData.hours = {
@@ -363,7 +348,6 @@ const getKitchenLarge = (): number => {
               }
             }
 
-
             serviceData.frequency = {
               isDisplay: true,
               value: frequencyLabel,
@@ -448,7 +432,6 @@ const getKitchenLarge = (): number => {
               },
             },
 
-
             contractTotal: totalServiceCost,
             originalContractTotal: originalContractTotal,
 
@@ -469,7 +452,6 @@ const getKitchenLarge = (): number => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, areaTotals, quote, customFields, totalServiceCost, originalContractTotal]);
-
 
   const getPresetAmount = (areaKey: RefreshAreaKey): number => {
     switch (areaKey) {

@@ -1,38 +1,22 @@
-// Commission Calculator Types - Version 2
-// Based on Solange Commission Draft v2 (June 2026)
 
-// ============================================================
-// ACCOUNT TYPES
-// ============================================================
 
-// Account Types - based on revenue and geographic proximity
 export type AccountType = 'Anchor' | 'Bread5' | 'Bread15' | 'Pit';
 
-// Pricing Lines - standard vs premium
 export type PricingLine = 'Redline' | 'Greenline' | 'BelowRedline';
 
-// Agreement Terms
 export type AgreementTerm = '3-year' | '1-year' | 'MTM-with-install' | 'MTM-no-install';
 
-// Quota Achievement Level
 export type QuotaLevel = 'below' | 'above' | 'double';
 
-// Business Type
 export type BusinessType = 'new' | 'renewal';
 
-// Service Frequency
 export type ServiceFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'one-time';
 
-// ============================================================
-// PRICING MULTIPLIERS (NEW IN V2)
-// Greenline now multiplies revenue for quota credit
-// ============================================================
-
 export interface PricingTier {
-  minRatio: number;        // Minimum price ratio (vs Redline)
-  maxRatio: number;        // Maximum price ratio
-  quotaMultiplier: number; // Multiplier for quota credit
-  label: string;           // Display label
+  minRatio: number;        
+  maxRatio: number;        
+  quotaMultiplier: number; 
+  label: string;           
   requiresApproval: boolean;
 }
 
@@ -44,16 +28,11 @@ export const PRICING_TIERS: PricingTier[] = [
   { minRatio: 1.30, maxRatio: Infinity, quotaMultiplier: 2.0, label: 'Greenline (130%+)', requiresApproval: false },
 ];
 
-// ============================================================
-// ACCOUNT TYPE REVENUE RULES (NEW IN V2)
-// Revenue-based deductions, not percentage adjustments
-// ============================================================
-
 export interface AccountTypeRevenueRule {
   type: AccountType;
-  revenueDeduction: number;    // First $X = no commission
-  anchorBonusThreshold: number; // Revenue threshold for bonus (Anchor only)
-  anchorBonusMultiplier: number; // Multiplier for revenue above threshold
+  revenueDeduction: number;    
+  anchorBonusThreshold: number; 
+  anchorBonusMultiplier: number; 
   description: string;
 }
 
@@ -88,10 +67,6 @@ export const ACCOUNT_TYPE_REVENUE_RULES: AccountTypeRevenueRule[] = [
   },
 ];
 
-// ============================================================
-// QUOTA THRESHOLDS BY EMPLOYEE TENURE (NEW IN V2)
-// ============================================================
-
 export interface QuotaThreshold {
   monthsEmployed: number;
   annualQuota: number;
@@ -106,11 +81,6 @@ export const QUOTA_THRESHOLDS: QuotaThreshold[] = [
   { monthsEmployed: 4, annualQuota: 7500, weeklyEquivalent: 150, description: 'Month 4 - $7,500 annual' },
   { monthsEmployed: 5, annualQuota: 10000, weeklyEquivalent: 200, description: 'Month 5+ - $10,000 annual' },
 ];
-
-// ============================================================
-// AUTO-QUOTA RULES (NEW IN V2)
-// Automatic quota achievement based on rooftop sales
-// ============================================================
 
 export interface AutoQuotaRule {
   minMonths: number;
@@ -137,53 +107,39 @@ export const AUTO_QUOTA_RULES: AutoQuotaRule[] = [
   },
 ];
 
-// ============================================================
-// FREQUENCY MULTIPLIERS
-// Visits per year for each frequency
-// ============================================================
-
 export const FREQUENCY_VISITS_PER_YEAR: Record<ServiceFrequency, number> = {
-  'weekly': 50,      // 50 weeks (accounting for holidays)
-  'biweekly': 25,    // 25 bi-weekly visits
+  'weekly': 50,      
+  'biweekly': 25,    
   'monthly': 12,
   'quarterly': 4,
   'one-time': 1,
 };
-
-// ============================================================
-// BASE COMMISSION RULES
-// ============================================================
 
 export interface CommissionRulesV2 {
   _id?: string;
   version: string;
   isActive: boolean;
 
-  // Base commission rates by quota level (percentages)
   quotaRates: {
-    below: number;      // 3%
-    above: number;      // 6%
-    double: number;     // 9%
+    below: number;      
+    above: number;      
+    double: number;     
   };
 
-  // Agreement term multipliers (percentages)
   agreementMultipliers: {
-    '3-year': number;           // 135%
-    '1-year': number;           // 100%
-    'MTM-with-install': number; // 100%
-    'MTM-no-install': number;   // 50%
+    '3-year': number;           
+    '1-year': number;           
+    'MTM-with-install': number; 
+    'MTM-no-install': number;   
   };
 
-  // Inside sales deduction (percentage points)
-  insideSalesDeduction: number; // -3%
+  insideSalesDeduction: number; 
 
-  // Renewal bonus
-  renewalBonusRate: number;     // 4%
-  renewalMinYears: number;      // 2 years (or 1 year with new policy)
+  renewalBonusRate: number;     
+  renewalMinYears: number;      
 
-  // Anchor minimum (for auto-detection)
-  anchorMinPerVisit: number;    // $200
-  anchorMinGreenline: number;   // $100 if Greenline
+  anchorMinPerVisit: number;    
+  anchorMinGreenline: number;   
 
   createdAt?: string;
   updatedAt?: string;
@@ -210,118 +166,87 @@ export const DEFAULT_COMMISSION_RULES_V2: Omit<CommissionRulesV2, '_id' | 'creat
   anchorMinGreenline: 100,
 };
 
-// ============================================================
-// COMMISSION CALCULATION INPUT (V2)
-// ============================================================
-
 export interface CommissionCalculationInputV2 {
-  // Revenue Information
-  perVisitRevenue: number;          // Actual price per visit
-  redlinePrice: number;             // Redline (standard) price
-  frequency: ServiceFrequency;      // Service frequency
+  
+  perVisitRevenue: number;          
+  redlinePrice: number;             
+  frequency: ServiceFrequency;      
 
-  // Account Information
-  accountType: AccountType;         // Auto-detected or manual
-  isNearAnchor: boolean;            // From RouteSTAR
-  drivingTimeMinutes?: number;      // From RouteSTAR
-  nearestAnchorName?: string;       // For reference
+  accountType: AccountType;         
+  isNearAnchor: boolean;            
+  drivingTimeMinutes?: number;      
+  nearestAnchorName?: string;       
 
-  // Agreement Information
   agreementTerm: AgreementTerm;
   contractMonths: number;
 
-  // Business Type
   businessType: BusinessType;
-  yearsAsCustomer?: number;         // For renewal bonus
-  totalRenewalValue?: number;       // Total value being renewed
+  yearsAsCustomer?: number;         
+  totalRenewalValue?: number;       
 
-  // Sales Information
   isInsideSales: boolean;
   salesPersonId?: string;
   salesPersonName?: string;
 
-  // Employee Information (for quota calculation)
-  employeeHireDate?: string;        // ISO date string
+  employeeHireDate?: string;        
   employeeMonthsEmployed?: number;
-  periodSalesTotal?: number;        // Total sales this period
-  newRooftopCount?: number;         // Number of new locations sold
+  periodSalesTotal?: number;        
+  newRooftopCount?: number;         
 
-  // Customer Information
   customerName?: string;
   customerAddress?: string;
 
-  // Notes
   notes?: string;
 }
 
-// ============================================================
-// COMMISSION CALCULATION BREAKDOWN (V2)
-// ============================================================
-
 export interface CommissionBreakdownV2 {
-  // Pricing Tier Analysis
-  priceRatio: number;               // actualPrice / redlinePrice
-  pricingTier: string;              // 'Redline', 'Greenline', etc.
-  pricingMultiplier: number;        // 1.0, 1.25, 1.5, or 2.0
+  
+  priceRatio: number;               
+  pricingTier: string;              
+  pricingMultiplier: number;        
   requiresApproval: boolean;
 
-  // Revenue Adjustments
-  originalRevenue: number;          // Per-visit revenue
-  revenueDeduction: number;         // Amount deducted (Pit/Bread)
-  anchorBonus: number;              // Extra credit for Anchor above $200
-  commissionableRevenue: number;    // After deductions and bonuses
+  originalRevenue: number;          
+  revenueDeduction: number;         
+  anchorBonus: number;              
+  commissionableRevenue: number;    
 
-  // Quota Credit Calculation
-  revenueWithPricingMultiplier: number; // commissionableRevenue * pricingMultiplier
+  revenueWithPricingMultiplier: number; 
   visitsPerYear: number;
-  annualQuotaCredit: number;        // What counts toward quota
+  annualQuotaCredit: number;        
 
-  // Quota Determination
-  employeeQuotaThreshold: number;   // Based on tenure
-  totalPeriodSales: number;         // Including this sale
-  autoQuotaQualified: boolean;      // Met auto-quota rules?
-  quotaLevel: QuotaLevel;           // below, above, double
+  employeeQuotaThreshold: number;   
+  totalPeriodSales: number;         
+  autoQuotaQualified: boolean;      
+  quotaLevel: QuotaLevel;           
 
-  // Commission Rate Calculation
-  baseRate: number;                 // 3%, 6%, or 9%
-  insideSalesDeduction: number;     // -3% if applicable
-  effectiveRate: number;            // baseRate + deductions
-  agreementMultiplier: number;      // 135%, 100%, or 50%
-  finalCommissionRate: number;      // effectiveRate * multiplier
+  baseRate: number;                 
+  insideSalesDeduction: number;     
+  effectiveRate: number;            
+  agreementMultiplier: number;      
+  finalCommissionRate: number;      
 
-  // Renewal Bonus
-  renewalBonusRate: number;         // 4% if applicable
-  renewalBonusAmount: number;       // Dollar amount
+  renewalBonusRate: number;         
+  renewalBonusAmount: number;       
 }
-
-// ============================================================
-// COMMISSION CALCULATION RESULT (V2)
-// ============================================================
 
 export interface CommissionCalculationResultV2 {
   input: CommissionCalculationInputV2;
   breakdown: CommissionBreakdownV2;
 
-  // Final Amounts
-  perVisitCommission: number;       // Commission per visit
-  weeklyCommission: number;         // Weekly estimate
-  annualCommission: number;         // Annual commission
-  contractCommission: number;       // Total contract commission (12 months)
-  renewalBonus: number;             // One-time renewal bonus
-  totalCommission: number;          // contractCommission + renewalBonus
+  perVisitCommission: number;       
+  weeklyCommission: number;         
+  annualCommission: number;         
+  contractCommission: number;       
+  renewalBonus: number;             
+  totalCommission: number;          
 
-  // Back Commission (if Pit converted)
   backCommissionEligible: boolean;
   backCommissionAmount: number;
 
-  // Metadata
   calculatedAt: string;
   rulesVersion: string;
 }
-
-// ============================================================
-// PIT CONVERSION TRACKING (NEW IN V2)
-// ============================================================
 
 export interface PitConversion {
   pitAgreementId: string;
@@ -339,10 +264,6 @@ export interface PitConversion {
   backCommissionPaid: boolean;
   backCommissionPaidDate?: string;
 }
-
-// ============================================================
-// ROUTESTAR INTEGRATION TYPES
-// ============================================================
 
 export interface RouteSTARCustomer {
   id: string;
@@ -379,10 +300,6 @@ export interface AccountTypeDetectionResult {
   reason: string;
   confidence: 'high' | 'medium' | 'low';
 }
-
-// ============================================================
-// FORM OPTIONS
-// ============================================================
 
 export const ACCOUNT_TYPE_OPTIONS_V2: { value: AccountType; label: string; description: string }[] = [
   { value: 'Anchor', label: 'Anchor', description: '$200+/visit. Revenue above $200 at 150% credit' },
@@ -423,22 +340,12 @@ export const BUSINESS_TYPE_OPTIONS_V2: { value: BusinessType; label: string }[] 
   { value: 'renewal', label: 'Renewal' },
 ];
 
-// ============================================================
-// LEGACY SUPPORT - Keep old types for backward compatibility
-// ============================================================
-
-// Re-export old types with deprecation notice
-/** @deprecated Use CommissionRulesV2 instead */
 export type CommissionRules = CommissionRulesV2;
 
-/** @deprecated Use DEFAULT_COMMISSION_RULES_V2 instead */
 export const DEFAULT_COMMISSION_RULES = DEFAULT_COMMISSION_RULES_V2;
 
-/** @deprecated Use CommissionCalculationInputV2 instead */
 export type CommissionCalculationInput = CommissionCalculationInputV2;
 
-/** @deprecated Use CommissionBreakdownV2 instead */
 export type CommissionBreakdown = CommissionBreakdownV2;
 
-/** @deprecated Use CommissionCalculationResultV2 instead */
 export type CommissionCalculationResult = CommissionCalculationResultV2;

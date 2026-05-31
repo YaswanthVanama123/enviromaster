@@ -43,7 +43,6 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     setEditedConfig(JSON.parse(JSON.stringify(config.config)));
   }, [config]);
 
-
   useEffect(() => {
     const changed = JSON.stringify(editedConfig) !== JSON.stringify(config.config);
     setHasChanges(changed);
@@ -54,7 +53,6 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     await onSave(editedConfig);
     setSaving(false);
   };
-
 
   const updateConfig = (path: string[], value: any) => {
     setEditedConfig((prev) => {
@@ -73,7 +71,6 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     });
   };
 
-
   const getConfigValue = (path: string[]): any => {
     let current = editedConfig;
     for (const key of path) {
@@ -83,53 +80,43 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
     return current;
   };
 
-
   const getAvailableTabs = (): Tab[] => {
     const serviceId = config.serviceId;
     const allTabs: Tab[] = [
       { key: "overview", label: "Overview", icon: "📋" },
     ];
 
-
     if (["saniscrub", "microfiberMopping", "rpmWindows", "carpetCleaning", "stripWax", "foamingDrain", "sanipod", "electrostaticSpray", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "frequencies", label: "Frequencies", icon: "📅" });
     }
-
 
     if (["saniclean"].includes(serviceId)) {
       allTabs.push({ key: "geographic", label: "Geographic Pricing", icon: "🗺️" });
     }
 
-
     if (["saniclean", "sanipod", "microfiberMopping", "rpmWindows", "stripWax"].includes(serviceId)) {
       allTabs.push({ key: "rateTiers", label: "Rate Tiers", icon: "💰" });
     }
-
 
     if (["saniscrub", "saniclean", "microfiberMopping"].includes(serviceId)) {
       allTabs.push({ key: "minimums", label: "Minimums", icon: "📊" });
     }
 
-
     if (["saniscrub", "rpmWindows", "carpetCleaning", "refreshPowerScrub"].includes(serviceId)) {
       allTabs.push({ key: "multipliers", label: "Multipliers", icon: "✖️" });
     }
-
 
     if (serviceId === "pureJanitorial") {
       allTabs.push({ key: "janitorial", label: "Janitorial Config", icon: "🧹" });
     }
 
-
     if (["saniclean"].includes(serviceId)) {
       allTabs.push({ key: "components", label: "Facility Components", icon: "🏢" });
     }
 
-
     if (["saniclean", "microfiberMopping", "electrostaticSpray"].includes(serviceId)) {
       allTabs.push({ key: "addons", label: "Add-Ons", icon: "➕" });
     }
-
 
     if (serviceId === "refreshPowerScrub") {
       allTabs.push({ key: "refreshPowerScrub", label: "Core Rates & Areas", icon: "🏭" });
@@ -274,7 +261,6 @@ export const ServicePricingEditor: React.FC<ServicePricingEditorProps> = ({
   );
 };
 
-
 const OverviewTab: React.FC<{
   config: ServiceConfig;
   editedConfig: Record<string, any>;
@@ -335,7 +321,6 @@ const OverviewTab: React.FC<{
   );
 };
 
-
 const FrequenciesTab: React.FC<{
   serviceId: string;
   editedConfig: Record<string, any>;
@@ -354,7 +339,6 @@ const FrequenciesTab: React.FC<{
     }
   };
 
-
   const renderFrequencyConfig = () => {
     if (serviceId === "saniscrub") {
       const fixtureRates = getConfigValue(["fixtureRates"]) || {};
@@ -362,7 +346,6 @@ const FrequenciesTab: React.FC<{
       const frequencyMeta = getConfigValue(["frequencyMeta"]) || {};
 
       const frequencies = ["monthly", "twicePerMonth", "bimonthly", "quarterly"];
-
 
       const monthlyAndTwiceLinked =
         fixtureRates.monthly === fixtureRates.twicePerMonth &&
@@ -815,7 +798,6 @@ const FrequenciesTab: React.FC<{
   );
 };
 
-
 const GeographicTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -962,7 +944,6 @@ const GeographicTab: React.FC<{
   );
 };
 
-
 const RateTiersTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -1047,7 +1028,6 @@ const RateTiersTab: React.FC<{
     </div>
   );
 };
-
 
 const MinimumsTab: React.FC<{
   serviceId: string;
@@ -1229,7 +1209,6 @@ const MinimumsTab: React.FC<{
     </div>
   );
 };
-
 
 const MultipliersTab: React.FC<{
   serviceId: string;
@@ -1425,7 +1404,6 @@ const MultipliersTab: React.FC<{
   );
 };
 
-
 const ComponentsTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -1591,7 +1569,6 @@ const ComponentsTab: React.FC<{
     </div>
   );
 };
-
 
 const AddonsTab: React.FC<{
   serviceId: string;
@@ -1908,7 +1885,6 @@ const AddonsTab: React.FC<{
   );
 };
 
-
 const RefreshPowerScrubTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -2163,7 +2139,6 @@ const RefreshPowerScrubTab: React.FC<{
   );
 };
 
-
 const AdvancedTab: React.FC<{
   editedConfig: Record<string, any>;
   updateConfig: (path: string[], value: any) => void;
@@ -2180,7 +2155,6 @@ const AdvancedTab: React.FC<{
     try {
       const parsed = JSON.parse(value);
       setJsonError(null);
-
 
       Object.keys(editedConfig).forEach((key) => {
         updateConfig([key], parsed[key]);
@@ -2216,7 +2190,6 @@ const AdvancedTab: React.FC<{
   );
 };
 
-
 const JANITORIAL_SUPPLY_DEFAULTS = [
   { key: "vacuums",          label: "Vacuums",           defaultAmount: 100 },
   { key: "mops",             label: "Mops",              defaultAmount: 500 },
@@ -2242,7 +2215,7 @@ const JanitorialAdminTab: React.FC<{
   return (
     <div className="spe__tab-content">
 
-      {/* Production Rates */}
+      {}
       <h3 className="spe__section-title">Production Rates (sq ft per hour)</h3>
       <p className="spe__hint" style={{ marginBottom: "16px" }}>
         Sets how many square feet one worker cleans per hour for each place type.
@@ -2273,7 +2246,7 @@ const JanitorialAdminTab: React.FC<{
         ))}
       </div>
 
-      {/* Labor Defaults */}
+      {}
       <h3 className="spe__section-title" style={{ marginTop: "24px" }}>Labor Defaults</h3>
       <p className="spe__hint" style={{ marginBottom: "16px" }}>
         These are the admin-configured baseline values. Salespeople can override them per quote.
@@ -2332,7 +2305,7 @@ const JanitorialAdminTab: React.FC<{
         </div>
       </div>
 
-      {/* Default Supply Line Items */}
+      {}
       <h3 className="spe__section-title" style={{ marginTop: "24px" }}>Default Supply Line Items (Annual $)</h3>
       <p className="spe__hint" style={{ marginBottom: "16px" }}>
         These are the default annual supply costs pre-filled when creating a new quote.

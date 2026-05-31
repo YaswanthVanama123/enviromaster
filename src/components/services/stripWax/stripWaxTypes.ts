@@ -19,7 +19,6 @@ export interface StripWaxVariantConfig {
   minCharge: number;
 }
 
-
 export interface StripWaxPricingConfig {
   weeksPerMonth: number;
   weeksPerYear: number;
@@ -58,9 +57,7 @@ export interface StripWaxFormState {
   frequency: StripWaxFrequencyKey;
   rateCategory: StripWaxRateCategory;
 
-
   contractMonths: number;
-
 
   weeksPerMonth: number;                           
   standardFullRatePerSqFt: number;                 
@@ -71,7 +68,6 @@ export interface StripWaxFormState {
   wellMaintainedMinCharge: number;                 
   redRateMultiplier: number;                       
   greenRateMultiplier: number;                     
-
 
   customPerVisit?: number;
   customMonthly?: number;

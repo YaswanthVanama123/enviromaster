@@ -70,16 +70,13 @@ function getActionConfig(action: EditHistoryItem["action"]): {
   }
 }
 
-// Build edit history from agreement files
 function buildEditHistory(agreement: SavedFileGroup): EditHistoryItem[] {
   const history: EditHistoryItem[] = [];
 
-  // Sort files by creation date to find the original creation
   const sortedByCreation = [...agreement.files].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
-  // First file creation is the agreement creation
   if (sortedByCreation.length > 0) {
     const firstFile = sortedByCreation[0];
     history.push({
@@ -91,9 +88,8 @@ function buildEditHistory(agreement: SavedFileGroup): EditHistoryItem[] {
     });
   }
 
-  // Collect all edits and additions
   agreement.files.forEach((file) => {
-    // If file was updated after creation, add edit entry
+    
     if (file.updatedAt && file.updatedAt !== file.createdAt && file.updatedBy) {
       history.push({
         id: `${file.id}-edited-${file.updatedAt}`,
@@ -105,7 +101,6 @@ function buildEditHistory(agreement: SavedFileGroup): EditHistoryItem[] {
       });
     }
 
-    // Version PDFs added after initial file
     if (file.fileType === "version_pdf" && file.createdBy) {
       const firstFileTime = sortedByCreation[0]?.createdAt;
       if (firstFileTime && file.createdAt !== firstFileTime) {
@@ -119,7 +114,6 @@ function buildEditHistory(agreement: SavedFileGroup): EditHistoryItem[] {
       }
     }
 
-    // Attachments
     if (file.fileType === "attached_pdf" && file.createdBy) {
       history.push({
         id: `${file.id}-attached`,
@@ -131,7 +125,6 @@ function buildEditHistory(agreement: SavedFileGroup): EditHistoryItem[] {
     }
   });
 
-  // Sort by timestamp descending (most recent first), but keep creation at the bottom
   return history.sort((a, b) => {
     if (a.action === "created") return 1;
     if (b.action === "created") return -1;
@@ -147,7 +140,6 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   const history = useMemo(() => buildEditHistory(agreement), [agreement]);
 
-  // Get creator info
   const creationEntry = history.find((h) => h.action === "created");
   const createdBy = creationEntry?.changedBy || "Unknown";
   const editCount = history.filter((h) => h.action !== "created").length;
@@ -163,7 +155,7 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
         boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
       }}
     >
-      {/* Header */}
+      {}
       <div
         onClick={() => setExpanded((p) => !p)}
         style={{
@@ -256,7 +248,7 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
         />
       </div>
 
-      {/* Edit History (Expanded) */}
+      {}
       {expanded && (
         <div
           style={{
@@ -264,7 +256,7 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
             borderTop: "1px solid #e5e7eb",
           }}
         >
-          {/* History Header */}
+          {}
           <div
             style={{
               display: "flex",
@@ -289,7 +281,7 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
             </span>
           </div>
 
-          {/* Timeline */}
+          {}
           {history.length === 0 ? (
             <div
               style={{
@@ -316,7 +308,7 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
                       position: "relative",
                     }}
                   >
-                    {/* Timeline connector */}
+                    {}
                     <div
                       style={{
                         display: "flex",
@@ -354,7 +346,7 @@ function AgreementHistoryCard({ agreement }: AgreementHistoryCardProps) {
                       )}
                     </div>
 
-                    {/* Content */}
+                    {}
                     <div style={{ flex: 1, paddingBottom: isLast ? "0" : "16px" }}>
                       <div
                         style={{
@@ -442,7 +434,7 @@ export function EditHistory() {
 
   return (
     <div style={{ padding: "24px" }}>
-      {/* Header */}
+      {}
       <div
         style={{
           display: "flex",
@@ -489,7 +481,7 @@ export function EditHistory() {
         </button>
       </div>
 
-      {/* Search */}
+      {}
       <div
         style={{
           display: "flex",
@@ -533,7 +525,7 @@ export function EditHistory() {
         )}
       </div>
 
-      {/* Count */}
+      {}
       <div
         style={{
           fontSize: "13px",
@@ -545,7 +537,7 @@ export function EditHistory() {
         {filteredAgreements.length} agreement{filteredAgreements.length !== 1 ? "s" : ""}
       </div>
 
-      {/* List */}
+      {}
       {loading ? (
         <div
           style={{

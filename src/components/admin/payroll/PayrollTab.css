@@ -26,7 +26,6 @@
   to { transform: rotate(360deg); }
 }
 
-/* Header */
 .payroll-header {
   display: flex;
   align-items: flex-start;
@@ -59,7 +58,6 @@
   margin: 0;
 }
 
-/* Banners */
 .payroll-error-banner {
   display: flex;
   align-items: center;
@@ -92,7 +90,6 @@
   font-weight: 500;
 }
 
-/* Subtab Bar */
 .payroll-subtab-bar {
   display: flex;
   gap: 8px;
@@ -127,14 +124,12 @@
   font-weight: 600;
 }
 
-/* Overview */
 .payroll-overview {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* Period Card */
 .payroll-period-card {
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-radius: 12px;
@@ -220,7 +215,6 @@
   opacity: 0.85;
 }
 
-/* Summary Grid */
 .payroll-summary-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
@@ -295,7 +289,6 @@
   color: #111827;
 }
 
-/* Employees Section */
 .payroll-employees-section {
   background: white;
   border: 1px solid #e5e7eb;
@@ -322,7 +315,6 @@
   gap: 12px;
 }
 
-/* Employee Card */
 .payroll-employee-card {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
@@ -413,7 +405,6 @@
   color: #6366f1;
 }
 
-/* Employee Details */
 .employee-details {
   padding: 0 16px 16px 16px;
   border-top: 1px solid #e5e7eb;
@@ -485,7 +476,6 @@
   color: #7c3aed;
 }
 
-/* Settings */
 .payroll-settings {
   max-width: 600px;
 }
@@ -608,7 +598,6 @@
   color: #9ca3af;
 }
 
-/* History */
 .payroll-history h3 {
   font-size: 18px;
   font-weight: 600;
@@ -695,7 +684,6 @@
   }
 }
 
-/* View Payroll Button in Header */
 .employee-header .view-payroll-btn {
   display: flex;
   align-items: center;

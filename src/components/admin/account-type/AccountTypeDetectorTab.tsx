@@ -1,7 +1,4 @@
-/**
- * Account Type Detector Tab
- * Admin panel component for detecting account types using Mapbox driving time
- */
+
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { companyMappingApi, CompanyMapping } from '../../../backendservice/api/companyMappingApi';
@@ -10,7 +7,6 @@ import { getAccountTypeColor, getAccountTypeBgColor } from '../../../backendserv
 import { MdSearch, MdDirectionsCar, MdLocationOn, MdBusiness, MdSchedule } from 'react-icons/md';
 import './AccountTypeDetectorTab.css';
 
-// Frequency options matching backend FREQUENCY_MAP
 const FREQUENCY_OPTIONS = [
   { value: '', label: 'All Frequencies' },
   { value: '1', label: 'Weekly' },
@@ -39,7 +35,6 @@ export const AccountTypeDetectorTab: React.FC = () => {
   const [result, setResult] = useState<MapboxDetectionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch mapped Bigin companies on mount
   useEffect(() => {
     const fetchCompanies = async () => {
       setLoadingCompanies(true);
@@ -64,7 +59,6 @@ export const AccountTypeDetectorTab: React.FC = () => {
     fetchCompanies();
   }, []);
 
-  // Filter companies based on search term
   const filteredCompanies = useMemo(() => {
     if (!searchTerm) return companies;
     const lower = searchTerm.toLowerCase();

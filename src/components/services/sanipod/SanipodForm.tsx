@@ -40,11 +40,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     initialData?.customFields || []
   );
 
-
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig, baselineRates } =
     useSanipodCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
@@ -54,11 +52,9 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -73,7 +69,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       : n.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -81,13 +76,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -104,13 +96,10 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     refreshConfig();
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -118,16 +107,13 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -136,22 +122,17 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         return;
       }
 
-
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-
   const prevDataRef = useRef<string>("");
 
-
   const effectiveRate = calc.effectiveRatePerPod;
-
 
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
     form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" ||
     form.frequency === "everyFourWeeks";
-
 
   const generateContractMonths = () => {
     const months = [];
@@ -284,7 +265,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         displayName: "SaniPod",
         isActive: true,
 
-
         perVisitBase: form.podQuantity * effectiveRate,  
         perVisit: calc.perVisit,  
         minimumChargePerVisit: calc.minimumChargePerVisit,  
@@ -314,7 +294,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           total: form.podQuantity * effectiveRate, 
         },
 
-
         ...(form.extraBagsPerWeek > 0 ? {
           extraBags: {
             isDisplay: true,
@@ -327,7 +306,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
             recurring: form.extraBagsRecurring,
           },
         } : {}),
-
 
         ...(form.isNewInstall && form.installQuantity > 0 ? {
           installation: {
@@ -349,7 +327,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         installRatePerPod: form.installRatePerPod,
 
         totals,
-
 
         customInstallationFee: form.customInstallationFee,
         customPerVisitPrice: form.customPerVisitPrice,
@@ -376,7 +353,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
 
-
   const prevInputsRef = useRef({
     podQuantity: form.podQuantity,
     extraBagsPerWeek: form.extraBagsPerWeek,
@@ -390,7 +366,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     isStandalone: form.isStandalone,
     extraBagsRecurring: form.extraBagsRecurring,
   });
-
 
   useEffect(() => {
     const prev = prevInputsRef.current;
@@ -416,7 +391,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         customAnnualPrice: undefined,
       }));
 
-      // Clear editing values to prevent stale display when switching frequencies
       setEditingValues({});
       setOriginalValues({});
 
@@ -449,13 +423,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     setForm,
   ]);
 
-
   const prevInstallRef = useRef({
     isNewInstall: form.isNewInstall,
     installQuantity: form.installQuantity,
     installRatePerPod: form.installRatePerPod,
   });
-
 
   useEffect(() => {
     const prev = prevInstallRef.current;
@@ -475,7 +447,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     }
   }, [form.isNewInstall, form.installQuantity, form.installRatePerPod, setForm]);
 
-
   const prevCustomRef = useRef({
     customWeeklyPodRate: form.customWeeklyPodRate,
     customPodServiceTotal: form.customPodServiceTotal,
@@ -483,10 +454,8 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     customInstallationFee: form.customInstallationFee,
   });
 
-
   useEffect(() => {
     const prev = prevCustomRef.current;
-
 
     if (prev.customWeeklyPodRate !== form.customWeeklyPodRate ||
         prev.customPodServiceTotal !== form.customPodServiceTotal ||
@@ -515,14 +484,11 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
     setForm,
   ]);
 
-
   const pods = Math.max(0, form.podQuantity || 0);
-
 
   const bagUnitLabel = form.extraBagsRecurring
     ? "$/bag/wk"
     : "$/bag one-time";
-
 
   const normalizeRate = (value: number | string | undefined) => {
     const num = Number(value);
@@ -612,34 +578,7 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
       </div>
 
       {}
-      {/* <div className="svc-row">
-        <label>Service Type</label>
-        <div className="svc-row-right">
-          <select
-            className="svc-in"
-            name="isStandalone"
-            value={form.isStandalone ? "standalone" : "package"}
-            onChange={(e) => {
-              const event = {
-                target: {
-                  name: "isStandalone",
-                  type: "checkbox",
-                  checked: e.target.value === "standalone",
-                  value: e.target.value === "standalone",
-                }
-              } as any;
-              onChange(event);
-            }}
-          >
-            <option value="standalone">
-              Standalone (auto-switch: {formatRateLabel(form.weeklyRatePerUnit)} or {formatRateLabel(form.altWeeklyRatePerUnit)}+{formatRateLabel(form.standaloneExtraWeeklyCharge)})
-            </option>
-            <option value="package">
-              Part of Package (always {formatRateLabel(form.weeklyRatePerUnit)}/pod)
-            </option>
-          </select>
-        </div>
-      </div> */}
+      {}
 
       <div className="svc-row">
         <label>Package base rate (${formatRatePlain(form.weeklyRatePerUnit)}/pod)</label>
@@ -1017,7 +956,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
         </div>
       </div>}
 
-
       {}
       {!isVisitBasedFrequency && (
         <div className="svc-row svc-row-total">
@@ -1075,7 +1013,6 @@ export const SanipodForm: React.FC<ServiceInitialData<SanipodFormState>> = ({
           </div>
         </div>
       )}
-
 
       {}
       {!isVisitBasedFrequency && (

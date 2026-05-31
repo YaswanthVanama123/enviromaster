@@ -110,7 +110,6 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                     const left = e.target.value;
                     const middle = field.calcValues?.middle || "";
 
-
                     const qty = parseFloat(left) || 0;
                     const rate = parseFloat(middle) || 0;
                     const calculatedTotal = qty * rate;
@@ -131,7 +130,6 @@ export const CustomFieldManager: React.FC<CustomFieldManagerProps> = ({
                   onChange={(e) => {
                     const middle = e.target.value;
                     const left = field.calcValues?.left || "";
-
 
                     const qty = parseFloat(left) || 0;
                     const rate = parseFloat(middle) || 0;

@@ -17,7 +17,6 @@ import type { ServiceConfig } from "../../backendservice/types/serviceConfig.typ
 import "ckeditor5/ckeditor5-content.css";
 import "./ServicesReferenceSection.css";
 
-
 interface ServiceMeta { icon: IconDefinition; color: string; bg: string }
 const SERVICE_META: Record<string, ServiceMeta> = {
   rpmWindows:        { icon: faWindowMaximize, color: "#0ea5e9", bg: "#e0f2fe" },
@@ -37,7 +36,6 @@ const SERVICE_META: Record<string, ServiceMeta> = {
   greaseTrap:        { icon: faOilCan,         color: "#b45309", bg: "#fef3c7" },
 };
 const FALLBACK_META: ServiceMeta = { icon: faCog, color: "#6b7280", bg: "#f3f4f6" };
-
 
 function camelToLabel(key: string): string {
   return key
@@ -76,7 +74,6 @@ function formatPrimitive(key: string, value: unknown): { display: string; unit: 
 
 type FieldEntry  = { key: string; label: string; display: string; unit: string; vtype: VType };
 type Section     = { sectionKey: string; title: string; icon: IconDefinition; fields: FieldEntry[]; subsections: Section[] };
-
 
 const SECTION_ICONS: Record<string, IconDefinition> = {
   windowPricingBothSidesIncluded: faWindowMaximize,
@@ -163,7 +160,6 @@ function buildSections(obj: Record<string, unknown>): Section[] {
   return sections;
 }
 
-
 function FieldRow({ label, display, unit, vtype }: FieldEntry) {
   const valueClass = {
     dollar: "srf-val--dollar", multiplier: "srf-val--multiplier",
@@ -182,7 +178,6 @@ function FieldRow({ label, display, unit, vtype }: FieldEntry) {
     </div>
   );
 }
-
 
 function SubSection({ section }: { section: Section }) {
   const [open, setOpen] = useState(true);
@@ -204,7 +199,6 @@ function SubSection({ section }: { section: Section }) {
   );
 }
 
-
 function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
   const [expanded, setExpanded] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -212,7 +206,6 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
   const meta = SERVICE_META[config.serviceId] ?? FALLBACK_META;
 
   const sections = useMemo(() => buildSections(config.config ?? {}), [config.config]);
-
 
   const hasDescription = Boolean(config.description);
   const allTabs = useMemo(() => {
@@ -386,7 +379,6 @@ function ServiceReferenceCard({ config }: { config: ServiceConfig }) {
     </div>
   );
 }
-
 
 interface Props { configs: ServiceConfig[] }
 

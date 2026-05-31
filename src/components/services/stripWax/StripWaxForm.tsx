@@ -31,10 +31,8 @@ export const StripWaxForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const { form, setForm, onChange, calc, refreshConfig, isLoadingConfig } = useStripWaxCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
@@ -44,11 +42,9 @@ export const StripWaxForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -62,7 +58,6 @@ export const StripWaxForm: React.FC<
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -70,13 +65,10 @@ export const StripWaxForm: React.FC<
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -87,13 +79,10 @@ export const StripWaxForm: React.FC<
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -101,16 +90,13 @@ export const StripWaxForm: React.FC<
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -119,19 +105,15 @@ export const StripWaxForm: React.FC<
         return;
       }
 
-
       onChange({ target: { name, value: numValue, type: "number" } } as any);
     }
   };
 
-
   const prevDataRef = useRef<string>("");
-
 
   const isVisitBasedFrequency = form.frequency === "oneTime" || form.frequency === "quarterly" ||
     form.frequency === "biannual" || form.frequency === "annual" || form.frequency === "bimonthly" ||
     form.frequency === "everyFourWeeks";
-
 
   const formatDisplayNumber = (value: number | undefined): string => {
     return Number.isFinite(value) ? (value as number).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
@@ -197,7 +179,6 @@ export const StripWaxForm: React.FC<
         contractMonths: form.contractMonths,
         applyMinimum: form.applyMinimum !== false,
 
-
         rawPrice: calc.rawPrice,  
         perVisit: calc.perVisit,  
         minCharge: form.minCharge,  
@@ -243,7 +224,6 @@ export const StripWaxForm: React.FC<
 
           if (isVisitBasedFrequency) {
 
-
             totals.recurringVisit = {
               isDisplay: true,
               orderNo: FIELD_ORDER.totals.recurringVisit,
@@ -253,7 +233,6 @@ export const StripWaxForm: React.FC<
               gap: "normal",
             };
           } else {
-
 
             totals.monthlyRecurring = {
               isDisplay: true,
@@ -314,7 +293,6 @@ export const StripWaxForm: React.FC<
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields]);
-
 
   useEffect(() => {
     setForm((prev) => ({
@@ -526,7 +504,6 @@ export const StripWaxForm: React.FC<
         </div>
       </div>
 
-
       {}
       {}
 
@@ -671,7 +648,6 @@ export const StripWaxForm: React.FC<
           </div>
         </div>
       )}
-
 
       {}
       {!isVisitBasedFrequency && (

@@ -1,8 +1,4 @@
-/**
- * Inside Sales Check Tab
- * Admin panel to check if employees have inside sales eligibility
- * based on Lisa Rothwell's audit history within 1 year
- */
+
 
 import React, { useState, useEffect } from 'react';
 import { biginAuditApi } from '../../../backendservice/api/biginAuditApi';
@@ -53,7 +49,6 @@ export const InsideSalesCheckTab: React.FC = () => {
   const [result, setResult] = useState<InsideSalesResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load employees on mount
   useEffect(() => {
     const loadEmployees = async () => {
       try {
@@ -72,7 +67,6 @@ export const InsideSalesCheckTab: React.FC = () => {
     loadEmployees();
   }, []);
 
-  // Check inside sales eligibility
   const handleCheck = async () => {
     if (!selectedEmployee) {
       setError('Please select an employee');
@@ -87,7 +81,7 @@ export const InsideSalesCheckTab: React.FC = () => {
     setResult(null);
 
     try {
-      // Try with fullName first, then username
+      
       const nameToCheck = employee.fullName || employee.username;
       console.log('Checking inside sales for:', nameToCheck);
 
@@ -106,7 +100,6 @@ export const InsideSalesCheckTab: React.FC = () => {
     }
   };
 
-  // Format date
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
@@ -120,7 +113,7 @@ export const InsideSalesCheckTab: React.FC = () => {
 
   return (
     <div className="inside-sales-check-tab">
-      {/* Header */}
+      {}
       <div className="isc-header">
         <div className="isc-header-content">
           <h2>Inside Sales Check</h2>
@@ -316,7 +309,7 @@ export const InsideSalesCheckTab: React.FC = () => {
         </div>
       )}
 
-      {/* Info Card */}
+      {}
       <div className="isc-info-card">
         <h4>How It Works</h4>
         <ul>

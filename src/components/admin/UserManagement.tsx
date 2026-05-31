@@ -11,13 +11,11 @@ export function UserManagement({}: UserManagementProps) {
   const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
 
-  // Form states
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -60,7 +58,6 @@ export function UserManagement({}: UserManagementProps) {
     e.preventDefault();
     setFormError(null);
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setFormError('Passwords do not match');
       return;
@@ -138,7 +135,6 @@ export function UserManagement({}: UserManagementProps) {
 
     setFormError(null);
 
-    // Validate passwords match
     if (newPassword !== confirmNewPassword) {
       setFormError('Passwords do not match');
       return;
@@ -215,7 +211,7 @@ export function UserManagement({}: UserManagementProps) {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
+      {}
       <div style={styles.header}>
         <div>
           <h2 style={styles.title}>User Management</h2>
@@ -232,7 +228,7 @@ export function UserManagement({}: UserManagementProps) {
         </button>
       </div>
 
-      {/* Filters */}
+      {}
       <div style={styles.filters}>
         <div style={styles.filterGroup}>
           <label style={styles.filterLabel}>Role</label>
@@ -258,7 +254,7 @@ export function UserManagement({}: UserManagementProps) {
         </div>
       </div>
 
-      {/* Error Alert */}
+      {}
       {error && (
         <div style={styles.errorAlert}>
           {error}
@@ -268,7 +264,7 @@ export function UserManagement({}: UserManagementProps) {
         </div>
       )}
 
-      {/* Users Table */}
+      {}
       <div style={styles.tableContainer}>
         {loading ? (
           <div style={styles.loadingContainer}>
@@ -351,7 +347,7 @@ export function UserManagement({}: UserManagementProps) {
         )}
       </div>
 
-      {/* Create User Modal */}
+      {}
       {showCreateModal && (
         <div style={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -485,7 +481,7 @@ export function UserManagement({}: UserManagementProps) {
         </div>
       )}
 
-      {/* Edit User Modal */}
+      {}
       {showEditModal && selectedUser && (
         <div style={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -552,7 +548,7 @@ export function UserManagement({}: UserManagementProps) {
         </div>
       )}
 
-      {/* Reset Password Modal */}
+      {}
       {showResetPasswordModal && selectedUser && (
         <div style={styles.modalOverlay} onClick={() => setShowResetPasswordModal(false)}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -934,7 +930,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// Add keyframe animation for spinner
 if (!document.getElementById('user-management-styles')) {
   const styleSheet = document.createElement('style');
   styleSheet.id = 'user-management-styles';

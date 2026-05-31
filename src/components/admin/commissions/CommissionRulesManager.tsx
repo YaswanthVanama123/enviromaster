@@ -11,11 +11,6 @@ import {
   ANCHOR_BONUS_MULTIPLIER,
 } from "../../../backendservice/types/commission.types";
 
-// Hydrate any V2 fields missing on the DB document with bundled defaults.
-// Necessary for legacy CommissionRules documents that were saved before V2
-// fields existed in the schema — without this, the editor would render
-// empty inputs / blank tables. The admin's first Save will persist the
-// hydrated values to MongoDB.
 function hydrateV2Fields(rules: CommissionRules): CommissionRules {
   return {
     ...rules,
@@ -120,7 +115,6 @@ export const CommissionRulesManager: React.FC = () => {
     });
   };
 
-  // V2 — per-visit penalty editors (Bread5 $50, Bread15 $75, Pit $100)
   const updatePerVisitPenalty = (
     key: "Bread5" | "Bread15" | "Pit",
     value: string
@@ -136,7 +130,6 @@ export const CommissionRulesManager: React.FC = () => {
     });
   };
 
-  // V2 — frequency visits-per-year editors (weekly 50 / monthly 12 / etc.)
   const updateFrequencyVisits = (
     key: "weekly" | "biweekly" | "monthly" | "quarterly" | "one-time",
     value: string
@@ -158,7 +151,6 @@ export const CommissionRulesManager: React.FC = () => {
     });
   };
 
-  // V2 — quota tier cutoff editors ($10K / $20K)
   const updateQuotaTierCutoff = (
     key: "aboveQuota" | "doubleQuota",
     value: string
@@ -174,9 +166,8 @@ export const CommissionRulesManager: React.FC = () => {
     });
   };
 
-  // V2 — pricing tier editor (per-row updates).
-  // Range inputs are displayed as PERCENTAGES (100, 110, 120, 130) for
-  // readability; stored under the hood as decimal ratios (1.00, 1.10, …).
+  
+  
   const updatePricingTier = (
     index: number,
     field: "minRatio" | "maxRatio" | "quotaMultiplier" | "label" | "requiresApproval",
@@ -199,7 +190,7 @@ export const CommissionRulesManager: React.FC = () => {
     } else if (field === "requiresApproval") {
       next[index] = { ...next[index], requiresApproval: Boolean(value) };
     } else if (field === "minRatio" || field === "maxRatio") {
-      // Inputs are PERCENT values (e.g. "110"); convert to decimal ratio for storage.
+      
       const pct = parseFloat(String(value));
       const ratio = isFinite(pct) ? pct / 100 : 0;
       next[index] = { ...next[index], [field]: ratio };
@@ -241,7 +232,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       )}
 
-      {/* Quota Rates */}
+      {}
       <div className="rules-section">
         <h3>Quota Achievement Rates (%)</h3>
         <div className="rules-grid">
@@ -275,7 +266,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Agreement Multipliers */}
+      {}
       <div className="rules-section">
         <h3>Agreement Term Multipliers (%)</h3>
         <div className="rules-grid rules-grid-4">
@@ -318,7 +309,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* V2 — Per-visit penalties (Solange Draft) */}
+      {}
       <div className="rules-section">
         <h3>Per-Visit Penalties (V2 — $)</h3>
         <p style={{ fontSize: "0.85em", color: "#6b7280", marginTop: -4 }}>
@@ -359,7 +350,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* V2 — Anchor thresholds + bonus */}
+      {}
       <div className="rules-section">
         <h3>Anchor Thresholds (V2 — per visit $)</h3>
         <div className="rules-grid rules-grid-4">
@@ -426,7 +417,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* V2 — Pricing tiers */}
+      {}
       <div className="rules-section">
         <h3>Pricing Tiers (V2 — % range → multiplier)</h3>
         <p style={{ fontSize: "0.85em", color: "#6b7280", marginTop: -4, marginBottom: 12 }}>
@@ -601,7 +592,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* V2 — Quota tier cutoffs */}
+      {}
       <div className="rules-section">
         <h3>Quota Tier Cutoffs (V2 — $)</h3>
         <p style={{ fontSize: "0.85em", color: "#6b7280", marginTop: -4 }}>
@@ -632,7 +623,7 @@ export const CommissionRulesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Other Settings */}
+      {}
       <div className="rules-section">
         <h3>Other Settings</h3>
         <div className="rules-grid">

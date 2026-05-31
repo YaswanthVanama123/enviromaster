@@ -228,7 +228,6 @@ class ApiClient {
       if (this.token) {
         headers["Authorization"] = `Bearer ${this.token}`;
       }
-      // Don't set Content-Type - browser will set it automatically with boundary
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: "POST",

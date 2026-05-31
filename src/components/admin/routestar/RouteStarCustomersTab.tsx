@@ -1,7 +1,4 @@
-/**
- * RouteStar Customers Tab
- * Admin panel for viewing and syncing customers from RouteStar
- */
+
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { routestarCustomersApi, type RouteStarCustomer, type CustomerSyncStatus, type CustomerStats } from '../../../backendservice/api/routestarCustomersApi';
@@ -18,7 +15,6 @@ export const RouteStarCustomersTab: React.FC = () => {
   const [pagination, setPagination] = useState({ total: 0, skip: 0, limit: 50 });
   const [selectedCustomer, setSelectedCustomer] = useState<RouteStarCustomer | null>(null);
 
-  // Load customers
   const loadCustomers = useCallback(async () => {
     setLoading(true);
     const result = await routestarCustomersApi.getAll({
@@ -36,7 +32,6 @@ export const RouteStarCustomersTab: React.FC = () => {
     setLoading(false);
   }, [searchTerm, stateFilter, activeFilter, pagination.limit, pagination.skip]);
 
-  // Load stats
   const loadStats = useCallback(async () => {
     const result = await routestarCustomersApi.getStats();
     if (result) {
@@ -44,7 +39,6 @@ export const RouteStarCustomersTab: React.FC = () => {
     }
   }, []);
 
-  // Load sync status
   const loadSyncStatus = useCallback(async () => {
     const result = await routestarCustomersApi.getSyncStatus();
     if (result) {
@@ -52,19 +46,16 @@ export const RouteStarCustomersTab: React.FC = () => {
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadCustomers();
     loadStats();
     loadSyncStatus();
   }, []);
 
-  // Reload when filters change
   useEffect(() => {
     loadCustomers();
   }, [loadCustomers]);
 
-  // Poll sync status when syncing
   useEffect(() => {
     if (syncStatus?.isRunning) {
       const interval = setInterval(() => {
@@ -74,7 +65,6 @@ export const RouteStarCustomersTab: React.FC = () => {
     }
   }, [syncStatus?.isRunning, loadSyncStatus]);
 
-  // Handle sync
   const handleSync = async () => {
     const result = await routestarCustomersApi.startSync();
     if (result) {
@@ -82,14 +72,12 @@ export const RouteStarCustomersTab: React.FC = () => {
     }
   };
 
-  // Handle search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPagination(prev => ({ ...prev, skip: 0 }));
     loadCustomers();
   };
 
-  // Format date
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
@@ -98,7 +86,7 @@ export const RouteStarCustomersTab: React.FC = () => {
 
   return (
     <div className="routestar-customers-tab">
-      {/* Header */}
+      {}
       <div className="rs-header">
         <div className="rs-header-content">
           <h2>RouteStar Customers</h2>
@@ -125,7 +113,7 @@ export const RouteStarCustomersTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {}
       <div className="rs-stats-grid">
         <div className="rs-stat-card">
           <div className="rs-stat-value">{stats?.total || 0}</div>
@@ -145,7 +133,7 @@ export const RouteStarCustomersTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Sync Status Banner */}
+      {}
       {syncStatus && (
         <div className={`rs-sync-status ${syncStatus.lastSyncResult || ''}`}>
           <div className="rs-sync-info">
@@ -169,7 +157,7 @@ export const RouteStarCustomersTab: React.FC = () => {
         </div>
       )}
 
-      {/* Filters */}
+      {}
       <div className="rs-filters">
         <form onSubmit={handleSearch} className="rs-search-form">
           <input
@@ -214,7 +202,7 @@ export const RouteStarCustomersTab: React.FC = () => {
         </span>
       </div>
 
-      {/* Customers Table */}
+      {}
       {loading ? (
         <div className="rs-loading">
           <div className="rs-loading-spinner"></div>
@@ -296,7 +284,7 @@ export const RouteStarCustomersTab: React.FC = () => {
         </div>
       )}
 
-      {/* Pagination */}
+      {}
       {pagination.total > pagination.limit && (
         <div className="rs-pagination">
           <button
@@ -319,7 +307,7 @@ export const RouteStarCustomersTab: React.FC = () => {
         </div>
       )}
 
-      {/* Customer Detail Modal */}
+      {}
       {selectedCustomer && (
         <div className="rs-modal-overlay" onClick={() => setSelectedCustomer(null)}>
           <div className="rs-modal" onClick={(e) => e.stopPropagation()}>

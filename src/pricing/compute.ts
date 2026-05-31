@@ -1,7 +1,6 @@
 import { GREEN_RATE_FACTOR } from "./pricingRules";
 import type { ComputedPrice, PriceFormulaInput, PriceRow } from "./pricingTypes";
 
-
 export function computePrice(
   row: PriceRow,
   input: PriceFormulaInput

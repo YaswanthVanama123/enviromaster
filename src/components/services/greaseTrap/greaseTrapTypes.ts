@@ -8,7 +8,6 @@ export interface GreaseTrapFormState extends BaseServiceFormState {
   pricePerTrap?: number;
   contractMonths?: number;
 
-
   perTrapRate: number;      
   perGallonRate: number;    
 }

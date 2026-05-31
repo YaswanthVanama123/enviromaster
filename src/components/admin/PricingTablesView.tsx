@@ -10,7 +10,6 @@ import "./PricingTablesView.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWindowMaximize } from '@fortawesome/free-solid-svg-icons';
 
-
 const truncateText = (text: string | undefined, maxLength: number): string => {
   if (!text) return "—";
   if (text.length <= maxLength) return text;
@@ -21,10 +20,8 @@ export const PricingTablesView: React.FC = () => {
   const { configs, loading: servicesLoading, error: servicesError, updateConfig } = useServiceConfigs();
   const { catalog, loading: catalogLoading, error: catalogError, updateCatalog } = useActiveProductCatalog();
 
-
   const [selectedProductFamily, setSelectedProductFamily] = useState<string>("");
   const [editingProduct, setEditingProduct] = useState<{ familyKey: string; productKey: string; field: "basePrice" | "warrantyPrice"; value: string } | null>(null);
-
 
   const [selectedService, setSelectedService] = useState<string>("");
   const [editingServiceField, setEditingServiceField] = useState<{ serviceId: string; path: string[]; value: string } | null>(null);
@@ -33,7 +30,6 @@ export const PricingTablesView: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
 
   useEffect(() => {
     if (catalog && catalog.families.length > 0 && !selectedProductFamily) {
@@ -61,7 +57,6 @@ export const PricingTablesView: React.FC = () => {
     }
   }, [errorMessage]);
 
-
   const formatFieldValue = (field: { label: string; value: number; unit?: string }): string => {
 
     if (field.unit) {
@@ -73,29 +68,23 @@ export const PricingTablesView: React.FC = () => {
       return `${field.value.toFixed(2)} ${field.unit}`;
     }
 
-
     const label = field.label.toLowerCase();
-
 
     if (label.includes("multiplier") || label.includes("factor")) {
       return `${field.value.toFixed(2)}×`;
     }
 
-
     if (label.includes("sq ft") || label.includes("square f")) {
       return `${field.value.toFixed(0)} sq ft`;
     }
-
 
     if (label.includes("fixture") && !label.includes("rate") && !label.includes("per")) {
       return `${field.value.toFixed(0)} fixtures`;
     }
 
-
     if (label.includes("visits") && label.includes("year")) {
       return `${field.value.toFixed(0)} visits/year`;
     }
-
 
     if (label.includes("weeks per") || label.includes("weeks/")) {
       return `${field.value.toFixed(2)} weeks`;
@@ -104,21 +93,17 @@ export const PricingTablesView: React.FC = () => {
       return `${field.value.toFixed(0)} months`;
     }
 
-
     if (label.includes("hours") && !label.includes("rate")) {
       return `${field.value.toFixed(1)} hours`;
     }
-
 
     if (label.includes("drains") && !label.includes("rate") && !label.includes("per")) {
       return `${field.value.toFixed(0)} drains`;
     }
 
-
     if (label.includes("places")) {
       return `${field.value.toFixed(0)} places`;
     }
-
 
     if (label.includes("rate") || label.includes("charge") || label.includes("price") ||
         label.includes("fee") || label.includes("minimum") || label.includes("credit") ||
@@ -126,14 +111,11 @@ export const PricingTablesView: React.FC = () => {
       return `$${field.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
-
     return `${field.value.toFixed(2)}`;
   };
 
-
   const extractServicePricing = (config: any, serviceId: string) => {
     const fields: Array<{ label: string; value: number; path: string[]; unit?: string }> = [];
-
 
     const ensureNestedDefaults = (config: any) => {
       if (!config.frequencyMetadata) {
@@ -163,9 +145,7 @@ export const PricingTablesView: React.FC = () => {
       return config;
     };
 
-
     config = ensureNestedDefaults(config);
-
 
     if (serviceId === "saniclean") {
 
@@ -177,31 +157,26 @@ export const PricingTablesView: React.FC = () => {
       if (ib.parkingFeeAddOn !== undefined) fields.push({ label: "Inside Beltway - Parking Fee Add-On", value: ib.parkingFeeAddOn, path: ["standardALaCartePricing", "insideBeltway", "parkingFeeAddOn"], unit: "$" });
     }
 
-
     if (config.standardALaCartePricing?.outsideBeltway) {
       const ob = config.standardALaCartePricing.outsideBeltway;
       if (ob.pricePerFixture !== undefined) fields.push({ label: "Outside Beltway - Price Per Fixture", value: ob.pricePerFixture, path: ["standardALaCartePricing", "outsideBeltway", "pricePerFixture"], unit: "$ per fixture" });
       if (ob.tripCharge !== undefined) fields.push({ label: "Outside Beltway - Trip Charge", value: ob.tripCharge, path: ["standardALaCartePricing", "outsideBeltway", "tripCharge"], unit: "$" });
     }
 
-
     if (config.allInclusivePricing) {
       if (config.allInclusivePricing.pricePerFixture !== undefined) fields.push({ label: "All-Inclusive - Price Per Fixture", value: config.allInclusivePricing.pricePerFixture, path: ["allInclusivePricing", "pricePerFixture"], unit: "$ per fixture" });
       if (config.allInclusivePricing.autoAllInclusiveMinFixtures !== undefined) fields.push({ label: "All-Inclusive - Auto Min Fixtures", value: config.allInclusivePricing.autoAllInclusiveMinFixtures, path: ["allInclusivePricing", "autoAllInclusiveMinFixtures"], unit: "fixtures" });
     }
-
 
     if (config.smallBathroomMinimums) {
       if (config.smallBathroomMinimums.minimumFixturesThreshold !== undefined) fields.push({ label: "Small Bathroom - Fixtures Threshold", value: config.smallBathroomMinimums.minimumFixturesThreshold, path: ["smallBathroomMinimums", "minimumFixturesThreshold"], unit: "fixtures" });
       if (config.smallBathroomMinimums.minimumPriceUnderThreshold !== undefined) fields.push({ label: "Small Bathroom - Minimum Price", value: config.smallBathroomMinimums.minimumPriceUnderThreshold, path: ["smallBathroomMinimums", "minimumPriceUnderThreshold"], unit: "$" });
     }
 
-
     if (config.warrantyFees) {
       if (config.warrantyFees.airFreshenerDispenserWarrantyFeePerWeek !== undefined) fields.push({ label: "Air Freshener Dispenser - Warranty Fee Per Week", value: config.warrantyFees.airFreshenerDispenserWarrantyFeePerWeek, path: ["warrantyFees", "airFreshenerDispenserWarrantyFeePerWeek"], unit: "$ per week" });
       if (config.warrantyFees.soapDispenserWarrantyFeePerWeek !== undefined) fields.push({ label: "Soap Dispenser - Warranty Fee Per Week", value: config.warrantyFees.soapDispenserWarrantyFeePerWeek, path: ["warrantyFees", "soapDispenserWarrantyFeePerWeek"], unit: "$ per week" });
     }
-
 
     if (config.soapUpgrades) {
       if (config.soapUpgrades.standardToLuxuryPerDispenserPerWeek !== undefined) fields.push({ label: "Soap Upgrade - Standard to Luxury Per Week", value: config.soapUpgrades.standardToLuxuryPerDispenserPerWeek, path: ["soapUpgrades", "standardToLuxuryPerDispenserPerWeek"], unit: "$ per dispenser per week" });
@@ -211,17 +186,14 @@ export const PricingTablesView: React.FC = () => {
       }
     }
 
-
     if (config.paperCredit?.creditPerFixturePerWeek !== undefined) {
       fields.push({ label: "Paper Credit - Per Fixture Per Week", value: config.paperCredit.creditPerFixturePerWeek, path: ["paperCredit", "creditPerFixturePerWeek"], unit: "$" });
     }
-
 
     if (config.includedItems) {
       if (config.includedItems.electrostaticSprayIncluded !== undefined) fields.push({ label: "Electrostatic Spray Included", value: config.includedItems.electrostaticSprayIncluded ? 1 : 0, path: ["includedItems", "electrostaticSprayIncluded"], unit: "boolean" });
       if (config.includedItems.includedWeeklyRefillsDefault !== undefined) fields.push({ label: "Included Weekly Refills Default", value: config.includedItems.includedWeeklyRefillsDefault, path: ["includedItems", "includedWeeklyRefillsDefault"], unit: "refills" });
     }
-
 
     if (config.monthlyAddOnSupplyPricing) {
       if (config.monthlyAddOnSupplyPricing.urinalMatMonthlyPrice !== undefined) fields.push({ label: "Urinal Mat - Monthly Price", value: config.monthlyAddOnSupplyPricing.urinalMatMonthlyPrice, path: ["monthlyAddOnSupplyPricing", "urinalMatMonthlyPrice"], unit: "$ per month" });
@@ -239,13 +211,11 @@ export const PricingTablesView: React.FC = () => {
       if (config.monthlyAddOnSupplyPricing.sanipodMonthlyPricePerPod !== undefined) fields.push({ label: "SaniPod - Monthly Price Per Pod", value: config.monthlyAddOnSupplyPricing.sanipodMonthlyPricePerPod, path: ["monthlyAddOnSupplyPricing", "sanipodMonthlyPricePerPod"], unit: "$ per month" });
     }
 
-
     if (config.microfiberMoppingIncludedWithSaniClean) {
       if (config.microfiberMoppingIncludedWithSaniClean.pricePerBathroom !== undefined) fields.push({ label: "Microfiber Mopping - Price Per Bathroom", value: config.microfiberMoppingIncludedWithSaniClean.pricePerBathroom, path: ["microfiberMoppingIncludedWithSaniClean", "pricePerBathroom"], unit: "$ per bathroom" });
       if (config.microfiberMoppingIncludedWithSaniClean.hugeBathroomSqFtUnit !== undefined) fields.push({ label: "Microfiber Mopping - Huge Bathroom Sq-ft Unit", value: config.microfiberMoppingIncludedWithSaniClean.hugeBathroomSqFtUnit, path: ["microfiberMoppingIncludedWithSaniClean", "hugeBathroomSqFtUnit"], unit: "sq ft" });
       if (config.microfiberMoppingIncludedWithSaniClean.hugeBathroomRate !== undefined) fields.push({ label: "Microfiber Mopping - Huge Bathroom Rate", value: config.microfiberMoppingIncludedWithSaniClean.hugeBathroomRate, path: ["microfiberMoppingIncludedWithSaniClean", "hugeBathroomRate"], unit: "$ per unit" });
     }
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -253,10 +223,8 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "sanipod") {
 
@@ -267,9 +235,7 @@ export const PricingTablesView: React.FC = () => {
       if (core.includedWeeklyRefills !== undefined) fields.push({ label: "Core Pricing - Included Weekly Refills", value: core.includedWeeklyRefills, path: ["corePricingIncludedWithSaniClean", "includedWeeklyRefills"], unit: "refills" });
     }
 
-
     if (config.extraBagPricing?.pricePerBag !== undefined) fields.push({ label: "Extra Bag - Price Per Bag", value: config.extraBagPricing.pricePerBag, path: ["extraBagPricing", "pricePerBag"], unit: "$ per bag" });
-
 
     if (config.standalonePricingWithoutSaniClean) {
       const standalone = config.standalonePricingWithoutSaniClean;
@@ -278,19 +244,16 @@ export const PricingTablesView: React.FC = () => {
       if (standalone.weeklyMinimumPrice !== undefined) fields.push({ label: "Standalone - Weekly Minimum Price", value: standalone.weeklyMinimumPrice, path: ["standalonePricingWithoutSaniClean", "weeklyMinimumPrice"], unit: "$" });
     }
 
-
     if (config.frequencySchedules) {
       if (config.frequencySchedules.weekly?.visitsPerYear !== undefined) fields.push({ label: "Frequency Schedule - Weekly Visits Per Year", value: config.frequencySchedules.weekly.visitsPerYear, path: ["frequencySchedules", "weekly", "visitsPerYear"], unit: "visits/year" });
       if (config.frequencySchedules.biweekly?.visitsPerYear !== undefined) fields.push({ label: "Frequency Schedule - Biweekly Visits Per Year", value: config.frequencySchedules.biweekly.visitsPerYear, path: ["frequencySchedules", "biweekly", "visitsPerYear"], unit: "visits/year" });
       if (config.frequencySchedules.monthly?.visitsPerYear !== undefined) fields.push({ label: "Frequency Schedule - Monthly Visits Per Year", value: config.frequencySchedules.monthly.visitsPerYear, path: ["frequencySchedules", "monthly", "visitsPerYear"], unit: "visits/year" });
     }
 
-
     if (config.billingConversions) {
       if (config.billingConversions.weeksPerMonth !== undefined) fields.push({ label: "Billing Conversions - Weeks Per Month", value: config.billingConversions.weeksPerMonth, path: ["billingConversions", "weeksPerMonth"], unit: "weeks" });
       if (config.billingConversions.weeksPerYear !== undefined) fields.push({ label: "Billing Conversions - Weeks Per Year", value: config.billingConversions.weeksPerYear, path: ["billingConversions", "weeksPerYear"], unit: "weeks" });
     }
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -298,10 +261,8 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "saniscrub") {
 
@@ -310,21 +271,17 @@ export const PricingTablesView: React.FC = () => {
       if (config.monthlyPricing.minimumPrice !== undefined) fields.push({ label: "Monthly - Minimum Price", value: config.monthlyPricing.minimumPrice, path: ["monthlyPricing", "minimumPrice"], unit: "$" });
     }
 
-
     if (config.bimonthlyPricing) {
       if (config.bimonthlyPricing.pricePerFixture !== undefined) fields.push({ label: "Bimonthly - Price Per Fixture", value: config.bimonthlyPricing.pricePerFixture, path: ["bimonthlyPricing", "pricePerFixture"], unit: "$ per fixture" });
       if (config.bimonthlyPricing.minimumPrice !== undefined) fields.push({ label: "Bimonthly - Minimum Price", value: config.bimonthlyPricing.minimumPrice, path: ["bimonthlyPricing", "minimumPrice"], unit: "$" });
     }
-
 
     if (config.quarterlyPricing) {
       if (config.quarterlyPricing.pricePerFixture !== undefined) fields.push({ label: "Quarterly - Price Per Fixture", value: config.quarterlyPricing.pricePerFixture, path: ["quarterlyPricing", "pricePerFixture"], unit: "$ per fixture" });
       if (config.quarterlyPricing.minimumPrice !== undefined) fields.push({ label: "Quarterly - Minimum Price", value: config.quarterlyPricing.minimumPrice, path: ["quarterlyPricing", "minimumPrice"], unit: "$" });
     }
 
-
     if (config.twicePerMonthPricing?.discountFromMonthlyRate !== undefined) fields.push({ label: "Twice Per Month - Discount from Monthly Rate", value: config.twicePerMonthPricing.discountFromMonthlyRate, path: ["twicePerMonthPricing", "discountFromMonthlyRate"], unit: "$" });
-
 
     if (config.nonBathroomSqFtPricingRule) {
       if (config.nonBathroomSqFtPricingRule.sqFtBlockUnit !== undefined) fields.push({ label: "Non-Bathroom - Sq Ft Block Unit", value: config.nonBathroomSqFtPricingRule.sqFtBlockUnit, path: ["nonBathroomSqFtPricingRule", "sqFtBlockUnit"], unit: "sq ft" });
@@ -332,15 +289,11 @@ export const PricingTablesView: React.FC = () => {
       if (config.nonBathroomSqFtPricingRule.priceAdditionalBlock !== undefined) fields.push({ label: "Non-Bathroom - Price Additional Block", value: config.nonBathroomSqFtPricingRule.priceAdditionalBlock, path: ["nonBathroomSqFtPricingRule", "priceAdditionalBlock"], unit: "$" });
     }
 
-
     if (config.installationPricing?.installMultiplierDirtyOrFirstTime !== undefined) fields.push({ label: "Installation - Multiplier (Dirty or First Time)", value: config.installationPricing.installMultiplierDirtyOrFirstTime, path: ["installationPricing", "installMultiplierDirtyOrFirstTime"], unit: "×" });
-
 
     if (config.tripCharges) {
 
-
     }
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -348,10 +301,8 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "foamingDrain") {
     if (config.standardPricing) {
@@ -361,29 +312,23 @@ export const PricingTablesView: React.FC = () => {
     }
     if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
 
-
     if (config.volumePricing?.minimumDrains !== undefined) fields.push({ label: "Volume Pricing - Minimum Drains", value: config.volumePricing.minimumDrains, path: ["volumePricing", "minimumDrains"], unit: "drains" });
     if (config.volumePricing?.weeklyRatePerDrain !== undefined) fields.push({ label: "Volume Pricing - Weekly Rate per Drain", value: config.volumePricing.weeklyRatePerDrain, path: ["volumePricing", "weeklyRatePerDrain"], unit: "$ per drain" });
     if (config.volumePricing?.bimonthlyRatePerDrain !== undefined) fields.push({ label: "Volume Pricing - Bimonthly Rate per Drain", value: config.volumePricing.bimonthlyRatePerDrain, path: ["volumePricing", "bimonthlyRatePerDrain"], unit: "$ per drain" });
-
 
     if (config.greaseTrapPricing) {
       if (config.greaseTrapPricing.weeklyRatePerTrap !== undefined) fields.push({ label: "Grease Trap - Weekly Rate per Trap", value: config.greaseTrapPricing.weeklyRatePerTrap, path: ["greaseTrapPricing", "weeklyRatePerTrap"], unit: "$ per trap" });
       if (config.greaseTrapPricing.installPerTrap !== undefined) fields.push({ label: "Grease Trap - Install per Trap", value: config.greaseTrapPricing.installPerTrap, path: ["greaseTrapPricing", "installPerTrap"], unit: "$" });
     }
 
-
     if (config.greenDrainPricing) {
       if (config.greenDrainPricing.installPerDrain !== undefined) fields.push({ label: "Green Drain - Install per Drain", value: config.greenDrainPricing.installPerDrain, path: ["greenDrainPricing", "installPerDrain"], unit: "$" });
       if (config.greenDrainPricing.weeklyRatePerDrain !== undefined) fields.push({ label: "Green Drain - Weekly Rate per Drain", value: config.greenDrainPricing.weeklyRatePerDrain, path: ["greenDrainPricing", "weeklyRatePerDrain"], unit: "$ per drain" });
     }
 
-
     if (config.addOns?.plumbingWeeklyAddonPerDrain !== undefined) fields.push({ label: "Plumbing - Weekly Addon per Drain", value: config.addOns.plumbingWeeklyAddonPerDrain, path: ["addOns", "plumbingWeeklyAddonPerDrain"], unit: "$ per drain" });
 
-
     if (config.installationMultipliers?.filthyMultiplier !== undefined) fields.push({ label: "Installation - Filthy Multiplier", value: config.installationMultipliers.filthyMultiplier, path: ["installationMultipliers", "filthyMultiplier"], unit: "×" });
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -391,10 +336,8 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "microfiberMopping") {
 
@@ -402,16 +345,13 @@ export const PricingTablesView: React.FC = () => {
     if (config.bathroomMoppingPricing?.hugeBathroomSqFtUnit !== undefined) fields.push({ label: "Huge Bathroom - Sq-ft Unit", value: config.bathroomMoppingPricing.hugeBathroomSqFtUnit, path: ["bathroomMoppingPricing", "hugeBathroomSqFtUnit"], unit: "sq ft" });
     if (config.bathroomMoppingPricing?.hugeBathroomRate !== undefined) fields.push({ label: "Huge Bathroom - Rate", value: config.bathroomMoppingPricing.hugeBathroomRate, path: ["bathroomMoppingPricing", "hugeBathroomRate"], unit: "$ per unit" });
 
-
     if (config.nonBathroomAddonAreas?.flatPriceSingleLargeArea !== undefined) fields.push({ label: "Non-Bathroom - Flat Price Single Large Area", value: config.nonBathroomAddonAreas.flatPriceSingleLargeArea, path: ["nonBathroomAddonAreas", "flatPriceSingleLargeArea"], unit: "$" });
     if (config.nonBathroomAddonAreas?.sqFtUnit !== undefined) fields.push({ label: "Non-Bathroom - Sq-ft Unit", value: config.nonBathroomAddonAreas.sqFtUnit, path: ["nonBathroomAddonAreas", "sqFtUnit"], unit: "sq ft" });
     if (config.nonBathroomAddonAreas?.ratePerSqFtUnit !== undefined) fields.push({ label: "Non-Bathroom - Rate Per Sq-ft Unit", value: config.nonBathroomAddonAreas.ratePerSqFtUnit, path: ["nonBathroomAddonAreas", "ratePerSqFtUnit"], unit: "$ per unit" });
 
-
     if (config.standaloneMoppingPricing?.sqFtUnit !== undefined) fields.push({ label: "Standalone - Sq-ft Unit", value: config.standaloneMoppingPricing.sqFtUnit, path: ["standaloneMoppingPricing", "sqFtUnit"], unit: "sq ft" });
     if (config.standaloneMoppingPricing?.ratePerSqFtUnit !== undefined) fields.push({ label: "Standalone - Rate Per Sq-ft Unit", value: config.standaloneMoppingPricing.ratePerSqFtUnit, path: ["standaloneMoppingPricing", "ratePerSqFtUnit"], unit: "$ per unit" });
     if (config.standaloneMoppingPricing?.minimumPrice !== undefined) fields.push({ label: "Standalone - Minimum Price", value: config.standaloneMoppingPricing.minimumPrice, path: ["standaloneMoppingPricing", "minimumPrice"], unit: "$" });
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -419,10 +359,8 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "rpmWindows") {
 
@@ -430,18 +368,14 @@ export const PricingTablesView: React.FC = () => {
     if (config.windowPricingBothSidesIncluded?.mediumWindowPrice !== undefined) fields.push({ label: "Medium Window Price", value: config.windowPricingBothSidesIncluded.mediumWindowPrice, path: ["windowPricingBothSidesIncluded", "mediumWindowPrice"], unit: "$ per window" });
     if (config.windowPricingBothSidesIncluded?.largeWindowPrice !== undefined) fields.push({ label: "Large Window Price", value: config.windowPricingBothSidesIncluded.largeWindowPrice, path: ["windowPricingBothSidesIncluded", "largeWindowPrice"], unit: "$ per window" });
 
-
     if (config.installPricing?.installationMultiplier !== undefined) fields.push({ label: "Installation Multiplier", value: config.installPricing.installationMultiplier, path: ["installPricing", "installationMultiplier"], unit: "×" });
 
-
     if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
-
 
     if (config.frequencyPriceMultipliers?.biweeklyPriceMultiplier !== undefined) fields.push({ label: "Biweekly Price Multiplier", value: config.frequencyPriceMultipliers.biweeklyPriceMultiplier, path: ["frequencyPriceMultipliers", "biweeklyPriceMultiplier"], unit: "×" });
     if (config.frequencyPriceMultipliers?.monthlyPriceMultiplier !== undefined) fields.push({ label: "Monthly Price Multiplier", value: config.frequencyPriceMultipliers.monthlyPriceMultiplier, path: ["frequencyPriceMultipliers", "monthlyPriceMultiplier"], unit: "×" });
     if (config.frequencyPriceMultipliers?.quarterlyPriceMultiplierAfterFirstTime !== undefined) fields.push({ label: "Quarterly Price Multiplier (After First Time)", value: config.frequencyPriceMultipliers.quarterlyPriceMultiplierAfterFirstTime, path: ["frequencyPriceMultipliers", "quarterlyPriceMultiplierAfterFirstTime"], unit: "×" });
     if (config.frequencyPriceMultipliers?.quarterlyFirstTimeMultiplier !== undefined) fields.push({ label: "Quarterly First Time Multiplier", value: config.frequencyPriceMultipliers.quarterlyFirstTimeMultiplier, path: ["frequencyPriceMultipliers", "quarterlyFirstTimeMultiplier"], unit: "×" });
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -449,12 +383,9 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
 
-
     } 
-
 
     if (serviceId === "carpetCleaning") {
     if (config.baseSqFtUnit !== undefined) fields.push({ label: "Base Sq-ft Unit", value: config.baseSqFtUnit, path: ["baseSqFtUnit"], unit: "sq ft" });
@@ -463,10 +394,8 @@ export const PricingTablesView: React.FC = () => {
     if (config.additionalUnitPrice !== undefined) fields.push({ label: "Additional Unit Price", value: config.additionalUnitPrice, path: ["additionalUnitPrice"], unit: "$" });
     if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
 
-
     if (config.installationMultipliers?.dirtyInstallMultiplier !== undefined) fields.push({ label: "Dirty Install Multiplier", value: config.installationMultipliers.dirtyInstallMultiplier, path: ["installationMultipliers", "dirtyInstallMultiplier"], unit: "×" });
     if (config.installationMultipliers?.cleanInstallMultiplier !== undefined) fields.push({ label: "Clean Install Multiplier", value: config.installationMultipliers.cleanInstallMultiplier, path: ["installationMultipliers", "cleanInstallMultiplier"], unit: "×" });
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -474,27 +403,22 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
-
 
     } 
 
-
     if (serviceId === "pureJanitorial") {
-      // Production Rates — dynamic, from backend only
+      
       const pr = config.productionRates || {};
       Object.entries(pr).forEach(([k, v]) => {
         const label = k.charAt(0).toUpperCase() + k.slice(1).replace(/([A-Z])/g, ' $1');
         fields.push({ label: `${label} (Production Rate)`, value: Number(v), path: ["productionRates", k], unit: "sq ft/hr" });
       });
 
-      // Labor Defaults
       fields.push({ label: "Cost Per Labor Hour", value: config.costPerHour    ?? 20, path: ["costPerHour"],    unit: "$/hr" });
       fields.push({ label: "Labor Tax %",         value: config.laborTaxPct    ?? 15, path: ["laborTaxPct"],    unit: "%" });
       fields.push({ label: "Gross Profit %",      value: config.grossProfitPct ?? 33, path: ["grossProfitPct"], unit: "%" });
 
-      // Default Supply Line Items
       const ds = config.defaultSupplies || {};
       fields.push({ label: "Supplies - Vacuums",           value: ds.vacuums          ?? 100, path: ["defaultSupplies", "vacuums"],          unit: "$/yr" });
       fields.push({ label: "Supplies - Mops",              value: ds.mops             ?? 500, path: ["defaultSupplies", "mops"],             unit: "$/yr" });
@@ -505,7 +429,6 @@ export const PricingTablesView: React.FC = () => {
       fields.push({ label: "Supplies - Consumables",       value: ds.consumables      ?? 0,   path: ["defaultSupplies", "consumables"],      unit: "$/yr" });
       fields.push({ label: "Supplies - Miscellaneous",     value: ds.miscellaneous    ?? 0,   path: ["defaultSupplies", "miscellaneous"],    unit: "$/yr" });
     } 
-
 
     if (serviceId === "stripWax") {
 
@@ -522,17 +445,14 @@ export const PricingTablesView: React.FC = () => {
       if (config.variants.wellMaintained.minCharge !== undefined) fields.push({ label: "Well Maintained - Minimum Charge", value: config.variants.wellMaintained.minCharge, path: ["variants", "wellMaintained", "minCharge"], unit: "$" });
     }
 
-
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "refreshPowerScrub") {
 
@@ -542,18 +462,15 @@ export const PricingTablesView: React.FC = () => {
     if (config.coreRates?.tripCharge !== undefined) fields.push({ label: "Trip Charge", value: config.coreRates.tripCharge, path: ["coreRates", "tripCharge"], unit: "$" });
     if (config.coreRates?.minimumVisit !== undefined) fields.push({ label: "Minimum Visit", value: config.coreRates.minimumVisit, path: ["coreRates", "minimumVisit"], unit: "$" });
 
-
     if (config.areaSpecificPricing?.kitchen?.smallMedium !== undefined) fields.push({ label: "Kitchen - Small/Medium", value: config.areaSpecificPricing.kitchen.smallMedium, path: ["areaSpecificPricing", "kitchen", "smallMedium"], unit: "$" });
     if (config.areaSpecificPricing?.kitchen?.large !== undefined) fields.push({ label: "Kitchen - Large", value: config.areaSpecificPricing.kitchen.large, path: ["areaSpecificPricing", "kitchen", "large"], unit: "$" });
     if (config.areaSpecificPricing?.frontOfHouse !== undefined) fields.push({ label: "Front of House Rate", value: config.areaSpecificPricing.frontOfHouse, path: ["areaSpecificPricing", "frontOfHouse"], unit: "$" });
     if (config.areaSpecificPricing?.patio?.standalone !== undefined) fields.push({ label: "Patio - Standalone", value: config.areaSpecificPricing.patio.standalone, path: ["areaSpecificPricing", "patio", "standalone"], unit: "$" });
     if (config.areaSpecificPricing?.patio?.upsell !== undefined) fields.push({ label: "Patio - Upsell", value: config.areaSpecificPricing.patio.upsell, path: ["areaSpecificPricing", "patio", "upsell"], unit: "$" });
 
-
     if (config.squareFootagePricing?.fixedFee !== undefined) fields.push({ label: "Square Footage - Fixed Fee", value: config.squareFootagePricing.fixedFee, path: ["squareFootagePricing", "fixedFee"], unit: "$" });
     if (config.squareFootagePricing?.insideRate !== undefined) fields.push({ label: "Square Footage - Inside Rate", value: config.squareFootagePricing.insideRate, path: ["squareFootagePricing", "insideRate"], unit: "$ per sq ft" });
     if (config.squareFootagePricing?.outsideRate !== undefined) fields.push({ label: "Square Footage - Outside Rate", value: config.squareFootagePricing.outsideRate, path: ["squareFootagePricing", "outsideRate"], unit: "$ per sq ft" });
-
 
     if (config.frequencyMetadata) {
       if (config.frequencyMetadata.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
@@ -561,10 +478,8 @@ export const PricingTablesView: React.FC = () => {
       if (config.frequencyMetadata.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
       if (config.frequencyMetadata.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     }
     } 
-
 
     if (serviceId === "electrostaticSpray") {
 
@@ -574,18 +489,15 @@ export const PricingTablesView: React.FC = () => {
     if (config.standardSprayPricing?.minimumPriceOptional !== undefined) fields.push({ label: "Minimum Price Optional", value: config.standardSprayPricing.minimumPriceOptional, path: ["standardSprayPricing", "minimumPriceOptional"], unit: "$" });
     if (config.minimumChargePerVisit !== undefined) fields.push({ label: "Minimum Charge Per Visit", value: config.minimumChargePerVisit, path: ["minimumChargePerVisit"], unit: "$" });
 
-
     if (config.frequencyMetadata?.weekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Weekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.weekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "weekly", "monthlyRecurringMultiplier"], unit: "×" });
     if (config.frequencyMetadata?.weekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Weekly - First Month Extra Multiplier", value: config.frequencyMetadata.weekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "weekly", "firstMonthExtraMultiplier"], unit: "×" });
     if (config.frequencyMetadata?.biweekly?.monthlyRecurringMultiplier !== undefined) fields.push({ label: "Biweekly - Monthly Recurring Multiplier", value: config.frequencyMetadata.biweekly.monthlyRecurringMultiplier, path: ["frequencyMetadata", "biweekly", "monthlyRecurringMultiplier"], unit: "×" });
     if (config.frequencyMetadata?.biweekly?.firstMonthExtraMultiplier !== undefined) fields.push({ label: "Biweekly - First Month Extra Multiplier", value: config.frequencyMetadata.biweekly.firstMonthExtraMultiplier, path: ["frequencyMetadata", "biweekly", "firstMonthExtraMultiplier"], unit: "×" });
 
-
     } 
 
     return fields;
   };
-
 
   const handleEditProduct = (familyKey: string, productKey: string, field: "basePrice" | "warrantyPrice", currentValue: number) => {
     setEditingProduct({ familyKey, productKey, field, value: currentValue.toString() });
@@ -619,11 +531,9 @@ export const PricingTablesView: React.FC = () => {
       setSuccessMessage("✓ Product price updated successfully!");
       setEditingProduct(null);
 
-
     }
     setSaving(false);
   };
-
 
   const handleEditServiceField = (serviceId: string, path: string[], currentValue: number) => {
     setEditingServiceField({ serviceId, path, value: currentValue.toString() });
@@ -659,13 +569,11 @@ export const PricingTablesView: React.FC = () => {
     setEditingServiceField(null);
   };
 
-
   const handleDetailedViewUpdate = async (path: string[], value: number) => {
     if (!detailedViewService) return;
 
     const newConfig = JSON.parse(JSON.stringify(detailedViewService.config));
     let current: any = newConfig;
-
 
     for (let i = 0; i < path.length - 1; i++) {
       if (!current[path[i]]) {
@@ -687,7 +595,6 @@ export const PricingTablesView: React.FC = () => {
     }
   };
 
-
   if (detailedViewService) {
     return (
       <ServicePricingDetailedView
@@ -698,7 +605,6 @@ export const PricingTablesView: React.FC = () => {
     );
   }
 
-
   if (catalogLoading || servicesLoading) {
     return (
       <div style={styles.loadingContainer} className="pricing-loading-container">
@@ -707,7 +613,6 @@ export const PricingTablesView: React.FC = () => {
       </div>
     );
   }
-
 
   if (servicesError || catalogError) {
     return (
@@ -720,7 +625,6 @@ export const PricingTablesView: React.FC = () => {
       </div>
     );
   }
-
 
   if (!catalogLoading && !servicesLoading && (!catalog || !configs || configs.length === 0)) {
     return (
@@ -1259,7 +1163,6 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "40px auto",
   },
 };
-
 
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `

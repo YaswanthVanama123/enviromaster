@@ -53,7 +53,6 @@ const getStatusConfig = (status: string) => {
          { value: status, label: status, color: '#6b7280', canManuallySelect: true };
 };
 
-// Get creator and last editor from agreement files (with agreement-level fallback)
 function getCreatorAndEditor(agreement: SavedFileGroup) {
   const mainFile = agreement.files.find(f => f.fileType === 'main_pdf');
   const sortedByUpdate = [...agreement.files].sort(
@@ -61,7 +60,6 @@ function getCreatorAndEditor(agreement: SavedFileGroup) {
   );
   const latestEdit = sortedByUpdate[0];
 
-  // Use file-level data if available, otherwise fall back to agreement-level
   return {
     createdBy: mainFile?.createdBy || agreement.files[0]?.createdBy || agreement.createdBy || null,
     lastEditedBy: latestEdit?.updatedBy || latestEdit?.createdBy || agreement.updatedBy || agreement.createdBy || null,
@@ -145,10 +143,8 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
   const handleTaskCreate = useCallback(() => onAgreementTaskCreate(agreement), [agreement, onAgreementTaskCreate]);
   const handleDateChange = useCallback((newDate: string) => onDateChange(agreement.id, newDate), [agreement.id, onDateChange]);
 
-  // Get creator and last editor
   const { createdBy, lastEditedBy, lastEditTime } = useMemo(() => getCreatorAndEditor(agreement), [agreement]);
 
-  // Format the last edit time for display
   const formattedEditTime = useMemo(() => {
     if (!lastEditTime) return null;
     const date = new Date(lastEditTime);
@@ -267,7 +263,7 @@ export const AgreementRow = memo((props: AgreementRowProps) => {
               </span>
           )}
         </div>
-        {/* Creator and Editor Info */}
+        {}
         <div style={{
           display: 'flex',
           alignItems: 'center',

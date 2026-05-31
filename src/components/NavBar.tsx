@@ -21,7 +21,6 @@ export default function NavBar() {
     navigate('/login');
   };
 
-  // Build links based on user role
   const links = [
     { path: "/home", label: "Home" },
     { path: "/form-filling", label: "Form Filling" },
@@ -30,7 +29,7 @@ export default function NavBar() {
     { path: "/my-quota", label: "My Quota" },
     { path: "/my-inside-sales", label: "Inside Sales" },
     { path: "/trash", label: "Trash" },
-    // Only show Admin links for admin users
+    
     ...(isAdmin ? [
       { path: "/admin-commissions", label: "Employee Commissions" },
       { path: "/admin-panel", label: "Admin Panel" }
@@ -59,7 +58,7 @@ export default function NavBar() {
         ))}
       </nav>
 
-      {/* User info and logout - Desktop */}
+      {}
       <div className="topnav__user desktop">
         {user && (
           <>
@@ -91,7 +90,7 @@ export default function NavBar() {
       </button>
 
       <div className={`mobilemenu ${open ? "mobilemenu--open" : ""}`}>
-        {/* User info - Mobile */}
+        {}
         {user && (
           <div className="mobilemenu__user">
             <span className="mobilemenu__username">{user.fullName || user.username}</span>
@@ -116,7 +115,7 @@ export default function NavBar() {
           </Link>
         ))}
 
-        {/* Logout - Mobile */}
+        {}
         {user && (
           <button
             className="mobilemenu__logout-btn"

@@ -115,9 +115,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     return config;
   };
 
-
   const configWithDefaults = ensureNestedDefaults({...config});
-
 
   const getValue = (path: string[], configSource?: any): any => {
     let current: any = configSource || configWithDefaults; 
@@ -433,7 +431,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.frequencyMeta = [
         {
@@ -466,19 +463,15 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.contractTerms = [
-
 
       ];
     }
-
 
     if (service.serviceId === "electrostaticSpray") {
       const standardSprayPricing = getValue(["standardSprayPricing"]) || {};
       const tripChargesData = getValue(["tripCharges"]) || {};
       const freqMeta = getValue(["frequencyMetadata"]) || {};
-
 
       categories.sprayRates = [
         {
@@ -518,12 +511,9 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.sprayTripCharges = [
 
-
       ];
-
 
       categories.sprayFrequencyConversions = [
         {
@@ -556,13 +546,10 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.contractTerms = [
-
 
       ];
     }
-
 
     if (service.serviceId === "foamingDrain") {
 
@@ -598,7 +585,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const volPricing = getValue(["volumePricing"]) || {};
       categories.volumePricing = [
         {
@@ -624,7 +610,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const grease = getValue(["greaseTrapPricing"]) || {};
       categories.greaseTrap = [
         {
@@ -643,7 +628,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const green = getValue(["greenDrainPricing"]) || {};
       categories.greenDrain = [
         {
@@ -661,7 +645,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Weekly service rate for eco-friendly green drain treatment",
         },
       ];
-
 
       const addOns = getValue(["addOns"]) || {};
       const installMults = getValue(["installationMultipliers"]) || {};
@@ -682,13 +665,10 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const tripChargesData = getValue(["tripCharges"]) || {};
       categories.tripCharges = [
 
-
       ];
-
 
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.billingConversions = [
@@ -721,17 +701,13 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Additional multiplier for first month (typically 1.165)",
         },
 
-
       ];
-
 
       const contract = getValue(["contract"]) || {};
       categories.contractTerms = [
 
-
       ];
     }
-
 
     if (service.serviceId === "microfiberMopping") {
 
@@ -753,7 +729,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.hugeBathrooms = [
         {
           label: "Huge Bathroom Sq-ft Unit",
@@ -770,7 +745,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Rate per unit for bathrooms exceeding standard size",
         },
       ];
-
 
       const extraArea = getValue(["nonBathroomAddonAreas"]) || {};
       categories.extraAreas = [
@@ -803,7 +777,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Use the higher of flat rate or per-unit calculation",
         },
       ];
-
 
       const standalone = getValue(["standaloneMoppingPricing"]) || {};
       const tripCharges = getValue(["tripCharges"]) || {};
@@ -852,7 +825,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.moppingMetadata = [
         {
@@ -885,13 +857,10 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.contractTerms = [
-
 
       ];
     }
-
 
     if (service.serviceId === "pureJanitorial") {
 
@@ -941,7 +910,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
       ];
     }
 
-
     if (service.serviceId === "saniclean") {
 
       const insideBeltway = getValue(["standardALaCartePricing", "insideBeltway"]) || {};
@@ -976,7 +944,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const outsideBeltway = getValue(["standardALaCartePricing", "outsideBeltway"]) || {};
       categories.outsideBeltway = [
         {
@@ -994,7 +961,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Trip charge for outside beltway locations (typically $0)",
         },
       ];
-
 
       const allInclusive = getValue(["allInclusivePricing"]) || {};
       categories.allInclusive = [
@@ -1014,7 +980,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const smallBathroom = getValue(["smallBathroomMinimums"]) || {};
       categories.smallFacility = [
         {
@@ -1032,7 +997,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Minimum charge for small facilities under threshold (typically $48)",
         },
       ];
-
 
       const soapUpgrades = getValue(["soapUpgrades"]) || {};
       const excessCharges = soapUpgrades.excessUsageCharges || {};
@@ -1060,7 +1024,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const warrantyFees = getValue(["warrantyFees"]) || {};
       const paperCredit = getValue(["paperCredit"]) || {};
       categories.warrantyCredits = [
@@ -1086,7 +1049,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Credit applied per fixture per week for paper products (typically $1)",
         },
       ];
-
 
       const freqMetadata = getValue(["frequencyMetadata"]) || {};
       categories.sanicleanBillingConversions = [
@@ -1119,9 +1081,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Additional multiplier for first month (typically 1.165)",
         },
 
-
       ];
-
 
       const rateCategories = getValue(["rateCategories"]) || {};
       categories.sanicleanRateTiers = [
@@ -1155,7 +1115,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const includedItemsData = getValue(["includedItems"]) || {};
       categories.includedItems = [
         {
@@ -1173,7 +1132,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Default number of weekly refills included (typically 1)",
         },
       ];
-
 
       const monthlyAddOns = getValue(["monthlyAddOnSupplyPricing"]) || {};
       categories.monthlyAddOns = [
@@ -1214,7 +1172,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const microfiberMopping = getValue(["microfiberMoppingIncludedWithSaniClean"]) || {};
       categories.microfiberMoppingAddon = [
         {
@@ -1240,13 +1197,10 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.contractTerms = [
-
 
       ];
     }
-
 
     if (service.serviceId === "sanipod") {
 
@@ -1275,7 +1229,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const extraBagPricing = getValue(["extraBagPricing"]) || {};
       categories.extraBags = [
         {
@@ -1286,7 +1239,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Price per additional waste bag beyond included refills (typically $2/bag)",
         },
       ];
-
 
       const standalonePricing = getValue(["standalonePricingWithoutSaniClean"]) || {};
       categories.standaloneService = [
@@ -1313,9 +1265,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.installation = [];
-
 
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.sanipodBillingConversions = [
@@ -1349,20 +1299,15 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.sanipodContractTerms = [
 
-
       ];
-
 
       const rateCategories = getValue(["rateCategories"]) || {};
       categories.sanipodRateTiers = [
 
-
       ];
     }
-
 
     if (service.serviceId === "saniscrub") {
 
@@ -1383,7 +1328,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Minimum monthly charge (typically $175)",
         },
       ];
-
 
       const bimonthlyPricing = getValue(["bimonthlyPricing"]) || {};
       const quarterlyPricing = getValue(["quarterlyPricing"]) || {};
@@ -1426,7 +1370,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const nonBathroomRule = getValue(["nonBathroomSqFtPricingRule"]) || {};
       categories.nonBathroomPricing = [
         {
@@ -1452,7 +1395,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const installPricing = getValue(["installationPricing"]) || {};
       categories.saniscrubInstallMultipliers = [
         {
@@ -1463,7 +1405,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Multiply base by this for dirty/first-time installs (typically 3x)",
         },
       ];
-
 
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.serviceFrequencies = [
@@ -1496,23 +1437,17 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Additional multiplier for first month (typically 1.165)",
         },
 
-
       ];
-
 
       const tripChargesData = getValue(["tripCharges"]) || {};
       categories.discountsAndFees = [
 
-
       ];
-
 
       categories.contractTerms = [
 
-
       ];
     }
-
 
     if (service.serviceId === "stripWax") {
 
@@ -1534,7 +1469,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const noSealant = getValue(["variants", "noSealant"]) || {};
       categories.noSealant = [
         {
@@ -1552,7 +1486,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Minimum charge for no-sealant strip & wax",
         },
       ];
-
 
       const wellMaintained = getValue(["variants", "wellMaintained"]) || {};
       categories.wellMaintained = [
@@ -1572,7 +1505,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.stripWaxContractTerms = [
         {
           label: "Minimum Contract Months",
@@ -1589,7 +1521,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Maximum contract duration allowed (typically 36 months)",
         },
       ];
-
 
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.stripWaxBillingConversions = [
@@ -1623,14 +1554,11 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       const rateCategories = getValue(["rateCategories"]) || {};
       categories.stripWaxRateTiers = [
 
-
       ];
     }
-
 
     if (service.serviceId === "refreshPowerScrub") {
 
@@ -1672,7 +1600,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.kitchenPricing = [
         {
           label: "Small/Medium Kitchen",
@@ -1690,7 +1617,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.fohPricing = [
         {
           label: "Front of House Rate",
@@ -1700,7 +1626,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Package price for front of house deep clean (typically $2,500)",
         },
       ];
-
 
       categories.patioPricing = [
         {
@@ -1718,7 +1643,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Upsell price when adding patio to FOH service (typically $500)",
         },
       ];
-
 
       categories.sqftPricing = [
         {
@@ -1743,7 +1667,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
           description: "Rate per square foot for outside areas (typically $0.40/sq ft)",
         },
       ];
-
 
       const freqMeta = getValue(["frequencyMetadata"]) || {};
       categories.scrubFrequencyConversions = [
@@ -1777,9 +1700,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         },
       ];
 
-
       categories.contractTerms = [
-
 
       ];
     }
@@ -1814,7 +1735,7 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
   const handleAddPlaceType = async () => {
     const label = newPTLabel.trim();
     if (!label) return;
-    // Convert "Business Place" → "businessPlace"
+    
     const key = label
       .split(/\s+/)
       .map((w, i) => i === 0 ? w.charAt(0).toLowerCase() + w.slice(1) : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
@@ -1833,7 +1754,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
     }
   };
   const categories = getFieldsByCategory();
-
 
   const getTabs = (): { key: TabKey; label: string; icon: any }[] => {
     if (service.serviceId === "rpmWindows") {
@@ -1911,7 +1831,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "microfiberMoppingAddon", label: "Microfiber Mopping", icon: faBroom },
         { key: "sanicleanBillingConversions", label: "Billing Conversions", icon: faSync },
 
-
       ];
     }
 
@@ -1922,7 +1841,6 @@ export const ServicePricingDetailedView: React.FC<ServicePricingDetailedViewProp
         { key: "standaloneService", label: "Standalone Service", icon: faStar },
 
         { key: "sanipodBillingConversions", label: "Billing Conversions", icon: faSync },
-
 
       ];
     }

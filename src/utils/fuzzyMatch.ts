@@ -4,11 +4,9 @@ function levenshteinDistance(str1: string, str2: string): number {
   const len1 = str1.length;
   const len2 = str2.length;
 
-
   const matrix: number[][] = Array(len1 + 1)
     .fill(null)
     .map(() => Array(len2 + 1).fill(0));
-
 
   for (let i = 0; i <= len1; i++) {
     matrix[i][0] = i;
@@ -16,7 +14,6 @@ function levenshteinDistance(str1: string, str2: string): number {
   for (let j = 0; j <= len2; j++) {
     matrix[0][j] = j;
   }
-
 
   for (let i = 1; i <= len1; i++) {
     for (let j = 1; j <= len2; j++) {
@@ -31,7 +28,6 @@ function levenshteinDistance(str1: string, str2: string): number {
 
   return matrix[len1][len2];
 }
-
 
 function similarityScore(str1: string, str2: string): number {
   const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
@@ -49,7 +45,6 @@ export interface MatchResult {
   score: number; 
 }
 
-
 export function matchCompanyName(
   companyName: string,
   searchTerm: string,
@@ -62,17 +57,14 @@ export function matchCompanyName(
   const normalizedCompany = companyName.toLowerCase().trim();
   const normalizedSearch = searchTerm.toLowerCase().trim();
 
-
   if (normalizedCompany === normalizedSearch) {
     return { matchType: 'exact', score: 1 };
   }
-
 
   if (normalizedCompany.includes(normalizedSearch)) {
 
     const position = normalizedCompany.indexOf(normalizedSearch);
     const coverage = normalizedSearch.length / normalizedCompany.length;
-
 
     const positionScore = 1 - (position / normalizedCompany.length);
     const score = 0.7 + (positionScore * 0.15) + (coverage * 0.15);
@@ -80,13 +72,11 @@ export function matchCompanyName(
     return { matchType: 'partial', score: Math.min(score, 0.99) };
   }
 
-
   const similarity = similarityScore(normalizedCompany, normalizedSearch);
 
   if (similarity >= fuzzyThreshold) {
     return { matchType: 'fuzzy', score: similarity * 0.6 }; 
   }
-
 
   const companyWords = normalizedCompany.split(/\s+/);
   const searchWords = normalizedSearch.split(/\s+/);
@@ -114,7 +104,6 @@ export function matchCompanyName(
   return { matchType: 'none', score: similarity };
 }
 
-
 export function getMatchTypeLabel(matchType: MatchType): string {
   switch (matchType) {
     case 'exact':
@@ -127,7 +116,6 @@ export function getMatchTypeLabel(matchType: MatchType): string {
       return 'No Match';
   }
 }
-
 
 export function getMatchTypeColor(matchType: MatchType): string {
   switch (matchType) {

@@ -124,7 +124,7 @@ export default function MyQuota() {
         </p>
       </header>
 
-      {/* Period Toggle */}
+      {}
       <div className="my-quota__period-toggle">
         {(Object.keys(PERIOD_LABELS) as PeriodType[]).map((type) => (
           <button
@@ -137,7 +137,7 @@ export default function MyQuota() {
         ))}
       </div>
 
-      {/* Current Period Card */}
+      {}
       <div className="my-quota__current-period">
         <div className="my-quota__period-header">
           <h2>{quotaStatus.period.label}</h2>
@@ -149,7 +149,7 @@ export default function MyQuota() {
           </span>
         </div>
 
-        {/* Progress Bar */}
+        {}
         <div className="my-quota__progress-container">
           <div className="my-quota__progress-bar">
             <div
@@ -173,7 +173,7 @@ export default function MyQuota() {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {}
         <div className="my-quota__stats-grid">
           <div className="my-quota__stat-card">
             <span className="my-quota__stat-label">Target</span>
@@ -194,7 +194,7 @@ export default function MyQuota() {
         </div>
       </div>
 
-      {/* Progress to Next Tier */}
+      {}
       <div className="my-quota__next-tier">
         <h3>Progress to Next Tier</h3>
         <div className="my-quota__tier-grid">

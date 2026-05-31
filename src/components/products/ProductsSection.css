@@ -5,7 +5,6 @@
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 
-
   min-height: 600px;
   contain: layout;
   contain-intrinsic-size: auto 600px;
@@ -48,7 +47,6 @@
 }
 .prod__add:hover{ background:#ffecec; }
 
-
 .product-tabs-container {
   margin-bottom: 10px;
 }
@@ -88,7 +86,6 @@
   background: #a00000;
 }
 
-
 .product-tab-content {
   display: none;
 }
@@ -108,7 +105,6 @@
     transform: translateY(0);
   }
 }
-
 
 .reference-table-container {
   margin-top: 0;
@@ -145,7 +141,6 @@
   box-sizing: border-box;
   contain: layout style;
 }
-
 
 .reference-table th:first-child {
   background: #dae9f8;
@@ -187,7 +182,6 @@
   padding-left: 12px;
 }
 
-
 .reference-table th:nth-child(1),
 .reference-table td:nth-child(1) {
   width: 30%;
@@ -214,14 +208,12 @@
   width: 25%;
 }
 
-
 .loading-message {
   text-align: center;
   padding: 40px 20px;
   color: #666;
   font-style: italic;
 }
-
 
 @media (max-width: 768px) {
   .product-tabs {
@@ -253,12 +245,10 @@
     padding-left: 8px;
   }
 
-
   .reference-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-
 
   .reference-table th:nth-child(1),
   .reference-table td:nth-child(1) {
@@ -266,7 +256,6 @@
     width: auto;
   }
 }
-
 
 .prod__tabs {
   display: flex;
@@ -343,7 +332,6 @@
   vertical-align: top;
 }
 
-
 .th-edit,
 .th-edit td,
 td:has(.th-edit) {
@@ -351,7 +339,6 @@ td:has(.th-edit) {
   min-width: 60px !important;
   max-width: 80px !important;
 }
-
 
 .table-desktop .grid10 th.th-edit,
 .table-desktop .grid10 td:last-child,
@@ -361,7 +348,6 @@ td:has(.th-edit) {
   min-width: 60px !important;
   max-width: 80px !important;
 }
-
 
 .gtable th.th-edit,
 .gtable td:last-child,
@@ -489,7 +475,6 @@ td:has(.th-edit) {
   background: #fff;
 }
 
-
 .product-select {
   position: relative;
   display: flex;
@@ -546,7 +531,6 @@ td:has(.th-edit) {
   color: #666;
 }
 
-
 @media (min-width:1025px){
   .gwrap { display:none; }
 }
@@ -558,14 +542,12 @@ td:has(.th-edit) {
   .in { height:32px; }
 }
 
-
 .namecell {
   position: relative;
   display: flex;
   align-items: stretch;
   gap: 6px;
 }
-
 
 .namecell-display {
   flex: 1;
@@ -594,7 +576,6 @@ td:has(.th-edit) {
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
-
 .namecell-text {
   display: block;
   white-space: normal;
@@ -603,7 +584,6 @@ td:has(.th-edit) {
   color: #333;
   line-height: 1.4;
 }
-
 
 .namecell-caret {
   position: absolute;
@@ -619,7 +599,6 @@ td:has(.th-edit) {
 .namecell-display:hover .namecell-caret {
   color: #333;
 }
-
 
 .row-remove {
   width: 24px;
@@ -642,7 +621,6 @@ td:has(.th-edit) {
   border-color: #cc0000;
   color: #fff;
 }
-
 
 .namecell-dropdown {
   position: absolute;
@@ -671,7 +649,6 @@ td:has(.th-edit) {
   }
 }
 
-
 .namecell-search {
   width: 100%;
   box-sizing: border-box;
@@ -695,13 +672,11 @@ td:has(.th-edit) {
   font-style: italic;
 }
 
-
 .namecell-options {
   max-height: 280px;
   overflow-y: auto;
   background: #fff;
 }
-
 
 .namecell-options::-webkit-scrollbar {
   width: 8px;
@@ -719,7 +694,6 @@ td:has(.th-edit) {
 .namecell-options::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
-
 
 .namecell-option {
   width: 100%;
@@ -761,7 +735,6 @@ td:has(.th-edit) {
   background: #fff;
   padding-left: 14px;
 }
-
 
 .namecell-option--custom {
   background: #f8f9fa;

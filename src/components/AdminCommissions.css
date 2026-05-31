@@ -114,7 +114,6 @@
   font-size: 15px;
 }
 
-/* Summary Grid */
 .admin-commissions__summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -180,7 +179,6 @@
   color: #1e293b;
 }
 
-/* Search Section */
 .admin-commissions__search-section {
   margin-bottom: 24px;
 }
@@ -202,7 +200,6 @@
   box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
 }
 
-/* Time Filter Tabs */
 .admin-commissions__time-filters {
   margin-bottom: 24px;
 }
@@ -292,7 +289,6 @@
   border-radius: 6px;
 }
 
-/* Employee List */
 .admin-commissions__employees-section h3 {
   margin: 0 0 16px 0;
   font-size: 18px;
@@ -438,7 +434,6 @@
   color: #16a34a;
 }
 
-/* Status Breakdown */
 .admin-commissions__status-breakdown {
   margin-bottom: 24px;
 }
@@ -486,7 +481,6 @@
   opacity: 0.8;
 }
 
-/* Agreements List */
 .admin-commissions__list {
   margin-top: 24px;
 }
@@ -633,7 +627,6 @@
   background: #e2e8f0;
 }
 
-/* Agreement Details */
 .admin-commissions__agreement-details {
   background: #f8fafc;
   padding: 20px;
@@ -687,7 +680,6 @@
   color: #b91c1c;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .admin-commissions {
     padding: 16px;

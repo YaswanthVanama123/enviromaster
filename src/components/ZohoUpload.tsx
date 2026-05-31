@@ -408,7 +408,6 @@ export const ZohoUpload: React.FC<ZohoUploadProps> = ({
     }
   };
 
-
   const handleFirstTimeUpload = async () => {
     if (!selectedCompany) {
       setToastMessage({ message: 'Please select a company', type: 'error' });

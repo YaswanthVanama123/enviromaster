@@ -7,7 +7,6 @@ import type { JanitorialFormState } from "./janitorialTypes";
 import type { ServiceInitialData, CustomField } from "../common/serviceTypes";
 import { useServicesContextOptional } from "../ServicesContext";
 
-
 const ServiceCard: React.FC<{
   title: string;
   children: React.ReactNode;
@@ -29,15 +28,12 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
 
   const { form, onChange, calc, quote, refreshConfig, isLoadingConfig, updateField } = useJanitorialCalc(initialData);
 
-
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
-
 
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined): string => {
 
@@ -48,7 +44,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
     return calculatedValue !== undefined ? calculatedValue.toFixed(2) : '';
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -56,13 +51,10 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -73,13 +65,10 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -87,16 +76,13 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -105,19 +91,15 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         return;
       }
 
-
       updateField(name as keyof JanitorialFormState, numValue as any);
     }
   };
 
-
   const servicesContext = useServicesContextOptional();
   const prevDataRef = useRef<string>('');
 
-
   useEffect(() => {
     if (servicesContext) {
-
 
       const hasCustomFieldValues = customFields.some(f =>
         (f.type === 'dollar' && !!f.value && parseFloat(f.value) > 0) ||
@@ -135,7 +117,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         displayName: "Pure Janitorial",
         isActive: true,
 
-
         recurringServiceRate: form.customRecurringServiceRate ?? form.recurringServiceRate,
         oneTimeServiceRate: form.customOneTimeServiceRate ?? form.oneTimeServiceRate,
         vacuumingRatePerHour: form.customVacuumingRatePerHour ?? form.vacuumingRatePerHour,
@@ -151,7 +132,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         monthlyMultiplier: form.customMonthlyMultiplier ?? form.monthlyMultiplier,
         oneTimeMultiplier: form.customOneTimeMultiplier ?? form.oneTimeMultiplier,
 
-
         baseHours: form.baseHours,
         vacuumingHours: form.vacuumingHours,
         dustingHours: form.dustingHours,
@@ -162,17 +142,14 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         locationRaw: form.location,
         needsParking: form.needsParking,
 
-
         perVisitBase: calc.baseServiceCost + calc.vacuumingCost + calc.dustingCost + calc.tripCharge,  
         perVisit: calc.perVisit,  
-
 
         serviceType: {
           label: "Service Type",
           type: "text" as const,
           value: form.serviceType === "recurringService" ? "Recurring Service" : "One-Time Service"
         },
-
 
         service: {
           label: "Service",
@@ -183,20 +160,17 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           unit: "hours"
         },
 
-
         vacuuming: {
           label: "Vacuuming",
           type: "text" as const,
           value: `${form.vacuumingHours} hours`
         },
 
-
         dusting: {
           label: "Dusting",
           type: "text" as const,
           value: `${form.dustingHours} places`
         },
-
 
         ...(form.serviceType === "recurringService" && {
           frequency: {
@@ -206,7 +180,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           }
         }),
 
-
         location: {
           label: "Location",
           type: "text" as const,
@@ -214,7 +187,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
                  form.location === "outsideBeltway" ? "Outside Beltway" :
                  "Paid Parking"
         },
-
 
         ...customFields.reduce((acc, field, index) => {
           const key = `custom_${index}`;
@@ -243,7 +215,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
           return acc;
         }, {} as Record<string, any>),
 
-
         totals: {
           perVisit: {
             label: "Per Visit Total",
@@ -268,7 +239,6 @@ export const JanitorialForm: React.FC<ServiceInitialData<JanitorialFormState>> =
         notes: "", 
         customFields: customFields
       } : null;
-
 
       const dataStr = JSON.stringify(data);
       if (dataStr !== prevDataRef.current) {

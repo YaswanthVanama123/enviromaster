@@ -83,21 +83,17 @@ export function EmployeeAgreements() {
   const [expandedAgreements, setExpandedAgreements] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Email composer state
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [currentEmailFile, setCurrentEmailFile] = useState<SavedFileListItem | null>(null);
   const [defaultEmailTemplate, setDefaultEmailTemplate] = useState<{ subject: string; body: string } | null>(null);
 
-  // Zoho upload state
   const [zohoUploadOpen, setZohoUploadOpen] = useState(false);
   const [currentZohoFile, setCurrentZohoFile] = useState<SavedFileListItem | null>(null);
   const [bulkZohoFiles, setBulkZohoFiles] = useState<SavedFileListItem[]>([]);
 
-  // Task modal state
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [currentTaskAgreement, setCurrentTaskAgreement] = useState<{ id: string; title: string } | null>(null);
 
-  // Load email template
   useEffect(() => {
     const loadTemplate = async () => {
       try {
@@ -113,15 +109,13 @@ export function EmployeeAgreements() {
     loadTemplate();
   }, []);
 
-  // Fetch users and agreements
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch all users
+      
       const usersResponse = await userManagementApi.listUsers({ limit: 100 });
       const users = usersResponse.users || [];
 
-      // Fetch all agreements
       const agreementsResponse = await pdfApi.getSavedFilesGrouped(1, 500, {
         includeLogs: true,
         includeDrafts: true,
@@ -130,10 +124,8 @@ export function EmployeeAgreements() {
       const agreements = agreementsResponse.groups || [];
       setAllAgreements(agreements);
 
-      // Group agreements by creator
       const employeeMap = new Map<string, EmployeeWithAgreements>();
 
-      // Initialize with all users
       users.forEach((user) => {
         employeeMap.set(user.username, {
           user,
@@ -143,7 +135,6 @@ export function EmployeeAgreements() {
         });
       });
 
-      // Assign agreements to creators (only if creator exists in user management)
       agreements.forEach((agreement) => {
         const creatorUsername = agreement.files[0]?.createdBy;
         if (creatorUsername) {
@@ -151,18 +142,17 @@ export function EmployeeAgreements() {
           if (employee) {
             employee.agreements.push(agreement);
           }
-          // Don't create fake entries for unknown users - only show real users from User Management
+          
         }
       });
 
-      // Convert to array and sort by agreement count (employees with agreements first, then by name)
       const employeeList = Array.from(employeeMap.values())
         .sort((a, b) => {
-          // First sort by agreement count descending
+          
           if (b.agreements.length !== a.agreements.length) {
             return b.agreements.length - a.agreements.length;
           }
-          // Then alphabetically by name
+          
           const nameA = a.user.fullName || a.user.username;
           const nameB = b.user.fullName || b.user.username;
           return nameA.localeCompare(nameB);
@@ -181,7 +171,6 @@ export function EmployeeAgreements() {
     fetchData();
   }, [fetchData]);
 
-  // Filter employees by search
   const filteredEmployees = useMemo(() => {
     if (!searchQuery.trim()) return employees;
     const query = searchQuery.toLowerCase();
@@ -217,7 +206,6 @@ export function EmployeeAgreements() {
     });
   };
 
-  // File actions
   const handleView = async (file: SavedFileListItem) => {
     let documentType: string;
     if (file.fileType === "main_pdf") documentType = "agreement";
@@ -300,7 +288,7 @@ export function EmployeeAgreements() {
 
   return (
     <div style={{ padding: "24px" }}>
-      {/* Header */}
+      {}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
         <div>
           <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#374151", margin: "0 0 4px 0" }}>
@@ -333,7 +321,7 @@ export function EmployeeAgreements() {
         </button>
       </div>
 
-      {/* Search */}
+      {}
       <div
         style={{
           display: "flex",
@@ -371,7 +359,7 @@ export function EmployeeAgreements() {
         )}
       </div>
 
-      {/* Stats */}
+      {}
       <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
         <div
           style={{
@@ -411,7 +399,7 @@ export function EmployeeAgreements() {
         </div>
       </div>
 
-      {/* Employee List */}
+      {}
       {loading ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "60px 20px" }}>
           <FontAwesomeIcon icon={faSync} spin style={{ fontSize: "24px", color: "#c00000", marginBottom: "12px" }} />
@@ -441,7 +429,7 @@ export function EmployeeAgreements() {
                   overflow: "hidden",
                 }}
               >
-                {/* Employee Header */}
+                {}
                 <div
                   onClick={() => toggleEmployee(employee.user.username)}
                   style={{
@@ -518,7 +506,7 @@ export function EmployeeAgreements() {
                   />
                 </div>
 
-                {/* Expanded Agreements */}
+                {}
                 {isExpanded && (
                   <div style={{ borderTop: "1px solid #e5e7eb", background: "#f8fafc" }}>
                     {employee.agreements.length === 0 ? (
@@ -529,7 +517,7 @@ export function EmployeeAgreements() {
                       employee.agreements.map((agreement) => {
                         const isAgreementExpanded = expandedAgreements.has(agreement.id);
                         const statusCfg = getStatusConfig(agreement.agreementStatus);
-                        // Filter files to only those created by this employee
+                        
                         const employeeFiles = agreement.files.filter(
                           (file) =>
                             file.createdBy === employee.user.username ||
@@ -538,7 +526,7 @@ export function EmployeeAgreements() {
                         const employeeFileCount = employeeFiles.length;
                         return (
                           <div key={agreement.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                            {/* Agreement Header */}
+                            {}
                             <div
                               onClick={() => toggleAgreement(agreement.id)}
                               style={{
@@ -589,11 +577,11 @@ export function EmployeeAgreements() {
                                   </span>
                                 </div>
                               </div>
-                              {/* Agreement Actions */}
+                              {}
                               <div style={{ display: "flex", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => {
-                                    // Only upload files created by this employee
+                                    
                                     const uploadableFiles = employeeFiles.filter(
                                       (f) => f.hasPdf || f.fileType === "version_log" || f.fileType === "attached_pdf"
                                     );
@@ -645,7 +633,7 @@ export function EmployeeAgreements() {
                               </div>
                             </div>
 
-                            {/* Files - Only show files created by this employee */}
+                            {}
                             {isAgreementExpanded && (
                               <div style={{ background: "#fff" }}>
                                 {employeeFiles.map((file) => {
@@ -706,7 +694,7 @@ export function EmployeeAgreements() {
                                           </span>
                                         </div>
                                       </div>
-                                      {/* File Actions */}
+                                      {}
                                       <div style={{ display: "flex", gap: "4px" }}>
                                         <button
                                           onClick={() => handleView(file)}
@@ -802,12 +790,12 @@ export function EmployeeAgreements() {
         </div>
       )}
 
-      {/* Toast */}
+      {}
       {toastMessage && (
         <Toast message={toastMessage.message} type={toastMessage.type} onClose={() => setToastMessage(null)} />
       )}
 
-      {/* Email Composer */}
+      {}
       {emailComposerOpen && currentEmailFile && (
         <EmailComposer
           isOpen={emailComposerOpen}
@@ -841,7 +829,7 @@ export function EmployeeAgreements() {
         />
       )}
 
-      {/* Zoho Upload */}
+      {}
       {zohoUploadOpen && (
         <ZohoUpload
           agreementId={currentZohoFile?.agreementId || currentZohoFile?.id || bulkZohoFiles[0]?.agreementId || ""}
@@ -866,7 +854,7 @@ export function EmployeeAgreements() {
         />
       )}
 
-      {/* Task Modal */}
+      {}
       {taskModalOpen && currentTaskAgreement && (
         <BiginTaskModal
           agreementId={currentTaskAgreement.id}

@@ -2,11 +2,9 @@
 
 export const FOAMING_DRAIN_CONFIG = {
 
-
   standardDrainRate: 10, 
   altBaseCharge: 20, 
   altExtraPerDrain: 4, 
-
 
   volumePricing: {
     minimumDrains: 10,
@@ -18,34 +16,28 @@ export const FOAMING_DRAIN_CONFIG = {
     },
   },
 
-
   grease: {
     weeklyRatePerTrap: 125,
     installPerTrap: 300,
   },
-
 
   green: {
     weeklyRatePerDrain: 5,
     installPerDrain: 100,
   },
 
-
   plumbing: {
     weeklyAddonPerDrain: 10, 
   },
-
 
   installationRules: {
     filthyMultiplier: 3, 
   },
 
-
   tripCharges: {
     standard: 0,
     beltway: 0,
   },
-
 
   billingConversions: {
     oneTime: {
@@ -83,7 +75,6 @@ export const FOAMING_DRAIN_CONFIG = {
     actualWeeksPerYear: 52,
     actualWeeksPerMonth: 4.33,
   },
-
 
   contract: {
     minMonths: 2,

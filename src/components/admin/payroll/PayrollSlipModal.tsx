@@ -339,7 +339,7 @@ export const PayrollSlipModal: React.FC<PayrollSlipModalProps> = ({
 
         <div className="payroll-modal-content">
           <div className="payroll-document" ref={slipRef}>
-            {/* Document Header */}
+            {}
             <div className="payroll-doc-header">
               <div className="company-logo-section">
                 <h1>ENVIRO-MASTER</h1>
@@ -357,7 +357,7 @@ export const PayrollSlipModal: React.FC<PayrollSlipModalProps> = ({
               </div>
             </div>
 
-            {/* Employee & Period Info */}
+            {}
             <div className="info-grid">
               <div className="info-box">
                 <div className="info-box-header">Employee Information</div>
@@ -404,7 +404,7 @@ export const PayrollSlipModal: React.FC<PayrollSlipModalProps> = ({
               </div>
             </div>
 
-            {/* Earnings Table */}
+            {}
             <div className="earnings-section">
               <div className="section-title">Commission Earnings</div>
               <table className="earnings-table">
@@ -436,7 +436,7 @@ export const PayrollSlipModal: React.FC<PayrollSlipModalProps> = ({
               </table>
             </div>
 
-            {/* Summary */}
+            {}
             <div className="summary-section">
               <div className="summary-box">
                 <div className="summary-row">
@@ -458,7 +458,7 @@ export const PayrollSlipModal: React.FC<PayrollSlipModalProps> = ({
               </div>
             </div>
 
-            {/* Signatures */}
+            {}
             <div className="footer-section">
               <div className="signature-block">
                 <div className="signature-line">

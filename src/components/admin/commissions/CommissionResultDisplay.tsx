@@ -33,7 +33,7 @@ export const CommissionResultDisplay: React.FC<CommissionResultDisplayProps> = (
         </span>
       </div>
 
-      {/* Main Results */}
+      {}
       <div className="result-main">
         <div className="result-card">
           <div className="result-card-label">Final Commission Rate</div>
@@ -57,7 +57,7 @@ export const CommissionResultDisplay: React.FC<CommissionResultDisplayProps> = (
         </div>
       </div>
 
-      {/* Breakdown */}
+      {}
       <div className="result-breakdown">
         <h4>Calculation Breakdown</h4>
         <div className="breakdown-grid">

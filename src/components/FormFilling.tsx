@@ -174,33 +174,28 @@ type LocationState = {
   editingVersionFile?: string;
 };
 
-
 const CUSTOMER_FALLBACK_ID = "6918cecbf0b2846a9c562fd6";
 
 const ADMIN_TEMPLATE_ID = "692dc43b3811afcdae0d5547";
-
 
 type CommissionState = {
   quotaLevel: QuotaLevel;
   accountType: AccountType;
   isInsideSales: boolean;
-  // True if this agreement is a brand-new location for us (no existing
-  // contract here). Drives the tiered Anchor calc and per-visit penalties
-  // per Solange Draft. Existing locations skip the Pit zone and skip
-  // Bread/Pit penalties.
+
+  
+  
   isNewLocation: boolean;
 };
 
-// V2 Commission Result with proper revenue deductions and pricing tiers
 type CommissionResult = {
-  // Input values
+  
   weeklyRevenue: number;
   redlinePrice: number;
   monthlyValue: number;
   agreementTerm: AgreementTerm;
   pricingLine: PricingLine;
 
-  // V2 Breakdown
   priceRatio: number;
   pricingTier: string;
   pricingMultiplier: number;
@@ -209,47 +204,40 @@ type CommissionResult = {
   anchorBonus: number;
   commissionableRevenue: number;
 
-  // Commission rates
   baseRate: number;
   agreementMultiplier: number;
-  accountTypeAdjustment: number; // Legacy - now uses revenue deduction
+  accountTypeAdjustment: number; 
   greenlineBonus: number;
   renewalBonus: number;
   insideSalesDeduction: number;
   effectiveBaseRate: number;
   finalCommissionRate: number;
 
-  // Commission amounts
   perVisitCommission: number;
   weeklyCommission: number;
   annualCommission: number;
   contractCommission: number;
 
-  // Spec-faithful pipeline (Solange Commission Draft, June 2026):
-  //   year1Value × pricingMultiplier × agreementMultiplier  → commissionBaseRaw
-  //   - account-type adjustment (tiered Anchor for new locations,
-  //     frequency-aware penalty for new Bread/Pit)
-  //   = commissionableAnnual
-  //   - tiered commission rate (3 / 6 / 9% piecewise across rep's quota
-  //     position) → annualCommission
-  commissionBaseRaw: number;            // year1Value × pricingMultiplier × agreementMultiplier
-  commissionableAnnual: number;         // after account-type adjustment
-  isNewLocation: boolean;
-  visitsPerYear: number;                // frequency assumed for the agreement (default 50 weekly)
-  belowQuotaPortion: number;            // $ of THIS sale falling in 0..aboveQuotaCutoff
-  aboveQuotaPortion: number;            // $ of THIS sale falling in aboveQuotaCutoff..doubleQuotaCutoff
-  doubleQuotaPortion: number;           // $ of THIS sale falling above doubleQuotaCutoff
-  belowQuotaCommission: number;         // commissionableAnnual share × 3% (− inside sales)
-  aboveQuotaCommission: number;         // share × 6%
-  doubleQuotaCommission: number;        // share × 9%
+  
 
-  // Quota credit — uses 12-month contract-equivalent values, scaled by the
-  // pricing-tier multiplier per the Solange Commission Draft (June 2026):
-  //   "Redline $1 per $1, Greenline $2 per dollar. Below Redline is half value."
-  // Multi-year contracts are normalized to a single year first, so quota is
-  // never multiplied by contract length.
-  annualContractTotal: number;          // (totalCurrentContract / globalContractMonths) × 12
-  annualQuotaCredit: number;            // annualContractTotal × pricingMultiplier
+  
+
+  commissionBaseRaw: number;            
+  commissionableAnnual: number;         
+  isNewLocation: boolean;
+  visitsPerYear: number;                
+  belowQuotaPortion: number;            
+  aboveQuotaPortion: number;            
+  doubleQuotaPortion: number;           
+  belowQuotaCommission: number;         
+  aboveQuotaCommission: number;         
+  doubleQuotaCommission: number;        
+
+  
+
+  
+  annualContractTotal: number;          
+  annualQuotaCredit: number;            
 };
 
 type ContractSummaryProps = {
@@ -263,10 +251,9 @@ type ContractSummaryProps = {
   userName?: string;
   isConnectedToBigin?: boolean;
   accountTypeDetection?: AccountTypeDetectionResult | null;
-  // Rep's existing actualSales (in quota-credit dollars) before this agreement.
-  // Used to split THIS sale's commission across quota-tier cutoffs piecewise
-  // (3% below, 6% above, 9% double), per Solange Draft. Defaults to 0 if not
-  // provided — i.e. treats this sale as if the rep starts the period at zero.
+
+  
+  
   repActualSalesBefore?: number;
 };
 
@@ -326,7 +313,6 @@ function ContractSummary({
   const tripFreqDropdownRef = useRef<HTMLDivElement>(null);
   const parkingFreqDropdownRef = useRef<HTMLDivElement>(null);
 
-
   const [agreementStartDate, setAgreementStartDate] = useState<string>(() => {
 
     if (initialStartDate) {
@@ -339,14 +325,11 @@ function ContractSummary({
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [expiryStatus, setExpiryStatus] = useState<'yet-to-start' | 'safe' | 'warning' | 'critical' | 'expired'>('safe');
 
-  // Commission Calculator State - use props from parent
   const { quotaLevel, accountType, isInsideSales, isNewLocation } = commissionState;
 
-  // Live commission rules — fetched from MongoDB and merged with bundled
-  // defaults via resolveCommissionRules(). Admin edits in CommissionRulesManager
-  // flow through to this state on next mount, so the calc below uses the latest
-  // values (per-visit penalties, Anchor thresholds, pricing tiers, quota
-  // cutoffs, frequency visits-per-year, etc.).
+  
+
+  
   const [activeRules, setActiveRules] = useState<ResolvedCommissionRules>(() =>
     resolveCommissionRules(null),
   );
@@ -362,7 +345,7 @@ function ContractSummary({
         }
       })
       .catch((err) => {
-        // Fall back to bundled defaults already in state — never break the form.
+        
         console.error("[RULES] Failed to load active commission rules:", err);
       });
     return () => {
@@ -370,29 +353,21 @@ function ContractSummary({
     };
   }, []);
 
-  // Calculate commission using V2 rules (Solange Commission Draft June 2026)
-  // All rule values come from `activeRules` — the resolved DB document merged
-  // with bundled defaults. Admin edits in CommissionRulesManager are picked up
-  // on next mount and flow through every threshold/multiplier here.
+  
+
   const calculateCommission = useMemo((): CommissionResult => {
     const rules = activeRules;
 
-    // Monthly recurring revenue (used for $ commission deductions; one-time excluded)
     const monthlyRecurring = totalMonthlyRecurring || 0;
 
-    // Convert to weekly revenue for display (divide by ~4.33 weeks per month)
     const weeklyRevenue = monthlyRecurring / 4.33;
 
-    // 12-MONTH-EQUIVALENT CONTRACT TOTALS
-    // All commission and quota math is anchored on a single year, regardless of
-    // whether globalContractMonths is 12, 24, or 36. For multi-year deals we
-    // take exactly one year's slice of totalCurrentContract / totalOriginalContract,
-    // so:
-    //   - The pricing ratio is length-agnostic (numerator and denominator are
-    //     both 12-month figures).
-    //   - Quota credit is never multiplied by contract length — only one year
-    //     of recurring revenue (plus prorated one-time) ever counts.
-    //   - Dollar commission was already 12-month-only by design.
+    
+
+    
+
+    
+
     const monthlyValue = globalContractMonths > 0
       ? totalCurrentContract / globalContractMonths
       : totalCurrentContract;
@@ -402,83 +377,66 @@ function ContractSummary({
     const currentContract12Months = monthlyValue * 12;
     const originalContract12Months = monthlyOriginalValue * 12;
 
-    // Price ratio uses 12-month-normalized totals (mathematically identical to
-    // dividing the raw multi-year totals — the months cancel — but explicit and
-    // length-agnostic).
+    
+    
     const priceRatio = originalContract12Months > 0
       ? currentContract12Months / originalContract12Months
       : 1;
 
-    // For display purposes, calculate what the weekly redline would be
-    // Use the same ratio applied to the actual weekly revenue
+    
     const redlinePrice = priceRatio > 0 ? weeklyRevenue / priceRatio : weeklyRevenue;
 
-    // Derive agreement term from contract months
     const getAgreementTerm = (): AgreementTerm => {
       if (globalContractMonths >= 36) return '3-year';
       if (globalContractMonths >= 12) return '1-year';
       return 'MTM-with-install';
     };
 
-    // Pricing line from indicator (auto from form - green/red line)
     const pricingLine: PricingLine = pricingIndicator === 'green' ? 'Greenline' : 'Redline';
     const agreementTerm = getAgreementTerm();
 
-    // Step 1: Get pricing tier based on price ratio (using contract-level ratio).
-    // Reads the admin-editable tier list from activeRules.pricingTiers.
+    
     const pricingTier = getPricingTierFromList(weeklyRevenue, redlinePrice, rules.pricingTiers);
     const pricingMultiplier = pricingTier.quotaMultiplier;
     const isGreenline = pricingTier.label === 'Greenline (130%+)';
 
-    // Visits per year for the agreement. Per Solange Draft: weekly = 50 weeks
-    // (holidays excluded), monthly = 12, quarterly = 4. FormFilling currently
-    // doesn't pin a single agreement-level frequency, so we default to weekly
-    // (50) — the dominant case for recurring services. The penalty thresholds
-    // ($5,000 / $5,000 / etc. in the spec) all derive from per-visit values
-    // multiplied by this number, so admin-editable visits-per-year is a
-    // configurable knob.
-    // Visits per year for the agreement. Sourced from admin-editable
-    // frequencyVisitsPerYear.weekly (defaults to 50 per Solange Draft).
-    // FormFilling currently doesn't pin a single agreement-level frequency,
-    // so we use the weekly default as the dominant case; admin can adjust.
+    
+
+    
+
+    
+
+    
     const visitsPerYear = rules.frequencyVisitsPerYear.weekly;
 
-    // Anchor classification threshold relaxes for Greenline pricing.
-    // Spec: "Anchor — $200 or more per visit ($100 or more if Greenline)."
+    
     const effectiveAnchorThreshold = isGreenline
       ? rules.anchorMinGreenline
       : rules.anchorPerVisitThreshold;
     const effectivePitThreshold = rules.pitPerVisitThreshold;
 
-    // Per-visit penalty (Bread5 / Bread15 / Pit). Sourced from admin-editable
-    // perVisitPenalties — same dollar values the spec calls out by default.
+    
     const perVisitPenalty = rules.perVisitPenalties[accountType];
 
-    // Step 2: Apply pricing × agreement multipliers to year-1 revenue.
-    // commissionBaseRaw is the per-spec figure that flows into the account-type
-    // tiered calc. Example from the Solange Draft: $13,333 × 2 × 1.35 ≈ $35,999.
+    
+    
     const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
     const adjustedAnnual = currentContract12Months * pricingMultiplier * (agreementMultiplier / 100);
     const adjustedPerVisit = visitsPerYear > 0 ? adjustedAnnual / visitsPerYear : 0;
     const commissionBaseRaw = adjustedAnnual;
 
-    // Step 3: Account-type adjustment (per-visit, then re-annualized).
-    // Operates on the pricing- and agreement-adjusted per-visit figure.
-    //
-    // NEW Anchor (this location was not previously serviced — penalty applies):
-    //   First $100/visit         → 0       (Pit zone, no commission)
-    //   $100–$200/visit          → 1×      (standard)
-    //   above $200/visit         → 1.5×    (Anchor bonus)
-    // EXISTING Anchor:
-    //   First $200/visit         → 1×      (standard, no Pit zone)
-    //   above $200/visit         → 1.5×    (Anchor bonus)
-    // NEW Bread5 / Bread15 / Pit: subtract per-visit penalty ($50 / $75 / $100)
-    // EXISTING Bread5 / Bread15:  no penalty
-    // EXISTING Pit:               no penalty if revenue already > $100/visit;
-    //                             otherwise apply the same Pit penalty.
+    
+
+    
+
+    
+
+    
+
+    
     let commissionablePerVisit = 0;
-    let revenueDeduction = 0;     // dollar penalty charged per visit
-    let anchorBonus = 0;          // dollar bonus per visit (above-threshold revenue × 0.5)
+    let revenueDeduction = 0;     
+    let anchorBonus = 0;          
 
     if (accountType === 'Anchor') {
       const standardPortion = Math.min(adjustedPerVisit, effectiveAnchorThreshold) -
@@ -491,7 +449,7 @@ function ContractSummary({
     } else if (accountType === 'Bread5' || accountType === 'Bread15') {
       revenueDeduction = isNewLocation ? perVisitPenalty : 0;
       commissionablePerVisit = Math.max(0, adjustedPerVisit - revenueDeduction);
-    } else { // Pit
+    } else { 
       const isExistingAlreadyOverThreshold = !isNewLocation && adjustedPerVisit > perVisitPenalty;
       revenueDeduction = isExistingAlreadyOverThreshold ? 0 : perVisitPenalty;
       commissionablePerVisit = Math.max(0, adjustedPerVisit - revenueDeduction);
@@ -499,19 +457,15 @@ function ContractSummary({
 
     const commissionableAnnual = commissionablePerVisit * visitsPerYear;
 
-    // Display fields kept for backwards compatibility with existing UI
-    // (commissionableRevenue is shown weekly elsewhere).
+    
     const commissionableRevenue = commissionablePerVisit * visitsPerYear / rules.weeksPerAnnualCommission;
 
-    // Quota credit — 12-month contract total × pricing multiplier (per
-    // Solange Draft). Computed here so it can drive the tier-split below.
+    
     const annualContractTotal = currentContract12Months;
     const annualQuotaCredit = annualContractTotal * pricingMultiplier;
 
-    // Step 4: Tiered commission rate — split this sale across the rep's
-    // existing quota position piecewise (3% / 6% / 9%) per Solange Draft.
-    //   "First $10,000: 3%. Remaining: 6%. Above $20,000: 9%."
-    // The cutoffs come from QUOTA_TIER_CUTOFFS (admin-editable).
+    
+
     const tierCutoffs = rules.quotaTierCutoffs;
     const positionBefore = repActualSalesBefore;
     const positionAfter = positionBefore + annualQuotaCredit;
@@ -519,14 +473,12 @@ function ContractSummary({
     const aboveQuotaPortion = Math.max(0, Math.min(positionAfter, tierCutoffs.doubleQuota) - Math.max(positionBefore, tierCutoffs.aboveQuota));
     const doubleQuotaPortion = Math.max(0, positionAfter - Math.max(positionBefore, tierCutoffs.doubleQuota));
 
-    // Inside-sales deduction (-3pp) applies uniformly to each tier rate.
     const insideSalesDeduction = isInsideSales ? rules.insideSalesDeduction : 0;
     const belowRate = (rules.quotaRates.below + insideSalesDeduction) / 100;
     const aboveRate = (rules.quotaRates.above + insideSalesDeduction) / 100;
     const doubleRate = (rules.quotaRates.double + insideSalesDeduction) / 100;
 
-    // Each tier's share of commissionableAnnual is proportional to that tier's
-    // share of the quota credit (since both scale linearly with the deal size).
+    
     const totalQuotaCredit = belowQuotaPortion + aboveQuotaPortion + doubleQuotaPortion;
     const belowShare = totalQuotaCredit > 0 ? (belowQuotaPortion / totalQuotaCredit) * commissionableAnnual : 0;
     const aboveShare = totalQuotaCredit > 0 ? (aboveQuotaPortion / totalQuotaCredit) * commissionableAnnual : 0;
@@ -538,34 +490,29 @@ function ContractSummary({
 
     const annualCommission = belowQuotaCommission + aboveQuotaCommission + doubleQuotaCommission;
 
-    // Per-visit / weekly are derived after the fact for display continuity.
     const perVisitCommission = visitsPerYear > 0 ? annualCommission / visitsPerYear : 0;
     const weeklyCommission = annualCommission / rules.weeksPerAnnualCommission;
 
-    // Commission is paid for 12 months only — agreement multiplier already
-    // baked into commissionBaseRaw, so contractCommission is the same as
-    // annualCommission here.
+    
+    
     const contractCommission = annualCommission;
 
-    // Reporting: pick the dominant tier rate as "baseRate" for display, and
-    // collapse the effective rate to (commission / commissionableAnnual) for
-    // legacy UIs that show a single percent.
+    
+    
     const baseRate = rules.quotaRates[quotaLevel];
     const finalCommissionRate = commissionableAnnual > 0
       ? (annualCommission / commissionableAnnual) * 100
       : 0;
     const effectiveRate = baseRate + insideSalesDeduction;
 
-    // Legacy fields for backwards compatibility
     const greenlineBonus = pricingTier.quotaMultiplier > 1 ? (pricingTier.quotaMultiplier - 1) * 100 : 0;
     const accountTypeAdjustment = -revenueDeduction;
-    const renewalBonus = 0; // FormFilling treats every deal as new business
+    const renewalBonus = 0; 
 
-    // Effective base rate for display compatibility
     const effectiveBaseRate = effectiveRate;
 
     return {
-      // V2 fields
+      
       weeklyRevenue,
       redlinePrice,
       monthlyValue,
@@ -579,7 +526,6 @@ function ContractSummary({
       anchorBonus,
       commissionableRevenue,
 
-      // Commission rates
       baseRate,
       agreementMultiplier,
       accountTypeAdjustment,
@@ -589,13 +535,11 @@ function ContractSummary({
       effectiveBaseRate,
       finalCommissionRate,
 
-      // Commission amounts
       perVisitCommission,
       weeklyCommission,
       annualCommission,
       contractCommission,
 
-      // Spec-faithful pipeline (tier split + raw bases)
       commissionBaseRaw,
       commissionableAnnual,
       isNewLocation,
@@ -607,7 +551,6 @@ function ContractSummary({
       aboveQuotaCommission,
       doubleQuotaCommission,
 
-      // Quota credit (12-month contract × pricing multiplier)
       annualContractTotal,
       annualQuotaCredit
     };
@@ -625,17 +568,14 @@ function ContractSummary({
     activeRules,
   ]);
 
-  // Notify parent of commission result changes
   useEffect(() => {
     onCommissionResultChange?.(calculateCommission);
   }, [calculateCommission, onCommissionResultChange]);
-
 
   const handleStartDateChange = (newDate: string) => {
     setAgreementStartDate(newDate);
     onStartDateChange?.(newDate);
   };
-
 
   useEffect(() => {
     if (initialStartDate) {
@@ -643,7 +583,6 @@ function ContractSummary({
       setAgreementStartDate(initialStartDate);
     }
   }, [initialStartDate]);
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -662,13 +601,11 @@ function ContractSummary({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-
   useEffect(() => {
     const threshold = totalOriginalContract * 1.30;
     setGreenLineThreshold(threshold);
     setpricingIndicator(totalCurrentContract > threshold ? 'green' : 'red');
   }, [totalCurrentContract, totalOriginalContract]);
-
 
   useEffect(() => {
     if (!agreementStartDate || !globalContractMonths || globalContractMonths <= 0) {
@@ -678,12 +615,10 @@ function ContractSummary({
       return;
     }
 
-
     const startDate = new Date(agreementStartDate);
     const calculatedExpiryDate = new Date(startDate);
     calculatedExpiryDate.setMonth(calculatedExpiryDate.getMonth() + globalContractMonths);
     setExpiryDate(calculatedExpiryDate);
-
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
@@ -691,7 +626,6 @@ function ContractSummary({
     startDateMidnight.setHours(0, 0, 0, 0);
     const expiryDateMidnight = new Date(calculatedExpiryDate);
     expiryDateMidnight.setHours(0, 0, 0, 0);
-
 
     const daysUntilStart = Math.ceil((startDateMidnight.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -708,11 +642,9 @@ function ContractSummary({
       return;
     }
 
-
     const timeDiff = expiryDateMidnight.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     setDaysRemaining(daysDiff);
-
 
     if (daysDiff < 0) {
       setExpiryStatus('expired'); 
@@ -1286,11 +1218,10 @@ function ContractSummary({
         </div>
       </div>
 
-      {/* Sales Commission section removed - now using GlobalCommissionSummary component */}
+      {}
     </div>
   );
 }
-
 
 function FormFillingContent({
   serviceAgreementTemplate,
@@ -1303,7 +1234,6 @@ function FormFillingContent({
   const navigate = useNavigate();
   const { id: urlId } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-
 
   const locationState = useMemo(() => (location.state ?? {}) as LocationState, [
     location.state?.editing,
@@ -1318,7 +1248,6 @@ function FormFillingContent({
   const [loading, setLoading] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
 
-
   useEffect(() => {
     console.log("🔄 [LOADING STATE CHANGED]", { loading });
   }, [loading]);
@@ -1332,7 +1261,6 @@ function FormFillingContent({
   const [paymentNote, setPaymentNote] = useState<string>("");
   const [includeProductsTable, setIncludeProductsTable] = useState<boolean>(true);
 
-
   const [showVersionDialog, setShowVersionDialog] = useState(false);
   const [versionStatus, setVersionStatus] = useState<VersionStatus | null>(null);
   const [isCheckingVersions, setIsCheckingVersions] = useState(false);
@@ -1344,33 +1272,27 @@ function FormFillingContent({
     contractTotal: 0,
   });
 
-
   const [agreementStartDate, setAgreementStartDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
 
-  // Commission state - lifted from ContractSummary for saving
   const [commissionState, setCommissionState] = useState<CommissionState>({
     quotaLevel: 'below',
     accountType: 'Anchor',
     isInsideSales: false,
     isNewLocation: true,
   });
-  // Rep's existing QuotaPeriod.actualSales before this agreement.
-  // Drives the piecewise commission-rate split (3 / 6 / 9% across cutoffs).
-  // Auto-fetched from the quota API alongside quotaLevel below.
+
+  
   const [repActualSales, setRepActualSales] = useState<number>(0);
-  // Commission result state removed - now using getCommissionDataForSave from context
+  
   const [quotaLoading, setQuotaLoading] = useState(true);
 
-  // Get quota setters from ServicesContext for commission calculation
   const { setQuotaLevel, setQuotaLevelData } = useServicesContext();
 
-  // Get logged-in user to fetch their quota level
   const { user } = useAuth();
 
-  // Auto-fetch quota level for logged-in employee
   useEffect(() => {
     const fetchQuotaLevel = async () => {
       if (!user?.username) {
@@ -1383,13 +1305,11 @@ function FormFillingContent({
         if (result) {
           const level = (result.quotaLevel as 'below' | 'above' | 'double') || 'above';
 
-          // Update local commission state
           setCommissionState(prev => ({
             ...prev,
             quotaLevel: level,
           }));
 
-          // Also update ServicesContext for GlobalCommissionSummary
           setQuotaLevel(level);
           setQuotaLevelData({
             quotaLevel: level,
@@ -1401,15 +1321,14 @@ function FormFillingContent({
             salesPersonName: result.salesPersonName || user.fullName || user.username,
           });
 
-          // Mirror into local state so ContractSummary's piecewise tier-split
-          // sees the rep's existing position (Solange Draft tiered rate).
+          
           setRepActualSales(result.actualSales || 0);
 
           console.log('[QUOTA] Quota level fetched:', level, 'Commission rate:', level === 'below' ? 3 : level === 'double' ? 9 : 6, '%');
         }
       } catch (error) {
         console.error('[QUOTA] Failed to fetch quota level:', error);
-        // Keep default "above" level on error
+        
       } finally {
         setQuotaLoading(false);
       }
@@ -1418,7 +1337,6 @@ function FormFillingContent({
     fetchQuotaLevel();
   }, [user?.username, user?.fullName, setQuotaLevel, setQuotaLevelData]);
 
-  // Auto-detect account type when biginCompanyId is available
   useEffect(() => {
     const detectAccountType = async () => {
       if (!biginCompanyId) return;
@@ -1426,7 +1344,7 @@ function FormFillingContent({
       console.log('🎯 [ACCOUNT TYPE] Auto-detecting account type for biginCompanyId:', biginCompanyId);
 
       try {
-        // Determine if this is a Greenline customer (based on payment option)
+        
         const isGreenline = paymentOption === 'online';
 
         const result = await mapDistanceApi.detectAccountType({
@@ -1438,7 +1356,7 @@ function FormFillingContent({
         setAccountTypeDetection(result);
 
         if (result.success && result.accountType) {
-          // Auto-select the detected account type
+          
           setCommissionState(prev => ({
             ...prev,
             accountType: result.accountType,
@@ -1453,11 +1371,10 @@ function FormFillingContent({
     detectAccountType();
   }, [biginCompanyId, paymentOption]);
 
-  // Auto-check Inside Sales based on Lisa Rothwell's audit history
-  // Check if any of the salesperson's agreements (Bigin IDs) appear in Lisa Rothwell's audit within 1 year
+  
   useEffect(() => {
     const checkInsideSales = async () => {
-      // Use the logged-in user's name
+      
       const salespersonName = user?.name || user?.username;
 
       if (!salespersonName) {
@@ -1491,7 +1408,6 @@ function FormFillingContent({
     checkInsideSales();
   }, [user?.name, user?.username]);
 
-
   const {
     servicesState,
     getTotalAgreementAmount,
@@ -1515,7 +1431,7 @@ function FormFillingContent({
     getCommissionDataForSave,
     baseCommissionRate,
     quotaLevel,
-    // Note: setQuotaLevel and setQuotaLevelData are destructured earlier in the component
+    
   } = useServicesContext();
 
   const totalCurrentContract = getTotalAgreementAmount();
@@ -1528,24 +1444,20 @@ function FormFillingContent({
     setPaymentNote(payload.agreement?.paymentNote ?? "");
     setIncludeProductsTable((payload as any).includeProductsTable !== false);
 
-
     if (payload.agreement?.startDate) {
       setAgreementStartDate(payload.agreement.startDate);
     }
   }, [payload]);
 
-  // Sync local biginCompanyId with ServicesContext for account type detection
   useEffect(() => {
     setContextBiginCompanyId(biginCompanyId);
   }, [biginCompanyId, setContextBiginCompanyId]);
 
-  // Sync documentId with ServicesContext for auto-saving account type cache
   useEffect(() => {
     setContextAgreementId(documentId);
   }, [documentId, setContextAgreementId]);
 
   const currentPaymentLabel = PAYMENT_OPTION_DETAILS.find((entry) => entry.value === paymentOption)?.label ?? "Payment Option";
-
 
   const calculatePricingStatus = useCallback((): 'red' | 'green' | 'neutral' => {
     const threshold = totalOriginalContract * 1.30;
@@ -1568,7 +1480,6 @@ function FormFillingContent({
       return totals;
     });
   }, []);
-
 
   useEffect(() => {
     if (!payload?.summary) return;
@@ -1620,15 +1531,12 @@ function FormFillingContent({
     setProductTotals,
   ]);
 
-
   const getDocumentStatus = useCallback((): 'saved' | 'pending_approval' => {
     const pricingStatus = calculatePricingStatus();
-
 
     const hasServiceNotes = Object.values(servicesState).some((sd: any) =>
       sd?.isActive && typeof sd.notes === 'string' && sd.notes.trim().length > 0
     );
-
 
     const hasCustomFields = Object.values(servicesState).some((sd: any) =>
       sd?.isActive && Array.isArray(sd.customFields) && sd.customFields.length > 0
@@ -1656,34 +1564,26 @@ function FormFillingContent({
     return status;
   }, [calculatePricingStatus, paymentOption, servicesState, totalOriginalContract, totalCurrentContract]);
 
-
   const hasChanges = hasPriceChanges();
   const changesCount = getPriceChangeCount();
-
 
   console.log(`🔍 [FORMFILLING] File logger status:`, {
     hasChanges,
     changesCount
   });
 
-
   debugFileLogger();
 
-
   const isInEditMode = location.pathname.startsWith('/edit/pdf');
-
 
   const productTab = searchParams.get('productTab') || undefined;
   const serviceTab = searchParams.get('serviceTab') || undefined;
 
-
   const productsRef = useRef<ProductsSectionHandle>(null);
   const servicesRef = useRef<ServicesDataHandle>(null);
 
-
   const hasInitiallyFetched = useRef(false);
   const previousDocId = useRef<string | null>(null); 
-
 
   const handleBack = () => {
     console.log('📍 Edit Form: Handling back navigation', {
@@ -1691,7 +1591,6 @@ function FormFillingContent({
       returnPath: locationState.returnPath,
       hasReturnState: !!locationState.returnState
     });
-
 
     if (locationState.fromPdfViewer && locationState.returnPath && locationState.returnState) {
       console.log('📍 Edit Form: Returning to PDF viewer with original context');
@@ -1706,20 +1605,17 @@ function FormFillingContent({
       return;
     }
 
-
     if (locationState.returnPath && locationState.returnState) {
       console.log('📍 Edit Form: Using return path:', locationState.returnPath);
       navigate(locationState.returnPath, { state: locationState.returnState });
       return;
     }
 
-
     if (locationState.returnPath) {
       console.log('📍 Edit Form: Using return path without state:', locationState.returnPath);
       navigate(locationState.returnPath);
       return;
     }
-
 
     console.log('📍 Edit Form: Using intelligent fallback navigation');
     const currentUrl = window.location.href;
@@ -1733,9 +1629,7 @@ function FormFillingContent({
 
   useEffect(() => {
 
-
     const currentDocId = urlId || locationState.id;
-
 
     if (previousDocId.current !== currentDocId) {
       hasInitiallyFetched.current = false;
@@ -1744,7 +1638,6 @@ function FormFillingContent({
     } else {
       console.log("⏭️ [FETCH SKIP] Same document ID, keeping hasInitiallyFetched:", currentDocId);
     }
-
 
     const { editing = false, id } = locationState;
 
@@ -1761,15 +1654,12 @@ function FormFillingContent({
       hasVersionInfo: !!(locationState.editingVersionId)
     });
 
-
     const agreementId = urlId || id;
-
 
     setDocumentId(agreementId || null);
     console.log("🔍 [DOCUMENT ID] Set to agreement ID:", agreementId);
 
     setIsEditMode(editing || isInEditMode); 
-
 
     const useCustomerDoc = (editing || isInEditMode) && !!agreementId;
 
@@ -1821,14 +1711,11 @@ function FormFillingContent({
           productsStructure: fromBackend.products ? Object.keys(fromBackend.products) : []
         });
 
-
         const generateTitleFromCustomerName = (headerRows: HeaderRow[]): string => {
           console.log("🔍 [TITLE DEBUG] Searching for customer name in headerRows:", headerRows);
 
-
           for (const row of headerRows) {
             console.log("🔍 [TITLE DEBUG] Checking row:", { labelLeft: row.labelLeft, valueLeft: row.valueLeft, labelRight: row.labelRight, valueRight: row.valueRight });
-
 
             if (row.labelLeft) {
               const leftLabel = row.labelLeft.toUpperCase();
@@ -1840,7 +1727,6 @@ function FormFillingContent({
                 }
               }
             }
-
 
             if (row.labelRight) {
               const rightLabel = row.labelRight.toUpperCase();
@@ -1858,7 +1744,6 @@ function FormFillingContent({
 
           return "Customer Update Addendum";
         };
-
 
         const dynamicTitle = generateTitleFromCustomerName(fromBackend.headerRows || []);
         const shouldUseBackendTitle = dynamicTitle === "Customer Update Addendum" && fromBackend.headerTitle && fromBackend.headerTitle !== "Customer Update Addendum";
@@ -1896,20 +1781,17 @@ function FormFillingContent({
 
         setPayload(cleanPayload);
 
-        // Set Bigin connection status from backend response
         if ((json as any).isConnectedToBigin !== undefined) {
           setIsConnectedToBigin((json as any).isConnectedToBigin);
         }
-        // IMPORTANT: Load saved account type cache BEFORE setting biginCompanyId
-        // Call initializeAccountTypeCache directly (not via state) to set ref synchronously
-        // This prevents auto-detection from triggering when cache is already available
+
+        
         const backendCache = (json as any).accountTypeCache;
         if (backendCache && Object.keys(backendCache).length > 0) {
           console.log('[ACCOUNT-TYPE] Loading cache from backend:', Object.keys(backendCache));
           initializeAccountTypeCache(backendCache);
         }
-        // Set Bigin company ID from backend response (for account type auto-detection)
-        // This must come AFTER initializing the cache to avoid unnecessary detection
+
         if ((json as any).biginCompanyId) {
           setBiginCompanyId((json as any).biginCompanyId);
         }
@@ -1929,10 +1811,8 @@ function FormFillingContent({
     setPayload((prev) => (prev ? { ...prev, headerRows: rows } : prev));
   };
 
-
   const transformProductsToBackendFormat = (productsData: any) => {
     const { smallProducts, dispensers, bigProducts } = productsData;
-
 
     const mergedProducts = [
 
@@ -1966,13 +1846,11 @@ function FormFillingContent({
       customFields: d.customFields || {},
     }));
 
-
     return {
       products: mergedProducts,  
       dispensers: transformedDispensers,
     };
   };
-
 
   const collectFormData = () => {
 
@@ -1985,13 +1863,11 @@ function FormFillingContent({
 
     console.log("📦 Products data from ProductsSection:", productsData);
 
-
     const productsForBackend = transformProductsToBackendFormat(productsData);
 
     console.log("📦 Products transformed for backend (2-category):", productsForBackend);
     console.log("📦 Merged products count:", productsForBackend.products.length);
     console.log("📦 Dispensers count:", productsForBackend.dispensers.length);
-
 
     const servicesData = servicesRef.current?.getData() || {
       saniclean: null,
@@ -2006,9 +1882,7 @@ function FormFillingContent({
       stripwax: null,
     };
 
-
     const customerName = extractCustomerName(payload?.headerRows || []);
-
 
     const titleForSave = customerName !== "Unnamed_Customer" ? customerName : (payload?.headerTitle || "Customer Update Addendum");
 
@@ -2058,7 +1932,7 @@ function FormFillingContent({
       includeProductsTable,
       customColumns: (productsData as any).customColumns || { products: [], dispensers: [] },
       summary,
-      // Include commission data for saving - use actual quota-based rate from context
+      
       commission: (() => {
         const commissionData = getCommissionDataForSave(baseCommissionRate);
         if (!commissionData) return null;
@@ -2070,7 +1944,7 @@ function FormFillingContent({
           breakdown: {
             baseRate: commissionData.baseRate,
             agreementMultiplier: commissionData.agreementMultiplier,
-            quotaLevel: quotaLevel, // Save the quota level at time of save
+            quotaLevel: quotaLevel, 
           },
           input: {
             baseRate: baseCommissionRate,
@@ -2079,7 +1953,7 @@ function FormFillingContent({
           serviceBreakdown: commissionData.serviceBreakdown,
         };
       })(),
-      // Save account type cache for commission calculations (avoid re-detecting on reload)
+      
       accountTypeCache: Object.keys(accountTypeCache).length > 0 ? accountTypeCache : null,
     };
   };
@@ -2142,7 +2016,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
   };
 };
 
-
   const extractCustomerName = (headerRows: HeaderRow[]): string => {
     for (const row of headerRows) {
 
@@ -2157,12 +2030,10 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     return "Unnamed_Customer";
   };
 
-
   const handleDraft = async () => {
     if (!payload) return;
 
     setIsSaving(true);
-
 
     const pricingStatus = calculatePricingStatus();
     console.log(`💾 [DRAFT] Pricing status: ${pricingStatus} (Red/Green Line check - drafts always use "draft" status)`);
@@ -2187,7 +2058,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         await pdfApi.updateCustomerHeader(documentId, payloadToSend);
         console.log("Draft updated successfully for agreement:", documentId);
 
-
         if (locationState.editingVersionId) {
           try {
             console.log(`🔄 Attempting to update version PDF status for ID: ${locationState.editingVersionId}`);
@@ -2205,7 +2075,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
-
         console.log(`📝 [DEBUG] Checking changes before draft save:`, {
           hasChanges,
           changesCount
@@ -2217,7 +2086,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
             console.log(`📝 [DRAFT-SAVE] Creating NEW log file with ${currentChangesCount} changes for draft save`);
-
 
             await createVersionLogFile({
               agreementId: documentId,
@@ -2246,14 +2114,12 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         console.log("Draft created successfully with ID:", newId);
         setToastMessage({ message: "Draft saved successfully!", type: "success" });
 
-
         const currentHasChanges = hasPriceChanges();
         const currentChangesCount = getPriceChangeCount();
         if (currentHasChanges && newId) {
           try {
             const documentTitle = payloadToSend.headerTitle || 'Untitled Document';
             console.log(`📝 [DRAFT-CREATE] Creating NEW log file with ${currentChangesCount} changes for new draft`);
-
 
             await createVersionLogFile({
               agreementId: newId,
@@ -2285,13 +2151,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-
   const handleSave = async () => {
     if (!payload) return;
 
     setIsSaving(true);
     setShowSaveModal(false);
-
 
     if (!documentId) {
       console.log("💾 [SAVE] New document - delegating to handleNormalSave");
@@ -2313,7 +2177,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         console.log(`✅ [AUTO-APPROVED] Green Line pricing - document auto-approved`);
       }
 
-
       const currentFormData = collectFormData();
       const payloadToSend = {
         ...currentFormData,
@@ -2321,7 +2184,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         status: documentStatus,
       };
 
-      // Debug: Log commission data being sent
       console.log(`💰 [COMMISSION-DEBUG] Commission data being saved:`, {
         hasCommission: !!payloadToSend.commission,
         commission: payloadToSend.commission,
@@ -2334,7 +2196,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         fullPayload: payloadToSend
       });
 
-
       const updateResponse = await pdfApi.updateCustomerHeader(documentId, payloadToSend);
       console.log("✅ [SAVE] Agreement data updated successfully:", {
         response: updateResponse,
@@ -2342,12 +2203,10 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         responseStatus: updateResponse?.data?.status || updateResponse?.status
       });
 
-
       setIsCheckingVersions(true);
       const status = await versionApi.checkVersionStatus(documentId);
       setVersionStatus(status);
       setIsCheckingVersions(false);
-
 
       if (status.isFirstTime) {
 
@@ -2372,16 +2231,13 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-
   const handleCreateFirstVersion = async () => {
     if (!documentId) return;
 
     try {
       setIsSaving(true);
 
-
       console.log("📝 [FIRST VERSION] Creating v1 PDF for agreement:", documentId);
-
 
       const result = await versionApi.createVersion(documentId, {
         changeNotes: "Initial version",
@@ -2390,7 +2246,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       });
 
       console.log("✅ [FIRST VERSION SUCCESS] v1 created successfully:", result);
-
 
       const currentHasChanges = hasPriceChanges();
       const currentChangesCount = getPriceChangeCount();
@@ -2415,7 +2270,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         }
       }
 
-
       const documentStatus = getDocumentStatus();
       const pricingStatus = calculatePricingStatus();
 
@@ -2432,7 +2286,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         });
       }
 
-
       setTimeout(() => {
         navigate("/saved-pdfs");
       }, 1500);
@@ -2447,7 +2300,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       setIsSaving(false);
     }
   };
-
 
   const handleNormalSave = async () => {
 
@@ -2468,13 +2320,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       status: documentStatus, 
     };
 
-
     console.log("📤 [FormFilling] COMPLETE PAYLOAD BEING SENT TO BACKEND:");
     console.log(JSON.stringify(payloadToSend, null, 2));
 
     try {
       if (documentId) {
-
 
         console.log("⚠️ [SAVE] Existing document should use version system, not normal save");
         await handleSave(); 
@@ -2484,7 +2334,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         const result = await pdfApi.createCustomerHeader(payloadToSend);
 
         console.log("🔍 [NEW DOCUMENT] Full createCustomerHeader response:", result);
-
 
         const newId = result.data?._id ||
                      result.data?.id ||
@@ -2504,7 +2353,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         console.log("✅ [NEW DOCUMENT] Agreement created successfully:", newId);
         console.log("🎯 [NEW DOCUMENT] Now auto-creating v1...");
 
-
         const versionResult = await versionApi.createVersion(newId, {
           changeNotes: "Initial version",
           replaceRecent: false,
@@ -2512,7 +2360,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         });
 
         console.log("✅ [NEW DOCUMENT] v1 created successfully:", versionResult);
-
 
         const currentHasChanges = hasPriceChanges();
         const currentChangesCount = getPriceChangeCount();
@@ -2538,7 +2385,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           }
         }
 
-
         if (documentStatus === 'pending_approval') {
           setToastMessage({
             message: `Agreement created! ${pricingStatus === 'red' ? '⚠️ Red Line pricing' : '⚠️ Pricing below threshold'} - pending approval before finalization.`,
@@ -2552,7 +2398,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           });
         }
 
-
         setTimeout(() => {
           navigate("/saved-pdfs");
         }, 1500);
@@ -2560,14 +2405,12 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     } catch (err: any) {
       console.error("❌ [SAVE ERROR] Error saving document:", err);
 
-
       setToastMessage({
         message: err.response?.data?.message || "Failed to save document. Please try again.",
         type: "error"
       });
     }
   };
-
 
   const handleCreateVersion = async (replaceRecent: boolean, changeNotes: string) => {
     if (!documentId) return;
@@ -2577,7 +2420,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
       console.log("📝 [VERSION CREATE] Creating PDF version for agreement:", documentId);
 
-
       const result = await versionApi.createVersion(documentId, {
         changeNotes,
         replaceRecent, 
@@ -2585,7 +2427,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       });
 
       console.log("✅ [VERSION SUCCESS] Version created successfully:", result);
-
 
       const currentHasChanges = hasPriceChanges();
       const currentChangesCount = getPriceChangeCount();
@@ -2610,7 +2451,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         }
       }
 
-
       const documentStatus = getDocumentStatus();
       const pricingStatus = calculatePricingStatus();
 
@@ -2634,7 +2474,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       setShowVersionDialog(false);
       setVersionStatus(null);
 
-
       setTimeout(() => {
         navigate("/saved-pdfs");
       }, 1500);
@@ -2650,7 +2489,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     }
   };
 
-
   const safeParseFloat = (value: string | undefined): number | undefined => {
     if (!value || value.trim() === "") return undefined;
     const parsed = parseFloat(value);
@@ -2662,7 +2500,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     const parsed = parseInt(value);
     return isNaN(parsed) ? undefined : parsed;
   };
-
 
   const extractProductsFromBackend = () => {
     const products = payload?.products;
@@ -2676,10 +2513,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
 
     console.log("🔍 [extractProductsFromBackend] Raw products data:", products);
 
-
     if (products.products && products.dispensers) {
       console.log("✅ [extractProductsFromBackend] Using edit-format structure");
-
 
       const extractedProducts = products.products.map((p: any) => {
         const name = p.displayName || p.customName || p.productName || p.productKey || "";
@@ -2706,10 +2541,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         }
       });
 
-
       const smallProducts = extractedProducts.filter(p => 'unitPrice' in p);
       const bigProducts = extractedProducts.filter(p => 'amount' in p);
-
 
       const extractedDispensers = products.dispensers.map((d: any) => {
         const name = d.displayName || d.customName || d.productName || d.productKey || "";
@@ -2744,10 +2577,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       };
     }
 
-
     if (products.smallProducts || products.dispensers || products.bigProducts) {
       console.log("⚠️ [extractProductsFromBackend] Using legacy 3-array structure");
-
 
       const extractProductData = (productArray: any[], type: 'small' | 'dispenser' | 'big') => {
         return productArray.map((p: any) => {
@@ -2791,7 +2622,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       };
     }
 
-
     const rows = products.rows;
     if (!rows || rows.length === 0) {
       return {
@@ -2817,7 +2647,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
         });
       }
 
-
       if (row[5] && row[5].trim() !== "") {
         dispensers.push({
           name: row[5],
@@ -2828,7 +2657,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
           total: safeParseFloat(row[10]),
         });
       }
-
 
       if (row[11] && row[11].trim() !== "") {
         bigProducts.push({
@@ -2848,13 +2676,11 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
     };
   };
 
-
   const extractedProducts = useMemo(() => {
 
     if (!isEditMode) {
       return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
     }
-
 
     if (!payload?.products) return { smallProducts: undefined, dispensers: undefined, bigProducts: undefined };
     return extractProductsFromBackend();
@@ -3110,8 +2936,8 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
             />
             <ServicesDataCollector ref={servicesRef} />
 
-            {/* Commission Summary - shows total commission across all services */}
-            {/* Note: commissionRate is now determined by user's quota level from ServicesContext */}
+            {}
+            {}
             <GlobalCommissionSummary showDetectButton={true} />
 
             {}
@@ -3266,7 +3092,6 @@ const attachRefreshPowerScrubDraftCustomField = (services?: Record<string, any>)
       </div>
   );
 }
-
 
 export default function FormFilling() {
 

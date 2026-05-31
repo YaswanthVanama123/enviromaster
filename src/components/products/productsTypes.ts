@@ -40,9 +40,7 @@ export type EnvProductCatalog = {
   families: EnvProductFamily[];
 };
 
-
 export type ColumnKey = "products" | "dispensers";
-
 
 export type ProductRow = {
   id: string;
@@ -54,19 +52,14 @@ export type ProductRow = {
   replacementPriceOverride?: number;
   amountOverride?: number;
 
-
   isCustom?: boolean;
   customName?: string;
 
-
   totalOverride?: number;
-
 
   frequency?: string;
 
-
   costType?: 'productCost' | 'warranty';
-
 
   customFields?: Record<string, string | number>;
 };

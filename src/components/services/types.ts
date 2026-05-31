@@ -49,7 +49,6 @@ export type ServicesData = {
   serviceNotes: { name: string; defaultValue?: string }[];
 };
 
-
 export type BackendServiceRow = {
   type: "line" | "bold" | "atCharge";
   label: string;

@@ -6,7 +6,6 @@ export const JANITORIAL_CONFIG = {
     oneTimeService: 35,         
   },
 
-
   additionalServices: {
     vacuuming: {
       baseHours: 0.5,           
@@ -18,7 +17,6 @@ export const JANITORIAL_CONFIG = {
     },
   },
 
-
   frequencyMultipliers: {
     daily: 0.85,              
     weekly: 1.0,              
@@ -27,7 +25,6 @@ export const JANITORIAL_CONFIG = {
     oneTime: 1.4,             
   },
 
-
   billingConversions: {
     weekly: 50,               
     biweekly: 25,             
@@ -35,12 +32,10 @@ export const JANITORIAL_CONFIG = {
     quarterly: 4,             
   },
 
-
   minimums: {
     perVisit: 50,             
     recurringContract: 200,    
   },
-
 
   tripCharges: {
     standard: 6,
@@ -51,7 +46,6 @@ export const JANITORIAL_CONFIG = {
 
 export const janitorialPricingConfig = JANITORIAL_CONFIG;
 export type JanitorialConfig = typeof JANITORIAL_CONFIG;
-
 
 export function isJanitorialFrequency(value: string): value is keyof typeof JANITORIAL_CONFIG.frequencyMultipliers {
   return value in JANITORIAL_CONFIG.frequencyMultipliers;

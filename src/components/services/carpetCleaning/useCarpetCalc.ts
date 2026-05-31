@@ -11,7 +11,6 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-
 interface BackendCarpetConfig {
   baseSqFtUnit: number;
   basePrice: number;
@@ -48,7 +47,6 @@ const DEFAULT_FORM: CarpetFormState = {
   includeInstall: false,
   isDirtyInstall: false,
 
-
   unitSqFt: cfg.unitSqFt,
   firstUnitRate: cfg.firstUnitRate,
   additionalUnitRate: cfg.additionalUnitRate,
@@ -58,7 +56,6 @@ const DEFAULT_FORM: CarpetFormState = {
   applyMinimum: true,
 };
 
-
 function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequencyMetadata'] | undefined) {
   if (!backendMeta) {
     console.warn('⚠️ No backend frequencyMetadata available, using static fallback values');
@@ -67,9 +64,7 @@ function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequen
 
   console.log('🔧 [Carpet] Transforming backend frequencyMetadata:', backendMeta);
 
-
   const transformedMeta: any = {};
-
 
   if (backendMeta.weekly) {
     transformedMeta.weekly = {
@@ -89,7 +84,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequen
     };
   }
 
-
   const cycleBased = ['monthly', 'bimonthly', 'quarterly', 'biannual', 'annual'] as const;
 
   for (const freq of cycleBased) {
@@ -107,7 +101,6 @@ function transformBackendFrequencyMeta(backendMeta: BackendCarpetConfig['frequen
       };
     }
   }
-
 
   const finalMeta = {
     ...cfg.frequencyMeta, 
@@ -138,13 +131,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
   const wasActiveRef = useRef<boolean>(false);
   const isEditMode = useRef(!!initial); 
 
-
   const baselineValues = useRef<Record<string, number>>({});
   const baselineInitialized = useRef(false);
 
-
   const servicesContext = useServicesContextOptional();
-
 
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -160,7 +150,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     console.log(`💰 [CARPET-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -183,7 +172,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       ...initial,
     };
 
-
     const defaultContractMonths = initial?.contractMonths
       ? initial.contractMonths
       : servicesContext?.globalContractMonths
@@ -196,13 +184,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     };
   });
 
-
   const [backendConfig, setBackendConfig] = useState<BackendCarpetConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-
   const updateFormWithConfig = (config: BackendCarpetConfig, forceUpdate: boolean = false) => {
-
 
     if (initial && !forceUpdate) {
       console.log('📋 [CARPET] Edit mode: Skipping form update to preserve loaded values');
@@ -222,7 +207,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }));
   };
 
-
   const fetchPricing = async (forceRefresh: boolean = false) => {
     setIsLoadingConfig(true);
     try {
@@ -234,7 +218,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           const config = backendData.config as BackendCarpetConfig;
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
@@ -267,7 +250,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     } catch (error) {
       console.error('❌ Failed to fetch Carpet Cleaning config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("carpetCleaning");
         if (fallbackConfig?.config) {
@@ -275,7 +257,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           const config = fallbackConfig.config as BackendCarpetConfig;
           setBackendConfig(config);
           updateFormWithConfig(config, forceRefresh);
-
 
           if (forceRefresh) {
             console.log('🔄 [CARPET] Manual refresh: Clearing all custom overrides');
@@ -302,7 +283,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }
   };
 
-
   useEffect(() => {
 
     console.log('📋 [CARPET-PRICING] Fetching backend config (initial load, will not overwrite edit mode values)');
@@ -310,14 +290,11 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
   useEffect(() => {
     if (!backendConfig) return;
 
-
     if (!baselineInitialized.current) {
       baselineInitialized.current = true;
-
 
       baselineValues.current = {
         firstUnitRate: initial?.firstUnitRate ?? backendConfig.basePrice,
@@ -334,10 +311,8 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         note: initial ? 'Edit mode: using loaded/saved values' : 'New document: using backend defaults'
       });
 
-
       if (initial) {
         console.log('🔍 [CARPET-PRICING] Detecting price overrides for yellow highlighting...');
-
 
         const hasFirstUnitRateOverride = initial.firstUnitRate !== undefined &&
                                           initial.firstUnitRate !== backendConfig.basePrice;
@@ -367,14 +342,12 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     }
   }, [backendConfig, initial]);
 
-
   useEffect(() => {
 
     if (servicesContext?.backendPricingData && !backendConfig) {
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
-
 
   useEffect(() => {
     const isServiceActive = (form.areaSqFt || 0) > 0;
@@ -400,7 +373,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     wasActiveRef.current = isServiceActive;
   }, [servicesContext?.globalContractMonths, form.contractMonths, form.areaSqFt, servicesContext]);
 
-
   const addServiceFieldChange = useCallback((
     fieldName: string,
     originalValue: number,
@@ -425,7 +397,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       changePercent: originalValue ? ((newValue - originalValue) / originalValue * 100).toFixed(2) + '%' : 'N/A'
     });
   }, [form.sqFt, form.frequency]);
-
 
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
@@ -457,7 +428,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
         }
 
-
         case "unitSqFt":
         case "firstUnitRate":
         case "additionalUnitRate":
@@ -475,7 +445,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           }
           break;
         }
-
 
         case "customFirstUnitRate":
         case "customAdditionalUnitRate":
@@ -540,12 +509,10 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           break;
       }
 
-
       const baseEditableFields = [
         'unitSqFt', 'firstUnitRate', 'additionalUnitRate', 'perVisitMinimum',
         'installMultiplierDirty', 'installMultiplierClean'
       ];
-
 
       const customOverrideFields = [
         'customFirstUnitRate', 'customAdditionalUnitRate', 'customPerVisitMinimum',
@@ -558,9 +525,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       if (allPricingFields.includes(name)) {
         const newValue = newFormState[name as keyof CarpetFormState] as number | undefined;
 
-
         let baselineValue = baselineValues.current[name];
-
 
         if (baselineValue === undefined && name.startsWith('custom')) {
           const baseFieldMap: Record<string, string> = {
@@ -575,7 +540,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
           }
         }
 
-
         if (newValue !== undefined && baselineValue !== undefined &&
             typeof newValue === 'number' && typeof baselineValue === 'number' &&
             newValue !== baselineValue) {
@@ -589,7 +553,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         }
       }
 
-
       const allFormFields = [
 
         'rooms', 'totalSqFt', 'contractMonths',
@@ -598,7 +561,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
         'needsStainProtection'
       ];
-
 
       if (allFormFields.includes(name)) {
         logServiceFieldChanges(
@@ -635,7 +597,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     totalVisitsForContract,
   } = useMemo(() => {
 
-
     const baseConfig = backendConfig ? {
       unitSqFt: backendConfig.baseSqFtUnit ?? cfg.unitSqFt,
       firstUnitRate: backendConfig.basePrice ?? cfg.firstUnitRate,
@@ -656,7 +617,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       frequencyMeta: cfg.frequencyMeta,
     };
 
-
     const activeConfig = {
       unitSqFt: baseConfig.unitSqFt,
       firstUnitRate: form.customFirstUnitRate ?? form.firstUnitRate ?? baseConfig.firstUnitRate,
@@ -671,7 +631,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
     };
 
     const freq = clampFrequency(form.frequency);
-
 
     const conv = activeConfig.frequencyMeta[freq];
     let monthlyVisits = 1;
@@ -733,18 +692,15 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       calculatedPerVisitCharge = form.applyMinimum !== false ? Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum) : calculatedPerVisitBase;
     }
 
-
     const perVisitBase = calculatedPerVisitBase;
     const perVisitCharge = form.customPerVisitPrice !== undefined
       ? form.customPerVisitPrice
       : calculatedPerVisitCharge;
 
-
     const perVisitTrip = 0;
     const monthlyTrip = 0;
 
     const serviceActive = areaSqFt > 0;
-
 
     const installationBasePrice = form.applyMinimum !== false ? Math.max(calculatedPerVisitBase, activeConfig.perVisitMinimum) : calculatedPerVisitBase;
     const calculatedInstallOneTime =
@@ -755,11 +711,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
             : activeConfig.installMultipliers.clean)
         : 0;
 
-
     const installOneTime = form.customInstallationFee !== undefined
       ? form.customInstallationFee
       : calculatedInstallOneTime;
-
 
     let calculatedMonthlyRecurring = 0;
 
@@ -776,11 +730,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       }
     }
 
-
     const monthlyRecurring = form.customMonthlyRecurring !== undefined
       ? form.customMonthlyRecurring
       : calculatedMonthlyRecurring;
-
 
     let calculatedFirstMonthTotal = 0;
 
@@ -879,11 +831,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       }
     }
 
-
     const firstMonthTotal = form.customFirstMonthPrice !== undefined
       ? form.customFirstMonthPrice
       : calculatedFirstMonthTotal;
-
 
     const contractMonths = clampContractMonths(form.contractMonths);
 
@@ -904,7 +854,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
         if (form.includeInstall && installOneTime > 0) {
 
-
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
           console.log(`🔧 [Carpet Weekly Contract] Override-aware: first=$${firstMonthTotal.toFixed(2)}, remaining=${remainingMonths}mo × $${monthlyRecurring.toFixed(2)} = $${calculatedContractTotal.toFixed(2)}`);
@@ -919,7 +868,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
         totalVisitsForContract = Math.round(contractMonths * effectiveMonthlyVisits);
 
         if (form.includeInstall && installOneTime > 0) {
-
 
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
@@ -1017,7 +965,6 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
 
         if (form.includeInstall && installOneTime > 0) {
 
-
           const remainingMonths = Math.max(contractMonths - 1, 0);
           calculatedContractTotal = firstMonthTotal + (remainingMonths * monthlyRecurring);
         } else {
@@ -1027,11 +974,9 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       }
     }
 
-
     const contractTotal = form.customContractTotal !== undefined
       ? form.customContractTotal
       : calculatedContractTotal;
-
 
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const contractTotalWithCustomFields = contractTotal + customFieldsTotal;
@@ -1044,9 +989,7 @@ export function useCarpetCalc(initial?: Partial<CarpetFormState>, customFields?:
       finalContractTotal: contractTotalWithCustomFields.toFixed(2)
     });
 
-
     const perVisitEffective = perVisitCharge;
-
 
     let originalContractTotal = 0;
     if (serviceActive && contractMonths > 0) {

@@ -21,7 +21,6 @@ import { CustomService, type CustomServiceData } from "./CustomService";
 import { useServicesContextOptional } from "./ServicesContext";
 import { transformServiceData } from "./common/dataTransformers";
 
-
 const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   saniclean: SanicleanForm,
   foamingDrain: FoamingDrainForm,
@@ -39,7 +38,6 @@ const SERVICE_COMPONENTS: Record<string, React.FC<any>> = {
   greaseTrap: GreaseTrapForm,
   electrostaticSpray: ElectrostaticSprayForm,
 };
-
 
 type ServicesSectionProps = {
   initialServices?: {
@@ -64,7 +62,6 @@ type ServicesSectionProps = {
   onTabChange?: (tab: string | null) => void;
 };
 
-
 export interface ServicesSectionHandle {
   getCustomServicesData: () => {
     customServices: CustomServiceData[];
@@ -81,10 +78,8 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
   const { configs, loading } = useServiceConfigs();
   const servicesContext = useServicesContextOptional();
 
-
   const validTabs = ['reference', ...configs.map(c => c.serviceId)];
   const currentTab = activeTab && validTabs.includes(activeTab) ? activeTab : null;
-
 
   const [visibleServices, setVisibleServices] = useState<Set<string>>(() => {
 
@@ -94,7 +89,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       );
       if (activeServiceIds.length > 0) {
         console.log('📋 [ServicesSection] Edit mode detected, showing saved services:', activeServiceIds);
-
 
         const normalizedIds = activeServiceIds.map(id => {
 
@@ -114,7 +108,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return new Set(configs.filter(c => c.isActive).map(c => c.serviceId));
   });
 
-
   const [customServices, setCustomServices] = useState<CustomServiceData[]>(() => {
     if (initialServices?.customServices) {
       console.log('📋 [ServicesSection] Initializing custom services from saved data:', initialServices.customServices);
@@ -126,18 +119,14 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return [];
   });
 
-
   const [showNewServiceDropdown, setShowNewServiceDropdown] = useState(false);
   const [showRemoveServiceDropdown, setShowRemoveServiceDropdown] = useState(false);
 
-
   const configsInitializedRef = useRef(false);
-
 
   React.useEffect(() => {
     if (configs.length > 0 && !configsInitializedRef.current) {
       configsInitializedRef.current = true;
-
 
       const hasInitialServices = initialServices && typeof initialServices === 'object' &&
         Object.keys(initialServices).some((key) => initialServices[key as keyof typeof initialServices]?.isActive);
@@ -151,12 +140,9 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     }
   }, [configs, initialServices]);
 
-
   const visibleServicesArray = useMemo(() => Array.from(visibleServices), [visibleServices]);
 
-
   const lastSavedCustomServicesRef = useRef<string>("");
-
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
@@ -167,7 +153,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
         visibleServices: visibleServicesArray,
       });
 
-
       if (currentValue !== lastSavedCustomServicesRef.current) {
         lastSavedCustomServicesRef.current = currentValue;
         servicesContext.updateService("customServices" as any, {
@@ -177,9 +162,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       }
     }
 
-
   }, [customServices, visibleServicesArray]);
-
 
   useImperativeHandle(ref, () => ({
     getCustomServicesData: () => ({
@@ -187,7 +170,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       visibleServices: visibleServicesArray,
     }),
   }), [customServices, visibleServicesArray]);
-
 
   const handleAddService = (serviceId: string) => {
     console.log('Adding service:', serviceId);
@@ -212,7 +194,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     setShowNewServiceDropdown(false);
   };
 
-
   const handleRemoveService = (serviceId: string) => {
 
     const aliasMap: Record<string, string[]> = {
@@ -224,10 +205,8 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       'stripwax': ['stripWax'],
     };
 
-
     const aliases = aliasMap[serviceId] || [];
     const allIdsToRemove = [serviceId, ...aliases];
-
 
     setVisibleServices((prev) => {
       const next = new Set(prev);
@@ -238,7 +217,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
       return next;
     });
 
-
     if (servicesContext) {
       allIdsToRemove.forEach(id => {
         console.log(`🗑️ [ServicesSection] Removing service data from context: ${id}`);
@@ -247,23 +225,19 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     }
   };
 
-
   const handleUpdateCustomService = (service: CustomServiceData) => {
     setCustomServices((prev) =>
       prev.map((s) => (s.id === service.id ? service : s))
     );
   };
 
-
   const handleRemoveCustomService = (id: string) => {
     setCustomServices((prev) => prev.filter((s) => s.id !== id));
   };
 
-
   const availableServices = configs.filter((config) => {
 
     if (visibleServices.has(config.serviceId)) return false;
-
 
     if ((config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') &&
         (visibleServices.has('carpetCleaning') || visibleServices.has('carpetclean'))) {
@@ -281,11 +255,9 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return true;
   });
 
-
   const activeVisibleServices = configs.filter((config) => {
 
     if (visibleServices.has(config.serviceId)) return true;
-
 
     if ((config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') &&
         (visibleServices.has('carpetCleaning') || visibleServices.has('carpetclean'))) {
@@ -303,14 +275,12 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return false;
   });
 
-
   const gridServices = activeVisibleServices.filter(
     (config) => config.serviceId !== "refreshPowerScrub"
   );
   const refreshPowerScrubVisible = activeVisibleServices.some(
     (c) => c.serviceId === "refreshPowerScrub"
   );
-
 
   const isServiceVisible = (serviceId: string) => {
 
@@ -319,11 +289,9 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
     return serviceId === currentTab;
   };
 
-
   console.log('Active Visible Services:', activeVisibleServices.map(c => ({ id: c.serviceId, label: c.label, isActive: c.isActive })));
   console.log('Grid Services:', gridServices.map(c => c.serviceId));
   console.log('Visible Services Set:', Array.from(visibleServices));
-
 
   const ServicesReferenceTable = useMemo(() => (
     <ServicesReferenceSection configs={configs} />
@@ -511,9 +479,7 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
               <ServiceComponent
                 initialData={(() => {
 
-
                   let rawData = initialServices?.[config.serviceId as keyof typeof initialServices];
-
 
                   if (!rawData) {
                     if (config.serviceId === 'carpetCleaning' || config.serviceId === 'carpetclean') {
@@ -526,7 +492,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
                   }
 
                   if (!rawData) return undefined;
-
 
                   const transformedData = transformServiceData(config.serviceId, rawData);
                   return transformedData;
@@ -560,7 +525,6 @@ export const ServicesSection = forwardRef<ServicesSectionHandle, ServicesSection
 
             const rawData = initialServices?.refreshPowerScrub;
             if (!rawData) return undefined;
-
 
             const transformedData = transformServiceData("refreshPowerScrub", rawData);
             return transformedData;

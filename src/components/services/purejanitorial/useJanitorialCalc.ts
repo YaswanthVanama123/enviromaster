@@ -34,13 +34,13 @@ const DEFAULT_ADMIN_RATES: JanitorialAdminRates = {
 };
 
 function buildAdminRates(config: any): JanitorialAdminRates {
-  // Build defaultSupplies by merging admin-configured overrides into the canonical order
+  
   const adminOverrides = config?.defaultSupplies ?? {};
   const defaultSupplies: JanitorialSupplyItem[] = DEFAULT_SUPPLIES.map(item => {
-    // Match by lowercased name key (e.g. "vacuums", "mops", "mopBuckets")
+    
     const key = item.name.replace(/\s+/g, "").charAt(0).toLowerCase() +
                 item.name.replace(/\s+/g, "").slice(1);
-    // Try common key variants
+    
     const variants = [
       key,
       item.name.toLowerCase().replace(/\s+/g, ""),
@@ -71,14 +71,12 @@ export function computeJanitorialCalc(
   console.log("[JAN DEBUG] placeType:", form.placeType, "| productionRates:", JSON.stringify(adminRates.productionRates), "| rate:", productionRate, "| sqFt:", form.sqFt);
   const hoursPerVisit = productionRate > 0 ? form.sqFt / productionRate : 0;
 
-  // Per-occurrence labor (cost for one service period's visits)
   const perOccurrenceLabor = hoursPerVisit * form.costPerHour * form.visitsPerWeek;
 
-  // Use frequency-based annualMultiplier instead of hardcoded 52
   const freqConversion = cfg.billingConversions[form.frequency] ?? cfg.billingConversions.weekly;
   const annualMultiplier = freqConversion.annualMultiplier;
 
-  const weeklyLabor = perOccurrenceLabor; // kept for display compatibility
+  const weeklyLabor = perOccurrenceLabor; 
   const annualBaseLabor = perOccurrenceLabor * annualMultiplier;
   const annualLaborTax = annualBaseLabor * (form.laborTaxPct / 100);
   const totalAnnualSupplies = form.supplies.reduce((s, x) => s + x.amount, 0);
@@ -86,10 +84,9 @@ export function computeJanitorialCalc(
   const gp = Math.min(Math.max(form.grossProfitPct / 100, 0), 0.999);
   const annualContractValue = gp < 1 ? totalAnnualCost / (1 - gp) : 0;
 
-  // Contract total: for oneTime, it's just the single-occurrence cost
   let contractTotal: number;
   if (form.frequency === "oneTime") {
-    contractTotal = annualContractValue; // annualMultiplier=1, so this IS the one-time cost
+    contractTotal = annualContractValue; 
   } else {
     contractTotal = annualContractValue * form.contractMonths / 12;
   }
@@ -99,10 +96,8 @@ export function computeJanitorialCalc(
     ? contractTotal / form.contractMonths
     : 0;
 
-  // Per-visit cost (for visit-based frequency display)
   const perVisit = annualMultiplier > 0 ? annualContractValue / annualMultiplier : 0;
 
-  // originalContractTotal uses admin-baseline rates (no user modifications)
   const origPerOccurrenceLabor = hoursPerVisit * adminRates.costPerHour * form.visitsPerWeek;
   const origAnnualBaseLabor = origPerOccurrenceLabor * annualMultiplier;
   const origAnnualLaborTax = origAnnualBaseLabor * (adminRates.laborTaxPct / 100);
@@ -152,7 +147,6 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
     ...initialData,
   }));
 
-  // Load admin config from backend context
   useEffect(() => {
     console.log("[JAN DEBUG] useEffect fired | hasCtx:", !!servicesContext, "| hasFn:", !!servicesContext?.getBackendPricingForService, "| backendPricingData length:", servicesContext?.backendPricingData?.length);
     if (!servicesContext?.getBackendPricingForService) return;
@@ -165,13 +159,12 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
       const availableTypes = Object.keys(rates.productionRates);
       setForm(prev => ({
         ...prev,
-        // Auto-correct placeType if current value isn't in backend rates
+        
         ...(availableTypes.length > 0 && !availableTypes.includes(prev.placeType)
           ? { placeType: availableTypes[0] }
           : {}),
-        // Apply admin defaults ONLY for new forms (not editing)
-        // When editing, keep the salesperson's saved values
-        // Greenline/Redline comparison uses adminRates separately
+
+        
         ...(!initialData ? {
           costPerHour:    rates.costPerHour,
           laborTaxPct:    rates.laborTaxPct,
@@ -183,7 +176,6 @@ export function useJanitorialCalc(initialData?: Partial<JanitorialFormState>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicesContext?.backendPricingData]);
 
-  // Sync global contract months
   useEffect(() => {
     if (
       servicesContext?.globalContractMonths &&

@@ -3,7 +3,6 @@ import type {
   SaniscrubFrequency,
 } from "./saniscrubTypes";
 
-
 export const saniscrubFrequencyList: SaniscrubFrequency[] = [
   "oneTime",
   "weekly",
@@ -29,7 +28,6 @@ export const saniscrubFrequencyLabels: Record<SaniscrubFrequency, string> = {
   biannual: "Bi-Annual",
   annual: "Annual",
 };
-
 
 export const saniscrubPricingConfig: SaniscrubPricingConfig = {
 
@@ -59,21 +57,17 @@ export const saniscrubPricingConfig: SaniscrubPricingConfig = {
     annual: 250,
   },
 
-
   nonBathroomUnitSqFt: 500,
   nonBathroomFirstUnitRate: 250,
   nonBathroomAdditionalUnitRate: 125,
-
 
   installMultipliers: {
     dirty: 3,
     clean: 1,
   },
 
-
   tripChargeBase: 0,
   parkingFee: 0,
-
 
   billingConversions: {
     oneTime: { annualMultiplier: 1, monthlyMultiplier: 0 },
@@ -88,10 +82,8 @@ export const saniscrubPricingConfig: SaniscrubPricingConfig = {
     annual: { annualMultiplier: 1, monthlyMultiplier: 0.083 },
   },
 
-
   minContractMonths: 2,
   maxContractMonths: 36,
-
 
   frequencyMeta: {
     oneTime: { visitsPerYear: 1, monthlyMultiplier: 0 },
@@ -105,7 +97,6 @@ export const saniscrubPricingConfig: SaniscrubPricingConfig = {
     biannual: { visitsPerYear: 2, monthlyMultiplier: 0.167 },
     annual: { visitsPerYear: 1, monthlyMultiplier: 0.083 },
   },
-
 
   twoTimesPerMonthDiscountFlat: 15,
 };

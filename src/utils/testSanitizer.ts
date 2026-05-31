@@ -2,7 +2,6 @@
 
 import { sanitizeText, detectProblematicCharacters, sanitizeObject } from './textSanitizer';
 
-
 export function runSanitizationTests() {
   console.log('🧪 Running Text Sanitization Tests...\n');
 
@@ -96,7 +95,6 @@ export function runSanitizationTests() {
   return { passed, failed };
 }
 
-
 export function testObjectSanitization() {
   console.log('🧪 Testing Object Sanitization...\n');
 
@@ -124,7 +122,6 @@ export function testObjectSanitization() {
 
   return cleaned;
 }
-
 
 export function testRealWorldData() {
   console.log('🧪 Testing Real-World Form Data...\n');
@@ -165,7 +162,6 @@ export function testRealWorldData() {
   console.log('\nAfter sanitization:');
   console.log(JSON.stringify(cleaned, null, 2));
 
-
   const before = JSON.stringify(formData);
   const after = JSON.stringify(cleaned);
 
@@ -177,7 +173,6 @@ export function testRealWorldData() {
 
   return cleaned;
 }
-
 
 if (typeof window !== 'undefined') {
   (window as any).testSanitization = {

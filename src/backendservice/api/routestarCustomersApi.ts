@@ -1,7 +1,4 @@
-/**
- * RouteStar Customers API
- * API client for managing customers synced from RouteStar
- */
+
 
 import { apiClient } from '../utils/apiClient';
 
@@ -53,9 +50,7 @@ export interface CustomerStats {
 const BASE_PATH = '/api/routestar-customers';
 
 export const routestarCustomersApi = {
-  /**
-   * Get all customers with optional filters
-   */
+  
   async getAll(params?: {
     search?: string;
     city?: string;
@@ -90,9 +85,6 @@ export const routestarCustomersApi = {
     }
   },
 
-  /**
-   * Get customer by ID
-   */
   async getById(id: string): Promise<RouteStarCustomer | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: RouteStarCustomer }>(
@@ -106,9 +98,6 @@ export const routestarCustomersApi = {
     }
   },
 
-  /**
-   * Get sync status
-   */
   async getSyncStatus(): Promise<CustomerSyncStatus | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: CustomerSyncStatus }>(
@@ -122,9 +111,6 @@ export const routestarCustomersApi = {
     }
   },
 
-  /**
-   * Start sync from RouteStar
-   */
   async startSync(): Promise<{ success: boolean; message: string } | null> {
     try {
       const response = await apiClient.post<{ success: boolean; message: string }>(
@@ -139,9 +125,6 @@ export const routestarCustomersApi = {
     }
   },
 
-  /**
-   * Get customer statistics
-   */
   async getStats(): Promise<CustomerStats | null> {
     try {
       const response = await apiClient.get<{ success: boolean; data: CustomerStats }>(

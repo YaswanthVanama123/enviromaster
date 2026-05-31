@@ -14,7 +14,6 @@ import { useServicesContextOptional } from "../ServicesContext";
 import { addPriceChange, getFieldDisplayName } from "../../../utils/fileLogger";
 import { logServiceFieldChanges } from "../../../utils/serviceLogger";
 
-
 interface BackendStripWaxConfig {
   variants: {
     standardFull: {
@@ -71,7 +70,6 @@ interface BackendStripWaxConfig {
   };
 }
 
-
 function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
 
   const defaults = {
@@ -125,14 +123,12 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
 
   console.log('📊 [Strip & Wax] Building active config from backend:', backendConfig);
 
-
   const activeConfig = {
 
     minContractMonths: backendConfig.minContractMonths ?? defaults.minContractMonths,
     maxContractMonths: backendConfig.maxContractMonths ?? defaults.maxContractMonths,
     defaultFrequency: backendConfig.defaultFrequency ?? defaults.defaultFrequency,
     defaultVariant: backendConfig.defaultVariant ?? defaults.defaultVariant,
-
 
     variants: {
       standardFull: {
@@ -153,12 +149,9 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
       }
     },
 
-
     rateCategories: backendConfig.rateCategories ?? defaults.rateCategories,
 
-
     tripCharges: backendConfig.tripCharges ?? { standard: 0, beltway: 0 },
-
 
     frequencyMultipliers: {
       oneTime: 0,
@@ -173,7 +166,6 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
       annual: 0,
     },
 
-
     annualFrequencies: {
       oneTime: 1,
       weekly: 52,
@@ -186,7 +178,6 @@ function buildActiveConfig(backendConfig: BackendStripWaxConfig | null) {
       biannual: backendConfig.frequencyMetadata?.biannual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.biannual.cycleMonths : 2,
       annual: backendConfig.frequencyMetadata?.annual?.cycleMonths ? 12 / backendConfig.frequencyMetadata.annual.cycleMonths : 1,
     },
-
 
     frequencyMetadata: backendConfig.frequencyMetadata,
   };
@@ -242,24 +233,17 @@ export interface StripWaxCalcResult {
 
   perVisit: number;
 
-
   monthly: number;
-
 
   annual: number;
 
-
   firstVisit: number;
-
 
   ongoingMonthly: number;
 
-
   contractTotal: number;
 
-
   originalContractTotal: number;
-
 
   rawPrice: number;
 }
@@ -272,7 +256,6 @@ const DEFAULT_FORM_STATE: StripWaxFormState = {
   frequency: cfg.defaultFrequency,
   rateCategory: "redRate",
   contractMonths: cfg.minContractMonths ?? 12,
-
 
   weeksPerMonth: cfg.weeksPerMonth,
   standardFullRatePerSqFt: cfg.variants.standardFull.ratePerSqFt,
@@ -291,7 +274,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
   const hasContractMonthsOverride = useRef(false);
   const wasActiveRef = useRef<boolean>(false);
 
-
   const servicesContext = useServicesContextOptional();
 
   const baselineRef = useRef<Record<string, number>>({});
@@ -300,7 +282,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     baselineRef.current.ratePerSqFt = variantDefaults.ratePerSqFt;
     baselineRef.current.minCharge = variantDefaults.minCharge;
   }, []);
-
 
   const calcFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -316,7 +297,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     console.log(`💰 [STRIP-WAX-CALC-FIELDS] Custom calc fields total: $${total.toFixed(2)} (${customFields.filter(f => f.type === "calc").length} calc fields)`);
     return total;
   }, [customFields]);
-
 
   const dollarFieldsTotal = useMemo(() => {
     if (!customFields || customFields.length === 0) return 0;
@@ -338,7 +318,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       ...DEFAULT_FORM_STATE,
       ...initialData,
     };
-
 
     const isInitiallyActive = (initialData?.floorAreaSqFt || 0) > 0;
     const defaultContractMonths = initialData?.contractMonths
@@ -391,7 +370,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     form.wellMaintainedMinCharge,
   ]);
 
-
   const [backendConfig, setBackendConfig] = useState<BackendStripWaxConfig | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
@@ -425,7 +403,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       greenRateMultiplier: activeConfig.rateCategories?.greenRate?.multiplier,
     });
   };
-
 
   const fetchPricing = async (forceRefresh: boolean = false) => {
     const applyBackendConfig = (config: BackendStripWaxConfig, forceOverride: boolean = forceRefresh) => {
@@ -489,7 +466,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     } catch (error) {
       console.error('❌ Failed to fetch StripWax config from context:', error);
 
-
       if (servicesContext?.getBackendPricingForService) {
         const fallbackConfig = servicesContext.getBackendPricingForService("stripWax");
         if (fallbackConfig?.config) {
@@ -507,7 +483,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     }
   };
 
-
   useEffect(() => {
 
     if (initialData) {
@@ -520,7 +495,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
   useEffect(() => {
 
     if (initialData) return;
@@ -529,7 +503,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       fetchPricing();
     }
   }, [servicesContext?.backendPricingData, backendConfig]);
-
 
   useEffect(() => {
     const isServiceActive = (form.floorAreaSqFt || 0) > 0;
@@ -615,7 +588,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     });
   }, [form.floorAreaSqFt, form.frequency]);
 
-
   const setContractMonths = useCallback((months: number) => {
     hasContractMonthsOverride.current = true;
     setForm(prev => ({
@@ -636,11 +608,9 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
 
       const next: StripWaxFormState = { ...prev };
 
-
       if (name === "serviceVariant") {
         const variantKey = t.value as StripWaxServiceVariant;
         next.serviceVariant = variantKey;
-
 
         if (variantKey === "standardFull") {
           next.ratePerSqFt = prev.standardFullRatePerSqFt;
@@ -685,7 +655,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
         (next as any)[name] = t.value;
       }
 
-
       const pricingFields = [
       'ratePerSqFt', 'minCharge', 'weeksPerMonth',
         'standardFullRatePerSqFt', 'standardFullMinCharge', 'noSealantRatePerSqFt', 'noSealantMinCharge',
@@ -723,7 +692,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
 
     const areaSqFt = Math.max(0, Number(form.floorAreaSqFt) || 0);
 
-
     if (areaSqFt === 0) {
       return {
         perVisit: 0,
@@ -737,7 +705,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       };
     }
 
-
     const rateCfg = {
       multiplier: form.rateCategory === "greenRate"
         ? form.greenRateMultiplier
@@ -745,7 +712,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     };
 
     const weeksPerMonth = activeConfig.frequencyMultipliers?.weekly ?? form.weeksPerMonth;  
-
 
     let monthlyVisits: number;
     if (activeConfig.frequencyMultipliers && activeConfig.frequencyMultipliers[form.frequency] !== undefined) {
@@ -755,7 +721,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       const conv = cfg.billingConversions?.[form.frequency];
       monthlyVisits = conv?.monthlyMultiplier ?? 0;
     }
-
 
     const isVisitBasedFrequency = form.frequency === "oneTime" ||
                                    form.frequency === "quarterly" ||
@@ -793,14 +758,12 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
     const minCharge =
       form.minCharge > 0 ? form.minCharge : variantCfg.minCharge;
 
-
     const rawPriceRed = areaSqFt * ratePerSqFt;
     const perVisitRed = form.applyMinimum !== false ? Math.max(rawPriceRed, minCharge) : rawPriceRed;
 
     const perVisit = perVisitRed * rateCfg.multiplier;
 
     const firstVisit = perVisit;
-
 
     let monthlyPrice: number;
     let calculatedContractTotal: number;
@@ -837,12 +800,10 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       calculatedContractTotal = monthlyPrice * contractMonths;
     }
 
-
     const finalPerVisit = form.customPerVisit ?? perVisit;
     const finalMonthly = form.customMonthly ?? monthlyPrice;
     const finalOngoingMonthly = form.customOngoingMonthly ?? monthlyPrice;
     const calculatedContractTotalBeforeCustomFields = form.customContractTotal ?? calculatedContractTotal;
-
 
     const customFieldsTotal = calcFieldsTotal + dollarFieldsTotal;
     const finalContractTotal = calculatedContractTotalBeforeCustomFields + customFieldsTotal;
@@ -856,7 +817,6 @@ export function useStripWaxCalc(initialData?: Partial<StripWaxFormState>, custom
       totalCustomFields: customFieldsTotal.toFixed(2),
       finalContractTotal: finalContractTotal.toFixed(2)
     });
-
 
     const baselineVariantRatePerSqFt = activeConfig.variants[form.serviceVariant]?.ratePerSqFt ?? activeConfig.variants[activeConfig.defaultVariant]?.ratePerSqFt ?? 0;
     const baselineVariantMinCharge = activeConfig.variants[form.serviceVariant]?.minCharge ?? activeConfig.variants[activeConfig.defaultVariant]?.minCharge ?? 0;

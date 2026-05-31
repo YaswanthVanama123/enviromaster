@@ -7,7 +7,6 @@ export const envProductCatalog: EnvProductCatalog = {
   currency: "USD",
   families: [
 
-
     {
       key: "floorProducts",
       label: "Floor Products",
@@ -106,7 +105,6 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-
     {
       key: "saniProducts",
       label: "Sani Products",
@@ -159,7 +157,6 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-
     {
       key: "threeSink",
       label: "Three Sink Components",
@@ -200,7 +197,6 @@ export const envProductCatalog: EnvProductCatalog = {
         },
       ],
     },
-
 
     {
       key: "otherChemicals",
@@ -276,7 +272,6 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-
     {
       key: "soap",
       label: "Soap Products",
@@ -328,7 +323,6 @@ export const envProductCatalog: EnvProductCatalog = {
         },
       ],
     },
-
 
     {
       key: "paper",
@@ -416,7 +410,6 @@ export const envProductCatalog: EnvProductCatalog = {
           quantityPerCase: 12,
           quantityPerCaseLabel: "Case/12",
         },
-
 
         {
           key: "paper_em_jrt_tissue",
@@ -521,7 +514,6 @@ export const envProductCatalog: EnvProductCatalog = {
           displayByAdmin: true,
         },
 
-
         {
           key: "paper_toilet_seat_covers",
           name: "Toilet Seat Covers",
@@ -539,7 +531,6 @@ export const envProductCatalog: EnvProductCatalog = {
         },
       ],
     },
-
 
     {
       key: "dispensers",
@@ -701,7 +692,6 @@ export const envProductCatalog: EnvProductCatalog = {
           },
         },
 
-
         {
           key: "disp_toilet_seat_dispenser",
           name: "Toilet Seat Dispenser",
@@ -755,7 +745,6 @@ export const envProductCatalog: EnvProductCatalog = {
             billingPeriod: "week",
           },
         },
-
 
         {
           key: "disp_em_twin_jrt",
@@ -952,7 +941,6 @@ export const envProductCatalog: EnvProductCatalog = {
       ],
     },
 
-
     {
       key: "extras",
       label: "Extras / Facilities Products",
@@ -1140,7 +1128,6 @@ export const envProductCatalog: EnvProductCatalog = {
           quantityPerCase: 50,
           quantityPerCaseLabel: "Case/50",
         },
-
 
         {
           key: "extra_daily_default",

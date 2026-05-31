@@ -14,7 +14,6 @@ export const ApprovalTaskSettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ message: string; type: ToastType } | null>(null);
 
-  // Form state
   const [selectedOwner, setSelectedOwner] = useState<{ id: string | null; name: string | null }>({ id: null, name: null });
   const [subjectTemplate, setSubjectTemplate] = useState('');
   const [userSearch, setUserSearch] = useState('');

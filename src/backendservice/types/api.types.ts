@@ -36,7 +36,7 @@ export interface LoginResponse {
   token: string;
   user: AuthUser;
   role: UserRole;
-  // For backward compatibility with admin login
+  
   admin?: AdminUser;
 }
 
@@ -47,7 +47,6 @@ export interface ApiError {
   detail?: string;
 }
 
-// User Management Types
 export interface UserListItem {
   id: string;
   username: string;

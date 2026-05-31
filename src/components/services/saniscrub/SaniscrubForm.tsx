@@ -25,7 +25,6 @@ const FIELD_ORDER = {
   },
 } as const;
 
-
 const formatNumber = (num: number): string => {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
@@ -37,10 +36,8 @@ export const SaniscrubForm: React.FC<
     initialData?.customFields || []
   );
 
-
   const { form, setForm, onChange, quote, calc, refreshConfig, isLoadingConfig, pricingOverrides } = useSaniscrubCalc(initialData, customFields);
   const servicesContext = useServicesContextOptional();
-
 
   useEffect(() => {
     if (servicesContext?.globalContractMonths && servicesContext.globalContractMonths !== form.contractMonths) {
@@ -50,11 +47,9 @@ export const SaniscrubForm: React.FC<
 
   const [showAddDropdown, setShowAddDropdown] = useState(false);
 
-
   const [editingValues, setEditingValues] = useState<Record<string, string>>({});
 
   const [originalValues, setOriginalValues] = useState<Record<string, string>>({});
-
 
   const getDisplayValue = (fieldName: string, calculatedValue: number | undefined, formatted = false): string => {
 
@@ -68,7 +63,6 @@ export const SaniscrubForm: React.FC<
       : calculatedValue.toFixed(2);
   };
 
-
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -76,13 +70,10 @@ export const SaniscrubForm: React.FC<
     setOriginalValues(prev => ({ ...prev, [name]: value }));
   };
 
-
   const handleLocalChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     setEditingValues(prev => ({ ...prev, [name]: value }));
-
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -93,13 +84,10 @@ export const SaniscrubForm: React.FC<
     }
   };
 
-
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-
     const originalValue = originalValues[name];
-
 
     setEditingValues(prev => {
       const newState = { ...prev };
@@ -107,16 +95,13 @@ export const SaniscrubForm: React.FC<
       return newState;
     });
 
-
     setOriginalValues(prev => {
       const newState = { ...prev };
       delete newState[name];
       return newState;
     });
 
-
     const numValue = parseFloat(value);
-
 
     if (originalValue !== value) {
 
@@ -125,21 +110,16 @@ export const SaniscrubForm: React.FC<
         return;
       }
 
-
       onChange({ target: { name, value: String(numValue) } } as any);
     }
   };
 
-
   const isSanicleanAllInclusive =
     servicesContext?.isSanicleanAllInclusive ?? false;
 
-
   const prevDataRef = React.useRef<string>("");
 
-
   const displayFixtureRate = (() => {
-
 
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
@@ -153,18 +133,14 @@ export const SaniscrubForm: React.FC<
     return Number(form.fixtureRateQuarterly) || 0;
   })();
 
-
   const fixtureLineDisplayAmount = (() => {
     if (form.fixtureCount <= 0) return 0;
-
 
     return calc.fixtureBaseAmount || 0;
   })();
 
-
   const nonBathroomLineDisplayAmount = (() => {
     if (form.nonBathroomSqFt <= 0) return 0;
-
 
     return calc.nonBathroomPerVisit;
   })();
@@ -185,7 +161,6 @@ export const SaniscrubForm: React.FC<
         displayName: "SaniScrub",
         isActive: true,
 
-
         fixtureRateMonthly: form.fixtureRateMonthly,
         fixtureRateBimonthly: form.fixtureRateBimonthly,
         fixtureRateQuarterly: form.fixtureRateQuarterly,
@@ -197,7 +172,6 @@ export const SaniscrubForm: React.FC<
         installMultiplierClean: form.installMultiplierClean,
         twoTimesPerMonthDiscount: form.twoTimesPerMonthDiscount,
 
-
         fixtureCount: form.fixtureCount,
         nonBathroomSqFt: form.nonBathroomSqFt,
         useExactNonBathroomSqft: form.useExactNonBathroomSqft,
@@ -206,7 +180,6 @@ export const SaniscrubForm: React.FC<
         isDirtyInstall: form.isDirtyInstall,
         contractMonths: form.contractMonths,
         applyMinimum: form.applyMinimum !== false,
-
 
         perVisitBase: calc.perVisitEffective,  
         perVisit: calc.perVisitEffective,  
@@ -220,7 +193,6 @@ export const SaniscrubForm: React.FC<
           value: saniscrubFrequencyLabels[form.frequency] || form.frequency,
           frequencyKey: form.frequency,
         },
-
 
         ...(form.fixtureCount > 0 ? {
           restroomFixtures: {
@@ -346,9 +318,7 @@ export const SaniscrubForm: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, calc, customFields, displayFixtureRate, fixtureLineDisplayAmount]);
 
-
   const fixtureRateFieldName = (() => {
-
 
     if (form.frequency === "oneTime" || form.frequency === "weekly" ||
         form.frequency === "biweekly" || form.frequency === "twicePerMonth" ||
@@ -366,7 +336,6 @@ export const SaniscrubForm: React.FC<
       : fixtureRateFieldName === "fixtureRateBimonthly"
         ? pricingOverrides?.fixtureRateBimonthly
         : pricingOverrides?.fixtureRateQuarterly;
-
 
   return (
     <div className="svc-card" style={{ position: 'relative' }}>
@@ -620,7 +589,6 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-
       {}
       {}
 
@@ -741,7 +709,6 @@ export const SaniscrubForm: React.FC<
         </div>
       </div>
 
-
       {}
       <div className="svc-row svc-row-charge">
         <label>{calc.isVisitBasedFrequency ? "First Visit Total" : "First Month Total"}</label>
@@ -771,7 +738,6 @@ export const SaniscrubForm: React.FC<
           </div>
         </div>
       </div>
-
 
       {}
       {}
@@ -960,7 +926,6 @@ export const SaniscrubForm: React.FC<
           </div>
         </div>
       )}
-
 
     </div>
   );

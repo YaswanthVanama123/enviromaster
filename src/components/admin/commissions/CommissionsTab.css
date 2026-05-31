@@ -68,7 +68,6 @@
   padding: 24px;
 }
 
-/* Calculator styles */
 .commission-calculator {
   max-width: 900px;
 }
@@ -198,7 +197,6 @@
   font-size: 14px;
 }
 
-/* Result display styles */
 .commission-result {
   margin-top: 32px;
   padding: 24px;
@@ -260,7 +258,6 @@
   color: #2563eb;
 }
 
-/* Breakdown styles */
 .result-breakdown {
   padding: 16px;
   background-color: white;
@@ -315,7 +312,6 @@
   color: #dc2626;
 }
 
-/* Commission Rules Manager styles */
 .commission-rules-manager {
   max-width: 800px;
 }
@@ -395,7 +391,6 @@
   cursor: not-allowed;
 }
 
-/* Commission History styles */
 .commission-history {
   max-width: 1000px;
 }

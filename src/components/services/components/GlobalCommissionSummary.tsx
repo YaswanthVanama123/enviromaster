@@ -5,7 +5,6 @@ import { useServicesContext, QuotaLevel, QUOTA_COMMISSION_RATES } from '../Servi
 import type { AccountType } from '../../../backendservice/api/accountTypeApi';
 import './GlobalCommissionSummary.css';
 
-// Color scheme for account types
 const ACCOUNT_TYPE_COLORS: Record<AccountType, { bg: string; text: string }> = {
   Anchor: { bg: '#fef3c7', text: '#92400e' },
   Bread5: { bg: '#d1fae5', text: '#065f46' },
@@ -13,7 +12,6 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, { bg: string; text: string }> = {
   Pit: { bg: '#fee2e2', text: '#991b1b' },
 };
 
-// Quota level labels and colors
 const QUOTA_LEVEL_DISPLAY: Record<QuotaLevel, { label: string; color: string; bgColor: string }> = {
   below: { label: 'Below Quota', color: '#dc2626', bgColor: '#fee2e2' },
   above: { label: 'Above Quota', color: '#059669', bgColor: '#d1fae5' },
@@ -30,35 +28,32 @@ export function GlobalCommissionSummary({
   const [expanded, setExpanded] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Record<number, boolean>>({});
 
-  // Get quota level from context (determines base commission rate)
   const { quotaLevel, quotaLevelData, baseCommissionRate } = useServicesContext();
   const commissionRate = baseCommissionRate;
 
   const global = useGlobalCommission(commissionRate);
   const { detectAccountTypes, isDetecting, error, isCompanyMapped } = useAccountTypeDetection();
 
-  // Get quota display info
   const quotaDisplay = QUOTA_LEVEL_DISPLAY[quotaLevel];
 
   const toggleServiceExpand = (index: number) => {
     setExpandedServices(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
-  // Don't show if no services
   if (global.serviceCount === 0) {
     return null;
   }
 
   return (
     <div className="commission-summary">
-      {/* Header */}
+      {}
       <div className="commission-summary__header">
         <div className="commission-summary__title">
           <span>Commission Summary</span>
           <span className="commission-summary__service-count">
             ({global.serviceCount} service{global.serviceCount !== 1 ? 's' : ''})
           </span>
-          {/* Quota Level Badge */}
+          {}
           <span
             className="commission-summary__quota-badge"
             style={{ backgroundColor: quotaDisplay.bgColor, color: quotaDisplay.color }}
@@ -84,21 +79,21 @@ export function GlobalCommissionSummary({
         )}
       </div>
 
-      {/* Error message */}
+      {}
       {error && (
         <div className="commission-summary__error">
           {error}
         </div>
       )}
 
-      {/* Not connected message */}
+      {}
       {!isCompanyMapped && (
         <div className="commission-summary__warning">
           Connect to Bigin to detect account types automatically
         </div>
       )}
 
-      {/* Totals */}
+      {}
       <div className="commission-summary__totals">
         <div className="commission-summary__total-item">
           <div className="commission-summary__total-label">Weekly</div>
@@ -113,7 +108,7 @@ export function GlobalCommissionSummary({
           </div>
         </div>
 
-        {/* Expand/Collapse button */}
+        {}
         <button
           className="commission-summary__toggle-btn"
           onClick={() => setExpanded(!expanded)}
@@ -123,10 +118,10 @@ export function GlobalCommissionSummary({
         </button>
       </div>
 
-      {/* Expanded Details */}
+      {}
       {expanded && (
         <div className="commission-summary__expanded">
-          {/* Per-service breakdown */}
+          {}
           <div className="commission-summary__breakdown-title">
             Service Breakdown
           </div>
@@ -137,7 +132,7 @@ export function GlobalCommissionSummary({
 
             return (
               <div key={index} className="service-row">
-                {/* Service header row */}
+                {}
                 <div
                   className="service-row__header"
                   onClick={() => toggleServiceExpand(index)}
@@ -177,10 +172,10 @@ export function GlobalCommissionSummary({
                   </div>
                 </div>
 
-                {/* Expanded details */}
+                {}
                 {isServiceExpanded && (
                   <div className="service-details">
-                    {/* Revenue Calculation Section */}
+                    {}
                     <div className="service-details__section">
                       <div className="service-details__section-title">
                         Revenue Calculation
@@ -195,7 +190,7 @@ export function GlobalCommissionSummary({
                           <span className="service-details__value">{service.formatted.perVisitRevenue}</span>
                         </div>
 
-                        {/* Pricing Tier (Solange Draft) — multiplier applied to revenue */}
+                        {}
                         <div className="service-details__row">
                           <span className="service-details__label">
                             Price Ratio (Current ÷ Redline):
@@ -265,7 +260,7 @@ export function GlobalCommissionSummary({
                       </div>
                     </div>
 
-                    {/* Commission Rate Section */}
+                    {}
                     <div className="service-details__section">
                       <div className="service-details__section-title">
                         Commission Rate Calculation
@@ -299,7 +294,7 @@ export function GlobalCommissionSummary({
                       </div>
                     </div>
 
-                    {/* Commission Calculation Section */}
+                    {}
                     <div className="service-details__section">
                       <div className="service-details__section-title">
                         Commission Calculation
@@ -341,7 +336,7 @@ export function GlobalCommissionSummary({
                       </div>
                     </div>
 
-                    {/* Account Type Info */}
+                    {}
                     {service.accountType && (
                       <div
                         className="service-details__account-info"
@@ -383,14 +378,14 @@ export function GlobalCommissionSummary({
             );
           })}
 
-          {/* Commission rate info */}
+          {}
           <div className="commission-summary__rate-footer">
             Rate: {commissionRate}% × {global.agreementMultiplier}% = {global.effectiveCommissionRate.toFixed(2)}%
           </div>
         </div>
       )}
 
-      {/* Commission rate footer (when collapsed) */}
+      {}
       {!expanded && (
         <div className="commission-summary__rate-footer">
           Rate: {commissionRate}% × {global.agreementMultiplier}% = {global.effectiveCommissionRate.toFixed(2)}%

@@ -1,8 +1,4 @@
-/**
- * Map Distance Update Tab Component
- * Admin panel screen for updating/refreshing existing map distance data
- * All operations run in background and persist across page refreshes
- */
+
 
 import React, { useState, useEffect, useRef } from 'react';
 import { mapDistanceApi, MapDistanceSyncJob, MapDistanceStats, MapDistanceRecord, RouteStarCustomerOption } from '../../../backendservice/api/mapDistanceApi';
@@ -10,7 +6,7 @@ import { MdRefresh, MdCancel, MdStorage, MdHistory, MdPerson, MdCalendarToday, M
 import './MapDistanceUpdateTab.css';
 
 export const MapDistanceUpdateTab: React.FC = () => {
-  // State
+  
   const [syncStatus, setSyncStatus] = useState<{ isRunning: boolean; isInterrupted: boolean; isPaused: boolean; job: MapDistanceSyncJob | null }>({
     isRunning: false,
     isInterrupted: false,
@@ -25,20 +21,17 @@ export const MapDistanceUpdateTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'records' | 'history'>('records');
 
-  // Filter state
   const [customersWithData, setCustomersWithData] = useState<RouteStarCustomerOption[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Delete confirmation state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load data on mount
   useEffect(() => {
     loadStats();
     checkSyncStatus();
@@ -46,7 +39,6 @@ export const MapDistanceUpdateTab: React.FC = () => {
     loadCustomersWithData();
   }, []);
 
-  // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
@@ -57,7 +49,6 @@ export const MapDistanceUpdateTab: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Poll for sync status when running
   useEffect(() => {
     if (syncStatus.isRunning) {
       pollIntervalRef.current = setInterval(() => {
@@ -66,7 +57,7 @@ export const MapDistanceUpdateTab: React.FC = () => {
     } else if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
-      // Refresh data when sync completes
+      
       loadStats();
       loadStoredRecords(currentPage);
       loadCustomersWithData();
@@ -143,7 +134,7 @@ export const MapDistanceUpdateTab: React.FC = () => {
     setShowDeleteConfirm(false);
 
     if (result.success) {
-      // Refresh all data
+      
       loadStats();
       loadStoredRecords(1);
       loadCustomersWithData();
@@ -241,7 +232,7 @@ export const MapDistanceUpdateTab: React.FC = () => {
 
   return (
     <div className="md-update-tab">
-      {/* Header */}
+      {}
       <div className="mdu-header">
         <div className="mdu-header-top">
           <div>
@@ -294,7 +285,7 @@ export const MapDistanceUpdateTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Delete Confirmation Modal */}
+        {}
         {showDeleteConfirm && (
           <div className="mdu-modal-overlay">
             <div className="mdu-modal">

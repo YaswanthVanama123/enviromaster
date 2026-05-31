@@ -15,12 +15,10 @@ export default function RowCalc({
   const [rate, setRate] = useState<string>(row.defaultRate || "");
   const [total, setTotal] = useState<string>(row.defaultTotal || "");
 
-
   useEffect(() => {
     const qty = parseFloat(quantity) || 0;
     const rateValue = parseFloat(rate) || 0;
     const calculatedTotal = qty * rateValue;
-
 
     const formattedTotal = calculatedTotal > 0 ? calculatedTotal.toFixed(2) : "";
     setTotal(formattedTotal);

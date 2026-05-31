@@ -1,7 +1,4 @@
-/**
- * Map Distance API
- * API client for fetching map distance from RouteStar
- */
+
 
 import { apiClient } from '../utils/apiClient';
 
@@ -109,9 +106,7 @@ export interface AccountTypeDetectionResult {
 const BASE_PATH = '/api/map-distance';
 
 export const mapDistanceApi = {
-  /**
-   * Get all RouteStar customers for dropdown
-   */
+  
   async getCustomers(search?: string): Promise<RouteStarCustomerOption[]> {
     try {
       const queryParams = new URLSearchParams();
@@ -131,9 +126,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Fetch map distance for a customer (starts background job)
-   */
   async fetchDistance(customerName: string): Promise<MapDistanceResponse> {
     try {
       const response = await apiClient.post<MapDistanceResponse>(
@@ -160,9 +152,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Start sync for all customers
-   */
   async startSync(): Promise<{ success: boolean; jobId?: string; totalCustomers?: number; error?: string }> {
     try {
       const response = await apiClient.post<{
@@ -187,9 +176,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Start update sync (only customers with existing data)
-   */
   async startUpdateSync(): Promise<{ success: boolean; jobId?: string; totalCustomers?: number; error?: string }> {
     try {
       const response = await apiClient.post<{
@@ -214,9 +200,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Get current sync status
-   */
   async getSyncStatus(): Promise<{ success: boolean; isRunning: boolean; isInterrupted: boolean; isPaused: boolean; job: MapDistanceSyncJob | null }> {
     try {
       const response = await apiClient.get<{
@@ -238,9 +221,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Cancel running sync
-   */
   async cancelSync(): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await apiClient.post<{ success: boolean; message: string }>(
@@ -255,9 +235,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Pause running sync (can be resumed later)
-   */
   async pauseSync(): Promise<{ success: boolean; processedCustomers?: number; totalCustomers?: number; error?: string }> {
     try {
       const response = await apiClient.post<{
@@ -282,9 +259,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Reset stuck jobs (mark all running as failed)
-   */
   async resetStuckJobs(): Promise<{ success: boolean; modifiedCount?: number; error?: string }> {
     try {
       const response = await apiClient.post<{
@@ -307,9 +281,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Resume an interrupted sync job
-   */
   async resumeSync(jobId?: string): Promise<{ success: boolean; jobId?: string; remainingCustomers?: number; error?: string }> {
     try {
       const response = await apiClient.post<{
@@ -334,9 +305,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Get sync history
-   */
   async getSyncHistory(): Promise<MapDistanceSyncJob[]> {
     try {
       const response = await apiClient.get<{
@@ -351,9 +319,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Get stored records
-   */
   async getStoredRecords(params?: { customerId?: string; page?: number; limit?: number }): Promise<{
     records: MapDistanceRecord[];
     total: number;
@@ -390,9 +355,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Get customers that have stored distance records (for filter dropdown)
-   */
   async getCustomersWithData(search?: string): Promise<RouteStarCustomerOption[]> {
     try {
       const queryParams = new URLSearchParams();
@@ -412,9 +374,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Get stats
-   */
   async getStats(): Promise<MapDistanceStats | null> {
     try {
       const response = await apiClient.get<{
@@ -429,9 +388,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Delete all stored records and sync history
-   */
   async deleteAllRecords(): Promise<{ success: boolean; deletedCount?: number; error?: string }> {
     try {
       const response = await apiClient.delete<{
@@ -454,12 +410,6 @@ export const mapDistanceApi = {
     }
   },
 
-  /**
-   * Detect account type based on Bigin company mapping and distance data
-   * @param biginCompanyId - The Bigin company ID
-   * @param perVisitRevenue - Optional per-visit revenue for revenue-based detection
-   * @param isGreenline - Whether this is a Greenline customer
-   */
   async detectAccountType(params: {
     biginCompanyId?: string;
     routeStarCustomerId?: string;

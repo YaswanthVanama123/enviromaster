@@ -1,6 +1,5 @@
 import type { BillingMultipliers, TripPolicy } from "./pricingTypes";
 
-
 export const BILLING: BillingMultipliers = {
   Weekly: 50,
   Biweekly: 25,

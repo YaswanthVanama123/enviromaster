@@ -24,7 +24,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Initialize auth state on mount
   useEffect(() => {
     const initAuth = () => {
       const { user: storedUser, isAuthenticated: isAuth } = authApi.initializeAuth();

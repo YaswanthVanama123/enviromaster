@@ -1,7 +1,4 @@
-/**
- * Account Type Detector Component
- * Auto-detects account type based on revenue and distance to nearest anchor
- */
+
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { accountTypeApi } from '../../../backendservice/api/accountTypeApi';
@@ -30,7 +27,7 @@ export const AccountTypeDetector: React.FC<AccountTypeDetectorProps> = ({
   initialGreenline = false,
   compact = false,
 }) => {
-  // Form state
+  
   const [perVisitRevenue, setPerVisitRevenue] = useState<string>(
     initialRevenue?.toString() || ''
   );
@@ -39,13 +36,11 @@ export const AccountTypeDetector: React.FC<AccountTypeDetectorProps> = ({
   );
   const [isGreenline, setIsGreenline] = useState<boolean>(initialGreenline);
 
-  // Detection state
   const [detectionResult, setDetectionResult] = useState<AccountTypeDetectionResult | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [thresholds, setThresholds] = useState<AccountTypeThresholds>(DEFAULT_THRESHOLDS);
 
-  // Fetch thresholds on mount
   useEffect(() => {
     const fetchThresholds = async () => {
       const response = await accountTypeApi.getThresholds();
@@ -56,7 +51,6 @@ export const AccountTypeDetector: React.FC<AccountTypeDetectorProps> = ({
     fetchThresholds();
   }, []);
 
-  // Auto-detect on input change (client-side for immediate feedback)
   useEffect(() => {
     if (perVisitRevenue) {
       const revenue = parseFloat(perVisitRevenue);
@@ -75,7 +69,6 @@ export const AccountTypeDetector: React.FC<AccountTypeDetectorProps> = ({
     }
   }, [perVisitRevenue, distanceToAnchor, isGreenline, thresholds, onAccountTypeDetected]);
 
-  // Server-side detection (for validation)
   const handleDetect = useCallback(async () => {
     if (!perVisitRevenue) {
       setError('Please enter per-visit revenue');
@@ -124,15 +117,15 @@ export const AccountTypeDetector: React.FC<AccountTypeDetectorProps> = ({
   const getAccountTypeColor = (type: AccountType): string => {
     switch (type) {
       case 'Anchor':
-        return '#16a34a'; // green
+        return '#16a34a'; 
       case 'Bread5':
-        return '#2563eb'; // blue
+        return '#2563eb'; 
       case 'Bread15':
-        return '#7c3aed'; // purple
+        return '#7c3aed'; 
       case 'Pit':
-        return '#dc2626'; // red
+        return '#dc2626'; 
       default:
-        return '#6b7280'; // gray
+        return '#6b7280'; 
     }
   };
 

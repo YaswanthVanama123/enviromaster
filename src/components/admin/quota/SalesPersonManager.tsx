@@ -20,7 +20,6 @@ export const SalesPersonManager: React.FC<SalesPersonManagerProps> = ({ onRefres
   const [searchTerm, setSearchTerm] = useState("");
   const [filterActive, setFilterActive] = useState<boolean | undefined>(true);
 
-  // Edit form state (only quota-related fields)
   const [editFormData, setEditFormData] = useState({
     salesRole: "field_sales" as SalesRole,
     territory: "",
@@ -31,7 +30,6 @@ export const SalesPersonManager: React.FC<SalesPersonManagerProps> = ({ onRefres
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Load sales persons (employees)
   const loadSalesPersons = useCallback(async () => {
     setLoading(true);
     const result = await salesPersonApi.getAll({
@@ -77,7 +75,7 @@ export const SalesPersonManager: React.FC<SalesPersonManagerProps> = ({ onRefres
     setFormError(null);
 
     try {
-      // Update sales-related fields
+      
       const updateResult = await salesPersonApi.update(editingPerson.employeeId, {
         salesRole: editFormData.salesRole,
         territory: editFormData.territory,
@@ -90,7 +88,6 @@ export const SalesPersonManager: React.FC<SalesPersonManagerProps> = ({ onRefres
         return;
       }
 
-      // Update quota if changed
       if (
         editFormData.monthlyTarget !== editingPerson.quota?.monthlyTarget ||
         editFormData.periodType !== editingPerson.quota?.periodType
@@ -152,7 +149,7 @@ export const SalesPersonManager: React.FC<SalesPersonManagerProps> = ({ onRefres
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {}
       {editingPerson && (
         <div className="edit-modal-overlay">
           <div className="edit-modal">

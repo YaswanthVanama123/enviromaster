@@ -7,18 +7,10 @@ interface AuthGuardProps {
   children?: React.ReactNode;
 }
 
-/**
- * Route guard component that protects routes requiring authentication
- *
- * Usage:
- * - Wrap protected routes with <AuthGuard> for any authenticated user
- * - Use requireAdmin={true} for admin-only routes
- */
 export function AuthGuard({ requireAdmin = false, children }: AuthGuardProps) {
   const { isAuthenticated, isAdmin, loading } = useAuthContext();
   const location = useLocation();
 
-  // Show loading state while checking authentication
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -28,7 +20,6 @@ export function AuthGuard({ requireAdmin = false, children }: AuthGuardProps) {
     );
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return (
       <Navigate
@@ -39,7 +30,6 @@ export function AuthGuard({ requireAdmin = false, children }: AuthGuardProps) {
     );
   }
 
-  // Redirect to home if admin access required but user is not admin
   if (requireAdmin && !isAdmin) {
     return (
       <Navigate
@@ -50,7 +40,6 @@ export function AuthGuard({ requireAdmin = false, children }: AuthGuardProps) {
     );
   }
 
-  // Render children or outlet
   return children ? <>{children}</> : <Outlet />;
 }
 
@@ -78,7 +67,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-// Add keyframe animation for spinner if not already added
 if (!document.getElementById('auth-guard-styles')) {
   const styleSheet = document.createElement('style');
   styleSheet.id = 'auth-guard-styles';
