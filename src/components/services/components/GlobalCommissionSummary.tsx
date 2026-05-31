@@ -187,9 +187,56 @@ export function GlobalCommissionSummary({
                       </div>
                       <div className="service-details__list">
                         <div className="service-details__row">
-                          <span className="service-details__label">Per-Visit Revenue:</span>
+                          <span className="service-details__label">Original Annual (Redline):</span>
+                          <span className="service-details__value">{service.formatted.annualOriginalRevenue}</span>
+                        </div>
+                        <div className="service-details__row">
+                          <span className="service-details__label">Current Annual Revenue:</span>
                           <span className="service-details__value">{service.formatted.perVisitRevenue}</span>
                         </div>
+
+                        {/* Pricing Tier (Solange Draft) — multiplier applied to revenue */}
+                        <div className="service-details__row">
+                          <span className="service-details__label">
+                            Price Ratio (Current ÷ Redline):
+                          </span>
+                          <span className="service-details__value">{service.formatted.priceRatio}</span>
+                        </div>
+                        <div className="service-details__row">
+                          <span className="service-details__label">Pricing Tier:</span>
+                          <span
+                            className="service-details__value"
+                            style={{ fontWeight: 600 }}
+                          >
+                            {service.pricingTierLabel}
+                          </span>
+                        </div>
+                        <div className="service-details__row">
+                          <span className="service-details__label">
+                            Pricing Multiplier:
+                          </span>
+                          <span
+                            className={`service-details__value${
+                              service.pricingMultiplier > 1
+                                ? ' service-details__value--green'
+                                : service.pricingMultiplier < 1
+                                ? ' service-details__value--red'
+                                : ''
+                            }`}
+                          >
+                            {service.formatted.pricingMultiplier}
+                          </span>
+                        </div>
+                        {service.pricingMultiplier !== 1 && (
+                          <div className="service-details__row">
+                            <span className="service-details__label">
+                              Adjusted Annual ({service.formatted.perVisitRevenue} × {service.formatted.pricingMultiplier}):
+                            </span>
+                            <span className="service-details__value">
+                              {service.formatted.adjustedAnnualRevenue}
+                            </span>
+                          </div>
+                        )}
 
                         {service.revenueDeduction > 0 && (
                           <div className="service-details__row">

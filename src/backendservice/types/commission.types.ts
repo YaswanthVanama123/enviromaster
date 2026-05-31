@@ -117,6 +117,141 @@ export const COMMISSION_RULES_V2: CommissionRulesV2 = {
 };
 
 // ============================================================
+// QUOTA TIER CUTOFFS (admin-editable)
+// Used for piecewise commission-rate splitting per Solange Draft:
+//   "First $10,000: 3% (below). Remaining: 6% (above). Above $20,000: 9% (double)."
+// Defaults match QUOTA_THRESHOLDS Month 5+ ($10K) and 2× ($20K).
+// ============================================================
+export interface QuotaTierCutoffs {
+  aboveQuota: number;   // sales above this hit the 'above' tier (6%)
+  doubleQuota: number;  // sales above this hit the 'double' tier (9%)
+}
+
+export const DEFAULT_QUOTA_TIER_CUTOFFS: QuotaTierCutoffs = {
+  aboveQuota: 10000,
+  doubleQuota: 20000,
+};
+
+// ============================================================
+// PER-VISIT THRESHOLDS for the tiered-Anchor calc
+// (Solange Draft: "First $100 = Pit, $100-$200 = standard, $200+ = Anchor 150%")
+// Already encoded in ACCOUNT_TYPE_REVENUE_RULES; exposed here for clarity
+// and so the admin panel can edit them as a single configurable group.
+// ============================================================
+export const PIT_PER_VISIT_THRESHOLD = 100;            // first $100/visit = no commission for new locations
+export const ANCHOR_PER_VISIT_THRESHOLD = 200;         // above $200/visit = Anchor 150% bonus
+export const ANCHOR_BONUS_MULTIPLIER = 1.5;            // 150% above the threshold
+
+// ============================================================
+// RESOLVED COMMISSION RULES — admin-DB document merged with bundled defaults.
+// Used by FormFilling.tsx so any field missing from the persisted document
+// falls back to the spec defaults rather than zeroing out a calculation.
+// ============================================================
+export interface ResolvedCommissionRules {
+  quotaRates: { below: number; above: number; double: number };
+  agreementMultipliers: {
+    '3-year': number;
+    '1-year': number;
+    'MTM-with-install': number;
+    'MTM-no-install': number;
+  };
+  insideSalesDeduction: number;          // -3 (percentage points)
+  renewalBonusRate: number;
+  renewalMinYears: number;
+  anchorMinPerVisit: number;
+  anchorMinGreenline: number;
+  pitPerVisitThreshold: number;
+  anchorPerVisitThreshold: number;
+  anchorBonusMultiplier: number;
+  perVisitPenalties: { Anchor: number; Bread5: number; Bread15: number; Pit: number };
+  pricingTiers: PricingTier[];
+  frequencyVisitsPerYear: {
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+    quarterly: number;
+    'one-time': number;
+  };
+  quotaTierCutoffs: { aboveQuota: number; doubleQuota: number };
+  weeksPerAnnualCommission: number;
+}
+
+/**
+ * Merge a (possibly partial) CommissionRules DB document with bundled
+ * spec defaults so the calc has every field populated even when the
+ * document was saved before a V2 field existed. Pass `{}` (or null)
+ * to get the all-defaults rules.
+ */
+export function resolveCommissionRules(
+  partial: Partial<CommissionRules> | null | undefined,
+): ResolvedCommissionRules {
+  const p = partial || {};
+  return {
+    quotaRates: {
+      below: p.quotaRates?.below ?? COMMISSION_RULES_V2.quotaRates.below,
+      above: p.quotaRates?.above ?? COMMISSION_RULES_V2.quotaRates.above,
+      double: p.quotaRates?.double ?? COMMISSION_RULES_V2.quotaRates.double,
+    },
+    agreementMultipliers: {
+      '3-year': p.agreementMultipliers?.['3-year'] ?? COMMISSION_RULES_V2.agreementMultipliers['3-year'],
+      '1-year': p.agreementMultipliers?.['1-year'] ?? COMMISSION_RULES_V2.agreementMultipliers['1-year'],
+      'MTM-with-install': p.agreementMultipliers?.['MTM-with-install'] ?? COMMISSION_RULES_V2.agreementMultipliers['MTM-with-install'],
+      'MTM-no-install': p.agreementMultipliers?.['MTM-no-install'] ?? COMMISSION_RULES_V2.agreementMultipliers['MTM-no-install'],
+    },
+    insideSalesDeduction: p.insideSalesDeduction ?? COMMISSION_RULES_V2.insideSalesDeduction,
+    renewalBonusRate: p.renewalBonusRate ?? COMMISSION_RULES_V2.renewalBonusRate,
+    renewalMinYears: p.renewalMinYears ?? COMMISSION_RULES_V2.renewalMinYears,
+    anchorMinPerVisit: p.anchorMinPerVisit ?? COMMISSION_RULES_V2.anchorMinPerVisit,
+    anchorMinGreenline: p.anchorMinGreenline ?? COMMISSION_RULES_V2.anchorMinGreenline,
+    pitPerVisitThreshold: p.pitPerVisitThreshold ?? PIT_PER_VISIT_THRESHOLD,
+    anchorPerVisitThreshold: p.anchorPerVisitThreshold ?? ANCHOR_PER_VISIT_THRESHOLD,
+    anchorBonusMultiplier: p.anchorBonusMultiplier ?? ANCHOR_BONUS_MULTIPLIER,
+    perVisitPenalties: {
+      Anchor: 0,
+      Bread5: p.perVisitPenalties?.Bread5 ?? ACCOUNT_TYPE_REVENUE_RULES.Bread5.revenueDeduction,
+      Bread15: p.perVisitPenalties?.Bread15 ?? ACCOUNT_TYPE_REVENUE_RULES.Bread15.revenueDeduction,
+      Pit: p.perVisitPenalties?.Pit ?? ACCOUNT_TYPE_REVENUE_RULES.Pit.revenueDeduction,
+    },
+    pricingTiers:
+      p.pricingTiers && p.pricingTiers.length > 0
+        ? p.pricingTiers
+        : PRICING_TIERS,
+    frequencyVisitsPerYear: {
+      weekly: p.frequencyVisitsPerYear?.weekly ?? FREQUENCY_VISITS_PER_YEAR.weekly,
+      biweekly: p.frequencyVisitsPerYear?.biweekly ?? FREQUENCY_VISITS_PER_YEAR.biweekly,
+      monthly: p.frequencyVisitsPerYear?.monthly ?? FREQUENCY_VISITS_PER_YEAR.monthly,
+      quarterly: p.frequencyVisitsPerYear?.quarterly ?? FREQUENCY_VISITS_PER_YEAR.quarterly,
+      'one-time': p.frequencyVisitsPerYear?.['one-time'] ?? FREQUENCY_VISITS_PER_YEAR['one-time'],
+    },
+    quotaTierCutoffs: {
+      aboveQuota: p.quotaTierCutoffs?.aboveQuota ?? DEFAULT_QUOTA_TIER_CUTOFFS.aboveQuota,
+      doubleQuota: p.quotaTierCutoffs?.doubleQuota ?? DEFAULT_QUOTA_TIER_CUTOFFS.doubleQuota,
+    },
+    weeksPerAnnualCommission: p.weeksPerAnnualCommission ?? 52,
+  };
+}
+
+/**
+ * Pick a pricing tier from a custom tier list (instead of the bundled
+ * PRICING_TIERS constant). Same logic as getPricingTier(), but the tier
+ * table is supplied at call time so admin edits to PricingTiers take effect.
+ */
+export function getPricingTierFromList(
+  actualPrice: number,
+  redlinePrice: number,
+  tiers: PricingTier[],
+): PricingTier {
+  if (!tiers || tiers.length === 0) return PRICING_TIERS[1];
+  if (redlinePrice <= 0) return tiers[1] ?? tiers[0];
+  const ratio = actualPrice / redlinePrice;
+  for (const tier of tiers) {
+    const max = Number.isFinite(tier.maxRatio) ? tier.maxRatio : Infinity;
+    if (ratio >= tier.minRatio && ratio < max) return tier;
+  }
+  return tiers[tiers.length - 1];
+}
+
+// ============================================================
 // V2 CALCULATION FUNCTIONS
 // ============================================================
 
@@ -334,7 +469,9 @@ export function calculateCommissionV2(input: CommissionCalculationInputV2): Comm
 // LEGACY V1 TYPES (for backwards compatibility)
 // ============================================================
 
-// Commission Rules Configuration (V1 - simplified)
+// Commission Rules Configuration — extended with V2 spec-faithful fields
+// (per-visit penalties, Anchor / Pit thresholds, pricing tiers, frequency
+// visits-per-year, quota tier cutoffs). V1 fields preserved for back-compat.
 export interface CommissionRules {
   _id?: string;
   version: string;
@@ -350,6 +487,7 @@ export interface CommissionRules {
     'MTM-with-install': number;
     'MTM-no-install': number;
   };
+  // V1 LEGACY — % adjustments
   accountTypeAdjustments: {
     Anchor: number;
     Bread5: number;
@@ -361,6 +499,43 @@ export interface CommissionRules {
   renewalMinYears: number;
   insideSalesDeduction: number;
   anchorMinMonthlyValue: number;
+  // V2 — per-visit penalties (Solange Draft) — admin-editable
+  perVisitPenalties?: {
+    Bread5: number;
+    Bread15: number;
+    Pit: number;
+  };
+  // V2 — Anchor classification + tiered-calc thresholds
+  anchorMinPerVisit?: number;
+  anchorMinGreenline?: number;
+  pitPerVisitThreshold?: number;
+  anchorPerVisitThreshold?: number;
+  anchorBonusMultiplier?: number;
+  // V2 — pricing tiers driving commission base + quota multiplier
+  pricingTiers?: Array<{
+    minRatio: number;
+    maxRatio: number;
+    quotaMultiplier: number;
+    label: string;
+    requiresApproval: boolean;
+  }>;
+  // V2 — visits per year by frequency
+  frequencyVisitsPerYear?: {
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+    quarterly: number;
+    'one-time': number;
+  };
+  // V2 — divisor used to display annual commission as a weekly figure
+  // (default 52 calendar weeks; admin may set to 50 to align with
+  // frequencyVisitsPerYear.weekly).
+  weeksPerAnnualCommission?: number;
+  // V2 — quota tier cutoffs for piecewise commission rate
+  quotaTierCutoffs?: {
+    aboveQuota: number;
+    doubleQuota: number;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

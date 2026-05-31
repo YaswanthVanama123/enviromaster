@@ -1,21 +1,16 @@
 import React, { useState, useCallback } from "react";
 import { CommissionCalculator } from "./CommissionCalculator";
 import { CommissionRulesManager } from "./CommissionRulesManager";
-import { CommissionHistory } from "./CommissionHistory";
-import { AccountTypeDetector } from "./AccountTypeDetector";
 import "./CommissionsTab.css";
 
-type SubTab = "calculator" | "detector" | "history" | "rules";
+type SubTab = "calculator" | "rules";
 
 export const CommissionsTab: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<SubTab>("calculator");
-  const [historyKey, setHistoryKey] = useState(0);
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>("rules");
 
-  // Callback to refresh history when a record is saved
-  const handleRecordSaved = useCallback(() => {
-    // Increment key to force re-mount of CommissionHistory
-    setHistoryKey(prev => prev + 1);
-  }, []);
+  // Kept for back-compat with CommissionCalculator's onRecordSaved prop
+  // even though the History tab has been removed.
+  const handleRecordSaved = useCallback(() => {}, []);
 
   return (
     <div className="commissions-tab-container">
@@ -35,20 +30,6 @@ export const CommissionsTab: React.FC = () => {
           Calculator
         </button>
         <button
-          className={`subtab-btn ${activeSubTab === "detector" ? "active" : ""}`}
-          onClick={() => setActiveSubTab("detector")}
-        >
-          <span className="subtab-icon">D</span>
-          Account Type Detector
-        </button>
-        <button
-          className={`subtab-btn ${activeSubTab === "history" ? "active" : ""}`}
-          onClick={() => setActiveSubTab("history")}
-        >
-          <span className="subtab-icon">H</span>
-          History
-        </button>
-        <button
           className={`subtab-btn ${activeSubTab === "rules" ? "active" : ""}`}
           onClick={() => setActiveSubTab("rules")}
         >
@@ -59,8 +40,6 @@ export const CommissionsTab: React.FC = () => {
 
       <div className="commissions-content">
         {activeSubTab === "calculator" && <CommissionCalculator onRecordSaved={handleRecordSaved} />}
-        {activeSubTab === "detector" && <AccountTypeDetector />}
-        {activeSubTab === "history" && <CommissionHistory key={historyKey} />}
         {activeSubTab === "rules" && <CommissionRulesManager />}
       </div>
     </div>

@@ -1,423 +1,556 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { commissionApi } from "../../../backendservice/api/commissionApi";
-import type {
-  CommissionCalculationInput,
-  CommissionCalculationResult,
-  AccountType,
-  AgreementTerm,
-  PricingLine,
-  QuotaLevel,
-  BusinessType,
-  ACCOUNT_TYPE_OPTIONS,
-  AGREEMENT_TERM_OPTIONS,
-  PRICING_LINE_OPTIONS,
-  QUOTA_LEVEL_OPTIONS,
-  BUSINESS_TYPE_OPTIONS,
-} from "../../../backendservice/types/commission.types";
 import {
-  detectAccountTypeClient,
-  type AccountTypeDetectionResult,
-} from "../../../backendservice/types/accountType.types";
-import { CommissionResultDisplay } from "./CommissionResultDisplay";
+  resolveCommissionRules,
+  getPricingTierFromList,
+  type ResolvedCommissionRules,
+  type AccountType,
+  type AgreementTerm,
+  type QuotaLevel,
+  type BusinessType,
+  type ServiceFrequency,
+} from "../../../backendservice/types/commission.types";
 
 interface CommissionCalculatorProps {
   onRecordSaved?: () => void;
 }
 
-const ACCOUNT_TYPES: typeof ACCOUNT_TYPE_OPTIONS = [
+const ACCOUNT_TYPES: { value: AccountType; label: string; description: string }[] = [
   { value: "Anchor", label: "Anchor", description: "$200+/visit, high-revenue location" },
   { value: "Bread5", label: "Bread5", description: "Within 5 minutes of Anchor" },
   { value: "Bread15", label: "Bread15", description: "Within 15 minutes of Anchor" },
-  { value: "Pit", label: "Pit", description: "New location, not near Anchor" },
+  { value: "Pit", label: "Pit", description: "Not near an Anchor" },
 ];
 
-const AGREEMENT_TERMS: typeof AGREEMENT_TERM_OPTIONS = [
-  { value: "3-year", label: "3-Year Agreement", multiplier: 135 },
-  { value: "1-year", label: "1-Year Agreement", multiplier: 100 },
-  { value: "MTM-with-install", label: "MTM with Install", multiplier: 100 },
-  { value: "MTM-no-install", label: "MTM No Install", multiplier: 50 },
+const FREQUENCIES: { value: ServiceFrequency; label: string }[] = [
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Bi-Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "one-time", label: "One-Time" },
 ];
 
-const PRICING_LINES: typeof PRICING_LINE_OPTIONS = [
-  { value: "Redline", label: "Redline", description: "Standard pricing" },
-  { value: "Greenline", label: "Greenline", description: "130%+ premium pricing" },
-];
-
-const QUOTA_LEVELS: typeof QUOTA_LEVEL_OPTIONS = [
+const QUOTA_LEVELS: { value: QuotaLevel; label: string; rate: number }[] = [
   { value: "below", label: "Below Quota", rate: 3 },
   { value: "above", label: "Above Quota", rate: 6 },
   { value: "double", label: "Double Quota", rate: 9 },
 ];
 
-const BUSINESS_TYPES: typeof BUSINESS_TYPE_OPTIONS = [
+const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
   { value: "new", label: "New Business" },
   { value: "renewal", label: "Renewal" },
 ];
 
+const formatCurrency = (n: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+
+const formatPercent = (n: number, digits = 2) => `${n.toFixed(digits)}%`;
+
 export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRecordSaved }) => {
-  // Form state
-  const [monthlyValue, setMonthlyValue] = useState<string>("");
-  const [agreementTerm, setAgreementTerm] = useState<AgreementTerm>("1-year");
+  // ── Inputs (mirroring FormFilling.tsx's CommissionState) ─────────────────
+  const [customerName, setCustomerName] = useState<string>("");
+  const [salesPersonName, setSalesPersonName] = useState<string>("");
+
+  // Contract values (matches FormFilling totalCurrentContract / totalOriginalContract)
+  const [currentContract, setCurrentContract] = useState<string>("");
+  const [originalContract, setOriginalContract] = useState<string>("");
+  const [contractMonths, setContractMonths] = useState<string>("36");
+
+  // Frequency drives visits-per-year for the account-type penalty annualization
+  const [frequency, setFrequency] = useState<ServiceFrequency>("weekly");
+
+  // Account type (no auto-detect for the standalone calculator)
   const [accountType, setAccountType] = useState<AccountType>("Anchor");
-  const [pricingLine, setPricingLine] = useState<PricingLine>("Redline");
+
+  // True if this is a new location (drives Pit zone / Bread/Pit penalty)
+  const [isNewLocation, setIsNewLocation] = useState<boolean>(true);
+
+  // Rep's quota state
   const [quotaLevel, setQuotaLevel] = useState<QuotaLevel>("below");
+  const [repActualSalesBefore, setRepActualSalesBefore] = useState<string>("0");
+  const [isInsideSales, setIsInsideSales] = useState<boolean>(false);
+
+  // Renewal context (for the 4% renewal bonus)
   const [businessType, setBusinessType] = useState<BusinessType>("new");
   const [yearsAsCustomer, setYearsAsCustomer] = useState<string>("0");
-  const [isInsideSales, setIsInsideSales] = useState(false);
-  const [salesPersonName, setSalesPersonName] = useState<string>("");
-  const [customerName, setCustomerName] = useState<string>("");
+  const [totalRenewalValue, setTotalRenewalValue] = useState<string>("0");
 
-  // Auto-detect state
-  const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
-  const [perVisitRevenue, setPerVisitRevenue] = useState<string>("");
-  const [distanceToAnchor, setDistanceToAnchor] = useState<string>("");
-  const [detectionResult, setDetectionResult] = useState<AccountTypeDetectionResult | null>(null);
+  // ── Active rules (admin-editable, MongoDB-backed) ────────────────────────
+  const [activeRules, setActiveRules] = useState<ResolvedCommissionRules>(() =>
+    resolveCommissionRules(null),
+  );
 
-  // Result state
-  const [result, setResult] = useState<CommissionCalculationResult | null>(null);
-  const [calculating, setCalculating] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    commissionApi
+      .getActiveRules()
+      .then(response => {
+        if (cancelled) return;
+        if (response?.data) setActiveRules(resolveCommissionRules(response.data));
+      })
+      .catch(err =>
+        console.error("[RULES] Calculator failed to load active commission rules:", err),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ── Calculation (mirrors FormFilling.tsx → calculateCommission) ──────────
+  const result = useMemo(() => {
+    const rules = activeRules;
+    const current = parseFloat(currentContract) || 0;
+    const original = parseFloat(originalContract) || current;
+    const months = Math.max(1, parseFloat(contractMonths) || 12);
+    const positionBefore = parseFloat(repActualSalesBefore) || 0;
+    const yearsCust = parseFloat(yearsAsCustomer) || 0;
+    const renewalValue = parseFloat(totalRenewalValue) || 0;
+
+    if (current <= 0) return null;
+
+    // Step 0 — 12-month-equivalent contract totals
+    const monthlyValue = current / months;
+    const monthlyOriginalValue = original / months;
+    const currentContract12Months = monthlyValue * 12;
+    const originalContract12Months = monthlyOriginalValue * 12;
+
+    // Step 1 — Pricing tier from agreement-level ratio
+    const priceRatio =
+      originalContract12Months > 0 ? currentContract12Months / originalContract12Months : 1;
+    const pricingTier = getPricingTierFromList(
+      currentContract12Months,
+      originalContract12Months,
+      rules.pricingTiers,
+    );
+    const pricingMultiplier = pricingTier.quotaMultiplier;
+    const isGreenline = pricingTier.label === "Greenline (130%+)";
+
+    // Step 2 — Agreement term + multiplier
+    const agreementTerm: AgreementTerm =
+      months >= 36 ? "3-year" : months >= 12 ? "1-year" : "MTM-with-install";
+    const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
+
+    // Step 3 — Visits per year + annualized account-type thresholds
+    const visitsPerYear = rules.frequencyVisitsPerYear[frequency];
+    const pitZoneAnnual = rules.pitPerVisitThreshold * visitsPerYear;
+    const anchorZoneAnnual =
+      (isGreenline ? rules.anchorMinGreenline : rules.anchorPerVisitThreshold) * visitsPerYear;
+    const bread5Annual = rules.perVisitPenalties.Bread5 * visitsPerYear;
+    const bread15Annual = rules.perVisitPenalties.Bread15 * visitsPerYear;
+    const pitAnnual = rules.perVisitPenalties.Pit * visitsPerYear;
+
+    // Adjusted annual = current × pricing multiplier (agreement multiplier
+    // stays in the rate as effectiveCommissionRate for display consistency)
+    const adjustedAnnual = currentContract12Months * pricingMultiplier;
+
+    // Step 4 — Account-type adjustment at annual level
+    let revenueDeduction = 0;
+    let anchorBonus = 0;
+    let commissionableAnnual = adjustedAnnual;
+
+    if (accountType === "Anchor") {
+      if (isNewLocation) {
+        const pitPart = Math.min(adjustedAnnual, pitZoneAnnual);
+        const stdPart = Math.min(
+          Math.max(0, adjustedAnnual - pitZoneAnnual),
+          anchorZoneAnnual - pitZoneAnnual,
+        );
+        const anchorPart = Math.max(0, adjustedAnnual - anchorZoneAnnual);
+        commissionableAnnual = Math.max(0, stdPart) + anchorPart * rules.anchorBonusMultiplier;
+        revenueDeduction = pitPart;
+        anchorBonus = anchorPart * (rules.anchorBonusMultiplier - 1);
+      } else {
+        const stdPart = Math.min(adjustedAnnual, anchorZoneAnnual);
+        const anchorPart = Math.max(0, adjustedAnnual - anchorZoneAnnual);
+        commissionableAnnual = stdPart + anchorPart * rules.anchorBonusMultiplier;
+        anchorBonus = anchorPart * (rules.anchorBonusMultiplier - 1);
+      }
+    } else if (accountType === "Bread5") {
+      revenueDeduction = isNewLocation ? bread5Annual : 0;
+      commissionableAnnual = Math.max(0, adjustedAnnual - revenueDeduction);
+    } else if (accountType === "Bread15") {
+      revenueDeduction = isNewLocation ? bread15Annual : 0;
+      commissionableAnnual = Math.max(0, adjustedAnnual - revenueDeduction);
+    } else {
+      // Pit
+      const isExistingAlreadyOver = !isNewLocation && adjustedAnnual > pitAnnual;
+      revenueDeduction = isExistingAlreadyOver ? 0 : pitAnnual;
+      commissionableAnnual = Math.max(0, adjustedAnnual - revenueDeduction);
+    }
+
+    // Step 5 — Quota credit
+    const annualContractTotal = currentContract12Months;
+    const annualQuotaCredit = annualContractTotal * pricingMultiplier;
+
+    // Step 6 — Tiered commission rate (3% / 6% / 9% piecewise)
+    const cutoffs = rules.quotaTierCutoffs;
+    const positionAfter = positionBefore + annualQuotaCredit;
+    const belowQuotaPortion = Math.max(
+      0,
+      Math.min(positionAfter, cutoffs.aboveQuota) - positionBefore,
+    );
+    const aboveQuotaPortion = Math.max(
+      0,
+      Math.min(positionAfter, cutoffs.doubleQuota) - Math.max(positionBefore, cutoffs.aboveQuota),
+    );
+    const doubleQuotaPortion = Math.max(
+      0,
+      positionAfter - Math.max(positionBefore, cutoffs.doubleQuota),
+    );
+
+    const insideSalesDeduction = isInsideSales ? rules.insideSalesDeduction : 0;
+    const belowRate = (rules.quotaRates.below + insideSalesDeduction) / 100;
+    const aboveRate = (rules.quotaRates.above + insideSalesDeduction) / 100;
+    const doubleRate = (rules.quotaRates.double + insideSalesDeduction) / 100;
+
+    const totalCredit = belowQuotaPortion + aboveQuotaPortion + doubleQuotaPortion;
+    const belowShare = totalCredit > 0 ? (belowQuotaPortion / totalCredit) * commissionableAnnual : 0;
+    const aboveShare = totalCredit > 0 ? (aboveQuotaPortion / totalCredit) * commissionableAnnual : 0;
+    const doubleShare = totalCredit > 0 ? (doubleQuotaPortion / totalCredit) * commissionableAnnual : 0;
+
+    const belowQuotaCommission = belowShare * Math.max(0, belowRate);
+    const aboveQuotaCommission = aboveShare * Math.max(0, aboveRate);
+    const doubleQuotaCommission = doubleShare * Math.max(0, doubleRate);
+
+    // Apply agreement multiplier to the base rate (matches FormFilling display)
+    const agreementMult = agreementMultiplier / 100;
+    const annualCommission =
+      (belowQuotaCommission + aboveQuotaCommission + doubleQuotaCommission) * agreementMult;
+    const weeklyCommission = annualCommission / rules.weeksPerAnnualCommission;
+
+    // Renewal bonus (4% of total renewed value, after 2+ years)
+    let renewalBonusRate = 0;
+    let renewalBonusAmount = 0;
+    if (businessType === "renewal" && yearsCust >= rules.renewalMinYears) {
+      renewalBonusRate = rules.renewalBonusRate;
+      renewalBonusAmount = renewalValue * (renewalBonusRate / 100);
+    }
+
+    const baseRate = rules.quotaRates[quotaLevel];
+    const effectiveRate = baseRate + insideSalesDeduction;
+    const finalCommissionRate = effectiveRate * agreementMult;
+
+    return {
+      // Inputs (for save)
+      input: {
+        currentContract: current,
+        originalContract: original,
+        contractMonths: months,
+        frequency,
+        accountType,
+        isNewLocation,
+        quotaLevel,
+        repActualSalesBefore: positionBefore,
+        isInsideSales,
+        businessType,
+        yearsAsCustomer: yearsCust,
+        totalRenewalValue: renewalValue,
+        customerName,
+        salesPersonName,
+      },
+      // Step 0
+      monthlyValue,
+      currentContract12Months,
+      originalContract12Months,
+      // Step 1
+      priceRatio,
+      pricingTier: pricingTier.label,
+      pricingMultiplier,
+      requiresApproval: pricingTier.requiresApproval,
+      // Step 2
+      agreementTerm,
+      agreementMultiplier,
+      // Step 3
+      visitsPerYear,
+      adjustedAnnual,
+      // Step 4
+      revenueDeduction,
+      anchorBonus,
+      commissionableAnnual,
+      // Step 5
+      annualContractTotal,
+      annualQuotaCredit,
+      // Step 6
+      belowQuotaPortion,
+      aboveQuotaPortion,
+      doubleQuotaPortion,
+      belowQuotaCommission: belowQuotaCommission * agreementMult,
+      aboveQuotaCommission: aboveQuotaCommission * agreementMult,
+      doubleQuotaCommission: doubleQuotaCommission * agreementMult,
+      // Final
+      baseRate,
+      insideSalesDeduction,
+      effectiveRate,
+      finalCommissionRate,
+      annualCommission,
+      weeklyCommission,
+      renewalBonusRate,
+      renewalBonusAmount,
+      totalCommission: annualCommission + renewalBonusAmount,
+      rulesVersion: rules ? "active" : "default",
+    };
+  }, [
+    activeRules,
+    currentContract,
+    originalContract,
+    contractMonths,
+    frequency,
+    accountType,
+    isNewLocation,
+    quotaLevel,
+    repActualSalesBefore,
+    isInsideSales,
+    businessType,
+    yearsAsCustomer,
+    totalRenewalValue,
+    customerName,
+    salesPersonName,
+  ]);
+
+  // ── Save / Clear ─────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Handle auto-detection when inputs change
-  const handleAutoDetect = useCallback(() => {
-    if (!autoDetectEnabled || !perVisitRevenue) {
-      setDetectionResult(null);
-      return;
-    }
-
-    const revenue = parseFloat(perVisitRevenue);
-    const distance = distanceToAnchor ? parseFloat(distanceToAnchor) : null;
-    const isGreenline = pricingLine === "Greenline";
-
-    if (!isNaN(revenue) && revenue > 0) {
-      const result = detectAccountTypeClient(revenue, distance, isGreenline);
-      setDetectionResult(result);
-      setAccountType(result.accountType);
-    }
-  }, [autoDetectEnabled, perVisitRevenue, distanceToAnchor, pricingLine]);
-
-  // Trigger auto-detect when relevant inputs change
-  React.useEffect(() => {
-    handleAutoDetect();
-  }, [handleAutoDetect]);
-
-  const handleCalculate = async () => {
-    if (!monthlyValue || parseFloat(monthlyValue) <= 0) {
-      setError("Please enter a valid monthly value greater than 0");
-      return;
-    }
-
-    setCalculating(true);
-    setError(null);
-
-    try {
-      const input: CommissionCalculationInput = {
-        monthlyValue: parseFloat(monthlyValue),
-        agreementTerm,
-        accountType,
-        pricingLine,
-        quotaLevel,
-        businessType,
-        yearsAsCustomer:
-          businessType === "renewal" ? parseInt(yearsAsCustomer, 10) : undefined,
-        isInsideSales,
-        salesPersonName: salesPersonName || undefined,
-        customerName: customerName || undefined,
-      };
-
-      const response = await commissionApi.calculate(input);
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setResult(response.data);
-      }
-    } catch (err) {
-      setError("Failed to calculate commission. Please try again.");
-    } finally {
-      setCalculating(false);
-    }
-  };
-
   const handleClear = () => {
-    setMonthlyValue("");
-    setAgreementTerm("1-year");
+    setCustomerName("");
+    setSalesPersonName("");
+    setCurrentContract("");
+    setOriginalContract("");
+    setContractMonths("36");
+    setFrequency("weekly");
     setAccountType("Anchor");
-    setPricingLine("Redline");
+    setIsNewLocation(true);
     setQuotaLevel("below");
+    setRepActualSalesBefore("0");
+    setIsInsideSales(false);
     setBusinessType("new");
     setYearsAsCustomer("0");
-    setIsInsideSales(false);
-    setSalesPersonName("");
-    setCustomerName("");
-    setResult(null);
+    setTotalRenewalValue("0");
     setError(null);
     setSuccessMessage(null);
-    // Clear auto-detect state
-    setAutoDetectEnabled(false);
-    setPerVisitRevenue("");
-    setDistanceToAnchor("");
-    setDetectionResult(null);
   };
 
   const handleSave = async () => {
     if (!result) {
-      setError("Please calculate commission first before saving");
+      setError("Enter a current contract value greater than 0 first");
       return;
     }
-
     if (!salesPersonName) {
       setError("Sales Person Name is required to save the record");
       return;
     }
-
     setSaving(true);
     setError(null);
     setSuccessMessage(null);
-
     try {
       const recordData = {
-        calculation: result,
+        calculation: result as any,
         salesPersonId: salesPersonName.toLowerCase().replace(/\s+/g, "_"),
-        salesPersonName: salesPersonName,
+        salesPersonName,
         customerName: customerName || undefined,
         status: "draft" as const,
       };
-
       const response = await commissionApi.saveRecord(recordData);
-
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
+      if (response.error) setError(response.error);
+      else {
         setSuccessMessage("Commission record saved successfully!");
-        // Notify parent to refresh history
-        if (onRecordSaved) {
-          onRecordSaved();
-        }
+        if (onRecordSaved) onRecordSaved();
       }
-    } catch (err) {
+    } catch {
       setError("Failed to save commission record. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="commission-calculator">
       <h3 className="calculator-section-title">
         <span>$</span> Deal Information
       </h3>
+      <p style={{ color: "#6b7280", fontSize: "0.85em", marginTop: -8 }}>
+        Same V2 spec-faithful pipeline as FormFilling — pricing tier from current/redline ratio,
+        admin-editable per-visit penalties + thresholds + tier rates, piecewise quota tier rate split.
+      </p>
 
       <div className="calculator-grid">
-        {/* Monthly Value */}
-        <div className="form-group">
-          <label>Monthly Contract Value ($)</label>
-          <input
-            type="number"
-            value={monthlyValue}
-            onChange={(e) => setMonthlyValue(e.target.value)}
-            placeholder="Enter monthly value"
-            min="0"
-            step="0.01"
-          />
-        </div>
-
-        {/* Customer Name */}
         <div className="form-group">
           <label>Customer Name (Optional)</label>
           <input
             type="text"
             value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            onChange={e => setCustomerName(e.target.value)}
             placeholder="Enter customer name"
           />
         </div>
-
-        {/* Account Type */}
-        <div className="form-group">
-          <label>
-            Account Type
-            <label style={{ marginLeft: "16px", fontWeight: "normal", fontSize: "12px" }}>
-              <input
-                type="checkbox"
-                checked={autoDetectEnabled}
-                onChange={(e) => setAutoDetectEnabled(e.target.checked)}
-                style={{ marginRight: "4px" }}
-              />
-              Auto-detect
-            </label>
-          </label>
-
-          {autoDetectEnabled ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input
-                  type="number"
-                  value={perVisitRevenue}
-                  onChange={(e) => setPerVisitRevenue(e.target.value)}
-                  placeholder="Per-visit revenue ($)"
-                  min="0"
-                  step="0.01"
-                  style={{ flex: 1 }}
-                />
-                <input
-                  type="number"
-                  value={distanceToAnchor}
-                  onChange={(e) => setDistanceToAnchor(e.target.value)}
-                  placeholder="Distance to anchor (mi)"
-                  min="0"
-                  step="0.01"
-                  style={{ flex: 1 }}
-                />
-              </div>
-              {detectionResult && (
-                <div style={{
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  backgroundColor: detectionResult.accountType === "Anchor" ? "#dcfce7" :
-                                   detectionResult.accountType === "Bread5" ? "#dbeafe" :
-                                   detectionResult.accountType === "Bread15" ? "#ede9fe" : "#fee2e2",
-                  color: detectionResult.accountType === "Anchor" ? "#166534" :
-                         detectionResult.accountType === "Bread5" ? "#1e40af" :
-                         detectionResult.accountType === "Bread15" ? "#5b21b6" : "#dc2626",
-                  fontSize: "12px"
-                }}>
-                  <strong>Detected: {detectionResult.accountType}</strong>
-                  <span style={{ marginLeft: "8px", opacity: 0.8 }}>({detectionResult.confidence} confidence)</span>
-                  <div style={{ marginTop: "4px", opacity: 0.7 }}>{detectionResult.reason}</div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <select
-              value={accountType}
-              onChange={(e) => setAccountType(e.target.value as AccountType)}
-            >
-              {ACCOUNT_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          )}
-          <small>
-            {ACCOUNT_TYPES.find((t) => t.value === accountType)?.description}
-          </small>
-        </div>
-
-        {/* Agreement Term */}
-        <div className="form-group">
-          <label>Agreement Term</label>
-          <select
-            value={agreementTerm}
-            onChange={(e) => setAgreementTerm(e.target.value as AgreementTerm)}
-          >
-            {AGREEMENT_TERMS.map((term) => (
-              <option key={term.value} value={term.value}>
-                {term.label} ({term.multiplier}%)
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Pricing Line */}
-        <div className="form-group">
-          <label>Pricing Line</label>
-          <select
-            value={pricingLine}
-            onChange={(e) => setPricingLine(e.target.value as PricingLine)}
-          >
-            {PRICING_LINES.map((line) => (
-              <option key={line.value} value={line.value}>
-                {line.label}
-              </option>
-            ))}
-          </select>
-          <small>
-            {PRICING_LINES.find((l) => l.value === pricingLine)?.description}
-          </small>
-        </div>
-
-        {/* Quota Level */}
-        <div className="form-group">
-          <label>Quota Achievement</label>
-          <select
-            value={quotaLevel}
-            onChange={(e) => setQuotaLevel(e.target.value as QuotaLevel)}
-          >
-            {QUOTA_LEVELS.map((level) => (
-              <option key={level.value} value={level.value}>
-                {level.label} ({level.rate}%)
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Business Type */}
-        <div className="form-group">
-          <label>Business Type</label>
-          <select
-            value={businessType}
-            onChange={(e) => setBusinessType(e.target.value as BusinessType)}
-          >
-            {BUSINESS_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Years as Customer (for renewals) */}
-        {businessType === "renewal" && (
-          <div className="form-group">
-            <label>Years as Customer</label>
-            <input
-              type="number"
-              value={yearsAsCustomer}
-              onChange={(e) => setYearsAsCustomer(e.target.value)}
-              placeholder="Enter years"
-              min="0"
-            />
-            <small>4% bonus applies at 2+ years</small>
-          </div>
-        )}
-
-        {/* Sales Person Name */}
         <div className="form-group">
           <label>Sales Person Name (Optional)</label>
           <input
             type="text"
             value={salesPersonName}
-            onChange={(e) => setSalesPersonName(e.target.value)}
+            onChange={e => setSalesPersonName(e.target.value)}
             placeholder="Enter sales person name"
           />
         </div>
+
+        <div className="form-group">
+          <label>Current Contract Total ($)</label>
+          <input
+            type="number"
+            value={currentContract}
+            onChange={e => setCurrentContract(e.target.value)}
+            placeholder="What customer is being charged"
+            min="0"
+            step="0.01"
+          />
+          <small>Multi-year total — calc auto-prorates to 1 year.</small>
+        </div>
+        <div className="form-group">
+          <label>Original (Redline) Contract Total ($)</label>
+          <input
+            type="number"
+            value={originalContract}
+            onChange={e => setOriginalContract(e.target.value)}
+            placeholder="Standard / redline price"
+            min="0"
+            step="0.01"
+          />
+          <small>Drives the pricing tier ratio. Leave blank to default to Current.</small>
+        </div>
+
+        <div className="form-group">
+          <label>Contract Months</label>
+          <input
+            type="number"
+            value={contractMonths}
+            onChange={e => setContractMonths(e.target.value)}
+            min="1"
+            step="1"
+          />
+          <small>Auto-derives Agreement Term: ≥36 → 3-year (135%), ≥12 → 1-year (100%), else MTM.</small>
+        </div>
+        <div className="form-group">
+          <label>Service Frequency</label>
+          <select value={frequency} onChange={e => setFrequency(e.target.value as ServiceFrequency)}>
+            {FREQUENCIES.map(f => (
+              <option key={f.value} value={f.value}>
+                {f.label} ({activeRules.frequencyVisitsPerYear[f.value]} visits/yr)
+              </option>
+            ))}
+          </select>
+          <small>Drives annualized per-visit penalty thresholds.</small>
+        </div>
+
+        <div className="form-group">
+          <label>Account Type</label>
+          <select value={accountType} onChange={e => setAccountType(e.target.value as AccountType)}>
+            {ACCOUNT_TYPES.map(t => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <small>{ACCOUNT_TYPES.find(t => t.value === accountType)?.description}</small>
+        </div>
+        <div className="form-group">
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontWeight: 500,
+              cursor: "pointer",
+              marginTop: 28,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={isNewLocation}
+              onChange={e => setIsNewLocation(e.target.checked)}
+            />
+            New Location (applies Pit zone / Bread+Pit penalty)
+          </label>
+          <small>Existing locations skip the per-visit penalty.</small>
+        </div>
+
+        <div className="form-group">
+          <label>Quota Achievement (informational)</label>
+          <select value={quotaLevel} onChange={e => setQuotaLevel(e.target.value as QuotaLevel)}>
+            {QUOTA_LEVELS.map(l => (
+              <option key={l.value} value={l.value}>
+                {l.label} ({l.rate}% base)
+              </option>
+            ))}
+          </select>
+          <small>Final rate uses piecewise tier split — see Existing Sales Position.</small>
+        </div>
+        <div className="form-group">
+          <label>Existing Sales Position ($)</label>
+          <input
+            type="number"
+            value={repActualSalesBefore}
+            onChange={e => setRepActualSalesBefore(e.target.value)}
+            placeholder="Rep's QuotaPeriod.actualSales before this deal"
+            min="0"
+            step="0.01"
+          />
+          <small>
+            Drives 3% / 6% / 9% piecewise split. Cutoffs: ${activeRules.quotaTierCutoffs.aboveQuota.toLocaleString()} /
+            ${activeRules.quotaTierCutoffs.doubleQuota.toLocaleString()}.
+          </small>
+        </div>
+
+        <div className="form-group">
+          <label>Business Type</label>
+          <select value={businessType} onChange={e => setBusinessType(e.target.value as BusinessType)}>
+            {BUSINESS_TYPES.map(b => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {businessType === "renewal" && (
+          <>
+            <div className="form-group">
+              <label>Years as Customer</label>
+              <input
+                type="number"
+                value={yearsAsCustomer}
+                onChange={e => setYearsAsCustomer(e.target.value)}
+                min="0"
+                step="1"
+              />
+              <small>{activeRules.renewalBonusRate}% bonus at {activeRules.renewalMinYears}+ years.</small>
+            </div>
+            <div className="form-group">
+              <label>Total Renewal Value ($)</label>
+              <input
+                type="number"
+                value={totalRenewalValue}
+                onChange={e => setTotalRenewalValue(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Inside Sales Toggle */}
-      <div className="form-group checkbox-group">
+      <div className="form-group checkbox-group" style={{ marginTop: 16 }}>
         <label>
           <input
             type="checkbox"
             checked={isInsideSales}
-            onChange={(e) => setIsInsideSales(e.target.checked)}
+            onChange={e => setIsInsideSales(e.target.checked)}
           />
-          Inside Sales Involvement (-3% deduction)
+          Inside Sales Involvement ({activeRules.insideSalesDeduction}% deduction)
         </label>
       </div>
 
       <div style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap" }}>
-        <button
-          className="calculate-btn"
-          onClick={handleCalculate}
-          disabled={calculating}
-        >
-          {calculating ? "Calculating..." : "Calculate Commission"}
-        </button>
-
         {result && (
           <button
             className="calculate-btn"
@@ -428,33 +561,230 @@ export const CommissionCalculator: React.FC<CommissionCalculatorProps> = ({ onRe
             {saving ? "Saving..." : "Save to History"}
           </button>
         )}
-
-        {(result || monthlyValue) && (
-          <button
-            className="calculate-btn"
-            onClick={handleClear}
-            style={{ backgroundColor: "#6b7280" }}
-          >
-            Clear
-          </button>
-        )}
+        <button className="calculate-btn" onClick={handleClear} style={{ backgroundColor: "#6b7280" }}>
+          Clear
+        </button>
       </div>
 
       {error && <div className="error-message">{error}</div>}
       {successMessage && (
-        <div className="success-message" style={{
-          marginTop: "12px",
-          padding: "12px 16px",
-          backgroundColor: "#dcfce7",
-          color: "#166534",
-          borderRadius: "8px",
-          fontWeight: "500"
-        }}>
+        <div
+          style={{
+            marginTop: 12,
+            padding: "12px 16px",
+            backgroundColor: "#dcfce7",
+            color: "#166534",
+            borderRadius: 8,
+            fontWeight: 500,
+          }}
+        >
           {successMessage}
         </div>
       )}
 
-      {result && <CommissionResultDisplay result={result} />}
+      {result && <CalculatorResult r={result} />}
     </div>
   );
 };
+
+// ── Result breakdown ───────────────────────────────────────────────────────
+
+const sectionStyle: React.CSSProperties = {
+  marginTop: 24,
+  padding: 16,
+  backgroundColor: "#f9fafb",
+  border: "1px solid #e5e7eb",
+  borderRadius: 8,
+};
+
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  padding: "6px 0",
+  borderBottom: "1px dashed #e5e7eb",
+};
+
+const totalRowStyle: React.CSSProperties = {
+  ...rowStyle,
+  fontWeight: 700,
+  borderBottom: "none",
+  borderTop: "2px solid #d1d5db",
+  marginTop: 8,
+  paddingTop: 12,
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: "0.75em",
+  fontWeight: 700,
+  color: "#6b7280",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  marginBottom: 8,
+};
+
+function CalculatorResult({ r }: { r: NonNullable<ReturnType<CommissionCalculatorMemo>> }) {
+  return (
+    <div style={{ marginTop: 24 }}>
+      <h3 style={{ fontSize: "1.1em", fontWeight: 700, marginBottom: 4 }}>Commission Breakdown</h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div
+          style={{
+            padding: 16,
+            backgroundColor: "#dcfce7",
+            color: "#166534",
+            borderRadius: 8,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "0.8em", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Annual Commission
+          </div>
+          <div style={{ fontSize: "1.6em", fontWeight: 800 }}>{formatCurrency(r.annualCommission)}</div>
+        </div>
+        <div
+          style={{
+            padding: 16,
+            backgroundColor: "#dbeafe",
+            color: "#1e3a8a",
+            borderRadius: 8,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "0.8em", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Weekly Commission
+          </div>
+          <div style={{ fontSize: "1.6em", fontWeight: 800 }}>{formatCurrency(r.weeklyCommission)}</div>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>Step 0–1: Pricing Tier (Agreement-Level)</div>
+        <div style={rowStyle}>
+          <span>Current 12-month Contract:</span>
+          <span>{formatCurrency(r.currentContract12Months)}</span>
+        </div>
+        <div style={rowStyle}>
+          <span>Original (Redline) 12-month Contract:</span>
+          <span>{formatCurrency(r.originalContract12Months)}</span>
+        </div>
+        <div style={rowStyle}>
+          <span>Price Ratio (Current ÷ Redline):</span>
+          <span>{formatPercent(r.priceRatio * 100, 1)}</span>
+        </div>
+        <div style={rowStyle}>
+          <span>Pricing Tier:</span>
+          <span style={{ fontWeight: 600 }}>{r.pricingTier}</span>
+        </div>
+        <div style={rowStyle}>
+          <span>Pricing Multiplier:</span>
+          <span style={{ color: r.pricingMultiplier > 1 ? "#16a34a" : r.pricingMultiplier < 1 ? "#dc2626" : "#6b7280", fontWeight: 600 }}>
+            {r.pricingMultiplier.toFixed(2)}×
+          </span>
+        </div>
+        {r.requiresApproval && (
+          <div style={{ ...rowStyle, color: "#dc2626" }}>
+            <span>⚠ Requires Approval</span>
+            <span></span>
+          </div>
+        )}
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>Step 2–3: Adjusted Annual Revenue</div>
+        <div style={rowStyle}>
+          <span>Adjusted Annual ({formatCurrency(r.currentContract12Months)} × {r.pricingMultiplier.toFixed(2)}×):</span>
+          <span>{formatCurrency(r.adjustedAnnual)}</span>
+        </div>
+        <div style={rowStyle}>
+          <span>Frequency:</span>
+          <span>{r.input.frequency} ({r.visitsPerYear} visits/yr)</span>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>Step 4: Account-Type Adjustment ({r.input.accountType})</div>
+        {r.revenueDeduction > 0 && (
+          <div style={rowStyle}>
+            <span>Revenue Deduction ({r.input.isNewLocation ? "new" : "existing"}):</span>
+            <span style={{ color: "#dc2626" }}>−{formatCurrency(r.revenueDeduction)}</span>
+          </div>
+        )}
+        {r.anchorBonus > 0 && (
+          <div style={rowStyle}>
+            <span>Anchor Bonus ({r.pricingMultiplier > 1 ? "Greenline-relaxed " : ""}150% above threshold):</span>
+            <span style={{ color: "#16a34a" }}>+{formatCurrency(r.anchorBonus)}</span>
+          </div>
+        )}
+        <div style={totalRowStyle}>
+          <span>Commissionable Annual:</span>
+          <span>{formatCurrency(r.commissionableAnnual)}</span>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>Step 5: Quota Credit</div>
+        <div style={rowStyle}>
+          <span>Annual Contract Total (12-month slice):</span>
+          <span>{formatCurrency(r.annualContractTotal)}</span>
+        </div>
+        <div style={totalRowStyle}>
+          <span>Annual Quota Credit (× {r.pricingMultiplier.toFixed(2)}×):</span>
+          <span>{formatCurrency(r.annualQuotaCredit)}</span>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>Step 6: Tiered Commission Rate</div>
+        <div style={rowStyle}>
+          <span>Existing Sales Position:</span>
+          <span>{formatCurrency(r.input.repActualSalesBefore)}</span>
+        </div>
+        {r.belowQuotaPortion > 0 && (
+          <div style={rowStyle}>
+            <span>
+              Below tier portion ({formatCurrency(r.belowQuotaPortion)} × {r.input.isInsideSales ? `(${r.baseRate} − 3)` : r.baseRate}% × {r.agreementMultiplier}%):
+            </span>
+            <span>{formatCurrency(r.belowQuotaCommission)}</span>
+          </div>
+        )}
+        {r.aboveQuotaPortion > 0 && (
+          <div style={rowStyle}>
+            <span>
+              Above tier portion ({formatCurrency(r.aboveQuotaPortion)} × {r.input.isInsideSales ? "3" : "6"}% × {r.agreementMultiplier}%):
+            </span>
+            <span>{formatCurrency(r.aboveQuotaCommission)}</span>
+          </div>
+        )}
+        {r.doubleQuotaPortion > 0 && (
+          <div style={rowStyle}>
+            <span>
+              Double tier portion ({formatCurrency(r.doubleQuotaPortion)} × {r.input.isInsideSales ? "6" : "9"}% × {r.agreementMultiplier}%):
+            </span>
+            <span>{formatCurrency(r.doubleQuotaCommission)}</span>
+          </div>
+        )}
+        <div style={totalRowStyle}>
+          <span>Annual Commission:</span>
+          <span style={{ color: "#16a34a" }}>{formatCurrency(r.annualCommission)}</span>
+        </div>
+      </div>
+
+      {r.renewalBonusAmount > 0 && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>Renewal Bonus</div>
+          <div style={rowStyle}>
+            <span>Total Renewed Value × {r.renewalBonusRate}%:</span>
+            <span style={{ color: "#16a34a" }}>+{formatCurrency(r.renewalBonusAmount)}</span>
+          </div>
+          <div style={totalRowStyle}>
+            <span>Total Commission:</span>
+            <span style={{ color: "#16a34a" }}>{formatCurrency(r.totalCommission)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper type alias used by CalculatorResult
+type CommissionCalculatorMemo = () => any;

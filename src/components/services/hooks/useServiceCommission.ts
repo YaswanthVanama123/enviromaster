@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useServicesContext, AccountTypeCacheEntry } from '../ServicesContext';
 import { getFrequencyNumber, BACKEND_TO_FREQUENCY } from './useAccountTypeDetection';
 import {
@@ -7,6 +7,19 @@ import {
   getVisitsPerYear,
 } from '../../../backendservice/utils/commissionCalculatorV2';
 import { DEFAULT_COMMISSION_RULES_V2 } from '../../../backendservice/types/commission.types.v2';
+import {
+  COMMISSION_RULES_V2,
+  ACCOUNT_TYPE_REVENUE_RULES,
+  ANCHOR_BONUS_MULTIPLIER,
+  ANCHOR_PER_VISIT_THRESHOLD,
+  PIT_PER_VISIT_THRESHOLD,
+  DEFAULT_QUOTA_TIER_CUTOFFS,
+  getPricingTierFromList,
+  PRICING_TIERS,
+  resolveCommissionRules,
+  type ResolvedCommissionRules,
+} from '../../../backendservice/types/commission.types';
+import { commissionApi } from '../../../backendservice/api/commissionApi';
 import type { AccountType } from '../../../backendservice/api/accountTypeApi';
 import type { ServiceFrequency, AgreementTerm } from '../../../backendservice/types/commission.types.v2';
 
@@ -286,6 +299,13 @@ export interface ServiceCommissionDetail {
   revenueDeduction: number;
   commissionableRevenue: number;
   anchorBonus: number;
+  // Pricing tier (per Solange Draft):
+  //   Below Redline 0.5×, Redline 1.0×, 110% 1.25×, 120% 1.5×, Greenline 2.0×
+  annualOriginalRevenue: number;     // 12-month redline figure for the group
+  priceRatio: number;                // current ÷ original (≥1 = above redline)
+  pricingTierLabel: string;          // e.g. "Redline", "Greenline (130%+)"
+  pricingMultiplier: number;         // 0.5 / 1.0 / 1.25 / 1.5 / 2.0
+  adjustedAnnualRevenue: number;     // annualCurrent × pricingMultiplier
   // Frequency info
   frequencyNumber: number;
   frequencyLabel: string;
@@ -299,6 +319,10 @@ export interface ServiceCommissionDetail {
     perVisitRevenue: string;
     revenueDeduction: string;
     commissionableRevenue: string;
+    annualOriginalRevenue: string;
+    adjustedAnnualRevenue: string;
+    priceRatio: string;
+    pricingMultiplier: string;
     perVisitCommission: string;
     weeklyCommission: string;
     annualCommission: string;
@@ -337,89 +361,340 @@ export interface GlobalCommissionResult {
 export function useGlobalCommission(commissionRate: number = 6): GlobalCommissionResult {
   const { servicesState, accountTypeCache, globalContractMonths } = useServicesContext();
 
+  // Live rules from MongoDB (admin-editable). Defaults until the fetch resolves.
+  const [activeRules, setActiveRules] = useState<ResolvedCommissionRules>(() =>
+    resolveCommissionRules(null),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    commissionApi
+      .getActiveRules()
+      .then(response => {
+        if (cancelled) return;
+        if (response?.data) {
+          setActiveRules(resolveCommissionRules(response.data));
+        }
+      })
+      .catch(err => {
+        console.error('[RULES] useGlobalCommission failed to load active rules:', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return useMemo(() => {
-    let totalPerVisitCommission = 0;
-    let totalWeeklyCommission = 0;
-    let totalAnnualCommission = 0;
-    let totalPerVisitRevenue = 0;
-    let totalCommissionableRevenue = 0;
+    // Use live admin-editable rules (per-visit penalties, Anchor thresholds,
+    // pricing tiers, frequency visits-per-year, weeksPerAnnualCommission, etc.).
+    const rules = activeRules;
 
-    // Get agreement multiplier based on contract months (e.g., 135% for 36 months)
-    const agreementMultiplier = getAgreementMultiplier(globalContractMonths);
-    // Effective commission rate = base rate × (agreement multiplier / 100)
-    const effectiveCommissionRate = commissionRate * (agreementMultiplier / 100);
+    // Visits per year per frequency, sourced from rules.
+    const visitsPerYearOf = (freqStr: string): number => {
+      const v: any = rules.frequencyVisitsPerYear;
+      const norm = (freqStr || 'monthly').toLowerCase().replace(/-/g, '');
+      if (norm === 'weekly') return v.weekly;
+      if (norm === 'biweekly') return v.biweekly;
+      if (norm === 'monthly') return v.monthly;
+      if (norm === 'quarterly') return v.quarterly;
+      if (norm === 'onetime') return v['one-time'];
+      // Fallback to backend-frequency table for extended types
+      return EXTENDED_FREQUENCY_VISITS[freqStr as ExtendedFrequency] ?? 12;
+    };
 
-    const services: ServiceCommissionDetail[] = [];
+    // Agreement multiplier (e.g. 135% for 36 months)
+    const agreementTerm = getAgreementTerm(globalContractMonths);
+    const agreementMultiplier = rules.agreementMultipliers[agreementTerm];
+
+    // === STEP 1 — Walk all active recurring services and bucket them by
+    // frequency. Per service, derive its 1-YEAR contract total (current and
+    // original/redline) by prorating the multi-year contractTotal down to a
+    // single year. No per-visit math anywhere.
+    type ServiceRow = {
+      serviceName: string;
+      serviceData: any;
+      freqNum: number;
+      freqLabel: string;
+      freqStr: ExtendedFrequency;
+      annualCurrent: number;
+      annualOriginal: number;
+      accountType: AccountType | null;
+      cacheEntry: AccountTypeCacheEntry | undefined;
+    };
+
+    const rows: ServiceRow[] = [];
 
     Object.entries(servicesState).forEach(([serviceName, serviceData]: [string, any]) => {
       if (!serviceData?.isActive) return;
 
       const freqNum = getFrequencyNumber(serviceData);
-      if (freqNum === null || freqNum === 0) return; // Skip one-time services
+      if (freqNum === null || freqNum === 0) return; // one-time excluded from frequency rollup
 
-      const perVisitRevenue =
-        serviceData.perVisit ??
-        serviceData.totals?.perVisit?.amount ??
-        serviceData.perVisitCharge ??
-        serviceData.calc?.perVisit ??
+      // Service contract total (multi-year) — current and redline
+      const serviceCurrent =
+        (typeof serviceData.contractTotal === 'number' && serviceData.contractTotal) ||
+        serviceData.totals?.contract?.amount ||
+        serviceData.totals?.annual?.amount ||
         0;
+      const serviceOriginal =
+        (typeof serviceData.originalContractTotal === 'number' && serviceData.originalContractTotal) ||
+        serviceCurrent;
 
-      if (perVisitRevenue <= 0) return;
+      if (serviceCurrent <= 0) return;
+
+      // 1-YEAR slice of the contract (regardless of contractMonths)
+      const annualCurrent =
+        globalContractMonths > 0 ? (serviceCurrent / globalContractMonths) * 12 : serviceCurrent;
+      const annualOriginal =
+        globalContractMonths > 0 ? (serviceOriginal / globalContractMonths) * 12 : serviceOriginal;
 
       const cacheEntry = accountTypeCache[freqNum] as AccountTypeCacheEntry | undefined;
       const accountType = cacheEntry?.accountType || null;
-      const confidence = cacheEntry?.confidence || null;
-      const reason = cacheEntry?.reason || null;
+      const freqStr = backendFrequencyToServiceFrequency(freqNum);
+      const freqLabel = BACKEND_TO_FREQUENCY[freqNum] || 'Unknown';
 
-      let commissionableRevenue = perVisitRevenue;
-      let revenueDeduction = 0;
-      let anchorBonus = 0;
+      rows.push({
+        serviceName,
+        serviceData,
+        freqNum,
+        freqLabel,
+        freqStr,
+        annualCurrent,
+        annualOriginal,
+        accountType,
+        cacheEntry,
+      });
+    });
 
-      if (accountType) {
-        const result = calculateCommissionableRevenue(perVisitRevenue, accountType);
-        commissionableRevenue = result.commissionableRevenue;
-        revenueDeduction = result.revenueDeduction;
-        anchorBonus = result.anchorBonus || 0;
+    // === STEP 2 — Group rows by frequency and run the contract-total calc per
+    // group. Penalties / Anchor zones are expressed as ANNUAL dollar amounts
+    // (per-visit threshold × visitsPerYear for that group) so a single
+    // deduction applies once per visit, not once per service-per-visit.
+    const groups = new Map<
+      string,
+      {
+        freqStr: ExtendedFrequency;
+        freqLabel: string;
+        rows: ServiceRow[];
+        accountType: AccountType | null;
+        annualCurrent: number;
+        annualOriginal: number;
+        priceRatio: number;
+        pricingTier: ReturnType<typeof getPricingTierFromList>;
+        pricingMultiplier: number;
+        adjustedAnnual: number;
+        revenueDeduction: number;
+        anchorBonus: number;
+        commissionableAnnual: number;
+        annualCommission: number;
+      }
+    >();
+
+    rows.forEach(row => {
+      const key = row.freqStr;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          freqStr: row.freqStr,
+          freqLabel: row.freqLabel,
+          rows: [],
+          accountType: row.accountType,
+          annualCurrent: 0,
+          annualOriginal: 0,
+          priceRatio: 1,
+          pricingTier: PRICING_TIERS[1],
+          pricingMultiplier: 1,
+          adjustedAnnual: 0,
+          revenueDeduction: 0,
+          anchorBonus: 0,
+          commissionableAnnual: 0,
+          annualCommission: 0,
+        });
+      }
+      const g = groups.get(key)!;
+      g.rows.push(row);
+      g.annualCurrent += row.annualCurrent;
+      g.annualOriginal += row.annualOriginal;
+      // Prefer the first non-null accountType for this frequency
+      if (!g.accountType && row.accountType) g.accountType = row.accountType;
+    });
+
+    let totalCommissionableAnnual = 0;
+    let totalQuotaCredit = 0;
+
+    // === AGREEMENT-LEVEL PRICING TIER ===
+    // Per Solange Draft, the pricing multiplier is determined by the WHOLE
+    // agreement's price ratio, not per-frequency-group ratios. Sum every
+    // service's 1-year contract (current + redline), compute the ratio once,
+    // and apply that single multiplier to every group.
+    let agreementCurrentAnnual = 0;
+    let agreementOriginalAnnual = 0;
+    rows.forEach(r => {
+      agreementCurrentAnnual += r.annualCurrent;
+      agreementOriginalAnnual += r.annualOriginal;
+    });
+    const agreementPriceRatio =
+      agreementOriginalAnnual > 0 ? agreementCurrentAnnual / agreementOriginalAnnual : 1;
+    const agreementPricingTier = getPricingTierFromList(
+      agreementCurrentAnnual,
+      agreementOriginalAnnual,
+      rules.pricingTiers,
+    );
+    const agreementPricingMultiplier = agreementPricingTier.quotaMultiplier;
+    const agreementIsGreenline = agreementPricingTier.label === 'Greenline (130%+)';
+
+    groups.forEach(g => {
+      // Use the AGREEMENT-level tier for every group (one ratio, one multiplier).
+      g.pricingTier = agreementPricingTier;
+      g.pricingMultiplier = agreementPricingMultiplier;
+      g.priceRatio = agreementPriceRatio;
+      const isGreenline = agreementIsGreenline;
+
+      // Annual base after pricing multiplier ONLY (agreement multiplier stays
+      // in the rate via effectiveCommissionRate, matching the existing UI's
+      // "commissionableRevenue × effectiveRate%" display contract).
+      g.adjustedAnnual = g.annualCurrent * g.pricingMultiplier;
+
+      // Annualized account-type thresholds for this frequency group
+      const visits = visitsPerYearOf(g.freqStr);
+      const pitZoneAnnual = rules.pitPerVisitThreshold * visits;
+      const anchorZoneAnnual = (isGreenline ? rules.anchorMinGreenline : rules.anchorPerVisitThreshold) * visits;
+      const pen = rules.perVisitPenalties;
+      const bread5Annual = pen.Bread5 * visits;
+      const bread15Annual = pen.Bread15 * visits;
+      const pitAnnual = pen.Pit * visits;
+
+      // Account-type adjustment at the annual contract-total level.
+      // (NOTE: isNewLocation flag isn't surfaced into this hook today; we
+      // default to "new location" semantics, matching the previous behavior
+      // which always applied the deduction. The FormFilling calc reads the
+      // isNewLocation flag directly.)
+      const isNewLocation = true;
+      const adjusted = g.adjustedAnnual;
+
+      switch (g.accountType) {
+        case 'Anchor': {
+          if (isNewLocation) {
+            const pitPart = Math.min(adjusted, pitZoneAnnual);
+            const stdPart = Math.min(Math.max(0, adjusted - pitZoneAnnual), anchorZoneAnnual - pitZoneAnnual);
+            const anchorPart = Math.max(0, adjusted - anchorZoneAnnual);
+            g.commissionableAnnual = Math.max(0, stdPart) + anchorPart * rules.anchorBonusMultiplier;
+            g.revenueDeduction = pitPart;
+            g.anchorBonus = anchorPart * (rules.anchorBonusMultiplier - 1);
+          } else {
+            const stdPart = Math.min(adjusted, anchorZoneAnnual);
+            const anchorPart = Math.max(0, adjusted - anchorZoneAnnual);
+            g.commissionableAnnual = stdPart + anchorPart * rules.anchorBonusMultiplier;
+            g.revenueDeduction = 0;
+            g.anchorBonus = anchorPart * (rules.anchorBonusMultiplier - 1);
+          }
+          break;
+        }
+        case 'Bread5': {
+          g.revenueDeduction = isNewLocation ? bread5Annual : 0;
+          g.commissionableAnnual = Math.max(0, adjusted - g.revenueDeduction);
+          break;
+        }
+        case 'Bread15': {
+          g.revenueDeduction = isNewLocation ? bread15Annual : 0;
+          g.commissionableAnnual = Math.max(0, adjusted - g.revenueDeduction);
+          break;
+        }
+        case 'Pit': {
+          if (isNewLocation || adjusted <= pitAnnual) {
+            g.revenueDeduction = pitAnnual;
+            g.commissionableAnnual = Math.max(0, adjusted - pitAnnual);
+          } else {
+            g.revenueDeduction = 0;
+            g.commissionableAnnual = adjusted;
+          }
+          break;
+        }
+        default: {
+          // Account type not detected → fall through with no adjustment
+          g.revenueDeduction = 0;
+          g.commissionableAnnual = adjusted;
+        }
       }
 
-      const serviceFrequency = backendFrequencyToServiceFrequency(freqNum);
-      const frequencyLabel = BACKEND_TO_FREQUENCY[freqNum] || 'Unknown';
-      const visitsPerYear = getVisitsPerYearExtended(serviceFrequency);
+      totalCommissionableAnnual += g.commissionableAnnual;
+      totalQuotaCredit += g.annualCurrent * g.pricingMultiplier;
+    });
 
-      // Use effective commission rate (includes agreement multiplier)
-      const perVisitCommission = commissionableRevenue * (effectiveCommissionRate / 100);
-      const annualCommission = perVisitCommission * visitsPerYear;
-      const weeklyCommission = annualCommission / 52;
+    // === STEP 3 — Distribute the GROUP-level commissionable back to the
+    // individual services proportional to their share of the group's annual
+    // current revenue. This keeps the per-service display rows in sync with
+    // the group-level math while charging deductions only once per visit.
+    let totalAnnualCommission = 0;
+    let totalWeeklyCommission = 0;
+    let totalPerVisitCommission = 0;
+    let totalPerVisitRevenue = 0;
+    let totalCommissionableRevenue = 0;
 
-      totalPerVisitCommission += perVisitCommission;
-      totalWeeklyCommission += weeklyCommission;
-      totalAnnualCommission += annualCommission;
-      totalPerVisitRevenue += perVisitRevenue;
-      totalCommissionableRevenue += commissionableRevenue;
+    const services: ServiceCommissionDetail[] = [];
+    // effectiveRate = base × agreement multiplier (e.g. 3% × 135% = 4.05%)
+    // Applied to commissionableAnnual (which has pricingMultiplier baked in).
+    const effectiveCommissionRate = commissionRate * (agreementMultiplier / 100);
 
-      services.push({
-        serviceName,
-        accountType,
-        confidence,
-        reason,
-        perVisitRevenue,
-        revenueDeduction,
-        commissionableRevenue,
-        anchorBonus,
-        frequencyNumber: freqNum,
-        frequencyLabel,
-        visitsPerYear,
-        perVisitCommission,
-        weeklyCommission,
-        annualCommission,
-        formatted: {
-          perVisitRevenue: formatCurrency(perVisitRevenue),
-          revenueDeduction: formatCurrency(revenueDeduction),
-          commissionableRevenue: formatCurrency(commissionableRevenue),
-          perVisitCommission: formatCurrency(perVisitCommission),
-          weeklyCommission: formatCurrency(weeklyCommission),
-          annualCommission: formatCurrency(annualCommission),
-        },
+    groups.forEach(g => {
+      // Commission for the group at the EFFECTIVE rate (base × agreement).
+      g.annualCommission = g.commissionableAnnual * (effectiveCommissionRate / 100);
+      const groupVisits = visitsPerYearOf(g.freqStr);
+      const groupWeekly = g.annualCommission / rules.weeksPerAnnualCommission;
+      const groupPerVisit = groupVisits > 0 ? g.annualCommission / groupVisits : 0;
+
+      g.rows.forEach(row => {
+        const share = g.annualCurrent > 0 ? row.annualCurrent / g.annualCurrent : 0;
+        const rowAnnualCommission = g.annualCommission * share;
+        const rowCommissionable = g.commissionableAnnual * share;
+        const rowDeduction = g.revenueDeduction * share;
+        const rowAnchorBonus = g.anchorBonus * share;
+        const rowWeekly = rowAnnualCommission / rules.weeksPerAnnualCommission;
+        const rowPerVisit = groupVisits > 0 ? rowAnnualCommission / groupVisits : 0;
+
+        totalAnnualCommission += rowAnnualCommission;
+        totalWeeklyCommission += rowWeekly;
+        totalPerVisitCommission += rowPerVisit;
+        totalPerVisitRevenue += row.annualCurrent;     // now reports ANNUAL revenue, not per-visit
+        totalCommissionableRevenue += rowCommissionable;
+
+        // Per-service share of the group's pricing-multiplied revenue
+        const rowAdjusted = row.annualCurrent * g.pricingMultiplier;
+        const rowOriginal = row.annualOriginal;
+
+        services.push({
+          serviceName: row.serviceName,
+          accountType: row.accountType,
+          confidence: row.cacheEntry?.confidence || null,
+          reason: row.cacheEntry?.reason || null,
+          perVisitRevenue: row.annualCurrent,
+          revenueDeduction: rowDeduction,
+          commissionableRevenue: rowCommissionable,
+          anchorBonus: rowAnchorBonus,
+          // Pricing tier (group-level, surfaced per service for display)
+          annualOriginalRevenue: rowOriginal,
+          priceRatio: g.priceRatio,
+          pricingTierLabel: g.pricingTier.label,
+          pricingMultiplier: g.pricingMultiplier,
+          adjustedAnnualRevenue: rowAdjusted,
+          frequencyNumber: row.freqNum,
+          frequencyLabel: row.freqLabel,
+          visitsPerYear: groupVisits,
+          perVisitCommission: rowPerVisit,
+          weeklyCommission: rowWeekly,
+          annualCommission: rowAnnualCommission,
+          formatted: {
+            perVisitRevenue: formatCurrency(row.annualCurrent),
+            revenueDeduction: formatCurrency(rowDeduction),
+            commissionableRevenue: formatCurrency(rowCommissionable),
+            annualOriginalRevenue: formatCurrency(rowOriginal),
+            adjustedAnnualRevenue: formatCurrency(rowAdjusted),
+            priceRatio: `${(g.priceRatio * 100).toFixed(1)}%`,
+            pricingMultiplier: `${g.pricingMultiplier.toFixed(2)}×`,
+            perVisitCommission: formatCurrency(rowPerVisit),
+            weeklyCommission: formatCurrency(rowWeekly),
+            annualCommission: formatCurrency(rowAnnualCommission),
+          },
+        });
       });
     });
 
@@ -446,7 +721,7 @@ export function useGlobalCommission(commissionRate: number = 6): GlobalCommissio
       hasDetectedServices: services.some(s => s.accountType !== null),
       serviceCount: services.length,
     };
-  }, [servicesState, accountTypeCache, commissionRate, globalContractMonths]);
+  }, [servicesState, accountTypeCache, commissionRate, globalContractMonths, activeRules]);
 }
 
 export default useServiceCommission;
